@@ -390,7 +390,7 @@ julia --startup-file=no --project=src/gnn/execute/rxinfer \
 | Kind detection | [pomdp_contract.py](../../../src/gnn/render/pomdp_contract.py)             | `detect_model_kind(...)`          |
 | Strategies     | [model_strategies.py](../../../src/gnn/render/rxinfer/model_strategies.py) | per-`ModelKind` strategy classes  |
 | Model blocks   | [GnnRxInferModels.jl](../../../src/gnn/execute/rxinfer/src/GnnRxInferModels.jl) | the five `@model` functions  |
-| Entry Point    | [processor.py](../../../src/gnn/render/processor.py)                       | `render_gnn_spec(...)`            |
+| Entry Point    | [rendering.py](../../../src/gnn/render/processor/rendering.py)             | `render_gnn_spec(...)`            |
 | Execution      | [rxinfer_runner.py](../../../src/gnn/execute/rxinfer/rxinfer_runner.py)    | `execute_rxinfer_script()`        |
 | Julia Check    | [julia_setup.py](../../../src/gnn/execute/julia_setup.py)                  | `is_julia_available()`            |
 | Analysis       | [analyzer.py](../../../src/gnn/analysis/rxinfer/analyzer.py)               | `generate_analysis_from_logs()`   |

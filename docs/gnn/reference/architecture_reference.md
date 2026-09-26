@@ -135,7 +135,7 @@ Consumers (one per line):
 
 Step 5 (type checker), Step 10 (ontology), and Step 11 (render) re-parse the target-dir
 GNN files directly (type_checker/checking/core.py `_discover_gnn_files`;
-ontology/processor.py; render/processor.py). The previously documented claims that
+ontology/processor.py; render/processor/). The previously documented claims that
 5_type_checker.py reads gnn_processing_results.json and that 8_visualization.py reads
 5_type_checker_output are not true of the current code and have been removed.
 

@@ -41,7 +41,7 @@ If a function is not exported there, it should not be documented as public API.
 
 ## Integration Boundaries
 
-- Upstream: called by render processor (`src/gnn/render/processor.py`).
+- Upstream: called by render processor (`src/gnn/render/processor/`).
 - Downstream: scripts are executed by `src/gnn/execute/pymdp/`.
 - This module does not run simulations and does not generate analysis plots.
 

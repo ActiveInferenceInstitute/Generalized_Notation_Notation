@@ -33,7 +33,7 @@ class PipelineDiagnosticEnhancer:
             },
             "POMDP processing modules not available.*attempted relative import": {
                 "category": "import_error",
-                "solution": "Fix relative imports in render/processor.py",
+                "solution": "Fix relative imports in render/processor/ submodules",
                 "priority": "high",
             },
             "matplotlib.*incompatible constructor arguments": {

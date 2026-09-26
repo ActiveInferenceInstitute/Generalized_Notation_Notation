@@ -14,6 +14,28 @@
 
 **Last Updated**: 2026-09-24
 
+## File Structure
+
+```
+pomdp_processor/
+├── __init__.py            # Package facade: module docstring, logger, re-exports, POMDPRenderProcessor assembly, public functions
+├── _routes.py             # RendererRoute dataclass and RENDERER_ROUTES dispatch table
+├── _flow.py               # _ProcessFlowMixin: __init__ and per-framework processing flow
+├── _validation.py         # _CompatibilityValidationMixin: POMDP-renderer compatibility validation
+├── _canonical.py          # _CanonicalSpecMixin: canonical POMDP spec composition helpers
+├── _spec_generation.py    # _SpecGenerationMixin: GNN spec builders per space model kind
+├── _renderer_dispatch.py  # _RendererDispatchMixin: _invoke_renderer and _call_*_renderer methods
+└── _documentation.py      # _DocumentationMixin: per-framework README generation
+
+processor/
+├── __init__.py            # Package facade: module docstring, numpy/sys.path bootstrap, logger, registry re-exports, moved defs
+├── parsing.py             # Parsing helpers: output stems, node/spec mapping, parse-summary rehydration, vector flattening, validation, matrix normalization
+├── receipts.py            # Receipt persistence: _load_prior_render_summary, _render_file_identity, _atomic_render_json, _write_render_receipt, parse_frameworks_selection
+├── pipeline.py            # process_render, _process_single_gnn_file_basic, _create_overview_documentation
+├── rendering.py           # _render_continuous_target, render_gnn_spec
+└── metadata.py            # get_module_info, get_available_renderers
+```
+
 ---
 
 ## Core Functionality
@@ -148,18 +170,18 @@ success = process_render(
 - `message` (str): Status message
 - `generated_files` (List[str]): List of generated file paths
 
-**Location**: `src/gnn/render/processor.py`
+**Location**: `src/gnn/render/processor/rendering.py`
 
 #### `parse_frameworks_selection(frameworks: Union[str, List[str], None]) -> Tuple[Optional[List[str]], bool]`
 **Description**: Normalize the `frameworks` selection used by `process_render` and the Step 11 CLI. Pure function; resolves `None`/`"all"` to `None` (all registered frameworks), `"lite"` to the registry preset (`get_lite_frameworks()`), and comma-separated strings to a stripped name list.
 
 **Returns**: `(frameworks, explicit_request)` — `explicit_request` is `True` when the caller pinned a specific framework set, which Step 11 treats as a strict-success policy.
 
-**Location**: `src/gnn/render/processor.py`
+**Location**: `src/gnn/render/processor/receipts.py`
 
 ### Shared helpers
 
-- `render.naming.safe_output_stem(value, fallback="model")` — filesystem-safe output stem (single source of truth for `processor.py` and `pomdp_processor.py`).
+- `render.naming.safe_output_stem(value, fallback="model")` — filesystem-safe output stem (single source of truth for the `render/processor/` and `render/pomdp_processor/` packages).
 - `render.naming.atomic_write_text(path, content)` — temp-file + `os.replace` atomic artifact write.
 - `render.spec_matrices.extract_abcd_matrices(gnn_spec)` — shared discrete A/B/C/D extraction with the `stateSpace.parameters` → `initialparameterization` → `parameters` fallback chain, neutral defaults, and column normalization (used by the PyTorch and NumPyro renderers).
 - `render.spec_matrices.format_array_literal(arr, *, prefix, suffix="", indent=4)` — language-neutral array-literal formatter behind `_format_tensor` / `_format_jnp_array`.
@@ -186,7 +208,7 @@ The shared contract is `canonical_pomdp_v1`; B is stored as `(next_state, previo
 - `features` (List[str]): List of available features
 - `supported_formats` (List[str]): List of supported output formats
 - `processing_modes` (List[str]): List of available processing modes
-**Location**: `src/gnn/render/processor.py`
+**Location**: `src/gnn/render/processor/metadata.py`
 
 #### `get_available_renderers() -> Dict[str, Dict[str, Any]]`
 **Description**: Get information about available renderers for each framework.
@@ -202,7 +224,7 @@ The shared contract is `canonical_pomdp_v1`; B is stored as `(next_state, previo
   - `output_format` (str): Output format type
   - `pomdp_compatible` (bool): Whether POMDP-aware processing is supported
 
-**Location**: `src/gnn/render/processor.py`
+**Location**: `src/gnn/render/processor/metadata.py`
 
 #### `validate_pomdp_for_rendering(pomdp_space: Any) -> Tuple[bool, List[str]]`
 **Description**: Validate POMDP state space structure for rendering compatibility.
@@ -214,7 +236,7 @@ The shared contract is `canonical_pomdp_v1`; B is stored as `(next_state, previo
 - `is_valid` (bool): Whether POMDP structure is valid
 - `errors` (List[str]): List of validation error messages
 
-**Location**: `src/gnn/render/processor.py`
+**Location**: `src/gnn/render/processor/parsing.py`
 
 #### `normalize_matrices(pomdp_space: Any, logger) -> Any`
 **Description**: Normalize POMDP matrices for consistent rendering.
@@ -225,7 +247,7 @@ The shared contract is `canonical_pomdp_v1`; B is stored as `(next_state, previo
 
 **Returns**: `Any` - Normalized POMDP state space object
 
-**Location**: `src/gnn/render/processor.py`
+**Location**: `src/gnn/render/processor/parsing.py`
 
 ### `render_gnn_to_jax` and friends (JAX generator)
 

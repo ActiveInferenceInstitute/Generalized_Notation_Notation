@@ -67,7 +67,7 @@ flowchart TD
 
 ### POMDP-Aware Processing
 
-The core function `process_render()` in `src/gnn/render/processor.py` implements:
+The core function `process_render()` in `src/gnn/render/processor/pipeline.py` implements:
 
 1. **POMDP Extraction** — Extracts state factors, observation modalities, control factors, matrices (A, B, C, D/E), and matrix provenance from GNN files via `gnn.extract.pomdp_extractor.extract_pomdp_from_file()`
 2. **Validation** — `validate_pomdp_for_rendering()` checks that required dimensions and matrices are present for the requested framework
