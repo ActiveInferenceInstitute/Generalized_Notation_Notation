@@ -31,4 +31,4 @@ pymdp/
 
 - Generated scripts target `inferactively-pymdp>=1.0.0`.
 - Required matrices are `A`, `B`, `C`, and `D`; factored POMDP specs are
-  composed by `render/pomdp_processor.py` before this renderer is called.
+  composed by `render/pomdp_processor/_spec_generation.py` before this renderer is called.

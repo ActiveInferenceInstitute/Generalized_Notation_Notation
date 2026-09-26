@@ -38,7 +38,7 @@ No additional public function is exported by this package.
 
 ## Integration
 
-- Called by the Step 11 render pipeline (`src/gnn/render/processor.py`).
+- Called by the Step 11 render pipeline (`src/gnn/render/processor/`).
 - Generated scripts are consumed by Step 12 execution (`src/gnn/execute/processor.py`).
 - Visualization is not handled in render.
 

@@ -126,7 +126,7 @@ Any exception raised during code generation is caught and returned as `(False, "
 ## Integration
 
 ### Orchestrated by
-- `render/processor.py::render_gnn_spec` — dispatches when `target == "discopy"`.
+- `render/processor/rendering.py::render_gnn_spec` — dispatches when `target == "discopy"`.
 - `11_render.py` — the numbered pipeline script.
 
 ### Consumed by

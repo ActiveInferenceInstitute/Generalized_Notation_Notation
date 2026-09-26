@@ -133,7 +133,7 @@ The generators attempt to make the produced files self-contained; installation o
 ## Integration Points
 
 - **Orchestrated by**:
-  - `src/gnn/render/processor.py` via the `"jax"` target in `AVAILABLE_RENDERERS`.
+  - `src/gnn/render/processor/rendering.py` via the `"jax"` target in `AVAILABLE_RENDERERS`.
   - `src/gnn/11_render.py` (Step 11) through `render.process_render`.
 
 - **Imported from**:

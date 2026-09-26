@@ -130,7 +130,7 @@ def normalize_pomdp_columns(matrix: Any) -> Any:
 
     Zero-sum columns are replaced with a uniform distribution (1/n_rows in every
     cell) — the same recovery policy used in
-    ``src/gnn/render/processor.py::normalize_matrices``. Non-2D input is returned
+    ``src/gnn/render/processor/parsing.py::normalize_matrices``. Non-2D input is returned
     unchanged so callers can apply this to the leaves of 3D or list-of-arrays
     structures without special-casing.
     """

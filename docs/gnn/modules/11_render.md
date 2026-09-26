@@ -195,7 +195,7 @@ success = process_render(
 - `message` (str): Status message
 - `generated_files` (List[str]): List of generated file paths
 
-**Location**: `src/gnn/render/processor.py`
+**Location**: `src/gnn/render/processor/rendering.py`
 
 ### Canonical POMDP renderers
 
@@ -220,7 +220,7 @@ The shared contract is `canonical_pomdp_v1`, with B stored as `(next_state, prev
 - `supported_formats` (List[str]): List of supported output formats
 - `processing_modes` (List[str]): List of available processing modes
 
-**Location**: `src/gnn/render/processor.py`
+**Location**: `src/gnn/render/processor/metadata.py`
 
 #### `get_available_renderers() -> Dict[str, Dict[str, Any]]`
 **Description**: Get information about available renderers for each framework.
@@ -236,7 +236,7 @@ The shared contract is `canonical_pomdp_v1`, with B stored as `(next_state, prev
   - `output_format` (str): Output format type
   - `pomdp_compatible` (bool): Whether POMDP-aware processing is supported
 
-**Location**: `src/gnn/render/processor.py`
+**Location**: `src/gnn/render/processor/metadata.py`
 
 #### `validate_pomdp_for_rendering(pomdp_space: Any) -> Tuple[bool, List[str]]`
 **Description**: Validate POMDP state space structure for rendering compatibility.
@@ -248,7 +248,7 @@ The shared contract is `canonical_pomdp_v1`, with B stored as `(next_state, prev
 - `is_valid` (bool): Whether POMDP structure is valid
 - `errors` (List[str]): List of validation error messages
 
-**Location**: `src/gnn/render/processor.py`
+**Location**: `src/gnn/render/processor/parsing.py`
 
 #### `normalize_matrices(pomdp_space: Any, logger) -> Any`
 **Description**: Normalize POMDP matrices for consistent rendering.
@@ -259,7 +259,7 @@ The shared contract is `canonical_pomdp_v1`, with B stored as `(next_state, prev
 
 **Returns**: `Any` - Normalized POMDP state space object
 
-**Location**: `src/gnn/render/processor.py`
+**Location**: `src/gnn/render/processor/parsing.py`
 
 ---
 
