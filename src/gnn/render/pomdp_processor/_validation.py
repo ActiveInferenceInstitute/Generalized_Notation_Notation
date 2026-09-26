@@ -3,7 +3,7 @@
 
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 from gnn.render.pomdp_contract import (
     ModelKind,
@@ -13,8 +13,13 @@ from gnn.render.pomdp_contract import (
     unsupported_nonstationary_reason,
 )
 
+from ._support import _POMDPProcessorSupportMixin
 
-class _CompatibilityValidationMixin:
+if TYPE_CHECKING:
+    from gnn.extract.pomdp_extractor import POMDPStateSpace
+
+
+class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
     def _validate_pomdp_framework_compatibility(
         self, pomdp_space: "POMDPStateSpace", framework: str
     ) -> Dict[str, Any]:

@@ -3,12 +3,17 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
 
 import numpy as np
 
+from ._support import _POMDPProcessorSupportMixin
 
-class _DocumentationMixin:
+if TYPE_CHECKING:
+    from gnn.extract.pomdp_extractor import POMDPStateSpace
+
+
+class _DocumentationMixin(_POMDPProcessorSupportMixin):
     def _create_framework_documentation(
         self,
         framework: str,

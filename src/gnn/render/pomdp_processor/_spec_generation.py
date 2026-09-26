@@ -2,16 +2,20 @@
 """Spec-generation mixin for the POMDP render processor."""
 
 import json
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import numpy as np
 
 from gnn.render.pomdp_contract import ModelKind, detect_pomdp_space_model_kind
 
 from ._routes import _continuous_shape
+from ._support import _POMDPProcessorSupportMixin
+
+if TYPE_CHECKING:
+    from gnn.extract.pomdp_extractor import POMDPStateSpace
 
 
-class _SpecGenerationMixin:
+class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
     def _pomdp_to_gnn_spec(
         self, pomdp_space: "POMDPStateSpace", **kwargs: Any
     ) -> Dict[str, Any]:

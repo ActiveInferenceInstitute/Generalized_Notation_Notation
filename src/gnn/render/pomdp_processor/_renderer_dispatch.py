@@ -3,12 +3,16 @@
 
 import importlib
 from pathlib import Path
-from typing import Any, Dict, cast
+from typing import TYPE_CHECKING, Any, Dict, cast
 
 from ._routes import RENDERER_ROUTES, RendererRoute, _safe_output_stem
+from ._support import _POMDPProcessorSupportMixin
+
+if TYPE_CHECKING:
+    pass
 
 
-class _RendererDispatchMixin:
+class _RendererDispatchMixin(_POMDPProcessorSupportMixin):
     def _call_framework_renderer(
         self, framework: str, gnn_spec: Dict[str, Any], output_dir: Path, **kwargs: Any
     ) -> Dict[str, Any]:

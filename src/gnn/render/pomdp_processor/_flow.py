@@ -5,13 +5,18 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from gnn.render.framework_registry import get_pomdp_framework_configs
 from gnn.utils.config_io.code_metrics import count_code_metrics
 
+from ._support import _POMDPProcessorSupportMixin
 
-class _ProcessFlowMixin:
+if TYPE_CHECKING:
+    from gnn.extract.pomdp_extractor import POMDPStateSpace
+
+
+class _ProcessFlowMixin(_POMDPProcessorSupportMixin):
     def __init__(self, base_output_dir: Path) -> None:
         """
         Initialize POMDP render processor.

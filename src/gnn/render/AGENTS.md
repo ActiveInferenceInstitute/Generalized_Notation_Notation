@@ -25,6 +25,7 @@ pomdp_processor/
 ├── _canonical.py          # _CanonicalSpecMixin: canonical POMDP spec composition helpers
 ├── _spec_generation.py    # _SpecGenerationMixin: GNN spec builders per space model kind
 ├── _renderer_dispatch.py  # _RendererDispatchMixin: _invoke_renderer and _call_*_renderer methods
+├── _support.py            # Cross-mixin typing contract (annotation-only declarations, no runtime members)
 └── _documentation.py      # _DocumentationMixin: per-framework README generation
 
 processor/

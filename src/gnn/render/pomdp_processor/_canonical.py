@@ -2,7 +2,7 @@
 """Canonical-spec mixins for the POMDP render processor."""
 
 import itertools
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import numpy as np
 
@@ -15,8 +15,13 @@ from gnn.render.pomdp_math import (
     _normalise_prob_vector,
 )
 
+from ._support import _POMDPProcessorSupportMixin
 
-class _CanonicalSpecMixin:
+if TYPE_CHECKING:
+    from gnn.extract.pomdp_extractor import POMDPStateSpace
+
+
+class _CanonicalSpecMixin(_POMDPProcessorSupportMixin):
     def _build_canonical_initialparameterization(
         self,
         pomdp_space: "POMDPStateSpace",

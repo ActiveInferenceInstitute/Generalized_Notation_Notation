@@ -258,7 +258,9 @@ def render_gnn_spec(
             gen_module_name, gen_name, suffix = _GENERATOR_TARGETS[target_lower]
             from importlib import import_module
 
-            generate_fn = getattr(import_module(gen_module_name, "gnn.render"), gen_name)
+            generate_fn = getattr(
+                import_module(gen_module_name, "gnn.render"), gen_name
+            )
             code = generate_fn(gnn_spec)
             output_file = output_dir / f"{output_stem}{suffix}"
             if code:

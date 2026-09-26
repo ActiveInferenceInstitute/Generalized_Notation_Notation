@@ -45,7 +45,6 @@ from gnn.render.framework_registry import (
     get_supported_frameworks as _registry_get_supported_frameworks,
 )
 from gnn.render.naming import safe_output_stem
-
 from gnn.render.processor.metadata import (
     get_available_renderers,
     get_module_info,
@@ -65,14 +64,14 @@ from gnn.render.processor.pipeline import (
     _process_single_gnn_file_basic,
     process_render,
 )
-from gnn.render.processor.rendering import (
-    _render_continuous_target,
-    render_gnn_spec,
-)
 from gnn.render.processor.receipts import (
     _atomic_render_json,
     _load_prior_render_summary,
     _render_file_identity,
     _write_render_receipt,
     parse_frameworks_selection,
+)
+from gnn.render.processor.rendering import (
+    _render_continuous_target,
+    render_gnn_spec,
 )

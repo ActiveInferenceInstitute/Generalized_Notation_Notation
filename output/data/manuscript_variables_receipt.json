@@ -1,9 +1,24 @@
 {
-  "counts_describe_commit": "eb72297f5",
-  "dirty_path_count": 2,
+  "counts_describe_commit": "2cadb8e04",
+  "dirty_path_count": 17,
   "dirty_paths": [
+    "docs/gnn/modules/20_website.md",
     "output/data/manuscript_variables.json",
-    "output/data/manuscript_variables_receipt.json"
+    "output/data/manuscript_variables_receipt.json",
+    "output/model_registry_api/model_registry.json",
+    "src/gnn/render/AGENTS.md",
+    "src/gnn/render/pomdp_processor/__init__.py",
+    "src/gnn/render/pomdp_processor/_canonical.py",
+    "src/gnn/render/pomdp_processor/_documentation.py",
+    "src/gnn/render/pomdp_processor/_flow.py",
+    "src/gnn/render/pomdp_processor/_renderer_dispatch.py",
+    "src/gnn/render/pomdp_processor/_spec_generation.py",
+    "src/gnn/render/pomdp_processor/_support.py",
+    "src/gnn/render/pomdp_processor/_validation.py",
+    "src/gnn/render/processor/__init__.py",
+    "src/gnn/render/processor/metadata.py",
+    "src/gnn/render/processor/parsing.py",
+    "src/gnn/render/processor/rendering.py"
   ],
   "generator": "scripts/z_generate_manuscript_variables.py",
   "git_available": true,

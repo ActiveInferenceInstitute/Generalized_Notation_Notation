@@ -5,6 +5,8 @@ from typing import Any, Dict
 
 from gnn.render.framework_registry import (
     get_available_renderers as _registry_get_available_renderers,
+)
+from gnn.render.framework_registry import (
     get_supported_frameworks as _registry_get_supported_frameworks,
 )
 

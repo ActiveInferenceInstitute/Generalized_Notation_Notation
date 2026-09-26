@@ -41,7 +41,12 @@ from ._canonical import _CanonicalSpecMixin
 from ._documentation import _DocumentationMixin
 from ._flow import _ProcessFlowMixin
 from ._renderer_dispatch import _RendererDispatchMixin
-from ._routes import _continuous_shape, _safe_output_stem, RendererRoute, RENDERER_ROUTES
+from ._routes import (
+    RENDERER_ROUTES,
+    RendererRoute,
+    _continuous_shape,
+    _safe_output_stem,
+)
 from ._spec_generation import _SpecGenerationMixin
 from ._validation import _CompatibilityValidationMixin
 

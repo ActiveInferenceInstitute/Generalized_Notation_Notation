@@ -105,7 +105,6 @@ def _rehydrate_file_backed_parse_summary(
         raise ValueError(f"Parsed GNN source file does not exist: {source_path}")
 
     from gnn.extract.pomdp_extractor import extract_pomdp_from_file
-
     from gnn.render.pomdp_processor import pomdp_to_gnn_spec
 
     pomdp_space = extract_pomdp_from_file(source_path, strict_validation=True)
