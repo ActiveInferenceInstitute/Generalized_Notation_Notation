@@ -503,4 +503,4 @@ If you encounter issues with optional dependencies:
 4. See [TROUBLESHOOTING.md](../troubleshooting/README.md) for more help
 
 ---
-**Status**: ✅ Current for Pipeline v3.5.0 (verified 2026-09-23 — framework statuses reflect `[project.dependencies]` in `pyproject.toml`)
+**Status**: ✅ Current for Pipeline v3.6.0 (verified 2026-09-26 — framework statuses reflect `[project.dependencies]` in `pyproject.toml`)

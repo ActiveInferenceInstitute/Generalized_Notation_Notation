@@ -1,10 +1,11 @@
 # GNN Version Map
 
 One-stop map of what changed at each release and where the authoritative record
-lives. Current version: **3.5.0** (see `pyproject.toml`, `CHANGELOG.md`).
+lives. Current version: **3.6.0** (see `pyproject.toml`, `CHANGELOG.md`).
 
 | Version | Date | Theme | Primary record |
 | --- | --- | --- | --- |
+| 3.6.0 | 2026-09-26 | Composability & Offline Truth: step-20 website per-model detail pages with breadcrumbs and client-side search, pure-dict `generate_website(..., filesystem=False)` with zero disk collection, dependency-free step-catalogue leaf module, fully offline assets (system font stack, JSON-LD + meta, atomic manifest), complexity-estimator subpackage + benchmark CLI subcommands, dashboard fold-and-delete into MCP artifact tools, six website dead-seams wired-or-removed (`website_html_filename` gone end-to-end), render band splits (`pomdp_processor` + `processor` packages), execute/processor band split, GEO-INFER consumer conformance suite | [CHANGELOG §3.6.0](../CHANGELOG.md) |
 | 3.5.0 | 2026-09-22 | Surface Truth & Integration: website step-20 statuses read from the recorded execution summary, standard MCP 2024-11-05 protocol in both transports, three new MCP tools (registry 142→146), `gnn gui` CLI subcommand, full API runs-delete contract with cancellation, one canonical framework tuple, step-24 LLM cache, didChange-aware LSP diagnostics, ngc-learn LGSSM exemplar + render/execute lane | [CHANGELOG §3.5.0](../CHANGELOG.md) |
 | 3.4.0 | 2026-09-17 | Model-Kind Truth: docs+manuscript generalization to discrete/continuous/multi-agent kinds (~110 docs), snapshot-based token auto-injection (`GNN_VERSION`/`GNN_MODULE_COUNT`/`GNN_TOOL_COUNT`/`GNN_TEST_COUNT`), `gnn doctor` capability probe + MCP `get_doctor_report`, bnlearn Step 12 executor, Step-6 B-orientation diagnostics + `--transpose-b`, cover-page graphical abstract | [CHANGELOG §3.4.0](../CHANGELOG.md) |
 | 3.3.0 | 2026-09-06 | One Corpus: input corpus closure (former top-level fixture dirs folded into `gnn_files/`), manuscript remediation reconciled onto the `src/gnn/` layout (Rule-8 path-claims gate, preamble PDF-metadata ownership, relocated manuscript gates), `gnn.*` as the single canonical import surface | [CHANGELOG §3.3.0](../CHANGELOG.md) |

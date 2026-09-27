@@ -5,16 +5,67 @@ All notable changes to the GNN Pipeline are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
 
 
-## [3.5.0] - 2026-09-22
+## [3.6.0] - 2026-09-26
 
-> **Surface Truth & Integration.** The website, MCP, API, and GUI surfaces now
-> report what the pipeline actually recorded: step-20 statuses come from the
-> execution summary, GUI launches are HTTP-verified instead of assumed, MCP
-> clients speak the standard 2024-11-05 protocol in both transports, and the
-> backends contract collapses onto one canonical framework tuple. Alongside:
-> three new MCP tools (registry 142→146), `gnn gui` on the CLI, LLM cache
-> wiring for step 24, didChange-aware LSP diagnostics, and full runs-delete
-> control on the API.
+> **Composability & Offline Truth.** The step-20 website is now a composable
+> library and a truthful offline artifact: per-model detail pages with
+> breadcrumbs and client-side search, a pure-dict render mode
+> (`generate_website(..., filesystem=False)`) with zero disk collection, a
+> dependency-free step-catalogue leaf module, and fully offline assets
+> (system font stack, JSON-LD + meta per page, atomic manifest). The
+> complexity estimator ships as a subpackage with benchmark CLI subcommands,
+> the dashboard folds-and-deletes into MCP artifact tools, all six
+> website dead-seams are wired-or-removed (the `website_html_filename`
+> knob is gone end-to-end), and the render band splits land
+> (`pomdp_processor` and `processor` packages) alongside the
+> execute/processor band split. GEO-INFER consumer conformance is pinned
+> by a dedicated test suite.
+
+### Added
+
+- **Consumer-conformance test suite** (`tests/export/test_geo_infer_consumer_compat.py`):
+  the three interchange emitters (`gnn.export.geo_infer`, `geo_infer_gaussian`,
+  `geo_infer_factored`) are pinned against the GEO-INFER consumer's validation
+  rules — exact key sets, byte-exact schema literals, matrix shapes,
+  axis-zero stochasticity (atol 1e-8), covariance definiteness, units, time
+  domain and provenance digests — with per-assertion citations to the pinned
+  consumer modules (`geo_infer_act.core.gnn_{contract,gaussian_contract,factored_contract}`).
+- `matrix_provenance["B"]["declared_order_explicit"]` records whether the B
+  axis order was explicitly declared in the source (vs defaulted to canonical),
+  separating parsed declarations from defaults in orientation provenance.
+
+### Added (2026-09-25 — website per-model pages, breadcrumbs, client-side search)
+
+- **Per-model detail pages, breadcrumbs, and client-side search ship with the
+  Step-20 website.** The generator emits one detail page per parsed model at
+  `model/<slug>.html` (slug = lowercased name, every character outside
+  `[a-z0-9]` collapsed to `-` and stripped, empty → `model`; deterministic
+  collection order; first claimant keeps the slug, later duplicates get
+  `-2`, `-3`, …). Each model page carries a model-name `h1`, a source link
+  back to the model's row on the `gnn_files` listing, variables/edges tables,
+  embedded visualization assets, and the model's FULL GNN source — no
+  truncation (the 3000-character cap remains only on the aggregate listing
+  rows). Every generated page — the seven site pages and every model page —
+  emits a breadcrumb nav in the page shell (`Home › <section>`; model pages:
+  `Home › GNN Files › <Model Name>`; index: a single `Home` crumb) with
+  relative, depth-correct hrefs. The manifest gains `model_pages_created`
+  and `model_pages` under new keys; the 7-page `SITE_PAGES` catalogue and
+  the existing `pages`/`pages_created` pins are untouched. The generator
+  also writes `search-index.json` (title/url/snippet per emitted page,
+  ≤200-char plain-text snippets) covering site and model pages, and the
+  `gnn_files` listing page gets a search box with an inline
+  `<script type="application/json">` copy of the index plus a small
+  vanilla-JS filter — the payload is inlined because `fetch()` fails on
+  `file://`. Documented in `docs/gnn/modules/20_website.md`; pinned by
+  `tests/website/test_website_model_pages.py`.
+
+### Changed
+
+- The `gnn-geo-infer/1` exporter's B-orientation refusal now reports the exact
+  evidence (contradiction, non-canonical detection, or non-decisive
+  doubly-stochastic data with the declared/defaults split) instead of the
+  blanket "B has contradictory axis conventions" message. Refusal semantics
+  are unchanged: ambiguous orientation is never reordered on export.
 
 ### Changed (2026-09-26 — composable dict-driven website API)
 
@@ -158,6 +209,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   `gnn.cli.handlers_complexity` (`_cmd_complexity` / `_cmd_benchmark`), and
   unit tests pin the receipt schemas, join keys, and CLI wiring without
   running any framework.
+## [3.5.0] - 2026-09-22
+
+> **Surface Truth & Integration.** The website, MCP, API, and GUI surfaces now
+> report what the pipeline actually recorded: step-20 statuses come from the
+> execution summary, GUI launches are HTTP-verified instead of assumed, MCP
+> clients speak the standard 2024-11-05 protocol in both transports, and the
+> backends contract collapses onto one canonical framework tuple. Alongside:
+> three new MCP tools (registry 142→146), `gnn gui` on the CLI, LLM cache
+> wiring for step 24, didChange-aware LSP diagnostics, and full runs-delete
+> control on the API.
 
 ### Added (2026-09-22 — ngc-learn T2 exemplar and docs)
 
@@ -424,75 +485,6 @@ one canonical framework tuple drives every framework list (fixing the
 content-addressed LLM response caching, LSP diagnostics track in-editor
 edits, and visualization imports got ~30% faster by making seaborn/scipy load
 lazily.
-## [Unreleased]
-
-### Added
-
-- **Consumer-conformance test suite** (`tests/export/test_geo_infer_consumer_compat.py`):
-  the three interchange emitters (`gnn.export.geo_infer`, `geo_infer_gaussian`,
-  `geo_infer_factored`) are pinned against the GEO-INFER consumer's validation
-  rules — exact key sets, byte-exact schema literals, matrix shapes,
-  axis-zero stochasticity (atol 1e-8), covariance definiteness, units, time
-  domain and provenance digests — with per-assertion citations to the pinned
-  consumer modules (`geo_infer_act.core.gnn_{contract,gaussian_contract,factored_contract}`).
-- `matrix_provenance["B"]["declared_order_explicit"]` records whether the B
-  axis order was explicitly declared in the source (vs defaulted to canonical),
-  separating parsed declarations from defaults in orientation provenance.
-
-### Added (2026-09-25 — website per-model pages, breadcrumbs, client-side search)
-
-- **Per-model detail pages, breadcrumbs, and client-side search ship with the
-  Step-20 website.** The generator emits one detail page per parsed model at
-  `model/<slug>.html` (slug = lowercased name, every character outside
-  `[a-z0-9]` collapsed to `-` and stripped, empty → `model`; deterministic
-  collection order; first claimant keeps the slug, later duplicates get
-  `-2`, `-3`, …). Each model page carries a model-name `h1`, a source link
-  back to the model's row on the `gnn_files` listing, variables/edges tables,
-  embedded visualization assets, and the model's FULL GNN source — no
-  truncation (the 3000-character cap remains only on the aggregate listing
-  rows). Every generated page — the seven site pages and every model page —
-  emits a breadcrumb nav in the page shell (`Home › <section>`; model pages:
-  `Home › GNN Files › <Model Name>`; index: a single `Home` crumb) with
-  relative, depth-correct hrefs. The manifest gains `model_pages_created`
-  and `model_pages` under new keys; the 7-page `SITE_PAGES` catalogue and
-  the existing `pages`/`pages_created` pins are untouched. The generator
-  also writes `search-index.json` (title/url/snippet per emitted page,
-  ≤200-char plain-text snippets) covering site and model pages, and the
-  `gnn_files` listing page gets a search box with an inline
-  `<script type="application/json">` copy of the index plus a small
-  vanilla-JS filter — the payload is inlined because `fetch()` fails on
-  `file://`. Documented in `docs/gnn/modules/20_website.md`; pinned by
-  `tests/website/test_website_model_pages.py`.
-
-### Changed
-
-- The `gnn-geo-infer/1` exporter's B-orientation refusal now reports the exact
-  evidence (contradiction, non-canonical detection, or non-decisive
-  doubly-stochastic data with the declared/defaults split) instead of the
-  blanket "B has contradictory axis conventions" message. Refusal semantics
-  are unchanged: ambiguous orientation is never reordered on export.
-
-### Removed (2026-09-19 — validate_gnn* alias retirement)
-
-- **All 10 `validate_gnn*` old-name aliases deleted** (v4.0.0 cycle; the
-  deprecation window opened 2026-09-11 with zero remaining live callers):
-  `parsers.basic.validate_gnn` / `validate_gnn_syntax_formal` →
-  `validate_gnn_syntax`; package-root `validate_gnn_file` →
-  `validate_gnn_source`; `validation.simple.validate_gnn_file` /
-  `validate_gnn_directory` → `check_gnn_file_basic` /
-  `check_gnn_directory_basic`; `validate_gnn_structure` →
-  `check_gnn_file_structure`; `validate_gnn_pomdp_structure` →
-  `check_gnn_pomdp_spec`; `schema_validator.validate_gnn_file` →
-  `validate_gnn_file_comprehensive`; `validate_gnn_cross_format_consistency`
-  → `check_cross_format_consistency`; `llm.validate_gnn` →
-  `validate_gnn_with_llm`. Importing any retired name now raises
-  `AttributeError`; `test_retired_validate_gnn_aliases_are_gone` pins the
-  retirement. Package re-export wiring (imports, lazy-export map entries,
-  `__all__`) pruned and `scripts/validate_surface_manifest.json`
-  `old_names` emptied. MCP tool registry names (`validate_gnn_content`,
-  `validate_gnn_file`, `validate_gnn_files`) are unchanged contracts.
-
----
 
 ## [3.4.0] — 2026-09-17
 
@@ -2314,7 +2306,8 @@ Completes the remaining RED_TEAM_REVIEW.md items from the 2026-08-14 wave.
 - pytest test suite with comprehensive coverage
 - MCP tool registration framework
 
-[Unreleased]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.5.0...HEAD
+[Unreleased]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.6.0...HEAD
+[3.6.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.2.0...v3.3.0

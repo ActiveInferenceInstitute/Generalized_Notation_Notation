@@ -72,7 +72,7 @@ src/gnn/website/
 - `output_dir` (Path): Output directory for website files
 - `verbose` (bool): Enable verbose logging (default: False)
 - `pipeline_output_root` (Optional[Path]): Root of numbered pipeline output dirs (default: `output_dir.parent`)
-- `**kwargs`: Additional website generation options (absorbed silently; the former `website_html_filename` orchestrator knob was removed end-to-end in v3.5.0 as dead)
+- `**kwargs`: Additional website generation options (absorbed silently; the former `website_html_filename` orchestrator knob was removed end-to-end in v3.6.0 as dead)
 
 **Returns**: `bool` - True if website generation succeeded, False otherwise
 
