@@ -1,4 +1,0 @@
-2025-06-23 15:36:32 | meta_aware.perf.meta_aware_sim_20250623_153632 | DEBUG | Memory usage at step 0: 156.53 MB
-2025-06-23 15:36:32 | meta_aware.perf.meta_aware_sim_20250623_153632 | DEBUG | Matrix operation: setup_matrices, matrix: all_matrices, input: (3, 4), output: (3,), time: 0.000033s
-2025-06-23 15:36:32 | meta_aware.perf.meta_aware_sim_20250623_153632 | DEBUG | Memory usage at step 0: 156.53 MB
-2025-06-23 15:36:32 | meta_aware.perf.meta_aware_sim_20250623_153632 | DEBUG | Matrix operation: initialize_state, matrix: state_arrays, input: (3, 100), output: (3, 100), time: 0.000033s

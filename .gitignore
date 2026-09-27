@@ -441,3 +441,17 @@ mcp_audit_report.json
 
 # Local agent-context note (never shipped)
 CONTEXT.md
+
+# ============================================================================
+# META-AWARE-2 GENERATED RUN ARTIFACTS (GROMA #7, 2026-09-27)
+# ============================================================================
+# The meta-aware-2 subtree mixes tracked sources (.md/.py/.toml doc-stub dirs,
+# code, config) with generated run artifacts. Run logs are already covered by
+# the global `*.log` rule and the meta-aware-2/logs/ directory by the global
+# `logs/` rule above; the patterns here pin the remaining generated classes
+# (top-level verification report, results pickles+json, figure rasters) so
+# they cannot silently return as tracked files.
+docs/cognitive_phenomena/meta-aware-2/verification_report.json
+docs/cognitive_phenomena/meta-aware-2/results/*.pkl
+docs/cognitive_phenomena/meta-aware-2/results/*.json
+docs/cognitive_phenomena/meta-aware-2/figures/*.png
