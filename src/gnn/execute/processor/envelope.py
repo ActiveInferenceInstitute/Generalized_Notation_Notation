@@ -11,6 +11,7 @@ from gnn.utils.runtime_safety.framework_availability import (
     FRAMEWORK_IMPORT_CHECK as _FRAMEWORK_IMPORT_CHECK,
 )
 
+
 def _is_python_framework_dependency_available(
     framework: str, executor: str, logger: Any
 ) -> bool:
@@ -159,4 +160,3 @@ def _make_distributed_dispatch_failure_result(
     envelope["dispatch_error_type"] = type(exc).__name__
     envelope["dispatch_max_retries"] = max_retries
     return envelope
-

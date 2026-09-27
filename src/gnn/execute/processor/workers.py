@@ -10,6 +10,7 @@ from gnn.execute.processor.envelope import (
 )
 from gnn.execute.processor.single import execute_single_script
 
+
 def _coerce_execution_workers(value: Any) -> int:
     """Normalize the configured local/distributed worker count."""
     try:
@@ -85,9 +86,7 @@ def _run_scripts_with_local_workers(
     try:
         from gnn.execute import processor as _processor_facade
 
-        with _processor_facade.ProcessPoolExecutor(
-            max_workers=bounded_workers
-        ) as pool:
+        with _processor_facade.ProcessPoolExecutor(max_workers=bounded_workers) as pool:
             return list(pool.map(_execute_script_worker, bundles))
     except Exception as exc:  # noqa: BLE001
         logger.error(
@@ -99,4 +98,3 @@ def _run_scripts_with_local_workers(
             _make_local_worker_pool_failure_result(script_info, exc)
             for script_info in executable_scripts
         ]
-

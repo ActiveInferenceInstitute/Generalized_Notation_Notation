@@ -14,6 +14,7 @@ from gnn.execute.metadata import (
 )
 from gnn.execute.types import ExecutionOutcome
 
+
 def _init_execution_summary(
     target_dir: Path,
     output_dir: Path,
@@ -198,4 +199,3 @@ def _write_execution_summaries(
         generate_execution_report(execution_results, results_dir, logger)
     finally:
         execution_results["execution_details"] = full_details_snapshot
-

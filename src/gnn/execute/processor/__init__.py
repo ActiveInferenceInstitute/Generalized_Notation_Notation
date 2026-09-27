@@ -79,16 +79,6 @@ from gnn.utils.logging_utils import (
 logger = logging.getLogger(__name__)
 
 
-from gnn.utils.runtime_safety.framework_availability import (
-    FRAMEWORK_IMPORT_CHECK as _FRAMEWORK_IMPORT_CHECK,  # noqa: E402
-)
-
-
-from gnn.utils.runtime_safety.framework_availability import (
-    is_framework_available as _is_framework_available_by_name,
-)
-
-
 from gnn.execute.processor.envelope import (
     _base_execution_envelope,
     _is_python_framework_dependency_available,
@@ -97,14 +87,10 @@ from gnn.execute.processor.envelope import (
     _make_skipped_result,
     _model_framework_from_path,
 )
-
-
 from gnn.execute.processor.pipeline import (
     execute_simulation_from_gnn,
     process_execute,
 )
-
-
 from gnn.execute.processor.single import (
     _GNN_ALLOW_MISSING_DEPS,
     _aggregate_benchmark_samples,
@@ -117,20 +103,21 @@ from gnn.execute.processor.single import (
     _sandbox_mode,
     execute_single_script,
 )
-
-
 from gnn.execute.processor.summary import (
     _classify_execute_outcome,
     _init_execution_summary,
     _update_framework_status,
     _write_execution_summaries,
 )
-
-
 from gnn.execute.processor.workers import (
     _coerce_dispatch_retries,
     _coerce_execution_workers,
     _execute_script_worker,
     _run_scripts_with_local_workers,
 )
-
+from gnn.utils.runtime_safety.framework_availability import (
+    FRAMEWORK_IMPORT_CHECK as _FRAMEWORK_IMPORT_CHECK,  # noqa: E402
+)
+from gnn.utils.runtime_safety.framework_availability import (
+    is_framework_available as _is_framework_available_by_name,
+)

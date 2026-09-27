@@ -34,7 +34,6 @@ from gnn.execute.julia_env import (
 from gnn.execute.metadata import _load_rxinfer_execution_metadata_from_script
 from gnn.execute.processor.envelope import (
     _base_execution_envelope,
-    _is_python_framework_dependency_available,
     _make_skipped_result,
 )
 from gnn.execute.security_gate import check_script_allowed
@@ -226,10 +225,14 @@ def execute_single_script(
     executor = context.executor
     model_name = context.model_name
     framework = context.framework
+    from gnn.execute import processor as _processor_facade
 
     # Pre-flight skip: do not run Python frameworks when optional dependency is missing
-    if executor == sys.executable and not _is_python_framework_dependency_available(
-        framework, executor, logger
+    if (
+        executor == sys.executable
+        and not _processor_facade._is_python_framework_dependency_available(
+            framework, executor, logger
+        )
     ):
         return _make_skipped_result(
             script_info, framework, model_name, executor, logger
@@ -369,7 +372,7 @@ def execute_single_script(
         broke_early = False
 
         try:
-            env = _build_execution_environment(context, results_dir)
+            env = _processor_facade._build_execution_environment(context, results_dir)
 
             sandbox_mode = _sandbox_mode()
             sandbox_prefix, sandbox_blocked = _sandbox_command_prefix(sandbox_mode)
@@ -740,4 +743,3 @@ def execute_single_script(
         logger.error(f"Error executing {script_info['name']}: {e}")
 
     return exec_result
-

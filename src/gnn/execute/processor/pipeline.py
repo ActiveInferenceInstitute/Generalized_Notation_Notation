@@ -14,7 +14,6 @@ from gnn.execute.metadata import (
     _execution_detail_key,
     _execution_input_identity,
     _execution_script_identity,
-    _load_render_summary_contract,
 )
 from gnn.execute.processor.envelope import _make_distributed_dispatch_failure_result
 from gnn.execute.processor.single import execute_single_script
@@ -147,11 +146,13 @@ def process_execute(
                 if render_output_dir is not None and render_output_dir != target_dir
                 else None
             )
+            from gnn.execute import processor as _processor_facade
+
             (
                 allowed_render_scripts,
                 render_failures,
                 unsupported_render_receipts,
-            ) = _load_render_summary_contract(
+            ) = _processor_facade._load_render_summary_contract(
                 render_output_dir,
                 requested_frameworks,
                 logger,
@@ -462,4 +463,3 @@ def execute_simulation_from_gnn(gnn_file: Path, output_dir: Path) -> Dict[str, A
     except Exception as e:
         logger.error(f"Failed to execute simulation for {gnn_file}: {e}")
         return {"success": False, "error": str(e)}
-
