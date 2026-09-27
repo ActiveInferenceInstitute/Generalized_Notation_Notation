@@ -461,7 +461,7 @@ A: The Step 12 outcome contract classifies each run: any failed script marks the
 run `failed`; skipped optional frameworks yield `success_with_skips`; all
 executed scripts succeeding yields `success`. Explicit (non-preset) framework
 requests are strict — a failed or skipped requested framework fails the run.
-See `src/gnn/execute/processor.py::_classify_execute_outcome`.
+See `src/gnn/execute/processor/summary.py::_classify_execute_outcome`.
 
 **Q: Can I install dependencies later?**  
 A: Yes. The pipeline detects available frameworks at execution time. Install a new framework and re-run Step 12.

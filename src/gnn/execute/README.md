@@ -24,7 +24,13 @@ JAX, NumPyro, PyTorch, and DisCoPy are **core** dependencies (`uv sync`). If the
 src/gnn/execute/
 ├── __init__.py              # Module initialization
 ├── executor.py              # GNNExecutor class (framework dispatch)
-├── processor.py             # Main processor (Step 12 entry point)
+├── processor/               # Step 12 processor package (facade re-exports)
+│   ├── __init__.py          # Facade: pre-split module surface, re-exports
+│   ├── envelope.py          # Per-script result envelope factories
+│   ├── workers.py           # Worker coercion + local process-pool dispatch
+│   ├── summary.py           # Aggregate summary assembly, outcome classification, persistence
+│   ├── single.py            # Single-script subprocess execution
+│   └── pipeline.py          # process_execute orchestration + file-level entry
 ├── validator.py             # Output validation
 ├── data_extractors.py       # Result data extraction
 ├── julia_setup.py           # Julia environment setup
@@ -82,7 +88,7 @@ Main executor class plus a small `ExecutorFrameworkSpec` registry for framework-
 - `execute_rendered_simulators(...)` — Iterates the registry, writes `summaries/execution_summary.json`, and renders the markdown execution report (`summaries/execution_report.md`)
 - `list_frameworks()` — Introspect the registry: one record per backend with `framework`, `result_key`, `available`, and `operation`
 
-### `processor.py` — Step 12 Entry Point
+### `processor/` — Step 12 Entry Point (package facade)
 
 Orchestrates multi-framework execution:
 

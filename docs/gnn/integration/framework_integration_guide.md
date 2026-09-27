@@ -95,7 +95,7 @@ and a simulation loop.
 
 **Execute:** Julia subprocess. The package-availability preflight runs
 `using JSON, Distributions, StatsBase, ActiveInference` (see
-`src/gnn/execute/processor.py`). As with RxInfer, Step 12 defaults `JULIA_PROJECT` to the
+`src/gnn/execute/processor/single.py`). As with RxInfer, Step 12 defaults `JULIA_PROJECT` to the
 committed environment at `src/gnn/execute/activeinference_jl/`, whose `Project.toml` is
 deliberately minimal: `ActiveInference` (0.1), `Distributions`, `JSON`, and
 `StatsBase`. Reads output from `simulation_results.csv`.
@@ -150,7 +150,7 @@ smoothed joint posterior — drives action selection via `softmax(log E − γ·
 **Execute:** Julia subprocess invoking
 `julia --startup-file=no --project=src/gnn/execute/rxinfer <script>`. Step 12 defaults
 `JULIA_PROJECT` to the committed environment for the framework being run
-(`_build_execution_environment()` in `src/gnn/execute/processor.py`), so scripts resolve
+(`_build_execution_environment()` in `src/gnn/execute/processor/single.py`), so scripts resolve
 their packages without an ambient environment; an explicitly set `JULIA_PROJECT` still
 wins. The committed `Project.toml` + `Manifest.toml` under `src/gnn/execute/rxinfer/` pin
 RxInfer 5.5.0 and define the `GnnRxInferModels` package, which precompiles the pomdp,

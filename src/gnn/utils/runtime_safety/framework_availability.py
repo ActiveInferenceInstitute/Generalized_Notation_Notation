@@ -2,10 +2,11 @@
 """Shared framework-availability helpers for the GNN pipeline.
 
 Single source of truth for "is this Python ML/AI framework importable?" — used by
-``src/gnn/execute/processor.py`` (Step 12) and ``src/gnn/render/processor/`` (Step 11) to
+``src/gnn/execute/processor/`` (Step 12) and ``src/gnn/render/processor/`` (Step 11) to
 decide between running, skipping, or warning on framework-specific code paths.
 
-Previously this logic lived duplicated inside ``execute/processor.py`` and a parallel
+Previously this logic lived duplicated inside ``execute/processor.py`` (now the
+``gnn.execute.processor`` package) and a parallel
 block in ``render/processor/``. Keeping it here lets both steps stay in sync when
 new frameworks are added and avoids the hazard of one step reporting a framework
 available while the other believes it missing.
