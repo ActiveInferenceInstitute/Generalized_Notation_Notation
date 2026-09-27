@@ -357,7 +357,7 @@ failure surfaces instead of being swallowed. `setup_environment.jl` activates an
 instantiates it (`Pkg.activate()` + `Pkg.instantiate()`); there is no runtime `Pkg.add`.
 
 Step 12 defaults `JULIA_PROJECT` to this directory for RxInfer scripts (see
-`_build_execution_environment()` in `src/gnn/execute/processor.py`), so a script resolves its
+`_build_execution_environment()` in `src/gnn/execute/processor/single.py`), so a script resolves its
 packages without an ambient environment. An explicitly set `JULIA_PROJECT` still wins.
 
 | Package            | Purpose                                            |

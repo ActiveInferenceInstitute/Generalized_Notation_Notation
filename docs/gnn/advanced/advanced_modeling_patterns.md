@@ -879,7 +879,7 @@ by the pipeline, not encoded in your spec, and it works in two deliberately diff
 ways depending on what went wrong.
 
 **A missing optional dependency skips a backend.** Step 12 runs a pre-flight check before
-executing Python framework scripts (`src/gnn/execute/processor.py`). If the backend's package
+executing Python framework scripts (`src/gnn/execute/processor/`). If the backend's package
 is absent — bnlearn being the standing case, with PyTorch absent on a plain
 `uv sync` (the package ships in the `torch` extra) — that backend is recorded as *skipped* with a
 dependency reason rather than failed. The run continues, downstream visualization and

@@ -45,7 +45,7 @@ When `goal_mean`/`control_gain` are declared, the forward simulation closes the 
 | Component | Path | Description |
 |-----------|------|-------------|
 | **Executor** | [`src/gnn/execute/executor.py`](../../src/gnn/execute/executor.py) | Multi-engine dispatcher |
-| **Processor** | [`src/gnn/execute/processor.py`](../../src/gnn/execute/processor.py) | Model processing |
+| **Processor** | [`src/gnn/execute/processor/`](../../src/gnn/execute/processor/) | Step 12 processing (facade package) |
 
 ---
 

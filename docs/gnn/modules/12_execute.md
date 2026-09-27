@@ -25,7 +25,7 @@ This module is responsible for running GNN models that have been rendered into f
 
 JAX, NumPyro and DisCoPy are **core** dependencies (`uv sync`); PyTorch needs the `torch` extra (`uv sync --extra torch`; torch>=2.13.0 resolves GHSA-rrmf-rvhw-rf47), bnlearn needs the `bnlearn` extra (`uv sync --extra bnlearn`), and Stan needs `uv sync --extra stan` plus a CmdStan toolchain. If the environment is incomplete, the affected scripts are **skipped** (not failed). Julia frameworks require Julia installed.
 
-Two behaviours introduced in v3.2.0: `_merge_prior_execution_summary` (`src/gnn/execute/processor.py`) folds a previously written `execution_summary.json` into the current results so the durable summary covers every input folder rather than the last one processed; and script discovery only considers `.py`/`.jl` files, so companion artifacts such as `<stem>_stan.stan` and `<stem>_stan_data.json` are never treated as executables.
+Two behaviours introduced in v3.2.0: `_merge_prior_execution_summary` (`src/gnn/execute/metadata.py`, re-exported through the `src/gnn/execute/processor/` facade) folds a previously written `execution_summary.json` into the current results so the durable summary covers every input folder rather than the last one processed; and script discovery only considers `.py`/`.jl` files, so companion artifacts such as `<stem>_stan.stan` and `<stem>_stan_data.json` are never treated as executables.
 
 Continuous (linear-Gaussian) models reach Step 12 only for the backends that render them (JAX, NumPyro, PyTorch, Stan, RxInfer.jl); the categorical backends report render status `unsupported` in Step 11 and emit nothing to execute.
 
@@ -93,7 +93,7 @@ fixing the ReverseDiff-extension precompile break against Distributions >=
 
 ### `JULIA_PROJECT` defaulting
 
-`_build_execution_environment` (`src/gnn/execute/processor.py`) sets `JULIA_PROJECT` to the committed environment matching the script's framework, using `setdefault` — **an explicitly exported `JULIA_PROJECT` still wins**. This is what lets `using GnnRxInferModels` / `using ActiveInference` resolve without an ambient environment, including under test runners whose temporary depot may not exist.
+`_build_execution_environment` (`src/gnn/execute/processor/single.py`) sets `JULIA_PROJECT` to the committed environment matching the script's framework, using `setdefault` — **an explicitly exported `JULIA_PROJECT` still wins**. This is what lets `using GnnRxInferModels` / `using ActiveInference` resolve without an ambient environment, including under test runners whose temporary depot may not exist.
 
 `setup_environment.jl` activates and instantiates the environment (`Pkg.activate()` + `Pkg.instantiate()`); there is no runtime `Pkg.add`.
 
@@ -194,7 +194,7 @@ success = process_execute(
 ```
 
 #### `execute_simulation_from_gnn(gnn_file: Path, output_dir: Path) -> Dict[str, Any]`
-**Description**: Execute the simulation for one GNN file (`src/gnn/execute/processor.py`).
+**Description**: Execute the simulation for one GNN file (`src/gnn/execute/processor/pipeline.py`, re-exported through the facade).
 
 **Parameters**:
 - `gnn_file` (Path): Path to GNN file

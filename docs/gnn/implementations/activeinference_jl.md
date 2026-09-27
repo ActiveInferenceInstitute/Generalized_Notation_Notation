@@ -336,7 +336,7 @@ the ActiveInference.jl preflight checks only `JSON`, `Distributions`, `StatsBase
 `ActiveInference`.
 
 Step 12 defaults `JULIA_PROJECT` to this directory when running ActiveInference.jl
-scripts (`_build_execution_environment()` in `src/gnn/execute/processor.py`), so the script
+scripts (`_build_execution_environment()` in `src/gnn/execute/processor/single.py`), so the script
 resolves its packages without an ambient environment. An explicitly set `JULIA_PROJECT`
 still wins.
 

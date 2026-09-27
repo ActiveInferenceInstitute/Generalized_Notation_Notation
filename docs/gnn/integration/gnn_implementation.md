@@ -176,7 +176,7 @@ The `--frameworks` flag supports:
 | `lite` | pymdp, jax, discopy, bnlearn |
 | Custom | Comma-separated, e.g. `"pymdp,jax"` |
 
-The authoritative list is `parse_frameworks_parameter()` in `src/gnn/execute/processor.py`.
+The authoritative list is `parse_frameworks_parameter()` in `src/gnn/execute/detection.py` (re-exported through the `src/gnn/execute/processor/` facade).
 Stan scripts are the rendered `<stem>_stan.py` cmdstanpy drivers under `stan/`; they
 are skipped (not failed) when cmdstanpy or a CmdStan toolchain is absent
 (`uv sync --extra stan`).

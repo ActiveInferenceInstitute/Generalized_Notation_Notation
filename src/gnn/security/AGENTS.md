@@ -266,7 +266,7 @@ above the configured severity. Escape hatch: `GNN_ALLOW_UNSAFE_EXEC=1`.
 - `gnn.utils.pipeline_orchestration.pipeline_template` - Pipeline utilities
 
 ### Imported By
-- `src/gnn/execute/processor.py` - Imports `scan_script_for_execution` for the Step 12 pre-execution gate
+- `src/gnn/execute/processor/` (via `execute/processor/single.py`) - Imports `scan_script_for_execution` for the Step 12 pre-execution gate
 - `src/gnn/18_security.py` - Thin orchestrator (Step 18)
 - `tests/security/*` - Security tests
 

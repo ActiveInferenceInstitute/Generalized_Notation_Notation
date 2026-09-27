@@ -288,7 +288,7 @@ def _execute_python_lane(
     The rendered script runs under ``sys.executable`` with the framework's
     output environment variable pointed at ``fw_dir`` so results land beside
     the rendered script (the same contract the Step-12 executor sets in
-    ``src/gnn/execute/processor.py``). When ``probe_availability`` is set, a
+    ``src/gnn/execute/processor/``). When ``probe_availability`` is set, a
     missing dependency yields an ``unavailable`` receipt before any rendering
     happens — a skip, never an execution failure.
     """
@@ -390,7 +390,7 @@ def _execute_pymdp(
     # The generated runner resolves the checkout from GNN_PROJECT_ROOT and
     # honours PYMDP_OUTPUT_DIR, so results land in fw_dir instead of
     # output/pymdp_simulations/<model>/ under the CWD. Both variables mirror
-    # what the Step-12 executor sets (src/gnn/execute/processor.py).
+    # what the Step-12 executor sets (src/gnn/execute/processor/single.py).
     return _execute_python_lane(
         framework,
         render_gnn_to_pymdp,

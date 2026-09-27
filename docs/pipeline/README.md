@@ -61,7 +61,7 @@ uv run python src/gnn/12_execute.py \
 ```
 
 `all` and `lite` are presets. The exact lists are implemented in
-`src/gnn/execute/processor.py::parse_frameworks_parameter`; do not infer executor
+`src/gnn/execute/detection.py::parse_frameworks_parameter` (re-exported through the `src/gnn/execute/processor/` facade); do not infer executor
 coverage from the renderer registry.
 
 ## Validation and acceptance checks

@@ -11,7 +11,21 @@
 
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
 
-**Last Updated**: 2026-09-16
+**Last Updated**: 2026-09-26
+
+---
+
+## File Structure
+
+```
+processor/
+├── __init__.py    # Package facade: module docstring, pre-split surface re-exports (detection/julia_env/metadata/data_extractors/types/subprocess_envelope aliases + moved defs)
+├── envelope.py    # Per-script result envelope factories: _base_execution_envelope, _make_skipped_result, local/distributed failure factories, facade-routed availability probe
+├── workers.py     # _coerce_execution_workers/_coerce_dispatch_retries, _execute_script_worker, _run_scripts_with_local_workers (ProcessPoolExecutor resolved through the facade)
+├── summary.py     # _init_execution_summary, _update_framework_status, _classify_execute_outcome, _write_execution_summaries
+├── single.py      # _aggregate_benchmark_samples, _new_execution_result, _build_execution_environment, sandbox helpers, _backend_version_from_runner_metadata, execute_single_script
+└── pipeline.py    # process_execute (Step 12 orchestration) and execute_simulation_from_gnn
+```
 
 ---
 
@@ -83,7 +97,7 @@ success = process_execute(
 ```
 
 #### `execute_simulation_from_gnn(gnn_file: Path, output_dir: Path) -> Dict[str, Any]`
-**Description**: Execute simulation for a specific GNN file (defined in `execute/processor.py`, re-exported from `execute`).
+**Description**: Execute simulation for a specific GNN file (defined in `execute/processor/pipeline.py`, re-exported from `execute`).
 
 **Parameters**:
 - `gnn_file` (Path): Path to GNN file
@@ -197,7 +211,7 @@ elif not detection.get("correct_package"):
 - `timeout` (int): Execution timeout in seconds (default: `3600`)
 - `capture_output` (bool): Capture stdout/stderr (default: `True`)
 - `render_output_dir` (Path): Render output directory to search before default discovery
-- `frameworks` (str): `"all"` (the executors: PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, Lean, bnlearn — bnlearn via `execute/bnlearn/`, skipping with the install hint when its runtime is absent), `"lite"` (PyMDP, JAX, DisCoPy, bnlearn), or a comma-separated subset — parsed by `parse_frameworks_parameter` in `execute/processor.py`
+- `frameworks` (str): `"all"` (the executors: PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, Lean, bnlearn — bnlearn via `execute/bnlearn/`, skipping with the install hint when its runtime is absent), `"lite"` (PyMDP, JAX, DisCoPy, bnlearn), or a comma-separated subset — parsed by `parse_frameworks_parameter` in `execute/detection.py` (re-exported through the `execute/processor/` facade)
 - `execution_workers` (int): Number of rendered scripts to execute concurrently. This parallelizes model/script runs, not timesteps within a single simulation.
 - `distributed` (bool): Route scripts through the distributed dispatcher instead of the local process pool
 - `backend` (str): Dispatcher backend, default `ray`

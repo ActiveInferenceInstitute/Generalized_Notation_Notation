@@ -229,11 +229,11 @@ else:
 
 ## Pre-execution script gate
 
-Step 18 runs after Step 12, so on its own it is forensic. `scan_script_for_execution(script_path, *, block_on="high")` in `src/gnn/security/processor.py` closes that gap: Step 12 (`src/gnn/execute/processor.py`) calls it on every rendered script before launching it and refuses to run the script when the verdict is `ok=False` (error type `SecurityGateBlocked`).
+Step 18 runs after Step 12, so on its own it is forensic. `scan_script_for_execution(script_path, *, block_on="high")` in `src/gnn/security/processor.py` closes that gap: Step 12 (`src/gnn/execute/processor/`) calls it on every rendered script before launching it and refuses to run the script when the verdict is `ok=False` (error type `SecurityGateBlocked`).
 
 - **Python scripts** are analysed with the AST scanner; findings at or above `block_on` block execution.
 - **Julia scripts** are validated with `Meta.parseall` through a `julia` subprocess (`_julia_meta_parseall`, 30 s timeout). Parsing builds the AST without executing the script. Only an explicit parse failure (`GNN_PARSE_FAIL`) blocks; when Julia is absent, times out, or the probe itself does not run (e.g. a launcher with no installed toolchain — the v3.2.0 fix), the gate degrades to the advisory regex sweep `_julia_regex_sweep` with `scanned=False`.
-- Setting `GNN_ALLOW_UNSAFE_EXEC` in the environment bypasses the gate (see `_gnn_allow_unsafe_exec` in `src/gnn/execute/processor.py`).
+- Setting `GNN_ALLOW_UNSAFE_EXEC` in the environment bypasses the gate (handled in `src/gnn/execute/processor/single.py::execute_single_script`).
 
 ## Output Specification
 
