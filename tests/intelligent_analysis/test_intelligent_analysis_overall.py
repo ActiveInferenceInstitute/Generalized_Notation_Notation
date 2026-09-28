@@ -112,10 +112,16 @@ class TestIntelligentAnalysisModuleComprehensive:
 
     @pytest.mark.unit
     def test_module_version(self) -> Any:
-        """Test module version is set correctly."""
+        """Test module version tracks the package single source."""
+        import tomllib
+        from pathlib import Path
+
         import gnn.intelligent_analysis as intelligent_analysis
 
-        assert intelligent_analysis.__version__ == "3.5.0"
+        pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+        with pyproject.open("rb") as stream:
+            expected = tomllib.load(stream)["project"]["version"]
+        assert intelligent_analysis.__version__ == expected
 
     @pytest.mark.unit
     def test_features_dict(self) -> Any:
