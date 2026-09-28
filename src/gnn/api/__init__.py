@@ -20,7 +20,7 @@ from typing import Any
 from gnn import __version__
 
 MODULE_NAME = "api"
-MODULE_VERSION = "3.5.0"
+MODULE_VERSION = __version__
 MODULE_DESCRIPTION = "FastAPI-based REST interface for the GNN processing pipeline"
 
 # Single source of truth for the server default bind address and the
