@@ -239,6 +239,17 @@ all = [
     "ngclearn>=3.2.2; python_version >= '3.12'",
     "ngcsimlib>=3.1.1; python_version >= '3.12'",
 
+    # cpomdp continuous active inference backend (git pin, see [tool.uv.sources])
+    "cpomdp",
+]
+# cpomdp backend (Step 11 render + Step 12 execute): continuous-state active
+# inference (Kalman filtering + expected-free-energy policy search) on JAX.
+# Optional extra only, never a core dependency; Step 12 skips the backend with
+# an install hint when the package is absent. Pinned to a cpomdp ``main``
+# commit via ``[tool.uv.sources]`` until the post-0.4.4 API (renamed model
+# fields, ``harness``) ships as a release; bump the ``rev`` deliberately.
+cpomdp = [
+    "cpomdp",
 ]
 
 # Development tooling (PEP 735 dependency group). Installed by default via
@@ -326,6 +337,9 @@ constraint-dependencies = [
     "tornado>=6.5.8",  # GHSA-mpf4-983q-p7j4, GHSA-8423-8fgw-73vq, GHSA-wwv5-g3v4-889x
     "urllib3>=2.7.0",
 ]
+
+[tool.uv.sources]
+cpomdp = { git = "https://github.com/inferogenesis/cpomdp", rev = "2836ec56addd1e925abd95ea08395e3716707ce6" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/gnn"]
