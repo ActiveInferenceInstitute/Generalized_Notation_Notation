@@ -231,6 +231,7 @@ def find_executable_scripts(
         "stan": "stan",
         "bnlearn": "bnlearn",
         "ngclearn": "ngclearn",
+        "cpomdp": "cpomdp",
     }
 
     # Normalise the base directory for consistent framework detection and

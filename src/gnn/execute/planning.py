@@ -48,7 +48,17 @@ _JULIA_FRAMEWORKS = frozenset({"rxinfer", "activeinference_jl"})
 # ``gnn.utils.runtime_safety.framework_availability`` helper (mirrors
 # ``execute.processor._is_python_framework_dependency_available``).
 _PYTHON_FRAMEWORKS = frozenset(
-    {"pymdp", "jax", "discopy", "pytorch", "numpyro", "stan", "bnlearn", "ngclearn"}
+    {
+        "pymdp",
+        "jax",
+        "discopy",
+        "pytorch",
+        "numpyro",
+        "stan",
+        "bnlearn",
+        "ngclearn",
+        "cpomdp",
+    }
 )
 
 

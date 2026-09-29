@@ -53,7 +53,7 @@ run_script = create_standardized_pipeline_script(
             "flag": "--frameworks",
             "type": str,
             "default": "all",
-            "help": "Frameworks to execute (all, lite, or comma-separated list: pymdp,rxinfer,activeinference_jl,jax,discopy,pytorch,numpyro,stan,bnlearn,lean)",
+            "help": "Frameworks to execute (all, lite, or comma-separated list: pymdp,rxinfer,activeinference_jl,jax,discopy,pytorch,numpyro,stan,bnlearn,cpomdp,lean)",
         },
         "timeout": {
             "flag": "--timeout",
