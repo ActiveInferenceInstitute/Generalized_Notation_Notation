@@ -740,20 +740,17 @@ def execute_pipeline_step(
                 )
                 return step_result
 
-        # Only apply folder-matrix logic if enabled and the step is a processing step (>= 3)
+        # Folder-matrix routing (processing steps >= 3); uniform routing
+        # collapses to one recursive run on the base target directory.
         if matrix_enabled and step_num >= 3:
-            base_target_dir = args.target_dir
-            if base_target_dir.exists() and base_target_dir.is_dir():
-                folders_config = testing_matrix.get("folders", {})
-                default_steps = testing_matrix.get("default_steps", [])
+            from gnn.pipeline.step_executor import matrix_target_folders
 
-                # Check all subdirectories in the base target directory
-                for item in base_target_dir.iterdir():
-                    if item.is_dir() and item.name != "archived_gnn_files":
-                        # Determine allowed steps for this folder
-                        allowed_steps = folders_config.get(item.name, default_steps)
-                        if step_num in allowed_steps:
-                            target_folders.append(item)
+            target_folders = matrix_target_folders(
+                step_num,
+                Path(args.target_dir),
+                testing_matrix,
+                recursive=bool(getattr(args, "recursive", True)),
+            )
 
         from gnn.pipeline.step_timeouts import get_step_timeout
         from gnn.utils.arguments.arg_parsing import build_step_command_args

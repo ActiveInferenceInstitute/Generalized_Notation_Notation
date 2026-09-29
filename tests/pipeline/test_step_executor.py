@@ -405,14 +405,28 @@ class TestConsolidatedRefusal:
         # forks per-folder when a subfolder actually allows the step.
         matrix_config = {"testing_matrix": {"enabled": True, "default_steps": [3]}}
         assert can_execute_in_process("3_gnn.py", args, pipeline_config=matrix_config)
-        # A dispatching subfolder keeps the step on the subprocess path.
+        # Uniform routing (every subfolder gets the step) collapses to one
+        # root run, so the step stays consolidated-eligible.
         dispatch_target = tmp_path / "dispatch"
         (dispatch_target / "model_a").mkdir(parents=True)
+        (dispatch_target / "model_b").mkdir(parents=True)
         dispatch_args = PipelineArguments(
             target_dir=dispatch_target, output_dir=tmp_path
         )
-        assert not can_execute_in_process(
+        assert can_execute_in_process(
             "3_gnn.py", dispatch_args, pipeline_config=matrix_config
+        )
+        # A matrix that really routes (model_b opts out) keeps the step on the
+        # per-folder subprocess path.
+        routed_config = {
+            "testing_matrix": {
+                "enabled": True,
+                "default_steps": [3],
+                "folders": {"model_b": [5]},
+            }
+        }
+        assert not can_execute_in_process(
+            "3_gnn.py", dispatch_args, pipeline_config=routed_config
         )
 
     def test_global_steps_disabled_produces_skipped_receipt(
@@ -959,3 +973,55 @@ class TestParsedModelCarrier:
             on_json.pop("timestamp", None)
             off_json.pop("timestamp", None)
             assert on_json == off_json
+
+
+class TestMatrixTargetFolders:
+    """Per-folder forking only when the testing matrix actually routes."""
+
+    @staticmethod
+    def _tree(root: Path, *names: str) -> Path:
+        for name in names:
+            (root / name).mkdir(parents=True)
+        return root
+
+    def test_uniform_routing_collapses_to_one_root_run(self, tmp_path: Path) -> None:
+        from gnn.pipeline.step_executor import matrix_target_folders
+
+        root = self._tree(tmp_path / "in", "a", "b", "c")
+        matrix = {"enabled": True, "default_steps": [9, 16, 20], "folders": {}}
+        for step in (9, 16, 20):
+            assert matrix_target_folders(step, root, matrix) == []
+
+    def test_partial_routing_forks_only_selected_folders(self, tmp_path: Path) -> None:
+        from gnn.pipeline.step_executor import matrix_target_folders
+
+        root = self._tree(tmp_path / "in", "a", "b", "c")
+        matrix = {"enabled": True, "default_steps": [16], "folders": {"b": [3]}}
+        assert [p.name for p in matrix_target_folders(16, root, matrix)] == ["a", "c"]
+        assert [p.name for p in matrix_target_folders(3, root, matrix)] == ["b"]
+
+    def test_excluded_folder_keeps_per_folder_dispatch(self, tmp_path: Path) -> None:
+        from gnn.pipeline.step_executor import matrix_target_folders
+
+        root = self._tree(tmp_path / "in", "a", "b", "archived_gnn_files")
+        matrix = {"enabled": True, "default_steps": [16]}
+        # A root run would also read the archive, so keep forking per folder.
+        assert [p.name for p in matrix_target_folders(16, root, matrix)] == ["a", "b"]
+
+    def test_non_recursive_run_keeps_per_folder_dispatch(self, tmp_path: Path) -> None:
+        from gnn.pipeline.step_executor import matrix_target_folders
+
+        root = self._tree(tmp_path / "in", "a", "b")
+        matrix = {"enabled": True, "default_steps": [16]}
+        folders = matrix_target_folders(16, root, matrix, recursive=False)
+        assert [p.name for p in folders] == ["a", "b"]
+
+    def test_disabled_matrix_and_setup_steps_never_fork(self, tmp_path: Path) -> None:
+        from gnn.pipeline.step_executor import matrix_target_folders
+
+        root = self._tree(tmp_path / "in", "a")
+        assert matrix_target_folders(16, root, {"enabled": False}) == []
+        assert (
+            matrix_target_folders(2, root, {"enabled": True, "default_steps": [2]})
+            == []
+        )
