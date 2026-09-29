@@ -448,3 +448,74 @@ def test_dask_dispatch_reports_wait_timeout_as_failure(
     assert results[0] == {"success": True, "name": "fast"}
     assert results[1]["success"] is False
     assert results[1]["error_type"] == "DistributedWaitTimeout"
+
+
+class _FlippingFuture:
+    """Future whose status reads ``pending`` once, then ``finished``.
+
+    Models a future completing between two status reads after the wait expired.
+    """
+
+    def __init__(self, name: str, statuses: list[str]) -> None:
+        self.name = name
+        self._statuses = statuses
+        self.cancelled = False
+
+    @property
+    def status(self) -> str:
+        return self._statuses.pop(0) if len(self._statuses) > 1 else self._statuses[0]
+
+    def cancel(self) -> None:
+        self.cancelled = True
+
+
+class _FakeDaskClient:
+    def as_current(self) -> Any:
+        import contextlib
+
+        return contextlib.nullcontext()
+
+    def gather(self, futures: list[Any]) -> list[dict[str, Any]]:
+        return [{"success": True, "name": fut.name} for fut in futures]
+
+
+def test_dask_gather_classifies_each_future_exactly_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A future finishing mid-classification is gathered or cancelled, never dropped.
+
+    With two separate status scans a future read ``pending`` by the first and
+    ``finished`` by the second lands in neither bucket: it is reported as a
+    ``DistributedWaitTimeout`` although it was never cancelled.
+    """
+    import types
+
+    from gnn.execute.distributed import WAIT_TIMEOUT_ENV, Dispatcher
+
+    def expired_wait(futures: Any, timeout: Any = None) -> None:
+        raise TimeoutError
+
+    fake_distributed = types.ModuleType("dask.distributed")
+    fake_distributed.wait = expired_wait  # type: ignore[attr-defined]
+    fake_dask = types.ModuleType("dask")
+    fake_dask.distributed = fake_distributed  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "dask", fake_dask)
+    monkeypatch.setitem(sys.modules, "dask.distributed", fake_distributed)
+    monkeypatch.setenv(WAIT_TIMEOUT_ENV, "1")
+
+    dispatcher = Dispatcher(backend="dask", max_retries=0)
+    dispatcher.client = _FakeDaskClient()
+    fast = _FlippingFuture("fast", ["finished"])
+    flipping = _FlippingFuture("flipping", ["pending", "finished"])
+    stuck = _FlippingFuture("stuck", ["pending"])
+
+    results = dispatcher._dask_gather_bounded([fast, flipping, stuck])
+
+    assert results[0] == {"success": True, "name": "fast"}
+    assert results[2]["error_type"] == "DistributedWaitTimeout"
+    assert stuck.cancelled
+    for fut, result in zip((fast, flipping, stuck), results):
+        timed_out = result.get("error_type") == "DistributedWaitTimeout"
+        assert timed_out == fut.cancelled, (
+            f"{fut.name}: reported timed out={timed_out} but cancelled={fut.cancelled}"
+        )
