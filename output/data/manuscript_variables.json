@@ -23,7 +23,7 @@
   "GNN_FAMILY_TARGET_DIR_COUNT": "9",
   "GNN_FIRST_AUTHOR": "Daniel Ari Friedman",
   "GNN_FRAMEWORK_TABLE": "| Framework | Discrete render | Continuous render | Executor status |\n|---|---|---|---|\n| PyMDP | yes | unsupported | executor |\n| RxInfer.jl | yes | yes | executor |\n| ActiveInference.jl | yes | unsupported | executor |\n| JAX | yes | yes | executor |\n| DisCoPy | yes | unsupported | executor |\n| PyTorch | yes | yes | executor |\n| NumPyro | yes | yes | executor |\n| Stan | yes | yes | executor |\n| bnlearn | yes | unsupported | executor |\n| ngc-learn | yes | yes | executor |\n: Model kinds each render framework supports, read entirely from the flags in `src/gnn/render/framework_registry.py` — the same source as [@tbl:backend_registry]. A continuous cell of `unsupported` is the renderer's own status for continuous-state models; a render-only entry has no Step-12 executor. Read with [@tbl:model_kinds], which groups the same flags by model kind. {#tbl:framework_capability}",
-  "GNN_GIT_COMMIT": "12d06363a",
+  "GNN_GIT_COMMIT": "459287940",
   "GNN_INPUT_FAMILY_DIR_COUNT": "11",
   "GNN_KEYWORDS": "GNN, active inference, generative models, model notation, pipeline automation",
   "GNN_LICENSE": "CC-BY-NC-SA-4.0",

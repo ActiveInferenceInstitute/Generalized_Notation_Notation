@@ -101,4 +101,15 @@ which emits plain `\ref`. Reinstating it means guarding it AND converting the
   \GNN@ttpos\z@ \GNN@ttemit#1\GNN@ttstop
   \endgroup}
 \makeatother
+
+% Declarations the template's combined-PDF renderer requires
+% (infrastructure/rendering/_pdf_combined_preamble.py). Absent here, it warns
+% "Preamble is missing declarations required by manuscript content" and
+% appends these exact lines itself; declaring them explicitly silences the
+% warning without changing the typeset document.
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
 ```
