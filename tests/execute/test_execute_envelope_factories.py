@@ -175,3 +175,41 @@ def test_new_execution_result_key_set() -> None:
     assert result["success"] is False
     assert result["skipped"] is False
     assert result["status"] == "failed"
+
+
+def test_bind_dispatcher_failure_gives_bare_record_script_identity() -> None:
+    from gnn.execute.processor.envelope import _bind_dispatcher_failure
+
+    bare = {
+        "success": False,
+        "error": "Distributed task ended with status 'error': ValueError: boom",
+        "error_type": "DistributedTaskError",
+        "exception_type": "ValueError",
+    }
+    result = _bind_dispatcher_failure(_script_info(), bare, "dask", 2)
+    assert set(result) == _DIST_FAIL_KEYS
+    assert result["script_path"] == _script_info()["path"]
+    assert result["framework"] == "pymdp"
+    assert result["error"] == bare["error"]
+    assert result["error_type"] == "DistributedTaskError"
+    assert result["dispatch_error_type"] == "ValueError"
+    assert result["dispatch_max_retries"] == 2
+
+    timeout = {
+        "success": False,
+        "error": "late",
+        "error_type": "DistributedWaitTimeout",
+    }
+    bound = _bind_dispatcher_failure(_script_info(), timeout, "dask", 0)
+    assert bound["error_type"] == "DistributedWaitTimeout"
+    assert bound["dispatch_error_type"] == "DistributedWaitTimeout"
+
+
+def test_bind_dispatcher_failure_passes_script_results_through() -> None:
+    from gnn.execute.processor.envelope import _bind_dispatcher_failure
+
+    runner_result = {"script_path": "/x.py", "success": True}
+    assert (
+        _bind_dispatcher_failure(_script_info(), runner_result, "ray", 3)
+        is runner_result
+    )

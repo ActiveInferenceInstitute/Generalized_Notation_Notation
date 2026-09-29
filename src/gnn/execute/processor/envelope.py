@@ -160,3 +160,29 @@ def _make_distributed_dispatch_failure_result(
     envelope["dispatch_error_type"] = type(exc).__name__
     envelope["dispatch_max_retries"] = max_retries
     return envelope
+
+
+def _bind_dispatcher_failure(
+    script_info: Dict[str, Any],
+    failure: Dict[str, Any],
+    backend: str,
+    max_retries: int,
+) -> Dict[str, Any]:
+    """Bind a per-task dispatcher failure record to the script it belongs to.
+
+    The distributed dispatcher reports a wait timeout or a task that ended
+    without a result as a bare ``success``/``error``/``error_type`` record; it
+    has no script identity, so it would otherwise be filed under framework
+    ``unknown`` and keyed by an empty path. Records that already carry a
+    ``script_path`` (every result produced by the script runner) pass through.
+    """
+    if "script_path" in failure:
+        return failure
+    error_type = str(failure.get("error_type") or "DistributedDispatchError")
+    envelope = _make_distributed_dispatch_failure_result(
+        script_info, RuntimeError(failure.get("error", "")), backend, max_retries
+    )
+    envelope["error"] = str(failure.get("error", ""))
+    envelope["error_type"] = error_type
+    envelope["dispatch_error_type"] = str(failure.get("exception_type") or error_type)
+    return envelope
