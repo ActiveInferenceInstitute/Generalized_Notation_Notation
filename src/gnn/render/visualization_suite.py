@@ -340,7 +340,7 @@ class VisualizationSuite:
             ax1 = axes[0, 0]
             data_for_box = list(numeric_traces.values())
             labels = list(numeric_traces.keys())
-            ax1.boxplot(data_for_box, labels=labels, patch_artist=True)
+            ax1.boxplot(data_for_box, tick_labels=labels, patch_artist=True)
             ax1.set_title("Distribution Summary (Box Plots)")
             ax1.set_ylabel("Value")
             plt.setp(ax1.get_xticklabels(), rotation=45, ha="right")

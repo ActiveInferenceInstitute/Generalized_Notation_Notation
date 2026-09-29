@@ -327,9 +327,17 @@ def generate_type_category_pie_chart(
             startangle=140,
             textprops=dict(color="w"),
         )
-        wedges = pie_result[0]
-        texts = pie_result[1]
-        autotexts = pie_result[2] if len(pie_result) > 2 else []
+        # matplotlib >= 3.11 returns a PieContainer (no len()); older versions
+        # return a (wedges, texts[, autotexts]) tuple.
+        if hasattr(pie_result, "wedges"):
+            wedges = pie_result.wedges
+            text_groups = list(pie_result.texts)
+            texts = text_groups[0] if text_groups else []
+            autotexts = text_groups[1] if len(text_groups) > 1 else []
+        else:
+            wedges = pie_result[0]
+            texts = pie_result[1]
+            autotexts = pie_result[2] if len(pie_result) > 2 else []
 
         ax.legend(
             wedges,

@@ -294,7 +294,7 @@ def generate_unified_framework_dashboard(
         entropy_data = list(framework_entropy.values())
         labels = list(framework_entropy.keys())
 
-        bp = ax2.boxplot(entropy_data, labels=labels, patch_artist=True)
+        bp = ax2.boxplot(entropy_data, tick_labels=labels, patch_artist=True)
         colors = plt.get_cmap("Set2")(np.linspace(0, 1, len(labels)))
         for patch, color in zip(bp["boxes"], colors):
             patch.set_facecolor(color)

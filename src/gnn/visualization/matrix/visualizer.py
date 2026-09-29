@@ -538,8 +538,15 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
 
             # Use a simpler approach without gridspec
 
-            # 1. Main transition matrices (top row)
-            for i in range(dim3):
+            # 1. Main transition matrices (top row). The 3x3 grid has three top-row
+            # cells; further actions would overlap the rows below (or raise past 9).
+            shown_actions = min(dim3, 3)
+            if dim3 > shown_actions:
+                logger.info(
+                    f"POMDP transition analysis: showing {shown_actions} of "
+                    f"{dim3} action matrices"
+                )
+            for i in range(shown_actions):
                 ax = fig.add_subplot(3, 3, i + 1)
 
                 slice_data = tensor[:, :, i]
@@ -574,8 +581,9 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
             ax_entropy = fig.add_subplot(3, 3, 4)
 
             # Calculate entropy for each action
-            epsilon = 1e-10
-            log_probs = np.log(tensor + epsilon)
+            # 0·log(0) := 0 exactly; an epsilon inside the log makes deterministic
+            # (p=1) transitions come out as tiny negative entropies.
+            log_probs = np.log(np.where(tensor > 0, tensor, 1.0))
             entropy = -np.sum(
                 tensor * log_probs, axis=0
             )  # Entropy per previous-state/action pair
@@ -593,10 +601,13 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
 
             # Add value labels on bars
             for bar, value in zip(bars, mean_entropy_per_action):
-                ax_entropy.text(
-                    bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() + 0.01,
+                # Offset in points, not data units, so a near-zero y-range cannot
+                # push the label (and the tight bbox) billions of pixels away.
+                ax_entropy.annotate(
                     f"{value:.3f}",
+                    (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                    xytext=(0, 3),
+                    textcoords="offset points",
                     ha="center",
                     va="bottom",
                     fontweight="bold",
@@ -626,10 +637,13 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
             )
 
             for bar, value in zip(bars, mean_determinism_per_action):
-                ax_determinism.text(
-                    bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() + 0.01,
+                # Offset in points, not data units, so a near-zero y-range cannot
+                # push the label (and the tight bbox) billions of pixels away.
+                ax_determinism.annotate(
                     f"{value:.3f}",
+                    (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                    xytext=(0, 3),
+                    textcoords="offset points",
                     ha="center",
                     va="bottom",
                     fontweight="bold",
@@ -661,10 +675,13 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
             )
 
             for bar, value in zip(bars, mean_reachability_per_action):
-                ax_reachability.text(
-                    bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() + 0.01,
+                # Offset in points, not data units, so a near-zero y-range cannot
+                # push the label (and the tight bbox) billions of pixels away.
+                ax_reachability.annotate(
                     f"{value:.1f}",
+                    (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                    xytext=(0, 3),
+                    textcoords="offset points",
                     ha="center",
                     va="bottom",
                     fontweight="bold",
@@ -725,15 +742,22 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                 ((8, 6), {"dpi": 72}),
                 ((6, 4), {}),
             ]
+            last_error: Exception | None = None
             for size, kwargs in save_attempts:
                 try:
                     if size:
                         fig.set_size_inches(*size)
                     plt.savefig(output_path, **kwargs)
                     break
-                except (RuntimeError, OSError, ValueError):
+                except (RuntimeError, OSError, ValueError) as save_error:
+                    last_error = save_error
                     continue
             else:
+                logger.error(
+                    f"Error saving POMDP transition analysis to {output_path}: "
+                    f"{last_error}"
+                )
+                plt.close()
                 return False
             plt.close()
             return True
