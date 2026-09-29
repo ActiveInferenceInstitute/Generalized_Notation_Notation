@@ -198,10 +198,10 @@ class TestPomdpTransitionAnalysis:
             ),
             # Single-row deterministic tensor (tmaze_epistemic shape).
             np.array([[[1.0, 0.0], [0.0, 1.0]]]),
-            # More actions than the grid's top-row cells.
-            np.full((4, 4, 5), 0.25),
+            # Ten actions: past the 3x3 grid, add_subplot(3, 3, 10) raised before the cap.
+            np.full((3, 3, 10), 1 / 3),
         ],
-        ids=["deterministic_3x3x3", "deterministic_1x2x2", "five_actions"],
+        ids=["deterministic_3x3x3", "deterministic_1x2x2", "ten_actions"],
     )
     def test_writes_png_of_sane_size(self, tmp_path: Path, tensor) -> None:
         from PIL import Image
