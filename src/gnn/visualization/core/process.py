@@ -226,8 +226,8 @@ def render_matrix_artifacts(
             if visualizer.generate_threejs_tensor_explorer(m_name, m_data, html_path):
                 artifacts.append(str(html_path))
             analysis_path = model_dir / f"{model_name}_{m_name}_analysis.png"
-            visualizer.generate_pomdp_transition_analysis(m_data, analysis_path)
-            artifacts.append(str(analysis_path))
+            if visualizer.generate_pomdp_transition_analysis(m_data, analysis_path):
+                artifacts.append(str(analysis_path))
         else:
             heatmap_path = model_dir / f"{model_name}_{m_name}_heatmap.png"
             if visualizer.generate_matrix_heatmap(m_name, m_data, heatmap_path):

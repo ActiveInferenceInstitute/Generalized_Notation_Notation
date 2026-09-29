@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -163,3 +164,140 @@ def test_process_visualization_empty_input_returns_warning_code(tmp_path: Path) 
     summary = json.loads((output / "visualization_summary.json").read_text())
     assert summary["processed_files"] == 0
     assert summary["warnings"]
+
+
+# --- matplotlib 3.11 regressions --------------------------------------------
+# uv.lock resolves matplotlib 3.10 on Python 3.11 and 3.11 on Python >= 3.12,
+# so these run on every CI leg. Each test asserts the figure file is actually
+# written: the plotting code catches and logs its own exceptions, so a return
+# value alone does not prove the figure exists. Covered: boxplot(labels=)
+# removed in 3.11 (tick_labels= since 3.9); Axes.pie returning a PieContainer
+# with no len() in 3.11; and a deterministic B tensor making the POMDP
+# transition analysis request a ~1081 x 18e9 px Agg canvas (every version).
+
+
+def _assert_png_written(path: Path) -> None:
+    assert path.is_file(), f"figure not written: {path}"
+    assert path.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+class TestPomdpTransitionAnalysis:
+    """generate_pomdp_transition_analysis must write a bounded-size PNG."""
+
+    @pytest.mark.parametrize(
+        "tensor",
+        [
+            # Identity-like permutation matrices: zero entropy per action.
+            np.stack(
+                [
+                    np.eye(3),
+                    np.eye(3)[[1, 0, 2]],
+                    np.eye(3)[[2, 1, 0]],
+                ],
+                axis=2,
+            ),
+            # Single-row deterministic tensor (tmaze_epistemic shape).
+            np.array([[[1.0, 0.0], [0.0, 1.0]]]),
+            # Ten actions: past the 3x3 grid, add_subplot(3, 3, 10) raised before the cap.
+            np.full((3, 3, 10), 1 / 3),
+        ],
+        ids=["deterministic_3x3x3", "deterministic_1x2x2", "ten_actions"],
+    )
+    def test_writes_png_of_sane_size(self, tmp_path: Path, tensor) -> None:
+        from PIL import Image
+
+        from gnn.visualization.matrix.visualizer import MatrixVisualizer
+
+        out = tmp_path / "pomdp_transition_analysis.png"
+        assert MatrixVisualizer().generate_pomdp_transition_analysis(tensor, out)
+        _assert_png_written(out)
+        with Image.open(out) as img:
+            width, height = img.size
+        assert width < 5000 and height < 5000, (width, height)
+
+    def test_deterministic_transitions_have_zero_entropy_labels(
+        self, tmp_path: Path
+    ) -> None:
+        """0·log(0) is 0, so deterministic transitions must not go negative."""
+        import matplotlib.pyplot as plt
+
+        from gnn.visualization.matrix.visualizer import MatrixVisualizer
+
+        tensor = np.stack([np.eye(2), np.eye(2)[[1, 0]]], axis=2)
+        captured: list[str] = []
+        original_savefig = plt.savefig
+
+        def capture_then_save(*args, **kwargs):
+            fig = plt.gcf()
+            entropy_ax = next(
+                ax
+                for ax in fig.axes
+                if ax.get_title() == "Transition Entropy by Action"
+            )
+            captured.extend(t.get_text() for t in entropy_ax.texts)
+            return original_savefig(*args, **kwargs)
+
+        plt.savefig = capture_then_save
+        try:
+            out = tmp_path / "pomdp.png"
+            assert MatrixVisualizer().generate_pomdp_transition_analysis(tensor, out)
+        finally:
+            plt.savefig = original_savefig
+        _assert_png_written(out)
+        assert captured == ["0.000", "0.000"]
+
+
+class TestTypeCategoryPieChart:
+    """generate_type_category_pie_chart must handle tuple and PieContainer."""
+
+    def test_writes_png(self, tmp_path: Path) -> None:
+        from gnn.type_checker.visualizer import generate_type_category_pie_chart
+
+        results = {
+            "type_analysis": [
+                {"type_distribution": {"float": 6, "int": 3, "categorical": 2}},
+                {"type_distribution": {"float": 2, "bool": 1}},
+            ]
+        }
+        path = generate_type_category_pie_chart(results, tmp_path)
+        assert path is not None
+        _assert_png_written(path)
+
+
+class TestBoxplotTickLabels:
+    """Box plots must use ``tick_labels=`` (``labels=`` removed in 3.11)."""
+
+    def test_unified_dashboard_entropy_comparison_written(self, tmp_path: Path) -> None:
+        from gnn.analysis.viz_dashboard import generate_unified_framework_dashboard
+
+        rng = np.random.default_rng(0)
+
+        def beliefs(steps: int = 6, states: int = 3) -> list[list[float]]:
+            raw = rng.random((steps, states)) + 0.1
+            return (raw / raw.sum(axis=1, keepdims=True)).tolist()
+
+        framework_data = {
+            "pymdp": {
+                "framework": "pymdp",
+                "simulation_data": {"beliefs": beliefs(), "actions": [0, 1, 0]},
+            },
+            "jax": {
+                "framework": "jax",
+                "simulation_data": {"beliefs": beliefs(), "actions": [1, 1, 0]},
+            },
+        }
+        generate_unified_framework_dashboard(framework_data, tmp_path, "Test Model")
+        _assert_png_written(tmp_path / "unified_entropy_comparison.png")
+
+    def test_render_statistical_plots_written(self, tmp_path: Path) -> None:
+        from gnn.render.visualization_suite import VisualizationSuite
+
+        suite = VisualizationSuite(tmp_path, "mpl_compat")
+        traces = {
+            "belief": [0.1, 0.4, 0.35, 0.6, 0.55],
+            "reward": [0.0, 1.0, 0.0, 1.0, 1.0],
+        }
+        files = suite._create_statistical_plots(traces)
+        assert files, "no statistical plot produced"
+        for path in files:
+            _assert_png_written(Path(path))
