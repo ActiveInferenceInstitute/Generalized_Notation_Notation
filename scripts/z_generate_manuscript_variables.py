@@ -59,6 +59,13 @@ ritual has run, in order:
 5. commit the regenerated ``output/`` artifacts (including
    ``output/data/manuscript_render_manifest.json``).
 
+PR-time drift guard: ``scripts/check_hydrated_prose.py`` (``local-gates.yml``
+``repo-gates``) re-substitutes ``manuscript/*.md`` from the committed token map
+and fails when the committed ``output/manuscript/`` differs. So a PR that
+regenerates the token map (every count-changing PR) must run this whole
+ritual. Regenerating and re-recording alone now fails before merge, where it
+used to fail only in the scheduled ``custody-re-render.yml`` after merge.
+
 What the gates verify afterwards: the strict token checks above, plus —
 via the custody manifest read by ``tests/test_manuscript_latex_log.py`` —
 that the committed ``.log``/``.tex``/``.md``, the hydrated sections under

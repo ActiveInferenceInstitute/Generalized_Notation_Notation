@@ -416,6 +416,10 @@ pytest --cov=src --cov-report=term-missing
 
 This repository shares custody pairs with two sibling repositories: fep_lean (bridge contract) and GEO-INFER (interchange contracts); each side pins the other via committed pin files plus paired CI. The one-line rule: **any edit to `src/gnn/**/*.py` (or `pyproject.toml`, `uv.lock`, `src/gnn/main.py`, `docs/gnn/gnn_syntax.md`, `src/gnn/pipeline/step_registry.py`) re-drifts the fep_lean custody pair** and must be closed out by the paired re-pin ritual. Canonical ordering and workflow details: [docs/development/fep_lean_paired_revision.md](docs/development/fep_lean_paired_revision.md).
 
+## Manuscript custody (SC-22): count-changing PRs run the full ritual
+
+`scripts/check_hydrated_prose.py` (the `Hydrated prose matches token map` step of `local-gates.yml`'s `repo-gates` job, `just hydrated-prose`) re-substitutes `manuscript/*.md` from the committed `output/data/manuscript_variables.json` and fails when the committed `output/manuscript/` differs. **Consequence: any PR that regenerates the token map (every count-changing `src/` or `tests/` PR) must run the full SC-22 ritual before it can go green.** Regenerating the map and re-recording the custody manifest is no longer enough. The ritual: `python -m scripts.manuscript_build_figures` → the template's `stage_03_render` (fresh `docxology/template` clone with this checkout symlinked at `projects/active/GeneralizedNotationNotation`) → `scripts/z_verify_fresh_render.py` → `scripts/z_record_manuscript_render_manifest.py` → commit `output/`. The canonical statement is the `scripts/z_generate_manuscript_variables.py` docstring.
+
 ## Agent Capabilities
 
 Each module provides specialized agent capabilities for different aspects of Active Inference model processing:

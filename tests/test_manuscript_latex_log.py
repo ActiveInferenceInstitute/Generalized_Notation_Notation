@@ -46,12 +46,26 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from gnn.manuscript.render_custody import (  # noqa: E402
     custody_issues,
+    hydration_issues,
+    mask_log_timestamp,
     record_render_manifest,
     verify_fresh_render,
 )
 
 LOG_PATH = REPO_ROOT / "output" / "pdf" / "_combined_manuscript.log"
 TEX_PATH = REPO_ROOT / "output" / "pdf" / "_combined_manuscript.tex"
+PREAMBLE_PATH = REPO_ROOT / "manuscript" / "preamble.md"
+
+# The declarations docxology/template's ``_pdf_combined_preamble.py`` checks
+# for, with its own patterns: a preamble missing one gets a fallback
+# injected at render time, so the PDF renders anyway while the committed
+# preamble no longer describes it.
+REQUIRED_PREAMBLE_DECLARATIONS = {
+    r"\usepackage{listings}": re.compile(r"\\usepackage(?:\[[^\]]*\])?\{listings\}"),
+    r"\newtheorem{theorem}": re.compile(r"\\newtheorem\*?\s*\{theorem\}"),
+    r"\newtheorem{remark}": re.compile(r"\\newtheorem\*?\s*\{remark\}"),
+    r"\newtheorem{example}": re.compile(r"\\newtheorem\*?\s*\{example\}"),
+}
 
 MESSAGE = "Infinite glue shrinkage found in box being split"
 
@@ -171,6 +185,26 @@ def test_the_log_carries_no_personal_machine_paths() -> None:
     log_text, _ = _shipped()
     assert "/Users/" not in log_text
     assert "/home/" not in log_text
+
+
+def test_the_preamble_declares_what_the_template_requires() -> None:
+    """``listings`` and the three theorem environments are declared in-repo."""
+    preamble = PREAMBLE_PATH.read_text(encoding="utf-8")
+    missing = [
+        name
+        for name, pattern in REQUIRED_PREAMBLE_DECLARATIONS.items()
+        if pattern.search(preamble) is None
+    ]
+    assert not missing, f"manuscript/preamble.md lacks {missing}"
+
+
+def test_the_preamble_patterns_reject_a_preamble_without_them() -> None:
+    """The patterns have teeth: a commented-out or renamed declaration is absent."""
+    stripped = "\\usepackage{xcolor}\n\\newtheorem{lemma}{Lemma}\n"
+    assert all(
+        pattern.search(stripped) is None
+        for pattern in REQUIRED_PREAMBLE_DECLARATIONS.values()
+    )
 
 
 # --- the render custody chain ------------------------------------------------
@@ -337,6 +371,156 @@ def test_a_missing_artifact_fails(tmp_path: Path) -> None:
     issues = verify_fresh_render(root)
     assert len(issues) == 1, issues
     assert issues[0].startswith("[FAIL] output/pdf/_combined_manuscript.log"), issues
+
+
+_XETEX_BANNER = (
+    "This is XeTeX, Version 3.141592653-2.6-0.999998 (TeX Live 2026) "
+    "(preloaded format=xelatex 2026.9.18)  {stamp}\n"
+    "entering extended mode\n[1] [2] Output written on x.pdf (2 pages).\n"
+)
+
+
+def test_mask_log_timestamp_masks_only_the_banner_start_time() -> None:
+    """The run start time goes; the engine version and format date stay."""
+    masked = mask_log_timestamp(_XETEX_BANNER.format(stamp="28 SEP 2026 21:42"))
+    assert "28 SEP 2026 21:42" not in masked
+    assert "(preloaded format=xelatex 2026.9.18)  <timestamp>" in masked
+    assert masked == mask_log_timestamp(_XETEX_BANNER.format(stamp="3 OCT 2026 07:05"))
+    other_engine = _XETEX_BANNER.replace("TeX Live 2026", "TeX Live 2027")
+    assert mask_log_timestamp(other_engine.format(stamp="3 OCT 2026 07:05")) != masked
+
+
+def test_a_re_render_differing_only_in_the_log_timestamp_passes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression for the PR #225 review: an identical render is not a [WARN].
+
+    The committed log and a fresh one differ only in XeTeX's banner start
+    time; ``verify_fresh_render`` must mask it on both sides.
+    """
+    root = _custody_fixture(tmp_path)
+    log_rel = "output/pdf/_combined_manuscript.log"
+    committed = _XETEX_BANNER.format(stamp="28 SEP 2026 21:42").encode("utf-8")
+    (root / log_rel).write_bytes(committed)
+    record_render_manifest(root)
+    committed_tree = {
+        rel: (root / rel).read_bytes()
+        for rel in (
+            log_rel,
+            "output/manuscript/05_reproducibility.md",
+            "output/pdf/_combined_manuscript.md",
+            "output/pdf/_combined_manuscript.tex",
+        )
+    }
+    monkeypatch.setattr(
+        "gnn.manuscript.render_custody._git_show",
+        lambda _root, rel: committed_tree[rel],
+    )
+    (root / log_rel).write_text(
+        _XETEX_BANNER.format(stamp="29 SEP 2026 07:14"), encoding="utf-8"
+    )
+    assert verify_fresh_render(root) == []
+
+    (root / log_rel).write_text(
+        _XETEX_BANNER.format(stamp="29 SEP 2026 07:14").replace("[2] ", ""),
+        encoding="utf-8",
+    )
+    issues = verify_fresh_render(root)
+    assert len(issues) == 1 and issues[0].startswith(f"[WARN] {log_rel}"), issues
+
+
+# --- the PR-time hydration guard ----------------------------------------------
+
+
+def _hydration_fixture(tmp_path: Path) -> Path:
+    """Sources, a token map, and the tree the injector writes from them."""
+    root = tmp_path / "repo"
+    (root / "manuscript").mkdir(parents=True)
+    (root / "output" / "data").mkdir(parents=True)
+    (root / "output" / "manuscript").mkdir(parents=True)
+    (root / "manuscript" / "05_reproducibility.md").write_text(
+        "a {{GNN_STEP_COUNT}}-step pipeline at {{GNN_GIT_COMMIT}}\n",
+        encoding="utf-8",
+    )
+    (root / "manuscript" / "AGENTS.md").write_text(
+        "example: {{GNN_STEP_COUNT}}\n", encoding="utf-8"
+    )
+    (root / "manuscript" / "preamble.md").write_text(
+        "\\usepackage{listings} {{NOT_SUBSTITUTED}}\n", encoding="utf-8"
+    )
+    (root / "manuscript" / "references.bib").write_text(
+        "@misc{k, title={t}}\n", encoding="utf-8"
+    )
+    (root / "output" / "data" / "manuscript_variables.json").write_text(
+        json.dumps({"GNN_GIT_COMMIT": "abc1234", "GNN_STEP_COUNT": "25"}),
+        encoding="utf-8",
+    )
+    out = root / "output" / "manuscript"
+    (out / "05_reproducibility.md").write_text(
+        "a 25-step pipeline at abc1234\n", encoding="utf-8"
+    )
+    for name in ("preamble.md", "references.bib"):
+        (out / name).write_bytes((root / "manuscript" / name).read_bytes())
+    return root
+
+
+_EXCLUDED = frozenset({"AGENTS.md", "README.md", "SYNTAX.md"})
+
+
+def test_hydrated_prose_matching_the_token_map_passes(tmp_path: Path) -> None:
+    """The injector's own output, from the committed map, is not drift."""
+    assert hydration_issues(_hydration_fixture(tmp_path), _EXCLUDED) == []
+
+
+def test_a_token_map_regenerated_without_rehydrating_fails(tmp_path: Path) -> None:
+    """The drift a count-changing PR leaves behind when the ritual is skipped.
+
+    The map moved (a new count at a new commit) and the manifest could be
+    re-recorded over it, but the prose still carries the old values; the
+    scheduled custody re-render would go red after merge.
+    """
+    root = _hydration_fixture(tmp_path)
+    (root / "output" / "data" / "manuscript_variables.json").write_text(
+        json.dumps({"GNN_GIT_COMMIT": "def5678", "GNN_STEP_COUNT": "26"}),
+        encoding="utf-8",
+    )
+    issues = hydration_issues(root, _EXCLUDED)
+    assert len(issues) == 1, issues
+    assert "output/manuscript/05_reproducibility.md" in issues[0], issues
+    assert "def5678" in issues[0], issues
+
+
+def test_a_commit_only_regeneration_fails_too(tmp_path: Path) -> None:
+    """Same counts, new commit: the cron's fresh comparison fails on the stamp."""
+    root = _hydration_fixture(tmp_path)
+    (root / "output" / "data" / "manuscript_variables.json").write_text(
+        json.dumps({"GNN_GIT_COMMIT": "def5678", "GNN_STEP_COUNT": "25"}),
+        encoding="utf-8",
+    )
+    assert len(hydration_issues(root, _EXCLUDED)) == 1
+
+
+def test_a_source_edit_never_hydrated_fails(tmp_path: Path) -> None:
+    """Prose edited in manuscript/ but never rendered is stale evidence."""
+    root = _hydration_fixture(tmp_path)
+    (root / "manuscript" / "preamble.md").write_text(
+        "\\usepackage{listings}\n", encoding="utf-8"
+    )
+    (root / "manuscript" / "07_new.md").write_text("new\n", encoding="utf-8")
+    (root / "output" / "manuscript" / "08_gone.md").write_text("x\n", encoding="utf-8")
+    issues = hydration_issues(root, _EXCLUDED)
+    assert [issue.split()[0] for issue in issues] == [
+        "output/manuscript/07_new.md",
+        "output/manuscript/preamble.md",
+        "output/manuscript/08_gone.md",
+    ], issues
+
+
+def test_a_missing_token_map_is_a_failure_not_a_skip(tmp_path: Path) -> None:
+    root = _hydration_fixture(tmp_path)
+    (root / "output" / "data" / "manuscript_variables.json").unlink()
+    issues = hydration_issues(root, _EXCLUDED)
+    assert issues and "z_generate_manuscript_variables" in issues[0], issues
 
 
 if __name__ == "__main__":  # pragma: no cover - convenience
