@@ -485,6 +485,7 @@ the package (`from tests.helpers import ...`) so implementations can move:
 | `FakeMCPTime` | `mcp_stubs.py` | Injectable clock standing in for `gnn.mcp.mcp.time`; `advance(seconds)` moves the observable clock forward instantly (cache expiry, sliding-window rate limiter) instead of sleeping. Shared by `tests/mcp` TTL/rate-limiter tests — adopt it instead of redeclaring local clock stubs. |
 | `EXPECTED_MCP_TOOLS`, `EXPECTED_MCP_MODULES`, `CENSUS_SOURCE` | `mcp_census.py` | Exact MCP census pin read from the committed `src/gnn/mcp/audit_report.json`; exact-pin gate tests (`tests/mcp/test_resource_api.py`, `tests/mcp/test_registry_internals.py`) assert against it. Regenerate the audit and update the constants in the same PR that adds or removes tools/modules. |
 | `render_gnn_files(target_dir, output_dir)` | `render_recovery.py` | Recovery-friendly bulk render for resilience tests. |
+| `figures_held_open`, `open_bar_figures`, `assert_bar_labels_offset_in_points`, `assert_png_bounded` | `bar_labels.py` | Assert bar value labels sit a fixed 3 pt above their bars at every data scale (points, not data units). Submodule import only (`from tests.helpers.bar_labels import ...`): not re-exported because it imports `matplotlib.pyplot`. |
 | `get_test_data_dir()`, `get_sample_gnn_model()`, `load_sample_gnn_spec()` | `__init__.py` | Path helpers for `test_data/` and the sample-model loader. |
 
 The plumbing's own regression tests live in `tests/tests/`

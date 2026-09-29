@@ -16,6 +16,7 @@ helpers/
 ├── mcp_stubs.py           # MCPTools: in-memory MCP registry test double; FakeMCPTime: injectable clock stub
 ├── mcp_census.py          # exact MCP census pin (EXPECTED_MCP_TOOLS / EXPECTED_MCP_MODULES / CENSUS_SOURCE)
 ├── render_recovery.py     # render_gnn_files(): recovery-friendly bulk render
+├── bar_labels.py          # bar value-label pixel-gap checks (submodule import only)
 └── (path helpers in __init__.py for test_data/)
 ```
 
@@ -29,6 +30,7 @@ helpers/
 - `EXPECTED_MCP_TOOLS` / `EXPECTED_MCP_MODULES` / `CENSUS_SOURCE` — exact MCP census pin from `mcp_census.py`, read from the committed `src/gnn/mcp/audit_report.json`; regenerate the audit and update the constants in the same PR that adds or removes tools/modules
 - `get_test_data_dir()` / `get_sample_gnn_model()` / `load_sample_gnn_spec()` — path helpers for `tests/test_data/`
 - `render_gnn_files()` — render every GNN file in a directory, capturing per-file results for recovery tests
+- `tests.helpers.bar_labels` — `figures_held_open`, `open_bar_figures`, `assert_bar_labels_offset_in_points`, `assert_png_bounded`: assert bar value labels sit 3 pt above their bars at every data scale. Import the submodule directly; it is not re-exported because it imports `matplotlib.pyplot`
 
 ## Usage
 

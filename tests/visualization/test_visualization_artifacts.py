@@ -45,6 +45,12 @@ from gnn.visualization.graph.network_visualizations import (
 )
 from gnn.visualization.matrix import visualizer as visualizer_module
 from gnn.visualization.matrix.visualizer import MatrixVisualizer
+from tests.helpers.bar_labels import (
+    assert_bar_labels_offset_in_points,
+    assert_png_bounded,
+    figures_held_open,
+    open_bar_figures,
+)
 
 
 @pytest.mark.unit
@@ -243,7 +249,6 @@ class TestPomdpTransitionAnalysis:
         self, tmp_path: Path
     ) -> None:
         """0·log(0) is 0, so deterministic transitions must not go negative."""
-        import matplotlib.pyplot as plt
 
         from gnn.visualization.matrix.visualizer import MatrixVisualizer
 
@@ -503,78 +508,18 @@ def test_step8_script_clean_corpus_exits_zero(tmp_path: Path) -> None:
 # canvas). Each site runs with degenerate and large-range data; the pixel gap
 # between bar top and label must be the fixed 3 pt, and the PNG bounded.
 
-OFFSET_POINTS = 3.0
-MAX_PNG_SIDE = 20_000
-
 
 @pytest.fixture
 def kept_figures(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Keep figures open past the code-under-test's ``plt.close`` calls."""
-    real_close = plt.close
-    real_close("all")
-    monkeypatch.setattr(plt, "close", lambda *args, **kwargs: None)
-    yield
-    monkeypatch.undo()
-    real_close("all")
-
-
-def _label_gaps_px(fig: Figure) -> list[float]:
-    """Pixel gap between each labelled bar's top and the bottom of its label."""
-    fig.canvas.draw()
-    renderer = fig.canvas.get_renderer()  # type: ignore[attr-defined]
-    gaps: list[float] = []
-    for ax in fig.axes:
-        assert isinstance(ax, Axes)
-        bars = [
-            patch
-            for container in ax.containers
-            if isinstance(container, BarContainer)
-            for patch in container
-        ]
-        texts = [t for t in ax.texts if t.get_text().strip()]
-        for bar in bars:
-            top = bar.get_window_extent(renderer).y1
-            center_x = bar.get_window_extent(renderer).x0 + (
-                bar.get_window_extent(renderer).width / 2
-            )
-            label = min(
-                texts,
-                key=lambda t: abs(
-                    (
-                        t.get_window_extent(renderer).x0
-                        + t.get_window_extent(renderer).x1
-                    )
-                    / 2
-                    - center_x
-                ),
-            )
-            gaps.append(label.get_window_extent(renderer).y0 - top)
-    return gaps
-
-
-def _assert_point_offset(fig: Figure) -> None:
-    expected = OFFSET_POINTS * fig.dpi / 72.0
-    gaps = _label_gaps_px(fig)
-    assert gaps, "no labelled bars found"
-    for gap in gaps:
-        assert gap == pytest.approx(expected, abs=0.75), (
-            f"label gap {gap:.2f}px != {expected:.2f}px (3 pt): offset is in data units"
-        )
-
-
-def _assert_bounded_png(path: Path) -> None:
-    assert path.is_file(), f"{path} not written"
-    height, width = mpimg.imread(path).shape[:2]
-    assert 0 < width <= MAX_PNG_SIDE and 0 < height <= MAX_PNG_SIDE, (width, height)
+    with figures_held_open(monkeypatch):
+        yield
 
 
 def _bar_figure() -> Figure:
-    """The open figure that contains bar containers."""
-    for num in plt.get_fignums():
-        fig = plt.figure(num)
-        if any(isinstance(c, BarContainer) for ax in fig.axes for c in ax.containers):
-            return fig
-    raise AssertionError("no figure with bars was produced")
+    """The single open figure that contains bars."""
+    (fig,) = open_bar_figures()
+    return fig
 
 
 # Degenerate: a single action taken once (count range [0, 1]); large: counts
@@ -593,8 +538,8 @@ def test_viz_plots_action_counts_label_offset(
 ) -> None:
     out = tmp_path / "actions.png"
     generate_action_analysis(ACTION_SEQUENCES[case], out)
-    _assert_bounded_png(out)
-    _assert_point_offset(_bar_figure())
+    assert_png_bounded(out)
+    assert_bar_labels_offset_in_points(_bar_figure())
 
 
 @pytest.mark.unit
@@ -608,8 +553,8 @@ def test_jax_structured_action_counts_label_offset(
     pngs = [Path(p) for p in paths if Path(p).suffix == ".png"]
     assert pngs, paths
     for png in pngs:
-        _assert_bounded_png(png)
-    _assert_point_offset(_bar_figure())
+        assert_png_bounded(png)
+    assert_bar_labels_offset_in_points(_bar_figure())
 
 
 @pytest.mark.unit
@@ -622,8 +567,8 @@ def test_jax_action_distribution_label_offset(
     )
     dist = tmp_path / "m_jax_action_dist.png"
     assert str(dist) in paths, paths
-    _assert_bounded_png(dist)
-    _assert_point_offset(_bar_figure())
+    assert_png_bounded(dist)
+    assert_bar_labels_offset_in_points(_bar_figure())
 
 
 def _sweep(time_of: Callable[[int, int], float]) -> list[SweepRecord]:
@@ -658,5 +603,5 @@ def test_meta_analysis_scaling_exponent_label_offset(
     viz = SweepVisualizer(records, tmp_path)
     path = viz._plot_scaling_exponent_summary(records, ["pymdp"])
     assert path is not None
-    _assert_bounded_png(Path(path))
-    _assert_point_offset(_bar_figure())
+    assert_png_bounded(Path(path))
+    assert_bar_labels_offset_in_points(_bar_figure())

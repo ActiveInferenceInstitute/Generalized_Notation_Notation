@@ -8,6 +8,8 @@ Provides reusable, typed helpers for test execution:
 - ``mcp_stubs``      — in-memory MCP registry test double (``MCPTools``)
 - ``mcp_census``     — exact MCP census pin (``EXPECTED_MCP_TOOLS`` / ``EXPECTED_MCP_MODULES``)
 - ``render_recovery``— recovery-friendly bulk render for resilience tests
+- ``bar_labels``     — bar value-label pixel-gap checks (import the submodule:
+  it pulls in ``matplotlib.pyplot``, so it is not re-exported here)
 - path helpers + sample-model loader for ``test_data/``
 """
 
