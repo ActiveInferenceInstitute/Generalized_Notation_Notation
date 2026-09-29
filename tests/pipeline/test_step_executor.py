@@ -662,12 +662,15 @@ class TestInProcessForceKill:
     ) -> None:
         """Timed-out artifacts are marked by a sentinel, never deleted."""
 
+        artifact_written = threading.Event()
+
         def writing_hang(
             output_dir: Any = None, cancel_token: Any = None, **kwargs: Any
         ) -> bool:
             out = Path(str(output_dir))
             out.mkdir(parents=True, exist_ok=True)
             (out / "partial_artifact.txt").write_text("mid-write", encoding="utf-8")
+            artifact_written.set()
             assert cancel_token is not None
             while not cancel_token.cancelled:
                 time.sleep(0.01)
@@ -677,13 +680,16 @@ class TestInProcessForceKill:
             step_executor, "resolve_step_function", lambda name: writing_hang
         )
         step_result = execute_step_in_process(
-            "3_gnn.py", _pipeline_args(tmp_path), LOGGER, timeout_seconds=1
+            "3_gnn.py", _pipeline_args(tmp_path), LOGGER, timeout_seconds=30
         )
         assert step_result["force_killed"] is True
 
         step_output = tmp_path / "3_gnn_output"
         artifact = step_output / "partial_artifact.txt"
         marker = step_output / ".gnn_step_timed_out"
+        assert artifact_written.wait(timeout=10), (
+            "writing_hang was force-killed before writing the partial artifact"
+        )
         assert artifact.is_file()
         assert artifact.read_text(encoding="utf-8") == "mid-write"
         payload = json.loads(marker.read_text(encoding="utf-8"))
