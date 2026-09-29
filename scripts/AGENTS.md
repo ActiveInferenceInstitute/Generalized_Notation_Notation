@@ -6,7 +6,7 @@ This folder hosts the explicit, stateless developer workflow validation agents r
 
 ## Components
 
-### Audit & Compliance (12 scripts)
+### Audit & Compliance (13 scripts)
 
 | Script | Purpose | Strict CI Gate |
 |--------|---------|:--------------:|
@@ -18,6 +18,7 @@ This folder hosts the explicit, stateless developer workflow validation agents r
 | `check_mcp_skills_health.py` | Executes every registered MCP tool and verifies every SKILL.md documents a resolvable surface | ✅ `--strict` (local-gates.yml) |
 | `check_capability_contracts.py` | Validates capability-contract claims against measured codebase state | ✅ exit 1 on mismatch |
 | `check_manuscript_tokens.py` | Manuscript integrity gate: unknown `{{TOKEN}}`s, dangling `[@key]` citations, hard-coded counts, contradicted `input/...` path claims | ✅ hard gate (`--strict` also fails count warnings) |
+| `check_hydrated_prose.py` | SC-22 PR-time custody drift guard: committed `output/manuscript/` must be what the committed token map hydrates to (a regenerated map without the full render ritual fails) | ✅ exit 1 on drift (local-gates.yml) |
 | `check_pomdp_gridworld_outputs.py` | End-to-end GridWorld output validity check for the canonical POMDP test case | ✅ exit 1 on mismatch |
 | `check_thin_orchestrators.py` | Enforces numbered thin-orchestrator line caps: 150 hard cap plus the registered ratchet in `thin_orchestrator_caps.json` | ✅ exit 1 on cap breach |
 | `check_flag_parity.py` | Ratchets argparse-registered CLI flags against maintained-doc `--flag` mentions (phantom tokens + undocumented flags) | ✅ exit 1 over ratchet cap |

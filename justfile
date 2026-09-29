@@ -106,6 +106,10 @@ capability:
 tokens:
     uv run python scripts/check_manuscript_tokens.py --strict
 
+# Fail when committed hydrated prose is stale for the token map (run the SC-22 ritual)
+hydrated-prose:
+    uv run python scripts/check_hydrated_prose.py
+
 # Run the POMDP GridWorld pipeline end-to-end, then validate the output contract
 # (regenerates the volatile run tree from input/gnn_files/pomdp_gridworld;
 #  requires local Julia toolchains for the RxInfer/ActiveInference.jl proof)
@@ -153,7 +157,7 @@ doc-patterns:
     uv run python scripts/check_gnn_doc_patterns.py --strict
 
 # Run fast quality gates without the full pytest suite
-quality: format-check lint import-linter thin-orchestrators flag-parity dep-hygiene validate-surface terminology doc-terms audit doc-contracts doc-patterns typecheck security capability skills-health tokens v3-acceptance mcp-count
+quality: format-check lint import-linter thin-orchestrators flag-parity dep-hygiene validate-surface terminology doc-terms audit doc-contracts doc-patterns typecheck security capability skills-health tokens hydrated-prose v3-acceptance mcp-count
 
 # Run focused PyMDP/POMDP behavior checks
 test-pymdp-focused:

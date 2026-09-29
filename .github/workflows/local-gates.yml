@@ -3,6 +3,7 @@ name: Local gates
 # Gates that were previously runnable only by hand via `just` and wired
 # into no workflow (found in the 2026-09-07 local/CI parity audit):
 #   - just tokens       (manuscript token/citation integrity)
+#   - just hydrated-prose (SC-22 PR-time guard: hydrated prose vs token map)
 #   - just skills-health (MCP tool + SKILL.md resolvability)
 #   - just import-linter (import boundary contracts)
 #   - just thin-orchestrators (numbered orchestrator line caps)
@@ -56,6 +57,13 @@ jobs:
 
       - name: Manuscript token audit
         run: uv run --extra dev python scripts/check_manuscript_tokens.py --strict
+
+      # SC-22 PR-time drift guard: the committed hydrated prose must be what
+      # the committed token map hydrates to. A PR that regenerated the map
+      # without the full ritual (figures -> template stage_03_render ->
+      # record) fails here instead of in custody-re-render.yml after merge.
+      - name: Hydrated prose matches token map
+        run: uv run --extra dev python scripts/check_hydrated_prose.py
 
       - name: Manuscript figure freshness
         run: uv run --extra dev python -m pytest tests/test_manuscript_figure_freshness.py -q -p no:cacheprovider

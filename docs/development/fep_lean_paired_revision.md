@@ -78,7 +78,9 @@ this exact order:
    SC-22 ritual in the `scripts/z_generate_manuscript_variables.py` module
    docstring — regenerate the token map → rebuild figures → run the template's
    `stage_03_render` → record the render-custody manifest → commit the
-   regenerated `output/` artifacts.
+   regenerated `output/` artifacts. `scripts/check_hydrated_prose.py`
+   (`local-gates.yml` repo-gates) enforces this at PR time: a regenerated
+   token map without the render fails it.
    Run the ritual only at the final content state and **never amend a commit
    after recording**: the recorded manifest's `counts_describe_commit` cites
    the commit it was produced at, and amending afterwards orphans that
