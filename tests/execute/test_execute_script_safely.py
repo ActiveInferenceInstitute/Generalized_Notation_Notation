@@ -528,7 +528,8 @@ class _ErroredFuture(_FlippingFuture):
         super().__init__(name, ["error"])
         self._exc = exc
 
-    def exception(self) -> BaseException:
+    def exception(self, timeout: Any = None) -> BaseException:
+        assert timeout is not None, "exception() must be fetched with a bound"
         return self._exc
 
 
@@ -665,3 +666,63 @@ def test_bare_dispatcher_failure_is_bound_to_its_script(
     assert Path(detail["script_path"]).resolve() == script.resolve()
     assert "remote boom" in detail["error"]
     assert "unknown" not in summary["framework_status"]
+
+
+class _NoResultFuture(_FlippingFuture):
+    """Future in a terminal no-result status whose exception fetch misbehaves."""
+
+    def __init__(self, name: str, status: str, fetch: Any) -> None:
+        super().__init__(name, [status])
+        self._fetch = fetch
+
+    def exception(self, timeout: Any = None) -> Any:
+        return self._fetch(timeout)
+
+
+def _never_called(timeout: Any) -> None:
+    raise AssertionError("exception() blocks forever on a lost future")
+
+
+def _fetch_times_out(timeout: Any) -> None:
+    raise TimeoutError
+
+
+@pytest.mark.parametrize(
+    ("status", "fetch", "exception_type", "detail"),
+    [
+        ("lost", _never_called, "WorkerLost", "no result"),
+        ("cancelled", _never_called, "CancelledError", "no result"),
+        ("error", _fetch_times_out, "UnknownError", "unavailable (TimeoutError)"),
+    ],
+)
+def test_dask_gather_reports_no_result_futures_without_blocking(
+    monkeypatch: pytest.MonkeyPatch,
+    status: str,
+    fetch: Any,
+    exception_type: str,
+    detail: str,
+) -> None:
+    """Lost/cancelled futures never fetch an exception; error fetches are bounded."""
+    import types
+
+    from gnn.execute.distributed import Dispatcher
+
+    fake_distributed = types.ModuleType("dask.distributed")
+    fake_distributed.wait = lambda futures, timeout=None: None  # type: ignore[attr-defined]
+    fake_dask = types.ModuleType("dask")
+    fake_dask.distributed = fake_distributed  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "dask", fake_dask)
+    monkeypatch.setitem(sys.modules, "dask.distributed", fake_distributed)
+
+    dispatcher = Dispatcher(backend="dask", max_retries=0)
+    dispatcher.client = _FinishedOnlyGatherClient()
+    ok = _FlippingFuture("ok", ["finished"])
+    bad = _NoResultFuture("bad", status, fetch)
+
+    results = dispatcher._dask_gather_bounded([ok, bad])
+
+    assert results[0] == {"success": True, "name": "ok"}
+    assert results[1]["error_type"] == "DistributedTaskError"
+    assert results[1]["exception_type"] == exception_type
+    assert f"status {status!r}" in results[1]["error"]
+    assert detail in results[1]["error"]

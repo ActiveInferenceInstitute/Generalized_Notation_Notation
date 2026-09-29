@@ -7,7 +7,7 @@ Includes robust retry semantics for node failure in external cloud instances.
 
 import logging
 import os
-from typing import Any, Callable, Dict, List, Literal, Optional, cast
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, cast
 
 logger = logging.getLogger(__name__)
 
@@ -47,18 +47,35 @@ def _wait_timeout_failures(count: int, wait_timeout: int) -> List[Dict[str, Any]
     ]
 
 
-def _remote_task_failure(future: Any) -> Dict[str, Any]:
-    """Failure record for a future that ended without a result (error/lost/cancelled)."""
-    try:
-        exc: Optional[BaseException] = future.exception()
-    except BaseException as fetch_exc:  # noqa: BLE001 — cancelled futures raise here
-        exc = fetch_exc
-    exception_type = type(exc).__name__ if exc is not None else "UnknownError"
+EXCEPTION_FETCH_TIMEOUT_SECONDS = 5
+
+# Statuses that end a future without a result and carry no remote exception.
+_NO_EXCEPTION_STATUS_TYPES = {"cancelled": "CancelledError", "lost": "WorkerLost"}
+
+
+def _remote_task_failure(future: Any, status: str) -> Dict[str, Any]:
+    """Failure record for a future that ended without a result.
+
+    ``status`` is the one status snapshot the caller classified the future by.
+    Only an ``error`` future has a remote exception to fetch, and the fetch is
+    bounded: on a ``lost`` future ``Future.exception()`` waits for a result that
+    never arrives, which would defeat the bounded wait this dispatcher enforces.
+    """
+    exception_type = _NO_EXCEPTION_STATUS_TYPES.get(status, "UnknownError")
+    detail = "no result"
+    if status == "error":
+        try:
+            exc = future.exception(timeout=EXCEPTION_FETCH_TIMEOUT_SECONDS)
+        except Exception as fetch_exc:  # noqa: BLE001 — record the fetch failure
+            detail = f"remote exception unavailable ({type(fetch_exc).__name__})"
+        else:
+            if exc is not None:
+                exception_type = type(exc).__name__
+                detail = str(exc)
     return {
         "success": False,
         "error": (
-            f"Distributed task ended with status {future.status!r}: "
-            f"{exception_type}: {exc}"
+            f"Distributed task ended with status {status!r}: {exception_type}: {detail}"
         ),
         "error_type": "DistributedTaskError",
         "exception_type": exception_type,
@@ -204,7 +221,7 @@ class Dispatcher:
         # are reported one by one, because gathering them raises and would
         # discard every other script's result.
         finished: List[Any] = []
-        failed: List[Any] = []
+        failed: List[Tuple[Any, str]] = []
         not_done: List[Any] = []
         for fut in futures:
             status = fut.status
@@ -213,7 +230,7 @@ class Dispatcher:
             elif status == "finished":
                 finished.append(fut)
             else:
-                failed.append(fut)
+                failed.append((fut, status))
         if not not_done and not failed:
             return cast("list[dict[str, Any]]", self.client.gather(futures))
         if not_done:
@@ -235,7 +252,9 @@ class Dispatcher:
         results: Dict[Any, Dict[str, Any]] = dict(
             zip(finished, self.client.gather(finished) if finished else [])
         )
-        results.update((fut, _remote_task_failure(fut)) for fut in failed)
+        results.update(
+            (fut, _remote_task_failure(fut, status)) for fut, status in failed
+        )
         return [
             results.get(fut, _wait_timeout_failures(1, wait_timeout)[0])
             for fut in futures
