@@ -455,3 +455,14 @@ docs/cognitive_phenomena/meta-aware-2/verification_report.json
 docs/cognitive_phenomena/meta-aware-2/results/*.pkl
 docs/cognitive_phenomena/meta-aware-2/results/*.json
 docs/cognitive_phenomena/meta-aware-2/figures/*.png
+
+# ============================================================================
+# META-AWARENESS GENERATED PAPER-FIGURE RASTERS (GROMA sibling hygiene, 2026-09-28)
+# ============================================================================
+# The meta-awareness subtree mixes tracked sources (.md/.py doc-stub dirs, code,
+# config) with generated figure rasters: in-repo reproductions of Sandved-Smith
+# et al. (2021) figures computed by run_paper_simulations.py / sandved_smith_2021.py
+# / visualizations.py (fixed seeds), not rasters extracted from the published
+# paper. The pattern here pins the figure-raster class under the figures_fig*
+# doc-stub dirs so they cannot silently return as tracked files.
+docs/cognitive_phenomena/meta-awareness/figures_fig*/*.png
