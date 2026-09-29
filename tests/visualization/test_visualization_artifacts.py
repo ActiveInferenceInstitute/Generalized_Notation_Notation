@@ -290,7 +290,6 @@ class TestBoxplotTickLabels:
         _assert_png_written(tmp_path / "unified_entropy_comparison.png")
 
     def test_render_statistical_plots_written(self, tmp_path: Path) -> None:
-        pytest.importorskip("scipy")
         from gnn.render.visualization_suite import VisualizationSuite
 
         suite = VisualizationSuite(tmp_path, "mpl_compat")
