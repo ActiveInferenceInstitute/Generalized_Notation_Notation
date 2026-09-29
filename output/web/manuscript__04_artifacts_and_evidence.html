@@ -569,7 +569,7 @@ mjx-container[display="true"] {
 <p>This section reports what the project has actually produced and how
 each quantitative claim is grounded. Every number below is substituted
 at render time from the deterministic producer, which reads the
-repository state at commit 13141e9f7, so each figure here is regenerated
+repository state at commit 12d06363a, so each figure here is regenerated
 from the artifacts it describes rather than transcribed.</p>
 <h2 id="model-family-coverage">Model-Family Coverage</h2>
 <p>GNN ships a curated corpus of model families that exercise the
@@ -577,7 +577,7 @@ language across the difficulty gradient from minimal parser fixtures to
 full multi-agent and scaling studies. The manifest registers 9 families
 (basics, discrete, continuous, hierarchical, multiagent, precision,
 structured, gridworld, scaling-study) across 9 target directories, and
-<code>input/gnn_files</code> holds 11 corpus directories containing 32
+<code>input/gnn_files</code> holds 11 corpus directories containing 36
 concrete example models. The three sets are not coextensive, and the
 manuscript does not treat them as one. Registered in no family:
 <code>input/gnn_files/learning</code>,
@@ -591,9 +591,9 @@ to drive, which is what lets the same text model fan out across the
 executable-model leg of the Triple Play [gnn2023]. The families and
 their declared frameworks are enumerated below.</p>
 <p>The exemplar corpus partitions cleanly by model kind, and the
-partition is itself a token: 27 of the 32 example specifications are
+partition is itself a token: 28 of the 36 example specifications are
 discrete-state — the discrete categorical kind and its composed variants
-— and 5 are continuous linear-Gaussian specifications in the continuous
+— and 8 are continuous linear-Gaussian specifications in the continuous
 family folder. The cold-start index
 <code>input/gnn_files/INDEX.md</code> catalogues every exemplar with its
 kind, its task folder, and a suggested reading order, and is the fastest
@@ -712,7 +712,7 @@ declares; the grid is deliberately sparse — most families declare a
 single backend, and only continuous, hierarchical, and gridworld declare
 several. Read it as declared intent, not as profiled outcomes: the gates
 described below supply the outcomes. The matrix is generated from the
-two registries at commit 13141e9f7.</figcaption>
+two registries at commit 12d06363a.</figcaption>
 </figure>
 <p>These families are not illustrative prose: they are the inputs over
 which the parser, the type checker, and the cross-framework code
@@ -766,7 +766,7 @@ is what makes “interchange” a checkable claim rather than a promise.</p>
 <p>The repository’s scale is itself evidence of the surface that the
 gates and pipeline cover, and it is reported in <span class="citation"
 data-cites="fig:repo_metrics">@fig:repo_metrics</span> directly from the
-tracked files at commit 13141e9f7.</p>
+tracked files at commit 12d06363a.</p>
 <figure id="fig:repo_metrics">
 <a class="figure-full-size-link" href="../figures/gnn_repo_metrics.png" target="_blank" rel="noopener" aria-label="Open full-size figure, Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered…"><img src="../figures/gnn_repo_metrics.png" style="width:80.0%"
 alt="Horizontal bar chart on a logarithmic axis of repository-scale counts: pipeline steps, model families, registered backends, execution backends, MCP tools, source packages, test files, example models and documentation files. Each bar is annotated with its exact value; all values come from output/data/manuscript_variables.json." /><span class="figure-full-size-label" aria-hidden="true">Open full-size figure</span></a>
@@ -775,7 +775,7 @@ axis: pipeline steps, model families, registered backends, execution
 backends, Model Context Protocol tools, source packages, test files,
 example models, and documentation files. Every bar is annotated with its
 exact value, and every value is a producer token read from
-<code>output/data/manuscript_variables.json</code> at commit 13141e9f7 —
+<code>output/data/manuscript_variables.json</code> at commit 12d06363a —
 the same token map that substitutes the prose counts, so the figure
 cannot disagree with the text without failing the figure-freshness
 suite. The two backend bars are deliberately distinct: <em>registered
@@ -784,13 +784,13 @@ backends</em> (10) counts render targets, <em>execution backends</em>
 of the surface the pipeline maintains, not as a quality
 measure.</figcaption>
 </figure>
-<p>The test suite comprises 504 test files containing 5408 test
-functions, exercising a source base of 650 Python files across 43
-packages (202612 lines of source). The pipeline’s step modules — the
+<p>The test suite comprises 537 test files containing 5710 test
+functions, exercising a source base of 699 Python files across 43
+packages (208636 lines of source). The pipeline’s step modules — the
 thin orchestrators named in <span class="citation"
 data-cites="tbl:pipeline_steps">[@tbl:pipeline_steps]</span> — number
 25, one per numbered step. The Model Context Protocol surface — which
-exposes GNN’s capabilities to external agents and tools — provides 162
+exposes GNN’s capabilities to external agents and tools — provides 164
 tools across 36 modules. The pipeline itself runs as 25 steps (0–24),
 and 7 figure artifacts from the rendering of figures, models, and
 reports are committed under <code>output/</code>, of which 7 are the

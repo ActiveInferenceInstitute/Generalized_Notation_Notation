@@ -450,7 +450,7 @@ Q(\pi) \;=\; \sigma\!\left(\ln E - G\right)
 }\end{equation}
 
 The discrete categorical kind is the language's original and most
-densely exercised target: 27 of the 32 exemplar specifications in the
+densely exercised target: 28 of the 36 exemplar specifications in the
 corpus are discrete-state. The discrete family folder holds the kind's
 core set --- from minimal \texttt{markov\_chain.md} and
 \texttt{hmm\_baseline.md} fixtures through epistemic planning
@@ -549,7 +549,7 @@ position, and whose control input pushes the believed position toward
 \texttt{goal\_mean} with gain \texttt{control\_gain}. The other
 continuous exemplars are passive: \breaktt{predictive\_coding\_agent.md}
 and \breaktt{stochastic\_dynamics.md} filter without steering. In total
-the corpus ships 5 continuous linear-Gaussian exemplars in the
+the corpus ships 8 continuous linear-Gaussian exemplars in the
 continuous family folder. Symbolically the kind reuses letters the
 discrete vocabulary already claims --- most prominently \texttt{F},
 which names the state-transition matrix here and the variational free
@@ -785,7 +785,7 @@ that produced it and forward to every step that depends on it.
 \begin{frame}[fragile,allowframebreaks]{The Processing Pipeline}
 \begin{figure}
 \centering
-\includegraphics[width=0.9\linewidth,height=0.40\textheight,keepaspectratio,alt={The 25-step GNN processing pipeline as a directed acyclic graph, laid out left to right by topological layer and colored by execution phase (legend, upper right). Each node is the thin step orchestrator under src/gnn/ named in tbl.~; each arrow is a hard data dependency parsed from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, so any artifact can be traced back to the step that produced it. Parsing (Step 3) fans out to nearly every later step, and analysis (Step 16) collects enrichment from execution, visualization, and the LLM step. The figure is generated from src/gnn/STEP\_INDEX.md at commit 13141e9f7; its footer restates the step count, the number of hard dependencies, and the layout rule.}]{../figures/gnn_pipeline_dag.png}
+\includegraphics[width=0.9\linewidth,height=0.40\textheight,keepaspectratio,alt={The 25-step GNN processing pipeline as a directed acyclic graph, laid out left to right by topological layer and colored by execution phase (legend, upper right). Each node is the thin step orchestrator under src/gnn/ named in tbl.~; each arrow is a hard data dependency parsed from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, so any artifact can be traced back to the step that produced it. Parsing (Step 3) fans out to nearly every later step, and analysis (Step 16) collects enrichment from execution, visualization, and the LLM step. The figure is generated from src/gnn/STEP\_INDEX.md at commit 12d06363a; its footer restates the step count, the number of hard dependencies, and the layout rule.}]{../figures/gnn_pipeline_dag.png}
 \caption{The 25-step GNN processing pipeline as a directed acyclic
 graph, laid out left to right by topological layer and colored by
 execution phase (legend, upper right). Each node is the thin step
@@ -796,7 +796,7 @@ parsed from the Data Dependency Graph block of
 back to the step that produced it. Parsing (Step 3) fans out to nearly
 every later step, and analysis (Step 16) collects enrichment from
 execution, visualization, and the LLM step. The figure is generated from
-\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit 13141e9f7; its footer
+\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit 12d06363a; its footer
 restates the step count, the number of hard dependencies, and the layout
 rule.}\label{fig:pipeline}
 \end{figure}
@@ -892,7 +892,7 @@ analysis \& executive reports \\
 \begin{frame}[fragile,allowframebreaks]{The Processing Pipeline}
 This staged design keeps the architecture modular. The implementation is
 organized into 43 source packages, one cluster of responsibilities per
-concern, and is documented across 630 documentation files so that each
+concern, and is documented across 631 documentation files so that each
 step's contract, inputs, and outputs are specified independently of the
 others. New backends or analyses attach to the graph by declaring their
 dependencies rather than by editing a monolith, and the deterministic
@@ -922,7 +922,7 @@ specification at their center.
 \begin{frame}[fragile,allowframebreaks]{The Triple Play}
 \begin{figure}
 \centering
-\includegraphics[width=0.7\linewidth,height=0.40\textheight,keepaspectratio,alt={The Triple Play: one GNN text specification (left) and its three coordinated projections (right) --- the human-readable text form, graphical model visualizations, and executable simulation code. All three arrows originate at the same source box because all three projections are generated from one parsed document, which is why they cannot drift apart; the executable node states that 10 of 10 registered backends run at Step 12 and previews three of them by name. Counts are producer tokens at commit 13141e9f7, and the panel is generated by scripts/manuscript\_fig\_triple\_play.py. Take-away: a model is authored once and then read, seen, and run from that single source.}]{../figures/gnn_triple_play.png}
+\includegraphics[width=0.7\linewidth,height=0.40\textheight,keepaspectratio,alt={The Triple Play: one GNN text specification (left) and its three coordinated projections (right) --- the human-readable text form, graphical model visualizations, and executable simulation code. All three arrows originate at the same source box because all three projections are generated from one parsed document, which is why they cannot drift apart; the executable node states that 10 of 10 registered backends run at Step 12 and previews three of them by name. Counts are producer tokens at commit 12d06363a, and the panel is generated by scripts/manuscript\_fig\_triple\_play.py. Take-away: a model is authored once and then read, seen, and run from that single source.}]{../figures/gnn_triple_play.png}
 \caption{The Triple Play: one GNN text specification (left) and its
 three coordinated projections (right) --- the human-readable text form,
 graphical model visualizations, and executable simulation code. All
@@ -930,7 +930,7 @@ three arrows originate at the same source box because all three
 projections are generated from one parsed document, which is why they
 cannot drift apart; the executable node states that 10 of 10 registered
 backends run at Step 12 and previews three of them by name. Counts are
-producer tokens at commit 13141e9f7, and the panel is generated by
+producer tokens at commit 12d06363a, and the panel is generated by
 \protect\breaktt{scripts/manuscript\_fig\_triple\_play.py}. Take-away: a
 model is authored once and then read, seen, and run from that single
 source.}\label{fig:triple_play}

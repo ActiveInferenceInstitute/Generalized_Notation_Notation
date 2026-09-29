@@ -573,8 +573,8 @@ version control; the generated artifacts it produces are described
 separately so that the boundary between hand-written source and
 reproducible output stays explicit.</p>
 <p>The <code>src/</code> tree is the executable core of GNN. It is
-organized into 43 Python packages spanning 650 source files and roughly
-202612 lines of code. Alongside these packages sit the 25 top-level step
+organized into 43 Python packages spanning 699 source files and roughly
+208636 lines of code. Alongside these packages sit the 25 top-level step
 modules (0–24) that implement the numbered pipeline as thin
 orchestrators delegating into the packages, each module owning one stage
 of the progression from a parsed GNN text model through visualization,
@@ -583,8 +583,8 @@ claim the manuscript makes about pipeline behavior should be traceable
 to one of these step modules rather than to descriptive prose alone.</p>
 <p>The <code>input/</code> tree holds the model corpora that exercise
 the pipeline. Its <code>gnn_files/</code> subtree contains 11 corpus
-directories organized by model family, together totaling 32 example
-files — 27 discrete-state specifications and 5 continuous
+directories organized by model family, together totaling 36 example
+files — 28 discrete-state specifications and 8 continuous
 linear-Gaussian specifications, the partition the manuscript’s
 model-kind accounting uses (<span class="citation"
 data-cites="sec:model_kinds">[@sec:model_kinds]</span>). The cold-start
@@ -592,7 +592,7 @@ index <code>input/gnn_files/INDEX.md</code> catalogues every exemplar
 with its kind and task folder, and the <code>recursive/</code> directory
 is reserved for bounded <code>--autonomous</code> proposal-loop runs,
 holding no committed models. Every model file under <code>input/</code>
-lives in that subtree, so the 32-file count covers the whole tree. A
+lives in that subtree, so the 36-file count covers the whole tree. A
 <code>model_family_manifest.json</code> enumerates the 9 registered
 families and their target directories. This manifest is the
 authoritative registry that downstream steps and the manuscript variable
@@ -609,7 +609,7 @@ values consumed throughout the manuscript. Treating these scripts as the
 source of reproduction commands keeps reported numbers bound to what the
 code actually computes.</p>
 <p>The <code>docs/</code> tree is the prose and reference surface,
-comprising 630 files of specification, tutorial, and design
+comprising 631 files of specification, tutorial, and design
 documentation for the GNN language and its Active Inference grounding
 [gnn2023]. It is the place to verify that a manuscript statement about
 GNN syntax or semantics matches the documented language rather than a

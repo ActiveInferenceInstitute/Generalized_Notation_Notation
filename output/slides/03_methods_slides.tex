@@ -240,7 +240,7 @@ plain-text notation. Parsing (step 3) reads each specification, builds
 an internal model representation, and re-emits it across a family of
 structured export formats so that downstream tools, and human readers,
 can consume the same model through whichever serialization they prefer.
-The corpus that exercises this stage spans 32 example model files
+The corpus that exercises this stage spans 36 example model files
 organized into 11 curated corpora, and it spans the model kinds of
 sec.~3.2: minimal perception fixtures used to test the
 parser, discrete categorical agents, continuous linear-Gaussian
@@ -421,7 +421,7 @@ fig.~6.
 \begin{frame}[fragile,allowframebreaks]{Rendering to Multiple Backends}
 \begin{figure}
 \centering
-\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={The GNN rendering backend registry as a table: one row per registered backend, with its registry key, display name, implementation language, whether a render-output subdirectory exists under src/gnn/render/, and its role in the cross-framework reference comparison. Amber rows are the backends the reliability gate profiles for the continuous family; the tan row (Stan, ngc-learn) is declared by that family but sits outside the maintained set, so it is never profiled; a red Render-Subdir cell would mean a registry entry with no subdirectory. The table is read directly from src/gnn/render/framework\_registry.py and the model-family manifest at commit 13141e9f7, and its footer summarizes the row counts. Take-away: registration, render presence, and profiling status are three different claims, and the table keeps them apart.}]{../figures/gnn_backend_capability_matrix.png}
+\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={The GNN rendering backend registry as a table: one row per registered backend, with its registry key, display name, implementation language, whether a render-output subdirectory exists under src/gnn/render/, and its role in the cross-framework reference comparison. Amber rows are the backends the reliability gate profiles for the continuous family; the tan row (Stan, ngc-learn) is declared by that family but sits outside the maintained set, so it is never profiled; a red Render-Subdir cell would mean a registry entry with no subdirectory. The table is read directly from src/gnn/render/framework\_registry.py and the model-family manifest at commit 12d06363a, and its footer summarizes the row counts. Take-away: registration, render presence, and profiling status are three different claims, and the table keeps them apart.}]{../figures/gnn_backend_capability_matrix.png}
 \caption{The GNN rendering backend registry as a table: one row per
 registered backend, with its registry key, display name, implementation
 language, whether a render-output subdirectory exists under
@@ -432,7 +432,7 @@ declared by that family but sits outside the maintained set, so it is
 never profiled; a red Render-Subdir cell would mean a registry entry
 with no subdirectory. The table is read directly from
 \protect\breaktt{src/gnn/render/framework\_registry.py} and the
-model-family manifest at commit 13141e9f7, and its footer summarizes the
+model-family manifest at commit 12d06363a, and its footer summarizes the
 row counts. Take-away: registration, render presence, and profiling
 status are three different claims, and the table keeps them
 apart.}\label{fig:backend_matrix}
@@ -655,7 +655,7 @@ Auto-Injection}\label{reproducibility-and-auto-injection}
 Auto-Injection}
 Every count reported in this manuscript is emitted by the producer
 \breaktt{scripts/z\_generate\_manuscript\_variables.py} from the
-repository state at commit 13141e9f7, not typed by hand. The producer
+repository state at commit 12d06363a, not typed by hand. The producer
 reads that commit's source surfaces directly --- the step modules, the
 source tree, the model-family manifest, and the framework registry ---
 together with the project's maintained ledgers, notably the Model
@@ -678,7 +678,7 @@ repository state yields the same values, and authors are prohibited from
 hard-coding any number that has a corresponding token. This makes the
 manuscript a faithful, regenerable description of the system it
 documents: when the 25-step pipeline, the 10 rendering backends, or the
-32-file example corpus change --- or when the discrete-to-continuous
+36-file example corpus change --- or when the discrete-to-continuous
 exemplar balance shifts --- the reported numbers change with them on the
 next build, and \breaktt{scripts/check\_manuscript\_tokens.py} fails the
 build if a section reintroduces a literal that a token already owns.

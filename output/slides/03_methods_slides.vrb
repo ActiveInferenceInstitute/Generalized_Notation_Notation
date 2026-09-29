@@ -6,7 +6,7 @@ repository state yields the same values, and authors are prohibited from
 hard-coding any number that has a corresponding token. This makes the
 manuscript a faithful, regenerable description of the system it
 documents: when the 25-step pipeline, the 10 rendering backends, or the
-32-file example corpus change --- or when the discrete-to-continuous
+36-file example corpus change --- or when the discrete-to-continuous
 exemplar balance shifts --- the reported numbers change with them on the
 next build, and \breaktt{scripts/check\_manuscript\_tokens.py} fails the
 build if a section reintroduces a literal that a token already owns.
