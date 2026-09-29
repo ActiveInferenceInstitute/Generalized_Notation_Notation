@@ -46,6 +46,7 @@ CLI_TARGETS: List[str] = [
     "jax_pomdp",
     "pytorch",
     "numpyro",
+    "cpomdp",
     "stan",
 ]
 

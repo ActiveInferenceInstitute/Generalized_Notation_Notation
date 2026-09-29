@@ -34,6 +34,7 @@ ALL_FRAMEWORKS: Final[tuple[str, ...]] = (
     "stan",
     "bnlearn",
     "ngclearn",
+    "cpomdp",
     "lean",
 )
 

@@ -15,7 +15,7 @@ CONTINUOUS_DIR = REPO / "input" / "gnn_files" / "continuous"
 FILES = sorted(CONTINUOUS_DIR.glob("*.md"))
 
 UNSUPPORTED = {"pymdp", "activeinference_jl", "bnlearn", "discopy"}
-SUPPORTED = {"jax", "numpyro", "pytorch", "stan", "rxinfer"}
+SUPPORTED = {"jax", "numpyro", "pytorch", "stan", "rxinfer", "cpomdp"}
 
 
 @pytest.mark.parametrize("path", FILES, ids=[p.stem for p in FILES])
@@ -98,6 +98,7 @@ def test_process_render_counts_unsupported_separately(tmp_path: Path) -> None:
             "pytorch",
             "stan",
             "rxinfer",
+            "cpomdp",
             "discopy",
             "pymdp",
             "activeinference_jl",

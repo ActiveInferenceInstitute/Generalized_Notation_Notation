@@ -66,6 +66,7 @@ _FRAMEWORK_REMEDIATIONS: dict[str, str] = {
     "jax": "Add jax: uv add jax jaxlib",
     "pymdp": "Add pymdp: uv add pymdp",
     "ngclearn": "Add ngclearn: uv sync --extra ngclearn",
+    "cpomdp": "Add cpomdp: uv sync --extra cpomdp",
 }
 
 

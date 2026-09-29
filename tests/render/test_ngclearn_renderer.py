@@ -222,11 +222,12 @@ def test_registry_position_pomdp_config_and_lite_exclusion() -> None:
     from gnn.frameworks import ALL_FRAMEWORKS, LITE_FRAMEWORKS
 
     # Registry order must match ALL_FRAMEWORKS minus the execution-only lean;
-    # ngclearn sits between bnlearn and lean in both.
-    assert list(FRAMEWORK_REGISTRY)[-1] == "ngclearn"
+    # ngclearn follows bnlearn in both, and lean stays last.
+    registry = list(FRAMEWORK_REGISTRY)
+    assert registry.index("ngclearn") == registry.index("bnlearn") + 1
     assert ALL_FRAMEWORKS.count("ngclearn") == 1
     assert ALL_FRAMEWORKS.index("ngclearn") == ALL_FRAMEWORKS.index("bnlearn") + 1
-    assert ALL_FRAMEWORKS.index("lean") == ALL_FRAMEWORKS.index("ngclearn") + 1
+    assert ALL_FRAMEWORKS[-1] == "lean"
     assert "ngclearn" not in LITE_FRAMEWORKS
     configs = get_pomdp_framework_configs()
     assert "ngclearn" in configs  # pomdp_compatible=True joins the loop
