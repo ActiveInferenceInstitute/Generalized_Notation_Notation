@@ -111,6 +111,12 @@ def sklearn_ready() -> bool:
 
 
 @functools.lru_cache(maxsize=1)
+def distributed_ready() -> bool:
+    """dask.distributed is importable (``uv sync --extra scaling``)."""
+    return _module_available("distributed")
+
+
+@functools.lru_cache(maxsize=1)
 def d2_ready() -> bool:
     """The D2 visualizer module is importable."""
     return _module_available("gnn.advanced_visualization.d2_visualizer")
@@ -199,6 +205,10 @@ TOOLCHAIN_MARKERS: dict[str, tuple[Callable[[], bool], str]] = {
     "needs_sklearn": (
         sklearn_ready,
         "scikit-learn is not installed (uv sync --extra ml-ai)",
+    ),
+    "needs_distributed": (
+        distributed_ready,
+        "dask.distributed is not installed (uv sync --extra scaling)",
     ),
     "needs_d2": (d2_ready, "D2 visualizer module is not importable"),
     "needs_d2_cli": (d2_cli_ready, "D2 CLI not available"),

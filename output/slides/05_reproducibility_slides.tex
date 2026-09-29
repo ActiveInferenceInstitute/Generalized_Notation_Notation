@@ -157,6 +157,13 @@
 % no code token overflows the measure, but forbid breaks inside the last
 % \GNNttTail characters (an extension is never orphaned) and inside the first
 % \GNNttHead (a one- or two-letter stub is never left behind).
+% Declarations the template's combined-PDF renderer requires
+% (infrastructure/rendering/_pdf_combined_preamble.py). Absent here, it warns
+% "Preamble is missing declarations required by manuscript content" and
+% appends these exact lines itself; declaring them explicitly silences the
+% warning without changing the typeset document.
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible}
 
 % Slide layout defaults for warning-clean scientific decks.
 \usepackage{etoolbox}
@@ -411,9 +418,9 @@ a missing copy degrades rather than failing the build.
 \begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
 Because the variables file is regenerated before rendering, the counts
 in the rendered PDF track the repository state at the commit recorded in
-\breaktt{output/data/manuscript\_variables.json} (12d06363a): a code
+\breaktt{output/data/manuscript\_variables.json} (e48d4ee5d): a code
 change that alters, for example, the test inventory (537 test files,
-5710 test functions) propagates into the prose on the next regeneration
+5715 test functions) propagates into the prose on the next regeneration
 without any manual editing.
 \end{frame}
 
