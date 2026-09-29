@@ -125,6 +125,36 @@ def test_gridworld_animation_suite_and_manifest(tmp_path: Any) -> None:
     assert "jax_dashboard" not in manifest_outputs
 
 
+def test_gridworld_manifest_flags_missing_matrix_provenance(tmp_path: Any) -> None:
+    """A payload lacking matrix_provenance fails the strict equality fold."""
+    from gnn.analysis.visualizations import write_gridworld_analysis_manifest
+
+    execution_dir = tmp_path / "12_execute_output"
+    analysis_dir = tmp_path / "16_analysis_output"
+    for framework, schema_version in (
+        ("pymdp", "pymdp_simulation_v1"),
+        ("numpyro", "numpyro_simulation_v1"),
+    ):
+        payload = _gridworld_payload(schema_version, framework)
+        if framework == "numpyro":
+            del payload["matrix_provenance"]
+        sim_dir = execution_dir / "pomdp_gridworld_3x3" / framework / "simulation_data"
+        sim_dir.mkdir(parents=True)
+        (sim_dir / "simulation_results.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    manifest_path = write_gridworld_analysis_manifest(
+        execution_dir,
+        analysis_dir,
+        allowed_frameworks={"pymdp", "numpyro"},
+        allowed_model_names={"pomdp_gridworld_3x3"},
+    )
+    assert manifest_path is not None
+    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    assert manifest["matrix_provenance_equal"] is False
+
+
 class TestAnalysisOverall:
     """Test suite for Analysis module."""
 

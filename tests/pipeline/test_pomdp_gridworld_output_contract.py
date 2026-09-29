@@ -175,3 +175,54 @@ def test_pomdp_gridworld_output_contract_rejects_missing_render_target(
 
     assert not report.ok
     assert any("all render targets" in error for error in report.errors)
+
+
+def _mutate_analysis_manifest(root: Path, mutate: Any) -> None:
+    manifest_path = (
+        root
+        / "16_analysis_output"
+        / "cross_framework"
+        / "gridworld_analysis_manifest.json"
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    mutate(manifest)
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+
+def test_pomdp_gridworld_output_contract_accepts_strict_targets_plus_extra(
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    _minimal_valid_output_tree(tmp_path)
+    _mutate_analysis_manifest(
+        tmp_path,
+        lambda manifest: manifest.update(
+            frameworks=sorted([*checker.STRICT_EXECUTION_TARGETS, "numpyro"])
+        ),
+    )
+
+    report = checker.validate_output_tree(tmp_path)
+
+    assert report.ok, report.errors
+    assert "analysis outputs" in report.checked
+
+
+def test_pomdp_gridworld_output_contract_rejects_missing_strict_target(
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    _minimal_valid_output_tree(tmp_path)
+    _mutate_analysis_manifest(
+        tmp_path,
+        lambda manifest: manifest.update(
+            frameworks=sorted(
+                target
+                for target in [*checker.STRICT_EXECUTION_TARGETS, "numpyro"]
+                if target != "rxinfer"
+            ),
+        ),
+    )
+    report = checker.validate_output_tree(tmp_path)
+
+    assert not report.ok
+    assert any("rxinfer" in error for error in report.errors)
