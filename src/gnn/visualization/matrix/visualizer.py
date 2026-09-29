@@ -534,6 +534,13 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                 safe_dpi = 96  # Use a very safe, low DPI to prevent overflow
                 fig.set_dpi(safe_dpi)
             except Exception:
+                logger.exception(
+                    "Could not create POMDP transition analysis figure for %s "
+                    "(tensor shape %s)",
+                    output_path,
+                    tensor.shape,
+                )
+                plt.close("all")
                 return False
 
             # Use a simpler approach without gridspec
@@ -749,7 +756,9 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                         fig.set_size_inches(*size)
                     plt.savefig(output_path, **kwargs)
                     break
-                except (RuntimeError, OSError, ValueError) as save_error:
+                # TypeError: an oversized Agg canvas raises it from the
+                # RendererAgg constructor, so it must reach the smaller fallbacks.
+                except (RuntimeError, OSError, ValueError, TypeError) as save_error:
                     last_error = save_error
                     continue
             else:

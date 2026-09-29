@@ -329,10 +329,13 @@ def create_visualizations_from_structured_data(
 
             # Add count labels
             for bar, count in zip(bars, counts):
-                ax1.text(
-                    bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() + 0.3,
+                # Offset in points, not data units, so the label gap is
+                # independent of the count scale.
+                ax1.annotate(
                     str(count),
+                    (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                    xytext=(0, 3),
+                    textcoords="offset points",
                     ha="center",
                     va="bottom",
                     fontweight="bold",
@@ -570,10 +573,13 @@ def create_jax_visualizations(
 
             # Add count labels on bars
             for bar, count in zip(bars, action_counts.values()):
-                ax.text(
-                    bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() + 0.5,
+                # Offset in points, not data units, so the label gap is
+                # independent of the count scale.
+                ax.annotate(
                     str(count),
+                    (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                    xytext=(0, 3),
+                    textcoords="offset points",
                     ha="center",
                     va="bottom",
                     fontweight="bold",
