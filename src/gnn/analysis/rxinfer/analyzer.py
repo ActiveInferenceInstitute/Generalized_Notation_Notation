@@ -497,18 +497,35 @@ def generate_analysis_from_logs(
                         )
                         visualizations.extend(viz_files)
 
-                        # D7: also produce an animated GIF alongside the PNGs.
+                        # D7: also produce an animated GIF alongside the PNGs;
+                        # multi-agent results get one GIF per agent.
                         try:
-                            from .gif_animator import generate_gif_animation
+                            from .gif_animator import (
+                                generate_gif_animation,
+                                per_agent_views,
+                            )
 
-                            gif_path: Path = output_dir / (
-                                f"{model_name}_rxinfer_animation.gif"
+                            agent_views = per_agent_views(data)
+                            gif_jobs = (
+                                [
+                                    (
+                                        view,
+                                        f"{model_name}_{agent}",
+                                    )
+                                    for agent, view in agent_views.items()
+                                ]
+                                if agent_views
+                                else [(data, model_name)]
                             )
-                            gif_file = generate_gif_animation(
-                                data, gif_path, model_name=model_name
-                            )
-                            if gif_file:
-                                visualizations.append(gif_file)
+                            for gif_data, gif_label in gif_jobs:
+                                gif_path: Path = output_dir / (
+                                    f"{gif_label}_rxinfer_animation.gif"
+                                )
+                                gif_file = generate_gif_animation(
+                                    gif_data, gif_path, model_name=gif_label
+                                )
+                                if gif_file:
+                                    visualizations.append(gif_file)
                         except Exception as e:
                             logger.warning(
                                 f"GIF generation failed for {model_name}: {e}"

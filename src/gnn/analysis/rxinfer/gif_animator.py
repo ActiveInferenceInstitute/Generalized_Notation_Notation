@@ -349,6 +349,45 @@ def _draw_graph_model(
         )
 
 
+_BY_AGENT_SUFFIX = "_by_agent"
+
+
+def per_agent_views(data: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """Split a multi-agent RxInfer result into one single-agent view per agent.
+
+    Multi-agent runs store every trace as ``<series>_by_agent[agent]``
+    (``beliefs_by_agent``, ``actions_by_agent``, ...), which the single-agent
+    animator cannot read. Each view maps those series back onto the
+    single-agent keys and keeps the shared top-level fields. Joint
+    ``model_parameters.state_factors`` describe the whole system, not one
+    agent, so they are dropped from the per-agent view. Returns ``{}`` for
+    single-agent results.
+    """
+    if data.get("beliefs") or not isinstance(data.get("beliefs_by_agent"), dict):
+        return {}
+    series = {
+        key[: -len(_BY_AGENT_SUFFIX)]: value
+        for key, value in data.items()
+        if key.endswith(_BY_AGENT_SUFFIX) and isinstance(value, dict)
+    }
+    shared = {
+        key: value for key, value in data.items() if not key.endswith(_BY_AGENT_SUFFIX)
+    }
+    params = shared.get("model_parameters")
+    if isinstance(params, dict):
+        shared["model_parameters"] = {
+            key: value for key, value in params.items() if key != "state_factors"
+        }
+    views: Dict[str, Dict[str, Any]] = {}
+    for agent in data["beliefs_by_agent"]:
+        view = dict(shared)
+        for name, by_agent in series.items():
+            if agent in by_agent:
+                view[name] = by_agent[agent]
+        views[str(agent)] = view
+    return views
+
+
 def generate_gif_animation(
     data: Dict[str, Any],
     output_path: Path,
