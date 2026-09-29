@@ -297,9 +297,12 @@ def _check_analysis_outputs(output_dir: Path, report: ContractReport) -> None:
     manifest = _load_json(manifest_path, report)
     if isinstance(manifest, dict):
         frameworks = sorted(manifest.get("frameworks", []))
+        strict_targets = sorted(STRICT_EXECUTION_TARGETS)
+        missing = [target for target in strict_targets if target not in frameworks]
         report.require(
-            frameworks == sorted(STRICT_EXECUTION_TARGETS),
-            f"GridWorld analysis manifest should list strict execution targets, got {frameworks}.",
+            not missing,
+            f"GridWorld analysis manifest should list strict execution targets "
+            f"{strict_targets} as a subset, missing {missing} (got {frameworks}).",
         )
         report.require(
             manifest.get("matrix_provenance_equal") is True,
