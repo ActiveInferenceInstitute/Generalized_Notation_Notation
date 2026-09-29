@@ -683,14 +683,19 @@ class TestInProcessForceKill:
         step_result = execute_step_in_process(
             "3_gnn.py", _pipeline_args(tmp_path), LOGGER, timeout_seconds=1
         )
+        # The marker is written when the step returns, so the artifact must
+        # already exist then; a worker thread scheduled too late to write it
+        # inside the timeout window fails here, not as a misleading
+        # possibly_partial mismatch below.
+        assert artifact_written.is_set(), (
+            "writing_hang did not write its partial artifact before the "
+            "timeout expired (worker thread scheduled late)"
+        )
         assert step_result["force_killed"] is True
 
         step_output = tmp_path / "3_gnn_output"
         artifact = step_output / "partial_artifact.txt"
         marker = step_output / ".gnn_step_timed_out"
-        assert artifact_written.wait(timeout=10), (
-            "writing_hang was force-killed before writing the partial artifact"
-        )
         assert artifact.is_file()
         assert artifact.read_text(encoding="utf-8") == "mid-write"
         payload = json.loads(marker.read_text(encoding="utf-8"))

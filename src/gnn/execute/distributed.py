@@ -178,8 +178,13 @@ class Dispatcher:
                 dask_wait(futures, timeout=wait_timeout)
         except TimeoutError:
             pass
-        done = [fut for fut in futures if fut.status != "pending"]
-        not_done = [fut for fut in futures if fut.status == "pending"]
+        # Read each future's status exactly once: a future that finishes
+        # mid-classification must land in exactly one bucket, never in neither
+        # (which would drop its result without cancelling it).
+        done: List[Any] = []
+        not_done: List[Any] = []
+        for fut in futures:
+            (not_done if fut.status == "pending" else done).append(fut)
         if not not_done:
             return cast("list[dict[str, Any]]", self.client.gather(futures))
         logger.warning(
