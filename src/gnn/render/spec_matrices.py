@@ -100,18 +100,21 @@ def format_array_literal(
 ) -> str:
     """Format a numpy array as a ``<prefix>(...)`` code literal.
 
-    1-D and 2-D arrays render with 6-decimal floats and matching indentation;
-    higher-rank arrays fall back to ``arr.tolist()``. *suffix* is appended
+    1-D and 2-D arrays render with round-trip (``repr``) floats and matching
+    indentation, so a normalized distribution stays normalized in the generated
+    code (6-decimal rounding turned a uniform ``1/3`` prior into a vector summing
+    to 0.999999, which NumPyro's simplex validation rejects); higher-rank arrays
+    fall back to ``arr.tolist()``. *suffix* is appended
     inside the parentheses (e.g. ``", dtype=torch.float64"``).
     """
     body_prefix = " " * indent
     if arr.ndim == 1:
-        vals = ", ".join(f"{v:.6f}" for v in arr)
+        vals = ", ".join(repr(float(v)) for v in arr)
         return f"{prefix}([{vals}]{suffix})"
     if arr.ndim == 2:
         rows = []
         for row in arr:
-            vals = ", ".join(f"{v:.6f}" for v in row)
+            vals = ", ".join(repr(float(v)) for v in row)
             rows.append(f"{body_prefix}    [{vals}]")
         inner = ",\n".join(rows)
         return f"{prefix}([\n{inner}\n{body_prefix}]{suffix})"

@@ -10,6 +10,9 @@ from gnn.execute.metadata import _load_rxinfer_execution_metadata_from_script
 from gnn.utils.runtime_safety.framework_availability import (
     FRAMEWORK_IMPORT_CHECK as _FRAMEWORK_IMPORT_CHECK,
 )
+from gnn.utils.runtime_safety.framework_availability import (
+    last_unavailable_status as _last_unavailable_status,
+)
 
 
 def _is_python_framework_dependency_available(
@@ -83,16 +86,28 @@ def _make_skipped_result(
     executor: str,
     logger: Any,
 ) -> Dict[str, Any]:
-    """Build an execution result dict for a script skipped due to missing dependency."""
+    """Build an execution result dict for a script skipped on a dependency pre-flight.
+
+    The reason comes from the probe's last negative diagnosis for this
+    ``(framework, executor)`` (module missing, interpreter too old, toolchain
+    probe failed, or probe timed out); without one it falls back to the
+    generic "Dependency not installed" wording.
+    """
     module_name, install_hint = _FRAMEWORK_IMPORT_CHECK.get(framework, ("", ""))
     reason = (
         f"Dependency not installed: {module_name}"
         if module_name
         else "Dependency not installed"
     )
+    skip_category = "missing_module"
+    diagnosis = _last_unavailable_status(framework, executor)
+    if diagnosis is not None and diagnosis.reason:
+        reason = diagnosis.reason
+        install_hint = diagnosis.install_hint or install_hint
+        skip_category = diagnosis.skip_category or skip_category
     if install_hint and not logger.isEnabledFor(logging.DEBUG):
         logger.info(
-            f"Skipping {script_info['name']} ({framework}): {module_name} not installed. Install with: {install_hint}"
+            f"Skipping {script_info['name']} ({framework}): {reason}. Install with: {install_hint}"
         )
     envelope = _base_execution_envelope(
         script_path=str(script_info["path"]),
@@ -105,6 +120,7 @@ def _make_skipped_result(
     )
     envelope["error"] = reason
     envelope["error_type"] = "DependencyNotInstalled"
+    envelope["skip_category"] = skip_category
     envelope["execution_metadata"] = (
         _load_rxinfer_execution_metadata_from_script(Path(script_info["path"]))
         if framework == "rxinfer"

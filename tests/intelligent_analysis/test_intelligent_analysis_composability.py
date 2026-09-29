@@ -8,6 +8,7 @@ Unit tests for the intelligent_analysis composability surface added in the
 All tests are pure (no network, no LLM, no pipeline execution).
 """
 
+import json
 import logging
 import sys
 from pathlib import Path
@@ -232,6 +233,26 @@ class TestResolveHelpers:
         parent_summary.parent.mkdir()
         parent_summary.write_text("{}")
         assert resolve_pipeline_summary_path(child) == parent_summary
+
+    @pytest.mark.unit
+    def test_current_run_preliminary_summary_wins(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Step 24 runs before the final summary exists; a final summary on disk
+        # is the previous run's, so the current run's preliminary must win.
+        summary_dir = tmp_path / "00_pipeline_summary"
+        summary_dir.mkdir()
+        (summary_dir / "pipeline_execution_summary.json").write_text(
+            json.dumps({"run_id": "previous"})
+        )
+        prelim = summary_dir / "preliminary_summary.json"
+        prelim.write_text(json.dumps({"run_id": "current"}))
+        monkeypatch.setenv("GNN_RUN_ID", "current")
+        assert resolve_pipeline_summary_path(tmp_path) == prelim
+        monkeypatch.setenv("GNN_RUN_ID", "another-run")
+        assert resolve_pipeline_summary_path(tmp_path) == (
+            summary_dir / "pipeline_execution_summary.json"
+        )
 
     @pytest.mark.unit
     def test_output_dir_passthrough_when_named_for_step(self, tmp_path: Path) -> None:

@@ -420,8 +420,10 @@ def _check_training_dependencies(ml_results: dict[str, Any]) -> bool:
 
 def _discover_gnn_files(target_dir: Path, recursive: bool) -> list[Path]:
     """Return the sorted GNN markdown files under ``target_dir``."""
+    from gnn.processing.discovery import is_model_source_path
+
     discovery = target_dir.rglob("*.md") if recursive else target_dir.glob("*.md")
-    return sorted(discovery)
+    return sorted(path for path in discovery if is_model_source_path(path))
 
 
 def _collect_features(

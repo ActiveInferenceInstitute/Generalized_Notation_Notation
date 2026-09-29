@@ -127,7 +127,7 @@ class TestExtractAbcdMatrices:
 class TestFormatArrayLiteral:
     def test_one_dimensional(self) -> None:
         out = format_array_literal(np.array([0.5, 0.25]), prefix="jnp.array")
-        assert out == "jnp.array([0.500000, 0.250000])"
+        assert out == "jnp.array([0.5, 0.25])"
 
     def test_two_dimensional_with_suffix_and_indent(self) -> None:
         out = format_array_literal(
@@ -136,11 +136,20 @@ class TestFormatArrayLiteral:
             suffix=", dtype=torch.float64",
             indent=2,
         )
-        assert out == (
-            "torch.tensor([\n      [1.000000, 2.000000]\n  ], dtype=torch.float64)"
-        )
+        assert out == ("torch.tensor([\n      [1.0, 2.0]\n  ], dtype=torch.float64)")
         assert out.startswith("torch.tensor([")
         assert out.endswith("dtype=torch.float64)")
+
+    def test_normalized_distribution_round_trips_to_a_simplex(self) -> None:
+        # Uniform priors over 3 and 256 states must still sum to 1 once the
+        # literal is evaluated: 6-decimal rounding produced 0.999999 / 0.999936,
+        # which NumPyro's Categorical rejected at run time.
+        for n in (3, 256):
+            arr = np.full(n, 1.0 / n)
+            out = format_array_literal(arr, prefix="list")
+            values = eval(out)  # nosec B307 - literal produced by the formatter
+            assert abs(sum(values) - 1.0) < 1e-12
+            assert values == arr.tolist()
 
     def test_three_dimensional_falls_back_to_repr(self) -> None:
         arr = np.ones((1, 1, 1))

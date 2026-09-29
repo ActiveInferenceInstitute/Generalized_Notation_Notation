@@ -453,37 +453,76 @@ def _global_steps_skip_note(
     return None
 
 
+MATRIX_EXCLUDED_FOLDERS = frozenset({"archived_gnn_files"})
+
+
+def matrix_target_folders(
+    step_num: int,
+    target_dir: Path,
+    testing_matrix: Optional[Dict[str, Any]],
+    *,
+    recursive: bool = True,
+) -> list[Path]:
+    """Return the subfolders the testing matrix routes *step_num* to, one run each.
+
+    An empty list means "run once on *target_dir*". That is also the answer
+    when routing would be uniform — every eligible subfolder gets the step, the
+    run is recursive, and no excluded folder exists — because one recursive
+    root run then covers exactly the same models. Forking per folder in that
+    case only re-ran each step N times over one shared output directory: each
+    folder's Step 3 run overwrote the parse results Steps 5-11 read (so Step 9
+    and the Step 20 site covered only the last folder), and Step 16
+    re-analysed every model's execution results on every pass.
+    """
+    if not isinstance(testing_matrix, dict) or not testing_matrix.get("enabled"):
+        return []
+    if step_num < 3:
+        return []
+    if not (target_dir.exists() and target_dir.is_dir()):
+        return []
+    folders_config: Dict[str, Any] = testing_matrix.get("folders") or {}
+    default_steps: list[int] = testing_matrix.get("default_steps") or []
+    eligible: list[Path] = []
+    selected: list[Path] = []
+    excluded_present = False
+    for item in sorted(target_dir.iterdir()):
+        if not item.is_dir():
+            continue
+        if item.name in MATRIX_EXCLUDED_FOLDERS:
+            excluded_present = True
+            continue
+        eligible.append(item)
+        allowed_steps = folders_config.get(item.name, default_steps) or []
+        if step_num in allowed_steps:
+            selected.append(item)
+    if recursive and not excluded_present and len(selected) == len(eligible):
+        return []
+    return selected
+
+
 def _matrix_dispatch_active(
     stem: str, args: Any, pipeline_config: Optional[Dict[str, Any]]
 ) -> bool:
     """Mirror execute_pipeline_step's per-folder dispatch condition.
 
-    The subprocess path forks one run per target subfolder only when the
-    testing matrix is enabled and at least one subfolder allows this step;
-    flat target dirs run standard mode and stay consolidated-eligible.
+    True only when :func:`matrix_target_folders` returns folders to fork;
+    flat target dirs and uniform matrices run standard mode and stay
+    consolidated-eligible.
     """
     if not pipeline_config:
-        return False
-    matrix = pipeline_config.get("testing_matrix", {})
-    if not isinstance(matrix, dict) or not matrix.get("enabled", False):
         return False
     try:
         step_num = int(stem.split("_")[0])
     except ValueError:
         return False
-    if step_num < 3:  # execute_pipeline_step computes folders only for >= 3
-        return False
-    target_dir = Path(args.target_dir)
-    if not (target_dir.exists() and target_dir.is_dir()):
-        return False
-    folders_config = matrix.get("folders", {})
-    default_steps = matrix.get("default_steps", [])
-    for item in target_dir.iterdir():
-        if item.is_dir() and item.name != "archived_gnn_files":
-            allowed_steps = folders_config.get(item.name, default_steps)
-            if step_num in allowed_steps:
-                return True
-    return False
+    return bool(
+        matrix_target_folders(
+            step_num,
+            Path(args.target_dir),
+            pipeline_config.get("testing_matrix", {}),
+            recursive=bool(getattr(args, "recursive", True)),
+        )
+    )
 
 
 def can_execute_in_process(

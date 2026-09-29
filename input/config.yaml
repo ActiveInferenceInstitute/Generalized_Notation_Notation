@@ -28,8 +28,12 @@ pipeline:
 
   # Timeout settings (in seconds)
   timeout:
-    step: 3600 # 1 hour per step
-    total: 7200 # 2 hours total
+    # Documentation only: per-step timeouts come from
+    # src/gnn/pipeline/step_timeouts.py (override with GNN_STEP_TIMEOUT_<N>).
+    step: 3600
+    # Enforced: steps starting after this budget are recorded SKIPPED and every
+    # step timeout is capped at the remaining budget.
+    total: 7200
 
 # Step 1 defaults (read by main.py → 1_setup). CLI flags override these when present.
 setup:

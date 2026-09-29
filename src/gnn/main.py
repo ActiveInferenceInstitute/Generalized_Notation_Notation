@@ -131,6 +131,10 @@ from gnn.pipeline.run_session_wiring import (  # noqa: E402
 from gnn.pipeline.step_registry import (
     PIPELINE_STEPS_TUPLE as PIPELINE_STEPS,  # noqa: E402
 )
+from gnn.pipeline.step_timeouts import (  # noqa: E402
+    PIPELINE_DEADLINE_ENV,
+    pipeline_budget_remaining,
+)
 from gnn.pipeline.summary_wiring import (  # noqa: E402
     CRITICAL_SCRIPTS,  # noqa: F401
     _consolidated_step_selected,
@@ -636,13 +640,9 @@ def _write_preliminary_pipeline_summary(
     """Write a current-run summary for report and intelligent-analysis steps."""
     try:
         prelim_summary = dict(pipeline_summary)
-        prelim_end = datetime.now()
-        prelim_start = datetime.fromisoformat(prelim_summary["start_time"])
-        prelim_summary["end_time"] = prelim_end.isoformat()
-        prelim_summary["total_duration_seconds"] = (
-            prelim_end - prelim_start
-        ).total_seconds()
-        prelim_summary["overall_status"] = "SUCCESS"
+        # Same end-time/duration/status rules as the final summary, so step 24
+        # never analyses a run that failed as if it had succeeded.
+        _finalize_pipeline_summary(prelim_summary)
         prelim_summary["preliminary"] = True
 
         prelim_path = output_dir / "00_pipeline_summary" / "preliminary_summary.json"
@@ -735,8 +735,13 @@ def _execute_pipeline_iteration(
 
     session = mark_units_running_guarded(session, [script_name], args, logger)
 
-    step_result: dict[str, Any] = _execute_selected_step(
-        script_name, args, pipeline_summary, logger
+    deadline_skip = _deadline_skip_result()
+    if deadline_skip is not None:
+        logger.warning(f"⏱️ {script_name}: {deadline_skip['skip_reason']}")
+    step_result: dict[str, Any] = (
+        deadline_skip
+        if deadline_skip is not None
+        else _execute_selected_step(script_name, args, pipeline_summary, logger)
     )
     step_duration = time.time() - step_start_time
     step_end_datetime = datetime.now()
@@ -772,6 +777,7 @@ def main(
     """
     with _run_environment_lock:
         incoming_run_id = os.environ.get("GNN_RUN_ID")
+        incoming_deadline = os.environ.get(PIPELINE_DEADLINE_ENV)
         os.environ["GNN_RUN_ID"] = incoming_run_id or uuid.uuid4().hex
         try:
             return _run_pipeline(override_args, override_config)
@@ -780,6 +786,53 @@ def main(
                 os.environ.pop("GNN_RUN_ID", None)
             else:
                 os.environ["GNN_RUN_ID"] = incoming_run_id
+            if incoming_deadline is None:
+                os.environ.pop(PIPELINE_DEADLINE_ENV, None)
+            else:
+                os.environ[PIPELINE_DEADLINE_ENV] = incoming_deadline
+
+
+def _arm_pipeline_deadline(
+    config_pipeline_settings: dict[Any, Any], logger: logging.Logger
+) -> None:
+    """Arm ``GNN_PIPELINE_DEADLINE`` from ``pipeline.timeout.total``.
+
+    An already-armed deadline (an enclosing run) wins. Step timeouts are then
+    capped at the remaining budget and steps that would start after it are
+    recorded as SKIPPED instead of run.
+    """
+    if os.environ.get(PIPELINE_DEADLINE_ENV):
+        return
+    timeout_cfg = config_pipeline_settings.get("timeout")
+    total = timeout_cfg.get("total") if isinstance(timeout_cfg, dict) else None
+    if isinstance(total, bool) or not isinstance(total, (int, float)) or total <= 0:
+        return
+    os.environ[PIPELINE_DEADLINE_ENV] = str(time.time() + float(total))
+    logger.info(f"Pipeline total timeout armed: {total}s (pipeline.timeout.total)")
+
+
+def _deadline_skip_result() -> Optional[dict[str, Any]]:
+    """Return a SKIPPED step result when the pipeline deadline has passed."""
+    remaining = pipeline_budget_remaining()
+    if remaining is None or remaining > 0:
+        return None
+    reason = (
+        "Skipped: pipeline total timeout (pipeline.timeout.total) exhausted "
+        f"{-remaining:.0f}s ago"
+    )
+    return {
+        "status": "SKIPPED",
+        "stdout": reason + "\n",
+        "stderr": "",
+        "memory_usage_mb": 0.0,
+        "peak_memory_mb": 0.0,
+        "memory_delta_mb": 0.0,
+        "exit_code": 0,
+        "retry_count": 0,
+        "prerequisite_check": True,
+        "dependency_warnings": [],
+        "skip_reason": reason,
+    }
 
 
 def _run_pipeline(
@@ -799,6 +852,8 @@ def _run_pipeline(
         ) = _prepare_pipeline_context(override_args, override_config)
     except Exception as e:
         return _fail_pipeline_startup(e)
+
+    _arm_pipeline_deadline(config_pipeline_settings, logger)
 
     if getattr(args, "autonomous", False):
         from gnn.pipeline.autonomous import run_autonomous_proposal_loop

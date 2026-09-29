@@ -349,3 +349,49 @@ def test_multiple_frames(tmp_path: Path) -> None:
     assert output.exists()
     # A GIF with 15 frames at 4fps should be at least 10KB
     assert output.stat().st_size > 10000
+
+
+def _build_multi_agent_results(
+    agents: tuple[str, ...] = ("agent1", "agent2"),
+) -> dict[str, Any]:
+    """Multi-agent schema: every trace is keyed ``<series>_by_agent[agent]``."""
+    single = _build_synthetic_results()
+    series = (
+        "beliefs",
+        "observations",
+        "true_states",
+        "actions",
+        "vfe_per_iteration",
+        "efe_per_action",
+        "policy_posterior",
+    )
+    multi: dict[str, Any] = {
+        key: value for key, value in single.items() if key not in series
+    }
+    multi["model_kind"] = "multi_agent"
+    multi["agents"] = list(agents)
+    multi["model_parameters"] = {"state_factors": [{"name": "joint", "size": 9}]}
+    for name in series:
+        multi[f"{name}_by_agent"] = dict.fromkeys(agents, single[name])
+    return multi
+
+
+def test_multi_agent_results_yield_one_gif_per_agent(tmp_path: Path) -> None:
+    """Multi-agent RxInfer results used to log "No beliefs found" and skip the GIF."""
+    from gnn.analysis.rxinfer.gif_animator import per_agent_views
+
+    results = _build_multi_agent_results()
+    assert generate_gif_animation(results, tmp_path / "joint.gif", "Swarm") == ""
+    views = per_agent_views(results)
+    assert list(views) == ["agent1", "agent2"]
+    for agent, view in views.items():
+        assert view["beliefs"] == results["beliefs_by_agent"][agent]
+        assert "state_factors" not in view["model_parameters"]
+        path = generate_gif_animation(view, tmp_path / f"{agent}.gif", agent)
+        assert path and Path(path).read_bytes()[:6] in (b"GIF87a", b"GIF89a")
+
+
+def test_single_agent_results_have_no_agent_views() -> None:
+    from gnn.analysis.rxinfer.gif_animator import per_agent_views
+
+    assert per_agent_views(_build_synthetic_results()) == {}

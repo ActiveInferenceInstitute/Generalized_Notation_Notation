@@ -33,10 +33,10 @@ def _get_llm_config() -> dict:
         if os.getenv("GNN_TESTING_NO_LLM_CONFIG"):
             return {}
 
-        # Resolve input/config.yaml relative to project root (src/../input/config.yaml)
-        config_path = (
-            Path(__file__).resolve().parent.parent.parent / "input" / "config.yaml"
-        )
+        # Repo root is parents[3] of src/gnn/llm/processor.py; parents[2] is
+        # src/, which silently dropped every ``llm:`` setting (model,
+        # max_files, timeouts) after the move under src/gnn/.
+        config_path = Path(__file__).resolve().parents[3] / "input" / "config.yaml"
         if config_path.exists():
             if yaml is None:
                 _logger.debug(
@@ -718,7 +718,13 @@ async def _process_llm_async(
         failed_auth_providers: set[Any] = set()
 
         # Find GNN files (recursive to handle subdirectory structure)
-        discovered_gnn_files = sorted(target_dir.rglob("*.md"), key=_llm_file_sort_key)
+        # README/AGENTS/INDEX etc. are documentation, not models.
+        from gnn.processing.discovery import is_model_source_path
+
+        discovered_gnn_files = sorted(
+            (path for path in target_dir.rglob("*.md") if is_model_source_path(path)),
+            key=_llm_file_sort_key,
+        )
         max_files = _resolve_llm_max_files(kwargs, llm_config)
         gnn_files = (
             discovered_gnn_files[:max_files]

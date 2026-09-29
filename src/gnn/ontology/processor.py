@@ -422,7 +422,13 @@ def process_ontology(
             if recursive is True
             else Path(target_dir).glob("*.md")
         )
-        gnn_files = sorted(discovery) if results["success"] else []
+        from gnn.processing.discovery import is_model_source_path
+
+        gnn_files = (
+            sorted(path for path in discovery if is_model_source_path(path))
+            if results["success"]
+            else []
+        )
         results["processed_files"] = len(gnn_files)
         for gnn_file in gnn_files:
             relative_file = gnn_file.relative_to(Path(target_dir))
