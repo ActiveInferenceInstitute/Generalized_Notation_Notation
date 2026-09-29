@@ -375,7 +375,8 @@ def test_dask_dispatch_without_distributed_applies_configured_retries(
 @pytest.fixture
 def dask_client() -> Any:
     """In-process Dask client that is deliberately NOT the global default."""
-    distributed = pytest.importorskip("distributed")
+    import distributed
+
     cluster = distributed.LocalCluster(
         n_workers=1,
         threads_per_worker=2,
@@ -391,6 +392,7 @@ def dask_client() -> Any:
         cluster.close()
 
 
+@pytest.mark.needs_distributed
 def test_dask_dispatch_applies_configured_retries(dask_client: Any) -> None:
     from gnn.execute.distributed import Dispatcher
 
@@ -421,6 +423,7 @@ def test_dask_dispatch_applies_configured_retries(dask_client: Any) -> None:
     assert [item["timeout"] for item in submitted] == [1, 1]
 
 
+@pytest.mark.needs_distributed
 def test_dask_dispatch_reports_wait_timeout_as_failure(
     dask_client: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
