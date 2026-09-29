@@ -160,6 +160,67 @@ class TestNumPyroRenderer:
         code = output.read_text(encoding="utf-8")
         assert "numpyro_simulation_v1" in code
 
+    def test_numpyro_emits_spec_matrix_provenance(self, tmp_path: Path) -> None:
+        """Generated code carries the spec's matrix_provenance verbatim."""
+        import ast
+
+        from gnn.render.numpyro.numpyro_renderer import render_gnn_to_numpyro
+
+        output = tmp_path / "numpyro_provenance.py"
+        spec = _small_gnn_spec()
+        spec["matrix_provenance"] = {
+            "B": {"canonical_order": "next_state_previous_state_action"}
+        }
+
+        success, message, _ = render_gnn_to_numpyro(spec, output)
+
+        assert success, message
+        code = output.read_text(encoding="utf-8")
+        tree = ast.parse(code)  # raises SyntaxError on malformed emission
+        results_dict = next(
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Assign)
+            and any(getattr(target, "id", None) == "results" for target in node.targets)
+        ).value
+        assert isinstance(results_dict, ast.Dict)
+        provenance_node = next(
+            value
+            for key, value in zip(results_dict.keys, results_dict.values)
+            if isinstance(key, ast.Constant) and key.value == "matrix_provenance"
+        )
+        assert ast.literal_eval(provenance_node) == {
+            "B": {"canonical_order": "next_state_previous_state_action"}
+        }
+
+    def test_numpyro_defaults_matrix_provenance_to_empty_dict(
+        self, tmp_path: Path
+    ) -> None:
+        """Specs without matrix_provenance still emit the key as {}."""
+        import ast
+
+        from gnn.render.numpyro.numpyro_renderer import render_gnn_to_numpyro
+
+        output = tmp_path / "numpyro_no_provenance.py"
+        success, message, _ = render_gnn_to_numpyro(_small_gnn_spec(), output)
+
+        assert success, message
+        code = output.read_text(encoding="utf-8")
+        tree = ast.parse(code)
+        results_dict = next(
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Assign)
+            and any(getattr(target, "id", None) == "results" for target in node.targets)
+        ).value
+        assert isinstance(results_dict, ast.Dict)
+        provenance_node = next(
+            value
+            for key, value in zip(results_dict.keys, results_dict.values)
+            if isinstance(key, ast.Constant) and key.value == "matrix_provenance"
+        )
+        assert ast.literal_eval(provenance_node) == {}
+
 
 # ──────────────────────────────────────────────
 # Stan Renderer Tests
