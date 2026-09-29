@@ -232,7 +232,7 @@ class GNNExecutor:
         else:
             # Default to a subdirectory within the project root
             self.output_dir = (
-                Path(__file__).parent.parent.parent / "output" / "12_execute_output"
+                Path(__file__).resolve().parents[3] / "output" / "12_execute_output"
             )
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.execution_log: list[dict[str, Any]] = []

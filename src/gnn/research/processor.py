@@ -538,8 +538,10 @@ def discover_gnn_files(target_dir: Path, recursive: bool) -> list[Path]:
     """
     if not target_dir.is_dir():
         return []
+    from gnn.processing.discovery import is_model_source_path
+
     pattern = target_dir.rglob("*.md") if recursive else target_dir.glob("*.md")
-    return sorted(pattern)
+    return sorted(path for path in pattern if is_model_source_path(path))
 
 
 def render_research_report(results: Mapping[str, Any]) -> str:

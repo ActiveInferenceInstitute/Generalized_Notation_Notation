@@ -16,7 +16,8 @@ from typing import Any, Dict, Optional, Tuple, cast
 
 logger = logging.getLogger(__name__)
 RUN_HASH_SCHEMA = "gnn-run-v2"
-RUNTIME_CONFIG_PATH = Path(__file__).resolve().parents[2] / "input" / "config.yaml"
+# Repo root is parents[3] of src/gnn/pipeline/hasher.py (parents[2] is src/).
+RUNTIME_CONFIG_PATH = Path(__file__).resolve().parents[3] / "input" / "config.yaml"
 
 
 def runtime_config_identity() -> Dict[str, Any]:
