@@ -210,6 +210,14 @@ _TIMEOUT_MARKER_NAME = ".gnn_step_timed_out"
 #: Cap on the per-file candidate list recorded in the timeout marker.
 _TIMEOUT_MARKER_CANDIDATE_CAP = 200
 
+#: Slack subtracted from the step's start time before comparing file mtimes.
+#: Filesystem timestamps come from a coarser clock than ``time.time()`` (Linux
+#: stamps mtimes from the kernel's coarse clock, a few ms behind; HFS+/FAT
+#: round to 1-2 s), so a file written just after the step started can carry
+#: an mtime *earlier* than the recorded start. Over-reporting a stale file as
+#: possibly partial is harmless; missing a truncated one is not.
+_TIMEOUT_MARKER_MTIME_SLACK_SECONDS = 2.0
+
 
 def _new_cancel_token() -> Any:
     """Create the step's cooperative cancel token (BC-13).
@@ -245,7 +253,8 @@ def _mark_timed_out_artifacts(
     """Mark (never delete) artifacts written while a timed-out step ran.
 
     The sentinel names the step, the deadline, and every file under the
-    step's output dir whose mtime postdates the step's start — candidates
+    step's output dir whose mtime postdates the step's start (less a
+    timestamp-granularity slack) — candidates
     for mid-write truncation by the cancelled/abandoned thread. Downstream
     consumers treat a marked directory as suspect; a later successful run of
     the same step re-authors the artifacts and removes the sentinel.
@@ -256,6 +265,7 @@ def _mark_timed_out_artifacts(
         return
     candidates: list[str] = []
     truncated = False
+    mtime_floor = started - _TIMEOUT_MARKER_MTIME_SLACK_SECONDS
     try:
         for path in sorted(step_output_dir.rglob("*")):
             try:
@@ -264,7 +274,7 @@ def _mark_timed_out_artifacts(
                 mtime = path.stat().st_mtime
             except OSError:
                 continue
-            if mtime >= started:
+            if mtime >= mtime_floor:
                 if len(candidates) >= _TIMEOUT_MARKER_CANDIDATE_CAP:
                     truncated = True
                     break

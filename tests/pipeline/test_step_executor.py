@@ -9,6 +9,7 @@ outside the whitelist are refused.
 
 import json
 import logging
+import os
 import shutil
 import subprocess
 import sys
@@ -680,7 +681,7 @@ class TestInProcessForceKill:
             step_executor, "resolve_step_function", lambda name: writing_hang
         )
         step_result = execute_step_in_process(
-            "3_gnn.py", _pipeline_args(tmp_path), LOGGER, timeout_seconds=30
+            "3_gnn.py", _pipeline_args(tmp_path), LOGGER, timeout_seconds=1
         )
         assert step_result["force_killed"] is True
 
@@ -707,6 +708,33 @@ class TestInProcessForceKill:
         follow = execute_step_in_process("3_gnn.py", _pipeline_args(tmp_path), LOGGER)
         assert follow["exit_code"] == 0
         assert not marker.exists()
+
+    def test_timeout_marker_tolerates_coarse_filesystem_mtimes(
+        self, tmp_path: Path
+    ) -> None:
+        """A file stamped slightly before the step start is still a candidate.
+
+        Filesystem mtimes come from a coarser clock than ``time.time()`` (Linux
+        uses the kernel's coarse clock), so an artifact written right after the
+        step started can carry an mtime a few ms *earlier* than the recorded
+        start. The scan must not drop it; a genuinely stale file stays out.
+        """
+        started = time.time()
+        fresh = tmp_path / "fresh.txt"
+        stale = tmp_path / "stale.txt"
+        fresh.write_text("mid-write", encoding="utf-8")
+        stale.write_text("old run", encoding="utf-8")
+        os.utime(fresh, (started - 0.005, started - 0.005))
+        os.utime(stale, (started - 3600, started - 3600))
+
+        step_executor._mark_timed_out_artifacts(
+            tmp_path, "3_gnn", timeout_seconds=1, started=started, logger=LOGGER
+        )
+
+        payload = json.loads(
+            (tmp_path / step_executor._TIMEOUT_MARKER_NAME).read_text(encoding="utf-8")
+        )
+        assert payload["possibly_partial"] == ["fresh.txt"]
 
     def test_parallel_worker_slot_released_after_hang(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
