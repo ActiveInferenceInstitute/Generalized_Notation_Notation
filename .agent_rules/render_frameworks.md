@@ -17,14 +17,15 @@
 | **Stan** | Stan | Native | Yes | `uv sync --extra stan` |
 | **bnlearn** | Python | Unsupported | Yes | `bnlearn` extra |
 | **ngc-learn** | Python | Native (continuous-only) | Yes | `ngclearn` extra (py3.12 marker) |
+| **cpomdp** | Python | Native (continuous-only) | Yes | `cpomdp` extra |
 
-All ten rows trace to `FRAMEWORK_REGISTRY` in
+All eleven rows trace to `FRAMEWORK_REGISTRY` in
 `src/gnn/render/framework_registry.py`: Continuous is `supports_continuous`,
 Step 12 Execution is `supports_execution`, and runtime gating mirrors the
 `FRAMEWORK_IMPORT_CHECK` probes in
 `gnn.utils.runtime_safety.framework_availability` (backends listed `none` ship
-in the default environment). ngc-learn is continuous-only
-(`continuous_only: true`): discrete POMDP models are refused at Step 11. The
+in the default environment). ngc-learn and cpomdp are
+continuous-only (`continuous_only: true`): discrete POMDP models are refused at Step 11. The
 execution-only `lean` backend (`gnn.frameworks.ALL_FRAMEWORKS`, no render
 entry) runs via the executor registry-runner path.
 

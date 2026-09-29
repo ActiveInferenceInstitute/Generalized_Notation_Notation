@@ -14,7 +14,7 @@
 Each spec is one of two kinds, classified by `render.pomdp_contract.detect_model_kind`:
 
 - **Discrete** — categorical `A/B/C/D[/E]` matrices (flat, factored, hierarchical, multi-agent or learning variants). Renders and executes on all nine frameworks declared in `src/gnn/render/framework_registry.py`.
-- **Continuous** — a linear-Gaussian state-space block only: `F` (dynamics), `H` (observation), `Q`/`R` (noise covariances), `prior_mean`/`prior_cov`, and optionally `goal_mean`/`control_gain` for closed-loop control. Renders and executes on the frameworks whose registry entry has `supports_continuous: True` (JAX, NumPyro, PyTorch, Stan, RxInfer.jl); the others report the `unsupported` render status, which is excluded from success rates and never executed by Step 12.
+- **Continuous** — a linear-Gaussian state-space block only: `F` (dynamics), `H` (observation), `Q`/`R` (noise covariances), `prior_mean`/`prior_cov`, and optionally `goal_mean`/`control_gain` for closed-loop control. Renders and executes on the frameworks whose registry entry has `supports_continuous: True` (JAX, NumPyro, PyTorch, Stan, RxInfer.jl, cpomdp); the others report the `unsupported` render status, which is excluded from success rates and never executed by Step 12.
 
 ## Components
 

@@ -208,7 +208,7 @@ GNN support is available for various IDEs:
 
 GNN tools integrate with several Active Inference frameworks:
 
-Step 11 renders to ten backends and Step 12 executes all ten (bnlearn via `src/gnn/execute/bnlearn/`, ngc-learn via `src/gnn/execute/ngclearn/`, skipping until their runtimes are installed). `uv run gnn health` reports which are importable in the current environment.
+Step 11 renders to eleven backends and Step 12 executes all eleven (bnlearn via `src/gnn/execute/bnlearn/`, ngc-learn via `src/gnn/execute/ngclearn/`, skipping until their runtimes are installed, with cpomdp scripts skipped until `uv sync --extra cpomdp`). `uv run gnn health` reports which are importable in the current environment.
 
 ```mermaid
 graph LR
@@ -223,17 +223,18 @@ graph LR
     RENDER --> NUMPYRO[NumPyro]
     RENDER --> STAN[Stan]
     RENDER --> NGCLEARN[ngc-learn]
+    RENDER --> CPOMDP[cpomdp]
 
     classDef tool fill:#f96,stroke:#333,stroke-width:2px;
     classDef framework fill:#9cf,stroke:#333,stroke-width:1px;
 
     class GNN,RENDER tool;
-    class PYMDP,RXINFER,AIFJL,JAX,DISCOPY,BNLEARN,PYTORCH,NUMPYRO,STAN,NGCLEARN framework;
+    class PYMDP,RXINFER,AIFJL,JAX,DISCOPY,BNLEARN,PYTORCH,NUMPYRO,STAN,NGCLEARN,CPOMDP framework;
 ```
 
 | Language | Backends |
 |---|---|
-| Python | PyMDP, JAX, DisCoPy, bnlearn, PyTorch, NumPyro, ngc-learn |
+| Python | PyMDP, JAX, DisCoPy, bnlearn, PyTorch, NumPyro, ngc-learn, cpomdp |
 | Julia | RxInfer.jl, ActiveInference.jl |
 | Stan | Stan |
 

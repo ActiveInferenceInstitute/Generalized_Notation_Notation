@@ -348,7 +348,7 @@ optionally `goal_mean`/`control_gain` for closed-loop control) as first-class.
 Runnable exemplars live in [`input/gnn_files/continuous/`](../../../input/gnn_files/continuous/) —
 start with `continuous/stochastic_dynamics.md` (passive filtering) and
 `continuous/continuous_navigation.md` (belief-driven goal seeking). They render
-and execute on JAX, NumPyro, PyTorch, Stan, and RxInfer.jl; categorical
+and execute on JAX, NumPyro, PyTorch, Stan, RxInfer.jl, and cpomdp; categorical
 backends (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) report them
 `unsupported`, so pick `--frameworks` accordingly.
 

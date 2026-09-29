@@ -270,7 +270,7 @@ The packaged templates above cover **discrete categorical** models. For
 start from the runnable exemplars under
 [`input/gnn_files/continuous/`](../../input/gnn_files/continuous/) — e.g.
 `continuous_navigation.md` — which render to JAX, NumPyro, PyTorch, Stan
-(LGSSM), and RxInfer.jl programs.
+(LGSSM), RxInfer.jl, and cpomdp programs.
 
 **Cross-References**: 
 - *PyMDP Integration*: [PyMDP Guide](../pymdp/gnn_pymdp.md)

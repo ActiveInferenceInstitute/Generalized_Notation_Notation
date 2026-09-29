@@ -8,7 +8,7 @@
 
 This directory contains documentation, resources, and implementation guides for integrating **SPM** (Statistical Parametric Mapping) with GNN (Generalized Notation Notation). SPM provides established statistical frameworks for neuroimaging analysis, enabling translation of neuroimaging insights into computational cognitive architectures.
 
-> **Scope note**: SPM is a *research/integration-notes* capability documented here. It is **not** a render or execution framework — it does not appear in `src/gnn/render/framework_registry.py` (whose 9 render frameworks are pymdp, rxinfer, activeinference_jl, jax, discopy, pytorch, numpyro, stan, and bnlearn) — and there is no SPM implementation code under `src/gnn/`. The documents in this directory analyze how SPM results could inform GNN model specification and validation.
+> **Scope note**: SPM is a *research/integration-notes* capability documented here. It is **not** a render or execution framework — it does not appear in `src/gnn/render/framework_registry.py` (whose 10 render frameworks are pymdp, rxinfer, activeinference_jl, jax, discopy, pytorch, numpyro, cpomdp, stan, and bnlearn) — and there is no SPM implementation code under `src/gnn/`. The documents in this directory analyze how SPM results could inform GNN model specification and validation.
 
 **Status**: Documentation module — research/integration notes (no SPM implementation in `src/gnn/`)  
 **Version**: 1.0

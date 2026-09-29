@@ -66,7 +66,7 @@ Same content as [Intermediate Path: Building and Integrating Models](#intermedia
 
 1. **Advanced Modeling**:
    - Dive into [Advanced Modeling Patterns](gnn/advanced/advanced_modeling_patterns.md).
-   - Run continuous linear-Gaussian models: [`input/gnn_files/continuous/`](../input/gnn_files/continuous/) on JAX, NumPyro, PyTorch, Stan, or RxInfer.jl (see [continuous LGSSM patterns](gnn/advanced/advanced_modeling_patterns.md#9-continuous-linear-gaussian-models)).
+   - Run continuous linear-Gaussian models: [`input/gnn_files/continuous/`](../input/gnn_files/continuous/) on JAX, NumPyro, PyTorch, Stan, RxInfer.jl, or cpomdp (see [continuous LGSSM patterns](gnn/advanced/advanced_modeling_patterns.md#9-continuous-linear-gaussian-models)).
    - Learn multi-agent systems in [GNN Multiagent](gnn/advanced/gnn_multiagent.md).
 
 2. **Integrations**:

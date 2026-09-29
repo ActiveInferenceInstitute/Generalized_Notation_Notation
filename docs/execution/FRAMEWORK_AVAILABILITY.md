@@ -28,7 +28,7 @@ apply:
   driver (`src/gnn/execute/stan/`).
 - **Continuous linear-Gaussian** models render to native LGSSM programs via
   `src/gnn/render/continuous_script.py` and execute on JAX, NumPyro, PyTorch,
-  Stan (LGSSM), and RxInfer.jl 5.5. Categorical backends that cannot express
+  Stan (LGSSM), RxInfer.jl 5.5, and cpomdp (its own template, `src/gnn/render/cpomdp/`). Categorical backends that cannot express
   them (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) report an explicit
   `unsupported` render status rather than failing silently.
 

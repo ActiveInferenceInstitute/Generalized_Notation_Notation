@@ -1046,7 +1046,7 @@ actions live on small supports, and the parameterization declares
 `F` (state transition), `H` (observation matrix), `Q`/`R` (process and
 observation noise covariances), and `prior_mean`/`prior_cov` (Gaussian prior)
 is classified as continuous and rendered natively on JAX, NumPyro, PyTorch,
-Stan, and RxInfer.jl. The categorical backends (PyMDP, ActiveInference.jl,
+Stan, RxInfer.jl, and cpomdp. The categorical backends (PyMDP, ActiveInference.jl,
 DisCoPy, bnlearn) report such models `unsupported` — a status, not a failure.
 
 ### Pattern: Passive Filtering (LGSSM)

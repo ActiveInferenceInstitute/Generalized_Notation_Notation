@@ -116,7 +116,7 @@ comma-separated list. The same selection is available through `src/gnn/main.py`.
 
 ## Framework boundaries
 
-Step 11 has **9 render targets**. Step 12 executes **10 framework families** — every
+Step 11 has **10 render targets**. Step 12 executes **11 framework families** — every
 render target plus Lean. Stan executes through the
 cmdstanpy driver (`src/gnn/execute/stan/`) since v3.2.0; it needs `uv sync --extra stan`
 plus a CmdStan toolchain and is reported skipped when either is absent. bnlearn

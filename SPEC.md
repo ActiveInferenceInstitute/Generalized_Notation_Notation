@@ -3,7 +3,7 @@
 ## Design Requirements
 This repository comprises the unified `Generalized Notation Notation` (GNN) ecosystem. At its foundational architectural root, it is built to orchestrate the translation of conceptual Active Inference generative models (written in highly structured Markdown) into dynamically actionable and executable scientific artifacts over a 25-step execution pipeline.
 
-The repository root governs real-implementation testing across all integrations, strict testing schemas, continuous documentation integration, and CI/CD security definitions. The environment handles multi-parameter rendering targets across the ten computational engines declared in `src/gnn/render/framework_registry.py`: PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, ngc-learn.
+The repository root governs real-implementation testing across all integrations, strict testing schemas, continuous documentation integration, and CI/CD security definitions. The environment handles multi-parameter rendering targets across the eleven computational engines declared in `src/gnn/render/framework_registry.py`: PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, ngc-learn, cpomdp.
 
 ## Components
 There are no python source packages instantiated directly within this root location. Instead, the root contains the infrastructural map that triggers the pipeline execution and validation layer:

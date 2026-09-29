@@ -24,7 +24,7 @@ The two headline render kinds referenced most often in examples are:
   softmax perception) — the default in tutorials.
 - **Continuous linear-Gaussian** (`F`/`H`/`Q`/`R` + `prior_mean`/`prior_cov`,
   optionally closed-loop `goal_mean`/`control_gain`) — renders on JAX, NumPyro,
-  PyTorch, Stan, and RxInfer.jl; categorical backends report it `unsupported`.
+  PyTorch, Stan, RxInfer.jl, and cpomdp; categorical backends report it `unsupported`.
 
 When citing runnable examples, point at real files under `input/gnn_files/`
 ([INDEX.md](INDEX.md) is the authoritative category list) and state the kind's

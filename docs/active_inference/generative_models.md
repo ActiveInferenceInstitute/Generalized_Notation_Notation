@@ -21,7 +21,7 @@ $$P(o_{1:T}, s_{1:T}, \pi) = P(\pi) \cdot P(s_1) \cdot \prod_{t=2}^{T} P(s_t|s_{
 
 In matrix form, this becomes the A, B, C, D, E system.
 
-> **Continuous models**: GNN also supports continuous linear-Gaussian state-space models, which declare F/H/Q/R system matrices plus `prior_mean`/`prior_cov` in an `initialparameterization` block instead of the discrete A/B/C/D/E matrices (detection: `detect_model_kind` in `src/gnn/render/pomdp_contract.py`). Continuous rendering is supported by RxInfer, JAX, NumPyro, PyTorch, and Stan; PyMDP and ActiveInference.jl are discrete-only.
+> **Continuous models**: GNN also supports continuous linear-Gaussian state-space models, which declare F/H/Q/R system matrices plus `prior_mean`/`prior_cov` in an `initialparameterization` block instead of the discrete A/B/C/D/E matrices (detection: `detect_model_kind` in `src/gnn/render/pomdp_contract.py`). Continuous rendering is supported by RxInfer, JAX, NumPyro, PyTorch, Stan, and cpomdp; PyMDP and ActiveInference.jl are discrete-only.
 
 ---
 

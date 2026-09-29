@@ -21,17 +21,17 @@ The main pipeline loads `input/config.yaml` automatically. See the
 ## Step boundaries
 
 - Steps 0–10 discover, parse, validate, export, visualize, and annotate models.
-- Step 11 has 9 render targets: PyMDP, RxInfer.jl, ActiveInference.jl, JAX,
-  DisCoPy, PyTorch, NumPyro, Stan, and bnlearn.
-- Step 12 has 10 executor families: PyMDP, JAX, DisCoPy, RxInfer.jl,
-  ActiveInference.jl, PyTorch, NumPyro, Lean, Stan, and bnlearn
+- Step 11 has 10 render targets: PyMDP, RxInfer.jl, ActiveInference.jl, JAX,
+  DisCoPy, PyTorch, NumPyro, cpomdp, Stan, and bnlearn.
+- Step 12 has 11 executor families: PyMDP, JAX, DisCoPy, RxInfer.jl,
+  ActiveInference.jl, PyTorch, NumPyro, cpomdp, Lean, Stan, and bnlearn
   (`src/gnn/execute/bnlearn/`). bnlearn programs skip with an install hint
   until their runtime is present (`uv sync --extra bnlearn`, or Rscript plus
   the R `bnlearn` package for `.R` scripts). Stan runs the
   rendered cmdstanpy driver (`src/gnn/execute/stan/`); it needs
   `uv sync --extra stan` plus a CmdStan toolchain, otherwise it is reported
   skipped. Continuous (linear-Gaussian) exemplars execute on jax, numpyro,
-  pytorch, stan and rxinfer; the categorical backends report `unsupported` for
+  pytorch, stan, rxinfer and cpomdp; the categorical backends report `unsupported` for
   them and are not executed. Lean verifies emitted documents against the
   fep_lean `FEP.GnnDocument` typed surface (requires the sibling fep_lean
   checkout; see `docs/other/fep_lean/README.md`).

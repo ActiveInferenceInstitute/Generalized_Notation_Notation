@@ -195,8 +195,8 @@ matrix-dimension check reports no findings. The scalar Variational Free Energy
 readout `F[1]` used by discrete files is not declared in continuous files —
 `F` is the state-transition matrix here.
 
-Framework support follows from the state space: JAX, NumPyro, PyTorch, Stan
-and RxInfer.jl render and execute continuous models natively (Kalman filter;
+Framework support follows from the state space: JAX, NumPyro, PyTorch, Stan,
+RxInfer.jl and cpomdp render and execute continuous models natively (Kalman filter;
 NumPyro and Stan additionally run NUTS over the same model). PyMDP,
 ActiveInference.jl, DisCoPy and bnlearn are categorical and report the model as
 **unsupported** ("continuous-state model: … supports discrete POMDPs only") —

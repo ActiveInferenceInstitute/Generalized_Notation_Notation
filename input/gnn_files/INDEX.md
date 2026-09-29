@@ -10,14 +10,14 @@ execute it through the 25-step pipeline. For syntax and file-structure rules see
 folders (`INDEX.md`, `AGENTS.md` and `README.md` are non-spec scaffolds and are
 excluded by `gnn.processing.discovery.is_model_source_path`). 28 are discrete-state
 POMDP/HMM models that render and execute on the nine categorical-capable
-frameworks and are reported as `unsupported` (not failed) on ngc-learn
-(continuous-only backend); the two non-stationary discrete specs
+frameworks and are reported as `unsupported` (not failed) on ngc-learn and
+cpomdp (continuous-only backends); the two non-stationary discrete specs
 (`time_varying_dynamics.md`, `regime_switched_dynamics.md`) are the exception —
 pymdp renders and executes their switching semantics while every other
 categorical framework receipts them `unsupported-nonstationary` (not failed);
 5 of the 8 files under `continuous/` are pure
 continuous-state linear-Gaussian models that render and execute on JAX,
-NumPyro, PyTorch, Stan, RxInfer.jl and ngc-learn and are reported as
+NumPyro, PyTorch, Stan, RxInfer.jl, ngc-learn and cpomdp and are reported as
 `unsupported` (not failed) on PyMDP, ActiveInference.jl, DisCoPy and bnlearn;
 the remaining three are composed specs that are receipted rather than rendered:
 `multi_agent_lgssm.md` (continuous × multi-agent, `unsupported-composition`

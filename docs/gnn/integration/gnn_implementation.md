@@ -3,7 +3,7 @@
 **Version**: v3.2.0 Engine (Bundle v2.0.0)  
 **Last Updated**: 2026-04-14  
 **Status**: ✅ Production Ready  
-**Modules**: 38+ · **Pipeline steps**: 25 · **Renderers**: 10 backends (see [../implementations/README.md](../implementations/README.md)) · **Tests**: see [../../../README.md](../../../README.md)
+**Modules**: 38+ · **Pipeline steps**: 25 · **Renderers**: 11 backends (see [../implementations/README.md](../implementations/README.md)) · **Tests**: see [../../../README.md](../../../README.md)
 
 This document provides guidance on how to implement GNN models in computational environments, with practical code examples and workflows.
 
@@ -15,8 +15,8 @@ GNN models are implemented through the processing pipeline's code generation and
 
 - **`src/gnn/11_render.py`** → Generate executable code for multiple frameworks
   - See: **[src/gnn/render/AGENTS.md](../../../src/gnn/render/AGENTS.md)** for rendering details
-  - Supports ten backends: PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy,
-    PyTorch, NumPyro, Stan, bnlearn, ngclearn
+  - Supports eleven backends: PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy,
+    PyTorch, NumPyro, Stan, bnlearn, ngclearn, cpomdp
 
 **Execution (Step 12)**
 

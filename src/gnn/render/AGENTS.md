@@ -119,6 +119,13 @@ processor/
 - **Output**: `<model>_ngclearn.py` scripts under `ngclearn/` when requested
 - **Continuous models**: native — LGSSM via the shared `render/continuous_script.py` generator (Kalman numerics byte-identical to the JAX backend); codegen-only — the emitted script imports `ngclearn`, never the renderer; executed by Step 12 via `execute/ngclearn/`, skipping with an install hint until `uv sync --extra ngclearn` (py3.12 marker-gated extra)
 
+#### cpomdp (Python)
+**Module**: `src/gnn/render/cpomdp/cpomdp_renderer.py`
+
+- **Purpose**: Continuous active inference (Kalman filter plus expected-free-energy policy search)
+- **Output**: `<model>_cpomdp.py` scripts under `cpomdp/` when requested
+- **Continuous models**: native, with its own template (`render/cpomdp/script_template.py`). Discrete models are `unsupported` (`continuous_only: true`). The emitted script imports `cpomdp`, never the renderer. Step 12 skips it with an install hint until `uv sync --extra cpomdp`
+
 The canonical framework inventory lives in `framework_registry.py`; update that
 registry before changing public framework lists, MCP enums, or processor configs.
 

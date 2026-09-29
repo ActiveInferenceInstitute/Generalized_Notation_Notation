@@ -12,7 +12,7 @@ This module provides **POMDP-aware code generation** for GNN models. It translat
 
 ## POMDP Processing Pipeline
 
-<!-- 5 of 10 renderers shown; the full renderer set lives in framework_registry.py -->
+<!-- 5 of 11 renderers shown; the full renderer set lives in framework_registry.py -->
 ```mermaid
 graph TD
     GNN[GNN File] --> Extract[POMDP Extraction]
@@ -36,7 +36,7 @@ graph TD
 
 ### Framework Rendering Architecture
 
-<!-- 5 of 10 renderers shown; the full renderer set lives in framework_registry.py -->
+<!-- 5 of 11 renderers shown; the full renderer set lives in framework_registry.py -->
 
 ```mermaid
 graph TB
@@ -228,6 +228,7 @@ Backend-specific renderers live under:
 - `src/gnn/render/discopy/`
 - additional maintained backends: `src/gnn/render/pytorch/`, `src/gnn/render/numpyro/`, `src/gnn/render/stan/` (runnable HMM / LGSSM programs plus cmdstanpy drivers), and generator-backed `bnlearn` (executed by `src/gnn/execute/bnlearn/`; skips without its runtime)
 - `src/gnn/render/ngclearn/` — codegen-only 4th Python backend of the shared continuous generator (`render/continuous_script.py`); run-time extra `ngclearn`, py3.12 marker-gated
+- `src/gnn/render/cpomdp/`: continuous-only backend with its own template (Kalman filter plus expected-free-energy policy search), run-time extra `cpomdp`
 
 ### Model kinds
 
@@ -237,7 +238,7 @@ Backend-specific renderers live under:
 `prior_mean/prior_cov`, optional `goal_mean/control_gain`) bypass
 canonicalisation: `render/continuous_common.py` validates the block and
 `render/continuous_script.py` generates the JAX / NumPyro / PyTorch / ngc-learn Kalman-filter
-scripts; Stan and RxInfer.jl have their own continuous programs. Frameworks
+scripts; Stan, RxInfer.jl and cpomdp have their own continuous programs. Frameworks
 whose registry entry has `supports_continuous: false` (PyMDP,
 ActiveInference.jl, DisCoPy, bnlearn) return `{"unsupported": true, "status":
 "unsupported"}` for continuous models — counted under
