@@ -98,9 +98,10 @@ def process_visualization(
 ) -> Union[bool, int]:
     """Process visualization for every GNN file in ``target_dir``.
 
-    Returns ``True`` when at least one artifact was generated, the warning
-    code ``2`` for no-input / no-artifact outcomes, and ``False`` for hard
-    processing failures. Accepts an optional ``logger`` for dependency
+    Returns ``True`` when every figure was generated, the warning code ``2``
+    (success with warnings) for no-input / no-artifact outcomes and for runs
+    where any figure failed while the step still completed, and ``False`` for
+    hard processing failures. Accepts an optional ``logger`` for dependency
     injection (the pipeline passes its configured step logger); when omitted
     the module-level ``"visualization"`` logger is used, preserving the
     direct-call behavior.
@@ -136,6 +137,7 @@ def process_visualization(
         all_visualizations: List[str] = []
         processing_errors: List[str] = []
         for gnn_file in gnn_files:
+            figure_failures: List[str] = []
             try:
                 all_visualizations.extend(
                     process_single_gnn_file(
@@ -145,10 +147,12 @@ def process_visualization(
                         parsed_model=(
                             parsed_models.get(gnn_file.stem) if parsed_models else None
                         ),
+                        failures=figure_failures,
                     )
                 )
             except Exception as e:
-                message = f"Error processing {gnn_file}: {e}"
+                figure_failures.append(f"Error processing {gnn_file}: {e}")
+            for message in figure_failures:
                 processing_errors.append(message)
                 log.warning(message)
 
@@ -212,26 +216,66 @@ def render_matrix_artifacts(
     model_name: str,
     visualizer: Any,
     verbose: bool = False,
+    *,
+    failures: Optional[List[str]] = None,
 ) -> List[str]:
-    """Render 2D heatmaps and 3D tensor panels for each collected matrix."""
+    """Render 2D heatmaps and 3D tensor panels for each collected matrix.
+
+    Every generator that reports failure (returns ``False``) is recorded in
+    ``failures`` when given, so the caller can surface it in the step exit
+    code instead of dropping the missing figure silently. Tensors of rank > 3
+    have no renderer; they are logged as unsupported, not attempted.
+    """
     artifacts: List[str] = []
+
+    def _record(ok: bool, path: Path, what: str, m_name: str) -> None:
+        if ok:
+            artifacts.append(str(path))
+        elif failures is not None:
+            failures.append(f"{model_name}: {what} for {m_name} failed ({path.name})")
+
     for m_name, m_data in matrices.items():
-        if m_data.ndim == 3:
+        if m_data.ndim > 3:
+            logger.info(
+                "Skipping matrix figures for %s.%s: rank-%d tensor %s is "
+                "unsupported (heatmaps take rank <= 2, tensor panels rank 3)",
+                model_name,
+                m_name,
+                m_data.ndim,
+                m_data.shape,
+            )
+        elif m_data.ndim == 3:
             tensor_path = model_dir / f"{model_name}_{m_name}_tensor.png"
-            if visualizer.generate_3d_tensor_visualization(
-                m_name, m_data, tensor_path, tensor_type="transition"
-            ):
-                artifacts.append(str(tensor_path))
+            _record(
+                visualizer.generate_3d_tensor_visualization(
+                    m_name, m_data, tensor_path, tensor_type="transition"
+                ),
+                tensor_path,
+                "3D tensor figure",
+                m_name,
+            )
             html_path = model_dir / f"{model_name}_{m_name}_threejs.html"
-            if visualizer.generate_threejs_tensor_explorer(m_name, m_data, html_path):
-                artifacts.append(str(html_path))
+            _record(
+                visualizer.generate_threejs_tensor_explorer(m_name, m_data, html_path),
+                html_path,
+                "Three.js tensor explorer",
+                m_name,
+            )
             analysis_path = model_dir / f"{model_name}_{m_name}_analysis.png"
-            if visualizer.generate_pomdp_transition_analysis(m_data, analysis_path):
-                artifacts.append(str(analysis_path))
+            _record(
+                visualizer.generate_pomdp_transition_analysis(m_data, analysis_path),
+                analysis_path,
+                "POMDP transition analysis",
+                m_name,
+            )
         else:
             heatmap_path = model_dir / f"{model_name}_{m_name}_heatmap.png"
-            if visualizer.generate_matrix_heatmap(m_name, m_data, heatmap_path):
-                artifacts.append(str(heatmap_path))
+            _record(
+                visualizer.generate_matrix_heatmap(m_name, m_data, heatmap_path),
+                heatmap_path,
+                "matrix heatmap",
+                m_name,
+            )
     if verbose and artifacts:
         logger.info(
             "Generated %s matrix visualizations for %s", len(artifacts), model_name
@@ -244,6 +288,7 @@ def write_viz_manifest(
     parsed_data: Dict[str, Any],
     artifacts: List[str],
     model_dir: Path,
+    figure_failures: Optional[List[str]] = None,
 ) -> Optional[Path]:
     """Write ``{model}_viz_manifest.json``; return the path or ``None`` on failure."""
     manifest_path = model_dir / f"{model_name}_viz_manifest.json"
@@ -257,6 +302,7 @@ def write_viz_manifest(
             "connection_count": len(parsed_data.get("connections") or []),
             "parameter_count": len(parsed_data.get("parameters") or []),
             "ontology_label_count": len(parsed_data.get("ontology_labels") or []),
+            "figure_failures": list(figure_failures or []),
         }
         with open(manifest_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
@@ -284,18 +330,34 @@ def write_sampling_note(
         logger.debug("Could not write sampling note for %s: %s", model_name, e)
 
 
+def _cached_figure_failures(model_dir: Path, model_name: str) -> List[str]:
+    """Return the figure failures recorded by the run that produced the cache."""
+    manifest_path = model_dir / f"{model_name}_viz_manifest.json"
+    try:
+        recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    failures = recorded.get("figure_failures") if isinstance(recorded, dict) else None
+    return [str(f) for f in failures] if isinstance(failures, list) else []
+
+
 def process_single_gnn_file(
     gnn_file: Path,
     results_dir: Path,
     verbose: bool = False,
     *,
     parsed_model: Optional[Dict[str, Any]] = None,
+    failures: Optional[List[str]] = None,
 ) -> List[str]:
     """Process a single GNN file into per-model PNG/JSON/HTML artifacts.
 
     ``parsed_model`` (consolidated executor carrier) supplies the step-3
     parsed payload in memory instead of re-reading ``{model}_parsed.json``.
+    ``failures``, when given, receives one message per figure that could not
+    be produced, so the step can report them in its exit code. A cache whose
+    manifest records figure failures is not reused; the figures are retried.
     """
+    figure_failures: List[str] = []
     with open(gnn_file, encoding="utf-8") as f:
         content = f.read()
 
@@ -304,6 +366,11 @@ def process_single_gnn_file(
     model_dir.mkdir(exist_ok=True)
 
     cached = load_cached_artifacts(model_dir, gnn_file.stat().st_mtime)
+    if cached and _cached_figure_failures(model_dir, model_name):
+        # The run that produced this cache lost figures: retry them rather
+        # than letting a partial cache pass as a clean result.
+        logger.info("Re-rendering %s: cached run recorded figure failures", model_name)
+        cached = []
     if cached:
         if verbose:
             print(f"Using cached visualizations for {model_name}")
@@ -325,8 +392,7 @@ def process_single_gnn_file(
                 generate_network_visualizations(parsed_data, model_dir, model_name)
             )
         except Exception as e:
-            if verbose:
-                print(f"Network visualization failed for {model_name}: {e}")
+            figure_failures.append(f"{model_name}: network visualization failed: {e}")
     elif verbose:
         print(f"Skipping network visualizations for {model_name} - too many nodes")
 
@@ -343,7 +409,14 @@ def process_single_gnn_file(
         matrices = collect_visualization_matrices(parsed_data)
         if matrices:
             visualizations.extend(
-                render_matrix_artifacts(matrices, model_dir, model_name, mv, verbose)
+                render_matrix_artifacts(
+                    matrices,
+                    model_dir,
+                    model_name,
+                    mv,
+                    verbose,
+                    failures=figure_failures,
+                )
             )
         elif verbose:
             logger.warning(
@@ -351,16 +424,15 @@ def process_single_gnn_file(
                 model_name,
             )
     except Exception as e:
-        if verbose:
-            logger.exception("Matrix visualization failed for %s: %s", model_name, e)
+        logger.exception("Matrix visualization failed for %s", model_name)
+        figure_failures.append(f"{model_name}: matrix visualization failed: {e}")
 
     try:
         visualizations.extend(
             generate_combined_analysis(parsed_data, model_dir, model_name)
         )
     except Exception as e:
-        if verbose:
-            print(f"Combined analysis failed for {model_name}: {e}")
+        figure_failures.append(f"{model_name}: combined analysis failed: {e}")
 
     if sampled and visualizations:
         write_sampling_note(
@@ -368,9 +440,11 @@ def process_single_gnn_file(
         )
 
     manifest_path = write_viz_manifest(
-        model_name, parsed_data, visualizations, model_dir
+        model_name, parsed_data, visualizations, model_dir, figure_failures
     )
     if manifest_path is not None:
         visualizations.append(str(manifest_path))
 
+    if failures is not None:
+        failures.extend(figure_failures)
     return visualizations

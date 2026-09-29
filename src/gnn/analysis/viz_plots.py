@@ -549,10 +549,13 @@ def generate_action_analysis(
 
     # Add count labels on bars
     for bar, count in zip(bars, action_counts):
-        ax1.text(
-            bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + 0.5,
+        # Offset in points, not data units, so the label gap is independent
+        # of the count scale.
+        ax1.annotate(
             str(count),
+            (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+            xytext=(0, 3),
+            textcoords="offset points",
             ha="center",
             va="bottom",
             fontsize=10,
