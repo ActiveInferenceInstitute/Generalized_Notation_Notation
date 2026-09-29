@@ -30,6 +30,7 @@ VISUALIZATION_FRAMEWORK_DIRS = {
     "discopy",
     "pytorch",
     "numpyro",
+    "cpomdp",
     "bnlearn",
     # stan renders + executes; its results were previously attributed to
     # "unknown" by _framework_from_path_or_payload.

@@ -497,6 +497,7 @@ def process_analysis(
                     ("rxinfer", "rxinfer", "RxInfer"),
                     ("pytorch", "pytorch", "PyTorch"),
                     ("numpyro", "numpyro", "NumPyro"),
+                    ("cpomdp", "cpomdp", "cpomdp"),
                 ]
                 import importlib
 

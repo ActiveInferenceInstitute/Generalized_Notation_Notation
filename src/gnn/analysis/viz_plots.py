@@ -81,6 +81,7 @@ def visualize_all_framework_outputs(
         "discopy",
         "pytorch",
         "numpyro",
+        "cpomdp",
     }
 
     # Search for execution result files
