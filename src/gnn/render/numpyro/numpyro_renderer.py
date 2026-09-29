@@ -95,7 +95,15 @@ def render_gnn_to_numpyro(
             if extracted_t is not None:
                 options["num_timesteps"] = extracted_t
 
-        code = _generate_numpyro_code(model_name, A, B, C, D, options)
+        code = _generate_numpyro_code(
+            model_name,
+            A,
+            B,
+            C,
+            D,
+            options,
+            matrix_provenance=gnn_spec.get("matrix_provenance", {}),
+        )
 
         output_path = Path(output_path)
         atomic_write_text(output_path, code)
@@ -130,8 +138,10 @@ def _generate_numpyro_code(
     C: np.ndarray,
     D: np.ndarray,
     options: Optional[Dict[str, Any]] = None,
+    matrix_provenance: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Generate standalone NumPyro POMDP simulation script."""
+    provenance = matrix_provenance or {}
     num_timesteps = (options or {}).get("num_timesteps", 15)
     num_states = A.shape[1] if A.ndim == 2 else 2
     num_obs = A.shape[0] if A.ndim == 2 else num_states
@@ -280,6 +290,7 @@ def run_simulation(seed: int = 42):
         "schema_version": "numpyro_simulation_v1",
         "model_name": "{model_name}",
         "framework": "numpyro",
+        "matrix_provenance": {provenance!r},
         "num_timesteps": T,
         "num_states": num_states,
         "num_observations": num_obs,

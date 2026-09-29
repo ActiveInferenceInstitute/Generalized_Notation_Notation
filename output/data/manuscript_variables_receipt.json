@@ -1,9 +1,12 @@
 {
-  "counts_describe_commit": "239d9655e",
-  "dirty_path_count": 0,
-  "dirty_paths": [],
+  "counts_describe_commit": "6bfc5b356",
+  "dirty_path_count": 2,
+  "dirty_paths": [
+    "output/data/manuscript_variables.json",
+    "output/data/manuscript_variables_receipt.json"
+  ],
   "generator": "scripts/z_generate_manuscript_variables.py",
   "git_available": true,
   "receipt_version": "gnn_manuscript_variables_receipt_v1",
-  "working_tree_clean": true
+  "working_tree_clean": false
 }
