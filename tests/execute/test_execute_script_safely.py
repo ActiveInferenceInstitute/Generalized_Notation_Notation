@@ -341,9 +341,13 @@ def test_rxinfer_manifest_pins_5_5_0() -> None:
     assert 'version = "5.5.0"' in rxinfer_section
 
 
-def test_dask_dispatch_applies_configured_retries() -> None:
+def test_dask_dispatch_without_distributed_applies_configured_retries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Without dask.distributed importable the dispatcher gathers unbounded."""
     from gnn.execute.distributed import Dispatcher
 
+    monkeypatch.setitem(sys.modules, "dask.distributed", None)
     submitted: list[dict[str, object]] = []
 
     class FakeClient:
@@ -366,3 +370,81 @@ def test_dask_dispatch_applies_configured_retries() -> None:
     assert len(results) == 2
     assert [item["retries"] for item in submitted] == [5, 5]
     assert [item["timeout"] for item in submitted] == [1, 1]
+
+
+@pytest.fixture
+def dask_client() -> Any:
+    """In-process Dask client that is deliberately NOT the global default."""
+    import distributed
+
+    cluster = distributed.LocalCluster(
+        n_workers=1,
+        threads_per_worker=2,
+        processes=False,
+        protocol="inproc",
+        dashboard_address=None,
+    )
+    client = distributed.Client(cluster, set_as_default=False)
+    try:
+        yield client
+    finally:
+        client.close()
+        cluster.close()
+
+
+@pytest.mark.needs_distributed
+def test_dask_dispatch_applies_configured_retries(dask_client: Any) -> None:
+    from gnn.execute.distributed import Dispatcher
+
+    submitted: list[dict[str, object]] = []
+    real_submit = dask_client.submit
+
+    def recording_submit(fn: Any, *args: Any, **kwargs: Any) -> Any:
+        submitted.append(kwargs)
+        return real_submit(fn, *args, **kwargs)
+
+    dask_client.submit = recording_submit
+    dispatcher = Dispatcher(backend="dask", max_retries=5)
+    dispatcher._initialized = True
+    dispatcher.client = dask_client
+
+    def execute(info: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+        return {"success": True, "name": info["name"], "timeout": kwargs["timeout"]}
+
+    results = dispatcher.run_scripts_parallel(
+        [{"name": "one"}, {"name": "two"}], execute, timeout=1
+    )
+
+    assert results == [
+        {"success": True, "name": "one", "timeout": 1},
+        {"success": True, "name": "two", "timeout": 1},
+    ]
+    assert [item["retries"] for item in submitted] == [5, 5]
+    assert [item["timeout"] for item in submitted] == [1, 1]
+
+
+@pytest.mark.needs_distributed
+def test_dask_dispatch_reports_wait_timeout_as_failure(
+    dask_client: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import time
+
+    from gnn.execute.distributed import WAIT_TIMEOUT_ENV, Dispatcher
+
+    monkeypatch.setenv(WAIT_TIMEOUT_ENV, "1")
+    dispatcher = Dispatcher(backend="dask", max_retries=0)
+    dispatcher._initialized = True
+    dispatcher.client = dask_client
+
+    def execute(info: dict[str, Any]) -> dict[str, Any]:
+        if info["name"] == "slow":
+            time.sleep(4)
+        return {"success": True, "name": info["name"]}
+
+    results = dispatcher.run_scripts_parallel(
+        [{"name": "fast"}, {"name": "slow"}], execute
+    )
+
+    assert results[0] == {"success": True, "name": "fast"}
+    assert results[1]["success"] is False
+    assert results[1]["error_type"] == "DistributedWaitTimeout"

@@ -9,11 +9,14 @@ the health score is built from.
 Environment-sensitivity note: the dependency/group assertions below hold
 for the committed ``uv.lock`` dev environment (core install has
 numpy/matplotlib/networkx/pandas/pytest/pymdp/openai/plotly/seaborn;
-gradio/anthropic/bokeh are not in any default extra).
+gradio/anthropic/bokeh are not in the default dev lock; the group-status
+test derives its expectation for those from what is actually installed, so it
+also holds under the weekly all-extras job).
 """
 
 from __future__ import annotations
 
+import importlib.util
 import subprocess
 from pathlib import Path
 from typing import Any, cast
@@ -69,6 +72,10 @@ def test_core_dependencies_reports_missing_module(
     assert len(results["missing"]) == 1
 
 
+def _installed(module: str) -> bool:
+    return importlib.util.find_spec(module) is not None
+
+
 def test_optional_dependency_group_statuses() -> None:
     """Group status derives from per-dependency availability."""
     results = EnhancedHealthChecker().check_optional_dependencies()
@@ -78,19 +85,27 @@ def test_optional_dependency_group_statuses() -> None:
     assert simulation["status"] == "available"
     assert simulation["critical"] is True
 
-    # openai is core, anthropic is not installed -> partial.
+    # openai is core; anthropic is not in the default dev lock, but the
+    # all-extras environment may carry it -> partial or fully available.
     llm = results["llm"]
-    assert llm["status"] == "partial"
-    assert "anthropic" in llm["missing"]
     assert any(dep.startswith("openai") for dep in llm["available"])
+    if _installed("anthropic"):
+        assert "anthropic" not in llm["missing"]
+    else:
+        assert llm["status"] == "partial"
+        assert "anthropic" in llm["missing"]
 
-    # gradio is not installed -> gui group unavailable.
-    assert results["gui"]["status"] == "unavailable"
+    # gradio ships only with the ``gui`` extra -> unavailable without it.
+    expected_gui = "available" if _installed("gradio") else "unavailable"
+    assert results["gui"]["status"] == expected_gui
 
-    # bokeh is not installed, plotly/seaborn are -> partial.
+    # plotly/seaborn are core; bokeh is only present in extended environments.
     visualization = results["visualization"]
-    assert visualization["status"] == "partial"
-    assert "bokeh" in visualization["missing"]
+    if _installed("bokeh"):
+        assert "bokeh" not in visualization["missing"]
+    else:
+        assert visualization["status"] == "partial"
+        assert "bokeh" in visualization["missing"]
 
 
 def test_check_system_resources_limited_without_psutil(
