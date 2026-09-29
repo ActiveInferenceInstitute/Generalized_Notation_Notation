@@ -119,6 +119,13 @@
 % no code token overflows the measure, but forbid breaks inside the last
 % \GNNttTail characters (an extension is never orphaned) and inside the first
 % \GNNttHead (a one- or two-letter stub is never left behind).
+% Declarations the template's combined-PDF renderer requires
+% (infrastructure/rendering/_pdf_combined_preamble.py). Absent here, it warns
+% "Preamble is missing declarations required by manuscript content" and
+% appends these exact lines itself; declaring them explicitly silences the
+% warning without changing the typeset document.
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible}
 
 % Slide layout defaults for warning-clean scientific decks.
 \usepackage{etoolbox}
