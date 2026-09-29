@@ -50,13 +50,17 @@ if str(Path(__file__).resolve().parents[3]) not in sys.path:  # pragma: no cover
 from gnn.manuscript.variables import token_checksum  # noqa: E402
 
 __all__ = [
+    "HYDRATION_FIX",
     "MANIFEST_VERSION",
     "RECORD_COMMAND",
     "RENDER_INPUT_ROOT",
     "RENDERED_ARTIFACTS",
     "custody_issues",
+    "hydrate_text",
+    "hydration_issues",
     "load_render_manifest",
     "manifest_path",
+    "mask_log_timestamp",
     "record_render_manifest",
     "strip_volatile_tokens",
     "verify_fresh_render",
@@ -69,6 +73,21 @@ _MANIFEST_REL = Path("output") / "data" / "manuscript_render_manifest.json"
 _VARIABLES_REL = Path("output") / "data" / "manuscript_variables.json"
 RENDER_INPUT_ROOT = Path("output") / "manuscript"
 _RECEIPT_REL = Path("output") / "data" / "manuscript_variables_receipt.json"
+_SOURCE_MANUSCRIPT_REL = Path("manuscript")
+# Hydration mirror of ``infrastructure.rendering.manuscript_injection``
+# (docxology/template): ``_TOKEN_RE`` is its token pattern, and these are
+# the auxiliary files ``write_resolved_manuscript_tree`` copies verbatim
+# (``preamble.md`` is substituted first and then overwritten by the copy,
+# so verbatim is what ships). Every ``*.bib`` is copied verbatim too.
+_TOKEN_RE = re.compile(r"\{\{([A-Z][A-Z0-9_]*)\}\}")
+_VERBATIM_AUX = ("config.yaml", "preamble.md")
+HYDRATION_FIX = (
+    "rerun the full SC-22 ritual (python -m scripts.manuscript_build_figures, "
+    "then the template's stage_03_render, then "
+    f"{RECORD_COMMAND}) and commit output/ — regenerating the token map and "
+    "re-recording the manifest alone refreshes neither the hydrated prose "
+    "nor the PDF evidence"
+)
 # The committed evidence tests/test_manuscript_latex_log.py reads, plus the
 # pandoc markdown source the render converted. aux/bbl/toc are also shipped,
 # but no gate reads them as evidence, so they stay out of the custody set.
@@ -349,6 +368,83 @@ def custody_issues(project_root: Path) -> list[str]:
     return issues
 
 
+def hydrate_text(text: str, variables: dict[str, str]) -> str:
+    """``{{TOKEN}}`` substitution exactly as the template injector does it.
+
+    Mirrors ``substitute_manuscript_text``: a key the map does not carry is
+    left literally in place (the token gate reports it separately).
+    """
+    return _TOKEN_RE.sub(lambda m: variables.get(m.group(1), m.group(0)), text)
+
+
+def _expected_hydrated_tree(
+    project_root: Path, variables: dict[str, str], excluded: frozenset[str]
+) -> dict[str, bytes]:
+    """``{relpath: bytes}`` the injector would write from this token map."""
+    source = project_root / _SOURCE_MANUSCRIPT_REL
+    out: dict[str, bytes] = {}
+    for md in sorted(source.glob("*.md")):
+        if md.name in excluded or md.name in _VERBATIM_AUX:
+            continue
+        text = hydrate_text(md.read_text(encoding="utf-8"), variables)
+        out[(RENDER_INPUT_ROOT / md.name).as_posix()] = text.encode("utf-8")
+    verbatim = [source / name for name in _VERBATIM_AUX] + sorted(source.glob("*.bib"))
+    for path in verbatim:
+        if path.is_file():
+            out[(RENDER_INPUT_ROOT / path.name).as_posix()] = path.read_bytes()
+    return out
+
+
+def hydration_issues(project_root: Path, excluded: frozenset[str]) -> list[str]:
+    """One message per hydrated file that the committed token map would not produce.
+
+    The PR-time half of the SC-22 custody check, and it needs no LaTeX. A
+    count-changing PR regenerates the token map and re-records the custody
+    manifest, and :func:`custody_issues` then passes. The hydrated prose
+    under ``output/manuscript/`` and the PDF evidence rendered from it are
+    only refreshed by the full ritual, so the scheduled
+    ``custody-re-render.yml`` goes red after the merge. The stale prose is
+    visible without rendering: it is not what the injector would write from
+    the committed map. This re-substitutes ``manuscript/`` from that map and
+    compares byte for byte, commit stamp included, because the cron's fresh
+    comparison masks only the manifest's stamp and HEAD's. Prose carrying an
+    older commit is drift there too.
+
+    ``excluded`` is the injector's ``EXCLUDED_DOC_FILENAMES`` (the caller
+    passes the shared mirror in ``scripts/lib/manuscript_exclusions.py``).
+    Returns (does not raise) so every stale file is reported at once; the
+    remedy for all of them is :data:`HYDRATION_FIX`.
+    """
+    variables_path = project_root / _VARIABLES_REL
+    if not variables_path.is_file():
+        return [
+            f"{_VARIABLES_REL.as_posix()} is missing — run "
+            "scripts/z_generate_manuscript_variables.py"
+        ]
+    variables = json.loads(variables_path.read_text(encoding="utf-8"))
+    expected = _expected_hydrated_tree(project_root, variables, excluded)
+    commit = variables.get("GNN_GIT_COMMIT")
+    issues: list[str] = []
+    for rel, data in sorted(expected.items()):
+        path = project_root / rel
+        if not path.is_file():
+            issues.append(f"{rel} is missing from the hydrated tree")
+        elif path.read_bytes() != data:
+            issues.append(
+                f"{rel} is not what the committed token map (commit {commit}) "
+                "hydrates to"
+            )
+    root = project_root / RENDER_INPUT_ROOT
+    for path in sorted(root.rglob("*")) if root.is_dir() else ():
+        rel = path.relative_to(project_root).as_posix()
+        if path.is_file() and rel not in expected:
+            issues.append(
+                f"{rel} has no source under {_SOURCE_MANUSCRIPT_REL.as_posix()}/ "
+                "(the injector deletes stale copies)"
+            )
+    return issues
+
+
 def verify_fresh_render(project_root: Path) -> list[str]:
     """Classify the fresh render on disk against the committed custody manifest.
 
@@ -376,6 +472,10 @@ def verify_fresh_render(project_root: Path) -> list[str]:
     length differs. The committed side is re-derived from ``git show`` at
     HEAD with the manifest's stamp masked; outside a git repo (the unit
     fixtures) the stored raw digest is used when the text carries no stamp.
+    The ``.log`` also has its TeX engine banner's start timestamp masked
+    (:func:`mask_log_timestamp`): it is the one line that differs between
+    two renders of identical inputs, and left raw it turned every clean
+    re-render into a ``[WARN]``.
 
     Read-only. Returns (does not raise) so the caller can print every
     finding at once; a missing manifest is the first ``[FAIL]``.
@@ -390,7 +490,9 @@ def verify_fresh_render(project_root: Path) -> list[str]:
 
     def _normalized(rel: Path) -> str | None:
         path = project_root / rel
-        return _normalized_text_digest(path, stamps) if path.is_file() else None
+        if not path.is_file():
+            return None
+        return _artifact_digest_from_bytes(rel.as_posix(), path.read_bytes(), stamps)
 
     def _committed_normalized(rel_posix: str, recorded: str | None) -> str | None:
         """Digest of the artifact AS COMMITTED, at the fresh side's normalization.
@@ -404,14 +506,14 @@ def verify_fresh_render(project_root: Path) -> list[str]:
         """
         committed = _git_show(project_root, rel_posix)
         if committed is not None:
-            return _normalized_text_digest_from_bytes(committed, stamps)
+            return _artifact_digest_from_bytes(rel_posix, committed, stamps)
         path = project_root / rel_posix
         if (
             stamps
             and path.is_file()
             and _text_contains_stamp(path.read_text(encoding="utf-8"), stamp)
         ):
-            return _normalized_text_digest(path, stamps)
+            return _artifact_digest_from_bytes(rel_posix, path.read_bytes(), stamps)
         return recorded or (_sha256(path) if path.is_file() else None)
 
     inputs_match = not _input_tree_issues(project_root, manifest, stamps)
@@ -563,3 +665,34 @@ def _commit_replacer(stamps: tuple[str, ...]) -> Callable[[re.Match[str]], str]:
 
 
 _COMMIT_HASH_RE = re.compile(r"\b[0-9a-f]{7,40}\b")
+
+
+# The first line of a TeX engine log: ``This is XeTeX, Version ... (preloaded
+# format=xelatex 2026.9.18)  28 SEP 2026 21:42``. Only the trailing run
+# start time is masked; the engine version and format date stay in the
+# digest, because a change there is real toolchain variance.
+_LOG_TIMESTAMP_RE = re.compile(
+    r"^(This is \S*TeX, .*?)\s+\d{1,2} [A-Z]{3} \d{4} \d{1,2}:\d{2}[ \t]*$",
+    re.MULTILINE,
+)
+_LOG_SUFFIX = ".log"
+
+
+def mask_log_timestamp(text: str) -> str:
+    """``text`` with the TeX log banner's run start timestamp replaced by a sentinel."""
+    return _LOG_TIMESTAMP_RE.sub(r"\1  <timestamp>", text, count=1)
+
+
+def _artifact_digest_from_bytes(
+    rel_posix: str, data: bytes, stamps: tuple[str, ...]
+) -> str:
+    """Fresh-comparison digest of one rendered artifact.
+
+    Commit stamps are masked for every artifact; the ``.log`` additionally
+    has its banner timestamp masked, so two renders of the same inputs
+    digest the same.
+    """
+    if not rel_posix.endswith(_LOG_SUFFIX):
+        return _normalized_text_digest_from_bytes(data, stamps)
+    masked = mask_log_timestamp(data.decode("utf-8", "replace"))
+    return _normalized_text_digest_from_bytes(masked.encode("utf-8"), stamps)

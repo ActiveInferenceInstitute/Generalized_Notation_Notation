@@ -34,7 +34,16 @@ token checker).
    after a render, audit the committed chain against it, and classify a
    fresh render against the committed manifest (`[FAIL]` = artifact missing
    or artifact+input joint drift → chain stale for HEAD; `[WARN]` =
-   artifact-only drift with inputs matching → toolchain variance).
+   artifact-only drift with inputs matching → toolchain variance). The
+   fresh comparison masks commit stamps and the TeX log banner's start
+   timestamp (`mask_log_timestamp()`), so an identical re-render is clean.
+8. `hydration_issues()` / `hydrate_text()` — the PR-time custody drift
+   guard (`scripts/check_hydrated_prose.py`, `local-gates.yml` repo-gates):
+   re-substitute `manuscript/*.md` from the committed token map, mirroring
+   the template injector, and report every committed `output/manuscript/`
+   file that differs. It needs no LaTeX. A count-changing PR that skips the
+   full SC-22 ritual fails here instead of in the scheduled
+   `custody-re-render.yml` after merge.
 
 ## Module Structure
 
@@ -52,7 +61,8 @@ token checker).
   tables) and cross-framework family selection.
 - `render_custody.py` — render custody manifest: record after a render,
   audit the committed chain, verify a fresh render against the committed
-  manifest (SC-22).
+  manifest, and check the hydrated prose against the token map at PR time
+  (SC-22).
 
 ## Dependencies
 
