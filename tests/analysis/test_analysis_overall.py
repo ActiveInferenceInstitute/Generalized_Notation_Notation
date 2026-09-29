@@ -125,6 +125,43 @@ def test_gridworld_animation_suite_and_manifest(tmp_path: Any) -> None:
     assert "jax_dashboard" not in manifest_outputs
 
 
+def test_gridworld_manifest_scoped_to_strict_execution_schemas(tmp_path: Any) -> None:
+    """Ungated runner schemas (numpyro/pytorch) stay out of the strict manifest.
+
+    Mirrors a ``--frameworks all`` run: the numpyro runner emits a 9-state,
+    5-action payload without ``model_parameters`` or ``matrix_provenance``.
+    It must not widen the manifest's framework list nor break provenance
+    equality across the strict PyMDP / RxInfer.jl / ActiveInference.jl set.
+    """
+    from gnn.analysis.visualizations import write_gridworld_analysis_manifest
+
+    execution_dir = tmp_path / "12_execute_output"
+    analysis_dir = tmp_path / "16_analysis_output"
+    strict = {
+        "pymdp": "pymdp_simulation_v1",
+        "rxinfer": "rxinfer_simulation_v1",
+        "activeinference_jl": "activeinference_jl_simulation_v1",
+    }
+    payloads = {fw: _gridworld_payload(schema, fw) for fw, schema in strict.items()}
+    ungated = _gridworld_payload("numpyro_simulation_v1", "numpyro")
+    del ungated["model_parameters"]
+    del ungated["matrix_provenance"]
+    ungated["num_states"] = 9
+    payloads["numpyro"] = ungated
+    for framework, payload in payloads.items():
+        sim_dir = execution_dir / "pomdp_gridworld_3x3" / framework / "simulation_data"
+        sim_dir.mkdir(parents=True)
+        (sim_dir / "simulation_results.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    manifest_path = write_gridworld_analysis_manifest(execution_dir, analysis_dir)
+    assert manifest_path is not None
+    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    assert manifest["frameworks"] == sorted(strict)
+    assert manifest["matrix_provenance_equal"] is True
+
+
 class TestAnalysisOverall:
     """Test suite for Analysis module."""
 

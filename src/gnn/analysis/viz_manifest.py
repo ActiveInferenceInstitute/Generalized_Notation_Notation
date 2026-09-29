@@ -22,6 +22,18 @@ from .viz_schema import (
 
 logger = logging.getLogger(__name__)
 
+# The manifest is the strict cross-framework execution proof for the public
+# POMDP GridWorld run (PyMDP, RxInfer.jl, ActiveInference.jl). Ungated runner
+# schemas (pytorch/numpyro) are plotted elsewhere but carry no
+# ``matrix_provenance``, so they are excluded here.
+GRIDWORLD_MANIFEST_SCHEMAS = frozenset(
+    {
+        "pymdp_simulation_v1",
+        "rxinfer_simulation_v1",
+        "activeinference_jl_simulation_v1",
+    }
+)
+
 
 def _relative_or_absolute(path: Path, base: Path) -> str:
     """Handle relative or absolute for internal callers."""
@@ -50,6 +62,8 @@ def write_gridworld_analysis_manifest(
             log.debug(f"Skipping unreadable simulation result {sim_file}: {e}")
             continue
         if not isinstance(payload, dict) or not _is_gridworld_payload(payload):
+            continue
+        if payload.get("schema_version") not in GRIDWORLD_MANIFEST_SCHEMAS:
             continue
 
         framework = _framework_from_path_or_payload(sim_file, payload)
