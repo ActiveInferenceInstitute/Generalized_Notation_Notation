@@ -1,7 +1,7 @@
 {
-  "counts_describe_commit": "ea277dc38",
+  "counts_describe_commit": "0a73f9d7e",
   "manifest_version": "gnn_render_manifest_v1",
-  "receipt_counts_describe_commit": "ea277dc38",
+  "receipt_counts_describe_commit": "0a73f9d7e",
   "recorded_by": "uv run python scripts/z_record_manuscript_render_manifest.py",
   "render_artifacts_sha256": {
     "output/pdf/_combined_manuscript.log": "5b48c980633210e69f065adc3d5368b1bec5c04e9c935b11aeaa52fcc0f7cb08",
