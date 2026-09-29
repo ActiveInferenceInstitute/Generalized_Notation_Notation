@@ -43,8 +43,10 @@
   `joint_state_space_size` / `joint_materialized: False`. pymdp-compatible
   JAX payloads keep the historical path.
 - **GridWorld animations** - current PyMDP, RxInfer.jl, and ActiveInference.jl
-  schemas emit belief GIFs, 3x3 state trajectory GIFs, a cross-framework
-  trajectory GIF, and `cross_framework/gridworld_analysis_manifest.json`.
+  schemas (plus the ungated NumPyro and PyTorch runner schemas, which the
+  manifest lists alongside the strict three) emit belief GIFs, 3x3 state
+  trajectory GIFs, a cross-framework trajectory GIF, and
+  `cross_framework/gridworld_analysis_manifest.json`.
 
 - **Static complexity estimation (`complexity/` subpackage, wave 8)** — pure-stdlib,
   execution-free per-backend bounds: `gnn.analysis.complexity.estimate_model_complexity`
