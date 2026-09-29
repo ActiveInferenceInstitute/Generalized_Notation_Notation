@@ -110,7 +110,8 @@ flowchart LR
 Analysis uses whatever execution (Step 12) produced. Python backends are in core `uv sync`; for Julia frameworks, install Julia and packages, then re-run Step 12.
 
 For the maintained 3x3 GridWorld fixture, Step 16 recognizes the current PyMDP,
-RxInfer.jl, and ActiveInference.jl schemas and writes per-framework belief GIFs,
+RxInfer.jl, and ActiveInference.jl schemas (plus the ungated NumPyro and PyTorch
+runner schemas, which the manifest lists alongside the strict three) and writes per-framework belief GIFs,
 per-framework 3x3 state trajectory GIFs, a side-by-side cross-framework trajectory
 GIF, and `cross_framework/gridworld_analysis_manifest.json`. Use
 `--no-animations` on Step 16 to suppress GIF artifacts. Programmatic callers

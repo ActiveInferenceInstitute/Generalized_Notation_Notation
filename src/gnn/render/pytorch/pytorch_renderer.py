@@ -75,6 +75,7 @@ def render_gnn_to_pytorch(
             C,
             D,
             _extract_num_timesteps(gnn_spec, options),
+            matrix_provenance=gnn_spec.get("matrix_provenance", {}),
         )
 
         # Write output
@@ -155,8 +156,10 @@ def _generate_pytorch_code(
     C: np.ndarray,
     D: np.ndarray,
     num_timesteps: int = 10,
+    matrix_provenance: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Generate standalone PyTorch POMDP simulation script."""
+    provenance = matrix_provenance or {}
     num_states = A.shape[1] if A.ndim == 2 else 2
     num_obs = A.shape[0] if A.ndim == 2 else num_states
     num_actions = B.shape[2] if B.ndim == 3 else 2
@@ -294,6 +297,7 @@ def run_simulation():
         "schema_version": "pytorch_simulation_v1",
         "model_name": "{model_name}",
         "framework": "pytorch",
+        "matrix_provenance": {provenance!r},
         "num_timesteps": T,
         "num_states": num_states,
         "num_observations": num_obs,

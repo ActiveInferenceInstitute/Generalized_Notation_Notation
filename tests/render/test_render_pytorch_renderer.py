@@ -78,3 +78,57 @@ def test_pytorch_discrete_code_declares_simulation_schema(tmp_path: Any) -> None
     assert success, message
     generated = output_path.read_text(encoding="utf-8")
     assert "pytorch_simulation_v1" in generated
+
+
+def _emitted_matrix_provenance(code: str) -> Any:
+    """Return the literal ``matrix_provenance`` value in the generated results dict."""
+    import ast
+
+    tree = ast.parse(code)  # raises SyntaxError on malformed emission
+    results_dict = next(
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and any(getattr(target, "id", None) == "results" for target in node.targets)
+    ).value
+    assert isinstance(results_dict, ast.Dict)
+    provenance_node = next(
+        value
+        for key, value in zip(results_dict.keys, results_dict.values)
+        if isinstance(key, ast.Constant) and key.value == "matrix_provenance"
+    )
+    return ast.literal_eval(provenance_node)
+
+
+def test_pytorch_emits_spec_matrix_provenance(tmp_path: Any) -> None:
+    """Generated code carries the spec's matrix_provenance verbatim.
+
+    Without it, a ``--frameworks all`` GridWorld run with the torch extra
+    breaks ``matrix_provenance_equal`` in the Step 16 manifest.
+    """
+    from gnn.render.pytorch.pytorch_renderer import render_gnn_to_pytorch
+
+    output_path = tmp_path / "pytorch_provenance.py"
+    spec = _small_gnn_spec()
+    spec["matrix_provenance"] = {
+        "B": {"canonical_order": "next_state_previous_state_action"}
+    }
+
+    success, message, _ = render_gnn_to_pytorch(spec, output_path)
+
+    assert success, message
+    assert _emitted_matrix_provenance(output_path.read_text(encoding="utf-8")) == {
+        "B": {"canonical_order": "next_state_previous_state_action"}
+    }
+
+
+def test_pytorch_defaults_matrix_provenance_to_empty_dict(tmp_path: Any) -> None:
+    """Specs without matrix_provenance still emit the key as {}."""
+    from gnn.render.pytorch.pytorch_renderer import render_gnn_to_pytorch
+
+    output_path = tmp_path / "pytorch_no_provenance.py"
+
+    success, message, _ = render_gnn_to_pytorch(_small_gnn_spec(), output_path)
+
+    assert success, message
+    assert _emitted_matrix_provenance(output_path.read_text(encoding="utf-8")) == {}

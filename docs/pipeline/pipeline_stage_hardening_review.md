@@ -20,7 +20,8 @@ Acceptance for this command:
 - Step 11 renders PyMDP, RxInfer.jl, and ActiveInference.jl from the same GNN matrices.
 - Step 12 executes exactly the current rendered scripts requested by `--frameworks` and collects one primary `simulation_results.json` per framework.
 - Step 16 reads only current execution outputs and produces statistics, PNG plots, per-framework GIFs, a cross-framework GridWorld GIF, dashboards, and `cross_framework/gridworld_analysis_manifest.json`.
-- The accepted execution schemas are `pymdp_simulation_v1`, `rxinfer_simulation_v1`, and `activeinference_jl_simulation_v1`; the accepted manifest schema is `gridworld_analysis_manifest_v1`.
+- The strict execution schemas are `pymdp_simulation_v1`, `rxinfer_simulation_v1`, and `activeinference_jl_simulation_v1`; the accepted manifest schema is `gridworld_analysis_manifest_v1`.
+- The manifest's `frameworks` list must contain the three strict targets as a subset: ungated runners executed by `--frameworks all` (`numpyro_simulation_v1`, `pytorch_simulation_v1`) may appear alongside them. Every listed payload carries the spec's `matrix_provenance`, and `matrix_provenance_equal` must be true across all of them (`scripts/check_pomdp_gridworld_outputs.py`).
 
 Generated outputs remain under ignored output trees and are regenerated as evidence, not maintained as source.
 
