@@ -43,9 +43,13 @@ ABOVE_AVG_DURATION_MULTIPLIER: float = 3.0
 def resolve_pipeline_summary_path(output_dir: Path) -> Path:
     """Locate the pipeline execution summary for ``output_dir``.
 
-    Prefers ``output_dir/00_pipeline_summary/pipeline_execution_summary.json``
-    and falls back to the same path under ``output_dir.parent`` (the layout
-    used when step 24 writes into a per-step subdirectory).
+    Inside a pipeline run (``GNN_RUN_ID`` set) the current run's
+    ``preliminary_summary.json`` wins, because the final
+    ``pipeline_execution_summary.json`` is only written after this step and,
+    when present, belongs to a previous run. Otherwise prefers
+    ``output_dir/00_pipeline_summary/pipeline_execution_summary.json`` and
+    falls back to the same path under ``output_dir.parent`` (the layout used
+    when step 24 writes into a per-step subdirectory).
 
     Args:
         output_dir: Pipeline output root directory
@@ -53,16 +57,21 @@ def resolve_pipeline_summary_path(output_dir: Path) -> Path:
     Returns:
         Path to the summary JSON (which may not exist yet)
     """
-    summary_path = (
-        output_dir / "00_pipeline_summary" / "pipeline_execution_summary.json"
-    )
-    if not summary_path.exists():
-        summary_path = (
-            output_dir.parent
-            / "00_pipeline_summary"
-            / "pipeline_execution_summary.json"
-        )
-    return summary_path
+    bases = (output_dir, output_dir.parent)
+    run_id = os.environ.get("GNN_RUN_ID")
+    if run_id:
+        for base in bases:
+            prelim = base / "00_pipeline_summary" / "preliminary_summary.json"
+            try:
+                if json.loads(prelim.read_text()).get("run_id") == run_id:
+                    return prelim
+            except (OSError, ValueError, AttributeError):
+                continue
+    for base in bases:
+        summary_path = base / "00_pipeline_summary" / "pipeline_execution_summary.json"
+        if summary_path.exists():
+            return summary_path
+    return output_dir.parent / "00_pipeline_summary" / "pipeline_execution_summary.json"
 
 
 def resolve_analysis_output_dir(output_dir: Path) -> Path:

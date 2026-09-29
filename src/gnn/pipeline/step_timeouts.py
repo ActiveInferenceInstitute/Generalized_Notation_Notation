@@ -5,11 +5,15 @@ Environment overrides:
   - GNN_STEP_TIMEOUT_SCALE: multiplier applied to every configured timeout
     (for slow-storage checkouts where process startup dominates; invalid or
     non-positive values are ignored).
+  - GNN_PIPELINE_DEADLINE: epoch seconds by which the whole run must finish,
+    armed by ``main`` from ``pipeline.timeout.total`` in input/config.yaml.
+    Every step timeout is capped at the remaining budget.
 """
 
 import logging
 import os
-from typing import Any, cast
+import time
+from typing import Any, Optional, cast
 
 logger = logging.getLogger(__name__)
 
@@ -30,13 +34,39 @@ STEP_TIMEOUTS: dict[str, Any] = {
 
 DEFAULT_TIMEOUT = 180
 
+PIPELINE_DEADLINE_ENV = "GNN_PIPELINE_DEADLINE"
+
+
+def pipeline_budget_remaining() -> Optional[float]:
+    """Seconds left before ``GNN_PIPELINE_DEADLINE``, or None when no deadline is armed."""
+    raw = os.environ.get(PIPELINE_DEADLINE_ENV)
+    if not raw:
+        return None
+    try:
+        return float(raw) - time.time()
+    except ValueError:
+        logger.debug("Invalid %s value: %s", PIPELINE_DEADLINE_ENV, raw)
+        return None
+
+
+def _cap_to_pipeline_budget(seconds: int) -> int:
+    remaining = pipeline_budget_remaining()
+    if remaining is None:
+        return seconds
+    return max(1, min(seconds, int(remaining)))
+
 
 def get_step_timeout(script_name: str, comprehensive: bool = False) -> int:
     """Get timeout for a pipeline step.
 
     Supports environment variable override: GNN_STEP_TIMEOUT_{STEP_NUMBER}
-    e.g., GNN_STEP_TIMEOUT_2=1800 overrides 2_tests.py timeout.
+    e.g., GNN_STEP_TIMEOUT_2=1800 overrides 2_tests.py timeout. The result is
+    capped at the remaining ``GNN_PIPELINE_DEADLINE`` budget when one is armed.
     """
+    return _cap_to_pipeline_budget(_configured_step_timeout(script_name, comprehensive))
+
+
+def _configured_step_timeout(script_name: str, comprehensive: bool) -> int:
     # Check env var override first
     step_num = script_name.split("_")[0] if "_" in script_name else ""
     env_key = f"GNN_STEP_TIMEOUT_{step_num}"
