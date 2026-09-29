@@ -1,9 +1,9 @@
 {
-  "counts_describe_commit": "e48d4ee5d",
+  "counts_describe_commit": "c35507daf",
   "dirty_path_count": 2,
   "dirty_paths": [
-    "output/data/manuscript_variables.json",
-    "output/data/manuscript_variables_receipt.json"
+    ".gitignore",
+    ".ignore"
   ],
   "generator": "scripts/z_generate_manuscript_variables.py",
   "git_available": true,
