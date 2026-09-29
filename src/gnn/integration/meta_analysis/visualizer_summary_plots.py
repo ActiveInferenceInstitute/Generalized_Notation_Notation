@@ -223,10 +223,14 @@ class SweepSummaryPlotMixin:
             linewidth=0.5,
         )
         for bar, v, r2 in zip(bars, vals, r2s):
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                bar.get_height() + 0.01,
+            # Offset in points, not data units, so the label gap does not
+            # depend on the exponent scale (a data-unit offset is unbounded
+            # in pixels when the y-range is near zero).
+            ax.annotate(
                 f"α={v:.2f}\nR²={r2:.2f}",
+                (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                xytext=(0, 3),
+                textcoords="offset points",
                 ha="center",
                 va="bottom",
                 fontsize=_STYLE["tick_size"] - 3,
