@@ -145,7 +145,9 @@ def test_step8_reports_failed_figure_as_warning_exit(
 
 
 @pytest.mark.unit
-def test_step8_clean_file_and_rank4_tensor_exit_zero(tmp_path: Path) -> None:
+def test_step8_clean_file_and_rank4_tensor_exit_zero(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
     target = tmp_path / "in"
     target.mkdir()
     for name in ("simple_mdp.md", "time_varying_dynamics.md"):
@@ -153,8 +155,13 @@ def test_step8_clean_file_and_rank4_tensor_exit_zero(tmp_path: Path) -> None:
         (target / name).write_text(source.read_text(encoding="utf-8"), "utf-8")
     out = tmp_path / "8_visualization_output"
 
-    result = process_visualization(target, out)
+    with caplog.at_level(logging.WARNING):
+        result = process_visualization(target, out)
 
+    # A rank-4 tensor (time_varying_dynamics.B_t) has no renderer: it must be
+    # skipped as unsupported, not attempted and logged as a figure ERROR.
+    errors = [r.getMessage() for r in caplog.records if r.levelno >= logging.ERROR]
+    assert errors == []
     summary = json.loads((out / "visualization_summary.json").read_text("utf-8"))
     assert summary["errors"] == []
     assert result is True
