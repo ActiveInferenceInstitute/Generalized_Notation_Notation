@@ -10,8 +10,8 @@
 
 | Condition | Outcome |
 |---|---|
-| `cmdstanpy` not importable | Step 12 pre-flight marks the script `skipped` ("Dependency not installed: cmdstanpy", hint `uv sync --extra stan`) |
-| CmdStan toolchain missing | driver exits 1 with `CmdStan toolchain not available` |
+| `cmdstanpy` not importable | Step 12 pre-flight marks the script `skipped` ("Dependency not installed: cmdstanpy", `skip_category` `missing_module`, hint `uv sync --extra stan`) |
+| CmdStan toolchain missing | Step 12 pre-flight marks the script `skipped` with `skip_category` `probe_failed` ("Dependency probe failed for cmdstanpy: …", hint `python -c 'import cmdstanpy; cmdstanpy.install_cmdstan()'`); a direct driver run exits 1 with `CmdStan toolchain not available` |
 | compile or sampling error | driver exits 1; stderr carries the CmdStan message |
 | success | `simulation_results.json` written; exit 0 iff `validation.all_valid` |
 

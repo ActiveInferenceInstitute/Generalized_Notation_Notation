@@ -25,4 +25,4 @@ execute/ngclearn/
 | Runner | `run_ngclearn_scripts(...)` is fail-closed: `False` when the probe fails, `True` when no ngclearn scripts are found, and `failure_count == 0` after execution |
 | Executor spec row | `result_key` `ngclearn_executions`, `operation_name` `execute_ngclearn_scripts`; absent runtime records status `SKIPPED` with message `ngc-learn framework not installed (optional dependency - install with: uv sync --extra ngclearn)` and `total_failures` 0 |
 | Env routing | `NGCLEARN_OUTPUT_DIR` → results land in `<model>/ngclearn/simulation_data/simulation_results.json` |
-| Script-path pre-flight | Reason `Dependency not installed: ngclearn`, hint `uv sync --extra ngclearn` |
+| Script-path pre-flight | On Python < 3.12 the extra cannot install: reason `Dependency not installable: ngclearn requires Python >= 3.12 (interpreter is 3.11)`, `skip_category` `python_too_old`; on Python >= 3.12 without the extra: reason `Dependency not installed: ngclearn`, `skip_category` `missing_module`, hint `uv sync --extra ngclearn` |

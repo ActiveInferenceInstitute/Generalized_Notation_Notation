@@ -41,7 +41,12 @@ _BASE_KEYS = {
     "timestamp",
 }
 
-_SKIP_KEYS = _BASE_KEYS | {"error", "error_type", "execution_metadata"}
+_SKIP_KEYS = _BASE_KEYS | {
+    "error",
+    "error_type",
+    "execution_metadata",
+    "skip_category",
+}
 _LOCAL_FAIL_KEYS = _BASE_KEYS | {"error", "error_type", "worker_pool_error_type"}
 _DIST_FAIL_KEYS = _BASE_KEYS | {
     "error",
