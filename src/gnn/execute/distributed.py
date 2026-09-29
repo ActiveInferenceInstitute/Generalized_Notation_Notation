@@ -170,7 +170,16 @@ class Dispatcher:
         if dask_wait is None:
             return cast("list[dict[str, Any]]", self.client.gather(futures))
         wait_timeout = _resolve_wait_timeout()
-        done, not_done = dask_wait(futures, timeout=wait_timeout)
+        # dask.distributed.wait resolves the process-global default client, so
+        # scope it to this dispatcher's client; on expiry it raises rather than
+        # returning the pending set, so derive done/not_done from future status.
+        try:
+            with self.client.as_current():
+                dask_wait(futures, timeout=wait_timeout)
+        except TimeoutError:
+            pass
+        done = [fut for fut in futures if fut.status != "pending"]
+        not_done = [fut for fut in futures if fut.status == "pending"]
         if not not_done:
             return cast("list[dict[str, Any]]", self.client.gather(futures))
         logger.warning(
