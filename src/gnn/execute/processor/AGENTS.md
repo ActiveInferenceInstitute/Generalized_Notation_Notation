@@ -33,11 +33,11 @@ This package has no MCP surface; the Step 12 MCP tools live in the parent packag
 | Module | Owns |
 | --- | --- |
 | `__init__.py` | Facade: pre-split surface re-exports (`__init__.py:20-77`), moved-def re-exports (`__init__.py:82-117`), framework-availability aliases (`__init__.py:118-123`) |
-| `envelope.py` | `_is_python_framework_dependency_available` (`envelope.py:15`), `_base_execution_envelope` (`envelope.py:31`), `_model_framework_from_path` (`envelope.py:66`), `_make_skipped_result` (`envelope.py:79`), `_make_local_worker_pool_failure_result` (`envelope.py:116`), `_make_distributed_dispatch_failure_result` (`envelope.py:138`) |
+| `envelope.py` | `_is_python_framework_dependency_available` (`envelope.py:15`), `_base_execution_envelope` (`envelope.py:31`), `_model_framework_from_path` (`envelope.py:66`), `_make_skipped_result` (`envelope.py:79`), `_make_local_worker_pool_failure_result` (`envelope.py:116`), `_make_distributed_dispatch_failure_result` (`envelope.py:138`), `_bind_dispatcher_failure` (`envelope.py:165`) |
 | `workers.py` | `_coerce_execution_workers` (`workers.py:14`), `_coerce_dispatch_retries` (`workers.py:23`), `_execute_script_worker` (`workers.py:32`), `_run_scripts_with_local_workers` (`workers.py:51`) |
 | `summary.py` | `_init_execution_summary` (`summary.py:18`), `_update_framework_status` (`summary.py:47`), `_classify_execute_outcome` (`summary.py:95`), `_write_execution_summaries` (`summary.py:164`) |
 | `single.py` | `_aggregate_benchmark_samples` (`single.py:53`), `_new_execution_result` (`single.py:70`), `_build_execution_environment` (`single.py:83`), `_framework_for_data_helpers` (`single.py:131`), `_GNN_ALLOW_MISSING_DEPS` (`single.py:136`), `_gnn_allow_missing_deps` (`single.py:139`), `_sandbox_mode` (`single.py:148`), `_sandbox_command_prefix` (`single.py:156`), `_backend_version_from_runner_metadata` (`single.py:180`), `execute_single_script` (`single.py:202`) |
-| `pipeline.py` | `process_execute` (`pipeline.py:43`), `execute_simulation_from_gnn` (`pipeline.py:440`) |
+| `pipeline.py` | `process_execute` (`pipeline.py:46`), `execute_simulation_from_gnn` (`pipeline.py:452`) |
 
 ## Public Surface (facade contract)
 
@@ -84,7 +84,7 @@ attribute are observed by the leaf code:
 
 - `envelope.py:24-28` — `_is_python_framework_dependency_available` resolves
   `_processor_facade._is_framework_available_by_name` at call time.
-- `pipeline.py:149-155` — `process_execute` resolves
+- `pipeline.py:152-158` — `process_execute` resolves
   `_processor_facade._load_render_summary_contract` at call time.
 - `single.py:228-236` — `execute_single_script` resolves
   `_processor_facade._is_python_framework_dependency_available` for the pre-flight skip check.
@@ -109,7 +109,7 @@ remain correct only for non-facade dependencies that are not patch seams.
 Acyclicity invariant: `src/gnn/execute/types.py:6-7` states the contract — a leaf module must not
 import from `execute.processor` or any execute sibling, which keeps the facade import graph
 acyclic. The module-top sibling imports that are legitimate (pure intra-package wiring, no patch
-seams): `pipeline.py:18-29` (envelope/single/summary/workers), `single.py:34-38` (metadata +
+seams): `pipeline.py:18-32` (envelope/single/summary/workers), `single.py:34-38` (metadata +
 envelope), `workers.py:8-11` (envelope + single). `envelope.py` imports no sibling at module top —
 only `gnn.execute.metadata` and the framework-availability module (`envelope.py:9-12`).
 

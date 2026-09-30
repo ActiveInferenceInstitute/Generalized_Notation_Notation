@@ -7,7 +7,7 @@ Includes robust retry semantics for node failure in external cloud instances.
 
 import logging
 import os
-from typing import Any, Callable, Dict, List, Literal, Optional, cast
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, cast
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,41 @@ def _wait_timeout_failures(count: int, wait_timeout: int) -> List[Dict[str, Any]
         {"success": False, "error": error, "error_type": "DistributedWaitTimeout"}
         for _ in range(count)
     ]
+
+
+EXCEPTION_FETCH_TIMEOUT_SECONDS = 5
+
+# Statuses that end a future without a result and carry no remote exception.
+_NO_EXCEPTION_STATUS_TYPES = {"cancelled": "CancelledError", "lost": "WorkerLost"}
+
+
+def _remote_task_failure(future: Any, status: str) -> Dict[str, Any]:
+    """Failure record for a future that ended without a result.
+
+    ``status`` is the one status snapshot the caller classified the future by.
+    Only an ``error`` future has a remote exception to fetch, and the fetch is
+    bounded: on a ``lost`` future ``Future.exception()`` waits for a result that
+    never arrives, which would defeat the bounded wait this dispatcher enforces.
+    """
+    exception_type = _NO_EXCEPTION_STATUS_TYPES.get(status, "UnknownError")
+    detail = "no result"
+    if status == "error":
+        try:
+            exc = future.exception(timeout=EXCEPTION_FETCH_TIMEOUT_SECONDS)
+        except Exception as fetch_exc:  # noqa: BLE001 — record the fetch failure
+            detail = f"remote exception unavailable ({type(fetch_exc).__name__})"
+        else:
+            if exc is not None:
+                exception_type = type(exc).__name__
+                detail = str(exc)
+    return {
+        "success": False,
+        "error": (
+            f"Distributed task ended with status {status!r}: {exception_type}: {detail}"
+        ),
+        "error_type": "DistributedTaskError",
+        "exception_type": exception_type,
+    }
 
 
 class Dispatcher:
@@ -158,7 +193,10 @@ class Dispatcher:
         """Gather Dask futures under a bounded wait.
 
         On wait-timeout the outstanding futures are cancelled and reported
-        as failed executions; completed results keep their submission order.
+        as failed executions; a future that ended without a result (remote
+        exception after its retries, lost worker) is reported as its own
+        ``DistributedTaskError`` instead of failing the whole gather.
+        Completed results keep their submission order.
         When dask.distributed is not importable (only possible for
         non-dask clients — a real dask client has dask installed by
         definition) the pre-change unbounded gather applies.
@@ -166,8 +204,6 @@ class Dispatcher:
         try:
             from dask.distributed import wait as dask_wait
         except ImportError:
-            dask_wait = None
-        if dask_wait is None:
             return cast("list[dict[str, Any]]", self.client.gather(futures))
         wait_timeout = _resolve_wait_timeout()
         # dask.distributed.wait resolves the process-global default client, so
@@ -180,26 +216,47 @@ class Dispatcher:
             pass
         # Read each future's status exactly once: a future that finishes
         # mid-classification must land in exactly one bucket, never in neither
-        # (which would drop its result without cancelling it).
-        done: List[Any] = []
+        # (which would drop its result without cancelling it). Futures that
+        # ended without a result (remote exception, lost worker, cancelled)
+        # are reported one by one, because gathering them raises and would
+        # discard every other script's result.
+        finished: List[Any] = []
+        failed: List[Tuple[Any, str]] = []
         not_done: List[Any] = []
         for fut in futures:
-            (not_done if fut.status == "pending" else done).append(fut)
-        if not not_done:
+            status = fut.status
+            if status == "pending":
+                not_done.append(fut)
+            elif status == "finished":
+                finished.append(fut)
+            else:
+                failed.append((fut, status))
+        if not not_done and not failed:
             return cast("list[dict[str, Any]]", self.client.gather(futures))
-        logger.warning(
-            "Dask wait exceeded %ss; cancelling %d outstanding executions.",
-            wait_timeout,
-            len(not_done),
-        )
+        if not_done:
+            logger.warning(
+                "Dask wait exceeded %ss; cancelling %d outstanding executions.",
+                wait_timeout,
+                len(not_done),
+            )
         for future in not_done:
             try:
                 future.cancel()
             except Exception as e:  # noqa: BLE001
                 logger.warning("Dask cancel failed: %s", e)
-        gathered = dict(zip(done, self.client.gather(list(done))))
+        if failed:
+            logger.warning(
+                "%d Dask executions ended without a result; reporting each as failed.",
+                len(failed),
+            )
+        results: Dict[Any, Dict[str, Any]] = dict(
+            zip(finished, self.client.gather(finished) if finished else [])
+        )
+        results.update(
+            (fut, _remote_task_failure(fut, status)) for fut, status in failed
+        )
         return [
-            gathered.get(fut, _wait_timeout_failures(1, wait_timeout)[0])
+            results.get(fut, _wait_timeout_failures(1, wait_timeout)[0])
             for fut in futures
         ]
 

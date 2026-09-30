@@ -519,3 +519,210 @@ def test_dask_gather_classifies_each_future_exactly_once(
         assert timed_out == fut.cancelled, (
             f"{fut.name}: reported timed out={timed_out} but cancelled={fut.cancelled}"
         )
+
+
+class _ErroredFuture(_FlippingFuture):
+    """Future that finished with a remote exception (dask status ``error``)."""
+
+    def __init__(self, name: str, exc: BaseException) -> None:
+        super().__init__(name, ["error"])
+        self._exc = exc
+
+    def exception(self, timeout: Any = None) -> BaseException:
+        assert timeout is not None, "exception() must be fetched with a bound"
+        return self._exc
+
+
+class _FinishedOnlyGatherClient(_FakeDaskClient):
+    """Gather that raises like dask when handed a non-finished future."""
+
+    def gather(self, futures: list[Any]) -> list[dict[str, Any]]:
+        for fut in futures:
+            if fut._statuses[0] != "finished":
+                raise RuntimeError(f"gather raised for {fut.name}")
+        return super().gather(futures)
+
+
+@pytest.mark.parametrize("with_pending", [False, True])
+def test_dask_gather_isolates_errored_futures(
+    monkeypatch: pytest.MonkeyPatch, with_pending: bool
+) -> None:
+    """One remotely failed future becomes one failure record, not a batch raise."""
+    import types
+
+    from gnn.execute.distributed import WAIT_TIMEOUT_ENV, Dispatcher
+
+    def wait(futures: Any, timeout: Any = None) -> None:
+        if with_pending:
+            raise TimeoutError
+
+    fake_distributed = types.ModuleType("dask.distributed")
+    fake_distributed.wait = wait  # type: ignore[attr-defined]
+    fake_dask = types.ModuleType("dask")
+    fake_dask.distributed = fake_distributed  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "dask", fake_dask)
+    monkeypatch.setitem(sys.modules, "dask.distributed", fake_distributed)
+    monkeypatch.setenv(WAIT_TIMEOUT_ENV, "1")
+
+    dispatcher = Dispatcher(backend="dask", max_retries=0)
+    dispatcher.client = _FinishedOnlyGatherClient()
+    futures: list[Any] = [
+        _FlippingFuture("ok", ["finished"]),
+        _ErroredFuture("bad", ValueError("model diverged")),
+    ]
+    if with_pending:
+        futures.append(_FlippingFuture("stuck", ["pending"]))
+
+    results = dispatcher._dask_gather_bounded(futures)
+
+    assert results[0] == {"success": True, "name": "ok"}
+    assert results[1]["success"] is False
+    assert results[1]["error_type"] == "DistributedTaskError"
+    assert results[1]["exception_type"] == "ValueError"
+    assert "model diverged" in results[1]["error"]
+    assert not futures[1].cancelled
+    if with_pending:
+        assert results[2]["error_type"] == "DistributedWaitTimeout"
+        assert futures[2].cancelled
+
+
+@pytest.mark.needs_distributed
+def test_dask_dispatch_reports_remote_exception_per_script(dask_client: Any) -> None:
+    from gnn.execute.distributed import Dispatcher
+
+    dispatcher = Dispatcher(backend="dask", max_retries=0)
+    dispatcher._initialized = True
+    dispatcher.client = dask_client
+
+    def execute(info: dict[str, Any]) -> dict[str, Any]:
+        if info["name"] == "bad":
+            raise ValueError("model diverged")
+        return {"success": True, "name": info["name"]}
+
+    results = dispatcher.run_scripts_parallel(
+        [{"name": "ok"}, {"name": "bad"}], execute
+    )
+
+    assert results[0] == {"success": True, "name": "ok"}
+    assert results[1]["success"] is False
+    assert results[1]["error_type"] == "DistributedTaskError"
+    assert results[1]["exception_type"] == "ValueError"
+
+
+def test_bare_dispatcher_failure_is_bound_to_its_script(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Per-task dispatcher failures keep the script's identity and framework."""
+    from gnn.execute import distributed, processor
+
+    render_out = tmp_path / "render" / "11_render_output"
+    script_dir = render_out / "model" / "pymdp"
+    script_dir.mkdir(parents=True)
+    script = script_dir / "model_pymdp.py"
+    script.write_text("print('ok')\n", encoding="utf-8")
+
+    class TimingOutDispatcher:
+        def __init__(self, **kwargs: object) -> None:
+            pass
+
+        def run_scripts_parallel(
+            self, infos: list[dict], *args: object, **kwargs: object
+        ) -> list[dict]:
+            return [
+                {
+                    "success": False,
+                    "error": "remote boom",
+                    "error_type": "DistributedTaskError",
+                    "exception_type": "ValueError",
+                }
+                for _ in infos
+            ]
+
+        def shutdown(self) -> None:
+            pass
+
+    monkeypatch.setattr(distributed, "Dispatcher", TimingOutDispatcher)
+    output_dir = tmp_path / "execute_output"
+    result = processor.process_execute(
+        target_dir=tmp_path / "input",
+        output_dir=output_dir,
+        frameworks="pymdp",
+        render_output_dir=render_out,
+        distributed=True,
+        backend="dask",
+        distributed_max_retries=2,
+        require_render_summary=False,
+    )
+
+    assert result is False
+    summary = json.loads(
+        (output_dir / "summaries" / "execution_summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    detail = summary["execution_details"][0]
+    assert detail["error_type"] == "DistributedTaskError"
+    assert detail["framework"] == "pymdp"
+    assert Path(detail["script_path"]).resolve() == script.resolve()
+    assert "remote boom" in detail["error"]
+    assert "unknown" not in summary["framework_status"]
+
+
+class _NoResultFuture(_FlippingFuture):
+    """Future in a terminal no-result status whose exception fetch misbehaves."""
+
+    def __init__(self, name: str, status: str, fetch: Any) -> None:
+        super().__init__(name, [status])
+        self._fetch = fetch
+
+    def exception(self, timeout: Any = None) -> Any:
+        return self._fetch(timeout)
+
+
+def _never_called(timeout: Any) -> None:
+    raise AssertionError("exception() blocks forever on a lost future")
+
+
+def _fetch_times_out(timeout: Any) -> None:
+    raise TimeoutError
+
+
+@pytest.mark.parametrize(
+    ("status", "fetch", "exception_type", "detail"),
+    [
+        ("lost", _never_called, "WorkerLost", "no result"),
+        ("cancelled", _never_called, "CancelledError", "no result"),
+        ("error", _fetch_times_out, "UnknownError", "unavailable (TimeoutError)"),
+    ],
+)
+def test_dask_gather_reports_no_result_futures_without_blocking(
+    monkeypatch: pytest.MonkeyPatch,
+    status: str,
+    fetch: Any,
+    exception_type: str,
+    detail: str,
+) -> None:
+    """Lost/cancelled futures never fetch an exception; error fetches are bounded."""
+    import types
+
+    from gnn.execute.distributed import Dispatcher
+
+    fake_distributed = types.ModuleType("dask.distributed")
+    fake_distributed.wait = lambda futures, timeout=None: None  # type: ignore[attr-defined]
+    fake_dask = types.ModuleType("dask")
+    fake_dask.distributed = fake_distributed  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "dask", fake_dask)
+    monkeypatch.setitem(sys.modules, "dask.distributed", fake_distributed)
+
+    dispatcher = Dispatcher(backend="dask", max_retries=0)
+    dispatcher.client = _FinishedOnlyGatherClient()
+    ok = _FlippingFuture("ok", ["finished"])
+    bad = _NoResultFuture("bad", status, fetch)
+
+    results = dispatcher._dask_gather_bounded([ok, bad])
+
+    assert results[0] == {"success": True, "name": "ok"}
+    assert results[1]["error_type"] == "DistributedTaskError"
+    assert results[1]["exception_type"] == exception_type
+    assert f"status {status!r}" in results[1]["error"]
+    assert detail in results[1]["error"]
