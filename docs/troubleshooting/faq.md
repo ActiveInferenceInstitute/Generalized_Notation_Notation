@@ -428,7 +428,7 @@ python -c "import julia; julia.install()"
 1. **Native continuous linear-Gaussian models** (recommended when your
    dynamics are linear-Gaussian): declare F/H/Q/R matrices with
    `prior_mean`/`prior_cov` state factors. GNN renders these to JAX,
-   NumPyro, PyTorch, Stan (LGSSM), and RxInfer.jl programs and executes them
+   NumPyro, PyTorch, Stan (LGSSM), RxInfer.jl, and cpomdp programs and executes them
    in Step 12. See `input/gnn_files/continuous/` for runnable exemplars such
    as `continuous_navigation.md`.
 

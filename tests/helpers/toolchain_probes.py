@@ -105,6 +105,12 @@ def torch_ready() -> bool:
 
 
 @functools.lru_cache(maxsize=1)
+def cpomdp_ready() -> bool:
+    """cpomdp is importable (``uv sync --extra cpomdp``)."""
+    return _module_available("cpomdp")
+
+
+@functools.lru_cache(maxsize=1)
 def sklearn_ready() -> bool:
     """scikit-learn is importable (``uv sync --extra ml-ai``)."""
     return _module_available("sklearn")
@@ -202,6 +208,10 @@ TOOLCHAIN_MARKERS: dict[str, tuple[Callable[[], bool], str]] = {
     ),
     "needs_pkl": (pkl_ready, "pkl CLI not on PATH; native eval path not exercised"),
     "needs_torch": (torch_ready, "torch is not installed (uv sync --extra torch)"),
+    "needs_cpomdp": (
+        cpomdp_ready,
+        "cpomdp is not installed (uv sync --extra cpomdp)",
+    ),
     "needs_sklearn": (
         sklearn_ready,
         "scikit-learn is not installed (uv sync --extra ml-ai)",

@@ -21,13 +21,14 @@ This module is responsible for running GNN models that have been rendered into f
 | **NumPyro** | Python | `numpyro/` | `*_numpyro.py` | ✅ Full support |
 | **Stan** | Python driver (cmdstanpy) | `stan/` | `*_stan.py` | ✅ (skipped when cmdstanpy/CmdStan absent) |
 | **ngc-learn** | Python | `ngclearn/` | `*_ngclearn.py` | ✅ (skipped without the py3.12 marker-gated `ngclearn` extra) |
+| **cpomdp** | Python | `cpomdp/` | `*_cpomdp.py` | ✅ (continuous models only, skipped without the `cpomdp` extra) |
 | **bnlearn** | Python (generator-backed; `.R` lane via Rscript) | `bnlearn/` | `*_bnlearn.py`, `*.R` | ✅ (skipped when the `bnlearn` extra / R bnlearn runtime is absent; executor `src/gnn/execute/bnlearn/`) |
 
 JAX, NumPyro and DisCoPy are **core** dependencies (`uv sync`); PyTorch needs the `torch` extra (`uv sync --extra torch`; torch>=2.13.0 resolves GHSA-rrmf-rvhw-rf47), bnlearn needs the `bnlearn` extra (`uv sync --extra bnlearn`), and Stan needs `uv sync --extra stan` plus a CmdStan toolchain. If the environment is incomplete, the affected scripts are **skipped** (not failed). Julia frameworks require Julia installed.
 
 Two behaviours introduced in v3.2.0: `_merge_prior_execution_summary` (`src/gnn/execute/metadata.py`, re-exported through the `src/gnn/execute/processor/` facade) folds a previously written `execution_summary.json` into the current results so the durable summary covers every input folder rather than the last one processed; and script discovery only considers `.py`/`.jl` files, so companion artifacts such as `<stem>_stan.stan` and `<stem>_stan_data.json` are never treated as executables.
 
-Continuous (linear-Gaussian) models reach Step 12 only for the backends that render them (JAX, NumPyro, PyTorch, Stan, RxInfer.jl); the categorical backends report render status `unsupported` in Step 11 and emit nothing to execute.
+Continuous (linear-Gaussian) models reach Step 12 only for the backends that render them (JAX, NumPyro, PyTorch, Stan, RxInfer.jl, cpomdp); the categorical backends report render status `unsupported` in Step 11 and emit nothing to execute.
 
 ## Agent Identity & Capabilities
 
@@ -35,7 +36,7 @@ Continuous (linear-Gaussian) models reach Step 12 only for the backends that ren
 
 ## Module Overview
 
-**Purpose**: Execute rendered simulation scripts across multiple frameworks (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, Lean, bnlearn, ngc-learn).
+**Purpose**: Execute rendered simulation scripts across multiple frameworks (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, Lean, bnlearn, ngc-learn, cpomdp).
 
 **Pipeline Step**: Step 12: Execution (12_execute.py)
 

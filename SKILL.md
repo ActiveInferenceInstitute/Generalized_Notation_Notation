@@ -22,7 +22,7 @@ GNN (Generalized Notation Notation) is a text-based specification language for A
 just                     # List recipes
 just test                # Fast test suite
 just pipeline            # Full 25-step pipeline
-just render-health       # Check all 9 renderer backends
+just render-health       # Check all 10 renderer backends
 
 # Run full pipeline directly
 python src/gnn/main.py --target-dir input/gnn_files --verbose

@@ -76,7 +76,7 @@ Step touchpoints:
 | 3 parse | `src/gnn/` | parse the emitted document; first acceptance gate |
 | 5 type check | `src/gnn/type_checker/` | state-space typing and dimension consistency |
 | 10 ontology | `src/gnn/ontology/` | validate bindings against `src/gnn/ontology/act_inf_ontology_terms.json`; unknown bindings need an explicit vocabulary decision, not silent misspellings |
-| 11 render | `src/gnn/render/` | nine render targets; continuous models on categorical-only backends report `unsupported`, never execute |
+| 11 render | `src/gnn/render/` | ten render targets; continuous models on categorical-only backends report `unsupported`, never execute |
 | 12 execute | `src/gnn/execute/` | eight execute targets; outputs land under `output/12_execute_output/summaries/execution_summary.json` |
 
 Commands of record (from the repository root):

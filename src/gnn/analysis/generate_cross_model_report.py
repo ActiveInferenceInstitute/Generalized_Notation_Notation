@@ -28,6 +28,7 @@ FRAMEWORK_ORDER: list[Any] = [
     "discopy",
     "pytorch",
     "numpyro",
+    "cpomdp",
 ]
 FRAMEWORK_LABELS: dict[str, Any] = {
     "pymdp": "PyMDP",

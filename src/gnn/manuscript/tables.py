@@ -135,11 +135,20 @@ def _render_backend_table(backends: list[tuple[str, str, bool]]) -> str:
     return "\n".join(rows)
 
 
+def _renders_discrete(spec: dict) -> bool:
+    """Whether a registry entry renders discrete models.
+
+    ``pomdp_compatible`` only says the POMDP processor routes the backend. A
+    continuous-only backend is routed too and sets ``continuous_only``.
+    """
+    return bool(spec.get("pomdp_compatible")) and not spec.get("continuous_only", False)
+
+
 def _render_framework_capability_table(specs: dict[str, dict]) -> str:
     """Render the per-framework model-kind capability table.
 
     Every cell is a registry flag, never prose: *Discrete render* is
-    ``pomdp_compatible``, *Continuous render* is ``supports_continuous``,
+    :func:`_renders_discrete`, *Continuous render* is ``supports_continuous``,
     and *Executor status* is ``supports_execution`` (whether a Step-12
     executor exists). An ``unsupported`` continuous cell is the renderer's
     own status for continuous-state models — reported as unsupported, not
@@ -151,7 +160,12 @@ def _render_framework_capability_table(specs: dict[str, dict]) -> str:
     ]
     for key, spec in specs.items():
         name = str(spec.get("name", key))
-        discrete = "yes" if spec.get("pomdp_compatible") else "no"
+        if _renders_discrete(spec):
+            discrete = "yes"
+        elif spec.get("pomdp_compatible"):
+            discrete = "unsupported"
+        else:
+            discrete = "no"
         continuous = "yes" if spec.get("supports_continuous") else "unsupported"
         executor = "executor" if spec.get("supports_execution") else "render-only"
         rows.append(f"| {name} | {discrete} | {continuous} | {executor} |")
@@ -174,8 +188,8 @@ def _render_model_kind_table(specs: dict[str, dict]) -> str:
 
     One row per model kind the pipeline represents and executes. The
     Renderer(s)/Executor(s) cells are generated from the registry's
-    ``pomdp_compatible``/``supports_continuous``/``supports_execution``
-    flags. Multi-agent specs are discrete-state models whose per-agent
+    ``pomdp_compatible``/``continuous_only``/``supports_continuous``/
+    ``supports_execution`` flags. Multi-agent specs are discrete-state models whose per-agent
     matrix keys canonicalize through the same discrete A/B/C/D render path
     (``structured_pomdp['matrices']`` in ``pomdp_contract.py``), so that row
     inherits the discrete row's registry-grounded coverage; the recursive
@@ -191,7 +205,7 @@ def _render_model_kind_table(specs: dict[str, dict]) -> str:
     continuous_executors: list[str] = []
     for key, spec in specs.items():
         name = str(spec.get("name", key))
-        if spec.get("pomdp_compatible"):
+        if _renders_discrete(spec):
             discrete_renderers.append(name)
             if spec.get("supports_execution"):
                 discrete_executors.append(name)

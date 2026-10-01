@@ -17,6 +17,7 @@
 - [PyMDP Framework Implementation](pymdp.md)
 - [CatColab Framework Implementation](catcolab.md)
 - [NumPyro Framework Implementation](numpyro.md)
+- [cpomdp Framework Implementation](cpomdp.md)
 
 
 ## Implementation Details

@@ -128,4 +128,14 @@ RENDERER_ROUTES: Dict[str, RendererRoute] = {
         result_mode="artifacts",
         artifacts_mode="returned",
     ),
+    "cpomdp": RendererRoute(
+        module=".cpomdp.cpomdp_renderer",
+        function="render_gnn_to_cpomdp",
+        suffix="_cpomdp.py",
+        label="cpomdp",
+        validate=False,
+        options_mode="timesteps",
+        result_mode="artifacts",
+        artifacts_mode="returned",
+    ),
 }

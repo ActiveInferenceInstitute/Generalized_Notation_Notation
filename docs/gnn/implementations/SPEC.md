@@ -14,6 +14,7 @@ backend can / cannot express.
 | `activeinference_jl.md` | ActiveInference.jl (Julia) | Full Active Inference |
 | `jax.md` | JAX (Python) | Full Active Inference |
 | `numpyro.md` | NumPyro (Python) | Full probabilistic |
+| `cpomdp.md` | cpomdp (Python) | Continuous Active Inference (expected-free-energy policy search) |
 | `pytorch.md` | PyTorch (Python) | ML integration |
 | `discopy.md` | DisCoPy (Python) | Categorical diagrams |
 | `stan.md` | Stan | HMM forward-algorithm + LGSSM Kalman programs (cmdstanpy driver; no online AI loop) |

@@ -248,6 +248,36 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
             "continuous_only": True,
             "unavailable_reason": None,
         },
+        "cpomdp": {
+            "name": "cpomdp",
+            "description": (
+                "Continuous active inference (Kalman filter + EFE policy search)"
+            ),
+            "language": "Python",
+            "file_extension": ".py",
+            "supported_features": [
+                "Continuous Active Inference",
+                "Expected Free Energy",
+                "JAX Backend",
+            ],
+            "function": "render_gnn_to_cpomdp",
+            "output_format": "python",
+            "pomdp_compatible": True,
+            "requires_matrices": [],
+            "optional_matrices": [],
+            "supports_multi_modality": False,
+            "supports_multi_factor": False,
+            "available": True,
+            # The generated script imports cpomdp, never the renderer.
+            # Execution skips without the `cpomdp` extra (`uv sync --extra
+            # cpomdp`; `gnn.utils.runtime_safety.framework_availability`).
+            "supports_execution": True,
+            "supports_continuous": True,
+            # Continuous-only backend: discrete POMDPs report the render
+            # status ``unsupported``.
+            "continuous_only": True,
+            "unavailable_reason": None,
+        },
     }
 )
 

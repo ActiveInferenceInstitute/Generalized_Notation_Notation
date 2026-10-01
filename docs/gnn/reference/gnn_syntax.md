@@ -251,7 +251,7 @@ symbol declared in `StateSpaceBlock` (so the dimension check reports no
 kind the renderer dispatches on — `detect_model_kind` routes these files as
 CONTINUOUS; the normative rules and precedence order are in
 [`gnn_syntax.md` § Parameterization families](../gnn_syntax.md#parameterization-families).
-JAX, NumPyro, PyTorch, Stan and RxInfer.jl render and execute them; PyMDP,
+JAX, NumPyro, PyTorch, Stan, RxInfer.jl and cpomdp render and execute them; PyMDP,
 ActiveInference.jl, DisCoPy and bnlearn report render status `unsupported`.
 
 ## Canonical matrix orientation (B)

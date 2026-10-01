@@ -117,7 +117,7 @@ GNN files are processed through a comprehensive 25-step pipeline orchestrated by
 
 ### Rendering and Execution (Steps 11, 12)
 
-- `11_render.py`: Code generation for PyMDP, RxInfer.jl, ActiveInference.jl, DisCoPy, JAX, PyTorch, NumPyro, Stan, bnlearn, ngclearn (10 backends)
+- `11_render.py`: Code generation for PyMDP, RxInfer.jl, ActiveInference.jl, DisCoPy, JAX, PyTorch, NumPyro, Stan, bnlearn, ngclearn, cpomdp (11 backends)
 - `12_execute.py`: Execution of rendered simulation scripts
 
 ### Analysis and Reporting (Steps 13, 16, 23, 24)

@@ -1,7 +1,7 @@
 # Execute Module - Agent Scaffolding
 
 ## Module Overview
-**Purpose**: Execute rendered simulation scripts across multiple frameworks (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, Lean, bnlearn, ngc-learn). Per-folder `execution_summary.json` files are merged so the durable summary covers every input folder; frameworks a model's kind cannot use are reported `unsupported` by Step 11 and are never executed.
+**Purpose**: Execute rendered simulation scripts across multiple frameworks (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, Lean, bnlearn, ngc-learn, cpomdp). Per-folder `execution_summary.json` files are merged so the durable summary covers every input folder; frameworks a model's kind cannot use are reported `unsupported` by Step 11 and are never executed.
 
 **Pipeline Step**: Step 12: Execution (src/gnn/12_execute.py)
 

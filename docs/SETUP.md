@@ -116,7 +116,7 @@ comma-separated list. The same selection is available through `src/gnn/main.py`.
 
 ## Framework boundaries
 
-Step 11 has **9 render targets**. Step 12 executes **10 framework families** — every
+Step 11 has **10 render targets**. Step 12 executes **11 framework families** — every
 render target plus Lean. Stan executes through the
 cmdstanpy driver (`src/gnn/execute/stan/`) since v3.2.0; it needs `uv sync --extra stan`
 plus a CmdStan toolchain and is reported skipped when either is absent. bnlearn
@@ -137,12 +137,14 @@ than pretending that every target is installed.
 | PyTorch | Python | Intentionally not locked | Render + execute when installed manually |
 | Stan | Stan | Optional extra (`uv sync --extra stan`) | Render + execute via cmdstanpy |
 | bnlearn | Python | Optional extra (`uv sync --extra bnlearn`) | Render + execute |
+| cpomdp | Python | Optional extra (`uv sync --extra cpomdp`) | Continuous models only, render + execute |
 
 Model kind also matters: **discrete categorical** models (A/B/C/D[/E]) run on
-every backend above, while **continuous linear-Gaussian** models
+every backend above except cpomdp, while **continuous linear-Gaussian** models
 (F/H/Q/R + `prior_mean`/`prior_cov`) render to native LGSSM programs and
-execute only on JAX, NumPyro, PyTorch, Stan, and RxInfer.jl — the categorical
-backends report them `unsupported`. See
+execute only on JAX, NumPyro, PyTorch, Stan, RxInfer.jl and cpomdp — the
+categorical backends report them `unsupported`, and cpomdp reports discrete
+models `unsupported`. See
 [framework availability](execution/FRAMEWORK_AVAILABILITY.md).
 
 ### Python targets

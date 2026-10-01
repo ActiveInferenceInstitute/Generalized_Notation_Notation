@@ -30,7 +30,7 @@ def continuous_spec() -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    "target", ["jax", "numpyro", "pytorch", "rxinfer", "stan", "ngclearn"]
+    "target", ["jax", "numpyro", "pytorch", "rxinfer", "stan", "ngclearn", "cpomdp"]
 )
 def test_public_continuous_dispatch(tmp_path: Path, target: str) -> None:
     ok, message, artifacts = render_gnn_spec(continuous_spec(), target, tmp_path)

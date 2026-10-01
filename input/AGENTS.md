@@ -18,12 +18,12 @@
 
 ## Model kinds and framework support
 
-`render.pomdp_contract.detect_model_kind` classifies each spec; `src/gnn/render/framework_registry.py` declares the nine frameworks and their `supports_continuous` flag.
+`render.pomdp_contract.detect_model_kind` classifies each spec; `src/gnn/render/framework_registry.py` declares the ten frameworks and their `supports_continuous` flag.
 
 | Model kind | Folders | Renders + executes on | Render status `unsupported` on |
 |---|---|---|---|
 | Discrete-state POMDP / HMM (categorical `A/B/C/D[/E]`; flat, factored, hierarchical, multi-agent, learning) | every folder except `continuous/` | PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn | — |
-| Continuous-state linear-Gaussian (`F/H/Q/R`, `prior_mean/prior_cov`, optional closed-loop `goal_mean/control_gain`) | `continuous/` | JAX, NumPyro, PyTorch, Stan, RxInfer.jl | PyMDP, ActiveInference.jl, DisCoPy, bnlearn (categorical backends) |
+| Continuous-state linear-Gaussian (`F/H/Q/R`, `prior_mean/prior_cov`, optional closed-loop `goal_mean/control_gain`) | `continuous/` | JAX, NumPyro, PyTorch, Stan, RxInfer.jl, cpomdp | PyMDP, ActiveInference.jl, DisCoPy, bnlearn (categorical backends) |
 
 `unsupported` is a first-class render status: it is excluded from success rates, listed under `unsupported_framework_renderings` in `output/11_render_output/render_processing_summary.json`, and Step 12 never executes those frameworks for that model. A Step 12 `skipped` means a toolchain is missing on the machine (Julia, `torch`, `cmdstanpy`/CmdStan), not that the model is unrepresentable.
 

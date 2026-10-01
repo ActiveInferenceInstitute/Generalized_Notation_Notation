@@ -396,6 +396,7 @@ class TestMaintainedOutputContracts:
             ("pytorch", CORPUS_CONTINUOUS),
             ("numpyro", CORPUS_DISCRETE),
             ("numpyro", CORPUS_CONTINUOUS),
+            ("cpomdp", CORPUS_CONTINUOUS),
             ("stan", CORPUS_DISCRETE),
             ("discopy", CORPUS_DISCRETE),
             ("bnlearn", CORPUS_BASICS),

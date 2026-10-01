@@ -13,6 +13,8 @@ committed corpus artifacts:
   (``'A_matrix': jnp.array(...)`` / ``A = torch.tensor(...)`` / ``K @ H``).
 - numpyro: ``numpyro.distributions`` sampling sites (discrete
   ``dist.Categorical(...).sample`` or continuous ``numpyro.sample``).
+- cpomdp: continuous-only programs building a ``LinearGaussianModel`` and
+  an ``EnumeratedEfeSearch`` over a ``FiniteActionSet``.
 - activeinference_jl: self-contained runner programs with the agent logic in
   emitted functions (no ``Agent(`` constructor call in the artifact).
 - bnlearn: generator-backed ``bn.make_DAG`` + ``bn.parameter_learning.fit``
@@ -98,6 +100,15 @@ CONTRACTS: Dict[str, Dict[str, Any]] = {
         "matrix_patterns": [
             r"dist\.\w+",
             r"\.sample\s*\(",
+        ],
+        "optional_variables": [],
+    },
+    "cpomdp": {
+        "required_imports": ["cpomdp"],
+        "required_variables": [],
+        "matrix_patterns": [
+            r"LinearGaussianModel\s*\(",
+            r"(EnumeratedEfeSearch|KalmanBackend)\s*\(",
         ],
         "optional_variables": [],
     },

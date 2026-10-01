@@ -27,6 +27,7 @@ RENDER_CLI_TARGETS = [
     "pytorch",
     "numpyro",
     "stan",
+    "cpomdp",
 ]
 
 

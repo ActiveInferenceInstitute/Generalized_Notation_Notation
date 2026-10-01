@@ -36,6 +36,7 @@ ExecutionFrameworkName = Literal[
     "stan",
     "bnlearn",
     "ngclearn",
+    "cpomdp",
     "lean",
 ]
 

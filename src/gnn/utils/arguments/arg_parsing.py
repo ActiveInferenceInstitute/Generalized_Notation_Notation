@@ -293,7 +293,7 @@ class ArgumentParser:
                 help_text=(
                     "Frameworks to execute/render (all, lite, or comma-separated list: "
                     "pymdp,rxinfer,activeinference_jl,jax,discopy,pytorch,numpyro,"
-                    "stan,bnlearn,lean)"
+                    "stan,bnlearn,cpomdp,lean)"
                 ),
             ),
             "strict_framework_success": ArgumentDefinition(

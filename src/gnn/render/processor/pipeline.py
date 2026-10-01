@@ -469,7 +469,8 @@ The rendered files are organized in implementation-specific subfolders:
 │   ├── numpyro/            # NumPyro simulations
 │   ├── stan/               # Stan models
 │   ├── bnlearn/            # Bayesian network scripts
-│   └── ngclearn/           # ngc-learn simulations
+│   ├── ngclearn/           # ngc-learn simulations
+│   └── cpomdp/             # cpomdp continuous simulations (continuous models only)
 └── render_processing_summary.json  # Detailed results
 ```
 

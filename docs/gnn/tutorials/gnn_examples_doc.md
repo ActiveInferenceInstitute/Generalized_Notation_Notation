@@ -15,7 +15,7 @@ notation. The models the pipeline actually ships and exercises live in
 |---|---|
 | `basics/` | Static and dynamic perception — the smallest complete models |
 | `discrete/` | Discrete POMDPs: MDPs, HMMs, bandits, T-maze, planning horizon |
-| `continuous/` | Pure linear-Gaussian state-space models (`F`/`H`/`Q`/`R`, `prior_mean`/`prior_cov`, optional `u`, `goal_mean`/`control_gain`) run natively on JAX, NumPyro, PyTorch, Stan and RxInfer.jl; categorical backends report them `unsupported` |
+| `continuous/` | Pure linear-Gaussian state-space models (`F`/`H`/`Q`/`R`, `prior_mean`/`prior_cov`, optional `u`, `goal_mean`/`control_gain`) run natively on JAX, NumPyro, PyTorch, Stan, RxInfer.jl and cpomdp; categorical backends report them `unsupported` |
 | `hierarchical/` | Multi-level state hierarchies |
 | `learning/` | Dirichlet likelihood learning |
 | `multiagent/` | Multi-agent coordination and stigmergic swarms |
@@ -524,7 +524,7 @@ action lives on a small categorical support, and the parameterization keys are
 linear-Gaussian block instead — `F` (state transition), `H` (observation
 matrix), `Q`/`R` (process/observation noise covariances), and
 `prior_mean`/`prior_cov` — is classified as a **continuous** model and rendered
-natively on JAX, NumPyro, PyTorch, Stan, and RxInfer.jl. Categorical backends
+natively on JAX, NumPyro, PyTorch, Stan, RxInfer.jl, and cpomdp. Categorical backends
 (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) report such models `unsupported`
 (not failed).
 

@@ -15,7 +15,7 @@ model kinds with different framework coverage:
 | Model kind | Folders | Renders + executes on | Reported `unsupported` on |
 |---|---|---|---|
 | Discrete-state POMDP / HMM (categorical `A/B/C/D[/E]`, including factored, hierarchical, multi-agent and learning variants) | `basics/`, `discrete/`, `hierarchical/`, `learning/`, `multiagent/`, `pomdp_gridworld/`, `precision/`, `pymdp_scaling_study/`, `structured/` | PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan (bnlearn renders; execution needs the intentionally unlocked `bnlearn` package) | — |
-| Continuous-state linear-Gaussian (`F/H/Q/R`, `prior_mean/prior_cov`, optional closed-loop `goal_mean/control_gain`) | `continuous/` | JAX, NumPyro, PyTorch, Stan, RxInfer.jl | PyMDP, ActiveInference.jl, DisCoPy, bnlearn — categorical backends (DisCoPy draws categorical string diagrams); the pipeline flags these as `unsupported`, never as failures |
+| Continuous-state linear-Gaussian (`F/H/Q/R`, `prior_mean/prior_cov`, optional closed-loop `goal_mean/control_gain`) | `continuous/` | JAX, NumPyro, PyTorch, Stan, RxInfer.jl, cpomdp | PyMDP, ActiveInference.jl, DisCoPy, bnlearn — categorical backends (DisCoPy draws categorical string diagrams); the pipeline flags these as `unsupported`, never as failures |
 
 `unsupported` is a distinct render status: it is excluded from success rates
 and Step 12 never executes those frameworks for that model. Skips at Step 12

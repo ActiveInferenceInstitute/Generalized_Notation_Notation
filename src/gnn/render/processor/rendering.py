@@ -70,6 +70,7 @@ def _render_continuous_target(
             "render_gnn_to_ngclearn",
             "_ngclearn.py",
         ),
+        "cpomdp": ("cpomdp.cpomdp_renderer", "render_gnn_to_cpomdp", "_cpomdp.py"),
     }
     if target not in targets:
         return False, f"Continuous models are unsupported for target: {target}", []
@@ -253,6 +254,13 @@ def render_gnn_spec(
                 canonical_spec, output_file, options
             )
             return (True, msg, artifacts) if success else (False, msg, [])
+
+        if target_lower == "cpomdp":
+            # Continuous-only backend: a discrete spec is the mirror image of
+            # pymdp facing a continuous one — unsupported, not a crash.
+            from gnn.render.cpomdp.cpomdp_renderer import UNSUPPORTED_MESSAGE
+
+            return False, UNSUPPORTED_MESSAGE, []
 
         if target_lower in _GENERATOR_TARGETS:
             gen_module_name, gen_name, suffix = _GENERATOR_TARGETS[target_lower]

@@ -56,8 +56,8 @@ blocks and classified by the pipeline (`render.pomdp_contract.detect_model_kind`
 - **Continuous linear-Gaussian**: `F/H/Q/R` dynamics blocks with `prior_mean/prior_cov`,
   optional closed-loop `goal_mean/control_gain`
 
-Continuous models render and execute on JAX, NumPyro, PyTorch, Stan, and
-RxInfer.jl; the categorical backends report `unsupported` for them. See the
+Continuous models render and execute on JAX, NumPyro, PyTorch, Stan,
+RxInfer.jl, and cpomdp; the categorical backends report `unsupported` for them. See the
 README section *"Model Kinds and Framework Support"* and the
 [GNN Syntax Reference](gnn/reference/gnn_syntax.md).
 

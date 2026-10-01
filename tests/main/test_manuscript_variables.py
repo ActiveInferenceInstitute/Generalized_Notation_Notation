@@ -356,7 +356,11 @@ def test_framework_table_cells_track_registry_flags(
     for key, spec in specs.items():
         name = str(spec.get("name", key))
         discrete, continuous, executor = by_name[name]
-        assert discrete == ("yes" if spec.get("pomdp_compatible") else "no")
+        routed = spec.get("pomdp_compatible")
+        renders_discrete = routed and not spec.get("continuous_only", False)
+        assert discrete == (
+            "yes" if renders_discrete else "unsupported" if routed else "no"
+        )
         assert continuous == (
             "yes" if spec.get("supports_continuous") else "unsupported"
         )
@@ -399,6 +403,14 @@ def test_model_kind_table_rows(
         if spec.get("supports_continuous")
     )
     assert by_kind["Continuous linear-Gaussian"][2] == continuous_names
+    # A continuous-only backend is routed but never listed as rendering discrete.
+    continuous_only = [
+        str(spec.get("name", key))
+        for key, spec in specs.items()
+        if spec.get("continuous_only", False)
+    ]
+    for name in continuous_only:
+        assert name not in by_kind["Discrete categorical"][2]
     assert by_kind["Continuous linear-Gaussian"][3] == continuous_names
     assert by_kind["Multi-agent"][1] == "`input/gnn_files/multiagent/`"
     assert by_kind["Recursive"][1] == "`input/gnn_files/recursive/`"

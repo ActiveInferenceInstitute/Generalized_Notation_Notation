@@ -83,7 +83,7 @@ uv run python -m json.tool \
   output/quickstart/00_pipeline_summary/pipeline_execution_summary.json
 ```
 
-Step 11 has nine render targets; Step 12 has ten executor families (all render
+Step 11 has ten render targets; Step 12 has eleven executor families (all render
 targets plus Lean). PyTorch and bnlearn are not installed by
 the default lock; Stan needs `uv sync --extra stan` plus a CmdStan toolchain, and
 bnlearn needs `uv sync --extra bnlearn`.
@@ -92,8 +92,8 @@ See [framework availability](execution/FRAMEWORK_AVAILABILITY.md).
 Model kind matters for execution: the PyMDP preset above runs **discrete
 categorical** models. A **continuous linear-Gaussian** model (F/H/Q/R with
 `prior_mean`/`prior_cov`), such as `input/gnn_files/continuous/continuous_navigation.md`,
-renders to native LGSSM programs and executes on jax, numpyro, pytorch, stan, and
-rxinfer — categorical backends report it `unsupported`.
+renders to native LGSSM programs and executes on jax, numpyro, pytorch, stan,
+rxinfer and cpomdp — categorical backends report it `unsupported`.
 
 ## 5. Inspect generated artifacts
 

@@ -178,7 +178,7 @@ The shipped `input/config.yaml` has `folders: {}` and `default_steps: [3–12, 1
 | Folder | Steps 3–12, 14–24 | Step 13 | Notes |
 |--------|:-----------------:|:-------:|-------|
 | `basics/` | ✅ default | Global | Discrete POMDP exemplars |
-| `continuous/` | ✅ default | Global | Pure linear-Gaussian continuous exemplars; render/execute on JAX, NumPyro, PyTorch, Stan, RxInfer.jl. PyMDP, ActiveInference.jl, DisCoPy, and bnlearn report status `unsupported` and Step 12 skips them |
+| `continuous/` | ✅ default | Global | Pure linear-Gaussian continuous exemplars; render/execute on JAX, NumPyro, PyTorch, Stan, RxInfer.jl, cpomdp. PyMDP, ActiveInference.jl, DisCoPy, and bnlearn report status `unsupported` and Step 12 skips them |
 | `discrete/` | ✅ default | Global | Largest discrete set |
 | `hierarchical/` | ✅ default | Global | |
 | `learning/` | ✅ default | Global | |
