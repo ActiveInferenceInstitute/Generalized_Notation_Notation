@@ -89,7 +89,7 @@ def _make_skipped_result(
 ) -> Dict[str, Any]:
     """Build a readiness receipt, preserving uncertain and failed probes.
 
-    The legacy helper name remains public. Only positively diagnosed missing
+    The existing helper name remains public. Only positively diagnosed missing
     or unsupported dependencies may skip; probe and containment failures use
     the same unsuccessful taxonomy as the direct executor APIs.
     """
