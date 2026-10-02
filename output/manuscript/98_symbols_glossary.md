@@ -89,9 +89,9 @@ are per-kind by construction: a continuous exemplar binds `F` to
 `StateTransitionMatrix`, never to a free-energy term, so the ontology layer
 carries the same kind-scoped reading [@tbl:actinf_symbols] fixes by hand.
 The same GNN specification feeds the project's rendering backends — including the
-10 registered targets (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, ngc-learn), of which the
-10 listed as executable
-(PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, ngc-learn) also run at Step 12 — with
+12 registered targets (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, cpomdp, THRML, ngc-learn), of which the
+12 listed as executable
+(PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, cpomdp, THRML, ngc-learn) also run at Step 12 — with
 per-kind reach recorded as explicit statuses ([@tbl:framework_capability]) — so
 that a model written once in this notation can be parsed, visualized, and
 executed across the 25-step pipeline (0–24)

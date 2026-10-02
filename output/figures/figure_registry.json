@@ -3,8 +3,8 @@
     {
       "alt_text": "End-to-end summary panel of the GNN pipeline in seven left-to-right stage cards: a plain-text GNN document declaring A, B, C, D and E; parsing; validation and type checking with the B-tensor orientation check; code rendering to the registered backends; execution of the backends including the bnlearn lane; analysis; and cross-repository interchange with GEO-INFER and fep_lean. Step pills name the pipeline step behind each stage, a callout states the two newest capabilities, and a footer strip carries the producer's scale counts for steps, families, backends and MCP tools.",
       "consumed_tokens": {
-        "GNN_BACKEND_COUNT": "10",
-        "GNN_EXECUTABLE_BACKEND_COUNT": "10",
+        "GNN_BACKEND_COUNT": "12",
+        "GNN_EXECUTABLE_BACKEND_COUNT": "12",
         "GNN_FAMILY_COUNT": "9",
         "GNN_MCP_TOOL_COUNT": "164",
         "GNN_STEP_ANALYSIS": "16",
@@ -15,12 +15,12 @@
         "GNN_STEP_RENDER": "11",
         "GNN_STEP_TYPE_CHECKER": "5",
         "GNN_STEP_VALIDATION": "6",
-        "GNN_VERSION": "3.6.0"
+        "GNN_VERSION": "4.0.0"
       },
       "filename": "gnn_graphical_abstract.png",
       "generated_by": "scripts/manuscript_fig_graphical_abstract.py",
       "label": "fig:graphical_abstract",
-      "png_sha256": "27bfed8435282241449c3b987817908df0055b8d9b9a4c149bccf167bd0ef7cd",
+      "png_sha256": "e6c3e2bb682e07cf2a7421c4e99688def19702f6093624d1d4300992dec9bfb4",
       "source_sha256": {}
     },
     {
@@ -31,7 +31,7 @@
       "label": "fig:pipeline",
       "png_sha256": "f0678cd3b3615bc080acde3601dad812b4f9c666166ff92b2477db55d7d77700",
       "source_sha256": {
-        "src/gnn/STEP_INDEX.md": "2638bd8e0cc26bd03a129c7d4493be110a57ed011f1c6d664f73b05a6e16aa46"
+        "src/gnn/STEP_INDEX.md": "0e18eb9d6d27479159e78ea4d02d9b977bb39d3d51057e39bd4ebb8b40c30238"
       }
     },
     {
@@ -40,10 +40,10 @@
       "filename": "gnn_family_framework_matrix.png",
       "generated_by": "scripts/manuscript_fig_family_framework.py",
       "label": "fig:family_matrix",
-      "png_sha256": "6212ba731ff843c576c1b2068cdaa3b7586cd29decc17db0adab33578734e0a9",
+      "png_sha256": "b1caa332ec3933c284408a607608e151455143096b9e54a5619a55f83f0a12b3",
       "source_sha256": {
         "input/model_family_manifest.json": "d2761feea73771f84f2bcc94e215e7042960c1c28d9ecbff8b069377b2fc26cf",
-        "src/gnn/render/framework_registry.py": "a684eb1d49d8045b7e42621339465629d5fd4eba61da3cfe631ea43afe795a11"
+        "src/gnn/render/framework_registry.py": "fa85d6c2d4941992caea6c1c4a1c17e43508d6d8ba822f1446085df3fa65fc6b"
       }
     },
     {
@@ -52,40 +52,40 @@
       "filename": "gnn_backend_capability_matrix.png",
       "generated_by": "scripts/manuscript_fig_backend_matrix.py",
       "label": "fig:backend_matrix",
-      "png_sha256": "5ea0ef69881a6afb2fcac189e325ffc9e0a573d5dec051a848756c60d0285f9c",
+      "png_sha256": "45f5a98e249d15c66ef19c1791635f98099cc06d08e00985e0bc4b20302c5789",
       "source_sha256": {
         "input/model_family_manifest.json": "d2761feea73771f84f2bcc94e215e7042960c1c28d9ecbff8b069377b2fc26cf",
-        "src/gnn/manuscript/variables.py": "882bc3f75b702b363617862e39488d16acb8171b34b784062a29351e469fa8f9",
+        "src/gnn/manuscript/variables.py": "f0770f854a60ccabb86ac034b87646044200974ac0940426a3667851b3827a1d",
         "src/gnn/pipeline/cross_framework_reliability.py": "f541016765f8c2b843226c9127f011cc77a0e66cbad694e89853db59c6cd8101",
-        "src/gnn/render/framework_registry.py": "a684eb1d49d8045b7e42621339465629d5fd4eba61da3cfe631ea43afe795a11"
+        "src/gnn/render/framework_registry.py": "fa85d6c2d4941992caea6c1c4a1c17e43508d6d8ba822f1446085df3fa65fc6b"
       }
     },
     {
       "alt_text": "Horizontal bar chart on a logarithmic axis of repository-scale counts: pipeline steps, model families, registered backends, execution backends, MCP tools, source packages, test files, example models and documentation files. Each bar is annotated with its exact value; all values come from output/data/manuscript_variables.json.",
       "consumed_tokens": {
-        "GNN_BACKEND_COUNT": "10",
-        "GNN_DOC_FILE_COUNT": "631",
-        "GNN_EXAMPLE_COUNT": "36",
-        "GNN_EXECUTABLE_BACKEND_COUNT": "10",
+        "GNN_BACKEND_COUNT": "12",
+        "GNN_DOC_FILE_COUNT": "635",
+        "GNN_EXAMPLE_COUNT": "38",
+        "GNN_EXECUTABLE_BACKEND_COUNT": "12",
         "GNN_FAMILY_COUNT": "9",
         "GNN_MCP_TOOL_COUNT": "164",
         "GNN_SRC_PACKAGE_COUNT": "43",
         "GNN_STEP_COUNT": "25",
-        "GNN_TEST_FILE_COUNT": "537",
-        "GNN_VERSION": "3.6.0"
+        "GNN_TEST_FILE_COUNT": "570",
+        "GNN_VERSION": "4.0.0"
       },
       "filename": "gnn_repo_metrics.png",
       "generated_by": "scripts/manuscript_fig_repo_metrics.py",
       "label": "fig:repo_metrics",
-      "png_sha256": "16b51667e6ab350a3239118178fd50f1a198b161de88625886c16f39217858d4",
+      "png_sha256": "9fe18f506c471649ddadc2dddf09658fe54f32d618328d63aafa909483f0141e",
       "source_sha256": {}
     },
     {
       "alt_text": "The Triple Play as one central GNN specification with three projections radiating from it: the readable text form, graphical visualizations of state-space and factor structure, and executable model code. All three point back to the single specification at the center.",
       "consumed_tokens": {
-        "GNN_BACKEND_COUNT": "10",
-        "GNN_BACKEND_LIST": "PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, ngc-learn",
-        "GNN_EXECUTABLE_BACKEND_COUNT": "10",
+        "GNN_BACKEND_COUNT": "12",
+        "GNN_BACKEND_LIST": "PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, cpomdp, THRML, ngc-learn",
+        "GNN_EXECUTABLE_BACKEND_COUNT": "12",
         "GNN_FAMILY_COUNT": "9",
         "GNN_STEP_COUNT": "25",
         "GNN_STEP_EXECUTE": "12",
@@ -94,7 +94,7 @@
       "filename": "gnn_triple_play.png",
       "generated_by": "scripts/manuscript_fig_triple_play.py",
       "label": "fig:triple_play",
-      "png_sha256": "227a6ca786d89ac94b365190ce4e2eec5b1e8b4ca94b81bec0b4e129d1fa8d36",
+      "png_sha256": "5d48953719f0f5dd9e131a5e424ca563472bf55dd833a1c54361d0328cc0c46e",
       "source_sha256": {}
     },
     {

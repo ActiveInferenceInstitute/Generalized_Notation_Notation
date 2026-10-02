@@ -647,13 +647,13 @@ trial-and-error discovery.</li>
 are implemented across 43 source packages, that carries a specification
 from parsing and validation through visualization, rendering, and
 execution.</li>
-<li><strong>10 rendering backends</strong> (PyMDP, RxInfer.jl,
+<li><strong>12 rendering backends</strong> (PyMDP, RxInfer.jl,
 ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn,
-ngc-learn) that materialize a single GNN specification as
-backend-specific model code, of which 10 (PyMDP, RxInfer.jl,
+cpomdp, THRML, ngc-learn) that materialize a single GNN specification as
+backend-specific model code, of which 12 (PyMDP, RxInfer.jl,
 ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn,
-ngc-learn) also execute at Step 12, realizing the executable arm of the
-Triple Play.</li>
+cpomdp, THRML, ngc-learn) also execute at Step 12, realizing the
+executable arm of the Triple Play.</li>
 <li><strong>164 Model Context Protocol tools</strong> that expose the
 pipeline’s capabilities to agentic and programmatic clients, so the
 notation and its tooling are directly accessible to automated

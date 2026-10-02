@@ -567,7 +567,7 @@ mjx-container[display="true"] {
 <main id="main-content" tabindex="-1">
 <h1 id="sec:limitations_next_steps">Limitations and Next Steps</h1>
 <h2 id="current-limitations">Current Limitations</h2>
-<p>GNN 3.6.0 is a working system with deliberately scoped boundaries,
+<p>GNN 4.0.0 is a working system with deliberately scoped boundaries,
 and it is worth stating those boundaries plainly rather than implying
 broader completeness than the artifacts support. The reliability gates
 that underpin our confidence in the system — the semantic-fidelity
@@ -582,7 +582,7 @@ ledgers and execution traces that the pipeline writes alongside each
 run. A reader who wants a number should regenerate it in their own
 environment rather than trust a transcribed digit here.</p>
 <p>A second limitation lives at the boundary between the model families
-and the rendering backends. GNN registers 10 simulation backends, but
+and the rendering backends. GNN registers 12 simulation backends, but
 coverage across the family-by-backend matrix is intentionally uneven,
 and the gaps are recorded as explicit <em>profiled-unsupported</em>
 statuses rather than silently omitted. The cross-framework acceptance
@@ -636,11 +636,12 @@ code for it
 (<code>src/gnn/render/rxinfer/_strategies_learning.py</code>). That
 corpus directory is registered in no manifest family — the unregistered
 set is exactly <code>input/gnn_files/learning</code>,
-<code>input/gnn_files/recursive</code> — so parameter learning is
-exercised by neither the semantic-fidelity nor the cross-framework
-ledger and carries no figure or table in this manuscript. We state it
-here as implemented-but-out-of-scope rather than leave the omission to
-be inferred from the family tables.</p>
+<code>input/gnn_files/recursive</code>,
+<code>input/gnn_files/thrml</code> — so parameter learning is exercised
+by neither the semantic-fidelity nor the cross-framework ledger and
+carries no figure or table in this manuscript. We state it here as
+implemented-but-out-of-scope rather than leave the omission to be
+inferred from the family tables.</p>
 <p>Finally, several capabilities depend on optional dependencies that
 are not part of the minimal install. The simulation frameworks
 themselves, the audio sonification path, the LLM-enhanced analysis step,
@@ -654,27 +655,26 @@ has installed. We consider this an acceptable engineering trade for
 portability, but it is a limitation a reader should hold in mind when
 interpreting any single end-to-end run.</p>
 <h2 id="next-steps">Next Steps</h2>
-<p>The roadmap is concrete and staged. The current release is GNN 3.6.0
-(“Composability &amp; Offline Truth”, 2026-09-26). It builds on the
-three safe-by-design orchestration contracts introduced in GNN 3.0.0,
-which generate and validate data only, with no live infrastructure
-mutation. The first is <em>durable observation streams</em>: file- and
-array-backed stream manifests (content-checksummed) with replayable
-execution traces, so that an extended run can be observed, paused, and
-re-derived deterministically before any live sensor or device-backed
-stream is ever introduced. The second is <em>resumable run
-sessions</em>: run-session manifests with atomic checkpoint/resume,
-status inspection, and cancellation-safe cleanup so that extended
-model-family acceptance runs can be interrupted and resumed without
-corrupting partial state. The third is <em>auditable container
-plans</em>: generating hardened container plans with an explicit static
-security-review and rollback descriptor, deliberately stopping short of
-mutating any real cluster. Each contract is covered by tests over real
-objects with negative controls and a strict acceptance gate, additive
-live wiring connects them to the session-acceptance and run-manifest
-paths, and three new Model Context Protocol tools expose them. The
-unifying discipline across all three is that orchestration becomes more
-capable only as fast as it becomes more inspectable.</p>
+<p>The roadmap is concrete and staged. The current release is GNN 4.0.0
+(““, 2026-10-01). It builds on the three safe-by-design orchestration
+contracts introduced in GNN 3.0.0, which generate and validate data
+only, with no live infrastructure mutation. The first is <em>durable
+observation streams</em>: file- and array-backed stream manifests
+(content-checksummed) with replayable execution traces, so that an
+extended run can be observed, paused, and re-derived deterministically
+before any live sensor or device-backed stream is ever introduced. The
+second is <em>resumable run sessions</em>: run-session manifests with
+atomic checkpoint/resume, status inspection, and cancellation-safe
+cleanup so that extended model-family acceptance runs can be interrupted
+and resumed without corrupting partial state. The third is <em>auditable
+container plans</em>: generating hardened container plans with an
+explicit static security-review and rollback descriptor, deliberately
+stopping short of mutating any real cluster. Each contract is covered by
+tests over real objects with negative controls and a strict acceptance
+gate, additive live wiring connects them to the session-acceptance and
+run-manifest paths, and three new Model Context Protocol tools expose
+them. The unifying discipline across all three is that orchestration
+becomes more capable only as fast as it becomes more inspectable.</p>
 <p>The next major release pushes toward bounded autonomy, and it is
 gated behind the 3.0.0 orchestration work for good reason. The intent is
 to promote today’s proposal-only candidate-scoring machinery — which

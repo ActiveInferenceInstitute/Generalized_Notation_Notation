@@ -210,7 +210,7 @@
 
 \begin{frame}[fragile,allowframebreaks]{Current Limitations}
 \protect\phantomsection\label{current-limitations}
-GNN 3.6.0 is a working system with deliberately scoped boundaries, and
+GNN 4.0.0 is a working system with deliberately scoped boundaries, and
 it is worth stating those boundaries plainly rather than implying
 broader completeness than the artifacts support. The reliability gates
 that underpin our confidence in the system --- the semantic-fidelity
@@ -229,7 +229,7 @@ alongside each run. A reader who wants a number should regenerate it in
 their own environment rather than trust a transcribed digit here.
 
 A second limitation lives at the boundary between the model families and
-the rendering backends. GNN registers 10 simulation backends, but
+the rendering backends. GNN registers 12 simulation backends, but
 coverage across the family-by-backend matrix is intentionally uneven,
 and the gaps are recorded as explicit \emph{profiled-unsupported}
 statuses rather than silently omitted. The cross-framework acceptance
@@ -287,11 +287,11 @@ variational message passing) and the renderer strategy that emits code
 for it (\breaktt{src/gnn/render/rxinfer/\_strategies\_learning.py}). That
 corpus directory is registered in no manifest family --- the
 unregistered set is exactly \breaktt{input/gnn\_files/learning},
-\breaktt{input/gnn\_files/recursive} --- so parameter learning is
-exercised by neither the semantic-fidelity nor the cross-framework
-ledger and carries no figure or table in this manuscript. We state it
-here as implemented-but-out-of-scope rather than leave the omission to
-be inferred from the family tables.
+\breaktt{input/gnn\_files/recursive}, \breaktt{input/gnn\_files/thrml} ---
+so parameter learning is exercised by neither the semantic-fidelity nor
+the cross-framework ledger and carries no figure or table in this
+manuscript. We state it here as implemented-but-out-of-scope rather than
+leave the omission to be inferred from the family tables.
 
 \end{frame}
 
@@ -312,13 +312,13 @@ interpreting any single end-to-end run.
 
 \begin{frame}[allowframebreaks]{Next Steps}
 \protect\phantomsection\label{next-steps}
-The roadmap is concrete and staged. The current release is GNN 3.6.0
-(``Composability \& Offline Truth'', 2026-09-26). It builds on the three
-safe-by-design orchestration contracts introduced in GNN 3.0.0, which
-generate and validate data only, with no live infrastructure mutation.
-The first is \emph{durable observation streams}: file- and array-backed
-stream manifests (content-checksummed) with replayable execution traces,
-so that an extended run can be observed, paused, and re-derived
+The roadmap is concrete and staged. The current release is GNN 4.0.0
+(``\,``, 2026-10-01). It builds on the three safe-by-design
+orchestration contracts introduced in GNN 3.0.0, which generate and
+validate data only, with no live infrastructure mutation. The first is
+\emph{durable observation streams}: file- and array-backed stream
+manifests (content-checksummed) with replayable execution traces, so
+that an extended run can be observed, paused, and re-derived
 deterministically before any live sensor or device-backed stream is ever
 introduced. The second is \emph{resumable run sessions}: run-session
 manifests with atomic checkpoint/resume, status inspection, and
