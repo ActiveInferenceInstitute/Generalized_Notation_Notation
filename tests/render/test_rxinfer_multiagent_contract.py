@@ -10,6 +10,7 @@ import io
 import json
 import logging
 import sys
+import time
 import tomllib
 from pathlib import Path
 
@@ -29,6 +30,27 @@ from gnn.render.rxinfer.rxinfer_renderer import (
     build_rxinfer_execution_metadata,
     render_gnn_to_rxinfer,
 )
+from gnn.utils.runtime_safety.framework_availability import FrameworkStatus
+
+
+@pytest.fixture
+def ready_python_rxinfer(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Admit the Python metadata fixture through the bounded readiness seam.
+
+    These tests execute real Python children to test sidecar propagation. They
+    do not claim a Python interpreter provides a working Julia/RxInfer backend.
+    """
+    probes = []
+
+    def ready(framework: str, **kwargs) -> FrameworkStatus:
+        assert framework == "rxinfer"
+        assert kwargs["executor"] == sys.executable
+        assert kwargs["deadline_monotonic"] > time.monotonic()
+        probes.append(kwargs)
+        return FrameworkStatus(framework, True)
+
+    monkeypatch.setattr("gnn.execute.processor._check_framework_by_name", ready)
+    return probes
 
 
 def test_rxinfer_compact_multiagent_keys_drive_agent_count() -> None:
@@ -379,6 +401,7 @@ def test_rxinfer_execution_metadata_ignores_unmatched_toml_sidecar(
 
 def test_rxinfer_step12_result_records_agent_metadata_on_success(
     tmp_path: Path,
+    ready_python_rxinfer: list[dict],
 ) -> None:
     script_path = tmp_path / "demo" / "rxinfer" / "demo_rxinfer.py"
     script_path.parent.mkdir(parents=True)
@@ -402,6 +425,8 @@ def test_rxinfer_step12_result_records_agent_metadata_on_success(
     )
 
     assert result["success"] is True
+    assert result["return_code"] == 0 and "ok" in result["stdout"]
+    assert len(ready_python_rxinfer) == 1
     assert result["execution_metadata"]["agent_count"] == 3
     structured = json.loads(
         (tmp_path / "12_execute_output")
@@ -417,6 +442,7 @@ def test_rxinfer_step12_result_records_agent_metadata_on_success(
 
 def test_rxinfer_step12_result_records_agent_metadata_on_failure(
     tmp_path: Path,
+    ready_python_rxinfer: list[dict],
 ) -> None:
     script_path = tmp_path / "demo" / "rxinfer" / "demo_rxinfer.py"
     script_path.parent.mkdir(parents=True)
@@ -447,6 +473,7 @@ def test_rxinfer_step12_result_records_agent_metadata_on_failure(
 
     assert result["success"] is False
     assert result["return_code"] == 2
+    assert len(ready_python_rxinfer) == 1
     assert result["execution_metadata"]["agent_count"] == 2
     structured = json.loads(
         (tmp_path / "12_execute_output")

@@ -151,14 +151,22 @@ def validate_native_agent_groups(gnn_spec: Dict[str, Any]) -> Dict[str, Dict[str
         agent_params = dict(params)
         per_agent_order = params.get(f"b_tensor_order_{name}")
         b_provenance = provenance.get(f"B_{name}") or {}
+        raw_b = np.asarray(group["B"])
+        recorded_source_order = b_provenance.get("source_order")
+        if recorded_source_order == "inferred" or (
+            raw_b.ndim == 2 and recorded_source_order == "next_state_previous_state"
+        ):
+            # Passive matrix axes are not a three-dimensional declaration.
+            recorded_source_order = None
+        # Component custody describes the retained source tensor. A global
+        # canonical marker may describe the separately composed joint B.
         source_order = (
             per_agent_order
+            or recorded_source_order
             or params.get("b_tensor_order")
             or params.get("B_tensor_order")
             or params.get("transition_tensor_order")
-            or b_provenance.get("source_order")
         )
-        raw_b = np.asarray(group["B"])
         if not source_order or source_order == "inferred":
             source_order = (
                 "action_next_state_previous_state"
@@ -168,7 +176,7 @@ def validate_native_agent_groups(gnn_spec: Dict[str, Any]) -> Dict[str, Dict[str
         agent_params["b_tensor_order"] = source_order
         inferred_actions = (
             raw_b.shape[0]
-            if str(source_order).startswith("action_")
+            if str(source_order).startswith(("action_", "actions_"))
             else raw_b.shape[-1]
             if raw_b.ndim == 3
             else 1

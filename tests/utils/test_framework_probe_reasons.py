@@ -190,6 +190,10 @@ def test_cleanup_failure_retains_timeout_cause_in_readiness_receipt(
         logging.getLogger(__name__),
         status,
     )
-    assert receipt["error_type"] == "DependencyProbeFailed"
+    # Containment failure takes priority over the probe's original timeout;
+    # neither uncertainty may become an optional dependency skip.
+    assert receipt["error_type"] == "ProcessCleanupFailure"
+    assert receipt["status"] == "failed"
+    assert receipt["success"] is False and receipt["skipped"] is False
     assert receipt["execution_error_type"] == "TimeoutExpired"
     assert receipt["cleanup_verified"] is False and receipt["streams_drained"] is False

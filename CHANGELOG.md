@@ -66,7 +66,7 @@ and paired custody described in the scope ledger.
 Read the v4 guide for IDs, artifact schemas, stricter validation, summary states,
 budget resolution, distributed startup ownership and resume requirements. Legacy
 artifacts remain inspectable but cannot establish evidence for a fresh invocation.
-Scientific corrections to four invalid illustrative sources require separately
+Scientific corrections to six invalid illustrative sources require separately
 justified model edits; v4 rejects them rather than silently changing their values.
 
 ## [3.6.0] - 2026-09-26

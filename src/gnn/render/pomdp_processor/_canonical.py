@@ -176,6 +176,18 @@ class _CanonicalSpecMixin(_POMDPProcessorSupportMixin):
             num_actions = max(1, int(np.prod(factor_action_counts)))
         else:
             num_actions = max(1, int(getattr(pomdp_space, "num_actions", 1)))
+            if any(key.startswith("B_agent") for key in b_keys):
+                active_action_counts = {
+                    count for count in factor_action_counts if count > 1
+                }
+                if len(active_action_counts) > 1 or (
+                    active_action_counts and num_actions not in active_action_counts
+                ):
+                    raise ValueError(
+                        "unsupported-agent-action-composition: per-agent action dimensions "
+                        f"{factor_action_counts} cannot use the declared shared action count "
+                        f"{num_actions}"
+                    )
 
         if not a_keys:
             raise ValueError("Factored POMDP is missing A_* likelihood matrices")
@@ -209,28 +221,46 @@ class _CanonicalSpecMixin(_POMDPProcessorSupportMixin):
         A_joint = _normalise_columns(A_joint, allow_weights=True)
 
         B_joint = np.ones((num_states, num_states, num_actions), dtype=np.float64)
+        component_b_provenance: dict[str, Any] = {}
         for key, factor_actions in zip(b_keys, factor_action_counts):
             factor_index = self._match_descriptor_index(key, state_factors)
             factor_size = state_sizes[factor_index]
-            tensor = self._canonicalise_factored_B(
-                matrices[key],
-                factor_size,
-                factor_actions,
-                agent_matrix=key.startswith("B_agent"),
-                model_parameters={
-                    **(getattr(pomdp_space, "model_parameters", None) or {}),
-                    **(
-                        {
-                            "b_tensor_order": (
-                                getattr(pomdp_space, "model_parameters", None) or {}
-                            )[f"b_tensor_order_{key[2:]}"]
-                        }
-                        if f"b_tensor_order_{key[2:]}"
-                        in (getattr(pomdp_space, "model_parameters", None) or {})
-                        else {}
-                    ),
-                },
+            tensor, transition_provenance = (
+                self._canonicalise_factored_B_with_provenance(
+                    matrices[key],
+                    factor_size,
+                    factor_actions,
+                    agent_matrix=key.startswith("B_agent"),
+                    model_parameters={
+                        **(getattr(pomdp_space, "model_parameters", None) or {}),
+                        **(
+                            {
+                                "b_tensor_order": (
+                                    getattr(pomdp_space, "model_parameters", None) or {}
+                                )[f"b_tensor_order_{key[2:]}"]
+                            }
+                            if f"b_tensor_order_{key[2:]}"
+                            in (getattr(pomdp_space, "model_parameters", None) or {})
+                            else {}
+                        ),
+                    },
+                )
             )
+            # The structured matrices remain original source values. The
+            # derived joint B has its own canonical order and must never
+            # overwrite the retained component tensor's source orientation.
+            component_b_provenance[key] = {
+                **(
+                    (getattr(pomdp_space, "matrix_provenance", None) or {}).get(key)
+                    or {}
+                ),
+                "source_order": transition_provenance["source_order"],
+                "source_shape": list(np.asarray(matrices[key]).shape),
+                "declared_order_explicit": transition_provenance[
+                    "declared_order_explicit"
+                ],
+                "canonicalization": transition_provenance,
+            }
             for action in range(num_actions):
                 if kronecker_factorized:
                     source_action = _mixed_radix_digit(
@@ -277,6 +307,7 @@ class _CanonicalSpecMixin(_POMDPProcessorSupportMixin):
         D_joint = _normalise_prob_vector(D_joint, allow_weights=True)
 
         provenance: dict[str, Any] = {
+            **component_b_provenance,
             "A": {
                 "source": "factored_joint_composition",
                 "normalization_scope": "derived_product_of_validated_source_conditionals",
@@ -351,26 +382,53 @@ class _CanonicalSpecMixin(_POMDPProcessorSupportMixin):
         model_parameters: Optional[Dict[str, Any]] = None,
     ) -> np.ndarray:
         """Apply the shared declared-axis and source-probability boundary."""
+        return self._canonicalise_factored_B_with_provenance(
+            value,
+            factor_size,
+            num_actions,
+            agent_matrix=agent_matrix,
+            model_parameters=model_parameters,
+        )[0]
+
+    def _canonicalise_factored_B_with_provenance(
+        self,
+        value: Any,
+        factor_size: int,
+        num_actions: int,
+        *,
+        agent_matrix: bool = False,
+        model_parameters: Optional[Dict[str, Any]] = None,
+    ) -> tuple[np.ndarray, Dict[str, Any]]:
+        """Bind retained source axes to the same strict joint canonicalization."""
         parameters = dict(model_parameters or {})
         raw = np.asarray(value)
+        declared_order = any(
+            parameters.get(k)
+            for k in ("b_tensor_order", "B_tensor_order", "transition_tensor_order")
+        )
+        orientation_resolution = (
+            "declared_model_parameter" if declared_order else "shape_inferred"
+        )
         if (
             agent_matrix
-            and not any(
-                parameters.get(k)
-                for k in ("b_tensor_order", "B_tensor_order", "transition_tensor_order")
-            )
+            and not declared_order
             and raw.ndim == 3
             and raw.shape[0] in {1, num_actions}
             and raw.shape[1:] == (factor_size, factor_size)
         ):
             parameters["b_tensor_order"] = "action_next_state_previous_state"
-        canonical, _ = canonicalise_b_matrix(
+            orientation_resolution = "native_agent_action_first_default"
+        canonical, provenance = canonicalise_b_matrix(
             value,
             num_states=factor_size,
             num_actions=num_actions,
             model_parameters=parameters,
         )
-        return np.asarray(canonical)
+        return np.asarray(canonical), {
+            **provenance,
+            "orientation_resolution": orientation_resolution,
+            "declared_order_explicit": bool(declared_order),
+        }
 
     def _match_descriptor_index(
         self,

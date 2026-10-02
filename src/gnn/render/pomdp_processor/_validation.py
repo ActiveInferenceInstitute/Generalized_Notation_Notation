@@ -272,6 +272,24 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
             # presence check) was already decided per framework upstream.
             return {"valid": True, "critical": False, "warnings": warnings}
 
+        if framework in {"rxinfer", "activeinference_jl"}:
+            from gnn.render.multi_agent_common import (
+                has_native_multi_agent_structure,
+                validate_native_agent_groups,
+            )
+
+            if has_native_multi_agent_structure(gnn_spec):
+                try:
+                    validate_native_agent_groups(gnn_spec)
+                except (ValueError, TypeError) as exc:
+                    return {
+                        "valid": False,
+                        "critical": True,
+                        "reason": str(exc),
+                        "warnings": warnings,
+                    }
+                return {"valid": True, "critical": False, "warnings": warnings}
+
         # Check required matrices
         missing_required: list[Any] = []
         required_matrices = cast(list[str], config["requires_matrices"])

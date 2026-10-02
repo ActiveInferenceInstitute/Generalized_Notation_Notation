@@ -202,7 +202,7 @@ class _ProcessFlowMixin(_POMDPProcessorSupportMixin):
         # Convert POMDP to GNN spec format expected by renderers
         spec_options = {
             **kwargs,
-            "native_agents": framework == "rxinfer",
+            "native_agents": framework in {"rxinfer", "activeinference_jl"},
             "preserve_discrete_structure": framework == "thrml",
         }
         gnn_spec = self._pomdp_to_gnn_spec(pomdp_space, **spec_options)

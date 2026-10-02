@@ -1,162 +1,95 @@
-# Render Frameworks
+# Render frameworks
 
-> Step 11 generates simulation code for multiple Active Inference frameworks.
-> Run: `uv run python src/gnn/11_render.py --target-dir input/gnn_files`
+Step 11 generates code through modular backend renderers; Step 12 supervises
+requested scripts and records execution outcomes. Keep the thin numbered
+orchestrators, canonical `gnn.*` imports, and shared configuration contracts.
 
-## Supported Frameworks
+## Maintained inventory
 
-| Framework | Language | Continuous | Step 12 Execution | Runtime Gating |
-|----------------------|--------|--------------------------|-------------------|---------------------------------|
-| **PyMDP** | Python | Unsupported | Yes | none |
-| **RxInfer.jl** | Julia | Native | Yes | none |
-| **ActiveInference.jl** | Julia | Unsupported | Yes | none |
-| **JAX** | Python | Native | Yes | none |
-| **DisCoPy** | Python | Unsupported | Yes | none |
-| **PyTorch** | Python | Native | Yes | `torch` extra |
-| **NumPyro** | Python | Native | Yes | none |
-| **Stan** | Stan | Native | Yes | `uv sync --extra stan` |
-| **bnlearn** | Python | Unsupported | Yes | `bnlearn` extra |
-| **ngc-learn** | Python | Native (continuous-only) | Yes | `ngclearn` extra (py3.12 marker) |
+| Framework | Language | Continuous support | Runtime requirement |
+| --- | --- | --- | --- |
+| PyMDP | Python | Unsupported | Declared base dependency |
+| RxInfer.jl | Julia | Native | Julia and the committed RxInfer project |
+| ActiveInference.jl | Julia | Unsupported | Julia and its committed project |
+| JAX | Python | Native | Declared base dependency |
+| DisCoPy | Python | Unsupported | Declared base dependency |
+| PyTorch | Python | Native | `torch` extra |
+| NumPyro | Python | Native | Declared base dependency |
+| Stan | Stan/Python driver | Native | `stan` extra and explicit CmdStan installation |
+| bnlearn | Python | Unsupported | `bnlearn` extra |
+| cpomdp | Python | Continuous only | `cpomdp` extra; explicit experimental selection |
+| THRML | Python | Unsupported | `thrml` extra; explicit experimental selection |
+| ngc-learn | Python | Continuous only | `ngclearn` extra; Python 3.12 or later |
 
-All ten rows trace to `FRAMEWORK_REGISTRY` in
-`src/gnn/render/framework_registry.py`: Continuous is `supports_continuous`,
-Step 12 Execution is `supports_execution`, and runtime gating mirrors the
-`FRAMEWORK_IMPORT_CHECK` probes in
-`gnn.utils.runtime_safety.framework_availability` (backends listed `none` ship
-in the default environment). ngc-learn is continuous-only
-(`continuous_only: true`): discrete POMDP models are refused at Step 11. The
-execution-only `lean` backend (`gnn.frameworks.ALL_FRAMEWORKS`, no render
-entry) runs via the executor registry-runner path.
+Derive inventory and help from `gnn.render.framework_registry.FRAMEWORK_REGISTRY`
+and `gnn.frameworks.ALL_FRAMEWORKS`. Every renderer above has an executor. The
+execution-only `lean` bridge is additional and has no Step 11 renderer. Registry
+family flags describe baseline dispatch; they do not establish support for every
+multi-agent, factored, hybrid, learning, or nonstationary composition.
 
-**Execution selection** (Step 12): run the requested frameworks and report explicit skipped or failed statuses when a requested backend is unavailable or fails.
+The automatic/default and `lite` selections exclude cpomdp and THRML. Installing
+an extra does not select its experimental backend. Use the backend guide for
+admitted compositions and call `gnn doctor` for structured readiness diagnoses.
+Missing packages, missing toolchains, unsupported Python/version, probe timeout,
+probe failure, and missing executors remain distinct. Installation is explicit.
 
----
+## Scientific contracts
 
-## JAX ⭐ (Pure JAX — No Flax Required)
+Use the shared model-kind dispatch and extraction boundaries. Categorical models
+require finite, nonnegative probabilities, valid mass, declared dimensions, and
+explicit transition orientation. Canonical B is `[next_state, previous_state,
+action]`. Preserve per-factor and per-agent source axes and parameter custody
+when constructing a composed model; a global axis declaration cannot overwrite
+unchanged component tensors. Strict paths reject malformed source probabilities.
+Compatibility/demo transformations require explicit policy and provenance.
 
-```python
-"""Pure JAX Active Inference — no Flax dependency."""
+Continuous models retain `F/H/Q/R`, prior means/covariances and declared controls;
+they are never replaced with categorical A/B/C/D defaults. Continuous uncertainty
+comes from covariance. Unsupported quantities remain absent with a reason.
+Numeric literals must round-trip, including tiny probabilities. Semantic fidelity
+binds values and relevant semantics; hashes, shapes, numerical witnesses and Lean
+evidence support separate claims.
 
-import jax
-import jax.numpy as jnp
-from jax import random, jit
+THRML maps admitted positive categorical models to native factor sampling,
+fixed-action Gibbs smoothing, retained samples and empirical witnesses. Structural
+zeros affected by upstream issue #72 are rejected. Do not claim action
+optimization, convergence, hardware operation, or energy savings. cpomdp maps
+admitted linear-Gaussian models to released constructors, filtering and explicitly
+requested control; validate policy admission before enumeration.
 
-# Model matrices (extracted from GNN)
-A_MATRIX = jnp.array([[0.9, 0.1], [0.1, 0.9], [0.5, 0.5]])
-B_MATRIX = jnp.array([[[0.9, 0.1], [0.1, 0.9]], [[0.5, 0.5], [0.5, 0.5]]])
-C_VECTOR = jnp.array([0.0, 1.0, 0.0])
-D_VECTOR = jnp.array([0.5, 0.5])
+## Execution and artifact ownership
 
+Resolve configuration once, freeze selected model identities and source hashes,
+and use the selected manifest for render and execute. An explicit empty selection
+means no work. Source-relative model IDs distinguish duplicate stems; display
+names remain separate. Current-run render manifests select Step 12 scripts, and
+current-run result indexes select analysis. Historical files cannot become new
+verified evidence through directory discovery alone.
 
-@jit
-def belief_update(prior, obs, A):
-    posterior = prior * A[obs, :]
-    return posterior / jnp.sum(posterior)
+Keep hard deadlines across readiness, dispatch, result retrieval and cleanup.
+Use supervised processes and record verified descendant cleanup and stream
+completion. Failed cleanup, exhausted work, cancellation and incomplete required
+artifacts cannot produce success. Preserve successful distributed siblings and
+submission order.
 
+Output is rooted under `output/11_render_output/<artifact_stem>/<framework>/`;
+the artifact stem carries the stable model identity. Execution/analysis receipts
+carry that identity, source/script hashes and invocation identity. Build the
+website once from verified current-run artifacts.
 
-@jit
-def expected_free_energy(qs, A, B, C, action):
-    qs_next = B[:, :, action] @ qs
-    qo = A @ qs_next
-    H_qo = -jnp.sum(qo * jnp.log(qo + 1e-10))  # Epistemic
-    pragmatic = jnp.sum(qo * C)  # Pragmatic
-    return -pragmatic + H_qo
-```
+## Verification and references
 
-**Key**: Generated code uses only `jax`, `jax.numpy`, `optax` — never `flax` or `flax.linen`.
+Test direct renderers, installed public composition, CLI, API and MCP against the
+same contracts. Cover malformed probabilities, asymmetric and equal-sized B
+axes, tiny values, empty/nested/duplicate selections, stale artifacts, real
+children, cleanup failure and configuration precedence. Optional native acceptance
+uses provisioned environments and ordinary installed wheels outside the checkout.
+Keep local, hosted, numerical and native-proof receipts separate.
 
----
+- [Implementation guides](../docs/gnn/implementations/README.md)
+- [THRML](../docs/gnn/implementations/thrml.md)
+- [cpomdp](../docs/gnn/implementations/cpomdp.md)
+- [v4 migration](../docs/development/run_ownership_migration.md)
+- [Verification ledger](../SCOPE-2026-10-01.md)
 
-## PyMDP
-
-```python
-"""PyMDP Active Inference."""
-
-try:
-    from pymdp.agent import Agent
-    from pymdp import utils
-
-    PYMDP_AVAILABLE = True
-except ImportError:
-    PYMDP_AVAILABLE = False
-
-# POMDP matrices
-A = [[0.9, 0.1], [0.1, 0.9]]  # Likelihood
-B = [[[0.9, 0.1], [0.1, 0.9]]]  # Transition
-C = [0.0, 1.0]  # Preferences
-D = [0.5, 0.5]  # Initial prior
-
-
-def run_simulation(n_steps=10):
-    if not PYMDP_AVAILABLE:
-        raise ImportError("Install: uv pip install inferactively-pymdp")
-    agent = Agent(A=A, B=B, C=C, D=D)
-    obs = agent.reset()
-    for t in range(n_steps):
-        qs = agent.infer_states(obs)
-        action = agent.sample_action()
-        print(f"Step {t}: obs={obs}, action={action}")
-```
-
----
-
-## RxInfer.jl (Julia)
-
-```julia
-# Generated Julia code — genuine @model + infer() pipeline
-using RxInfer, Distributions, LinearAlgebra, Random, SHA, JSON
-
-@model function pomdp_model(y, A, B, D, u, T)
-    s[1] ~ Categorical(D)
-    y[1] ~ DiscreteTransition(s[1], A)
-    for t in 2:T
-        s[t] ~ DiscreteTransition(s[t-1], B[:, :, u[t-1]])
-        y[t] ~ DiscreteTransition(s[t], A)
-    end
-end
-
-result = infer(
-    model = pomdp_model(A=A, B=B, D=D, u=actions, T=T),
-    data = (y = observations,),
-    iterations = 20,
-    free_energy = true  # real VFE traces
-)
-```
-
-**Setup**: `julia --startup-file=no --project=src/gnn/execute/rxinfer src/gnn/execute/rxinfer/setup_environment.jl --verbose`
-
----
-
-## Matrix Extraction from GNN
-
-All frameworks use the same extraction:
-
-```python
-def extract_matrices(gnn_model: Dict[str, Any]) -> Dict[str, np.ndarray]:
-    """Extract POMDP matrices from parsed GNN model."""
-    init = gnn_model.get("initialparameterization", {})
-    return {
-        "A": np.array(init.get("A", np.eye(3))),  # Likelihood
-        "B": np.array(init.get("B", np.eye(3))),  # Transition
-        "C": np.array(init.get("C", np.zeros(3))),  # Preferences
-        "D": np.array(init.get("D", np.ones(3) / 3)),  # Initial prior
-    }
-```
-
----
-
-## Output Structure
-
-```
-output/11_render_output/
-└── model_name/
-    ├── pymdp/model_name_pymdp.py
-    ├── jax/model_name_jax.py
-    ├── rxinfer/model_name_rxinfer.jl
-    ├── activeinference_jl/model_name_activeinference.jl
-    └── discopy/model_name_discopy.py
-```
-
----
-
-**Last Updated**: 2026-09-22 | **Status**: Maintained Standard
+**Last updated**: 2026-10-02

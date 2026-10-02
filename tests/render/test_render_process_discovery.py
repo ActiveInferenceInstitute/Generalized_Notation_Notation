@@ -1,14 +1,11 @@
 """Regression tests for process_render recursive discovery of nested exemplar GNN files.
 
-Verifies the recursive-discovery fix in ``src/render/processor.py``:
+Verifies recursive discovery in ``gnn.render.processor``:
 
-1. ``process_render(..., recursive=True)`` (the default) walks nested exemplar
-   folders (discrete/, basics/, continuous/, pomdp_gridworld/, ...) and renders
-   every exemplar GNN spec to RxInfer.jl — 36 exemplar ``*.md`` files are all
-   discovered; the 31 plain ones render, and the five receipted exemplars are
-   never rendered: the composed trio (continuous × multi-agent, hybrid,
-   factored-continuous LGSSM) plus the two non-stationary discrete specs
-   (``unsupported-nonstationary``).
+1. ``process_render(..., recursive=True)`` walks every nested model folder.
+   All 38 model sources receive current receipts: 27 render, five unsupported
+   family compositions receive explicit receipts, and six malformed authored
+   examples fail strict scientific validation. Documentation is excluded.
 2. Passing ``recursive=False`` via kwargs reverts to a top-level-only glob, so
    no nested files are found and ``process_render`` returns exit code ``2``.
 
@@ -17,6 +14,7 @@ Kept fast: no Julia is executed, only code generation and summary JSON checks.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -26,11 +24,27 @@ from gnn.render.processor import process_render
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXEMPLAR_DIR = REPO_ROOT / "input" / "gnn_files"
-EXPECTED_EXEMPLAR_COUNT = 36
-# Plain exemplars that still render to RxInfer.jl; the five receipted
-# exemplars (composed trio + the two non-stationary discrete specs) are
-# never rendered.
-EXPECTED_RENDERED_COUNT = 31
+EXPECTED_EXEMPLAR_COUNT = 38
+EXPECTED_INVALID_SOURCES = {
+    "basics/dynamic_perception.md": "probability mass must be one",
+    "basics/static_perception.md": "probability mass must be one",
+    "discrete/hmm_baseline.md": "probability mass must be one",
+    "discrete/tmaze_epistemic.md": "positive finite mass",
+    "hierarchical/hierarchical_pomdp.md": "probability mass must be one",
+    "hierarchical/temporal_hierarchy.md": "probability mass must be one",
+}
+EXPECTED_UNSUPPORTED_SOURCES = {
+    "continuous/multi_agent_lgssm.md": "unsupported-composition",
+    "continuous/hybrid_discrete_continuous.md": "unsupported-composition",
+    "continuous/factored_continuous_lgssm.md": "unsupported-factored-continuous",
+    "discrete/time_varying_dynamics.md": "unsupported-nonstationary",
+    "discrete/regime_switched_dynamics.md": "unsupported-nonstationary",
+}
+EXPECTED_RENDERED_COUNT = (
+    EXPECTED_EXEMPLAR_COUNT
+    - len(EXPECTED_INVALID_SOURCES)
+    - len(EXPECTED_UNSUPPORTED_SOURCES)
+)
 
 
 def _count_exemplar_md_files() -> int:
@@ -52,8 +66,8 @@ def test_process_render_recursive_discovers_and_renders_all_exemplars(
         verbose=False,
     )
 
-    # Recursive render of all exemplars should succeed under the aggregate policy.
-    assert result is True or result is not False
+    # Required invalid work prevents success even though other models render.
+    assert result is False
 
     summary_path = output_dir / "render_processing_summary.json"
     assert summary_path.exists(), (
@@ -65,35 +79,69 @@ def test_process_render_recursive_discovers_and_renders_all_exemplars(
     assert summary["total_files"] == EXPECTED_EXEMPLAR_COUNT
     assert summary["total_files"] == _count_exemplar_md_files()
 
-    # (2) Real render behavior: every plain exemplar rendered to RxInfer.
-    assert summary["successful_files"] == EXPECTED_EXEMPLAR_COUNT
-    assert summary["total_framework_attempts"] == EXPECTED_RENDERED_COUNT
-    assert summary["successful_framework_renderings"] == EXPECTED_RENDERED_COUNT
+    from gnn.processing.discovery import is_model_source_path
 
-    # (3) The five receipted exemplars are receipted on RxInfer — never
-    # rendered as one family or rendered flat.
-    expected_receipts = {
-        "multi_agent_lgssm": "unsupported-composition",
-        "hybrid_discrete_continuous": "unsupported-composition",
-        "factored_continuous_lgssm": "unsupported-factored-continuous",
-        "time_varying_dynamics": "unsupported-nonstationary",
-        "regime_switched_dynamics": "unsupported-nonstationary",
+    selected = {
+        str(path.resolve())
+        for path in EXEMPLAR_DIR.rglob("*.md")
+        if is_model_source_path(path)
     }
-    for stem, prefix in expected_receipts.items():
-        entries = [
-            entry
-            for entry in summary["unsupported_framework_renderings"]
-            if stem in entry["file"]
-        ]
-        assert len(entries) == 1, stem
-        assert entries[0]["framework"] == "rxinfer"
-        assert prefix in entries[0]["message"], stem
+    assert set(summary["file_results"]) == selected
+    assert not any(Path(source).name == "INDEX.md" for source in selected)
+    assert summary["successful_files"] == (
+        EXPECTED_EXEMPLAR_COUNT - len(EXPECTED_INVALID_SOURCES)
+    )
+    assert summary["failed_files"] == len(EXPECTED_INVALID_SOURCES)
+    assert summary["total_framework_attempts"] == (
+        EXPECTED_RENDERED_COUNT + len(EXPECTED_INVALID_SOURCES)
+    )
+    assert summary["successful_framework_renderings"] == EXPECTED_RENDERED_COUNT
+    assert len(summary["failed_framework_renderings"]) == len(EXPECTED_INVALID_SOURCES)
+    assert len(summary["unsupported_framework_renderings"]) == len(
+        EXPECTED_UNSUPPORTED_SOURCES
+    )
+
+    for source, record in summary["file_results"].items():
+        path = Path(source)
+        relative = str(path.relative_to(EXEMPLAR_DIR))
+        assert record["source_identity"] == {
+            "path": source,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        }
+        rendering = record["framework_results"]["rxinfer"]
+        if relative in EXPECTED_INVALID_SOURCES:
+            assert record["overall_success"] is False
+            assert rendering["success"] is False
+            assert rendering.get("unsupported") is not True
+            assert EXPECTED_INVALID_SOURCES[relative] in rendering["message"]
+            assert not rendering.get("output_files")
+            assert not rendering["artifact_identities"]
+        elif relative in EXPECTED_UNSUPPORTED_SOURCES:
+            assert record["overall_success"] is True
+            assert rendering["status"] == "unsupported"
+            assert rendering["unsupported"] is True
+            assert EXPECTED_UNSUPPORTED_SOURCES[relative] in rendering["message"]
+            assert not rendering.get("output_files")
+            assert not rendering["artifact_identities"]
+        else:
+            assert record["overall_success"] is True
+            assert rendering["success"] is True
+            assert rendering["artifact_identities"]
+            for artifact in rendering["artifact_identities"]:
+                artifact_path = Path(artifact["path"])
+                assert artifact_path.is_relative_to(output_dir)
+                assert (
+                    artifact["sha256"]
+                    == hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+                )
 
     # Each plain rendered exemplar produces exactly one RxInfer.jl artifact.
     rendered_jl = list(output_dir.rglob("*.jl"))
     assert len(rendered_jl) == EXPECTED_RENDERED_COUNT
     assert not any(
-        stem in path.name for stem in expected_receipts for path in rendered_jl
+        Path(source).stem in path.name
+        for source in EXPECTED_UNSUPPORTED_SOURCES | EXPECTED_INVALID_SOURCES
+        for path in rendered_jl
     )
 
 
@@ -118,23 +166,21 @@ def test_process_render_recursive_false_skips_nested_files(tmp_path: Path) -> No
 
 
 def test_process_render_aggregates_summary_across_invocations(tmp_path: Path) -> None:
-    """Sequential per-folder invocations must accumulate file_results.
+    """Only explicitly same-run folder calls may carry byte-bound results.
 
-    The pipeline invokes ``process_render`` once per top-level input folder,
-    each writing the same ``render_processing_summary.json``. Without
-    aggregation only the last folder's ``file_results`` survive, and Step 12's
-    manifest-based discovery executes just that folder.
+    The pipeline freezes a corpus once. Standalone callers can explicitly bind
+    multiple folder calls to one run; a new run must exclude prior evidence.
     """
     output_dir = tmp_path / "render_out"
 
     first = process_render(
-        target_dir=EXEMPLAR_DIR / "basics",
+        target_dir=EXEMPLAR_DIR / "precision",
         output_dir=output_dir,
         frameworks=["rxinfer"],
         verbose=False,
         run_id="folder-aggregation-test",
     )
-    assert first is not False
+    assert first is True
 
     summary = json.loads(
         (output_dir / "render_processing_summary.json").read_text(encoding="utf-8")
@@ -150,7 +196,7 @@ def test_process_render_aggregates_summary_across_invocations(tmp_path: Path) ->
         verbose=False,
         run_id="folder-aggregation-test",
     )
-    assert second is not False
+    assert second is False  # The discrete folder includes two invalid sources.
 
     summary = json.loads(
         (output_dir / "render_processing_summary.json").read_text(encoding="utf-8")
@@ -162,5 +208,30 @@ def test_process_render_aggregates_summary_across_invocations(tmp_path: Path) ->
     assert first_keys <= merged_keys
     assert len(merged_keys) > first_total
     assert summary["total_files"] == len(merged_keys)
-    assert any("basics/" in key for key in merged_keys)
+    assert any("precision/" in key for key in merged_keys)
     assert any("discrete/" in key for key in merged_keys)
+    expected_discrete = {
+        str(path.resolve()) for path in (EXEMPLAR_DIR / "discrete").glob("*.md")
+    }
+    assert merged_keys == first_keys | expected_discrete
+    assert summary["failed_files"] == 2
+    assert summary["successful_files"] == len(merged_keys) - 2
+    assert summary["receipt_identity"]["run_id"] == "folder-aggregation-test"
+
+    third = process_render(
+        target_dir=EXEMPLAR_DIR / "precision",
+        output_dir=output_dir,
+        frameworks=["rxinfer"],
+        verbose=False,
+        run_id="fresh-folder-run",
+    )
+    assert third is True
+    fresh = json.loads(
+        (output_dir / "render_processing_summary.json").read_text(encoding="utf-8")
+    )
+    assert fresh["receipt_identity"]["run_id"] == "fresh-folder-run"
+    assert set(fresh["file_results"]) == first_keys
+    assert fresh["total_files"] == fresh["successful_files"] == 2
+    assert fresh["failed_files"] == 0
+    assert not set(fresh["file_results"]) & expected_discrete
+    assert list((output_dir / "history").glob("render-*.json"))
