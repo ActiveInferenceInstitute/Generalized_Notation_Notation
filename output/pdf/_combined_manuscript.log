@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999998 (TeX Live 2026) (preloaded format=xelatex 2026.3.1)  2 OCT 2026 11:50
+This is XeTeX, Version 3.141592653-2.6-0.999998 (TeX Live 2026) (preloaded format=xelatex 2026.3.1)  2 OCT 2026 15:58
 entering extended mode
  %&-line parsing enabled.
 **_combined_manuscript.tex
@@ -620,13 +620,7 @@ LaTeX Info: Redefining \addtolength on input line 87.
 \calc@Ccount=\count331
 \calc@Cskip=\skip63
 )
-(/usr/local/texlive/2026basic/texmf-dist/tex/latex/footnotehyper/footnotehyper.
-sty
-Package: footnotehyper 2025/11/15 v1.1f hyperref aware footnote.sty (JFB)
-\FNH@notes=\box64
-\FNH@width=\dimen197
-\FNH@toks=\toks28
-) (/usr/local/texlive/2026basic/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2026basic/texmf-dist/tex/latex/graphics/graphicx.sty
 Package: graphicx 2024/12/31 v1.2e Enhanced LaTeX Graphics (DPC,SPQR)
 
 (/usr/local/texlive/2026basic/texmf-dist/tex/latex/graphics/graphics.sty
@@ -640,10 +634,10 @@ File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
 )
 Package graphics Info: Driver file: xetex.def on input line 106.
 )
-\Gin@req@height=\dimen198
-\Gin@req@width=\dimen199
+\Gin@req@height=\dimen197
+\Gin@req@width=\dimen198
 )
-\pandoc@box=\box65
+\pandoc@box=\box64
 (/usr/local/texlive/2026basic/texmf-dist/tex/generic/babel/babel.sty
 Package: babel 2026/02/14 v26.3 The multilingual framework for LuaLaTeX, pdfLaT
 eX and XeLaTeX
@@ -662,7 +656,7 @@ LaTeX Encoding Info:    Ignoring declaration for text command \IJ (encoding ?)
 on input line 2086.
 LaTeX Encoding Info:    Ignoring declaration for text command \SS (encoding ?)
 on input line 2111.
-\U@D=\dimen256
+\U@D=\dimen199
 \l@unhyphenated=\language23
 
 (/usr/local/texlive/2026basic/texmf-dist/tex/generic/babel/xebabel.def)
@@ -701,12 +695,12 @@ Package caption Info: New subtype `subtable' on input line 238.
 (/usr/local/texlive/2026basic/texmf-dist/tex/latex/float/float.sty
 Package: float 2001/11/08 v1.3d Float enhancements (AL)
 \c@float@type=\count338
-\float@exts=\toks29
-\float@box=\box66
-\@float@everytoks=\toks30
-\@floatcapt=\box67
+\float@exts=\toks28
+\float@box=\box65
+\@float@everytoks=\toks29
+\@floatcapt=\box66
 )
-\@float@every@codelisting=\toks31
+\@float@every@codelisting=\toks30
 \c@codelisting=\count339
 
 (/usr/local/texlive/2026basic/texmf-dist/tex/latex/bookmark/bookmark.sty
@@ -751,7 +745,7 @@ Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO
 )
 )
-\@linkdim=\dimen257
+\@linkdim=\dimen256
 \Hy@linkcounter=\count341
 \Hy@pagecounter=\count342
 
@@ -781,7 +775,7 @@ Package hyperref Info: Bookmarks ON on input line 4468.
 Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 )
 LaTeX Info: Redefining \url on input line 4807.
-\XeTeXLinkMargin=\dimen258
+\XeTeXLinkMargin=\dimen257
 
 (/usr/local/texlive/2026basic/texmf-dist/tex/generic/bitset/bitset.sty
 Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
@@ -791,8 +785,8 @@ Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
 )
 ))
 \Fld@menulength=\count345
-\Field@Width=\dimen259
-\Fld@charsize=\dimen260
+\Field@Width=\dimen258
+\Fld@charsize=\dimen259
 Package hyperref Info: Hyper figures OFF on input line 6084.
 Package hyperref Info: Link nesting OFF on input line 6089.
 Package hyperref Info: Hyper index ON on input line 6092.
@@ -807,7 +801,7 @@ Package hyperref Info: PDF/A mode OFF on input line 6114.
 Package hyperref Info: Driver (autodetected): hxetex.
  (/usr/local/texlive/2026basic/texmf-dist/tex/latex/hyperref/hxetex.def
 File: hxetex.def 2026-01-29 v7.01p Hyperref driver for XeTeX
-\pdfm@box=\box68
+\pdfm@box=\box67
 \c@Hy@AnnotLevel=\count349
 \HyField@AnnotCount=\count350
 \Fld@listcount=\count351
@@ -830,7 +824,7 @@ Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 File: bkm-dvipdfm.def 2023-12-10 v1.31 bookmark driver for dvipdfm (HO)
 \BKM@id=\count353
 ))
-Package hyperref Info: Option `colorlinks' set `true' on input line 167.
+Package hyperref Info: Option `colorlinks' set `true' on input line 164.
 
 (~/Library/texmf/tex/latex/seqsplit/seqsplit.sty
 Package: seqsplit 2006/08/07 v0.1 Splitting long sequences (DNA, RNA, proteins,
@@ -842,17 +836,17 @@ Package: seqsplit 2006/08/07 v0.1 Splitting long sequences (DNA, RNA, proteins,
 
 (/usr/local/texlive/2026basic/texmf-dist/tex/latex/listings/listings.sty
 \lst@mode=\count357
-\lst@gtempboxa=\box69
-\lst@token=\toks32
+\lst@gtempboxa=\box68
+\lst@token=\toks31
 \lst@length=\count358
-\lst@currlwidth=\dimen261
+\lst@currlwidth=\dimen260
 \lst@column=\count359
 \lst@pos=\count360
-\lst@lostspace=\dimen262
-\lst@width=\dimen263
+\lst@lostspace=\dimen261
+\lst@width=\dimen262
 \lst@newlines=\count361
 \lst@lineno=\count362
-\lst@maxwidth=\dimen264
+\lst@maxwidth=\dimen263
 
 (/usr/local/texlive/2026basic/texmf-dist/tex/latex/listings/lstpatch.sty
 File: lstpatch.sty 2025/11/14 1.11b (Carsten Heinz)
@@ -861,7 +855,7 @@ File: lstpatch.sty 2025/11/14 1.11b (Carsten Heinz)
 File: lstmisc.sty 2025/11/14 1.11b (Carsten Heinz)
 \c@lstnumber=\count363
 \lst@skipnumbers=\count364
-\lst@framebox=\box70
+\lst@framebox=\box69
 )
 (/usr/local/texlive/2026basic/texmf-dist/tex/latex/listings/listings.cfg
 File: listings.cfg 2025/11/14 1.11b listings configuration
@@ -878,26 +872,26 @@ Package: listings 2025/11/14 1.11b (Carsten Heinz)
 (./_combined_manuscript.aux)
 \openout1 = `_combined_manuscript.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 273.
-LaTeX Font Info:    ... okay on input line 273.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 273.
-LaTeX Font Info:    ... okay on input line 273.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 273.
-LaTeX Font Info:    ... okay on input line 273.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 273.
-LaTeX Font Info:    ... okay on input line 273.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 273.
-LaTeX Font Info:    ... okay on input line 273.
-LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 273.
-LaTeX Font Info:    ... okay on input line 273.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 273.
-LaTeX Font Info:    ... okay on input line 273.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 273.
-LaTeX Font Info:    ... okay on input line 273.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 273.
-LaTeX Font Info:    ... okay on input line 273.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 273.
-LaTeX Font Info:    ... okay on input line 273.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 270.
+LaTeX Font Info:    ... okay on input line 270.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 270.
+LaTeX Font Info:    ... okay on input line 270.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 270.
+LaTeX Font Info:    ... okay on input line 270.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 270.
+LaTeX Font Info:    ... okay on input line 270.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 270.
+LaTeX Font Info:    ... okay on input line 270.
+LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 270.
+LaTeX Font Info:    ... okay on input line 270.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 270.
+LaTeX Font Info:    ... okay on input line 270.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 270.
+LaTeX Font Info:    ... okay on input line 270.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 270.
+LaTeX Font Info:    ... okay on input line 270.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 270.
+LaTeX Font Info:    ... okay on input line 270.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: xetex
@@ -934,19 +928,19 @@ LaTeX Font Info:    ... okay on input line 273.
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
 LaTeX Font Info:    Overwriting math alphabet `\mathrm' in version `normal'
-(Font)                  OT1/cmr/m/n --> TU/lmr/m/n on input line 273.
+(Font)                  OT1/cmr/m/n --> TU/lmr/m/n on input line 270.
 LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `normal'
-(Font)                  OT1/cmr/m/it --> TU/lmr/m/it on input line 273.
+(Font)                  OT1/cmr/m/it --> TU/lmr/m/it on input line 270.
 LaTeX Font Info:    Overwriting math alphabet `\mathbf' in version `normal'
-(Font)                  OT1/cmr/bx/n --> TU/lmr/bx/n on input line 273.
+(Font)                  OT1/cmr/bx/n --> TU/lmr/bx/n on input line 270.
 LaTeX Font Info:    Overwriting math alphabet `\mathsf' in version `normal'
-(Font)                  OT1/cmss/m/n --> TU/lmss/m/n on input line 273.
+(Font)                  OT1/cmss/m/n --> TU/lmss/m/n on input line 270.
 LaTeX Font Info:    Overwriting math alphabet `\mathsf' in version `bold'
-(Font)                  OT1/cmss/bx/n --> TU/lmss/bx/n on input line 273.
+(Font)                  OT1/cmss/bx/n --> TU/lmss/bx/n on input line 270.
 LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `normal'
-(Font)                  OT1/cmtt/m/n --> TU/lmtt/m/n on input line 273.
+(Font)                  OT1/cmtt/m/n --> TU/lmtt/m/n on input line 270.
 LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `bold'
-(Font)                  OT1/cmtt/m/n --> TU/lmtt/bx/n on input line 273.
+(Font)                  OT1/cmtt/m/n --> TU/lmtt/bx/n on input line 270.
 
 Package fontspec Info:
 (fontspec)             latinmodern-math scale = 0.9999960663218141.
@@ -977,7 +971,7 @@ pt=math;language=dflt;"
 pt=math;language=dflt;"
 
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(0)/m/n' will be
-(Font)              scaled to size 9.0pt on input line 273.
+(Font)              scaled to size 9.0pt on input line 270.
 
 Package fontspec Info:
 (fontspec)             latinmodern-math scale = 0.9999960663218141.
@@ -1020,18 +1014,18 @@ dern-math.otf]/OT:script=math;language=dflt;+ssty=1;"
 pt=math;language=dflt;"
 
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(1)/m/n' will be
-(Font)              scaled to size 9.0pt on input line 273.
+(Font)              scaled to size 9.0pt on input line 270.
 LaTeX Font Info:    Encoding `OT1' has changed to `TU' for symbol font
-(Font)              `operators' in the math version `normal' on input line 273.
+(Font)              `operators' in the math version `normal' on input line 270.
 
 LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
 (Font)                  OT1/cmr/m/n --> TU/latinmodern-math.otf(1)/m/n on input
- line 273.
+ line 270.
 LaTeX Font Info:    Encoding `OT1' has changed to `TU' for symbol font
-(Font)              `operators' in the math version `bold' on input line 273.
+(Font)              `operators' in the math version `bold' on input line 270.
 LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
 (Font)                  OT1/cmr/bx/n --> TU/latinmodern-math.otf(1)/b/n on inpu
-t line 273.
+t line 270.
 
 Package fontspec Info:
 (fontspec)             latinmodern-math scale = 0.9999960663218141.
@@ -1105,15 +1099,15 @@ n-math.otf]/OT:script=math;language=dflt;+ssty=1;"
 t=math;language=dflt;"
 
 LaTeX Font Info:    Encoding `OMS' has changed to `TU' for symbol font
-(Font)              `symbols' in the math version `normal' on input line 273.
+(Font)              `symbols' in the math version `normal' on input line 270.
 LaTeX Font Info:    Overwriting symbol font `symbols' in version `normal'
 (Font)                  OMS/cmsy/m/n --> TU/latinmodern-math.otf(2)/m/n on inpu
-t line 273.
+t line 270.
 LaTeX Font Info:    Encoding `OMS' has changed to `TU' for symbol font
-(Font)              `symbols' in the math version `bold' on input line 273.
+(Font)              `symbols' in the math version `bold' on input line 270.
 LaTeX Font Info:    Overwriting symbol font `symbols' in version `bold'
 (Font)                  OMS/cmsy/b/n --> TU/latinmodern-math.otf(2)/b/n on inpu
-t line 273.
+t line 270.
 
 Package fontspec Info:
 (fontspec)             latinmodern-math scale = 0.9999960663218141.
@@ -1182,23 +1176,23 @@ pt=math;language=dflt;"
 
 LaTeX Font Info:    Encoding `OMX' has changed to `TU' for symbol font
 (Font)              `largesymbols' in the math version `normal' on input line 2
-73.
+70.
 LaTeX Font Info:    Overwriting symbol font `largesymbols' in version `normal'
 (Font)                  OMX/cmex/m/n --> TU/latinmodern-math.otf(3)/m/n on inpu
-t line 273.
+t line 270.
 LaTeX Font Info:    Encoding `OMX' has changed to `TU' for symbol font
-(Font)              `largesymbols' in the math version `bold' on input line 273
+(Font)              `largesymbols' in the math version `bold' on input line 270
 .
 LaTeX Font Info:    Overwriting symbol font `largesymbols' in version `bold'
 (Font)                  OMX/cmex/m/n --> TU/latinmodern-math.otf(3)/b/n on inpu
-t line 273.
-LaTeX Info: Redefining \microtypecontext on input line 273.
-Package microtype Info: Applying patch `item' on input line 273.
-Package microtype Info: Applying patch `toc' on input line 273.
-Package microtype Info: Applying patch `eqnum' on input line 273.
-Package microtype Info: Applying patch `footnote' on input line 273.
-Package microtype Info: Applying patch `verbatim' on input line 273.
-LaTeX Info: Redefining \microtypesetup on input line 273.
+t line 270.
+LaTeX Info: Redefining \microtypecontext on input line 270.
+Package microtype Info: Applying patch `item' on input line 270.
+Package microtype Info: Applying patch `toc' on input line 270.
+Package microtype Info: Applying patch `eqnum' on input line 270.
+Package microtype Info: Applying patch `footnote' on input line 270.
+Package microtype Info: Applying patch `verbatim' on input line 270.
+LaTeX Info: Redefining \microtypesetup on input line 270.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using protrusion set `basicmath'.
 Package microtype Info: No adjustment of tracking.
@@ -1215,7 +1209,7 @@ Package caption Info: float package is loaded.
 Package caption Info: hyperref package is loaded.
 Package caption Info: listings package is loaded.
 Package caption Info: End \AtBeginDocument code.
-Package hyperref Info: Link coloring ON on input line 273.
+Package hyperref Info: Link coloring ON on input line 270.
 \c@lstlisting=\count366
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: TU).
@@ -1298,10 +1292,10 @@ L3 programming layer <2026-01-19>
  ***********
  )
 Here is how much of TeX's memory you used:
- 23739 strings out of 469709
- 434672 string characters out of 5466024
- 1057011 words of memory out of 5000000
- 52059 multiletter control sequences out of 15000+600000
+ 23630 strings out of 469709
+ 432305 string characters out of 5466024
+ 1055801 words of memory out of 5000000
+ 51954 multiletter control sequences out of 15000+600000
  631333 words of font info for 82 fonts, out of 8000000 for 9000
  319 hyphenation exceptions out of 8191
  90i,9n,114p,1710b,565s stack positions out of 10000i,1000n,20000p,200000b,200000s
