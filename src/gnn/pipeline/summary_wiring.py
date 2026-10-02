@@ -484,7 +484,15 @@ def _write_performance_dashboard(
         template_path = Path(__file__).parent / "performance_dashboard.template.html"
         if template_path.exists():
             template_content = template_path.read_text()
-            json_payload = json.dumps(pipeline_summary)
+            # HTML parses closing script tags before JavaScript parses its
+            # strings. Preserve JSON values while preventing model/provider
+            # text from escaping this inline script element.
+            json_payload = (
+                json.dumps(pipeline_summary, ensure_ascii=True)
+                .replace("<", "\\u003c")
+                .replace(">", "\\u003e")
+                .replace("&", "\\u0026")
+            )
             final_html = template_content.replace("{SUMMARY_JSON}", json_payload)
             db_path = summary_path.parent / "performance_dashboard.html"
             from gnn.pipeline._io import atomic_write_text

@@ -87,7 +87,7 @@ class Dispatcher:
         self._owned_cluster: Any = None
         self._owns_ray = False
 
-    def connect_to_cluster(self) -> bool:
+    def connect_to_cluster(self, *, deadline_monotonic: float | None = None) -> bool:
         """Adopt a ready cluster or start one inside the supervised pipeline.
 
         Direct callers must provide a ready Dask client or initialize Ray in
@@ -96,6 +96,9 @@ class Dispatcher:
         """
         from gnn.pipeline.run_context import current_run_context
 
+        deadline, budget = self._collection_deadline(deadline_monotonic)
+        if budget <= 0:
+            return False
         if self.backend == "dask" and self.client is not None:
             self._initialized = getattr(self.client, "status", None) == "running"
             return self._initialized
@@ -104,6 +107,8 @@ class Dispatcher:
             try:
                 import ray
             except ImportError:
+                return False
+            if time.monotonic() >= deadline:
                 return False
             if ray.is_initialized():
                 self._initialized = True
@@ -118,6 +123,8 @@ class Dispatcher:
                 import ray
 
                 if not ray.is_initialized():
+                    if time.monotonic() >= deadline:
+                        return False
                     ray.init(
                         address=self.address,
                         num_cpus=self.num_cpus,
@@ -125,6 +132,9 @@ class Dispatcher:
                     )
                     self._owns_ray = True
                 self._initialized = True
+                if time.monotonic() >= deadline:
+                    self.shutdown(deadline_monotonic=deadline)
+                    return False
                 logger.info(
                     f"Successfully connected to Ray cluster (Active Nodes: {len(ray.nodes())})"
                 )
@@ -139,6 +149,8 @@ class Dispatcher:
             try:
                 from dask.distributed import Client, LocalCluster
 
+                if time.monotonic() >= deadline:
+                    return False
                 if self.address:
                     self.client = Client(self.address)
                     self._owns_client = True
@@ -147,9 +159,15 @@ class Dispatcher:
                         n_workers=self.num_cpus if self.num_cpus else 4
                     )
                     self._owned_cluster = cluster
+                    if time.monotonic() >= deadline:
+                        self.shutdown(deadline_monotonic=deadline)
+                        return False
                     self.client = Client(cluster)
                     self._owns_client = True
                 self._initialized = True
+                if time.monotonic() >= deadline:
+                    self.shutdown(deadline_monotonic=deadline)
+                    return False
                 logger.info(f"Successfully connected to Dask cluster: {self.client}")
                 return True
             except ImportError:
@@ -159,11 +177,11 @@ class Dispatcher:
                 return False
             except Exception as e:
                 logger.error(f"Failed to initialize Dask: {e}")
-                self.shutdown()
+                self.shutdown(deadline_monotonic=deadline)
                 return False
         return False
 
-    def shutdown(self) -> Any:
+    def shutdown(self, *, deadline_monotonic: float | None = None) -> Any:
         """Close owned resources, bounding Dask cleanup by the invocation budget.
 
         An externally initialized Ray runtime is caller-owned. Dask client and
@@ -171,6 +189,8 @@ class Dispatcher:
         does not close that cluster itself. An exhausted deadline queues public
         asynchronous close requests, never another synchronous scheduler wait.
         """
+        if deadline_monotonic is not None:
+            self._collection_deadline(deadline_monotonic)
         if self.backend == "dask":
             from gnn.pipeline.run_context import current_run_context
 
@@ -178,6 +198,7 @@ class Dispatcher:
             context = current_run_context()
             for limit in (
                 self.deadline_monotonic,
+                deadline_monotonic,
                 context.deadline_monotonic if context else None,
             ):
                 if limit is not None:
@@ -210,7 +231,11 @@ class Dispatcher:
                     from gnn.pipeline.run_context import current_run_context
 
                     context = current_run_context()
-                    if context is not None and context.remaining_seconds() != 0:
+                    if (
+                        context is not None
+                        and context.remaining_seconds() != 0
+                        and self._collection_deadline(deadline_monotonic)[1] > 0
+                    ):
                         ray.shutdown()
                     else:
                         logger.warning(
@@ -223,15 +248,24 @@ class Dispatcher:
         elif self.backend == "ray":
             self._initialized = False
 
-    def _collection_deadline(self) -> tuple[float, float]:
+    def _collection_deadline(
+        self, deadline_monotonic: float | None = None
+    ) -> tuple[float, float]:
         """Intersect backend collection and invocation budgets once."""
         from gnn.pipeline.run_context import current_run_context
 
+        if deadline_monotonic is not None and (
+            isinstance(deadline_monotonic, bool)
+            or not math.isfinite(deadline_monotonic)
+        ):
+            raise ValueError("deadline_monotonic must be finite")
         timeout = _resolve_wait_timeout()
         started = time.monotonic()
         limits = [started + timeout]
         if self.deadline_monotonic is not None:
             limits.append(self.deadline_monotonic)
+        if deadline_monotonic is not None:
+            limits.append(deadline_monotonic)
         context = current_run_context()
         if context is not None and context.deadline_monotonic is not None:
             limits.append(context.deadline_monotonic)
@@ -259,15 +293,19 @@ class Dispatcher:
             for _ in range(count)
         ]
 
-    def _ray_get_bounded(self, futures: List[Any]) -> List[Any]:
+    def _ray_get_bounded(
+        self, futures: List[Any], *, deadline_monotonic: float | None = None
+    ) -> List[Any]:
         """Collect each Ray result independently under one monotonic deadline.
 
         Wait readiness does not grant an unbounded data transfer. A sibling's
         exception or cancellation does not discard successful task receipts.
         """
+        if not futures:
+            return []
+        deadline, timeout = self._collection_deadline(deadline_monotonic)
         import ray
 
-        deadline, timeout = self._collection_deadline()
         results: dict[int, Any] = {}
         pending = list(range(len(futures)))
         while pending and (remaining := deadline - time.monotonic()) > 0:
@@ -338,7 +376,9 @@ class Dispatcher:
         except (RuntimeError, OSError) as exc:
             logger.warning("Dask cancellation request failed: %s", exc)
 
-    def _dask_gather_bounded(self, futures: List[Any]) -> List[Any]:
+    def _dask_gather_bounded(
+        self, futures: List[Any], *, deadline_monotonic: float | None = None
+    ) -> List[Any]:
         """Preserve ordered sibling results across errors, cancellation and loss.
 
         ``lost`` is recoverable scheduler state, so it remains pending until
@@ -346,9 +386,12 @@ class Dispatcher:
         once per iteration; every finished/error result transfer is also bounded.
         There is no unbounded gather fallback when distributed is unavailable.
         """
+        if not futures:
+            return []
+        deadline, timeout = self._collection_deadline(deadline_monotonic)
         try:
             from dask.distributed import wait as dask_wait
-            from distributed.client import (  # type: ignore[import-not-found]
+            from distributed.client import (
                 FutureCancelledError,
                 FuturesCancelledError,
             )
@@ -358,7 +401,6 @@ class Dispatcher:
                 for _ in futures
             ]
 
-        deadline, timeout = self._collection_deadline()
         results: dict[int, Any] = {}
         pending = list(range(len(futures)))
         while pending and (remaining := deadline - time.monotonic()) > 0:
@@ -411,13 +453,23 @@ class Dispatcher:
         return [results[i] for i in range(len(futures))]
 
     def _submit_dask(
-        self, fn: Callable, calls: List[tuple[tuple[Any, ...], Dict[str, Any]]]
+        self,
+        fn: Callable,
+        calls: List[tuple[tuple[Any, ...], Dict[str, Any]]],
+        *,
+        deadline_monotonic: float,
+        timeout_seconds: float,
     ) -> List[Any]:
-        """Keep prior submissions when a positively identified channel fails."""
+        """Bound every submission and retain independent, ordered receipts."""
         receipts: dict[int, Any] = {}
         positions: list[int] = []
         futures = []
         for index, (args, kwargs) in enumerate(calls):
+            if time.monotonic() >= deadline_monotonic:
+                for position in range(index, len(calls)):
+                    receipts[position] = _wait_timeout_failures(1, timeout_seconds)[0]
+                    receipts[position]["dispatch_phase"] = "submission"
+                break
             try:
                 future = self.client.submit(
                     fn, *args, retries=self.max_retries, **kwargs
@@ -434,7 +486,10 @@ class Dispatcher:
                 continue
             positions.append(index)
             futures.append(future)
-        for index, result in zip(positions, self._dask_gather_bounded(futures)):
+        for index, result in zip(
+            positions,
+            self._dask_gather_bounded(futures, deadline_monotonic=deadline_monotonic),
+        ):
             receipts[index] = result
         return [receipts[index] for index in range(len(calls))]
 
@@ -444,8 +499,19 @@ class Dispatcher:
         """
         Execute multiple scripts in parallel across workers with robust retries.
         """
-        if not self._initialized and not self.connect_to_cluster():
+        if not script_infos:
+            return []
+        deadline, timeout = self._collection_deadline()
+        if timeout <= 0:
+            return _wait_timeout_failures(len(script_infos), timeout)
+        if not self._initialized and not self.connect_to_cluster(
+            deadline_monotonic=deadline
+        ):
+            if time.monotonic() >= deadline:
+                return _wait_timeout_failures(len(script_infos), timeout)
             return self._initialization_failures(len(script_infos))
+        if time.monotonic() >= deadline:
+            return _wait_timeout_failures(len(script_infos), timeout)
 
         logger.info(
             f"Dispatching {len(script_infos)} scripts to {self.backend.capitalize()} cluster..."
@@ -464,6 +530,11 @@ class Dispatcher:
             submitted = []
             positions = []
             for index, info in enumerate(script_infos):
+                if time.monotonic() >= deadline:
+                    for position in range(index, len(script_infos)):
+                        receipts[position] = _wait_timeout_failures(1, timeout)[0]
+                        receipts[position]["dispatch_phase"] = "submission"
+                    break
                 try:
                     submitted.append(_remote_execute.remote(info, kwargs))
                     positions.append(index)
@@ -471,13 +542,19 @@ class Dispatcher:
                     receipts[index] = self._task_failure(
                         "DistributedTransportError", exc
                     )
-            for index, result in zip(positions, self._ray_get_bounded(submitted)):
+            for index, result in zip(
+                positions,
+                self._ray_get_bounded(submitted, deadline_monotonic=deadline),
+            ):
                 receipts[index] = result
             return [receipts[index] for index in range(len(script_infos))]
 
         elif self.backend == "dask":
             return self._submit_dask(
-                execute_fn, [((info,), kwargs) for info in script_infos]
+                execute_fn,
+                [((info,), kwargs) for info in script_infos],
+                deadline_monotonic=deadline,
+                timeout_seconds=timeout,
             )
 
         return []
@@ -488,8 +565,19 @@ class Dispatcher:
         """
         Execute a parameter sweep with built-in retry semantics.
         """
-        if not self._initialized and not self.connect_to_cluster():
+        if not param_grid:
+            return []
+        deadline, timeout = self._collection_deadline()
+        if timeout <= 0:
+            return _wait_timeout_failures(len(param_grid), timeout)
+        if not self._initialized and not self.connect_to_cluster(
+            deadline_monotonic=deadline
+        ):
+            if time.monotonic() >= deadline:
+                return _wait_timeout_failures(len(param_grid), timeout)
             return self._initialization_failures(len(param_grid))
+        if time.monotonic() >= deadline:
+            return _wait_timeout_failures(len(param_grid), timeout)
 
         logger.info(
             f"Dispatching {len(param_grid)} parameter combinations for sweep using {self.backend.capitalize()}..."
@@ -507,6 +595,11 @@ class Dispatcher:
             submitted = []
             positions = []
             for index, params in enumerate(param_grid):
+                if time.monotonic() >= deadline:
+                    for position in range(index, len(param_grid)):
+                        receipts[position] = _wait_timeout_failures(1, timeout)[0]
+                        receipts[position]["dispatch_phase"] = "submission"
+                    break
                 try:
                     submitted.append(_remote_eval.remote(params))
                     positions.append(index)
@@ -514,11 +607,19 @@ class Dispatcher:
                     receipts[index] = self._task_failure(
                         "DistributedTransportError", exc
                     )
-            for index, result in zip(positions, self._ray_get_bounded(submitted)):
+            for index, result in zip(
+                positions,
+                self._ray_get_bounded(submitted, deadline_monotonic=deadline),
+            ):
                 receipts[index] = result
             return [receipts[index] for index in range(len(param_grid))]
 
         elif self.backend == "dask":
-            return self._submit_dask(model_fn, [((), params) for params in param_grid])
+            return self._submit_dask(
+                model_fn,
+                [((), params) for params in param_grid],
+                deadline_monotonic=deadline,
+                timeout_seconds=timeout,
+            )
 
         return []

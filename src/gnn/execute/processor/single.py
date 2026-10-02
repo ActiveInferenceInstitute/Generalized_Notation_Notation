@@ -7,7 +7,6 @@ import logging
 import os
 import platform
 import subprocess  # nosec B404
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
@@ -293,81 +292,14 @@ def execute_single_script(
                 f"Executing {script_info['framework']} script: {script_info['name']}"
             )
 
-        # Check if the executor is available
-        try:
-            precondition = execution_precondition(
-                timeout, None, deadline_monotonic=deadline
-            )
-            if precondition is not None:
-                return {**exec_result, **precondition}
-            probe_timeout = min(5.0, max(0.001, deadline - time.monotonic()))
-            # For Python scripts, check if Python is available (most are Python scripts)
-            if executor in ["python", "python3"]:
-                subprocess.run(
-                    [executor, "--version"],  # nosec B603
-                    capture_output=True,
-                    text=True,
-                    timeout=probe_timeout,
-                    check=True,
-                )
-
-                # For PyMDP, specifically check if it's importable
-                if framework == "pymdp":
-                    try:
-                        import_check = subprocess.run(  # nosec B603
-                            [executor, "-c", 'import pymdp; print("ok")'],
-                            capture_output=True,
-                            text=True,
-                            timeout=min(5.0, max(0.001, deadline - time.monotonic())),
-                        )
-                        if import_check.returncode != 0:
-                            logger.warning(
-                                f"PyMDP package appears missing or broken: {import_check.stderr}"
-                            )
-                            exec_result["error"] = (
-                                f"PyMDP dependency missing: {import_check.stderr}"
-                            )
-                            if not _gnn_allow_missing_deps():
-                                # SC-34: continuation is opt-in. Default is a
-                                # structured fast failure instead of a doomed run.
-                                exec_result["error_type"] = "DependencyMissing"
-                                exec_result["return_code"] = NEVER_STARTED
-                                logger.error(
-                                    f"Failing fast for {script_info['name']}: PyMDP "
-                                    "unavailable (set GNN_ALLOW_MISSING_DEPS=1 to "
-                                    "attempt continuation)"
-                                )
-                                return exec_result
-                            # Opt-in continuation: might still be a local import.
-                    except Exception as e:
-                        logger.debug(f"Error checking PyMDP importability: {e}")
-
-            elif framework in FRAMEWORK_JULIA_PACKAGES:
-                # The shared preflight already checked this committed project.
-                pass
-            # For other executors, try a basic check
-            else:
-                subprocess.run(
-                    [executor, "--version"],  # nosec B603
-                    capture_output=True,
-                    text=True,
-                    timeout=probe_timeout,
-                    check=True,
-                )
-        except (
-            subprocess.CalledProcessError,
-            FileNotFoundError,
-            subprocess.TimeoutExpired,
-        ) as e:
-            exec_result["error"] = (
-                f"Executor '{executor}' is not available or not working: {e}"
-            )
-            exec_result["error_type"] = "ExecutorUnavailable"
-            exec_result["return_code"] = NEVER_STARTED
-            logger.warning(
-                f"Executor unavailable for {script_info['name']}: {executor}"
-            )
-            return exec_result
+        # Structured readiness already validates the actual interpreter and
+        # imports under supervision. Dispatch only the requested script here;
+        # redundant raw version/import probes cannot contain their descendants.
+        precondition = execution_precondition(
+            timeout, None, deadline_monotonic=deadline
+        )
+        if precondition is not None:
+            return {**exec_result, **precondition}
 
         # Execute the script with improved error handling. Failure carriers use
         # ``subprocess.CompletedProcess`` so the success and failure paths share
@@ -475,6 +407,7 @@ def execute_single_script(
                         exec_result[receipt_key] = envelope[receipt_key]
 
                 if envelope.get("error_type") == "TimeoutExpired":
+                    exec_result["status"] = "timed_out"
                     exec_result["execution_time"] = elapsed_rep
                     exec_result["error"] = (
                         f"Script execution timed out after {timeout} seconds"
@@ -539,6 +472,12 @@ def execute_single_script(
                         exec_result["error_type"] = "ProcessCleanupFailure"
                         exec_result["error"] = envelope.get(
                             "error", "Subprocess cleanup could not be verified"
+                        )
+                    elif envelope.get("error_type") == "Cancelled":
+                        exec_result["status"] = "cancelled"
+                        exec_result["error_type"] = "Cancelled"
+                        exec_result["error"] = envelope.get(
+                            "error", "Script execution cancelled"
                         )
 
                     logger.warning(
@@ -666,6 +605,7 @@ def execute_single_script(
             "script_name": script_info["name"],
             "script_path": str(script_path),
             "success": exec_result["success"],
+            "status": exec_result["status"],
             "return_code": exec_result.get("return_code"),
             "execution_time": exec_result.get("execution_time", 0),
             "timestamp": exec_result["timestamp"],

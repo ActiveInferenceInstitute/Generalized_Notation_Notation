@@ -72,7 +72,7 @@ def test_initialization_failure_does_not_execute_unbounded_sequential_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     dispatcher = Dispatcher("dask")
-    monkeypatch.setattr(dispatcher, "connect_to_cluster", lambda: False)
+    monkeypatch.setattr(dispatcher, "connect_to_cluster", lambda **kwargs: False)
     calls = []
     results = dispatcher.run_scripts_parallel(
         [{"id": 1}, {"id": 2}], lambda *args: calls.append(args)
@@ -86,6 +86,319 @@ def test_initialization_failure_does_not_execute_unbounded_sequential_fallback(
         result["error_type"] == "DistributedInitializationError"
         for result in results + sweep
     )
+
+
+@pytest.mark.parametrize("backend", ["dask", "ray"])
+@pytest.mark.parametrize("operation", ["scripts", "sweep"])
+@pytest.mark.parametrize("initialized", [False, True])
+@pytest.mark.parametrize("limit_source", ["explicit", "context"])
+def test_expired_dispatch_never_connects_or_submits(
+    monkeypatch: pytest.MonkeyPatch,
+    backend: Any,
+    operation: str,
+    initialized: bool,
+    limit_source: str,
+) -> None:
+    from gnn.pipeline import run_context
+
+    deadline = time.monotonic() - 1
+    monkeypatch.setattr(
+        run_context,
+        "current_run_context",
+        lambda: (
+            SimpleNamespace(deadline_monotonic=deadline)
+            if limit_source == "context"
+            else None
+        ),
+    )
+    dispatcher = Dispatcher(
+        backend, deadline_monotonic=deadline if limit_source == "explicit" else None
+    )
+    dispatcher._initialized = initialized
+    calls: list[str] = []
+    monkeypatch.setattr(
+        dispatcher,
+        "connect_to_cluster",
+        lambda **kwargs: calls.append("connect") or True,
+    )
+    if operation == "scripts":
+        result = dispatcher.run_scripts_parallel(
+            [{"id": 1}, {"id": 2}], lambda **kwargs: calls.append("execute")
+        )
+    else:
+        result = dispatcher.parameter_sweep(
+            lambda **kwargs: calls.append("execute"), [{"id": 1}, {"id": 2}]
+        )
+    assert not calls
+    assert len(result) == 2 and all(
+        receipt["success"] is False
+        and receipt["error_type"] == "DistributedWaitTimeout"
+        for receipt in result
+    )
+    assert dispatcher._initialized is initialized
+
+
+@pytest.mark.parametrize("backend", ["dask", "ray"])
+@pytest.mark.parametrize("operation", ["scripts", "sweep"])
+def test_connection_cannot_renew_the_original_dispatch_budget(
+    monkeypatch: pytest.MonkeyPatch, backend: Any, operation: str
+) -> None:
+    import gnn.execute.distributed as dispatch_module
+    from gnn.pipeline import run_context
+
+    clock = [100.0]
+    monkeypatch.setattr(
+        dispatch_module, "time", SimpleNamespace(monotonic=lambda: clock[0])
+    )
+    monkeypatch.setattr(run_context, "current_run_context", lambda: None)
+    monkeypatch.setenv("GNN_DISTRIBUTED_WAIT_TIMEOUT", "1")
+    dispatcher = Dispatcher(backend)
+
+    def connect(**kwargs: Any) -> bool:
+        assert kwargs["deadline_monotonic"] == 101.0
+        clock[0] += 2
+        return True
+
+    monkeypatch.setattr(dispatcher, "connect_to_cluster", connect)
+    if operation == "scripts":
+        result = dispatcher.run_scripts_parallel([{"id": 1}], lambda **kwargs: None)
+    else:
+        result = dispatcher.parameter_sweep(lambda **kwargs: None, [{"id": 1}])
+    assert result[0]["error_type"] == "DistributedWaitTimeout"
+    assert result[0]["collection_timeout_seconds"] == 1
+    assert dispatcher.deadline_monotonic is None
+
+
+@pytest.mark.parametrize("backend", ["dask", "ray"])
+def test_slow_backend_import_cannot_start_a_cluster_after_dispatch_expiry(
+    monkeypatch: pytest.MonkeyPatch, backend: Any
+) -> None:
+    import builtins
+
+    import gnn.execute.distributed as dispatch_module
+    from gnn.pipeline import run_context
+
+    clock = [100.0]
+    started = []
+    monkeypatch.setattr(
+        dispatch_module, "time", SimpleNamespace(monotonic=lambda: clock[0])
+    )
+    monkeypatch.setattr(
+        run_context,
+        "current_run_context",
+        lambda: SimpleNamespace(deadline_monotonic=None, remaining_seconds=lambda: 60),
+    )
+    real_import = builtins.__import__
+    runtime = SimpleNamespace(
+        is_initialized=lambda: False,
+        init=lambda **kwargs: started.append("ray"),
+        Client=lambda *args: started.append("client"),
+        LocalCluster=lambda **kwargs: started.append("cluster"),
+    )
+
+    def delayed_import(name: str, *args: Any, **kwargs: Any) -> Any:
+        if name == ("ray" if backend == "ray" else "dask.distributed"):
+            clock[0] += 2
+            return runtime
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", delayed_import)
+    dispatcher = Dispatcher(backend)
+    assert dispatcher.connect_to_cluster(deadline_monotonic=101.0) is False
+    assert not started and not dispatcher._initialized
+    assert not dispatcher._owns_ray and not dispatcher._owns_client
+
+
+def test_expired_dask_startup_queues_owned_cluster_cleanup_without_starting_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import builtins
+
+    import gnn.execute.distributed as dispatch_module
+    from gnn.pipeline import run_context
+
+    clock = [100.0]
+    queued = []
+    clients = []
+    monkeypatch.setattr(
+        dispatch_module, "time", SimpleNamespace(monotonic=lambda: clock[0])
+    )
+    monkeypatch.setattr(
+        run_context,
+        "current_run_context",
+        lambda: SimpleNamespace(deadline_monotonic=None, remaining_seconds=lambda: 60),
+    )
+    cluster = SimpleNamespace(
+        loop=SimpleNamespace(add_callback=lambda fn: queued.append(fn)),
+        close=lambda **kwargs: None,
+    )
+
+    def start_cluster(**kwargs: Any) -> Any:
+        clock[0] += 2
+        return cluster
+
+    runtime = SimpleNamespace(
+        LocalCluster=start_cluster, Client=lambda *args: clients.append(args)
+    )
+    real_import = builtins.__import__
+
+    def import_backend(name: str, *args: Any, **kwargs: Any) -> Any:
+        return (
+            runtime
+            if name == "dask.distributed"
+            else real_import(name, *args, **kwargs)
+        )
+
+    monkeypatch.setattr(builtins, "__import__", import_backend)
+    dispatcher = Dispatcher("dask")
+    assert dispatcher.connect_to_cluster(deadline_monotonic=101.0) is False
+    assert queued == [cluster.close] and not clients
+    assert dispatcher.deadline_monotonic is None and not dispatcher._initialized
+
+
+@pytest.mark.parametrize("backend", ["dask", "ray"])
+@pytest.mark.parametrize("operation", ["scripts", "sweep"])
+def test_empty_dispatch_does_not_initialize_any_backend(
+    monkeypatch: pytest.MonkeyPatch, backend: Any, operation: str
+) -> None:
+    dispatcher = Dispatcher(backend)
+    calls = []
+    monkeypatch.setattr(
+        dispatcher, "connect_to_cluster", lambda **kwargs: calls.append(True)
+    )
+    if operation == "scripts":
+        assert dispatcher.run_scripts_parallel([], lambda **kwargs: None) == []
+    else:
+        assert dispatcher.parameter_sweep(lambda **kwargs: None, []) == []
+    assert not calls
+
+
+@pytest.mark.parametrize("backend", ["dask", "ray"])
+@pytest.mark.parametrize("operation", ["scripts", "sweep"])
+def test_submission_expiry_stops_new_work_and_keeps_ordered_siblings(
+    monkeypatch: pytest.MonkeyPatch, backend: Any, operation: str
+) -> None:
+    import types
+
+    import gnn.execute.distributed as dispatch_module
+    from gnn.pipeline import run_context
+
+    clock = [100.0]
+    submitted = []
+    collected = []
+    monkeypatch.setattr(
+        dispatch_module, "time", SimpleNamespace(monotonic=lambda: clock[0])
+    )
+    monkeypatch.setattr(run_context, "current_run_context", lambda: None)
+    monkeypatch.setenv("GNN_DISTRIBUTED_WAIT_TIMEOUT", "1")
+
+    def submit(*args: Any, **kwargs: Any) -> str:
+        submitted.append((args, kwargs))
+        clock[0] += 2
+        return "observed-success"
+
+    def collect(futures: Any, *, deadline_monotonic: float | None = None) -> Any:
+        collected.append((futures, deadline_monotonic))
+        return [{"success": True, "id": 1}]
+
+    dispatcher = Dispatcher(backend, client=SimpleNamespace(submit=submit))
+    dispatcher._initialized = True
+    if backend == "ray":
+        runtime = types.ModuleType("ray")
+        runtime.remote = lambda **kwargs: lambda fn: SimpleNamespace(remote=submit)  # type: ignore[attr-defined]
+        runtime.exceptions = SimpleNamespace(RayError=RuntimeError)  # type: ignore[attr-defined]
+        monkeypatch.setitem(sys.modules, "ray", runtime)
+        monkeypatch.setattr(dispatcher, "_ray_get_bounded", collect)
+    else:
+        monkeypatch.setattr(dispatcher, "_dask_gather_bounded", collect)
+    selections = [{"id": 1}, {"id": 2}, {"id": 3}]
+    if operation == "scripts":
+        result = dispatcher.run_scripts_parallel(selections, lambda **kwargs: None)
+    else:
+        result = dispatcher.parameter_sweep(lambda **kwargs: None, selections)
+    assert len(submitted) == 1
+    assert collected == [(["observed-success"], 101.0)]
+    assert result[0] == {"success": True, "id": 1}
+    assert len(result) == 3 and all(
+        receipt["error_type"] == "DistributedWaitTimeout"
+        and receipt["dispatch_phase"] == "submission"
+        for receipt in result[1:]
+    )
+    assert dispatcher.deadline_monotonic is None
+
+
+@pytest.mark.needs_distributed
+@pytest.mark.parametrize("operation", ["scripts", "sweep"])
+def test_real_dask_expired_dispatch_preserves_caller_client(
+    cluster: Any, monkeypatch: pytest.MonkeyPatch, operation: str
+) -> None:
+    client, local = cluster
+    submissions = []
+    original_submit = client.submit
+
+    def submit(*args: Any, **kwargs: Any) -> Any:
+        submissions.append(args)
+        return original_submit(*args, **kwargs)
+
+    monkeypatch.setattr(client, "submit", submit)
+    dispatcher = Dispatcher(
+        "dask", client=client, deadline_monotonic=time.monotonic() - 1
+    )
+    if operation == "scripts":
+        result = dispatcher.run_scripts_parallel([{"id": 1}], lambda **kwargs: 1)
+    else:
+        result = dispatcher.parameter_sweep(lambda **kwargs: 1, [{"id": 1}])
+    assert result[0]["error_type"] == "DistributedWaitTimeout"
+    assert not submissions
+    dispatcher.shutdown()
+    from distributed.core import Status
+
+    assert client.status == "running" and local.status == Status.running
+
+
+@pytest.mark.needs_distributed
+@pytest.mark.parametrize("operation", ["scripts", "sweep"])
+def test_real_dask_submission_expiry_never_starts_later_selected_work(
+    cluster: Any, tmp_path: Path, operation: str
+) -> None:
+    client, local = cluster
+    submitted = []
+
+    class SlowSubmissionClient:
+        def __getattr__(self, name: str) -> Any:
+            return getattr(client, name)
+
+        def submit(self, *args: Any, **kwargs: Any) -> Any:
+            future = client.submit(*args, **kwargs)
+            submitted.append(future)
+            assert future.result(timeout=1) == 1
+            time.sleep(0.25)
+            return future
+
+    def work(id: int) -> int:
+        (tmp_path / str(id)).write_text("actually-executed")
+        return id
+
+    dispatcher = Dispatcher(
+        "dask", client=SlowSubmissionClient(), deadline_monotonic=time.monotonic() + 0.2
+    )
+    if operation == "scripts":
+        result = dispatcher.run_scripts_parallel(
+            [{"id": 1}, {"id": 2}, {"id": 3}], lambda info: work(**info)
+        )
+    else:
+        result = dispatcher.parameter_sweep(work, [{"id": 1}, {"id": 2}, {"id": 3}])
+    assert len(submitted) == 1
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["1"]
+    assert len(result) == 3 and all(
+        receipt["error_type"] == "DistributedWaitTimeout" for receipt in result
+    )
+    assert result[1]["dispatch_phase"] == result[2]["dispatch_phase"] == "submission"
+    # Successful execution without in-budget result retrieval remains unfinished.
+    dispatcher.shutdown()
+    from distributed.core import Status
+
+    assert client.status == "running" and local.status == Status.running
 
 
 @pytest.mark.needs_distributed
@@ -466,6 +779,12 @@ import json, sys, time, ray
 from gnn.execute.distributed import Dispatcher
 ray.init(num_cpus=2, include_dashboard=False, log_to_driver=False, _temp_dir=sys.argv[1])
 try:
+    expired = Dispatcher("ray", deadline_monotonic=time.monotonic() - 1)
+    rejected = expired.run_scripts_parallel([{"id": 1}], lambda info: info)
+    rejected += expired.parameter_sweep(lambda id: id, [{"id": 2}])
+    assert len(rejected) == 2 and all(item["error_type"] == "DistributedWaitTimeout" for item in rejected)
+    expired.shutdown()
+    assert ray.is_initialized(), "the ready runtime remains caller-owned"
     @ray.remote(max_retries=0)
     def task(name):
         if name == "bad": raise ValueError("bad-model")

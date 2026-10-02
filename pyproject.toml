@@ -364,6 +364,7 @@ strict_equality = true
 module = [
     "aiohttp.*",
     "dask.*",
+    "distributed.*",
     "defusedxml.*",
     "fastapi.*",
     "jax.*",

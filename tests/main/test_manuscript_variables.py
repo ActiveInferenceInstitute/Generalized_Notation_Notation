@@ -356,7 +356,11 @@ def test_framework_table_cells_track_registry_flags(
     for key, spec in specs.items():
         name = str(spec.get("name", key))
         discrete, continuous, executor = by_name[name]
-        assert discrete == ("yes" if spec.get("pomdp_compatible") else "no")
+        assert discrete == (
+            "yes"
+            if spec.get("pomdp_compatible") and not spec.get("continuous_only")
+            else "no"
+        )
         assert continuous == (
             "yes" if spec.get("supports_continuous") else "unsupported"
         )
@@ -389,7 +393,9 @@ def test_model_kind_table_rows(
         "Multi-agent",
         "Recursive",
     ]
-    assert by_kind["Multi-agent"][2:] == by_kind["Discrete categorical"][2:]
+    assert by_kind["Multi-agent"][2:] != by_kind["Discrete categorical"][2:]
+    assert "Model/backend dependent" in by_kind["Multi-agent"][2]
+    assert "explicit acceptance required" in by_kind["Multi-agent"][3]
     assert by_kind["Discrete categorical"][1] == "`input/gnn_files/discrete/`"
     assert by_kind["Continuous linear-Gaussian"][1] == "`input/gnn_files/continuous/`"
     specs = _registry_specs(snapshot)
@@ -403,6 +409,44 @@ def test_model_kind_table_rows(
     assert by_kind["Multi-agent"][1] == "`input/gnn_files/multiagent/`"
     assert by_kind["Recursive"][1] == "`input/gnn_files/recursive/`"
     assert variables["GNN_MODEL_KIND_TABLE"].rstrip().endswith("{#tbl:model_kinds}")
+
+
+def test_continuous_only_targets_never_advertise_categorical_rendering() -> None:
+    from gnn.manuscript.tables import (
+        _render_framework_capability_table,
+        _render_model_kind_table,
+    )
+
+    # Both targets enter the POMDP dispatch registry, but their actual render
+    # paths reject A/B/C/D models. Dispatch compatibility is not kind support.
+    specs = {
+        "cpomdp": {
+            "name": "cpomdp",
+            "pomdp_compatible": True,
+            "continuous_only": True,
+            "supports_continuous": True,
+            "supports_execution": True,
+        },
+        "thrml": {
+            "name": "THRML",
+            "pomdp_compatible": True,
+            "supports_execution": True,
+        },
+    }
+    assert "| cpomdp | no | yes | executor |" in (
+        _render_framework_capability_table(specs)
+    )
+    table = _render_model_kind_table(specs)
+    categorical = next(
+        row for row in table.splitlines() if row.startswith("| Discrete categorical")
+    )
+    assert "| THRML | THRML |" in categorical
+    assert "cpomdp" not in categorical
+    multi_agent = next(
+        row for row in table.splitlines() if row.startswith("| Multi-agent")
+    )
+    assert "THRML" not in multi_agent and "all " not in multi_agent
+    assert "THRML accepts independent categorical components" in table
 
 
 def test_counts_describe_the_stamped_commit_not_the_working_tree(

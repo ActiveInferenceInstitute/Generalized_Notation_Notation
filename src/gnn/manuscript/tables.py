@@ -138,8 +138,8 @@ def _render_backend_table(backends: list[tuple[str, str, bool]]) -> str:
 def _render_framework_capability_table(specs: dict[str, dict]) -> str:
     """Render the per-framework model-kind capability table.
 
-    Every cell is a registry flag, never prose: *Discrete render* is
-    ``pomdp_compatible``, *Continuous render* is ``supports_continuous``,
+    *Discrete render* requires ``pomdp_compatible`` and excludes
+    ``continuous_only`` targets. *Continuous render* is ``supports_continuous``,
     and *Executor status* is ``supports_execution`` (whether a Step-12
     executor exists). An ``unsupported`` continuous cell is the renderer's
     own status for continuous-state models — reported as unsupported, not
@@ -151,7 +151,11 @@ def _render_framework_capability_table(specs: dict[str, dict]) -> str:
     ]
     for key, spec in specs.items():
         name = str(spec.get("name", key))
-        discrete = "yes" if spec.get("pomdp_compatible") else "no"
+        discrete = (
+            "yes"
+            if spec.get("pomdp_compatible") and not spec.get("continuous_only")
+            else "no"
+        )
         continuous = "yes" if spec.get("supports_continuous") else "unsupported"
         executor = "executor" if spec.get("supports_execution") else "render-only"
         rows.append(f"| {name} | {discrete} | {continuous} | {executor} |")
@@ -161,7 +165,10 @@ def _render_framework_capability_table(specs: dict[str, dict]) -> str:
             "the flags in `src/gnn/render/framework_registry.py` — the same "
             "source as [@tbl:backend_registry]. A continuous cell of "
             "`unsupported` is the renderer's own status for continuous-state "
-            "models; a render-only entry has no Step-12 executor. Read with "
+            "models; continuous-only targets do not render categorical "
+            "models. An executor entry declares dispatch support, not "
+            "acceptance of every model or inference mode; a render-only "
+            "entry has no Step-12 executor. Read with "
             "[@tbl:model_kinds], which groups the same flags by model kind.",
             "framework_capability",
         )
@@ -175,11 +182,11 @@ def _render_model_kind_table(specs: dict[str, dict]) -> str:
     One row per model kind the pipeline represents and executes. The
     Renderer(s)/Executor(s) cells are generated from the registry's
     ``pomdp_compatible``/``supports_continuous``/``supports_execution``
-    flags. Multi-agent specs are discrete-state models whose per-agent
-    matrix keys canonicalize through the same discrete A/B/C/D render path
-    (``structured_pomdp['matrices']`` in ``pomdp_contract.py``), so that row
-    inherits the discrete row's registry-grounded coverage; the recursive
-    row is an execution mode with no notation or render target of its own.
+    flags, excluding continuous-only targets from categorical coverage.
+    The registry has no universal multi-agent capability flag. Multi-agent
+    composition is model- and backend-dependent and cannot inherit a
+    categorical renderer's coverage. The recursive row is an execution mode
+    with no notation or render target of its own.
     """
     rows = [
         "| Model kind | Notation block | Exemplar folder | Renderer(s) | Executor(s) |",
@@ -191,7 +198,7 @@ def _render_model_kind_table(specs: dict[str, dict]) -> str:
     continuous_executors: list[str] = []
     for key, spec in specs.items():
         name = str(spec.get("name", key))
-        if spec.get("pomdp_compatible"):
+        if spec.get("pomdp_compatible") and not spec.get("continuous_only"):
             discrete_renderers.append(name)
             if spec.get("supports_execution"):
                 discrete_executors.append(name)
@@ -225,10 +232,10 @@ def _render_model_kind_table(specs: dict[str, dict]) -> str:
                 f"| {_coverage_cell(continuous_executors, n_frameworks)} |"
             ),
             (
-                f"| Multi-agent | `nr_agents` + per-agent matrix keys "
-                f"(`A_agent1`, …) | `input/gnn_files/multiagent/` "
-                f"| {_coverage_cell(discrete_renderers, n_frameworks)} "
-                f"| {_coverage_cell(discrete_executors, n_frameworks)} |"
+                "| Multi-agent | `nr_agents` + per-agent categorical or "
+                "linear-Gaussian parameters | `input/gnn_files/multiagent/` "
+                "| Model/backend dependent composition "
+                "| Model/backend dependent; explicit acceptance required |"
             ),
             ("| Recursive | — | `input/gnn_files/recursive/` | — | — |"),
         ]
@@ -240,10 +247,13 @@ def _render_model_kind_table(specs: dict[str, dict]) -> str:
             "declares; exemplar folders are the committed corpus under "
             "`input/gnn_files/`. Renderer(s)/Executor(s) cells are generated "
             "from the registry flags (see [@tbl:framework_capability]): the "
-            "two parameterization rows carry their own flag sets, and "
-            "multi-agent inherits the discrete row's coverage because its "
-            "per-agent matrix keys canonicalize through the same discrete "
-            "A/B/C/D render path; `recursive/` is "
+            "two parameterization rows carry their own flag sets, excluding "
+            "continuous-only targets from categorical coverage. These flags "
+            "do not establish universal multi-agent support: THRML accepts "
+            "independent categorical components, and coupled models require "
+            "a backend-specific representation and acceptance evidence. "
+            "Native independent linear-Gaussian agent exemplars are verified "
+            "on JAX and RxInfer in the v4 acceptance ledger; `recursive/` is "
             "reserved for bounded `--autonomous` proposal-loop runs and "
             "holds no committed models.",
             "model_kinds",

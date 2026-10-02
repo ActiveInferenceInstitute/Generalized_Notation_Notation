@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from datetime import datetime
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -16,6 +17,49 @@ from gnn.pipeline.run_session import load_session, status_report
 from gnn.utils.arguments.pipeline_arguments import PipelineArguments
 
 pytestmark = pytest.mark.pipeline
+
+
+def test_dashboard_preserves_data_without_creating_injected_html_nodes(
+    tmp_path: Path,
+) -> None:
+    import gnn.pipeline.summary_wiring as wiring
+
+    class ScriptInventory(HTMLParser):
+        def __init__(self) -> None:
+            super().__init__()
+            self.scripts: list[dict[str, str | None]] = []
+
+        def handle_starttag(
+            self, tag: str, attrs: list[tuple[str, str | None]]
+        ) -> None:
+            if tag == "script":
+                self.scripts.append(dict(attrs))
+
+    payload = {
+        "run_id": "review-run",
+        "overall_status": "FAILED",
+        "steps": [
+            {
+                "stdout": '</script><script id="injected">alert(1)</script><script><!--&>\u2028\u2029'
+            }
+        ],
+    }
+    path = tmp_path / "pipeline_execution_summary.json"
+    wiring._write_performance_dashboard(path, payload, logging.getLogger(__name__))
+    rendered = (tmp_path / "performance_dashboard.html").read_text()
+    template = (
+        Path(wiring.__file__).parent / "performance_dashboard.template.html"
+    ).read_text()
+    expected = ScriptInventory()
+    expected.feed(template)
+    actual = ScriptInventory()
+    actual.feed(rendered)
+    assert actual.scripts == expected.scripts
+    encoded = rendered.split("const rawData = ", 1)[1]
+    decoded, end = json.JSONDecoder().raw_decode(encoded)
+    assert decoded == payload and encoded[end:].startswith(";")
+    assert "<" not in encoded[:end] and "&" not in encoded[:end]
+    assert "\u2028" not in encoded[:end] and "\u2029" not in encoded[:end]
 
 
 @pytest.fixture
