@@ -3462,6 +3462,26 @@
       "errors": 0,
       "skipped": 0,
       "seconds": 20.831
+    },
+    {
+      "receipt": "gnn-v4-final-readiness-shared-verified.xml",
+      "command": "Shared single/THRML/Stan readiness and availability: full timeout/cleanup/cancellation taxonomy, real interpreter-wrapper child containment",
+      "sha256": "5c4abd9421c79d03efd0fd66fe9b70e5f67dd4760118001d07ca82126a540e73",
+      "tests": 94,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 9.346
+    },
+    {
+      "receipt": "gnn-v4-final-review-readiness.xml",
+      "command": "Fresh independent connected readiness suite; native wrapper and shared dispatcher semantics",
+      "sha256": "a660d6926d4501c6f9ba9bfd1bc135359a2c4be0b18cd1690a1001d637993ee3",
+      "tests": 150,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 8.589
     }
   ],
   "pending": [
@@ -4341,7 +4361,7 @@
       "gnn_policy": "Affected structural zeros are explicitly unsupported; no silent epsilon repair"
     },
     "final_installed_gnn_acceptance": {
-      "status": "verified at intermediate content 4fbe8e483af5f5639b3994e86237090dfc92e592; superseded for final publication by reviewed infrastructure corrections; new wheel acceptance required",
+      "status": "Earlier wheel acceptance is intermediate; final release wheel must include reviewed readiness taxonomy fixes",
       "wheel_sha256": "7a6c01bf8a584fb210678d585850cb934462765c94429632dd63363ed68f2816",
       "installed_python_source_files": 740,
       "installed_source_inventory_sha256": "9f7393ce66b877516b1492ad17cad9e2c29019544d3b2f8f7e8614cb6d7dc071",
@@ -7452,7 +7472,7 @@
     }
   },
   "prepublication_review_corrections": {
-    "state": "source fixes verified locally; final source commit and fresh independent verdict pending",
+    "state": "All five concrete findings resolved and independently replayed; immutable final content and artifact publication binding pending",
     "findings": [
       {
         "finding": "Redundant raw executor version/import probes could orphan their children",
@@ -7473,13 +7493,20 @@
         "finding": "Generated capability tables advertised continuous-only targets as categorical and inherited universal multi-agent coverage",
         "resolution": "Exclude continuous_only from categorical capability; require model-specific multi-agent acceptance and state THRML independent-component restriction",
         "verification": "Registry-derived table regressions and explicit continuous-only fixture"
+      },
+      {
+        "finding": "Readiness probe uncertainty was counted as optional missing dependencies, enabling Step12 false success",
+        "resolution": "Reuse shared unsuccessful readiness taxonomy for single dispatch; preserve typed cancellation and prioritize unverified cleanup over legacy cause labels",
+        "verification": "94 shared tests; fresh independent150-case suite and81 controlled published-summary diagnoses; real timeout child reaped and counted failed"
       }
     ],
     "source_hashes": {
       "src/gnn/execute/distributed.py": "4657b078307d68b26735ed62cbb42887332938a4b46cfad8d9f9e121fd2ed08e",
       "src/gnn/execute/processor/single.py": "ef01075e301ffffec14cc27a06d7e3a61ea2fc7d8badebfb4870f04957039aff",
       "src/gnn/pipeline/summary_wiring.py": "5227d4090aad48d1f81f93e31b5a23f0e951cdaf29454aa07dc7c55ac2d9bb36",
-      "src/gnn/manuscript/tables.py": "fcbbb61c3a839ff0abfba22aab9be5e9a1d669cafbb303918e7c72c336cb81d0"
+      "src/gnn/manuscript/tables.py": "fcbbb61c3a839ff0abfba22aab9be5e9a1d669cafbb303918e7c72c336cb81d0",
+      "src/gnn/execute/preconditions.py": "1e9e93b4f0bde3bc447f399d1e15c3c8ce878e5555d9e9e515d7900d74d0189e",
+      "src/gnn/execute/processor/envelope.py": "36e0a6a6e7f2366ea7be7af96aa2f586af0a616258ecb294ff0524b4af52c217"
     }
   },
   "evidence_inventory_policy": "Raw receipt SHA256 binds the full local JUnit; module counts and canonical case-inventory SHA256 summarize verbose test names without treating machine identifiers as prose."

@@ -122,11 +122,18 @@ def unavailable_framework_result(diagnosis: FrameworkStatus) -> dict[str, Any]:
     cleanup_failed = (
         diagnosis.cleanup_verified is False or diagnosis.streams_drained is False
     )
+    cancelled = (
+        diagnosis.reason_code == "probe_cancelled"
+        or diagnosis.execution_error_type == "Cancelled"
+    )
     return {
         "success": False,
-        "skipped": skipped and not cleanup_failed,
+        "skipped": skipped and not cleanup_failed and not cancelled,
+        "cancelled": cancelled,
         "status": "failed"
         if cleanup_failed
+        else "cancelled"
+        if cancelled
         else "skipped"
         if skipped
         else "timed_out"
@@ -134,6 +141,8 @@ def unavailable_framework_result(diagnosis: FrameworkStatus) -> dict[str, Any]:
         else "failed",
         "error_type": "ProcessCleanupFailure"
         if cleanup_failed
+        else "Cancelled"
+        if cancelled
         else diagnosis.execution_error_type
         or ("DependencyUnavailable" if skipped else "FrameworkProbeFailure"),
         "execution_error_type": diagnosis.execution_error_type,
