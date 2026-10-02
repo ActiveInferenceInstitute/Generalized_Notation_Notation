@@ -98,6 +98,20 @@ separate from missing dependencies. Explicit empty selection is valid zero work.
 Required unfinished work prevents success; optional enrichment skips remain
 visible. A timeout or failed output verification marks the invocation failed.
 
+## Scientific comparison admission
+
+Step 16 keeps operational counts and per-result timing separate from numerical
+agreement. Comparisons retain model IDs, source hashes, inference meaning and
+numeric precision. Matching display names or dimensions cannot admit a pair.
+Missing or incompatible bindings produce unavailable results with reasons;
+historical artifacts remain inspectable without acquiring verified comparison status.
+
+Categorical summaries describe validated probability traces. Gaussian summaries
+use posterior means and covariances, with uncertainty derived from covariance.
+Native agent and factor views retain their own identities. Absent free energy,
+confidence or inference diagnostics remain absent. These descriptive metrics do
+not establish extraction correctness, universal equivalence or convergence.
+
 ## Strict scientific inputs
 
 Direct renderers, CLI and MCP reject nonfinite, negative, zero-mass or materially

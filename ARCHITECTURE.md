@@ -157,13 +157,15 @@ A strict acceptance gate, `scripts/run_v3_orchestration_acceptance.py`, exercise
 
 ## Exemplar Gold Standard (v3.2.0)
 
-Version 3.2.0 makes every exemplar under `input/gnn_files/` render *and* execute on every framework that can represent it, and flag the rest explicitly:
+Version 3.2.0 introduced model-kind dispatch and explicit unsupported outcomes.
+The current strict contract also rejects malformed authored inputs; a corpus
+entry or supported family alone cannot establish successful execution:
 
 - **Model kinds**: `src/gnn/render/pomdp_contract.py` (`detect_model_kind`) classifies every spec: a discrete kind (flat, factored, hierarchical, multi-agent, learning, or the structural no-parameterization wrapper) over the categorical `A/B/C/D[/E]` contract, or the continuous linear-Gaussian kind (`F/H/Q/R`, `prior_mean/prior_cov`, optional closed-loop `goal_mean/control_gain`). Continuous blocks pass through the render processor verbatim.
 - **Framework capabilities**: `src/gnn/render/framework_registry.py` is the single declaration of the registered frameworks and carries `supports_continuous` per entry. Frameworks without continuous support (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) return the `unsupported` render status for continuous models; it is counted separately in `render_processing_summary.json` and never reaches Step 12.
 - **Shared LGSSM generator**: `src/gnn/render/continuous_script.py` produces the online Kalman filter (Joseph-form update, closed-loop control) used by the JAX, NumPyro, PyTorch and Stan renderers; RxInfer.jl keeps its native continuous strategy.
 - **Stan execution**: `src/gnn/render/stan/stan_renderer.py` emits runnable HMM and LGSSM programs plus a cmdstanpy driver, and `src/gnn/execute/stan/` runs them (skipped, not failed, without `cmdstanpy`/CmdStan).
-- **Step 12 summary merge**: `src/gnn/execute/processor.py` merges the prior `execution_summary.json` so one durable summary covers every input folder, mirroring Step 11.
+- **Historical Step 12 summary merge**: v3.2 combined prior summaries across input folders. v4 assembles one summary for the frozen current selection; previous-run artifacts remain history.
 
 See `CHANGELOG.md` §3.2.0 and the README section "Model Kinds and Framework Support".
 
@@ -188,6 +190,12 @@ deadline. Both execution modes consume that selection. Aggregation, website
 assembly, and reports consume current-run evidence; an exclusive output lease
 prevents concurrent writers. Required unfinished work prevents a successful
 final summary. See the [v4 migration](docs/development/run_ownership_migration.md).
+
+Scientific result comparisons preserve model/source identity, native agent and
+factor views, inference semantics and declared numerical precision. Gaussian
+plots use posterior means with covariance-derived uncertainty. Comparison
+admission is shared by JSON, Markdown and plotting; missing or incompatible
+evidence produces an unavailable result with reasons.
 
 Experimental backends extend the existing numbered steps through the same
 registry and contracts. [THRML](docs/gnn/implementations/thrml.md) separates
@@ -403,7 +411,7 @@ Each agent implements comprehensive performance monitoring:
 ---
 
 **Architecture Version**: [pyproject.toml](pyproject.toml) (canonical · 4.0.0)
-**Last Updated**: 2026-09-21
+**Last Updated**: 2026-10-02
 **Status**: Maintained
 **Compliance**: Thin orchestrator pattern
 **Latest Validation**: See current test and pipeline runs

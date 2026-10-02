@@ -198,8 +198,12 @@ flowchart TD
 
 ### Data Dependencies
 
-Edges below describe **runtime data flow**, verified against each step's
-processor. Most steps re-parse the input GNN files directly; only the edges
+Edges below describe processor-level data flow. In v4, source consumers
+receive the immutable selected-model manifest, artifact consumers receive
+current-run indexes, and Steps 23/24 receive the current summary snapshot.
+The [migration guide](docs/development/run_ownership_migration.md) governs
+identity, freshness and scheduling; directory presence cannot admit prior-run
+evidence. Most steps re-parse the input GNN files directly; only the edges
 shown move artifacts between steps. Solid arrows are artifact reads the
 consumer performs on its primary path; dotted arrows are optional enrichments
 read only when the producer's output directory exists.
@@ -289,7 +293,7 @@ deliberately broader than this artifact graph.
 - **Screen Reader Support**: Accessible output with emoji-free alternatives for assistive technologies
 - **Performance Monitoring**: Built-in timing and resource consumption tracking with visual displays
 
-### Current Validation (September 2026)
+### Historical Validation (September 2026)
 
 - **uv 0.12.0 compatibility**: Verified. `uv lock --check` passes and `uv sync --frozen` succeeds. `uv run --extra dev` executes all tests. The `uv` toolchain constraint `uv>=0.7.8` in Dockerfile is the minimum bootstrap floor.
 - **Docs audit**: `uv run --extra dev python docs/development/docs_audit.py --strict --check-anchors --no-write` reports no broken links, anchor gaps, or AGENTS/README coverage gaps.
@@ -308,7 +312,7 @@ deliberately broader than this artifact graph.
 - **`unsupported` render status**: frameworks whose `framework_registry.py` entry has `supports_continuous: False` (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) return `status: unsupported` for continuous models; these are counted separately under `unsupported_framework_renderings` in `render_processing_summary.json`, excluded from success rates, and never executed by Step 12.
 - **Native continuous backends**: JAX, NumPyro (+NUTS), PyTorch and Stan share `render/continuous_script.py` (online Kalman filter, Joseph-form update, closed-loop control); RxInfer.jl uses its native LGSSM strategy.
 - **Stan is executable**: `render/stan/stan_renderer.py` emits an HMM (forward-algorithm marginalisation, Dirichlet priors centred on `A`) for discrete models and the Kalman marginal likelihood for continuous ones, as `<stem>_stan.stan` plus a `<stem>_stan.py` cmdstanpy driver; `src/gnn/execute/stan/` runs it and `gnn.utils.runtime_safety.framework_availability` reports `skipped` when `cmdstanpy`/CmdStan is absent (`uv sync --extra stan`).
-- **Step 12 summary merge**: `execute/processor.py` (`_merge_prior_execution_summary`) folds the previous `execution_summary.json` into the current run so the durable summary covers every input folder, mirroring Step 11.
+- **Historical Step 12 summary merge**: v3.2 combined summaries across input folders. v4 aggregates the frozen current-run selection once and excludes inherited execution artifacts from current evidence.
 - **Julia pre-exec gate**: a `julia` launcher without a working toolchain no longer blocks scripts; the probe degrades to the advisory regex sweep unless the parser itself reports a failure.
 - Live counts come from `output/11_render_output/render_processing_summary.json` and `output/12_execute_output/summaries/execution_summary.json`; see `CHANGELOG.md` §3.2.0 for the release receipt.
 
@@ -341,6 +345,10 @@ deliberately broader than this artifact graph.
 - [cpomdp](docs/gnn/implementations/cpomdp.md) remains an explicitly selected
   experimental released-wheel backend. Admission estimates, numerical witnesses,
   execution receipts, and formal custody retain separate claims.
+- Step 16 admits numerical comparisons only for compatible model IDs, source
+  hashes, inference semantics, inputs and declared precision. Native Gaussian
+  uncertainty comes from covariance; unbound or incompatible comparisons retain
+  refusal reasons through JSON, Markdown and plotting.
 - The [scope ledger](SCOPE-2026-10-01.md) records acceptance and deferred checks.
   Publication requires final repository gates, manuscript rendering, paired
   custody, hosted results, and remote commit parity; implementation prose is not
@@ -661,7 +669,7 @@ uv run --extra dev python scripts/run_v3_orchestration_acceptance.py
 
 ---
 
-**Last Updated**: 2026-09-07
+**Last Updated**: 2026-10-02
 **Pipeline Version**: [pyproject.toml](pyproject.toml) (canonical)
 **Total Steps**: 25 (0-24)
 **Status**: Maintained

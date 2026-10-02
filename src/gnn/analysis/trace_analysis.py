@@ -13,6 +13,13 @@ from typing import Any, Dict, List
 
 import numpy as np
 
+from .comparison_contract import (
+    performance_admission,
+    prepare_scientific_record,
+    scientific_comparisons,
+)
+from .result_adapter import categorical_trace
+
 logger = logging.getLogger(__name__)
 
 
@@ -62,7 +69,12 @@ def analyze_simulation_traces(
 
     except Exception as e:
         logger.error(f"Error analyzing simulation traces: {e}")
-        return {"framework": framework, "model_name": model_name, "error": str(e)}
+        return {
+            "framework": framework,
+            "model_name": model_name,
+            "status": "failed",
+            "error": str(e),
+        }
 
 
 def analyze_free_energy(
@@ -90,22 +102,11 @@ def analyze_free_energy(
         if not free_energy_values:
             return analysis
 
-        # Safely convert free energy values to a flat 1-D array of scalars.
-        # Values may be nested lists, multi-dimensional arrays, or ragged
-        # sequences — flatten everything and reduce each element to a scalar
-        # via np.mean() so that downstream float() calls never fail.
-        raw: list[Any] = []
-        for val in free_energy_values:
-            try:
-                arr = np.asarray(val, dtype=float)
-                raw.append(float(np.mean(arr)))  # reduce to scalar
-            except (TypeError, ValueError) as e:
-                logger.debug("Skipping non-numeric free energy entry: %s", e)
-                continue
-        if not raw:
-            return analysis
-
-        fe_array = np.array(raw, dtype=float)
+        fe_array = np.asarray(free_energy_values, dtype=float)
+        if fe_array.ndim != 1 or not np.isfinite(fe_array).all():
+            raise ValueError(
+                "free energy must be a finite scalar series; policy arrays require explicit reduction semantics"
+            )
 
         # Calculate statistics
         analysis["mean_free_energy"] = float(np.mean(fe_array))
@@ -138,7 +139,12 @@ def analyze_free_energy(
 
     except Exception as e:
         logger.error(f"Error analyzing free energy: {e}")
-        return {"framework": framework, "model_name": model_name, "error": str(e)}
+        return {
+            "framework": framework,
+            "model_name": model_name,
+            "status": "failed",
+            "error": str(e),
+        }
 
 
 def analyze_policy_convergence(
@@ -167,19 +173,13 @@ def analyze_policy_convergence(
         if not policy_traces:
             return analysis
 
-        # Calculate entropy for each policy
-        for policy in policy_traces:
-            if isinstance(policy, (list, tuple, np.ndarray)):
-                policy_array = np.array(policy)
-                # Normalize to probabilities
-                policy_array = (
-                    policy_array / np.sum(policy_array)
-                    if np.sum(policy_array) > 0
-                    else policy_array
-                )
-                # Calculate entropy
-                entropy = -np.sum(policy_array * np.log(policy_array + 1e-10))
-                analysis["policy_entropy"].append(float(entropy))
+        # Values must already be probabilities; analysis cannot repair them.
+        for policy_array in categorical_trace(
+            policy_traces, name="policy distributions"
+        ):
+            positive = policy_array[policy_array > 0]
+            entropy = -np.sum(positive * np.log(positive))
+            analysis["policy_entropy"].append(float(entropy))
 
         # Calculate stability (variance in policy entropy)
         if analysis["policy_entropy"]:
@@ -197,7 +197,12 @@ def analyze_policy_convergence(
 
     except Exception as e:
         logger.error(f"Error analyzing policy convergence: {e}")
-        return {"framework": framework, "model_name": model_name, "error": str(e)}
+        return {
+            "framework": framework,
+            "model_name": model_name,
+            "status": "failed",
+            "error": str(e),
+        }
 
 
 def analyze_state_distributions(
@@ -226,19 +231,10 @@ def analyze_state_distributions(
         if not state_traces:
             return analysis
 
-        # Calculate entropy for each state distribution
-        for state in state_traces:
-            if isinstance(state, (list, tuple, np.ndarray)):
-                state_array = np.array(state)
-                # Normalize to probabilities
-                state_array = (
-                    state_array / np.sum(state_array)
-                    if np.sum(state_array) > 0
-                    else state_array
-                )
-                # Calculate entropy
-                entropy = -np.sum(state_array * np.log(state_array + 1e-10))
-                analysis["state_entropy"].append(float(entropy))
+        for state_array in categorical_trace(state_traces, name="state distributions"):
+            positive = state_array[state_array > 0]
+            entropy = -np.sum(positive * np.log(positive))
+            analysis["state_entropy"].append(float(entropy))
 
         # Calculate diversity metrics
         if analysis["state_entropy"]:
@@ -253,7 +249,12 @@ def analyze_state_distributions(
 
     except Exception as e:
         logger.error(f"Error analyzing state distributions: {e}")
-        return {"framework": framework, "model_name": model_name, "error": str(e)}
+        return {
+            "framework": framework,
+            "model_name": model_name,
+            "status": "failed",
+            "error": str(e),
+        }
 
 
 def compare_framework_results(
@@ -281,40 +282,35 @@ def compare_framework_results(
             comparison["message"] = "Need at least 2 frameworks for comparison"
             return comparison
 
-        # Compare free energy if available
-        fe_comparison: dict[Any, Any] = {}
-        for framework, results in framework_results.items():
-            if "free_energy" in results.get("simulation_data", {}):
-                fe_values = results["simulation_data"]["free_energy"]
-                if fe_values:
-                    fe_comparison[framework] = {
-                        "mean": float(np.mean(fe_values)),
-                        "min": float(np.min(fe_values)),
-                        "max": float(np.max(fe_values)),
-                    }
+        records = {
+            framework: [prepare_scientific_record(results)]
+            for framework, results in framework_results.items()
+        }
+        comparison["comparisons"].update(scientific_comparisons(records))
 
-        if fe_comparison:
-            comparison["comparisons"]["free_energy"] = fe_comparison
-            # Find best (lowest mean free energy)
-            best_framework = min(fe_comparison.items(), key=lambda x: x[1]["mean"])
-            comparison["comparisons"]["best_free_energy"] = {
-                "framework": best_framework[0],
-                "mean_fe": best_framework[1]["mean"],
-            }
-
-        # Compare execution times
-        exec_times: dict[Any, Any] = {}
-        for framework, results in framework_results.items():
-            if "execution_time" in results:
-                exec_times[framework] = results["execution_time"]
-
+        # Descriptive runtime observations remain useful without establishing
+        # matched-corpus performance. A ranking requires explicit custody.
+        exec_times = {
+            framework: results["execution_time"]
+            for framework, results in framework_results.items()
+            if isinstance(results.get("execution_time"), (int, float))
+            and not isinstance(results.get("execution_time"), bool)
+            and np.isfinite(results["execution_time"])
+            and results["execution_time"] >= 0
+        }
         if exec_times:
             comparison["comparisons"]["execution_time"] = exec_times
-            fastest_framework = min(exec_times.items(), key=lambda x: x[1])
-            comparison["comparisons"]["fastest_execution"] = {
-                "framework": fastest_framework[0],
-                "time": fastest_framework[1],
-            }
+            reasons = performance_admission(records)
+            if reasons:
+                comparison["comparisons"]["unavailable_metrics"] = {
+                    "fastest_execution": reasons
+                }
+            elif len(exec_times) == len(framework_results):
+                fastest_framework = min(exec_times.items(), key=lambda item: item[1])
+                comparison["comparisons"]["fastest_execution"] = {
+                    "framework": fastest_framework[0],
+                    "time": fastest_framework[1],
+                }
 
         # Compare success rates
         success_rates: dict[Any, Any] = {}

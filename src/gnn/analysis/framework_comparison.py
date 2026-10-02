@@ -18,6 +18,26 @@ from typing import (
 
 import numpy as np
 
+from .comparison_contract import prepare_scientific_record, scientific_comparisons
+
+
+def _valid_execution_times(values: Any) -> tuple[list[float], int]:
+    if values is None:
+        return [], 0
+    if not isinstance(values, (list, tuple, np.ndarray)):
+        return [], 1
+    if isinstance(values, np.ndarray) and values.ndim != 1:
+        return [], 1
+    valid = [
+        float(value)
+        for value in values
+        if isinstance(value, (int, float, np.integer, np.floating))
+        and not isinstance(value, (bool, np.bool_))
+        and np.isfinite(value)
+        and value >= 0
+    ]
+    return valid, len(values) - len(valid)
+
 
 def _derive_framework_status(
     details: List[Dict[str, Any]],
@@ -109,10 +129,22 @@ def analyze_framework_outputs(
     execution_summary_file = (
         execution_output_dir / "summaries" / "execution_summary.json"
     )
-    if not execution_summary_file.exists():
+    if not execution_summary_file.exists() and not execution_summary_file.is_symlink():
         execution_summary_file = execution_output_dir / "execution_summary.json"
-    if not execution_summary_file.exists():
+    if not execution_summary_file.exists() and not execution_summary_file.is_symlink():
         logger.warning(f"Execution summary not found at {execution_summary_file}")
+        return results
+    try:
+        execution_summary_file = execution_summary_file.resolve()
+        execution_summary_file.relative_to(execution_output_dir.resolve())
+        if not execution_summary_file.is_file():
+            raise ValueError("Execution summary must be a regular file")
+    except (OSError, RuntimeError, ValueError):
+        reason = (
+            "Execution summary must be a regular file within the current output tree"
+        )
+        logger.warning(reason)
+        results["unavailable_metrics"] = {"execution_summary": reason}
         return results
 
     try:
@@ -241,6 +273,43 @@ def _extract_simulation_metrics(
     execution_output_dir: Path,
     logger: logging.Logger,
 ) -> Dict[str, Any]:
+    """Retain each execution's scientific identity instead of merging models."""
+    rows = [
+        _extract_execution_metrics(framework, [detail], execution_output_dir, logger)
+        for detail in details
+    ]
+    loaded = [row for row in rows if row.get("data_source")]
+    metrics = (
+        dict(loaded[0])
+        if len(loaded) == 1
+        else _extract_execution_metrics(framework, [], execution_output_dir, logger)
+    )
+    metrics.pop("_scientific_record", None)
+    metrics["execution_times"], invalid_times = _valid_execution_times(
+        [detail["execution_time"] for detail in details if "execution_time" in detail]
+    )
+    if invalid_times:
+        metrics["invalid_execution_time_count"] = invalid_times
+        metrics.setdefault("unavailable_metrics", {})["invalid_execution_times"] = (
+            "Nonfinite, negative, Boolean, or nonnumeric timing entries were excluded"
+        )
+    metrics["scientific_records"] = [
+        row["_scientific_record"] for row in loaded if "_scientific_record" in row
+    ]
+    if len(loaded) > 1:
+        metrics["data_sources"] = [row["data_source"] for row in loaded]
+        metrics["unavailable_metrics"] = {
+            "aggregate_posterior": "Different execution results retain separate model and native view identities"
+        }
+    return metrics
+
+
+def _extract_execution_metrics(
+    framework: str,
+    details: List[Dict[str, Any]],
+    execution_output_dir: Path,
+    logger: logging.Logger,
+) -> Dict[str, Any]:
     """Extract simulation-specific metrics from framework outputs.
 
     Searches simulation_data/ subdirectories and maps framework-specific
@@ -306,13 +375,13 @@ def _extract_simulation_metrics(
 
         model_name = detail.get("model_name")
         if model_name:
-            candidate = (
+            model_candidate = _resolve_current_output_path(
                 execution_output_dir
                 / str(model_name)
                 / framework.lower().replace(".", "_").replace(" ", "_")
             )
-            if candidate.exists():
-                return candidate
+            if model_candidate is not None and model_candidate.exists():
+                return model_candidate
         return None
 
     for detail in details:
@@ -407,7 +476,11 @@ def _extract_simulation_metrics(
                     logger.debug(f"  [{framework}] execution_logs glob failed: {e}")
 
         for output_file in candidate_files:
-            if output_file.exists():
+            resolved_file = _resolve_current_output_path(output_file)
+            if resolved_file is None:
+                continue
+            output_file = resolved_file
+            if output_file.is_file():
                 try:
                     with open(output_file, "r") as f:
                         data = json.load(f)
@@ -428,6 +501,9 @@ def _extract_simulation_metrics(
                             continue
 
                         metrics["data_source"] = str(output_file)
+                        metrics["_scientific_record"] = prepare_scientific_record(
+                            payload, detail
+                        )
                         logger.info(
                             f"  [{framework}] Loaded pymdp_simulation_v1 data from: {output_file}"
                         )
@@ -461,6 +537,9 @@ def _extract_simulation_metrics(
                         break
 
                     metrics["data_source"] = str(output_file)
+                    metrics["_scientific_record"] = prepare_scientific_record(
+                        data, detail
+                    )
                     logger.info(
                         f"  [{framework}] Loaded simulation data from: {output_file}"
                     )
@@ -569,7 +648,11 @@ def _extract_simulation_metrics(
                     )
 
             for csv_file in csv_candidates:
-                if csv_file.exists():
+                resolved_csv = _resolve_current_output_path(csv_file)
+                if resolved_csv is None:
+                    continue
+                csv_file = resolved_csv
+                if csv_file.is_file():
                     try:
                         import csv as csv_module
 
@@ -600,6 +683,14 @@ def _extract_simulation_metrics(
 
                         if beliefs or actions or observations:
                             metrics["data_source"] = str(csv_file)
+                            metrics["_scientific_record"] = prepare_scientific_record(
+                                {
+                                    "beliefs": beliefs,
+                                    "actions": actions,
+                                    "observations": observations,
+                                },
+                                detail,
+                            )
                             logger.info(
                                 f"  [{framework}] Loaded CSV simulation data from: {csv_file}"
                             )
@@ -648,7 +739,11 @@ def _extract_simulation_metrics(
                     )
 
             for params_file in params_candidates:
-                if params_file.exists():
+                resolved_params = _resolve_current_output_path(params_file)
+                if resolved_params is None:
+                    continue
+                params_file = resolved_params
+                if params_file.is_file():
                     try:
                         with open(params_file, "r") as f:
                             params_data = json.load(f)
@@ -689,7 +784,11 @@ def _extract_simulation_metrics(
                     )
 
             for circuit_file in circuit_candidates:
-                if circuit_file.exists():
+                resolved_circuit = _resolve_current_output_path(circuit_file)
+                if resolved_circuit is None:
+                    continue
+                circuit_file = resolved_circuit
+                if circuit_file.is_file():
                     try:
                         with open(circuit_file, "r") as f:
                             circuit_data = json.load(f)
@@ -774,9 +873,18 @@ def _compare_framework_results(
 
     # Compare execution times
     for framework, data in framework_data.items():
-        times = data.get("execution_times", [])
-        if times and any(t > 0 for t in times):
-            valid_times = [t for t in times if t > 0]
+        valid_times, invalid_times = _valid_execution_times(
+            data.get("execution_times", [])
+        )
+        if invalid_times or data.get("invalid_execution_time_count"):
+            comparisons.setdefault("unavailable_metrics", {}).setdefault(framework, {})[
+                "execution_time"
+            ] = {
+                "reason": "Invalid timing entries were excluded",
+                "invalid_count": invalid_times
+                + data.get("invalid_execution_time_count", 0),
+            }
+        if valid_times:
             comparisons["performance_comparison"][framework] = {
                 "mean": float(np.mean(valid_times)),
                 "std": float(np.std(valid_times)) if len(valid_times) > 1 else 0.0,
@@ -801,76 +909,13 @@ def _compare_framework_results(
         }
         comparisons["data_coverage"][framework] = coverage
 
-    # Compare simulation statistics across frameworks with data
-    frameworks_with_beliefs = {
-        fw: data for fw, data in framework_data.items() if data.get("beliefs")
+    records = {
+        framework: data["scientific_records"]
+        if "scientific_records" in data
+        else [prepare_scientific_record(data)]
+        for framework, data in framework_data.items()
     }
-    frameworks_with_efe = {
-        fw: data for fw, data in framework_data.items() if data.get("free_energy")
-    }
-
-    for framework, data in frameworks_with_beliefs.items():
-        beliefs = data["beliefs"]
-        try:
-            beliefs_arr = np.array(beliefs)
-            if beliefs_arr.ndim == 2:
-                comparisons["simulation_statistics"][framework] = {
-                    "belief_dims": list(beliefs_arr.shape),
-                    "mean_confidence": float(np.mean(np.max(beliefs_arr, axis=1))),
-                    "final_belief": [float(v) for v in beliefs_arr[-1]]
-                    if len(beliefs_arr) > 0
-                    else [],
-                }
-        except Exception as e:
-            logger.debug(f"Error computing belief statistics for {framework}: {e}")
-
-    for framework, data in frameworks_with_efe.items():
-        efe = data["free_energy"]
-        try:
-            efe_arr = np.array(efe, dtype=float)
-            stats = comparisons["simulation_statistics"].get(framework, {})
-            stats["efe_mean"] = float(np.mean(efe_arr))
-            stats["efe_std"] = float(np.std(efe_arr))
-            stats["efe_min"] = float(np.min(efe_arr))
-            stats["efe_max"] = float(np.max(efe_arr))
-            comparisons["simulation_statistics"][framework] = stats
-        except Exception as e:
-            logger.debug(f"Error computing EFE statistics for {framework}: {e}")
-
-    # Metric agreement — if multiple frameworks have beliefs, compare final convergence
-    if len(frameworks_with_beliefs) >= 2:
-        agreement: dict[Any, Any] = {}
-        fw_names = list(frameworks_with_beliefs.keys())
-        for i in range(len(fw_names)):
-            for j in range(i + 1, len(fw_names)):
-                fw_a, fw_b = fw_names[i], fw_names[j]
-                try:
-                    beliefs_a = np.array(frameworks_with_beliefs[fw_a]["beliefs"])
-                    beliefs_b = np.array(frameworks_with_beliefs[fw_b]["beliefs"])
-                    if beliefs_a.shape == beliefs_b.shape:
-                        if beliefs_a.shape[0] > 1:
-                            with np.errstate(divide="ignore", invalid="ignore"):
-                                corr_val = np.corrcoef(
-                                    np.max(beliefs_a, axis=1), np.max(beliefs_b, axis=1)
-                                )[0, 1]
-                            correlation = 0.0 if np.isnan(corr_val) else float(corr_val)
-                        else:
-                            correlation = 0.0
-                        agreement[f"{fw_a}_vs_{fw_b}"] = {
-                            "confidence_correlation": correlation,
-                            "same_dimensions": True,
-                        }
-                    else:
-                        agreement[f"{fw_a}_vs_{fw_b}"] = {
-                            "same_dimensions": False,
-                            "dims_a": list(beliefs_a.shape),
-                            "dims_b": list(beliefs_b.shape),
-                        }
-                except Exception as e:
-                    logger.debug(
-                        f"Error computing metric agreement for {fw_a} vs {fw_b}: {e}"
-                    )
-        comparisons["metric_agreement"] = agreement
+    comparisons.update(scientific_comparisons(records))
 
     return comparisons
 
@@ -974,7 +1019,7 @@ def generate_framework_comparison_report(
             report_lines.append(f"- Status Reason: {status_reason}")
 
         # Add execution time if available
-        times = [t for t in data.get("execution_times", []) if t > 0]
+        times, _ = _valid_execution_times(data.get("execution_times", []))
         if times:
             report_lines.append(f"- Execution Time: {times[0]:.2f}s")
 
@@ -1009,34 +1054,44 @@ def generate_framework_comparison_report(
 
         report_lines.append("")
 
-    # Simulation Statistics Comparison
+    # Scientific statistics retain model and native view identity.
     comparisons = comparison_data.get("comparisons", {})
     sim_stats = comparisons.get("simulation_statistics", {})
     if sim_stats:
         report_lines.extend(
             [
-                "## Simulation Data Comparison",
+                "## Validated Simulation Statistics",
                 "",
-                "| Framework | Timesteps | Mean Confidence | EFE Mean | EFE Std |",
-                "|-----------|-----------|-----------------|----------|---------|",
+                "| Framework | Model ID | View | Kind | Timesteps | Categorical Confidence | Posterior Std |",
+                "|-----------|----------|------|------|-----------|------------------------|---------------|",
             ]
         )
-
-        for framework, stats in sim_stats.items():
-            dims = stats.get("belief_dims", [])
-            timesteps = dims[0] if dims else "N/A"
-            conf = (
-                f"{stats.get('mean_confidence', 0):.4f}"
-                if "mean_confidence" in stats
-                else "N/A"
-            )
-            efe_mean = (
-                f"{stats.get('efe_mean', 0):.4f}" if "efe_mean" in stats else "N/A"
-            )
-            efe_std = f"{stats.get('efe_std', 0):.4f}" if "efe_std" in stats else "N/A"
-            report_lines.append(
-                f"| {framework} | {timesteps} | {conf} | {efe_mean} | {efe_std} |"
-            )
+        for framework, summary in sim_stats.items():
+            rows = summary.get("models", {"single": summary})
+            for stats in rows.values():
+                views = stats.get("views", {"joint": stats})
+                for name, view in views.items():
+                    dims = view.get("belief_dims", [])
+                    steps = view.get("num_timesteps", dims[0] if dims else "N/A")
+                    confidence = (
+                        f"{view['mean_confidence']:.4f}"
+                        if "mean_confidence" in view
+                        else "N/A"
+                    )
+                    std = (
+                        f"{view['mean_posterior_std']:.4f}"
+                        if "mean_posterior_std" in view
+                        else "N/A"
+                    )
+                    report_lines.append(
+                        f"| {framework} | {stats.get('model_id') or 'unbound'} | {name} | {stats.get('model_kind', 'unknown')} | {steps} | {confidence} | {std} |"
+                    )
+        report_lines.append("")
+    exclusions = comparisons.get("scientific_exclusions", {})
+    if exclusions:
+        report_lines.extend(["## Unavailable Scientific Comparisons", ""])
+        for label, reasons in exclusions.items():
+            report_lines.append(f"- **{label}**: {'; '.join(reasons)}")
         report_lines.append("")
 
     # Data Coverage
@@ -1066,22 +1121,31 @@ def generate_framework_comparison_report(
     if metric_agreement:
         report_lines.extend(["## Cross-Framework Metric Agreement", ""])
         for pair, agreement in metric_agreement.items():
-            if agreement.get("same_dimensions"):
-                corr = agreement.get("confidence_correlation", 0)
+            if agreement.get("status") != "comparable":
                 report_lines.append(
-                    f"- **{pair}**: confidence correlation = {corr:.4f}"
+                    f"- **{pair}**: unavailable — {'; '.join(agreement.get('reasons', []))}"
                 )
-            else:
+                continue
+            report_lines.append(
+                f"- **{pair}**: model `{agreement['model_id']}`, source `{agreement['source_sha256']}`, inference `{agreement['inference_mode']}`, tolerances `{agreement['tolerance']}`"
+            )
+            for name, witness in agreement.get("views", {}).items():
                 report_lines.append(
-                    f"- **{pair}**: different dimensions ({agreement.get('dims_a')} vs {agreement.get('dims_b')})"
+                    f"  - View `{name}`: maximum posterior difference {witness['max_absolute_difference']:.6g}; within tolerance: {witness['within_tolerance']}"
                 )
+                if "covariance_max_absolute_difference" in witness:
+                    report_lines.append(
+                        f"  - Covariance difference {witness['covariance_max_absolute_difference']:.6g}; within tolerance: {witness['covariance_within_tolerance']}"
+                    )
         report_lines.append("")
 
     # Performance comparison
     if comparisons.get("performance_comparison"):
         report_lines.extend(
             [
-                "## Performance Comparison",
+                "## Operational Timing Aggregates",
+                "",
+                "Descriptive timings may cover different model sets and environments; they do not establish relative performance.",
                 "",
                 "| Framework | Mean Time (s) | Std Dev | Min | Max |",
                 "|-----------|---------------|---------|-----|-----|",

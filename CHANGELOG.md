@@ -24,7 +24,9 @@ and paired custody described in the scope ledger.
 - Direct rendering rejects malformed probabilities and Gaussian parameters.
   Numeric literals retain tiny probabilities and tensor ranks; semantic fidelity
   v2 binds parameter values. Native agent/factor traces and Gaussian covariance
-  metrics replace fabricated categorical projections.
+  metrics replace fabricated categorical projections. Cross-framework numerical
+  comparisons require compatible source-bound model and inference identities;
+  unknown or incompatible results retain explicit unavailability reasons.
 - One monotonic budget governs supervised pipeline work, distributed result
   retrieval and provider requests. Cancellation preserves successful siblings and
   partial evidence. Observed descendant cleanup is bounded and reports failures;

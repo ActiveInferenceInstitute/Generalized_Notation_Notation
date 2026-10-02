@@ -1,7 +1,7 @@
 {
   "schema": "gnn_v4_acceptance_receipt_v1",
   "baseline_commit": "536d949829f6aed11dc540e5c5dec77578b25016",
-  "status": "final_composition_refinement_frozen_verification_and_custody_pending",
+  "status": "scientific_reporting_source_ready_manuscript_final_verification_pair_and_publication_pending",
   "publication": "companion_draft_pr45_open_GNN_not_published",
   "native_backend_receipts": {
     "full_reported/receipts.json": {
@@ -3515,8 +3515,8 @@
     }
   ],
   "pending": [
-    "Final shared native-agent composition fix, focused independent review and complete default rerun",
-    "Final source-stamped manuscript ritual after composition/test changes",
+    "Final source-bound scientific comparison and native-view plotting repair, independent review, then complete committed default/pipeline/MCP/static reruns",
+    "Final source-stamped manuscript ritual after scientific reporting and test changes",
     "Final ordinary-wheel native acceptance and byte binding on both supported splits",
     "Complete38-model whole-context nativeLLM coverage; unfinishedcoverage remains non-success",
     "Companion draftPR45 final bridge repin, hostedchecks/review/merge, finalGNNpairpin",
@@ -10494,5 +10494,817 @@
     "junit_sha256": "1087cddd78357dd968c2fc8d6a462c9e977dd1e49aea49b4a273ce8ee40d8a36",
     "seconds": 14.14,
     "scientific_scope": "Source tensor values, component axis custody, native-agent routing, strict corpus refusals and current-run indices; native Julia execution and complete final suite remain separate."
+  },
+  "recovered_durable_acceptance_2026_10_02": {
+    "default": {
+      "mode": "default",
+      "head": "9df7bf53b46da0a042c87807e813983a4226e3e8",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "pytest",
+        "tests/",
+        "-q",
+        "--tb=short",
+        "-rsx",
+        "--maxfail=0",
+        "-m",
+        "not pipeline and not mcp and not ollama and not env_heavy and not toolchain",
+        "-n",
+        "4",
+        "--dist",
+        "worksteal",
+        "--cov=gnn",
+        "--cov-report=json:<persistent-receipts>/gnn-review/default-coverage.json",
+        "--junitxml=<persistent-receipts>/gnn-review/default.xml"
+      ],
+      "inclusive_budget_seconds": 1800,
+      "elapsed_seconds": 444.2947748339999,
+      "exit_code": 0,
+      "timed_out": false,
+      "tracked_files": 3151,
+      "changed_tracked_files": [],
+      "owned_child_identities_observed": 230,
+      "surviving_owned_children": [],
+      "junit_summary": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "6590",
+          "time": "439.189",
+          "timestamp": "2026-10-02T14:17:51.948038-07:00"
+        }
+      ],
+      "log_sha256": "54b60fec7bc0c58b06e7ec7fffb6c2f8039c021634bf2d9c81d6b8857def389f",
+      "junit_sha256": "8d9b3a0f19d46d8292a18b9ea2e936186a77f1207b218e16e33b1db7618b35ca",
+      "accepted": true,
+      "raw_receipt_sha256": "556ca75a1ed7e6b70d0687c9b435451dc2a3fb11fddc1c73fa374f3c7da95e93",
+      "passed_cases": 6580,
+      "passed_subtests": 10,
+      "coverage": {
+        "covered_lines": 55967,
+        "num_statements": 79594,
+        "percent_covered": 70.31560167851848
+      }
+    },
+    "pipeline": {
+      "mode": "pipeline",
+      "head": "9df7bf53b46da0a042c87807e813983a4226e3e8",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "pytest",
+        "tests/",
+        "-q",
+        "--tb=short",
+        "-rsx",
+        "--maxfail=0",
+        "-m",
+        "pipeline and not ollama and not env_heavy and (not toolchain or needs_posix)",
+        "--junitxml=<persistent-receipts>/gnn-review/pipeline.xml"
+      ],
+      "inclusive_budget_seconds": 1800,
+      "elapsed_seconds": 336.99689149999995,
+      "exit_code": 0,
+      "timed_out": false,
+      "tracked_files": 3151,
+      "changed_tracked_files": [],
+      "owned_child_identities_observed": 109,
+      "surviving_owned_children": [],
+      "junit_summary": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "294",
+          "time": "334.472",
+          "timestamp": "2026-10-02T14:25:50.890626-07:00"
+        }
+      ],
+      "log_sha256": "5cf6f8a4f170e5eed50a34c9072c6a9fa8b6adc108bf0acd8031a2ab364c9e5f",
+      "junit_sha256": "c61346ed6d922fd48910f05f2dadb9d3e3f418302bebf12929bdc7167cfe8daa",
+      "accepted": true,
+      "raw_receipt_sha256": "735dbe7511ac97944b5f6b2fcd972ed7fc974f4604997a9ef746aa842856a3df"
+    },
+    "mcp": {
+      "mode": "mcp",
+      "head": "9df7bf53b46da0a042c87807e813983a4226e3e8",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "pytest",
+        "tests/",
+        "-q",
+        "--tb=short",
+        "-rsx",
+        "--maxfail=0",
+        "-m",
+        "mcp and not ollama and not env_heavy and not toolchain",
+        "--junitxml=<persistent-receipts>/gnn-review/mcp.xml"
+      ],
+      "inclusive_budget_seconds": 1800,
+      "elapsed_seconds": 28.080296667000084,
+      "exit_code": 0,
+      "timed_out": false,
+      "tracked_files": 3151,
+      "changed_tracked_files": [],
+      "owned_child_identities_observed": 2,
+      "surviving_owned_children": [],
+      "junit_summary": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "458",
+          "time": "19.639",
+          "timestamp": "2026-10-02T14:26:36.462661-07:00"
+        }
+      ],
+      "log_sha256": "9b1121ca56289b08cbb52cf1b872bb4aa5fc72bd43899086e6c780beb7a3b09a",
+      "junit_sha256": "6c368212f82cf7aeae2f396b92a0946ce4cab74f6a1f1cdb267c9c61110646ee",
+      "accepted": true,
+      "raw_receipt_sha256": "1024e3a90482bc3e5c664d8b2a3534392b82284a7463a88eb39c0ba9d5fddb2f"
+    },
+    "declared_static_gates": {
+      "head": "9df7bf53b46da0a042c87807e813983a4226e3e8",
+      "gates": [
+        {
+          "gate": "lock",
+          "command": [
+            "uv",
+            "lock",
+            "--check"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.040821291999918685,
+          "log_sha256": "1c1e10694b458ed8499a84cbdea796257e689942dd375efd40834f4c998f8a3c"
+        },
+        {
+          "gate": "lint",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "ruff",
+            "check",
+            "src/gnn",
+            "scripts"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.1604925409999396,
+          "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+        },
+        {
+          "gate": "format",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "ruff",
+            "format",
+            "--check",
+            "src",
+            "scripts"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.07819870899993475,
+          "log_sha256": "8fec6400d23960dbb50bdd627796b84a0b31c9258bc9a97bb19632b35b49a2ef"
+        },
+        {
+          "gate": "mypy",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "mypy",
+            "src/gnn",
+            "--show-error-codes"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 2.227295292000008,
+          "log_sha256": "60c3bcb245d8e3e9d2badfebf46b5836ad03b8485cd2a6a60cf599dc20f86bf1"
+        },
+        {
+          "gate": "docs",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "docs/development/docs_audit.py",
+            "--strict",
+            "--check-anchors",
+            "--no-write"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 12.551608333000104,
+          "log_sha256": "996e712049b34d89c46940bcbbf546787bcbc1ed843433a763be750ad4292d84"
+        },
+        {
+          "gate": "doc_patterns",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_gnn_doc_patterns.py",
+            "--strict"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 2.471104041999979,
+          "log_sha256": "5fe502f8b7bbf0f10cd2fd23eb86d730fb745078e1afbb6ac28157ce9bdc0cef"
+        },
+        {
+          "gate": "doc_terms",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_maintained_doc_terms.py",
+            "--strict"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 5.429528291999986,
+          "log_sha256": "205ddd2831f57baec1749be54991850d629ad29a2b4bf2db2b4b2e883fcdad24"
+        },
+        {
+          "gate": "terminology",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_repo_terminology.py",
+            "--strict"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 12.639484834000086,
+          "log_sha256": "883dee38c210171c258677eff1d69f933ba3739fdda8d00e4a3b737e1a2a7263"
+        },
+        {
+          "gate": "doc_contracts",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_doc_contracts.py",
+            "--strict"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.35962687500000357,
+          "log_sha256": "aa370c51912db1462adc8e9419e6a3ae92ade6797375bcefe67e19949870d10d"
+        },
+        {
+          "gate": "doc_paths",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_doc_path_references.py"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.24566491699988546,
+          "log_sha256": "9f738c83c008fbff691db867b717d40d63453d5ba18bd019750cd7d423243529"
+        },
+        {
+          "gate": "capability",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_capability_contracts.py",
+            "--strict"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.07771999999999935,
+          "log_sha256": "63277fc79b0c3d1b23024037cc9a393ff5b97ed9c498996a679d82428069755c"
+        },
+        {
+          "gate": "skills_mcp",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_mcp_skills_health.py",
+            "--strict"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 106.98956666699996,
+          "log_sha256": "744f4493d06cd3673f03c947100e5f053a44fad953da3c57e11546d3b12d3bc5"
+        },
+        {
+          "gate": "import_boundaries",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "lint-imports"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.3422591660000762,
+          "log_sha256": "e964310ca2c6a02c8ef05d1347b14aa3ef6b9609938ae220808c0a5db8180a79"
+        },
+        {
+          "gate": "thin_orchestrators",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_thin_orchestrators.py"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.07675425000002178,
+          "log_sha256": "ca0124c04d74c9c18d4900b56f5067774fbadcd48584d71061c9895f36cfc419"
+        },
+        {
+          "gate": "flags",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_flag_parity.py"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.5677914170000804,
+          "log_sha256": "f66e4be49ac3756ddfe2877578666b14e33908e4c2fad672cb277896113000c4"
+        },
+        {
+          "gate": "dependencies",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_dep_hygiene.py"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 5.108662208999931,
+          "log_sha256": "33a7d0ffc871bcb0dd0822f2812ac2f4d1dc74f9457efcefe4a863712e91ab21"
+        },
+        {
+          "gate": "validate_surface",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/audit_validate_surface.py"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 7.05140412500009,
+          "log_sha256": "63feceee15b505e0418d3fc37b2c04819cd10d9025872761ce85b94a5639b382"
+        },
+        {
+          "gate": "security_medium",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "bandit",
+            "-r",
+            "src/gnn",
+            "-c",
+            "pyproject.toml",
+            "-q",
+            "--severity-level",
+            "medium",
+            "--confidence-level",
+            "medium"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 18.465491458000088,
+          "log_sha256": "910471dd52c1aa402f453749edc46a1d244470587390de7c6597c2bd5aa0fe74"
+        },
+        {
+          "gate": "tokens",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_manuscript_tokens.py",
+            "--strict"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 1.1587860420002016,
+          "log_sha256": "3cdd53f1775fc54544402896da95de498e47b8dd853f700afe2dc520a646938e"
+        },
+        {
+          "gate": "hydration",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/check_hydrated_prose.py"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.08992045799982407,
+          "log_sha256": "98ea795fcf74477f4c0d16d308e339dc9979fb73e0f3bc63919da8b57eed262f"
+        },
+        {
+          "gate": "fresh_render",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/z_verify_fresh_render.py"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.3024806659998376,
+          "log_sha256": "97aba868af104b526934309b10790a4499390a0ed38c819f46698f57120af28a"
+        },
+        {
+          "gate": "v3_orchestration",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "scripts/run_v3_orchestration_acceptance.py",
+            "--strict"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.8792100829998617,
+          "log_sha256": "48971b67ae59f925bb3dc5641d098998accebc698b6f4866f20d473ec60fb710"
+        },
+        {
+          "gate": "git_diff_whitespace",
+          "command": [
+            "git",
+            "diff",
+            "--check"
+          ],
+          "exit_code": 0,
+          "timed_out": false,
+          "elapsed_seconds": 0.020281832999899052,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "changed_tracked_files": [],
+      "accepted": true,
+      "raw_receipt_sha256": "ebbb79910d49efc52d1018408c42f0d7d3aa867a00d8901231a2b98748ca1472"
+    },
+    "module_inventory": {
+      "source_head": "9df7bf53b46da0a042c87807e813983a4226e3e8",
+      "registered_steps": 25,
+      "execution_scopes": {
+        "corpus": 6,
+        "run": 5,
+        "source": 10,
+        "artifacts": 4
+      },
+      "module_exports_checked": 504,
+      "all_dispatch_and_exports_resolve": true,
+      "all_module_agent_readme_spec_present": true,
+      "raw_receipt_sha256": "b93eed0b07b0090d26c707f18edb1423fea7d8025ccf50145a669c4a9edb7a4b"
+    },
+    "binding": {
+      "source_commit": "399a3618b30d4c6bf1056e08b0a4c66305dfa571",
+      "artifact_commit": "9df7bf53b46da0a042c87807e813983a4226e3e8",
+      "acceptance": "historical_positive_pre_comparison_repair",
+      "mandatory_followup": "Repeat default, pipeline, MCP, static gates and package isolation on the new scientific-reporting source freeze."
+    },
+    "installed_release_wheel": {
+      "311": {
+        "accepted": true,
+        "artifact_commit": "9df7bf53b46da0a042c87807e813983a4226e3e8",
+        "command": [
+          "<persistent-receipts>/py311/bin/python",
+          "-I",
+          "-m",
+          "pytest",
+          "tests/render/test_thrml_contracts.py",
+          "tests/render/test_thrml_native.py",
+          "tests/render/test_thrml_surfaces.py",
+          "tests/render/test_cpomdp_contracts.py",
+          "tests/render/test_native_agent_canonical_custody.py",
+          "tests/execute/test_single_cleanup_receipt.py",
+          "tests/execute/test_resource_measurement.py",
+          "tests/visualization/test_visualization_artifacts.py::TestTypeCategoryPieChart",
+          "--rootdir=<persistent-receipts>/installed-tests",
+          "--confcutdir=<persistent-receipts>/installed-tests",
+          "--override-ini=addopts=",
+          "-q",
+          "--tb=short",
+          "--maxfail=0",
+          "--junitxml=<persistent-receipts>/installed-311.xml"
+        ],
+        "elapsed_seconds": 44.261257083000146,
+        "envelope": {
+          "cancelled": false,
+          "child_peak_rss_mb": 868.39,
+          "cleanup_timeout_seconds": 1.0,
+          "cleanup_verified": true,
+          "containment": "observed_descendants",
+          "duration_seconds": 44.255845749999935,
+          "observed_descendant_count": 26,
+          "return_code": 0,
+          "rss_sample_interval_seconds": 0.25,
+          "rss_samples_count": 176,
+          "sandbox_mode": "off",
+          "sandboxed": false,
+          "streams_drained": true,
+          "success": true
+        },
+        "installed_outside_checkout": true,
+        "junit_sha256": "e35d6a3e793a3f0c9d6e40eda58759625ad1a68ea0a73e660321669adba69586",
+        "python": "3.11.15 (main, May  4 2026, 21:04:48) [Clang 22.1.3 ]",
+        "python_source_files_bound": 740,
+        "source_bytes_match": true,
+        "source_commit": "399a3618b30d4c6bf1056e08b0a4c66305dfa571",
+        "suites": [
+          {
+            "errors": "0",
+            "failures": "0",
+            "name": "pytest",
+            "skipped": "0",
+            "tests": "222",
+            "time": "43.356",
+            "timestamp": "2026-10-02T14:38:20.744852-07:00"
+          }
+        ],
+        "versions": {
+          "cpomdp": "0.4.4",
+          "generalized-notation-notation": "4.0.0",
+          "jax": "0.9.2",
+          "jaxlib": "0.9.2",
+          "matplotlib": "3.10.9",
+          "numpy": "2.4.4",
+          "thrml": "0.1.4"
+        },
+        "wheel_sha256": "95b867a65e8fbbeb752c8a8e6c4b453ca45854b1b360046711eaa3262d380720",
+        "raw_receipt_sha256": "0c888eeb33134f344769eb2e9b7bfb41664c5b35994db676d30cb37edb7c191a"
+      },
+      "312": {
+        "accepted": true,
+        "artifact_commit": "9df7bf53b46da0a042c87807e813983a4226e3e8",
+        "command": [
+          "<persistent-receipts>/py312/bin/python",
+          "-I",
+          "-m",
+          "pytest",
+          "tests/render/test_thrml_contracts.py",
+          "tests/render/test_thrml_native.py",
+          "tests/render/test_thrml_surfaces.py",
+          "tests/render/test_cpomdp_contracts.py",
+          "tests/render/test_native_agent_canonical_custody.py",
+          "tests/execute/test_single_cleanup_receipt.py",
+          "tests/execute/test_resource_measurement.py",
+          "tests/visualization/test_visualization_artifacts.py::TestTypeCategoryPieChart",
+          "--rootdir=<persistent-receipts>/installed-tests",
+          "--confcutdir=<persistent-receipts>/installed-tests",
+          "--override-ini=addopts=",
+          "-q",
+          "--tb=short",
+          "--maxfail=0",
+          "--junitxml=<persistent-receipts>/installed-312.xml"
+        ],
+        "elapsed_seconds": 43.34238154100012,
+        "envelope": {
+          "cancelled": false,
+          "child_peak_rss_mb": 793.03,
+          "cleanup_timeout_seconds": 1.0,
+          "cleanup_verified": true,
+          "containment": "observed_descendants",
+          "duration_seconds": 43.33628279200002,
+          "observed_descendant_count": 26,
+          "return_code": 0,
+          "rss_sample_interval_seconds": 0.25,
+          "rss_samples_count": 172,
+          "sandbox_mode": "off",
+          "sandboxed": false,
+          "streams_drained": true,
+          "success": true
+        },
+        "installed_outside_checkout": true,
+        "junit_sha256": "93b0001d16970adb1ded02c7a06795eae21a8ca194347f103f431dac4b26bf84",
+        "python": "3.12.13 (main, Jun  2 2026, 22:42:28) [Clang 22.1.3 ]",
+        "python_source_files_bound": 740,
+        "source_bytes_match": true,
+        "source_commit": "399a3618b30d4c6bf1056e08b0a4c66305dfa571",
+        "suites": [
+          {
+            "errors": "0",
+            "failures": "0",
+            "name": "pytest",
+            "skipped": "0",
+            "tests": "222",
+            "time": "42.319",
+            "timestamp": "2026-10-02T14:38:20.790285-07:00"
+          }
+        ],
+        "versions": {
+          "cpomdp": "0.4.4",
+          "generalized-notation-notation": "4.0.0",
+          "jax": "0.11.2",
+          "jaxlib": "0.11.2",
+          "matplotlib": "3.11.2",
+          "numpy": "2.5.3",
+          "thrml": "0.1.4"
+        },
+        "wheel_sha256": "95b867a65e8fbbeb752c8a8e6c4b453ca45854b1b360046711eaa3262d380720",
+        "raw_receipt_sha256": "9f0bf1ae08531819c6d45c2b03e24b38b4466f62d0a77882f20318a10cbfe917"
+      }
+    },
+    "independent_review": {
+      "verdict": "changes_required",
+      "raw_receipt_sha256": "11f8594e7cd37b82d4cc60cd71dca2733dc8c01a3e7b6d83e278fbef2b30d181",
+      "findings": [
+        "Unrelated models were compared under a shared framework label.",
+        "Gaussian means were labelled as categorical confidence."
+      ],
+      "required_followup": "Shared source-bound comparison admission and covariance-aware plots plus independent controls."
+    }
+  },
+  "evidence_storage_recovery_2026_10_02": {
+    "event": "Earlier temporary receipt paths and separately provisioned environments became unavailable between local observations. The GNN source and committed manuscript artifacts remained intact.",
+    "policy": "Historical tool-observed results and committed hashes are retained. Fresh acceptance is regenerated in durable private workspace storage, with public projections excluding operator paths and hostnames. Missing raw receipts are not represented as currently accessible.",
+    "new_durable_receipts": true
+  },
+  "companion_fixture_and_utf8_repair_2026_10_02": {
+    "repository": "ActiveInferenceInstitute/fep_formal",
+    "pr": 45,
+    "published_head": "b4f03b6c8e2a15cd59c5f4b64c8db508943cb0e5",
+    "fixture_correction_commit": "12c8884c187b2073d681e81afcbb141dc8a32fd1",
+    "related_tests_passed": 229,
+    "related_tests_skipped": 0,
+    "fixture_independent_controls_passed": 11,
+    "fixture_review_sha256": "e84cc4692c12d596895096c064f92753a29a7c23d2ce09ce33a5c51b34403d6b",
+    "utf8_distribution_tests_passed": 51,
+    "utf8_tests_receipt_sha256": "409a2c8a5672db289ea644c3d393b41471c8348f1c75325e5e7a204a67cd92ba",
+    "utf8_junit_sha256": "45929672b0c25af1e6d539e1e0cb1396e0bdb2ae6fbbe4f481023b9a40beb4f2",
+    "utf8_independent_review_sha256": "25ef28c48551008b5b9394045bbc52ee9a25b4e343552e6914436ac85df02631",
+    "historical_production_evidence_unchanged": true,
+    "current_h2_terminal_acceptance": "stale_not_resealed",
+    "hosted": {
+      "head": "b4f03b6c8e2a15cd59c5f4b64c8db508943cb0e5",
+      "run_id": 37072143620,
+      "distribution_matrix": "all15_legs_passed_including_Windows310_through314",
+      "render_deps": "passed",
+      "python_lean_render": "python_passed_Lean_render_still_pending",
+      "python": {
+        "passed": 2338,
+        "skipped": 16,
+        "seconds": 756.38,
+        "coverage_percent": 91.25,
+        "required_coverage_percent": 89,
+        "mypy_source_files": 112,
+        "formatted_files": 353,
+        "raw_log_receipt_sha256": "28aa9e3b7147eca1a6c1494657d4888d63a48cff70500c490bb1b92ccafb5a89"
+      },
+      "windows314": {
+        "passed": 51,
+        "seconds": 102.79,
+        "python": "3.14.8",
+        "platform": "win32",
+        "raw_log_receipt_sha256": "084e57ed77f04a37976e62dd66f2ff1ffb83a1db2423444c08b2e6787af9a75c"
+      }
+    },
+    "paired_pin_and_native168": "held_until_new_GNN_artifact_freeze"
+  },
+  "recovered_manuscript_custody_399a361": {
+    "source_content_commit": "399a3618b30d4c6bf1056e08b0a4c66305dfa571",
+    "artifact_commit": "9df7bf53b46da0a042c87807e813983a4226e3e8",
+    "template_commit": "f1914383a08f0f4195134ed33a359b7aacc4f978",
+    "actual_artifact_files_changed": 45,
+    "actual_render_seconds": 94.667,
+    "token_variables": 93,
+    "figures": 7,
+    "formats": [
+      "PDF",
+      "HTML",
+      "10 slide decks"
+    ],
+    "custody_tests_passed": 145,
+    "strict_fresh_tokens_hydration": "passed",
+    "acceptance": "historical_current_artifact_bytes_preserved; repeat on scientific_reporting_source_freeze"
+  },
+  "scientific_reporting_correction_2026_10_02": {
+    "status": "GO_scoped_source_review_frozen_full_verification_pending",
+    "scope": [
+      "analysis/comparison_contract.py",
+      "analysis/framework_comparison.py",
+      "analysis/trace_analysis.py",
+      "analysis/viz_dashboard.py",
+      "analysis/viz_schema.py"
+    ],
+    "scientific_contract": "Retain each source-bound model/native view; admit only compatible inference, inputs, axes and declared precision. Gaussian uncertainty uses covariance. Missing/scalar-unbound quantities are unavailable; operational timing stays descriptive and every attempt is counted once.",
+    "failed_baseline_reproductions": [
+      "Unrelated same-shape models compared under framework aggregates.",
+      "Gaussian means labelled categorical confidence.",
+      "Cached record revalidation could erase an original source-binding conflict.",
+      "Outside-tree paths could reach candidate artifact reads."
+    ],
+    "independent_observed_controls": {
+      "numeric": 54,
+      "readable_png": 21,
+      "extended_axis_and_index": 14,
+      "path_boundary": 8
+    },
+    "final_source_binding": "All nine reviewed files retain exact frozen hashes before and after owner tests and independent controls.",
+    "frozen_files": {
+      "src/gnn/analysis/framework_comparison.py": "06fd58a4b2e732c25c0fb76f3bdea2d3d98ab4118228e4d4560d0e819a539039",
+      "src/gnn/analysis/trace_analysis.py": "cb5bf34d410dfdc4f0b8ee55a9cedc52e35d43b006cab69c1ab3e7856f625675",
+      "src/gnn/analysis/comparison_contract.py": "430440162cef4a7c4531a3a8c9db201e4c273fa8b2d7b752335f5f5a19e26449",
+      "src/gnn/analysis/viz_dashboard.py": "099aeb5376e48a41fc3c230506b3d3a99653af17db65c9ba93d2e03182b8166b",
+      "src/gnn/analysis/viz_schema.py": "9d863e40add7711644405844910364f4c6fddb77e6ad7563b070a2427259c26f",
+      "tests/analysis/test_comparison_scientific_contract.py": "93461b0c96b0c666dc419779c590254df85b97c45a556849c7a42c391bfc64d1",
+      "tests/analysis/test_analysis_overall.py": "8b77994f4723f040eaefc8886d9ce8098fbbbfe8baa0e9e92f5a18df885221e3",
+      "tests/analysis/test_analysis_post_simulation.py": "783a2ea3721e166c8668e8b0758f754651985985745720016bdc7c2fa8dcae18",
+      "tests/analysis/test_analysis_split_smoke.py": "9d48f95675798db4f127d557ef03fda0e8e7df0fc227a5bdb2961b57f073358b"
+    },
+    "owner_analysis": {
+      "passed": 573,
+      "deselected": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 43.82,
+      "junit_sha256": "25687c81a2cd82019748cf19eef29903bf7abb784fe936fc818d50b1b637208a",
+      "raw_receipt_sha256": "1c07e32215f0dcb7364c2b59e84564d4274cd752988f55ffbeb25bbe6dd0ac12"
+    },
+    "independent_review": {
+      "verdict": "GO",
+      "actual_controls": 112,
+      "readable_pngs": 9,
+      "connected_pytest_passed": 123,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 4.058,
+      "ruff_checked_files": 9,
+      "format_checked_files": 9,
+      "mypy_source_files": 5,
+      "raw_receipt_sha256": "1813c9c62c8113917f407f769bc95e993f6c6f763c79448829088f56fc392a0e"
+    },
+    "path_claim_boundary": "Static current-tree confinement with traversal and symlink controls; no claim of race-proof or OS sandbox containment."
   }
 }

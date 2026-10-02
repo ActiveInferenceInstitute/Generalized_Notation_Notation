@@ -48,10 +48,10 @@ This repository now mirrors GEO_INFER's paired-revision mechanism on its side.
 No fep_lean file, workflow or pin is involved; the mirror covers only the
 GEO_INFER pair:
 
-- `.github/gnn-pair.json` records the companion revision: GEO_INFER main
-  `c0115779d05369c1ba63f5009f7de53e4bb3d3d5`, verified locally — the checks
-  script ran the full round trip against that checkout and exited 0 with
-  stable artifact digests (repeated runs reproduce identical digests). Note
+- [`.github/gnn-pair.json`](../../.github/gnn-pair.json) records the exact
+  reviewed GEO_INFER revision. Read the committed pin for the current SHA;
+  acceptance receipts name both checkouts and retain per-artifact digests.
+  The historical expansion results above do not establish a new run. Note
   the deliberate name reuse: GEO_INFER's own `.github/gnn-pair.json` pins
   this repository, so each side names the other in a same-named file.
 - `.github/workflows/geo-infer-interchange.yml` validates the pin (known

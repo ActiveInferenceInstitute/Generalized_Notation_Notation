@@ -50,6 +50,7 @@ def _current_schema_visualization_data(data: Dict[str, Any]) -> Dict[str, Any]:
     if data.get("schema_version") not in CURRENT_VISUALIZATION_SCHEMAS:
         return {}
     return {
+        **data,
         "beliefs": (data.get("beliefs_by_factor", {}) or {}).get(
             "joint_state", data.get("beliefs", [])
         ),

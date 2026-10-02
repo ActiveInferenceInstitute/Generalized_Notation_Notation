@@ -1,6 +1,6 @@
 # TO-DO - GNN Pipeline Roadmap
 
-**Last Updated**: 2026-10-01
+**Last Updated**: 2026-10-02
 **Current Version**: 4.0.0
 **Next Target**: v4.0.0 acceptance and publication — see remaining receipts below
 
@@ -16,7 +16,7 @@ verified by the current strict audit rather than the stale wave census.
 | Work | Acceptance still required |
 | --- | --- |
 | Manuscript #232–#234, plotting #244 / PR #249 | Actual stamped render, hydration/digests and complete paired custody |
-| Probability/result contracts #235/#242 | Strict source values, tiny/rank/axis regressions and native replay receipts |
+| Probability/result contracts #235/#242 | Final source-bound cross-framework comparison and covariance-aware PNG/Markdown receipts; six malformed authored exemplars remain tracked in #250 |
 | Pipeline #236/#237/#239/#240/#243 / PR #248 | Current-run IDs/coverage, byte ownership, lease and real process deadlines in all modes |
 | Readiness #238/#247 and distributed #246 / PR #231 | Bounded diagnoses, genuine Dask/Ray cancellation and transfer acceptance |
 | LLM #241 | Full corpus scheduling, exact provider/model, fair budgets and checkpointed partial coverage |

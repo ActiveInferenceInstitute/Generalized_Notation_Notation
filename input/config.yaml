@@ -11,10 +11,10 @@ pipeline:
   steps: []
 
   # Skip specific steps by number (e.g. [13] to skip LLM). Default: run all steps.
-  # Step 13 needs a local LLM (e.g. Ollama) and the model from src/llm/defaults.py or OLLAMA_MODEL.
+  # Step 13 needs a local LLM (e.g. Ollama) and the model from src/gnn/llm/defaults.py or OLLAMA_MODEL.
   skip_steps: []
 
-  # Step 2 test mode when not overridden on CLI (see src/utils/pipeline_config_merge.py)
+  # Step 2 test mode when not overridden on CLI (see src/gnn/utils/pipeline_config_merge.py)
   fast_only: true
   # comprehensive: false   # set true to run the full pytest suite in step 2
 
@@ -134,10 +134,10 @@ testing_matrix:
   # Each key = subdirectory name in input/gnn_files/
   # Each value = list of step numbers to run on that folder
   #
-  # Every folder runs the FULL pipeline (parse -> render -> simulate ->
-  # visualize -> analyze -> report -> website). All GNN files are POMDP/pymdp
-  # renderable and RxInfer + general-framework simulatable, so every model is
-  # taken end-to-end. Step 13 (LLM) is handled globally via the llm section.
+  # Folder routing uses the frozen selected-model manifest. Scientific
+  # validation and backend capabilities determine render/execute outcomes;
+  # unsupported or malformed models retain explicit non-success receipts.
+  # Step 13 (LLM) uses the same selection and the llm configuration below.
   folders: {}
 
 # LLM settings (Step 13)
