@@ -3,7 +3,7 @@
 **Version**: v3.2.0 Engine (Bundle v2.0.0)  
 **Last Updated**: 2026-04-15  
 **Status**: ✅ Production Ready  
-**Modules**: 38+ · **Pipeline steps**: 25 · **Renderers**: 10 backends (see [../implementations/README.md](../implementations/README.md)) · **Tests**: see [../../../README.md](../../../README.md)
+**Modules**: 38+ · **Pipeline steps**: 25 · **Renderers**: registry-defined backends (see [../implementations/README.md](../implementations/README.md)) · **Tests**: see [../../../README.md](../../../README.md)
 
 This document provides comprehensive guidance on multi-format export capabilities for Generalized Notation Notation (GNN) models, including export formats, validation, and semantic preservation.
 

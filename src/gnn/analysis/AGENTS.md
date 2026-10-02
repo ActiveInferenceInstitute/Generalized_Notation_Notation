@@ -599,3 +599,21 @@ framework names normalize via `viz_schema._normalize_framework_name`
 - **[AGENTS](AGENTS.md)**: Agentic Workflows
 - **[SPEC](SPEC.md)**: Architectural Specification
 - **[SKILL](SKILL.md)**: Capability API
+
+## Scientific result views
+
+`result_adapter.py` validates categorical/native marginal/Gaussian payloads and
+provides `result_views`, `structured_result_data`, and `continuous_result_metrics`.
+`rxinfer/family_visuals.py` draws actual Gaussian means and covariance intervals
+and separately labeled native views across PNG/GIF/HTML. See
+[backend scientific contracts](../../../docs/development/backend_scientific_contracts.md).
+
+
+## v4 THRML analysis
+
+[thrml/](thrml/README.md) validates native categorical sampling results before
+publishing readable posterior/predictive plots. Full-sequence smoothing,
+replicate prediction and fixed T-1 transition actions remain explicit. Independent
+component marginals are separate; empirical entropy does not establish
+convergence/calibration. Unavailable EFE/VFE and continuous covariance quantities
+remain absent with reasons. Current-run selection governs analysis dispatch.

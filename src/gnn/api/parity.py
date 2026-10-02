@@ -65,6 +65,7 @@ from gnn.cli.commands import (
     find_render_artifact,
     preflight_severities,
     publish_pipeline_report,
+    render_processing_succeeded,
     run_validation_checks,
 )
 
@@ -82,6 +83,9 @@ RenderFramework = Literal[
     "pytorch",
     "discopy",
     "bnlearn",
+    "ngclearn",
+    "cpomdp",
+    "thrml",
 ]
 
 ParseOutputFormat = Literal["json", "yaml", "summary"]
@@ -90,11 +94,6 @@ GraphOutputFormat = Literal["mermaid", "text"]
 #: CLI exit codes reachable on a 200 parity response (strict escalation and
 #: hard failures return error envelopes instead).
 ParityExitCode = Literal[0, 2]
-
-#: Server-generated scratch directory for the model registry output. Not
-#: client-supplied, hence deliberately outside request path resolution.
-MODEL_REGISTRY_OUTPUT_DIR = "output/model_registry_api"
-
 
 # ── Request models ───────────────────────────────────────────────────────────
 
@@ -160,6 +159,10 @@ class RenderRequest(BaseModel):
 
     file_path: str = Field(min_length=1, description="Repository-local GNN file")
     framework: RenderFramework = Field(description="Renderer framework to run")
+    options: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Framework-specific validated render options (for example THRML sampling and observations)",
+    )
     output_dir: Optional[str] = Field(
         default=None,
         description=(
@@ -690,7 +693,13 @@ def _extract_gnn(gnn_file: Path, *, strict: bool, compact: bool) -> ExtractRespo
     )
 
 
-def _render_gnn(gnn_file: Path, framework: str, output_dir: Path) -> RenderResponse:
+def _render_gnn(
+    gnn_file: Path,
+    framework: str,
+    output_dir: Path,
+    *,
+    options: Optional[Dict[str, Any]] = None,
+) -> RenderResponse:
     """Mirror ``gnn.cli._cmd_render`` single-framework render invocation."""
     from gnn.render import process_render
 
@@ -705,13 +714,19 @@ def _render_gnn(gnn_file: Path, framework: str, output_dir: Path) -> RenderRespo
             frameworks=[framework],
             strict_validation=False,
             strict_framework_success=True,
+            backend_options={framework: options or {}},
         )
-    if ok not in (True, 0):
+    if not render_processing_succeeded(ok):
         raise HTTPException(
             status_code=400,
             detail=f"Render failed for {gnn_file} using framework {framework}",
         )
-    artifact = find_render_artifact(output_dir, framework)
+    artifact = find_render_artifact(output_dir, framework, require_current=True)
+    if artifact is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No supported render artifact was produced for {framework}",
+        )
     return RenderResponse(
         file=str(gnn_file),
         framework=framework,
@@ -784,16 +799,16 @@ def _model_registry(target_path: Path, query_ontology: Optional[str]) -> ModelsR
     """Mirror ``gnn.cli._cmd_models`` registry processing and filtering."""
     from gnn.model_registry import process_model_registry
 
-    registry_dir = _resolve_client_path(
-        MODEL_REGISTRY_OUTPUT_DIR,
-        purpose="Registry output directory",
-        create=True,
-    )
-    results = process_model_registry(
-        target_dir=target_path,
-        output_dir=registry_dir,
-        query_ontology=query_ontology,
-    )
+    # A registry is a per-request snapshot. Sharing the repository's tracked
+    # output directory mutates evidence during a GET and races concurrent
+    # queries. The backend still exercises its real persistence path, in an
+    # exclusive server-owned scratch directory which is removed on failure too.
+    with tempfile.TemporaryDirectory(prefix="gnn-api-registry-") as scratch:
+        results = process_model_registry(
+            target_dir=target_path,
+            output_dir=Path(scratch),
+            query_ontology=query_ontology,
+        )
     return ModelsResponse(
         total_models=results["total_models"],
         query_ontology=query_ontology,
@@ -913,7 +928,12 @@ def register_parity_routes(app: FastAPI) -> None:
                 create=True,
             )
         response = _run_backend(
-            lambda: _render_gnn(gnn_file, request.framework, output_dir),
+            lambda: _render_gnn(
+                gnn_file,
+                request.framework,
+                output_dir,
+                **({"options": request.options} if request.options else {}),
+            ),
             command="render",
         )
         return success_envelope(response.model_dump(mode="json"), endpoint="render")

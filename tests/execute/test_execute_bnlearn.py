@@ -13,6 +13,8 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
+from gnn.utils.runtime_safety.framework_availability import FrameworkStatus
+
 SRC = Path(__file__).resolve().parents[2]
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
@@ -110,6 +112,7 @@ def test_bnlearn_import_check_is_registered() -> None:
     """The shared probe maps bnlearn → the bnlearn module + install hint."""
     assert FRAMEWORK_IMPORT_CHECK["bnlearn"] == ("bnlearn", "uv sync --extra bnlearn")
 
+
 def test_python_probe_delegates_to_shared_availability(monkeypatch: Any) -> None:
     seen: Dict[str, Any] = {}
 
@@ -117,12 +120,13 @@ def test_python_probe_delegates_to_shared_availability(monkeypatch: Any) -> None
         framework: str,
         executor: Optional[str] = None,
         logger: Any = None,
-    ) -> bool:
+        timeout: float = 30,
+    ) -> FrameworkStatus:
         seen["framework"] = framework
         seen["executor"] = executor
-        return True
+        return FrameworkStatus(framework, True)
 
-    monkeypatch.setattr(bnlearn_runner, "is_framework_available", _fake_probe)
+    monkeypatch.setattr(bnlearn_runner, "check_framework", _fake_probe)
     assert is_bnlearn_available("python3") is True
     assert seen == {"framework": "bnlearn", "executor": "python3"}
 
@@ -133,9 +137,7 @@ def test_r_probe_requires_rscript_on_path(monkeypatch: Any) -> None:
 
 
 def test_r_probe_probes_library_load(monkeypatch: Any) -> None:
-    monkeypatch.setattr(
-        bnlearn_runner.shutil, "which", lambda name: "/usr/bin/Rscript"
-    )
+    monkeypatch.setattr(bnlearn_runner.shutil, "which", lambda name: "/usr/bin/Rscript")
     spy = _EnvelopeSpy([_envelope()])
     monkeypatch.setattr(bnlearn_runner, "run_subprocess_envelope", spy)
     assert is_r_bnlearn_available() is True
@@ -156,7 +158,9 @@ def test_execute_python_script_success_sets_output_env(
     spy = _EnvelopeSpy()
     monkeypatch.setattr(bnlearn_runner, "run_subprocess_envelope", spy)
     monkeypatch.setattr(
-        bnlearn_runner, "is_bnlearn_available", lambda executor=None: True
+        bnlearn_runner,
+        "_check_bnlearn_status",
+        lambda executor=None, timeout=30: FrameworkStatus("bnlearn", True),
     )
 
     record = execute_bnlearn_script(script, out_dir)
@@ -182,7 +186,15 @@ def test_execute_python_script_skips_when_module_missing(
     spy = _EnvelopeSpy()
     monkeypatch.setattr(bnlearn_runner, "run_subprocess_envelope", spy)
     monkeypatch.setattr(
-        bnlearn_runner, "is_bnlearn_available", lambda executor=None: False
+        bnlearn_runner,
+        "_check_bnlearn_status",
+        lambda executor=None, timeout=30: FrameworkStatus(
+            "bnlearn",
+            False,
+            install_hint="uv sync --extra bnlearn",
+            reason="Missing bnlearn; uv sync --extra bnlearn",
+            reason_code="missing_module",
+        ),
     )
 
     record = execute_bnlearn_script(script, tmp_path / "exec")
@@ -211,7 +223,9 @@ def test_execute_python_script_nonzero_exit_fails_explicitly(
     )
     monkeypatch.setattr(bnlearn_runner, "run_subprocess_envelope", spy)
     monkeypatch.setattr(
-        bnlearn_runner, "is_bnlearn_available", lambda executor=None: True
+        bnlearn_runner,
+        "_check_bnlearn_status",
+        lambda executor=None, timeout=30: FrameworkStatus("bnlearn", True),
     )
 
     record = execute_bnlearn_script(script, tmp_path / "exec")
@@ -242,7 +256,9 @@ def test_execute_python_script_timeout_reports_error_type(
     )
     monkeypatch.setattr(bnlearn_runner, "run_subprocess_envelope", spy)
     monkeypatch.setattr(
-        bnlearn_runner, "is_bnlearn_available", lambda executor=None: True
+        bnlearn_runner,
+        "_check_bnlearn_status",
+        lambda executor=None, timeout=30: FrameworkStatus("bnlearn", True),
     )
 
     record = execute_bnlearn_script(script, tmp_path / "exec", timeout=5)
@@ -257,7 +273,11 @@ def test_execute_r_script_runs_under_rscript(tmp_path: Path, monkeypatch: Any) -
     script = _write_render_script(tmp_path, "model_a", "a.R")
     spy = _EnvelopeSpy()
     monkeypatch.setattr(bnlearn_runner, "run_subprocess_envelope", spy)
-    monkeypatch.setattr(bnlearn_runner, "is_r_bnlearn_available", lambda r="Rscript": True)
+    monkeypatch.setattr(
+        bnlearn_runner,
+        "_check_r_bnlearn_status",
+        lambda r="Rscript", timeout=30: FrameworkStatus("bnlearn", True),
+    )
     # The pre-exec gate's file-type policy denies the R lane; the operator
     # override is the documented path for exercising the spawn itself.
     monkeypatch.setenv("GNN_ALLOW_UNSAFE_EXEC", "1")
@@ -286,9 +306,21 @@ def test_run_bnlearn_scripts_mixed_lanes(tmp_path: Path, monkeypatch: Any) -> No
     spy = _EnvelopeSpy()
     monkeypatch.setattr(bnlearn_runner, "run_subprocess_envelope", spy)
     monkeypatch.setattr(
-        bnlearn_runner, "is_bnlearn_available", lambda executor=None: False
+        bnlearn_runner,
+        "_check_bnlearn_status",
+        lambda executor=None, timeout=30: FrameworkStatus(
+            "bnlearn",
+            False,
+            install_hint="uv sync --extra bnlearn",
+            reason="Missing bnlearn; uv sync --extra bnlearn",
+            reason_code="missing_module",
+        ),
     )
-    monkeypatch.setattr(bnlearn_runner, "is_r_bnlearn_available", lambda r="Rscript": True)
+    monkeypatch.setattr(
+        bnlearn_runner,
+        "_check_r_bnlearn_status",
+        lambda r="Rscript", timeout=30: FrameworkStatus("bnlearn", True),
+    )
     monkeypatch.setenv("GNN_ALLOW_UNSAFE_EXEC", "1")
 
     records = run_bnlearn_scripts(tmp_path, tmp_path / "exec")
@@ -353,7 +385,15 @@ def test_step12_preflight_skips_bnlearn_scripts_without_module(
         "size_bytes": script.stat().st_size,
     }
     monkeypatch.setattr(
-        execute_processor, "_is_framework_available_by_name", lambda *a, **k: False
+        execute_processor,
+        "_check_framework_by_name",
+        lambda *a, **k: FrameworkStatus(
+            "bnlearn",
+            False,
+            "bnlearn",
+            reason_code="missing_module",
+            reason="Dependency not installed: bnlearn",
+        ),
     )
 
     result = execute_processor.execute_single_script(
@@ -365,3 +405,163 @@ def test_step12_preflight_skips_bnlearn_scripts_without_module(
     assert result["status"] == "skipped"
     assert result["error_type"] == "DependencyNotInstalled"
     assert "bnlearn" in result["error"]
+
+
+def test_direct_relative_script_survives_output_cwd(tmp_path, monkeypatch):
+    import os
+
+    from gnn.execute.bnlearn import bnlearn_runner as runner
+
+    source = tmp_path / "input" / "relative.py"
+    source.parent.mkdir()
+    source.write_text(
+        "import os; from pathlib import Path; Path(os.environ['BNLEARN_OUTPUT_DIR'], 'written.txt').write_text('actual child')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("GNN_ALLOW_UNSAFE_EXEC", "1")
+    monkeypatch.setattr(
+        runner, "_check_bnlearn_status", lambda *_: FrameworkStatus("bnlearn", True)
+    )
+    result = runner.execute_bnlearn_script("input/relative.py", "output", timeout=10)
+    assert result["success"] and result["status"] == "success"
+    assert result["cleanup_verified"] and result["streams_drained"]
+    assert (tmp_path / "output/written.txt").read_text() == "actual child"
+
+
+def test_direct_pre_cancel_precedes_missing_runtime_probe(tmp_path, monkeypatch):
+    from gnn.execute.bnlearn import bnlearn_runner as runner
+    from gnn.execute.subprocess_envelope import CancelToken
+
+    source = tmp_path / "unused.py"
+    source.write_text("raise RuntimeError('must not start')\n")
+    token = CancelToken()
+    token.cancel("stop")
+
+    def forbidden(*_):
+        raise AssertionError("cancelled work cannot probe a runtime")
+
+    monkeypatch.setattr(runner, "_check_bnlearn_status", forbidden)
+    result = runner.execute_bnlearn_script(source, tmp_path / "out", cancel_token=token)
+    assert result["cancelled"] and result["status"] == "cancelled"
+    assert result["containment"] == "not_started"
+
+
+def test_direct_timeout_preserves_containment_receipt(tmp_path, monkeypatch):
+    from gnn.execute.bnlearn import bnlearn_runner as runner
+
+    source = tmp_path / "slow.py"
+    source.write_text(
+        "import time; print('partial evidence', flush=True); time.sleep(10)\n"
+    )
+    monkeypatch.setenv("GNN_ALLOW_UNSAFE_EXEC", "1")
+    monkeypatch.setattr(
+        runner, "_check_bnlearn_status", lambda *_: FrameworkStatus("bnlearn", True)
+    )
+    result = runner.execute_bnlearn_script(source, tmp_path / "out", timeout=0.2)
+    assert not result["success"] and result["status"] == "timed_out"
+    assert result["cleanup_verified"] and result["streams_drained"]
+    assert "partial evidence" in result["stdout"]
+
+
+@pytest.mark.parametrize(
+    ("diagnosis", "expected_status", "expected_error"),
+    [
+        (
+            FrameworkStatus(
+                "bnlearn",
+                False,
+                reason_code="probe_timeout",
+                execution_error_type="TimeoutExpired",
+                cleanup_verified=True,
+                streams_drained=True,
+            ),
+            "timed_out",
+            "TimeoutExpired",
+        ),
+        (
+            FrameworkStatus(
+                "bnlearn",
+                False,
+                reason_code="probe_failed",
+                execution_error_type="RuntimeError",
+                cleanup_verified=True,
+                streams_drained=True,
+            ),
+            "failed",
+            "RuntimeError",
+        ),
+        (
+            FrameworkStatus(
+                "bnlearn",
+                False,
+                reason_code="probe_failed",
+                execution_error_type="TimeoutExpired",
+                cleanup_verified=False,
+                streams_drained=False,
+            ),
+            "failed",
+            "ProcessCleanupFailure",
+        ),
+    ],
+)
+def test_direct_bnlearn_retains_failed_probe_cause(
+    tmp_path, monkeypatch, diagnosis, expected_status, expected_error
+):
+    script = _write_render_script(tmp_path)
+    monkeypatch.setattr(bnlearn_runner, "_check_bnlearn_status", lambda *_: diagnosis)
+
+    def forbid_dispatch(*args, **kwargs):
+        raise AssertionError("failed readiness must prevent script dispatch")
+
+    monkeypatch.setattr(bnlearn_runner, "run_subprocess_envelope", forbid_dispatch)
+    record = execute_bnlearn_script(script, tmp_path / "out")
+    assert record["status"] == expected_status
+    assert record["error_type"] == expected_error
+    assert record["skipped"] is False
+    assert record["reason_code"] == diagnosis.reason_code
+
+
+@pytest.mark.parametrize(
+    ("envelope", "reason_code"),
+    [
+        (
+            _envelope(
+                success=False,
+                return_code=42,
+                cleanup_verified=True,
+                streams_drained=True,
+            ),
+            "missing_module",
+        ),
+        (
+            _envelope(
+                success=False,
+                return_code=1,
+                error_type="RuntimeError",
+                cleanup_verified=True,
+                streams_drained=True,
+            ),
+            "probe_failed",
+        ),
+        (
+            _envelope(
+                success=False,
+                return_code=-1,
+                error_type="TimeoutExpired",
+                cleanup_verified=True,
+                streams_drained=True,
+            ),
+            "probe_timeout",
+        ),
+    ],
+)
+def test_r_readiness_distinguishes_absence_failure_and_timeout(
+    monkeypatch, envelope, reason_code
+):
+    monkeypatch.setattr(bnlearn_runner.shutil, "which", lambda _: "/usr/bin/Rscript")
+    monkeypatch.setattr(
+        bnlearn_runner, "run_subprocess_envelope", _EnvelopeSpy([envelope])
+    )
+    diagnosis = bnlearn_runner._check_r_bnlearn_status()
+    assert diagnosis.available is False
+    assert diagnosis.reason_code == reason_code

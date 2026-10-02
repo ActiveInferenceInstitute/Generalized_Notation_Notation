@@ -12,6 +12,7 @@ statistics, correlation plots, and POMDP tensor analysis from the
 matrix/
 ├── __init__.py       # Package exports
 ├── visualizer.py     # MatrixVisualizer class
+├── transition_analysis.py # Canonical POMDP tensor diagnostics and figure assembly
 ├── extract.py        # Matrix extraction from parsed models
 └── compat.py         # Shared helper exports
 ```

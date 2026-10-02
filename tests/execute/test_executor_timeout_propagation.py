@@ -99,7 +99,7 @@ def test_execute_configured_frameworks_threads_timeout(
     """The batch funnel forwards its timeout to every configured spec runner."""
     captured: list[dict[str, Any]] = []
     spec = _recording_spec(captured)
-    monkeypatch.setattr(executor_module, "_framework_specs", lambda: (spec,))
+    monkeypatch.setattr(executor_module, "_framework_specs", lambda **kwargs: (spec,))
     framework_dirs = {spec.framework_dir_key: tmp_path / "pymdp"}
     results = _execution_results()
 

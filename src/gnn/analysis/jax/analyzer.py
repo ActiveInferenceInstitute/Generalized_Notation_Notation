@@ -214,6 +214,24 @@ def create_visualizations_from_structured_data(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    from gnn.analysis.result_adapter import model_family, result_views
+
+    if model_family(sim_results) in {"continuous", "multi_agent_continuous"}:
+        from gnn.analysis.rxinfer.family_visuals import (
+            artifact_component,
+            continuous_png,
+        )
+
+        return [
+            continuous_png(
+                view,
+                output_dir
+                / f"{model_name}_jax_{artifact_component(name)}_gaussian.png",
+                f"{model_name}: {name}",
+            )
+            for name, view in result_views(sim_results).items()
+        ]
+
     # Extract data from structured results
     trace = sim_results.get("simulation_trace", sim_results)
     beliefs = trace.get("beliefs", sim_results.get("beliefs", []))

@@ -49,7 +49,11 @@ class _ProcessFlowMixin(_POMDPProcessorSupportMixin):
             Dictionary with processing results for each framework
         """
         if frameworks is None:
-            frameworks = list(self.framework_configs.keys())
+            frameworks = [
+                name
+                for name, spec in self.framework_configs.items()
+                if not spec.get("experimental", False)
+            ]
 
         results: dict[Any, Any] = {}
         overall_success = True
@@ -104,6 +108,8 @@ class _ProcessFlowMixin(_POMDPProcessorSupportMixin):
                 self.logger.error(error_msg)
                 results[framework] = {
                     "success": False,
+                    "status": "failed",
+                    "error_type": type(e).__name__,
                     "message": error_msg,
                     "output_files": [],
                     "warnings": [],
@@ -194,7 +200,12 @@ class _ProcessFlowMixin(_POMDPProcessorSupportMixin):
         framework_output_dir.mkdir(parents=True, exist_ok=True)
 
         # Convert POMDP to GNN spec format expected by renderers
-        gnn_spec = self._pomdp_to_gnn_spec(pomdp_space, **kwargs)
+        spec_options = {
+            **kwargs,
+            "native_agents": framework == "rxinfer",
+            "preserve_discrete_structure": framework == "thrml",
+        }
+        gnn_spec = self._pomdp_to_gnn_spec(pomdp_space, **spec_options)
 
         # Get framework-specific renderer
         try:
@@ -227,6 +238,8 @@ class _ProcessFlowMixin(_POMDPProcessorSupportMixin):
             else:
                 return {
                     "success": False,
+                    "unsupported": bool(renderer_result.get("unsupported")),
+                    "status": renderer_result.get("status", "failed"),
                     "message": renderer_result["message"],
                     "output_files": [],
                     "warnings": validation_result.get("warnings", []),

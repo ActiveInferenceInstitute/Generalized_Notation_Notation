@@ -44,4 +44,4 @@ Exactness (Kronecker identities, per-factor EFE decomposition) is pinned by
 
 ## Dependencies
 
-- `jax >= 0.4.0`, `jaxlib` (with optional GPU support)
+- `jax[cpu]>=0.7.0,<0.12`, `jaxlib>=0.7.0,<0.12` from the supported frozen lock splits; GPU installation remains explicit.

@@ -213,10 +213,13 @@ def _generate_visualizations_for_html(
     bars = plt.bar(short_files, memory_values, color="skyblue")
     for bar in bars:
         height = bar.get_height()
-        plt.text(
-            bar.get_x() + bar.get_width() / 2.0,
-            height + 0.01,
+        # Offset in points, not data units: a +0.01 data offset is unbounded
+        # in pixels when the estimates (and so the y-range) are near zero.
+        plt.annotate(
             f"{height:.2f}",
+            (bar.get_x() + bar.get_width() / 2.0, height),
+            xytext=(0, 3),
+            textcoords="offset points",
             ha="center",
             va="bottom",
             fontsize=9,
@@ -235,10 +238,13 @@ def _generate_visualizations_for_html(
     bars = plt.bar(short_files, inference_values, color="lightgreen")
     for bar in bars:
         height = bar.get_height()
-        plt.text(
-            bar.get_x() + bar.get_width() / 2.0,
-            height + 0.01,
+        # Offset in points, not data units: a +0.01 data offset is unbounded
+        # in pixels when the estimates (and so the y-range) are near zero.
+        plt.annotate(
             f"{height:.2f}",
+            (bar.get_x() + bar.get_width() / 2.0, height),
+            xytext=(0, 3),
+            textcoords="offset points",
             ha="center",
             va="bottom",
             fontsize=9,
@@ -257,10 +263,13 @@ def _generate_visualizations_for_html(
     bars = plt.bar(short_files, storage_values, color="salmon")
     for bar in bars:
         height = bar.get_height()
-        plt.text(
-            bar.get_x() + bar.get_width() / 2.0,
-            height + 0.01,
+        # Offset in points, not data units: a +0.01 data offset is unbounded
+        # in pixels when the estimates (and so the y-range) are near zero.
+        plt.annotate(
             f"{height:.2f}",
+            (bar.get_x() + bar.get_width() / 2.0, height),
+            xytext=(0, 3),
+            textcoords="offset points",
             ha="center",
             va="bottom",
             fontsize=9,

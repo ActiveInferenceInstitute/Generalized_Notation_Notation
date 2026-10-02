@@ -129,7 +129,7 @@ class TestInProcessExecutorEnvOverrides:
         # 1s env budget fired (not the 300s configured default), the receipt
         # records the force kill, and the executor returned at the budget.
         assert receipt["exit_code"] == -1
-        assert receipt["force_killed"] is True
+        assert receipt["force_killed"] is False
         assert "TIMEOUT" in receipt["stderr"]
         assert 0.8 <= elapsed < 1 + 0.2 + 3
 
@@ -160,5 +160,5 @@ class TestInProcessExecutorEnvOverrides:
             "3_gnn.py", _pipeline_args(tmp_path / "scaled"), LOGGER
         )
         assert timed["exit_code"] == -1
-        assert timed["force_killed"] is True
+        assert timed["force_killed"] is False
         assert "TIMEOUT" in timed["stderr"]

@@ -17,8 +17,8 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from gnn.parsers.common import ParseError
-
+from .asset_transport import copy_interactive_bundle, selected_website_asset
+from .source_collection import _collect_gnn_files, _collect_parsed_models
 from .steps import PIPELINE_STEPS
 
 logger = logging.getLogger(__name__)
@@ -87,86 +87,24 @@ def website_data_from_dict(
     return data
 
 
-def _collect_gnn_files(p_root: Path, input_dir: Path) -> tuple[list[Path], bool]:
-    """Discover GNN source markdown files, preferring ``<root>/input/gnn_files``."""
-    for search_dir in (p_root.parent / "input" / "gnn_files", input_dir):
-        if search_dir.exists():
-            return sorted(search_dir.glob("*.md")), True
-    return [], False
-
-
-def _collect_parsed_models(gnn_files: list[Path]) -> list[dict[str, Any]]:
-    """Parse each discovered GNN source file into per-model page data.
-
-    Uses the reference markdown parser (``gnn.parsers.markdown_parser``);
-    variables/edges keep the parsed shapes the model pages tabulate. Files
-    that cannot be parsed are skipped (debug-logged) — a model page exists
-    only for a successfully parsed model. The returned order matches the
-    caller's ``gnn_files`` order (sorted by filename), which fixes the
-    downstream slug claim order deterministically.
-    """
-    if not gnn_files:
-        return []
-    from gnn.parsers.markdown_parser import MarkdownGNNParser
-
-    parser = MarkdownGNNParser()
-    models: list[dict[str, Any]] = []
-    for source in gnn_files:
-        try:
-            parsed = parser.parse_file(str(source))
-        except (ParseError, ValueError, OSError) as e:
-            logger.debug(f"Skipped unreadable GNN file {source.name}: {e}")
-            continue
-        if not parsed.success:
-            logger.debug(f"Skipped unparseable GNN file {source.name}: {parsed.errors}")
-            continue
-        parsed_model = parsed.model
-        models.append(
-            {
-                "name": str(parsed_model.model_name),
-                "source": source,
-                "source_name": source.name,
-                "annotation": str(parsed_model.annotation or "").strip(),
-                "variables": [
-                    {
-                        "name": var.name,
-                        "type": getattr(var.var_type, "value", str(var.var_type)),
-                        "dimensions": list(var.dimensions),
-                        "data_type": getattr(
-                            var.data_type, "value", str(var.data_type)
-                        ),
-                        "description": var.description or "",
-                    }
-                    for var in parsed_model.variables
-                ],
-                "edges": [
-                    {
-                        "sources": list(conn.source_variables),
-                        "targets": list(conn.target_variables),
-                        "type": getattr(
-                            conn.connection_type,
-                            "value",
-                            str(conn.connection_type),
-                        ),
-                        "annotation": conn.annotation or conn.description or "",
-                    }
-                    for conn in parsed_model.connections
-                ],
-            }
-        )
-    return models
-
-
 def _load_pipeline_summary(p_root: Path) -> dict[str, Any]:
     """Load ``pipeline_execution_summary.json`` (absent or malformed → ``{}``)."""
-    for candidate in (
+    from gnn.pipeline.run_context import current_run_context
+
+    context = current_run_context()
+    candidates: tuple[Path, ...] = (
         p_root / "00_pipeline_summary" / "pipeline_execution_summary.json",
         p_root / "pipeline_execution_summary.json",
-    ):
+    )
+    if context is not None:
+        candidates = (p_root / "00_pipeline_summary" / "current_summary.json",)
+    for candidate in candidates:
         if not candidate.exists():
             continue
         try:
             loaded = json.loads(candidate.read_text(encoding="utf-8"))
+            if context is not None and loaded.get("run_id") != context.run_id:
+                continue
         except Exception as e:
             logger.debug(f"Skipped malformed pipeline summary file: {e}")
             return {}
@@ -252,10 +190,13 @@ def _collect_analysis_results(p_root: Path) -> list[Any]:
     ):
         if not candidate.exists():
             continue
-        for jf in candidate.glob("*.json"):
-            if jf.name in seen:
+        from gnn.pipeline.artifact_ownership import current_artifact_files
+
+        for jf in current_artifact_files(candidate, "*.json"):
+            identity = jf.resolve().as_posix()
+            if identity in seen or not selected_website_asset(jf):
                 continue
-            seen.add(jf.name)
+            seen.add(identity)
             try:
                 loaded = json.loads(jf.read_text())
             except Exception as e:
@@ -272,6 +213,14 @@ def _collect_analysis_results(p_root: Path) -> list[Any]:
 def _load_mcp_summary(p_root: Path) -> dict[str, Any]:
     """Load the Step 21 MCP processing summary (absent or malformed → ``{}``)."""
     candidate = p_root / "21_mcp_output" / "mcp_processing_summary.json"
+    from gnn.pipeline.artifact_ownership import owned_artifact_paths
+
+    inventory = owned_artifact_paths(p_root)
+    if (
+        inventory is not None
+        and candidate.relative_to(p_root).as_posix() not in inventory
+    ):
+        return {}
     if not candidate.exists():
         return {}
     try:
@@ -285,6 +234,14 @@ def _load_mcp_summary(p_root: Path) -> dict[str, Any]:
 def _load_registered_tools(p_root: Path) -> list[dict[str, str]]:
     """Map ``registered_tools.json`` (step 21) to the page tool-card shape."""
     candidate = p_root / "21_mcp_output" / "registered_tools.json"
+    from gnn.pipeline.artifact_ownership import owned_artifact_paths
+
+    inventory = owned_artifact_paths(p_root)
+    if (
+        inventory is not None
+        and candidate.relative_to(p_root).as_posix() not in inventory
+    ):
+        return []
     if not candidate.exists():
         logger.debug("No registered_tools.json found for website (step 21 optional)")
         return []
@@ -329,11 +286,45 @@ def _collect_visualizations(
     visualizations: list[dict[str, Any]] = []
     warnings: list[str] = []
     used_names: set[str] = set()
+    from gnn.pipeline.artifact_ownership import owned_artifact_paths
+
+    inventory = owned_artifact_paths(assets_dir.parent.parent)
     for viz_dir in viz_dirs:
         if not viz_dir.exists():
             continue
         for pattern, artifact_type in (("*.png", "image"), ("*.html", "html")):
             for artifact in viz_dir.rglob(pattern):
+                if (
+                    inventory is not None
+                    and artifact.relative_to(assets_dir.parent.parent).as_posix()
+                    not in inventory
+                ):
+                    continue
+                if not selected_website_asset(artifact):
+                    continue
+                if artifact_type == "html":
+                    try:
+                        bundle_path = copy_interactive_bundle(
+                            artifact,
+                            viz_dir,
+                            assets_dir,
+                            assets_dir.parent.parent,
+                            inventory,
+                        )
+                    except (OSError, ValueError) as error:
+                        warnings.append(
+                            f"Skipped visualization {artifact.name} (bundle copy failed: {error})"
+                        )
+                        continue
+                    visualizations.append(
+                        {
+                            **_visualization_provenance(artifact),
+                            "title": artifact.stem,
+                            "path": bundle_path,
+                            "type": artifact_type,
+                        }
+                    )
+                    continue
                 dest_name = artifact.name
                 if dest_name.lower() in used_names:
                     prefix = f"{viz_dir.name}__"
@@ -354,12 +345,40 @@ def _collect_visualizations(
                 used_names.add(dest_name.lower())
                 visualizations.append(
                     {
+                        **_visualization_provenance(artifact),
                         "title": artifact.stem,
                         "path": dest.name,
                         "type": artifact_type,
                     }
                 )
     return visualizations, warnings
+
+
+def _visualization_provenance(artifact: Path) -> dict[str, str]:
+    """Identify assets using the original path-bound model, not display names."""
+    from gnn.pipeline.run_context import current_run_context, model_provenance
+
+    context = current_run_context()
+    if context is None:
+        return {}
+    provenance = model_provenance(artifact, 20)
+    if provenance:
+        return provenance
+    matches = [
+        model
+        for model in context.selected_models(20)
+        if artifact.stem == model.artifact_stem
+        or artifact.stem.startswith(model.artifact_stem + "_")
+    ]
+    if len(matches) == 1:
+        model = matches[0]
+        return {
+            "model_id": model.model_id,
+            "source_path": model.source_path,
+            "source_relative_path": model.relative_path,
+            "source_sha256": model.sha256,
+        }
+    return {}
 
 
 def _collect_reports(p_root: Path) -> list[dict[str, Any]]:
@@ -370,7 +389,9 @@ def _collect_reports(p_root: Path) -> list[dict[str, Any]]:
     for entry in sorted(p_root.iterdir()):
         if not (entry.is_dir() and entry.name[0].isdigit()):
             continue
-        for jf in list(entry.rglob("*.json"))[:5]:  # cap per dir
+        from gnn.pipeline.artifact_ownership import current_artifact_files
+
+        for jf in current_artifact_files(entry, "*.json")[:5]:  # cap per dir
             try:
                 content = jf.read_text(encoding="utf-8", errors="replace")
                 reports.append(

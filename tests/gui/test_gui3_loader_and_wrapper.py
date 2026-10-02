@@ -35,9 +35,7 @@ from gnn.gui.gui_3 import gui_3
 from gnn.gui.gui_3.processor import run_gui as run_gui_3
 
 STEP_DIR_NAME = "22_gui_output"
-DEFAULT_TEMPLATE_HEADER = (
-    "# GNN Example: Active Inference POMDP Agent (Design Studio)"
-)
+DEFAULT_TEMPLATE_HEADER = "# GNN Example: Active Inference POMDP Agent (Design Studio)"
 
 
 def _test_logger() -> logging.Logger:
@@ -167,9 +165,7 @@ class TestGui3Loader:
 
     @pytest.mark.unit
     @pytest.mark.fast
-    def test_prefers_actinf_pomdp_agent_file(
-        self, isolated_temp_dir: Any
-    ) -> None:
+    def test_prefers_actinf_pomdp_agent_file(self, isolated_temp_dir: Any) -> None:
         target = isolated_temp_dir / "input"
         output = isolated_temp_dir / "output"
         _write_target(target)
@@ -216,9 +212,7 @@ class TestGui3Wrapper:
 
     @pytest.mark.unit
     @pytest.mark.fast
-    def test_wrapper_omits_port_url_when_headless(
-        self, isolated_temp_dir: Any
-    ) -> None:
+    def test_wrapper_omits_port_url_when_headless(self, isolated_temp_dir: Any) -> None:
         target = isolated_temp_dir / "input"
         output = isolated_temp_dir / "output"
         _write_target(target)
@@ -257,9 +251,7 @@ class TestGui3Wrapper:
             lambda markdown_text, export_path, logger: _RaisingDemo(),
         )
 
-        result = gui_3(
-            target_dir=target, output_dir=output, logger=_test_logger()
-        )
+        result = gui_3(target_dir=target, output_dir=output, logger=_test_logger())
 
         assert result["success"] is False
         assert "port" not in result
@@ -270,6 +262,7 @@ class TestGui3Wrapper:
         )
         assert status["launched"] is False
         assert status["status"] == "launch_failed"
+
     @pytest.mark.unit
     @pytest.mark.fast
     def test_wrapper_includes_port_url_when_launched(
@@ -295,9 +288,7 @@ class TestGui3Wrapper:
                 lambda markdown_text, export_path, logger: _BlockingDemo(release),
             )
 
-            result = gui_3(
-                target_dir=target, output_dir=output, logger=_test_logger()
-            )
+            result = gui_3(target_dir=target, output_dir=output, logger=_test_logger())
 
             assert result["success"] is True
             assert result["port"] == serving_http

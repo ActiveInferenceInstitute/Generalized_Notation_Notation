@@ -5,6 +5,70 @@ All notable changes to the GNN Pipeline are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
 
 
+## [4.0.0] - 2026-10-01
+
+**Current-run Reliability.** The 25-step pipeline now binds selection,
+configuration, source identity, output ownership and deadlines to one invocation.
+See [the migration guide](docs/development/run_ownership_migration.md) and
+[SCOPE-2026-10-01.md](SCOPE-2026-10-01.md) for evidence and remaining acceptance.
+This entry describes the implementation; publication requires the recorded gates
+and paired custody described in the scope ledger.
+
+### Changed
+
+- Path-derived model IDs distinguish duplicate filenames and display names.
+  Source consumers share a frozen manifest; analysis and website assembly run
+  once per selected corpus. Reports consume current-run snapshots and durable
+  evidence excludes historical artifacts. An output-root lease rejects concurrent
+  writers.
+- Direct rendering rejects malformed probabilities and Gaussian parameters.
+  Numeric literals retain tiny probabilities and tensor ranks; semantic fidelity
+  v2 binds parameter values. Native agent/factor traces and Gaussian covariance
+  metrics replace fabricated categorical projections.
+- One monotonic budget governs supervised pipeline work, distributed result
+  retrieval and provider requests. Cancellation preserves successful siblings and
+  partial evidence. Observed descendant cleanup is bounded and reports failures;
+  it does not claim isolation of hostile, unobserved daemonization.
+- LLM processing injects resolved configuration, covers every selected model by
+  default, schedules summaries before fair extra prompt rounds, binds checkpoints
+  and caches to full requests, and rejects provider/model substitution. Automatic
+  budget is 600 seconds per model with a 45-second request ceiling.
+- Availability diagnoses distinguish package, toolchain, Python/version, probe
+  and executor failures. Setup recognizes declared extras. Matplotlib tuple and
+  PieContainer boundaries work across the supported lock splits.
+- Manuscript gates share substitution grammar, verify Markdown/TeX commit stamps,
+  and allow only byte-identical inherited drift in merge-base-aware PR evaluation.
+  Main checks remain strict. Generated bar annotations use fixed-point offsets.
+
+### Added
+
+- Experimental `thrml==0.1.4` ordinary-wheel integration with modular categorical
+  validation, factor-program generation, supervised execution, and sample-bound
+  analysis. Explicit fixed-action smoothing supports admitted independent
+  agent/factor and observation compositions. Strict positivity, axis/value
+  binding, and resource admission prevent silent clipping or dropped semantics.
+  CLI, resolved configuration, Python API, and MCP share options. Structural
+  zeros, continuous models, coupled agents, action optimization, convergence claims,
+  and hardware execution remain outside this adapter's verified contract; exact
+  native acceptance receipts and outstanding checks live in the scope ledger.
+- Experimental `cpomdp==0.4.4` wheel adapter with explicit selection, Kalman/EFE
+  control, admission caps, policy score decomposition and resource receipts.
+  Passive models do not enumerate policies. Independent Gaussian agent blocks
+  compose native JAX and RxInfer execution with explicit per-agent semantics.
+- Deterministic pipeline contract PR CI and execution-count/source receipts for
+  the existing weekly all-extras workflow.
+- Behavior-preserving boundaries for arguments, website collection/navigation,
+  matrix transition visualization, schema parameter dimensions and intelligent
+  analysis evidence. API registry requests use isolated scratch directories.
+
+### Migration
+
+Read the v4 guide for IDs, artifact schemas, stricter validation, summary states,
+budget resolution, distributed startup ownership and resume requirements. Legacy
+artifacts remain inspectable but cannot establish evidence for a fresh invocation.
+Scientific corrections to four invalid illustrative sources require separately
+justified model edits; v4 rejects them rather than silently changing their values.
+
 ## [3.6.0] - 2026-09-26
 
 > **Composability & Offline Truth.** The step-20 website is now a composable
@@ -2306,7 +2370,8 @@ Completes the remaining RED_TEAM_REVIEW.md items from the 2026-08-14 wave.
 - pytest test suite with comprehensive coverage
 - MCP tool registration framework
 
-[Unreleased]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.6.0...HEAD
+[Unreleased]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.6.0...v4.0.0
 [3.6.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.3.0...v3.4.0

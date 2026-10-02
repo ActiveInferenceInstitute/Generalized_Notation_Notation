@@ -12,6 +12,7 @@ import logging
 import os
 import re
 import sys
+import time
 from copy import copy
 from datetime import datetime
 from pathlib import Path
@@ -214,6 +215,16 @@ def _update_performance_summary(
 ) -> None:
     """Update aggregate counts and peak memory after a step finishes."""
     perf_summary = pipeline_summary["performance_summary"]
+    complete = {
+        step.get("script_name")
+        for step in pipeline_summary.get("steps", [])
+        if step.get("status") in ("SUCCESS", "SUCCESS_WITH_WARNINGS", "SKIPPED")
+    }
+    pipeline_summary["unfinished_steps"] = [
+        script
+        for script in pipeline_summary.get("planned_steps", [])
+        if script not in complete
+    ]
     if step_result["status"] in ("SUCCESS", "SUCCESS_WITH_WARNINGS", "SKIPPED"):
         perf_summary["successful_steps"] += 1
     elif step_result["status"] == "FAILED":
@@ -357,6 +368,16 @@ def _record_step_result(
         has_warning,
         total_steps,
     )
+    from gnn.pipeline.run_context import current_run_context
+
+    context = current_run_context()
+    if context is not None:
+        from gnn.pipeline._io import atomic_write_text
+
+        atomic_write_text(
+            Path(context.output_root) / "00_pipeline_summary" / "current_summary.json",
+            json.dumps(pipeline_summary, indent=2, default=str),
+        )
     _log_pipeline_step_completion(
         summary_step_number,
         description,
@@ -378,6 +399,10 @@ def _consolidated_step_selected(
     (not in the consolidated whitelist, or testing-matrix folder dispatch is
     active), the canonical subprocess path runs unchanged.
     """
+    if os.environ.get("GNN_RUN_CONTEXT_FILE"):
+        # Threads cannot enforce filesystem quiescence at a hard step deadline.
+        # Budgeted top-level invocations keep a killable process boundary.
+        return False
     if not getattr(args, "consolidated_steps", False):
         return False
     from gnn.pipeline.step_executor import can_execute_in_process
@@ -393,13 +418,20 @@ def _finalize_pipeline_summary(pipeline_summary: dict[str, Any]) -> None:
     """Set end time, duration, and final overall status."""
     end_time_dt = datetime.now()
     pipeline_summary["end_time"] = end_time_dt.isoformat()
-    start_time_dt = datetime.fromisoformat(pipeline_summary["start_time"])
-    pipeline_summary["total_duration_seconds"] = (
-        end_time_dt - start_time_dt
-    ).total_seconds()
+    pipeline_summary["total_duration_seconds"] = _elapsed_run_duration(
+        pipeline_summary, end_time_dt
+    )
 
     perf_summary = pipeline_summary["performance_summary"]
-    if perf_summary["critical_failures"] > 0:
+    timeout_steps = [
+        step
+        for step in pipeline_summary.get("steps", [])
+        if step.get("stop_reason") in ("total_timeout", "step_timeout")
+    ]
+    if timeout_steps:
+        pipeline_summary["overall_status"] = "FAILED"
+        pipeline_summary["stop_reason"] = timeout_steps[0]["stop_reason"]
+    elif perf_summary["critical_failures"] > 0:
         pipeline_summary["overall_status"] = "FAILED"
     elif perf_summary["failed_steps"] > 0:
         total_steps = perf_summary["total_steps"]
@@ -407,10 +439,8 @@ def _finalize_pipeline_summary(pipeline_summary: dict[str, Any]) -> None:
 
         if failed_ratio > 0.5:
             pipeline_summary["overall_status"] = "FAILED"
-        elif failed_ratio > 0.2:
-            pipeline_summary["overall_status"] = "PARTIAL_SUCCESS"
         else:
-            pipeline_summary["overall_status"] = "SUCCESS_WITH_WARNINGS"
+            pipeline_summary["overall_status"] = "PARTIAL_SUCCESS"
     elif perf_summary.get("warnings", 0) > 0 or any(
         step.get("status") == "SUCCESS_WITH_WARNINGS"
         for step in pipeline_summary.get("steps", [])
@@ -423,6 +453,13 @@ def _finalize_pipeline_summary(pipeline_summary: dict[str, Any]) -> None:
 def _pipeline_exit_code(overall_status: str) -> int:
     """Map final pipeline status to the public process exit contract."""
     return _shared_pipeline_exit_code(overall_status)
+
+
+def _elapsed_run_duration(summary: dict[str, Any], end_time: datetime) -> float:
+    """Measure live elapsed time independently of host wall clock adjustments."""
+    if "start_monotonic" in summary:
+        return time.monotonic() - float(summary["start_monotonic"])
+    return (end_time - datetime.fromisoformat(summary["start_time"])).total_seconds()
 
 
 def _status_from_step_exit_code(
@@ -450,9 +487,13 @@ def _write_performance_dashboard(
             json_payload = json.dumps(pipeline_summary)
             final_html = template_content.replace("{SUMMARY_JSON}", json_payload)
             db_path = summary_path.parent / "performance_dashboard.html"
-            db_path.write_text(final_html)
+            from gnn.pipeline._io import atomic_write_text
+
+            atomic_write_text(db_path, final_html)
             logger.info(f"📊 D3 Performance Dashboard rendered to: {db_path}")
     except Exception as e:
+        if os.environ.get("GNN_RUN_CONTEXT_FILE"):
+            raise
         logger.warning(f"Could not render performance dashboard: {e}")
 
 
@@ -463,19 +504,22 @@ def _write_final_pipeline_report(
 ) -> None:
     """Regenerate the final pipeline report from the final summary."""
     try:
+        from gnn.pipeline._io import atomic_write_text
         from gnn.report.pipeline_report import generate_pipeline_report
 
         report_path = output_dir / "PIPELINE_REPORT.md"
-        report_path.write_text(
+        atomic_write_text(
+            report_path,
             generate_pipeline_report(
                 output_dir,
                 summary_path=summary_path,
                 mode="final",
             ),
-            encoding="utf-8",
         )
         logger.info(f"📄 Final pipeline report written to: {report_path}")
     except Exception as e:
+        if os.environ.get("GNN_RUN_CONTEXT_FILE"):
+            raise
         logger.warning(f"Could not render final pipeline report: {e}")
 
 
@@ -562,6 +606,10 @@ def _write_pipeline_summary_outputs(
         atomic_write_text(
             summary_path, json.dumps(pipeline_summary, indent=4, default=str)
         )
+        atomic_write_text(
+            summary_path.parent / "current_summary.json",
+            json.dumps(pipeline_summary, indent=4, default=str),
+        )
         logger.info("Pipeline summary saved successfully")
 
         run_hash_value = pipeline_summary.get("run_hash")
@@ -583,9 +631,12 @@ def _write_pipeline_summary_outputs(
     except Exception as e:
         logger.error(f"Failed to save pipeline summary: {e}")
         pipeline_summary["overall_status"] = "FAILED"
+        pipeline_summary["steps_count"] = len(pipeline_summary.get("steps", []))
         _late_main("_save_minimal_pipeline_summary")(
             summary_path, pipeline_summary, e, logger
         )
+        if os.environ.get("GNN_RUN_CONTEXT_FILE"):
+            raise
 
 
 def _print_pipeline_completion(
@@ -624,20 +675,89 @@ def _handle_pipeline_failure(
     pipeline_summary: dict[str, Any],
     logger: logging.Logger,
 ) -> int:
-    """Record a failed summary if the pipeline crashes outside a step."""
+    """Invalidate all terminal claim surfaces after an invocation failure."""
     end_time_dt = datetime.now()
     pipeline_summary["end_time"] = end_time_dt.isoformat()
     pipeline_summary["overall_status"] = "FAILED"
-    start_time_dt = datetime.fromisoformat(pipeline_summary["start_time"])
-    pipeline_summary["total_duration_seconds"] = (
-        end_time_dt - start_time_dt
-    ).total_seconds()
+    pipeline_summary["error"] = str(error)
+    complete = {
+        step.get("script_name")
+        for step in pipeline_summary.get("steps", [])
+        if step.get("status") in ("SUCCESS", "SUCCESS_WITH_WARNINGS", "SKIPPED")
+    }
+    pipeline_summary["unfinished_steps"] = [
+        script
+        for script in pipeline_summary.get("planned_steps", [])
+        if script not in complete
+    ]
+    if isinstance(error, TimeoutError):
+        pipeline_summary["stop_reason"] = "total_timeout"
+    pipeline_summary["evidence_integrity"] = {"status": "failed", "error": str(error)}
+    pipeline_summary["total_duration_seconds"] = _elapsed_run_duration(
+        pipeline_summary, end_time_dt
+    )
 
     summary_path = _pipeline_summary_path(args.output_dir)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     from gnn.pipeline._io import atomic_write_text
 
+    try:
+        from gnn.pipeline.finalization import record_failed_evidence
+
+        record_failed_evidence(args.output_dir, pipeline_summary)
+    except Exception as recovery_error:
+        pipeline_summary.setdefault("finalization_errors", []).append(
+            f"Failed evidence recovery: {recovery_error}"
+        )
+        logger.error("Failed evidence recovery: %s", recovery_error)
     atomic_write_text(summary_path, json.dumps(pipeline_summary, indent=4, default=str))
+    atomic_write_text(
+        summary_path.parent / "current_summary.json",
+        json.dumps(pipeline_summary, indent=4, default=str),
+    )
+    try:
+        from gnn.pipeline.hasher import index_run
+
+        run_hash = pipeline_summary.get("run_hash")
+        if isinstance(run_hash, str) and run_hash:
+            index_run(
+                run_hash,
+                summary_path,
+                config={
+                    "args": args.to_dict(),
+                    "identity_config": pipeline_summary.get("identity_config"),
+                    "run_hash_schema": pipeline_summary.get("run_hash_schema"),
+                },
+                file_hashes=pipeline_summary.get("file_hashes"),
+            )
+    except Exception as index_error:
+        logger.error("Could not index failed run: %s", index_error)
+    try:
+        _late_main("_write_performance_dashboard")(
+            summary_path, pipeline_summary, logger
+        )
+    except Exception as dashboard_error:
+        import html
+
+        logger.error("Could not render failed dashboard: %s", dashboard_error)
+        atomic_write_text(
+            summary_path.parent / "performance_dashboard.html",
+            "<!doctype html><title>Pipeline FAILED</title><h1>FAILED</h1><pre>"
+            + html.escape(json.dumps(pipeline_summary, indent=2, default=str))
+            + "</pre>",
+        )
+    try:
+        _late_main("_write_final_pipeline_report")(
+            args.output_dir, summary_path, logger
+        )
+    except Exception as report_error:
+        logger.error("Could not render failed report: %s", report_error)
+        atomic_write_text(
+            args.output_dir / "PIPELINE_REPORT.md",
+            f"# Pipeline Report\n\n**Status**: FAILED\n\n"
+            f"**Run ID**: {pipeline_summary.get('run_id')}\n\n"
+            f"{error}\n\nReport rendering failed: {report_error}\n",
+        )
 
     log_step_error(logger, f"Pipeline failed: {str(error)}")
     return 1
@@ -724,6 +844,13 @@ def execute_pipeline_step(
 
         matrix_enabled = testing_matrix.get("enabled", False)
         target_folders: list[Any] = []
+        from gnn.pipeline.step_registry import step_for_name
+
+        step_metadata = step_for_name(script_name)
+        matrix_folder_scope = (
+            step_metadata is None
+            or step_metadata.execution_scope not in {"run", "corpus"}
+        )
 
         # Check global_steps: if a global step (0, 1, 2) is disabled, skip it entirely
         if matrix_enabled:
@@ -741,14 +868,14 @@ def execute_pipeline_step(
                 return step_result
 
         # Only apply folder-matrix logic if enabled and the step is a processing step (>= 3)
-        if matrix_enabled and step_num >= 3:
+        if matrix_enabled and step_num >= 3 and matrix_folder_scope:
             base_target_dir = args.target_dir
             if base_target_dir.exists() and base_target_dir.is_dir():
                 folders_config = testing_matrix.get("folders", {})
                 default_steps = testing_matrix.get("default_steps", [])
 
                 # Check all subdirectories in the base target directory
-                for item in base_target_dir.iterdir():
+                for item in sorted(base_target_dir.iterdir()):
                     if item.is_dir() and item.name != "archived_gnn_files":
                         # Determine allowed steps for this folder
                         allowed_steps = folders_config.get(item.name, default_steps)
@@ -767,11 +894,59 @@ def execute_pipeline_step(
             _env["GNN_RUN_ID"] = run_id
         _env.setdefault("PYTHONUNBUFFERED", "1")
         comprehensive_requested = any("--comprehensive" in str(arg) for arg in sys.argv)
-        step_timeout_seconds = get_step_timeout(
+        step_timeout_seconds: float = get_step_timeout(
             script_name, comprehensive=comprehensive_requested
         )
+        from gnn.pipeline.run_context import current_run_context
 
-        if matrix_enabled and step_num >= 2 and target_folders:
+        context = current_run_context()
+        if (
+            matrix_enabled
+            and step_num >= 3
+            and matrix_folder_scope
+            and not target_folders
+        ):
+            from gnn.parsers.common import get_supported_gnn_extensions
+            from gnn.pipeline.run_context import selected_model_sources
+
+            root_sources = selected_model_sources(
+                args.target_dir,
+                step_num,
+                recursive=False,
+                extensions=get_supported_gnn_extensions(),
+            )
+            if not root_sources:
+                return {
+                    **step_result,
+                    "status": "SKIPPED",
+                    "exit_code": 0,
+                    "skip_reason": "no_selected_models",
+                    "stdout": "No selected model sources; no work dispatched",
+                }
+        if context is not None:
+            if step_num == 13 and not os.environ.get("GNN_STEP_TIMEOUT_13"):
+                configured_llm_timeout = context.input_config.get("llm", {}).get(
+                    "timeout_seconds"
+                )
+                step_timeout_seconds = (
+                    float(configured_llm_timeout)
+                    if configured_llm_timeout is not None
+                    else 600 * max(1, len(context.selected_models(13)))
+                )
+            step_timeout_seconds = context.bounded_timeout(step_timeout_seconds)
+            if step_timeout_seconds <= 0:
+                return {
+                    **step_result,
+                    "status": "FAILED",
+                    "exit_code": -1,
+                    "stop_reason": "total_timeout",
+                    "stderr": "Pipeline total deadline expired",
+                }
+
+        logical_step_deadline = time.monotonic() + step_timeout_seconds
+        result: dict[str, Any]
+
+        if matrix_enabled and step_num >= 3 and matrix_folder_scope and target_folders:
             # MATRIX MODE: We found specific folders to run for this step
             if args.verbose:
                 logger.info(
@@ -781,8 +956,19 @@ def execute_pipeline_step(
             combined_stdout = ""
             combined_stderr = ""
             worst_exit_code = 0
+            folder_results = []
 
             for folder in target_folders:
+                remaining = logical_step_deadline - time.monotonic()
+                if remaining <= 0:
+                    result = {
+                        "status": "TIMEOUT",
+                        "exit_code": -1,
+                        "stderr": "Logical matrix step deadline expired",
+                        "force_killed": False,
+                    }
+                    worst_exit_code = -1
+                    break
                 if args.verbose:
                     logger.info(f"  -> Executing for folder: {folder.name}")
 
@@ -806,7 +992,7 @@ def execute_pipeline_step(
                     cmd,
                     cwd=project_root,
                     env=_env,
-                    timeout=step_timeout_seconds,
+                    timeout=remaining,
                     print_stdout=args.verbose,
                     print_stderr=True,
                     capture_output=True,
@@ -819,6 +1005,23 @@ def execute_pipeline_step(
                     combined_stderr += f"\n--- Stderr for {folder.name} ---\n{result.get('stderr', '')}\n"
 
                 exit_code = result.get("exit_code", -1)
+                folder_results.append(
+                    {
+                        "folder": str(folder),
+                        "status": result.get("status"),
+                        "exit_code": exit_code,
+                        **{
+                            key: result[key]
+                            for key in (
+                                "containment",
+                                "cleanup_verified",
+                                "streams_drained",
+                                "force_killed",
+                            )
+                            if key in result
+                        },
+                    }
+                )
                 if exit_code != 0:
                     if exit_code == 2 and worst_exit_code == 0:
                         worst_exit_code = 2
@@ -827,6 +1030,8 @@ def execute_pipeline_step(
                     logger.warning(
                         f"  -> Folder {folder.name} execution returned code {exit_code}"
                     )
+                if result.get("status") == "TIMEOUT":
+                    break
 
             end_memory = get_current_memory_usage()
             peak_memory = max(peak_memory, end_memory)
@@ -837,6 +1042,10 @@ def execute_pipeline_step(
             step_result["memory_usage_mb"] = end_memory
             step_result["peak_memory_mb"] = peak_memory
             step_result["memory_delta_mb"] = end_memory - start_memory
+            step_result["folder_results"] = folder_results
+            step_result["unfinished_folders"] = [
+                str(folder) for folder in target_folders[len(folder_results) :]
+            ]
 
         else:
             # STANDARD MODE
@@ -873,6 +1082,16 @@ def execute_pipeline_step(
                 )
 
         # Determine status
+        for key in ("containment", "cleanup_verified", "streams_drained"):
+            if key in result:
+                step_result[key] = result[key]
+        if result.get("status") == "TIMEOUT":
+            step_result["stop_reason"] = result.get("stop_reason") or (
+                "total_timeout"
+                if context and context.remaining_seconds() == 0
+                else "step_timeout"
+            )
+            step_result["force_killed"] = result.get("force_killed", False)
         step_result["status"] = _status_from_step_exit_code(
             step_result["exit_code"], step_result["dependency_warnings"]
         )

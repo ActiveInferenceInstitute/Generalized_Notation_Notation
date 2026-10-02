@@ -123,7 +123,7 @@ PipelineStep = tuple[str, str]
 # Derive PIPELINE_STEPS from the canonical step registry
 from gnn.pipeline.run_session import RunSession  # noqa: E402
 from gnn.pipeline.run_session_wiring import (  # noqa: E402
-    close_run_session_guarded,
+    close_run_session_guarded,  # noqa: F401 — preserved existing export
     mark_units_running_guarded,
     open_run_session_guarded,
     record_step_result_guarded,
@@ -502,6 +502,7 @@ def _initialize_pipeline_summary(
         "identity_config": identity_config,
         "file_hashes": file_hashes,
         "start_time": datetime.now().isoformat(),
+        "start_monotonic": time.monotonic(),
         "arguments": args.to_dict(),
         "steps": [],
         "end_time": None,
@@ -564,17 +565,20 @@ def _prepare_pipeline_context(
         )
     except Exception as error:
         # Args are resolved, so even a config/logging/selection failure has a receipt.
+        failed_summary: dict[str, Any] = {
+            "run_id": os.environ.get("GNN_RUN_ID"),
+            "start_time": datetime.now().isoformat(),
+            "start_monotonic": time.monotonic(),
+            "arguments": args.to_dict(),
+            "steps": [],
+        }
         _save_minimal_pipeline_summary(
             _pipeline_summary_path(args.output_dir),
-            {
-                "run_id": os.environ.get("GNN_RUN_ID"),
-                "start_time": datetime.now().isoformat(),
-                "arguments": args.to_dict(),
-                "steps": [],
-            },
+            failed_summary,
             error,
             _module_logger,
         )
+        _handle_pipeline_failure(error, args, failed_summary, _module_logger)
         raise
 
 
@@ -637,23 +641,47 @@ def _write_preliminary_pipeline_summary(
     try:
         prelim_summary = dict(pipeline_summary)
         prelim_end = datetime.now()
-        prelim_start = datetime.fromisoformat(prelim_summary["start_time"])
         prelim_summary["end_time"] = prelim_end.isoformat()
-        prelim_summary["total_duration_seconds"] = (
-            prelim_end - prelim_start
-        ).total_seconds()
-        prelim_summary["overall_status"] = "SUCCESS"
+        if "start_monotonic" in prelim_summary:
+            prelim_summary["total_duration_seconds"] = (
+                time.monotonic() - prelim_summary["start_monotonic"]
+            )
+        else:
+            prelim_start = datetime.fromisoformat(prelim_summary["start_time"])
+            prelim_summary["total_duration_seconds"] = (
+                prelim_end - prelim_start
+            ).total_seconds()
         prelim_summary["preliminary"] = True
+        prelim_summary["evidence_phase"] = "current_run_snapshot"
 
-        prelim_path = output_dir / "00_pipeline_summary" / "preliminary_summary.json"
+        prelim_path = output_dir / "00_pipeline_summary" / "current_summary.json"
         prelim_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(prelim_path, "w") as f:
-            json.dump(prelim_summary, f, indent=4, default=str)
+        from gnn.pipeline._io import atomic_write_text
+
+        snapshot_path = (
+            prelim_path.parent
+            / "snapshots"
+            / str(prelim_summary.get("run_id", "standalone"))
+            / f"{len(prelim_summary.get('steps', [])):03d}-{uuid.uuid4().hex}.json"
+        )
+        prelim_summary["snapshot_path"] = str(snapshot_path.resolve())
+        atomic_write_text(
+            snapshot_path, json.dumps(prelim_summary, indent=4, default=str)
+        )
+        atomic_write_text(
+            prelim_path, json.dumps(prelim_summary, indent=4, default=str)
+        )
+        atomic_write_text(
+            prelim_path.with_name("preliminary_summary.json"),
+            json.dumps(prelim_summary, indent=4, default=str),
+        )
         logger.info(
             f"📝 Preliminary pipeline summary written ({len(prelim_summary.get('steps', []))} steps — "
             f"final summary path is 00_pipeline_summary/pipeline_execution_summary.json)"
         )
     except Exception as prelim_err:
+        if os.environ.get("GNN_RUN_CONTEXT_FILE"):
+            raise
         logger.warning(f"Could not write preliminary summary: {prelim_err}")
 
 
@@ -670,25 +698,100 @@ def _execute_selected_step(
     steps run in-process, everything else keeps the canonical subprocess
     path (mixed modes within one run are legal).
     """
+    from copy import copy
+
+    from gnn.pipeline.artifact_ownership import changed_artifacts, snapshot_files
+    from gnn.pipeline.config import get_output_dir_for_script
+    from gnn.pipeline.run_context import current_run_context
+    from gnn.pipeline.step_registry import step_for_name
+
+    context = current_run_context()
+    step = step_for_name(script_name)
+    if context is not None:
+        remaining = context.remaining_seconds()
+        if remaining is not None and remaining <= 0:
+            return {
+                "status": "FAILED",
+                "exit_code": -1,
+                "stop_reason": "total_timeout",
+                "stdout": "",
+                "stderr": "Pipeline total deadline expired",
+                "artifacts": [],
+            }
+        context.verify_sources()
+        if step is not None and step.execution_scope != "run":
+            number = int(step.script_stem.split("_")[0])
+            if not context.selected_models(number):
+                return {
+                    "status": "SKIPPED",
+                    "exit_code": 0,
+                    "skip_reason": "no_selected_models",
+                    "stdout": "No selected model sources; no work dispatched",
+                    "stderr": "",
+                    "artifacts": [],
+                }
+            args = copy(args)
+            args.target_dir = context.input_view(number)
+        # The frozen view already contains the exact matrix selection. Dispatch once.
+        pipeline_config = context.input_config
+        pipeline_config["testing_matrix"] = {"enabled": False}
+    else:
+        pipeline_config = pipeline_summary.get("identity_config", {}).get(
+            "input_config"
+        )
+    output_root = Path(args.output_dir)
+    step_output = get_output_dir_for_script(script_name, output_root)
+    before = snapshot_files(step_output)
     run_id = pipeline_summary.get("run_id")
-    pipeline_config = pipeline_summary.get("identity_config", {}).get("input_config")
     if _consolidated_step_selected(script_name, args, pipeline_summary):
         from gnn.pipeline.step_executor import execute_step_in_process
 
-        return execute_step_in_process(
+        result = execute_step_in_process(
             script_name,
             args,
             logger,
             run_id=run_id,
             pipeline_config=pipeline_config,
         )
-    return execute_pipeline_step(
-        script_name,
-        args,
-        logger,
-        run_id=run_id,
-        pipeline_config=pipeline_config,
-    )
+    else:
+        result = execute_pipeline_step(
+            script_name, args, logger, run_id=run_id, pipeline_config=pipeline_config
+        )
+        if context is not None and getattr(args, "consolidated_steps", False):
+            result["execution_fallback_reason"] = (
+                "hard_deadline_requires_process_boundary"
+            )
+    try:
+        result["artifacts"] = changed_artifacts(step_output, output_root, before)
+    except TimeoutError:
+        result.update(
+            status="FAILED",
+            exit_code=-1,
+            stop_reason="total_timeout",
+            artifacts=[],
+            partial_output_dir=str(step_output),
+        )
+    if context is not None:
+        result["run_id"] = context.run_id
+        result["selected_model_ids"] = [
+            model.model_id
+            for model in context.selected_models(int(script_name.split("_")[0]))
+        ]
+    return result
+
+
+def _execute_timed_selected_step(
+    script_name: str,
+    args: PipelineArguments,
+    pipeline_summary: dict[str, Any],
+    logger: logging.Logger,
+) -> tuple[Dict[str, Any], datetime, datetime, float]:
+    """Measure a parallel worker's execution before its future is collected."""
+    started = time.monotonic()
+    start_datetime = datetime.now()
+    result = _execute_selected_step(script_name, args, pipeline_summary, logger)
+    duration = time.monotonic() - started
+    return result, start_datetime, datetime.now(), duration
 
 
 def _execute_pipeline_iteration(
@@ -715,7 +818,7 @@ def _execute_pipeline_iteration(
     function stay compatible when callers append the session positionally.
     """
     actual_step_number = step_index + 1
-    step_start_time = time.time()
+    step_start_time = time.monotonic()
     step_start_datetime = datetime.now()
 
     visual_logger.print_step_header(
@@ -730,7 +833,7 @@ def _execute_pipeline_iteration(
         logger,
     )
 
-    if script_name in ("23_report.py", "24_intelligent_analysis.py"):
+    if script_name in ("20_website.py", "23_report.py", "24_intelligent_analysis.py"):
         _write_preliminary_pipeline_summary(pipeline_summary, args.output_dir, logger)
 
     session = mark_units_running_guarded(session, [script_name], args, logger)
@@ -738,7 +841,7 @@ def _execute_pipeline_iteration(
     step_result: dict[str, Any] = _execute_selected_step(
         script_name, args, pipeline_summary, logger
     )
-    step_duration = time.time() - step_start_time
+    step_duration = time.monotonic() - step_start_time
     step_end_datetime = datetime.now()
 
     _record_step_result(
@@ -772,14 +875,29 @@ def main(
     """
     with _run_environment_lock:
         incoming_run_id = os.environ.get("GNN_RUN_ID")
+        incoming_context = os.environ.get("GNN_RUN_CONTEXT_FILE")
         os.environ["GNN_RUN_ID"] = incoming_run_id or uuid.uuid4().hex
         try:
-            return _run_pipeline(override_args, override_config)
+            from gnn.pipeline.output_lease import OutputLease, OutputLeaseError
+
+            probe_args, _ = _build_main_args(override_args)
+            try:
+                with OutputLease(Path(probe_args.output_dir), os.environ["GNN_RUN_ID"]):
+                    return _run_pipeline(override_args, override_config)
+            except OutputLeaseError as error:
+                # A previous invocation may still own an open file handler to a
+                # now-rejected hardlinked log. Refusal must not write through it.
+                print(f"Pipeline ownership failure: {error}", file=sys.stderr)
+                return 1
         finally:
             if incoming_run_id is None:
                 os.environ.pop("GNN_RUN_ID", None)
             else:
                 os.environ["GNN_RUN_ID"] = incoming_run_id
+            if incoming_context is None:
+                os.environ.pop("GNN_RUN_CONTEXT_FILE", None)
+            else:
+                os.environ["GNN_RUN_CONTEXT_FILE"] = incoming_context
 
 
 def _run_pipeline(
@@ -800,6 +918,35 @@ def _run_pipeline(
     except Exception as e:
         return _fail_pipeline_startup(e)
 
+    from gnn.pipeline.run_context import CONTEXT_ENV, build_run_context
+
+    try:
+        context = build_run_context(
+            args.target_dir,
+            args.output_dir,
+            str(pipeline_summary["run_id"]),
+            [int(step[0].split("_")[0]) for step in steps_to_execute],
+            pipeline_summary["identity_config"]["input_config"],
+            frameworks=str(getattr(args, "frameworks", "all")).split(","),
+            recursive=bool(getattr(args, "recursive", True)),
+        )
+        context_path = args.output_dir / "00_pipeline_summary" / "run_context.json"
+        context.write(context_path)
+        os.environ[CONTEXT_ENV] = str(context_path.resolve())
+        pipeline_summary["model_selection"] = [
+            model.__dict__ for model in context.models if model.steps
+        ]
+        pipeline_summary["source_inventory"] = [
+            model.__dict__ for model in context.models
+        ]
+        pipeline_summary["selection_exclusions"] = list(context.exclusions)
+        pipeline_summary["deadline_monotonic"] = context.deadline_monotonic
+        pipeline_summary["artifact_inventory_contract"] = "current-run-v1"
+        pipeline_summary["planned_steps"] = [step[0] for step in steps_to_execute]
+        _write_preliminary_pipeline_summary(pipeline_summary, args.output_dir, logger)
+    except Exception as error:
+        return _handle_pipeline_failure(error, args, pipeline_summary, logger)
+
     if getattr(args, "autonomous", False):
         from gnn.pipeline.autonomous import run_autonomous_proposal_loop
 
@@ -811,12 +958,12 @@ def _run_pipeline(
         )
         return 0
 
-    run_session: Optional[RunSession] = open_run_session_guarded(
-        args, steps_to_execute, pipeline_summary, logger
-    )
-
+    run_session: Optional[RunSession] = None
     progress_tracker: Optional[PipelineProgressTracker] = None
     try:
+        run_session = open_run_session_guarded(
+            args, steps_to_execute, pipeline_summary, logger
+        )
         progress_tracker = _start_pipeline_run(
             args,
             steps_to_execute,
@@ -831,11 +978,14 @@ def _run_pipeline(
 
             from gnn.pipeline.dag import resolve_execution_order
             from gnn.utils.pipeline_orchestration.pipeline_step_dependencies import (
+                PIPELINE_OPTIONAL_PRODUCERS,
                 PIPELINE_STEP_DEPENDENCIES,
             )
 
             deps_dict = {
-                step_num: list(deps)
+                step_num: sorted(
+                    set(deps) | set(PIPELINE_OPTIONAL_PRODUCERS.get(step_num, ()))
+                )
                 for step_num, deps in PIPELINE_STEP_DEPENDENCIES.items()
             }
             exec_indices = {
@@ -902,12 +1052,15 @@ def _run_pipeline(
                         [s[0] for s in tier_steps],
                     )
                     with ThreadPoolExecutor(max_workers=dynamic_workers) as pool:
+                        _write_preliminary_pipeline_summary(
+                            pipeline_summary, args.output_dir, logger
+                        )
                         futures = []
                         for s_idx_offset, (script_name, description) in enumerate(
                             tier_steps
                         ):
                             f = pool.submit(
-                                _execute_selected_step,
+                                _execute_timed_selected_step,
                                 script_name,
                                 args,
                                 pipeline_summary,
@@ -928,9 +1081,12 @@ def _run_pipeline(
                         )
 
                         for step_num, script_name, description, future in futures:
-                            step_start_datetime = datetime.now()
-                            step_result = future.result()
-                            step_end_datetime = datetime.now()
+                            (
+                                step_result,
+                                step_start_datetime,
+                                step_end_datetime,
+                                step_duration,
+                            ) = future.result()
 
                             _record_step_result(
                                 step_result,
@@ -939,7 +1095,7 @@ def _run_pipeline(
                                 description,
                                 step_start_datetime,
                                 step_end_datetime,
-                                0.0,
+                                step_duration,
                                 pipeline_summary,
                                 len(steps_to_execute),
                                 progress_tracker,
@@ -966,11 +1122,22 @@ def _run_pipeline(
                 if updated_session is not None:
                     run_session = updated_session
 
+        context.verify_sources()
+        from gnn.pipeline.artifact_ownership import verify_owned_artifacts
+
+        verify_owned_artifacts(args.output_dir, pipeline_summary)
+        pipeline_summary["evidence_integrity"] = {
+            "status": "verified",
+            "source_count": len(context.models),
+        }
         _finalize_pipeline_summary(pipeline_summary)
+        from gnn.pipeline.finalization import finalize_run_evidence
+
+        finalize_run_evidence(args.output_dir, pipeline_summary, run_session)
         _write_pipeline_summary_outputs(
             args, config_pipeline_settings, pipeline_summary, logger
         )
-        run_session = close_run_session_guarded(run_session, args, logger)
+        context.raise_if_expired()
         _print_pipeline_completion(pipeline_summary, progress_tracker, logger)
         return _pipeline_exit_code(pipeline_summary["overall_status"])
 

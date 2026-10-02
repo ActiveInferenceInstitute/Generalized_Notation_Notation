@@ -77,27 +77,12 @@ graph TB
     Generator --> Summary
 ```
 
-### Provider Selection Flow
+### Step-13 corpus contract
 
-```mermaid
-flowchart TD
-    Start[Start LLM Processing] --> CheckKeys{API Keys<br/>Available?}
-    
-    CheckKeys -->|OpenAI Key| UseOpenAI[Use OpenAI]
-    CheckKeys -->|OpenRouter Key| UseOpenRouter[Use OpenRouter]
-    CheckKeys -->|No Keys| CheckOllama{Ollama<br/>Available?}
-    
-    CheckOllama -->|Yes| UseOllama[Use Ollama]
-    CheckOllama -->|No| Recovery[Recovery Analysis]
-    
-    UseOpenAI --> Process[Process with LLM]
-    UseOpenRouter --> Process
-    UseOllama --> Process
-    Recovery --> Process
+The resolved run configuration pins one provider and model. Structural analysis completes for all selected models before summaries run for all models, then additional prompts run in corpus rounds. There is no default file sampling. Automatic total LLM budgets allocate 600 seconds per selected model; explicit finite positive limits win. Requests keep a 45-second ceiling and run in killable processes under the remaining invocation deadline.
 
-    
-    Process --> Results[Analysis Results]
-```
+`corpus_runner.py` owns selection, fair scheduling and byte-bound checkpoints. `request_worker.py` owns one pinned provider/model request and cleanup. Full request definitions bind response caches. An explicit empty selection records `skipped`; partial work returns failure with measured coverage and a checkpoint. Provider/model substitution and recovery text cannot count as successful coverage.
+
 Package exports (`from gnn.llm import ...`): `LLMAnalyzer`, `AnalysisType`,
 `UnifiedLLMProcessor`, `ProviderType`, `LLMConfig`, `LLMMessage`, `LLMResponse`,
 `BaseLLMProvider`, `DEFAULT_OLLAMA_MODEL`, `get_available_providers`,
@@ -345,8 +330,8 @@ output/13_llm_output/
 # Keys read by llm/processor.py
 llm_config = {
     "model": "smollm2:135m-instruct-q4_K_S",  # preferred Ollama tag
-    "timeout_seconds": 600,                    # step timeout budget
-    "max_files": None,                         # cap on files per run
+    "timeout_seconds": None,                   # automatic: 600s per selected model
+    "max_files": None,                         # all selected models; explicit caps allowed
     "prompt_timeout": 45,                      # per-prompt timeout (seconds)
 }
 ```
@@ -367,17 +352,17 @@ DEFAULT_PROVIDER=ollama       # preferred provider order
 Tests live in `tests/llm/` (module-level, functional, Ollama, Ollama integration).
 
 ```bash
-uv run --extra dev python -m pytest tests/test_llm*.py -v
+uv run --extra dev python -m pytest tests/llm/ -v
 ```
 
 ## Dependencies
 
 ### Core Dependencies (installed by `uv sync`; no dedicated pip extra)
 - **openai**: OpenAI/OpenRouter API access
-- **ollama** (PyPI): Local Ollama client; CLI recovery when the client is unusable
+- **ollama** (PyPI): SDK dependency; maintained Ollama chat uses bounded standard-library HTTP without importing it
 
 ### Runtime Requirement
-- **Ollama runtime** (CLI/daemon from https://ollama.com) for local inference; not a pip package
+- **Ollama 0.35 or later daemon** (from https://ollama.com) for local inference; not a pip package
 
 ## Performance Metrics
 
@@ -424,7 +409,7 @@ OLLAMA_TIMEOUT=60
 
 Default tag is also defined in code as `llm.defaults.DEFAULT_OLLAMA_MODEL`. Override with `OLLAMA_MODEL` or `input/config.yaml` `llm.model`.
 
-`process_llm` passes the selected tag to every structured and custom prompt via `get_response(..., model_name=...)`, and into per-file summarization when Ollama is available. Summary tasks prefer Ollama before cloud providers when registered. If OpenAI returns quota errors, unset `OPENAI_API_KEY` for local-only runs.
+`process_llm` pins the configured provider and model for every request. It completes structural work for all selected sources, then attempts all summaries before additional prompt rounds. Missing models, context overflow and deadline exhaustion produce partial coverage without source truncation or provider/model replacement. Checkpoint version two binds effective options and full-context policy; earlier responses are retained only as historical artifacts.
 
 You can also point to a different host:
 
@@ -436,8 +421,8 @@ Common Ollama tags: `smollm2:135m-instruct-q4_K_S`, `gemma3:4b`, `tinyllama`, an
 
 ## Summary
 
-The module analyses GNN models with an LLM of the caller's choosing, prefers local
-Ollama when no cloud keys are set, and writes per-model summary / explanation /
+The corpus processor analyses every selected GNN model on the configured provider
+and model, and writes per-model summary / explanation /
 optimisation artifacts into `output/13_llm_output/` for downstream consumption by
 steps 16, 20, and 23.
 

@@ -38,6 +38,19 @@ importable Step 12 marks the script **skipped** with the reason
 | `execute_stan_script(script, out_dir)` | run one driver with `STAN_OUTPUT_DIR` set |
 | `run_stan_scripts(render_dir, out_dir)` | run all drivers, or skip all with a reason |
 
+Both runner functions accept an optional `cancel_token`. Preconditions precede
+availability probes; readiness uses the shared bounded child probe in the
+selected Python interpreter. The shared script security gate also precedes
+readiness and execution; blocked scripts retain findings and never run.
+Missing dependencies and toolchains produce skipped
+receipts, while probe failures retain their cause as failed work. Cancellation
+and timeout use the shared subprocess envelope; per-driver receipts preserve
+the original error category, partial streams, and observed process cleanup
+evidence. The invocation deadline bounds all work; a standalone driver's timeout
+applies to its command and separately caps its readiness probe.
+
 ## Tests
 
-`tests/execute/test_execute_stan.py` (skips when CmdStan is absent).
+`tests/execute/test_execute_stan.py` covers discovery and actual child-process
+cancellation/timeout without CmdStan. Native compilation and sampling use the
+explicit `needs_cmdstan` integration test.

@@ -246,7 +246,7 @@ class TestComposedExemplar:
         assert detect_model_kind(spec) is ModelKind.MULTI_AGENT
 
     def test_corpus_has_no_other_composed_spec(self) -> None:
-        """Exactly three composed exemplars are sanctioned, none silent.
+        """The four maintained composed exemplars have explicit kind sets.
 
         The composed receipts change behavior only for the sanctioned composed
         exemplars — continuous × multi-agent, the factored-continuous LGSSM
@@ -257,6 +257,9 @@ class TestComposedExemplar:
 
         expected_composed = {
             COMPOSED_REL: frozenset({ModelKind.CONTINUOUS, ModelKind.MULTI_AGENT}),
+            "continuous/independent_gaussian_agents.md": frozenset(
+                {ModelKind.CONTINUOUS, ModelKind.MULTI_AGENT}
+            ),
             "continuous/factored_continuous_lgssm.md": frozenset(
                 {ModelKind.FACTORED, ModelKind.CONTINUOUS}
             ),
@@ -339,7 +342,7 @@ class TestDispatchHonesty:
         assert files and "unsupported-composition" not in message
 
     def test_process_render_receipts_the_composition(self, tmp_path: Path) -> None:
-        """Step 11 over the continuous folder: 5 render, 3 receipted."""
+        """Step 11: six native programs and three unsupported compositions."""
         result = process_render(
             target_dir=GNN_FILES / "continuous",
             output_dir=tmp_path / "11_render_output",
@@ -352,9 +355,9 @@ class TestDispatchHonesty:
                 tmp_path / "11_render_output" / "render_processing_summary.json"
             ).read_text(encoding="utf-8")
         )
-        assert summary["total_files"] == 8
-        assert summary["successful_files"] == 8
-        assert summary["successful_framework_renderings"] == 5
+        assert summary["total_files"] == 9
+        assert summary["successful_files"] == 9
+        assert summary["successful_framework_renderings"] == 6
         expected_receipts = {
             "multi_agent_lgssm": "unsupported-composition",
             # The factored exemplar is receipted by the pomdp_processor
@@ -369,7 +372,7 @@ class TestDispatchHonesty:
             assert entries[0]["framework"] == "rxinfer"
             assert prefix in entries[0]["message"], stem
         rendered_jl = list((tmp_path / "11_render_output").rglob("*.jl"))
-        assert len(rendered_jl) == 5
+        assert len(rendered_jl) == 6
         assert not any(
             stem in path.name for stem in expected_receipts for path in rendered_jl
         )

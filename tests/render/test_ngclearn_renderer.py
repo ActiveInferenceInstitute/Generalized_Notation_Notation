@@ -148,7 +148,9 @@ def test_ngclearn_kalman_numerics_byte_identical_to_jax() -> None:
 
 
 def test_ngclearn_renders_continuous_exemplar_file_spec(tmp_path: Path) -> None:
-    ok, msg, arts = render_gnn_to_ngclearn(_file_spec(), tmp_path / "damped_ngclearn.py")
+    ok, msg, arts = render_gnn_to_ngclearn(
+        _file_spec(), tmp_path / "damped_ngclearn.py"
+    )
     assert ok, msg
     script = Path(arts[0]).read_text()
     assert 'FRAMEWORK = "ngclearn"' in script
@@ -221,11 +223,13 @@ def test_registry_entry_carries_backend_contract() -> None:
 def test_registry_position_pomdp_config_and_lite_exclusion() -> None:
     from gnn.frameworks import ALL_FRAMEWORKS, LITE_FRAMEWORKS
 
-    # Registry order must match ALL_FRAMEWORKS minus the execution-only lean;
-    # ngclearn sits between bnlearn and lean in both.
+    # Registry order follows the canonical render inventory; execution-only
+    # Lean is appended separately and cpomdp requires explicit selection.
     assert list(FRAMEWORK_REGISTRY)[-1] == "ngclearn"
     assert ALL_FRAMEWORKS.count("ngclearn") == 1
-    assert ALL_FRAMEWORKS.index("ngclearn") == ALL_FRAMEWORKS.index("bnlearn") + 1
+    assert list(FRAMEWORK_REGISTRY) == [
+        name for name in ALL_FRAMEWORKS if name != "lean"
+    ]
     assert ALL_FRAMEWORKS.index("lean") == ALL_FRAMEWORKS.index("ngclearn") + 1
     assert "ngclearn" not in LITE_FRAMEWORKS
     configs = get_pomdp_framework_configs()
@@ -251,9 +255,7 @@ def test_continuous_dispatch_routes_ngclearn(tmp_path: Path) -> None:
     assert artifacts[0].endswith("_ngclearn.py")
     assert Path(artifacts[0]).is_file()
     # The unknown-target refusal must not fire for ngclearn.
-    assert not msg.startswith(
-        "Continuous models are unsupported for target: ngclearn"
-    )
+    assert not msg.startswith("Continuous models are unsupported for target: ngclearn")
 
 
 # ── 5. POMDPRenderProcessor loop (registry-driven routing) ─────────────────
@@ -293,5 +295,3 @@ def test_pomdp_loop_continuous_model_renders_into_ngclearn_subdir(
     assert artifact.parent == tmp_path / "ngclearn"
     assert artifact.is_file()
     assert result["overall_success"] is True
-
-

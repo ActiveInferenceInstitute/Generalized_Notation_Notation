@@ -202,9 +202,7 @@ class TestModelPageGeneration:
     """C2: one page per parsed model under ``model/`` with collision slugs."""
 
     @pytest.mark.unit
-    def test_model_pages_created_with_collision_suffixes(
-        self, tmp_path: Any
-    ) -> None:
+    def test_model_pages_created_with_collision_suffixes(self, tmp_path: Any) -> None:
         site, result = _build_multi_model_site(tmp_path)
 
         assert result["model_pages_created"] == 6
@@ -216,9 +214,7 @@ class TestModelPageGeneration:
             assert (site / rel).is_file()
 
     @pytest.mark.unit
-    def test_model_page_content_h1_source_link_and_tables(
-        self, tmp_path: Any
-    ) -> None:
+    def test_model_page_content_h1_source_link_and_tables(self, tmp_path: Any) -> None:
         site, _ = _build_multi_model_site(tmp_path)
         page = (site / "model/alpha-model.html").read_text(encoding="utf-8")
 
@@ -272,9 +268,7 @@ class TestBreadcrumbs:
     """C1: breadcrumb nav on every generated page, depth-correct + escaped."""
 
     @pytest.mark.unit
-    def test_breadcrumbs_present_on_every_generated_page(
-        self, tmp_path: Any
-    ) -> None:
+    def test_breadcrumbs_present_on_every_generated_page(self, tmp_path: Any) -> None:
         site, _ = _build_multi_model_site(tmp_path)
         pages = [site / f for f in (*_SITE_PAGE_FILENAMES, *_EXPECTED_MODEL_PAGES)]
         for page_path in pages:
@@ -552,12 +546,11 @@ class TestDeepLinksAndHygiene:
         for page in pages:
             html = page.read_text(encoding="utf-8")
             for attribute in ("src", "href"):
-                for match in re.findall(
-                    rf'{attribute}\s*=\s*"[^"]*"', html
-                ):
-                    assert not match.lower().startswith(
-                        f'{attribute}="http'
-                    ), (page.name, match)
+                for match in re.findall(rf'{attribute}\s*=\s*"[^"]*"', html):
+                    assert not match.lower().startswith(f'{attribute}="http'), (
+                        page.name,
+                        match,
+                    )
             assert "@import" not in html, page.name
             assert not re.search(r"url\(\s*[\"']?https?://", html), page.name
 
@@ -580,9 +573,9 @@ class TestDeepLinksAndHygiene:
         assert {p.name for p in pages} >= set(_SITE_PAGE_FILENAMES)
         for page in pages:
             html = page.read_text(encoding="utf-8")
-            assert '<meta name="description" content="GNN Pipeline Results' in (
-                html
-            ), page.name
+            assert '<meta name="description" content="GNN Pipeline Results' in (html), (
+                page.name
+            )
             match = re.search(
                 r'<script type="application/ld\+json">(.*?)</script>',
                 html,

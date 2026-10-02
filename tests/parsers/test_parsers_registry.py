@@ -9,13 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-GNN_SNIPPET = (
-    "## ModelName\n"
-    "Tiny Agent\n"
-    "\n"
-    "## StateSpaceBlock\n"
-    "s_f0[2,1,type=int]\n"
-)
+GNN_SNIPPET = "## ModelName\nTiny Agent\n\n## StateSpaceBlock\ns_f0[2,1,type=int]\n"
 
 
 class TestRegistries:
@@ -29,8 +23,10 @@ class TestRegistries:
         assert parsers.SERIALIZER_REGISTRY[GNNFormat.MARKDOWN] is MarkdownSerializer
         assert len(parsers.PARSER_REGISTRY) >= 20
         assert len(parsers.SERIALIZER_REGISTRY) >= 20
-        assert all(entry.__name__.endswith(("Parser", "GNNParser"))
-                   for entry in parsers.PARSER_REGISTRY.values())
+        assert all(
+            entry.__name__.endswith(("Parser", "GNNParser"))
+            for entry in parsers.PARSER_REGISTRY.values()
+        )
 
 
 class TestGNNParsingSystem:

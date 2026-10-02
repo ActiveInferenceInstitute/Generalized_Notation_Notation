@@ -26,12 +26,13 @@ def _small_gnn_spec() -> Dict[str, Any]:
             "num_obs": 2,
             "num_actions": 2,
             "num_timesteps": 5,
+            "b_tensor_order": "next_state_previous_state_action",
         },
         "initialparameterization": {
             "A": [[0.9, 0.1], [0.1, 0.9]],
             "B": [
-                [[0.9, 0.2], [0.1, 0.8]],
-                [[0.8, 0.1], [0.2, 0.9]],
+                [[0.9, 0.8], [0.2, 0.1]],
+                [[0.1, 0.2], [0.8, 0.9]],
             ],
             "C": [0.0, 1.0],
             "D": [0.5, 0.5],

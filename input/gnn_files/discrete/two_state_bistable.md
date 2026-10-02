@@ -92,7 +92,7 @@ A={
   (0.2, 0.8)
 }
 
-# B: 2 actions. Action 0 = push left, action 1 = push right. The transition tensor B is stored as (next_state, previous_state, action); per-action slices are column-stochastic: rows are next states, columns are previous states, and each column sums to 1 over next states.
+# B: 2 actions. Action 0 = push left, action 1 = push right. The outer B blocks are actions, each matrix stores (next_state, previous_state); ModelParameters declares action_next_state_previous_state explicitly. per-action slices are column-stochastic: rows are next states, columns are previous states, and each column sums to 1 over next states.
 
 B={
   ( (0.8, 0.3), (0.2, 0.7) ),
@@ -144,6 +144,10 @@ u=Action
 t=Time
 
 ## ModelParameters
+
+# Axis correction: preserve every numeric transition value and transpose only
+# from the declared action blocks; no probability-mass repair is allowed.
+b_tensor_order: action_next_state_previous_state
 
 num_hidden_states: 2
 num_obs: 2

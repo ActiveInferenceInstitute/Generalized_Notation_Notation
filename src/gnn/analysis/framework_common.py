@@ -28,6 +28,9 @@ FRAMEWORK_DIR_NAMES: frozenset[str] = frozenset(
     {
         "activeinference_jl",
         "bnlearn",
+        "cpomdp",
+        "thrml",
+        "ngclearn",
         "discopy",
         "jax",
         "numpyro",

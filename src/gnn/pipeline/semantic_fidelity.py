@@ -25,7 +25,7 @@ from gnn.schema import (
 
 STRICT_ROUND_TRIP_FORMATS = ("json",)
 SCHEMA_VERSION = "gnn_semantic_fidelity_ledger_v1"
-CONTRACT_SCHEMA_VERSION = "gnn_semantic_contract_v1"
+CONTRACT_SCHEMA_VERSION = "gnn_semantic_contract_v2"
 
 
 @dataclass(frozen=True)
@@ -108,6 +108,8 @@ def build_semantic_contract(model_path: Path) -> dict[str, Any]:
         "variables": _canonical_variables(model),
         "edges": _canonical_edges(model),
         "parameter_shapes": _canonical_parameter_shapes(model),
+        "parameter_values": _canonical_parameter_values(model),
+        "parameter_metadata": _canonical_parameter_metadata(model),
         "parameter_names": sorted(
             str(parameter.name) for parameter in model.parameters if parameter.name
         ),
@@ -142,6 +144,8 @@ def compare_semantic_contracts(
         "variables",
         "edges",
         "parameter_shapes",
+        "parameter_values",
+        "parameter_metadata",
         "parameter_names",
         "equations",
         "time_specification",
@@ -296,6 +300,8 @@ def _contract_from_model(source_contract: dict[str, Any], model: Any) -> dict[st
     contract["variables"] = _canonical_variables(model)
     contract["edges"] = _canonical_edges(model)
     contract["parameter_shapes"] = _canonical_parameter_shapes(model)
+    contract["parameter_values"] = _canonical_parameter_values(model)
+    contract["parameter_metadata"] = _canonical_parameter_metadata(model)
     contract["parameter_names"] = sorted(
         str(parameter.name) for parameter in model.parameters if parameter.name
     )
@@ -366,6 +372,28 @@ def _canonical_parameter_shapes(model: Any) -> dict[str, list[int]]:
             continue
         shapes[name] = _shape_of(parameter.value)
     return dict(sorted(shapes.items()))
+
+
+def _canonical_parameter_values(model: Any) -> dict[str, Any]:
+    """Keep every parameter value and axis order in the scientific contract."""
+    return dict(
+        sorted(
+            (str(parameter.name), _json_stable(parameter.value))
+            for parameter in model.parameters
+            if parameter.name
+        )
+    )
+
+
+def _canonical_parameter_metadata(model: Any) -> dict[str, Any]:
+    """Preserve declared parameter semantics and provenance across formats."""
+    return dict(
+        sorted(
+            (str(parameter.name), _json_stable(parameter.metadata))
+            for parameter in model.parameters
+            if parameter.name and parameter.metadata
+        )
+    )
 
 
 def _canonical_equations(model: Any) -> list[dict[str, str]]:

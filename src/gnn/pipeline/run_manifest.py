@@ -77,7 +77,9 @@ def _stable_stream_id(rel_path: Path) -> str:
     return f"{slug}_{digest}"
 
 
-def _discover_artifacts(run_output_dir: Path) -> List[Path]:
+def _discover_artifacts(
+    run_output_dir: Path, summary_path: Optional[Path] = None
+) -> List[Path]:
     """Return sorted JSON artifact paths under the run's ``N_*_output/`` dirs.
 
     Only ``*.json`` files inside step output directories are collected. The
@@ -91,6 +93,7 @@ def _discover_artifacts(run_output_dir: Path) -> List[Path]:
     Returns:
         A deterministically sorted list of absolute artifact paths.
     """
+    owned = _current_artifact_inventory(run_output_dir, summary_path)
     artifacts: List[Path] = []
     for child in run_output_dir.iterdir():
         if not child.is_dir():
@@ -99,6 +102,11 @@ def _discover_artifacts(run_output_dir: Path) -> List[Path]:
             continue
         for json_path in child.rglob("*.json"):
             if json_path.is_file():
+                if (
+                    owned is not None
+                    and json_path.relative_to(run_output_dir).as_posix() not in owned
+                ):
+                    continue
                 if not json_path.resolve().is_relative_to(run_output_dir.resolve()):
                     raise ValueError(
                         f"Artifact escapes run output directory: {json_path}"
@@ -123,7 +131,9 @@ _BINARY_DTYPE: Dict[str, str] = {
 }
 
 
-def _discover_binary_artifacts(run_output_dir: Path) -> List[Path]:
+def _discover_binary_artifacts(
+    run_output_dir: Path, summary_path: Optional[Path] = None
+) -> List[Path]:
     """Return sorted binary artifact paths under the run's ``N_*_output/`` dirs.
 
     Mirrors :func:`_discover_artifacts` exactly, but collects files whose
@@ -136,6 +146,7 @@ def _discover_binary_artifacts(run_output_dir: Path) -> List[Path]:
     Returns:
         A deterministically sorted list of absolute binary artifact paths.
     """
+    owned = _current_artifact_inventory(run_output_dir, summary_path)
     artifacts: List[Path] = []
     for child in run_output_dir.iterdir():
         if not child.is_dir():
@@ -144,11 +155,44 @@ def _discover_binary_artifacts(run_output_dir: Path) -> List[Path]:
             continue
         for path in child.rglob("*"):
             if path.is_file() and path.suffix.lower() in _BINARY_EXTENSIONS:
+                if (
+                    owned is not None
+                    and path.relative_to(run_output_dir).as_posix() not in owned
+                ):
+                    continue
                 if not path.resolve().is_relative_to(run_output_dir.resolve()):
                     raise ValueError(f"Artifact escapes run output directory: {path}")
                 artifacts.append(path)
     artifacts.sort(key=lambda p: p.relative_to(run_output_dir).as_posix())
     return artifacts
+
+
+def _summary_path(run_dir: Path, supplied: Optional[Path]) -> Path:
+    """Resolve a staged or canonical summary within the owned output root."""
+    path = supplied if supplied is not None else run_dir / _SUMMARY_REL
+    if not path.resolve().is_relative_to(run_dir.resolve()):
+        raise ValueError("Summary path escapes run output directory")
+    return path
+
+
+def _current_artifact_inventory(
+    run_dir: Path, summary_path: Optional[Path] = None
+) -> Optional[set[str]]:
+    """Project new-contract receipts exactly; standalone manifests keep discovery."""
+    path = _summary_path(run_dir, summary_path)
+    if not path.is_file():
+        return None
+    summary = json.loads(path.read_text(encoding="utf-8"))
+    if summary.get("artifact_inventory_contract") != "current-run-v1":
+        return None
+    from gnn.pipeline.artifact_ownership import verify_owned_artifacts
+
+    verify_owned_artifacts(run_dir, summary)
+    return {
+        record["path"]
+        for step in _step_records(summary)
+        for record in step.get("artifacts", [])
+    }
 
 
 def _step_records(summary: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -260,13 +304,29 @@ def _build_trace_from_dirs(trace_id: str, run_output_dir: Path) -> ExecutionTrac
     return trace
 
 
-def _run_provenance(run_dir: Path) -> Dict[str, Any]:
+def _run_provenance(
+    run_dir: Path, summary_path: Optional[Path] = None
+) -> Dict[str, Any]:
     """Bind complete summary metadata, or explicitly declare directory-only evidence."""
-    summary_path = run_dir / _SUMMARY_REL
+    summary_path = _summary_path(run_dir, summary_path)
     if not summary_path.exists():
         return {"mode": "directories"}
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     _step_records(summary)
+    session_hash = summary.get("run_session_sha256")
+    if session_hash is not None:
+        session_path = summary_path.parent / "run_session.json"
+        if not session_path.resolve().is_relative_to(run_dir.resolve()):
+            raise ValueError("Run session escapes its output root")
+        if hashlib.sha256(session_path.read_bytes()).hexdigest() != session_hash:
+            raise ValueError("Run session checksum differs from the terminal summary")
+        session = json.loads(session_path.read_text(encoding="utf-8"))
+        if session.get("session_id") != summary.get("run_id") or session.get(
+            "final_status"
+        ) != summary.get("overall_status"):
+            raise ValueError(
+                "Run session terminal identity/status differs from summary"
+            )
     canonical = json.dumps(summary, sort_keys=True, ensure_ascii=False).encode("utf-8")
     return {
         "mode": "summary",
@@ -347,6 +407,7 @@ def emit_run_manifests(
     run_output_dir: Union[str, Path],
     *,
     manifest_out: Optional[Union[str, Path]] = None,
+    summary_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """Emit durable v3 manifests + a trace for a COMPLETED pipeline run.
 
@@ -369,6 +430,7 @@ def emit_run_manifests(
         run_output_dir: The output directory of a completed run.
         manifest_out: Destination directory for the emitted artifacts; defaults
             to ``run_output_dir/v3_run_manifest``.
+        summary_path: Optional staged summary under the owned run output root.
 
     Returns:
         A summary dict::
@@ -402,11 +464,11 @@ def emit_run_manifests(
             raise ValueError(
                 "Manifest output cannot be inside a step artifact directory"
             )
-    provenance = _run_provenance(run_dir)
+    provenance = _run_provenance(run_dir, summary_path)
     manifest_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Build a StreamManifest per produced JSON artifact (deterministic order).
-    artifacts = _discover_artifacts(run_dir)
+    artifacts = _discover_artifacts(run_dir, summary_path)
     manifest_entries: List[Dict[str, str]] = []
     written_filenames: set[str] = set()
     for artifact in artifacts:
@@ -420,7 +482,7 @@ def emit_run_manifests(
     # (Perf#5): binary records live under the new index keys and never
     # touch the JSON inventory.
     binary_entries: List[Dict[str, str]] = []
-    for artifact in _discover_binary_artifacts(run_dir):
+    for artifact in _discover_binary_artifacts(run_dir, summary_path):
         entry = _write_file_stream_manifest(
             artifact,
             run_dir,
@@ -433,7 +495,7 @@ def emit_run_manifests(
 
     # 2. Reconstruct the execution trace from the summary, else from step dirs.
     trace_id = f"run::{run_dir.name}"
-    summary_path = run_dir / _SUMMARY_REL
+    summary_path = _summary_path(run_dir, summary_path)
     if summary_path.is_file():
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         trace = _build_trace_from_summary(trace_id, summary)
@@ -542,7 +604,10 @@ def _verify_index_entry(
 
 
 def verify_run_manifests(
-    manifest_dir: Union[str, Path], run_output_dir: Union[str, Path]
+    manifest_dir: Union[str, Path],
+    run_output_dir: Union[str, Path],
+    *,
+    summary_path: Optional[Path] = None,
 ) -> List[str]:
     """Re-validate every emitted manifest and the trace.
 
@@ -562,6 +627,7 @@ def verify_run_manifests(
     Args:
         manifest_dir: Directory previously written by :func:`emit_run_manifests`.
         run_output_dir: The run output directory the manifests describe.
+        summary_path: Optional staged summary under the owned run output root.
 
     Returns:
         A list of human-readable problems. Empty means everything re-validates.
@@ -573,19 +639,23 @@ def verify_run_manifests(
         index = json.loads((mdir / "index.json").read_text(encoding="utf-8"))
         if not isinstance(index, dict) or not isinstance(index.get("manifests"), list):
             return ["index.json must contain a manifests list"]
+        if index.get("verification_status") == "FAILED":
+            return [
+                f"Run evidence explicitly failed finalization: {index.get('error')}"
+            ]
         if index.get("schema_version") not in ("3.1", "3.2"):
             problems.append(
                 "Index lacks supported complete inventory/provenance schema 3.1/3.2"
             )
-        if index.get("provenance") != _run_provenance(run_dir):
+        if index.get("provenance") != _run_provenance(run_dir, summary_path):
             problems.append("Run provenance differs from the indexed summary")
         actual_sources = {
             path.relative_to(run_dir).as_posix()
-            for path in _discover_artifacts(run_dir)
+            for path in _discover_artifacts(run_dir, summary_path)
         }
         actual_binary_sources = {
             path.relative_to(run_dir).as_posix()
-            for path in _discover_binary_artifacts(run_dir)
+            for path in _discover_binary_artifacts(run_dir, summary_path)
         }
     except (OSError, ValueError, TypeError) as exc:
         return [f"Cannot read run manifest inventory/provenance: {exc}"]
@@ -645,7 +715,7 @@ def verify_run_manifests(
         if index.get("trace_event_count") != len(trace.events):
             problems.append("trace_event_count does not match stored trace")
         trace_id = f"run::{run_dir.name}"
-        summary_path = run_dir / _SUMMARY_REL
+        summary_path = _summary_path(run_dir, summary_path)
         expected = (
             _build_trace_from_summary(
                 trace_id, json.loads(summary_path.read_text(encoding="utf-8"))

@@ -85,7 +85,9 @@ def _assert_schema(
     assert res["model_kind"] == "continuous"
     assert res["num_states"] == dims and res["num_observations"] == 2
     assert len(res["beliefs"]) == timesteps and len(res["beliefs"][0]) == dims
-    assert len(res["posterior_cov"]) == timesteps and len(res["posterior_cov"][0]) == dims
+    assert (
+        len(res["posterior_cov"]) == timesteps and len(res["posterior_cov"][0]) == dims
+    )
     assert len(res["controls"]) == timesteps
     assert res["actions"] == [] and res["observations"] == []
     assert res["validation"]["all_valid"] is True
@@ -165,7 +167,11 @@ def test_damped_oscillator_bias_file_spec_and_shapes() -> None:
     """The new exemplar extracts with 3 states / 2 observations and exact matrices."""
     spec = _file_spec()
     initial = spec["initialparameterization"]
-    assert _rows(initial["F"]) == [[1.0, 0.1, 0.0], [-0.09, 0.99, 0.0], [0.0, 0.0, 0.95]]
+    assert _rows(initial["F"]) == [
+        [1.0, 0.1, 0.0],
+        [-0.09, 0.99, 0.0],
+        [0.0, 0.0, 0.95],
+    ]
     assert _rows(initial["H"]) == [[1.0, 0.0, 1.0], [0.0, 1.0, 0.5]]
     assert _rows(initial["Q"]) == [
         [0.01, 0.002, 0.0],
@@ -232,7 +238,6 @@ def test_damped_oscillator_bias_stan_program_and_driver(tmp_path: Path) -> None:
     res = _run(driver, "STAN_OUTPUT_DIR", tmp_path / "out")
     _assert_schema(res, "stan", False, dims=3, timesteps=NEW_EXEMPLAR_TIMESTEPS)
     assert res["validation"]["rhat_ok"] is True
-
 
 
 def test_ngclearn_continuous_renders_codegen_only(tmp_path: Path) -> None:

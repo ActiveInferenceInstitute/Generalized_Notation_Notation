@@ -305,9 +305,9 @@ def test_negative_tampered_binary_is_detected(tmp_path: Path) -> None:
 
     problems = verify_run_manifests(manifest_dir, run_dir)
     assert problems, "expected verification to report the tampered binary"
-    assert any(
-        "checksum mismatch for 3_gnn_output/graph.png" in p for p in problems
-    ), problems
+    assert any("checksum mismatch for 3_gnn_output/graph.png" in p for p in problems), (
+        problems
+    )
 
 
 def test_negative_deleted_binary_is_detected(tmp_path: Path) -> None:
@@ -322,9 +322,7 @@ def test_negative_deleted_binary_is_detected(tmp_path: Path) -> None:
     problems = verify_run_manifests(manifest_dir, run_dir)
     assert problems, "deleting a binary should produce manifest problems"
     assert any("source file does not exist" in p for p in problems), problems
-    assert any(
-        "Binary artifact inventory differs" in p for p in problems
-    ), problems
+    assert any("Binary artifact inventory differs" in p for p in problems), problems
 
 
 def test_legacy_3_1_index_still_verifies_without_binaries(tmp_path: Path) -> None:
@@ -368,9 +366,9 @@ def test_legacy_3_1_index_reports_unrecorded_binaries(tmp_path: Path) -> None:
     (run_dir / "3_gnn_output" / "late.png").write_bytes(b"\x89PNG\r\n\x1a\nlate")
 
     problems = verify_run_manifests(manifest_dir, run_dir)
-    assert any(
-        "Binary artifacts not recorded in the index" in p for p in problems
-    ), problems
+    assert any("Binary artifacts not recorded in the index" in p for p in problems), (
+        problems
+    )
 
 
 def test_binary_count_mismatch_detected(tmp_path: Path) -> None:
@@ -389,8 +387,7 @@ def test_binary_count_mismatch_detected(tmp_path: Path) -> None:
 
     problems = verify_run_manifests(manifest_dir, run_dir)
     assert any(
-        "binary_count does not match binary manifest inventory" in p
-        for p in problems
+        "binary_count does not match binary manifest inventory" in p for p in problems
     ), problems
 
 
@@ -410,12 +407,10 @@ def test_emit_determinism_with_binaries(tmp_path: Path) -> None:
     index_a = json.loads((out_a / "index.json").read_text(encoding="utf-8"))
     index_b = json.loads((out_b / "index.json").read_text(encoding="utf-8"))
     streams_a = {
-        (entry["stream_id"], entry["source"])
-        for entry in index_a["binary_artifacts"]
+        (entry["stream_id"], entry["source"]) for entry in index_a["binary_artifacts"]
     }
     streams_b = {
-        (entry["stream_id"], entry["source"])
-        for entry in index_b["binary_artifacts"]
+        (entry["stream_id"], entry["source"]) for entry in index_b["binary_artifacts"]
     }
     assert streams_a == streams_b
 

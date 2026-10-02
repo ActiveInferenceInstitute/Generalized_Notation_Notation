@@ -128,6 +128,14 @@ def collect_execution_outputs(
         "other": [],
     }
 
+    if framework == "thrml":
+        # The supervised invocation has already bound this result to its token
+        # and script. Preserve its owned destination; never scan old scripts.
+        artifact = output_dir / "simulation_data" / "simulation_results.json"
+        if artifact.is_file() and not artifact.is_symlink():
+            collected["simulation_data"] = [str(artifact)]
+        return collected
+
     try:
         script_dir = script_path.parent
 
@@ -323,7 +331,16 @@ def extract_simulation_data_from_files(
     enhanced_data: dict[Any, Any] = {}
 
     try:
-        if framework == "pymdp":
+        if framework == "thrml":
+            from gnn.analysis.thrml import adapt_result
+
+            artifact = output_dir / "simulation_data" / "simulation_results.json"
+            if artifact.is_symlink() or artifact.stat().st_size > 16 * 1024 * 1024:
+                raise ValueError("THRML native result is unsafe or exceeds 16 MiB")
+            payload = json.loads(artifact.read_text(encoding="utf-8"))
+            adapt_result(payload)
+            enhanced_data = payload
+        elif framework == "pymdp":
             enhanced_data = extract_pymdp_data_from_files(output_dir, logger)
         elif framework == "rxinfer":
             enhanced_data = extract_rxinfer_data_from_files(output_dir, logger)
@@ -457,22 +474,11 @@ def extract_rxinfer_data_from_files(
                 results_file = results_files[0]
                 with open(results_file, "r", encoding="utf-8") as f:
                     results = json.load(f)
-                for key in (
-                    "schema_version",
-                    "beliefs",
-                    "true_states",
-                    "observations",
-                    "actions",
-                    "expected_free_energy",
-                    "expected_free_energy_convention",
-                    "policy_posterior",
-                    "validation",
-                    "model_parameters",
-                ):
-                    if key in results:
-                        data[key] = results[key]
-                if "expected_free_energy" in results:
-                    data["free_energy"] = results["expected_free_energy"]
+                from gnn.analysis.result_adapter import structured_result_data
+
+                data.update(structured_result_data(results))
+                if "vfe_per_iteration" in results:
+                    data["free_energy"] = results["vfe_per_iteration"]
                 logger.info(f"Extracted RxInfer data from {results_file.name}")
                 return data
 

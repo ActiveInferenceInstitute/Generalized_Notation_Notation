@@ -68,13 +68,7 @@ VALID_MINIMAL_GNN = (
 MODEL_PARAMETERS_GNN = "## ModelParameters\nnum_obs: 3\n"
 
 # Missing GNNVersionAndFlags, StateSpaceBlock, and Connections.
-MISSING_SECTIONS_GNN = (
-    "## GNNSection\n"
-    "ActInfPOMDP\n"
-    "\n"
-    "## ModelName\n"
-    "Sparse Model\n"
-)
+MISSING_SECTIONS_GNN = "## GNNSection\nActInfPOMDP\n\n## ModelName\nSparse Model\n"
 
 # Declared shape conflict (GNN-E002, line 17 -> index 16) and undeclared
 # parameterization (GNN-W003, line 18 -> index 17).
@@ -197,9 +191,7 @@ class TestSchemaBackedDiagnostics:
         written = self._did_open("file:///sparse.md", MISSING_SECTIONS_GNN)
         assert written[0]["method"] == "textDocument/publishDiagnostics"
         diagnostics = written[0]["params"]["diagnostics"]
-        missing = [
-            d for d in diagnostics if "Missing required section" in d["message"]
-        ]
+        missing = [d for d in diagnostics if "Missing required section" in d["message"]]
         assert len(missing) == 3
         assert {d["severity"] for d in missing} == {1}
         assert {d["source"] for d in missing} == {"gnn"}
@@ -242,9 +234,7 @@ class TestDiagnoseTextDelegation:
 
     def test_missing_section_diagnostic_shape(self) -> None:
         diagnostics = cli_lsp.diagnose_text(MISSING_SECTIONS_GNN)
-        missing = [
-            d for d in diagnostics if "Missing required section" in d["message"]
-        ]
+        missing = [d for d in diagnostics if "Missing required section" in d["message"]]
         assert missing
         for d in missing:
             assert set(d) == {"range", "severity", "message", "source"}

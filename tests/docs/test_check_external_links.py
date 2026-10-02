@@ -61,7 +61,9 @@ class TestNormalizeUrl:
         assert checker._normalize_url(url) == url
 
     def test_noop_on_clean_url(self, checker: Any) -> None:
-        url = "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation"
+        url = (
+            "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation"
+        )
         assert checker._normalize_url(url) == url
 
 

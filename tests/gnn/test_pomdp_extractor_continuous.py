@@ -25,7 +25,14 @@ def test_continuous_exemplar_extracts_lgssm(path: Path) -> None:
     assert pomdp.model_kind == "continuous"
     assert pomdp.A_matrix is None and pomdp.B_matrix is None
     assert pomdp.matrices is not None
-    if path.stem == "factored_continuous_lgssm":
+    if path.stem == "independent_gaussian_agents":
+        for suffix in ("1", "2"):
+            for prefix in ("F", "H", "Q", "R", "prior_mean", "prior_cov"):
+                assert f"{prefix}_agent{suffix}" in pomdp.matrices
+        assert len(pomdp.matrices["F_agent1"]) == 1
+        assert len(pomdp.matrices["F_agent2"]) == 2
+        assert pomdp.model_parameters["agent_coupling"] == "independent"
+    elif path.stem == "factored_continuous_lgssm":
         # Per-factor LGSSM block: every per-factor key is collected, the
         # optional goal/control pair on factor 1 included; joint dimensions
         # come from factor 1.

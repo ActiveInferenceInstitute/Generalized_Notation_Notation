@@ -283,7 +283,8 @@ def _mark_timed_out_artifacts(
         logger.warning("Timeout marker: could not scan %s: %s", step_output_dir, error)
     payload = {
         "step": stem,
-        "force_killed": True,
+        "force_killed": False,
+        "containment": "cooperative_only",
         "timeout_seconds": timeout_seconds,
         "timed_out_at": datetime.now(timezone.utc).isoformat(),
         "possibly_partial": candidates,
@@ -574,8 +575,9 @@ def execute_step_in_process(
     tee'd to the console and captured into the receipt's ``stdout``/``stderr``
     fields. A timeout records the subprocess tier's timeout receipt semantics
     (exit code -1, FAILED status, partial captured streams) plus the additive
-    ``force_killed`` field (``False`` on clean completion, ``True`` when the
-    deadline fired). On timeout the executor cancels the step's cooperative
+    ``force_killed`` field (always ``False``: Python threads cannot be killed).
+    Timeout receipts explicitly report cooperative containment and whether
+    the worker stopped. On timeout the executor cancels the step's cooperative
     :class:`~gnn.execute.subprocess_envelope.CancelToken` — injected as a
     ``cancel_token`` kwarg when the step function declares one, and enforced
     at the step's console-write safe points by the capture tee — then, after
@@ -689,6 +691,7 @@ def execute_step_in_process(
         )
 
     call_started = time.time()
+    call_started_monotonic = time.monotonic()
     captured_stdout = io.StringIO()
     captured_stderr = io.StringIO()
     holder: Dict[str, Any] = {}
@@ -773,7 +776,9 @@ def execute_step_in_process(
         step_result["memory_usage_mb"] = end_memory
         step_result["peak_memory_mb"] = max(start_memory, end_memory)
         step_result["memory_delta_mb"] = end_memory - start_memory
-        step_result["force_killed"] = True
+        step_result["force_killed"] = False
+        step_result["containment"] = "cooperative_only"
+        step_result["worker_stopped"] = thread_stopped
         _mark_timed_out_artifacts(
             step_output_dir,
             stem,
@@ -783,7 +788,7 @@ def execute_step_in_process(
         )
         logger.error(
             "Consolidated in-process execution of %s timed out after %ss "
-            "(force_killed=true): %s.",
+            "(cooperative cancellation only): %s.",
             step.script_name,
             timeout_seconds,
             (
@@ -830,7 +835,7 @@ def execute_step_in_process(
     )
     step_result["stdout"] = captured_stdout.getvalue() + (
         f"{step.script_name}: consolidated in-process execution completed "
-        f"in {time.time() - call_started:.2f}s\n"
+        f"in {time.monotonic() - call_started_monotonic:.2f}s\n"
     )
     step_result["memory_usage_mb"] = end_memory
     step_result["peak_memory_mb"] = max(start_memory, end_memory)

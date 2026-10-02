@@ -21,6 +21,9 @@ from typing import Any, Dict, Iterable, List, Tuple, TypedDict, cast
 import numpy as np
 
 CANONICAL_B_ORDER = "next_state_previous_state_action"
+# Only source decimal rounding drift may be corrected; arbitrary weights
+# require the explicit demo adapter and never enter strict canonical models.
+DECLARED_PROBABILITY_MASS_ATOL = 1e-4
 
 
 class ModelKind(Enum):
@@ -114,29 +117,47 @@ def nested_shape(value: Any) -> List[int]:
     return shape
 
 
-def normalise_vector(value: Any, *, name: str) -> List[float]:
+def normalise_vector(
+    value: Any, *, name: str, allow_weights: bool = False
+) -> List[float]:
     """Return a finite probability vector."""
     vector = np.asarray(value, dtype=np.float64).reshape(-1)
     if vector.size == 0:
         raise ValueError(f"{name} must not be empty")
+    if not np.isfinite(vector).all() or np.any(vector < 0):
+        raise ValueError(f"{name} must contain finite nonnegative probabilities")
     total = float(vector.sum())
     if not np.isfinite(total) or total <= 0.0:
         raise ValueError(f"{name} must have positive finite mass")
+    if not allow_weights and not np.isclose(
+        total, 1.0, rtol=0, atol=DECLARED_PROBABILITY_MASS_ATOL
+    ):
+        raise ValueError(f"{name} probability mass must be one, got {total}")
     return cast(List[float], (vector / total).astype(float).tolist())
 
 
-def normalise_matrix_columns(value: Any, *, name: str) -> List[List[float]]:
+def normalise_matrix_columns(
+    value: Any, *, name: str, allow_weights: bool = False
+) -> List[List[float]]:
     """Return a 2-D matrix with columns summing to one."""
     matrix = np.asarray(value, dtype=np.float64)
     if matrix.ndim != 2:
         raise ValueError(f"{name} must be 2-D, got shape {matrix.shape}")
     if min(matrix.shape) <= 0:
         raise ValueError(f"{name} must not be empty")
+    if not np.isfinite(matrix).all() or np.any(matrix < 0):
+        raise ValueError(f"{name} must contain finite nonnegative probabilities")
     output = matrix.copy()
     for column in range(output.shape[1]):
         total = float(output[:, column].sum())
         if not np.isfinite(total) or total <= 0.0:
             raise ValueError(f"{name} column {column} has invalid probability mass")
+        if not allow_weights and not np.isclose(
+            total, 1.0, rtol=0, atol=DECLARED_PROBABILITY_MASS_ATOL
+        ):
+            raise ValueError(
+                f"{name} column {column} probability mass must be one, got {total}"
+            )
         output[:, column] /= total
     return cast(List[List[float]], output.astype(float).tolist())
 
@@ -161,7 +182,23 @@ def canonicalise_b_matrix(
 ) -> Tuple[List[List[List[float]]], Dict[str, Any]]:
     """Return B as ``(next_state, previous_state, action)``."""
     raw = np.asarray(value, dtype=np.float64)
+    if not np.isfinite(raw).all() or np.any(raw < 0):
+        raise ValueError("B must contain finite nonnegative probabilities")
     declared_order = _declared_b_order(model_parameters)
+    supported_orders = {
+        CANONICAL_B_ORDER,
+        "next_previous_action",
+        "next_prev_action",
+        "states_next_states_previous_actions",
+        "action_next_state_previous_state",
+        "action_next_previous",
+        "actions_next_previous",
+        "action_previous_state_next_state",
+        "action_previous_next",
+        "actions_previous_next",
+    }
+    if declared_order and declared_order not in supported_orders:
+        raise ValueError(f"Unsupported declared B tensor order: {declared_order}")
     source_order = "inferred"
 
     if raw.ndim == 2:
@@ -230,6 +267,8 @@ def canonicalise_b_matrix(
                     "B[:, previous_state, action] must have positive finite mass "
                     f"for previous_state={previous_state}, action={action}"
                 )
+            if not np.isclose(total, 1.0, rtol=0, atol=DECLARED_PROBABILITY_MASS_ATOL):
+                raise ValueError(f"B probability mass must be one, got {total}")
             output[:, previous_state, action] /= total
 
     return (
@@ -238,6 +277,8 @@ def canonicalise_b_matrix(
             "source_order": source_order,
             "canonical_order": CANONICAL_B_ORDER,
             "shape": list(output.shape),
+            "orientation_transformed": source_order != CANONICAL_B_ORDER,
+            "normalized": bool(not np.array_equal(output, tensor)),
         },
     )
 
@@ -287,6 +328,9 @@ def _is_active_inference_matrix_key(key: str) -> bool:
 
 
 _AGENT_MATRIX_KEY = re.compile(r"^[ABCDE]_agent\d+", re.IGNORECASE)
+_AGENT_CONTINUOUS_KEY = re.compile(
+    r"^(F|H|Q|R|prior_mean|prior_cov|goal_mean|control_gain)_agent[1-9]\d*$"
+)
 _LEVEL_MATRIX_KEY = re.compile(r"^[ABCDE]_level\d+", re.IGNORECASE)
 _DIRICHLET_PRIOR_KEY = re.compile(r"^dirichlet_[ABCDE]$", re.IGNORECASE)
 _CONTINUOUS_PARAM_KEYS = frozenset({"F", "H", "Q", "R"})
@@ -392,7 +436,10 @@ def detect_model_kinds(gnn_spec: Dict[str, Any]) -> frozenset[ModelKind]:
         nr_agents = int(nr_agents)
     except (TypeError, ValueError):
         nr_agents = 1
-    if nr_agents > 1 or any(_AGENT_MATRIX_KEY.match(key) for key in all_keys):
+    if nr_agents > 1 or any(
+        _AGENT_MATRIX_KEY.match(key) or _AGENT_CONTINUOUS_KEY.fullmatch(key)
+        for key in all_keys
+    ):
         kinds.add(ModelKind.MULTI_AGENT)
 
     # Hybrid: discrete A/B/C/D[/E] contract keys declared alongside an
@@ -424,6 +471,7 @@ def detect_model_kinds(gnn_spec: Dict[str, Any]) -> frozenset[ModelKind]:
         # without this, a per-factor spec classifies {FACTORED} only and
         # the generic discrete path demands static A/B/C/D keys.
         or any(_FACTOR_CONTINUOUS_KEY.fullmatch(str(key)) for key in initial_keys)
+        or any(_AGENT_CONTINUOUS_KEY.fullmatch(str(key)) for key in initial_keys)
     ):
         kinds.add(ModelKind.CONTINUOUS)
 
@@ -641,8 +689,23 @@ def build_canonical_pomdp_spec(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
         .tolist(),
         "D": normalise_vector(initial["D"], name="D"),
     }
+    if len(canonical_initial["A"]) != num_observations or any(
+        len(row) != num_states for row in canonical_initial["A"]
+    ):
+        raise ValueError("A shape does not match declared observation/state dimensions")
+    if (
+        len(canonical_initial["D"]) != num_states
+        or len(canonical_initial["C"]) != num_observations
+    ):
+        raise ValueError(
+            "C/D lengths do not match declared observation/state dimensions"
+        )
+    if not np.isfinite(canonical_initial["C"]).all():
+        raise ValueError("C must contain finite preferences")
     if "E" in initial:
         canonical_initial["E"] = normalise_vector(initial["E"], name="E")
+        if len(canonical_initial["E"]) != action_count:
+            raise ValueError("E length does not match declared action count")
     for key, value in initial.items():
         if key not in canonical_initial and not _is_active_inference_matrix_key(key):
             canonical_initial[key] = deepcopy(value)
@@ -664,7 +727,7 @@ def build_canonical_pomdp_spec(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
     provenance["B"] = {
         **existing_b,
         **b_provenance,
-        "derived": existing_b.get("derived", False),
+        "derived": existing_b.get("derived", False) or b_provenance["normalized"],
     }
     for key in ("A", "C", "D", "E"):
         if key in canonical_initial and key not in provenance:
@@ -672,6 +735,16 @@ def build_canonical_pomdp_spec(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
                 "source": "initialparameterization",
                 "shape": nested_shape(canonical_initial[key]),
                 "derived": False,
+            }
+        if key in canonical_initial and not np.array_equal(
+            np.asarray(initial[key]),
+            np.asarray(canonical_initial[key]).reshape(np.asarray(initial[key]).shape),
+        ):
+            provenance[key] = {
+                **provenance[key],
+                "derived": True,
+                "normalization": "declared_precision_mass_correction",
+                "source_values": deepcopy(initial[key]),
             }
     spec["matrix_provenance"] = provenance
 

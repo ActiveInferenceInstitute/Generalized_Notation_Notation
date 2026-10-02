@@ -86,10 +86,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // 1. Populate Header & Metrics
-        document.getElementById('dashboard-meta').innerText = `Execution ID: ${rawData.process_id || 'Unknown'} | Timestamp: ${rawData.timestamp || ''}`;
+        const status = rawData.overall_status || 'UNKNOWN';
+        document.getElementById('dashboard-meta').innerText = `Execution ID: ${rawData.run_id || 'Unknown'} | Status: ${status} | Started: ${rawData.start_time || ''}`;
         
         // Derive a health score when Step 24 has not produced one yet.
-        const health = rawData.health_score || (100 - (rawData.failures ? rawData.failures.length : 0) * 10);
+        const failedSteps = rawData.steps.filter(step => step.status === 'FAILED' || step.status === 'TIMEOUT').length;
+        const health = status === 'FAILED' ? 0 : (rawData.health_score ?? Math.max(0, 100 - failedSteps * 10));
         document.getElementById('val-health').innerText = `${health}/100`;
         // Color code health
         document.getElementById('val-health').style.color = health > 80 ? 'var(--success)' : health > 50 ? 'var(--warning)' : 'var(--danger)';
@@ -97,10 +99,10 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('val-duration').innerText = (rawData.total_duration_seconds || rawData.total_duration || 0).toFixed(2);
         
         // Find Peak Memory
-        const maxMem = Math.max(...rawData.steps.map(s => s.memory_mb || 0).filter(v => v));
+        const maxMem = Math.max(0, ...rawData.steps.map(s => s.peak_memory_mb || s.memory_usage_mb || s.memory_mb || 0));
         document.getElementById('val-memory').innerText = maxMem > 0 ? maxMem.toFixed(1) : 'N/A';
         
-        const errs = rawData.failures ? rawData.failures.length : 0;
+        const errs = failedSteps + (rawData.error ? 1 : 0);
         document.getElementById('val-errors').innerText = errs;
 
 

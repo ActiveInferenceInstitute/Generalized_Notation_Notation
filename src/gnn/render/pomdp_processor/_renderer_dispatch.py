@@ -71,17 +71,27 @@ class _RendererDispatchMixin(_POMDPProcessorSupportMixin):
                             "warnings": warnings,
                         }
 
+            configured_options = kwargs.get("backend_options", {})
+            if not isinstance(configured_options, dict):
+                raise ValueError("backend_options must be a mapping")
+            selected_options = configured_options.get(framework, {})
+            if not isinstance(selected_options, dict):
+                raise ValueError(f"backend_options.{framework} must be a mapping")
+            resolved_kwargs = (
+                dict(kwargs) if framework == "thrml" else {**kwargs, **selected_options}
+            )
+
             if route.options_mode == "timesteps":
                 # Build options dict with timesteps if available
                 options: dict[Any, Any] = {}
                 model_params = gnn_spec.get("model_parameters", {})
                 if "num_timesteps" in model_params:
                     options["num_timesteps"] = model_params["num_timesteps"]
-                renderer_options: Any = options or None
+                renderer_options: Any = {**options, **resolved_kwargs} or None
             elif route.options_mode == "kwargs_or_none":
-                renderer_options = kwargs or None
+                renderer_options = resolved_kwargs or None
             else:
-                renderer_options = kwargs
+                renderer_options = resolved_kwargs
 
             result = render_fn(gnn_spec, output_file, renderer_options)
 
@@ -110,6 +120,13 @@ class _RendererDispatchMixin(_POMDPProcessorSupportMixin):
 
             return {
                 "success": success,
+                "unsupported": not success
+                and str(message).startswith("unsupported-thrml:"),
+                "status": "success"
+                if success
+                else "unsupported"
+                if str(message).startswith("unsupported-thrml:")
+                else "failed",
                 "message": message,
                 "artifacts": artifacts,
                 "warnings": warnings,

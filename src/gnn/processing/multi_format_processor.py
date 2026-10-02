@@ -134,6 +134,14 @@ def process_gnn_multi_format(
                 "formats_per_file": {},
             },
         }
+        from gnn.pipeline.run_context import current_run_context
+
+        run_context = current_run_context()
+        if run_context is not None:
+            processing_results["run_id"] = run_context.run_id
+            processing_results["model_selection"] = [
+                m.__dict__ for m in run_context.selected_models(3)
+            ]
 
         for file_path in gnn_files:
             try:
@@ -162,8 +170,13 @@ def process_gnn_multi_format(
 
                 # Save parsed model JSON
                 parsed_model_file = file_output_dir / f"{file_path.stem}_parsed.json"
+                parsed_payload = parse_result.model.to_dict()
+                if run_context is not None:
+                    from gnn.pipeline.run_context import model_provenance
+
+                    parsed_payload["_gnn_provenance"] = model_provenance(file_path, 3)
                 with open(parsed_model_file, "w", encoding="utf-8") as f:
-                    json.dump(parse_result.model.to_dict(), f, indent=2, default=str)
+                    json.dump(parsed_payload, f, indent=2, default=str)
 
                 file_result: Dict[str, Any] = {
                     "file_name": file_path.name,
@@ -187,6 +200,18 @@ def process_gnn_multi_format(
                     "errors": parse_result.errors,
                     "warnings": parse_result.warnings,
                 }
+                if run_context is not None:
+                    reference = next(
+                        m
+                        for m in run_context.selected_models(3)
+                        if m.artifact_stem == file_path.stem
+                    )
+                    file_result.update(
+                        model_id=reference.model_id,
+                        source_path=reference.source_path,
+                        source_relative_path=reference.relative_path,
+                        source_sha256=reference.sha256,
+                    )
 
                 formats_generated = 0
 
@@ -252,6 +277,11 @@ def process_gnn_multi_format(
                 processing_results["summary"]["failed_parses"] += 1
 
         processing_results["summary"]["total_files"] = len(gnn_files)
+        if run_context is not None:
+            from gnn.pipeline.run_context import model_provenance
+
+            for record in processing_results["processed_files"]:
+                record.update(model_provenance(Path(record["file_path"]), 3))
 
         # Save artifacts
         results_file = step_output_dir / "gnn_processing_results.json"
@@ -284,6 +314,10 @@ def process_gnn_multi_format(
             json.dump(format_stats, f, indent=2)
 
         success = processing_results["summary"]["successful_parses"] > 0
+        if run_context is not None:
+            success = processing_results["summary"]["successful_parses"] == len(
+                run_context.selected_models(3)
+            )
         if success:
             total_formats = processing_results["summary"]["total_formats_generated"]
             log_step_success(
@@ -293,7 +327,10 @@ def process_gnn_multi_format(
                 f"(preset={preset_norm})",
             )
         else:
-            log_step_error(logger, "No files were successfully processed")
+            log_step_error(
+                logger,
+                f"Selected parse coverage incomplete: {processing_results['summary']['successful_parses']} successful, {processing_results['summary']['failed_parses']} failed",
+            )
 
         return cast("bool", success)
 

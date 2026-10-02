@@ -221,6 +221,13 @@ def _load_render_summary_contract(
         )
 
     def _in_scope(source_file: str) -> bool:
+        from gnn.pipeline.run_context import current_run_context
+
+        context = current_run_context()
+        if context is not None:
+            return Path(source_file).stem in {
+                model.artifact_stem for model in context.selected_models(12)
+            }
         if target_dir is None:
             return True
         try:
@@ -354,6 +361,9 @@ def _slim_execution_detail(detail: Dict[str, Any]) -> Dict[str, Any]:
         "script_name",
         "framework",
         "model_name",
+        "model_id",
+        "source_path",
+        "source_relative_path",
         "source_sha256",
         "executor",
         "success",
@@ -362,6 +372,12 @@ def _slim_execution_detail(detail: Dict[str, Any]) -> Dict[str, Any]:
         "attempts_started",
         "return_code",
         "cancelled",
+        "containment",
+        "cleanup_verified",
+        "streams_drained",
+        "cleanup_timeout_seconds",
+        "cleanup_error",
+        "execution_error_type",
         "error",
         "error_type",
         "execution_time",
@@ -517,9 +533,14 @@ def _merge_prior_execution_summary(
     ) or _execution_input_identity(Path(scope))
     current["execution_details"] = [_slim_execution_detail(d) for d in current_details]
     invocations: Dict[str, Any] = {}
+    from gnn.pipeline.run_context import current_run_context
+
+    context = current_run_context()
     prior_invocations = prior.get("invocation_receipts", {})
-    if prior.get("receipt_identity") == identity and isinstance(
-        prior_invocations, dict
+    if (
+        context is None
+        and prior.get("receipt_identity") == identity
+        and isinstance(prior_invocations, dict)
     ):
         for old_scope, record in prior_invocations.items():
             if (

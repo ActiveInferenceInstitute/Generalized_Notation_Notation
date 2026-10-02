@@ -76,6 +76,21 @@ def render_gnn_to_jax(
         from gnn.render.pomdp_contract import ModelKind, detect_model_kinds
 
         if detect_model_kinds(gnn_spec) == frozenset(
+            {ModelKind.MULTI_AGENT, ModelKind.CONTINUOUS}
+        ):
+            from gnn.render.multi_agent_continuous import (
+                generate_multi_agent_continuous_script,
+            )
+
+            return _render_to_path(
+                lambda spec, _opts: generate_multi_agent_continuous_script(spec, "jax"),
+                "JAX native independent continuous agents",
+                gnn_spec,
+                output_path,
+                options,
+            )
+
+        if detect_model_kinds(gnn_spec) == frozenset(
             {ModelKind.FACTORED, ModelKind.CONTINUOUS}
         ):
             # Per-factor LGSSM path: independent per-factor blocks rendered by

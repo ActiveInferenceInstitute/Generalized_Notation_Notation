@@ -166,6 +166,15 @@ class RepositorySnapshot:
         self._cache[rel] = data
         return data
 
+    def read_bytes(self, rel: Path | str) -> bytes:
+        """Read exact evidence bytes without text decoding or newline changes."""
+        if self._revision:
+            result = self._git("show", f"{self._revision}:{Path(rel).as_posix()}")
+            if result is None or result.returncode:
+                raise OSError(f"cannot read {rel} at {self.commit}")
+            return result.stdout
+        return (self.project_root / rel).read_bytes()
+
     def glob(self, prefix: str, pattern: str) -> list[Path]:
         """Snapshot equivalent of ``(project_root / prefix).rglob(pattern)``.
 

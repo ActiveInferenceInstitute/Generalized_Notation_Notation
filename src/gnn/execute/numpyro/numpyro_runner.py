@@ -21,19 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 def is_numpyro_available() -> bool:
-    """Check if NumPyro (and JAX backend) is importable."""
-    try:
-        import jax
-        import numpyro
+    """Check NumPyro in a supervised child of the current Python interpreter."""
+    from gnn.utils.runtime_safety.framework_availability import check_framework
 
-        logger.info(f"NumPyro version: {numpyro.__version__} (JAX {jax.__version__})")
-        return True
-    except ImportError as e:
-        logger.error(f"NumPyro not available: {e}")
-        return False
-    except Exception as e:
-        logger.error(f"Error checking NumPyro: {e}")
-        return False
+    diagnosis = check_framework("numpyro", logger=logger)
+    return diagnosis.available
 
 
 def find_numpyro_scripts(
@@ -72,15 +64,16 @@ def execute_numpyro_script(
 
     logger.info(f"Executing NumPyro script: {script_path}")
 
-    # Dependency check
-    for dep in ("jax", "numpyro", "numpy"):
-        try:
-            __import__(dep)
-            logger.debug(f"✅ Dependency available: {dep}")
-        except ImportError:
-            logger.error(f"❌ Missing required dependency: {dep}")
-            logger.error("Install with: uv sync")
-            return False
+    from gnn.execute.preconditions import script_readiness
+
+    deadline, readiness_error = script_readiness("numpyro", timeout)
+    if readiness_error is not None:
+        logger.error(
+            "NumPyro readiness failed (%s): %s",
+            readiness_error.get("reason_code") or readiness_error.get("error_type"),
+            readiness_error.get("reason") or readiness_error.get("error"),
+        )
+        return False
 
     # Syntax validation
     try:
@@ -94,7 +87,7 @@ def execute_numpyro_script(
     env = os.environ.copy()
     if output_dir:
         output_dir.mkdir(parents=True, exist_ok=True)
-        env["NUMPYRO_OUTPUT_DIR"] = str(output_dir)
+        env["NUMPYRO_OUTPUT_DIR"] = str(output_dir.resolve())
 
     # Delegate the subprocess envelope (run + timing + error normalization) to
     # the canonical safe executor. Function-local import: executor.py imports
@@ -107,6 +100,7 @@ def execute_numpyro_script(
         timeout=timeout,
         cwd=abs_path.parent,
         env=env,
+        deadline_monotonic=deadline,
     )
 
     if envelope["return_code"] == -1 and "error" in envelope:
@@ -181,8 +175,12 @@ def run_numpyro_scripts(
     ``timeout`` optionally overrides the per-script execution timeout;
     when omitted each script runs with its historical 300 s default.
     """
-    if not is_numpyro_available():
-        logger.error("NumPyro not available, cannot execute NumPyro scripts")
+
+    from gnn.execute.preconditions import execution_precondition
+
+    script_timeout = timeout if timeout is not None else 300
+    if execution_precondition(script_timeout, None) is not None:
+        logger.error("Invalid or exhausted script execution budget")
         return False
 
     if execution_output_dir:
@@ -200,7 +198,6 @@ def run_numpyro_scripts(
     success_count = 0
     failure_count = 0
 
-    script_timeout = timeout if timeout is not None else 300
     for script in scripts:
         out = Path(execution_output_dir) / script.stem if execution_output_dir else None
         if execute_numpyro_script(script, verbose, out, timeout=script_timeout):

@@ -29,7 +29,7 @@ pipeline:
   # Timeout settings (in seconds)
   timeout:
     step: 3600 # 1 hour per step
-    total: 7200 # 2 hours total
+    total: null # Automatic sum of selected step budgets; explicit values win
 
 # Step 1 defaults (read by main.py → 1_setup). CLI flags override these when present.
 setup:
@@ -43,6 +43,17 @@ setup:
 uv:
   recreate_uv_env: false
   uv_env_dir: ".venv"
+
+# Explicit experimental backends are selected with --frameworks thrml or cpomdp.
+# Backend options are passed from the immutable resolved run configuration.
+# Direct API/CLI options override these values; package installation is explicit.
+render:
+  backend_options:
+    thrml:
+      num_samples: 2048
+      burn_in: 256
+      thin: 2
+      seed: 0
 
 # Input/output settings
 io:
@@ -134,11 +145,12 @@ llm:
   # Default model for Ollama (overridden by OLLAMA_MODEL env var)
   model: "smollm2:135m-instruct-q4_K_S"
 
-  # Total budget for LLM processing in seconds (pipeline kills at 900s)
-  timeout_seconds: 600
+  # Automatic total budget: 600 seconds per selected model. Set a finite
+  # positive value to impose an explicit corpus-wide limit.
+  timeout_seconds: null
 
-  # Bound full-pipeline LLM work to the documented 8-file prompt sample
-  max_files: 8
+  # All selected models by default. A positive integer is an explicit cap.
+  max_files: null
 
   # Per-prompt timeout in seconds
   prompt_timeout: 45

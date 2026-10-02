@@ -88,7 +88,7 @@ class TestAtomicWriteText:
 
 class TestExtractAbcdMatrices:
     def test_empty_spec_gets_neutral_defaults(self) -> None:
-        a, b, c, d = extract_abcd_matrices({})
+        a, b, c, d = extract_abcd_matrices({}, allow_adapters=True)
         assert a.shape == (2, 2)
         assert np.allclose(np.diag(a), 1.0)
         assert b.shape == (2, 2)
@@ -100,22 +100,25 @@ class TestExtractAbcdMatrices:
             "stateSpace": {"size": 3, "parameters": {"A": [[1.0, 2.0, 3.0]] * 3}},
             "initialparameterization": {"A": [[9.0]]},
         }
-        a, _, _, _ = extract_abcd_matrices(spec)
+        a, _, _, _ = extract_abcd_matrices(spec, allow_adapters=True)
         assert a.shape == (3, 3)
         assert np.allclose(a, 1.0 / 3.0)  # columns normalized from [3, 6, 9] sums
 
     def test_initialparameterization_used_when_state_space_empty(self) -> None:
         spec = {"initialparameterization": {"A": [[1.0, 1.0], [1.0, 1.0]]}}
-        a, _, _, _ = extract_abcd_matrices(spec)
+        a, _, _, _ = extract_abcd_matrices(spec, allow_adapters=True)
         assert np.allclose(a, 0.5)
 
     def test_d_is_normalized_to_probability_vector(self) -> None:
-        _, _, _, d = extract_abcd_matrices({"parameters": {"D": [2.0, 2.0, 4.0]}})
+        _, _, _, d = extract_abcd_matrices(
+            {"stateSpace": {"size": 3}, "parameters": {"D": [2.0, 2.0, 4.0]}},
+            allow_adapters=True,
+        )
         assert np.allclose(d, [0.25, 0.25, 0.5])
 
     def test_string_matrix_parsed_via_safe_literal(self) -> None:
         spec = {"parameters": {"A": "[[0.6, 0.25], [0.4, 0.75]]"}}
-        a, _, _, _ = extract_abcd_matrices(spec)
+        a, _, _, _ = extract_abcd_matrices(spec, allow_adapters=True)
         assert np.allclose(a, [[0.6, 0.25], [0.4, 0.75]])
 
     def test_parse_gnn_matrix_value_invalid_string_returns_default(self) -> None:
@@ -127,7 +130,7 @@ class TestExtractAbcdMatrices:
 class TestFormatArrayLiteral:
     def test_one_dimensional(self) -> None:
         out = format_array_literal(np.array([0.5, 0.25]), prefix="jnp.array")
-        assert out == "jnp.array([0.500000, 0.250000])"
+        assert out == "jnp.array([0.5, 0.25])"
 
     def test_two_dimensional_with_suffix_and_indent(self) -> None:
         out = format_array_literal(
@@ -136,9 +139,7 @@ class TestFormatArrayLiteral:
             suffix=", dtype=torch.float64",
             indent=2,
         )
-        assert out == (
-            "torch.tensor([\n      [1.000000, 2.000000]\n  ], dtype=torch.float64)"
-        )
+        assert out == ("torch.tensor([\n      [1.0, 2.0]\n  ], dtype=torch.float64)")
         assert out.startswith("torch.tensor([")
         assert out.endswith("dtype=torch.float64)")
 
@@ -398,7 +399,7 @@ class TestMaintainedOutputContracts:
             ("numpyro", CORPUS_CONTINUOUS),
             ("stan", CORPUS_DISCRETE),
             ("discopy", CORPUS_DISCRETE),
-            ("bnlearn", CORPUS_BASICS),
+            ("bnlearn", CORPUS_DISCRETE),
         ],
     )
     def test_corpus_render_satisfies_contract(

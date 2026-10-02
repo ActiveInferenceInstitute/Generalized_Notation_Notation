@@ -15,7 +15,10 @@ from gnn.execute.metadata import (
     _execution_input_identity,
     _execution_script_identity,
 )
-from gnn.execute.processor.envelope import _make_distributed_dispatch_failure_result
+from gnn.execute.processor.envelope import (
+    _bind_dispatcher_failure,
+    _make_distributed_dispatch_failure_result,
+)
 from gnn.execute.processor.single import execute_single_script
 from gnn.execute.processor.summary import (
     _classify_execute_outcome,
@@ -286,6 +289,12 @@ def process_execute(
                                 f"{len(details)} results for "
                                 f"{len(executable_scripts)} scripts"
                             )
+                        details = [
+                            _bind_dispatcher_failure(
+                                info, detail, str(backend), dispatch_max_retries
+                            )
+                            for info, detail in zip(executable_scripts, details)
+                        ]
                     except Exception as exc:  # noqa: BLE001
                         logger.error(
                             "Distributed %s dispatch failed for %d scripts: %s",

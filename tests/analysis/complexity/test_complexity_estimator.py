@@ -36,7 +36,9 @@ EXEMPLARS: dict[str, Path] = {
     / "continuous"
     / "hybrid_discrete_continuous.md",
     "regime_switched_dynamics": INPUT_DIR / "discrete" / "regime_switched_dynamics.md",
-    "multi_agent_coordination": INPUT_DIR / "multiagent" / "multi_agent_coordination.md",
+    "multi_agent_coordination": INPUT_DIR
+    / "multiagent"
+    / "multi_agent_coordination.md",
 }
 
 RECEIPT_KEYS = {
@@ -349,7 +351,10 @@ def test_driver_and_note_hygiene_pomdp() -> None:
     for row in receipt["per_backend"]:
         if row["family"] == "verification":
             assert row["drivers"] == {}
-            assert row["asymptotic"] == "class-only: proof cost is not numerically estimated"
+            assert (
+                row["asymptotic"]
+                == "class-only: proof cost is not numerically estimated"
+            )
         elif row["applicable"]:
             assert row["drivers"], f"{row['framework']} applicable without drivers"
         else:
@@ -380,15 +385,17 @@ def test_path_and_object_form_hashing() -> None:
     from_object = estimate_model_complexity(parsed.model)
     assert from_path["model"]["path"] == str(path)
     assert from_object["model"]["path"] == ""
-    assert from_path["model"]["source_sha256"] == hashlib.sha256(
-        path.read_bytes()
-    ).hexdigest()
+    assert (
+        from_path["model"]["source_sha256"]
+        == hashlib.sha256(path.read_bytes()).hexdigest()
+    )
     canonical = json.dumps(
         parsed.model.to_dict(), sort_keys=True, separators=(",", ":"), default=str
     )
-    assert from_object["model"]["source_sha256"] == hashlib.sha256(
-        canonical.encode("utf-8")
-    ).hexdigest()
+    assert (
+        from_object["model"]["source_sha256"]
+        == hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    )
     assert from_object["model"]["source_sha256"] != from_path["model"]["source_sha256"]
     assert from_object["model"]["name"] == from_path["model"]["name"]
     assert from_object["structure"] == from_path["structure"]

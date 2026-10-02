@@ -5,15 +5,18 @@ This module provides the main execution functionality for GNN models,
 including script execution, simulation management, and result collection.
 """
 
-import functools
 import json
 import logging
 import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union
 
+if TYPE_CHECKING:
+    from gnn.utils.runtime_safety.framework_availability import FrameworkStatus
+
+from .preconditions import execution_precondition as _execution_precondition
 from .result_cache import ExecutionResultCache, cache_key_for_script
 from .security_gate import check_script_allowed
 from .subprocess_envelope import CancelToken, run_subprocess_envelope
@@ -29,6 +32,7 @@ class _RunnerState:
 
     available: bool
     runner: Any
+    diagnosis: "FrameworkStatus | None" = None
 
 
 def _load_pymdp() -> tuple[bool, Any]:
@@ -74,12 +78,15 @@ def _load_pytorch() -> tuple[bool, Any]:
 
 
 def _load_ngclearn() -> tuple[bool, Any]:
-    from .ngclearn.ngclearn_runner import is_ngclearn_available, run_ngclearn_scripts
+    from .ngclearn.ngclearn_runner import run_ngclearn_scripts
 
-    # ngclearn itself is a marker-gated extra (py3.12+); the probe inside the
-    # runner reports importability so an absent runtime yields a SKIPPED
-    # record, never a runner failure.
-    return is_ngclearn_available(), run_ngclearn_scripts
+    return True, run_ngclearn_scripts
+
+
+def _load_thrml() -> tuple[bool, Any]:
+    from .thrml.thrml_runner import run_thrml_records
+
+    return True, run_thrml_records
 
 
 def _load_lean() -> tuple[bool, Any]:
@@ -89,9 +96,15 @@ def _load_lean() -> tuple[bool, Any]:
 
 
 def _load_stan() -> tuple[bool, Any]:
-    from .stan.stan_runner import is_stan_available, run_stan_scripts
+    from .stan.stan_runner import run_stan_scripts
 
-    return is_stan_available(), run_stan_scripts
+    return True, run_stan_scripts
+
+
+def _load_bnlearn() -> tuple[bool, Any]:
+    from .bnlearn.bnlearn_runner import run_bnlearn_scripts
+
+    return True, run_bnlearn_scripts
 
 
 _RUNNER_LOADERS: dict[str, Callable[[], tuple[bool, Any]]] = {
@@ -104,21 +117,57 @@ _RUNNER_LOADERS: dict[str, Callable[[], tuple[bool, Any]]] = {
     "pytorch": _load_pytorch,
     "lean": _load_lean,
     "ngclearn": _load_ngclearn,
+    "thrml": _load_thrml,
     "stan": _load_stan,
+    "bnlearn": _load_bnlearn,
 }
 
 
-@functools.cache
 def _runner_state(framework_dir_key: str) -> _RunnerState:
-    """Resolve one backend's availability and runner, cached per key."""
+    """Resolve live readiness; invocation-scoped probes own any verdict cache."""
     loader = _RUNNER_LOADERS.get(framework_dir_key)
     if loader is None:
         return _RunnerState(False, None)
+    from gnn.utils.runtime_safety.framework_availability import (
+        FRAMEWORK_IMPORT_CHECK,
+        FRAMEWORK_JULIA_PACKAGES,
+        FrameworkStatus,
+        check_framework,
+    )
+
+    diagnosis = None
+    if (
+        framework_dir_key in FRAMEWORK_IMPORT_CHECK
+        or framework_dir_key in FRAMEWORK_JULIA_PACKAGES
+    ):
+        # Readiness imports run in a supervised child before even the runner
+        # module loads. A missing, failed or hanging optional dependency must
+        # never reach an unbounded parent import through a runner's imports.
+        diagnosis = check_framework(framework_dir_key)
+        if not diagnosis.available:
+            return _RunnerState(False, None, diagnosis)
     try:
         available, runner = loader()
-    except ImportError:
-        return _RunnerState(False, None)
-    return _RunnerState(available, runner)
+    except ImportError as error:
+        return _RunnerState(
+            False,
+            None,
+            FrameworkStatus(
+                framework_dir_key,
+                False,
+                reason_code="runner_import_failed",
+                reason=f"Framework runner could not import: {error}",
+                execution_error_type="ImportError",
+            ),
+        )
+    if not available:
+        diagnosis = FrameworkStatus(
+            framework_dir_key,
+            False,
+            reason_code="missing_toolchain",
+            reason="Framework runner prerequisites are unavailable",
+        )
+    return _RunnerState(available, runner, diagnosis)
 
 
 from gnn.utils.logging_utils import (
@@ -198,15 +247,52 @@ _EXECUTION_RESULT_CACHE = ExecutionResultCache()
 
 
 # Provide a simple hardware detection function used in tests for patching
-def get_available_hardware() -> list[str]:
-    """Return available hardware."""
-    try:
-        import jax  # noqa: F401
+class _HardwareContainmentFailure(RuntimeError):
+    """Hardware readiness cannot conceal an unverified child cleanup."""
 
-        return ["cpu", "gpu"]
-    except Exception as e:
-        logger.debug("jax import failed; falling back to cpu: %s", e)
-        return ["cpu"]
+    def __init__(self, envelope: Dict[str, Any]) -> None:
+        super().__init__("Hardware probe cleanup or pipe drain could not be verified")
+        self.envelope = envelope
+
+
+def get_available_hardware(
+    *,
+    deadline_monotonic: Optional[float] = None,
+    cancel_token: Optional[CancelToken] = None,
+) -> list[str]:
+    """Inspect actual JAX devices in a bounded child; CPU is a best-effort fallback."""
+    envelope = run_subprocess_envelope(
+        [
+            sys.executable,
+            "-c",
+            "import json,jax; print('GNN_DEVICES:' + json.dumps(sorted({device.platform for device in jax.devices()})))",
+        ],
+        timeout=5,
+        sandbox=False,
+        deadline_monotonic=deadline_monotonic,
+        cancel_token=cancel_token,
+    )
+    if (
+        envelope.get("cleanup_verified") is False
+        or envelope.get("streams_drained") is False
+        or envelope.get("error_type") == "ProcessCleanupFailure"
+    ):
+        raise _HardwareContainmentFailure(envelope)
+    if envelope.get("success"):
+        for line in reversed(envelope.get("stdout", "").splitlines()):
+            if line.startswith("GNN_DEVICES:"):
+                try:
+                    devices = json.loads(line[len("GNN_DEVICES:") :])
+                except json.JSONDecodeError:
+                    break
+                if (
+                    isinstance(devices, list)
+                    and devices
+                    and all(isinstance(device, str) for device in devices)
+                ):
+                    return devices
+    logger.debug("Device probe did not establish hardware; using CPU fallback")
+    return ["cpu"]
 
 
 class GNNExecutor:
@@ -262,125 +348,235 @@ class GNNExecutor:
         Returns:
             Dictionary with execution results
         """
-        try:
-            # SC-1: pre-execution security gate — same shared helper as the
-            # Step 12 processor path. GNNExecutor runs rendered scripts; the
-            # MCP tools (execute_gnn_model_mcp → execute_simulation_from_gnn)
-            # reach execution only through this dispatch, so one gate here
-            # covers every script GNNExecutor is about to run.
-            if Path(model_path).suffix.lower() in _EXECUTABLE_SUFFIXES:
-                gate_verdict = check_script_allowed(Path(model_path))
-            elif execution_type == "lean" and Path(model_path).suffix.lower() == ".md":
-                # Lean dispatch executes .md documents through the fep-lean
-                # bridge (lean_runner.verify_document), so they are gate-
-                # checked: the shared helper scans their fenced code blocks
-                # with the same rendered-script verdict machinery.
-                gate_verdict = check_script_allowed(Path(model_path))
-            else:
-                # Model sources that this dispatch only parses as data (e.g.
-                # .md under pymdp/jax) are not executed here; the scanner only
-                # accepts executable scripts, so skip the gate.
-                gate_verdict = {"ok": True, "overridden": False, "blocked": []}
-            if gate_verdict["overridden"]:
-                logger.warning(
-                    "GNN_ALLOW_UNSAFE_EXEC set: pre-execution security gate "
-                    "bypassed for %s (trusted-local use only)",
-                    model_path,
-                )
-            if not gate_verdict["ok"]:
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
+        from .preconditions import script_execution_scope
+
+        automatic_timeout = {
+            "pymdp": DEFAULT_RUNNER_TIMEOUT_SECONDS,
+            "activeinference_jl": 600,
+            "stan": 1800,
+            "bnlearn": 1800,
+            "lean": 1800,
+        }.get(execution_type, 300)
+        invocation_timeout = timeout if timeout is not None else automatic_timeout
+        # Lean's established options timeout remains an explicit caller override.
+        if execution_type == "lean" and (options or {}).get("timeout") is not None:
+            invocation_timeout = (options or {})["timeout"]
+        precondition = _execution_precondition(invocation_timeout, cancel_token)
+        if precondition is not None:
+            return precondition
+        start_time = time.monotonic()
+        with script_execution_scope(invocation_timeout):
+            try:
+                # SC-1: pre-execution security gate — same shared helper as the
+                # Step 12 processor path. GNNExecutor runs rendered scripts; the
+                # MCP tools (execute_gnn_model_mcp → execute_simulation_from_gnn)
+                # reach execution only through this dispatch, so one gate here
+                # covers every script GNNExecutor is about to run.
+                if Path(model_path).suffix.lower() in _EXECUTABLE_SUFFIXES:
+                    gate_verdict = check_script_allowed(Path(model_path))
+                elif (
+                    execution_type == "lean"
+                    and Path(model_path).suffix.lower() == ".md"
+                ):
+                    # Lean dispatch executes .md documents through the fep-lean
+                    # bridge (lean_runner.verify_document), so they are gate-
+                    # checked: the shared helper scans their fenced code blocks
+                    # with the same rendered-script verdict machinery.
+                    gate_verdict = check_script_allowed(Path(model_path))
+                else:
+                    # Model sources that this dispatch only parses as data (e.g.
+                    # .md under pymdp/jax) are not executed here; the scanner only
+                    # accepts executable scripts, so skip the gate.
+                    gate_verdict = {"ok": True, "overridden": False, "blocked": []}
+                if gate_verdict["overridden"]:
+                    logger.warning(
+                        "GNN_ALLOW_UNSAFE_EXEC set: pre-execution security gate "
+                        "bypassed for %s (trusted-local use only)",
+                        model_path,
+                    )
+                if not gate_verdict["ok"]:
+                    return {
+                        "success": False,
+                        "error": (
+                            f"Pre-execution security gate blocked {model_path}: "
+                            f"{gate_verdict['reason']}"
+                        ),
+                        "error_type": gate_verdict.get(
+                            "error_type", "SecurityGateBlocked"
+                        ),
+                        "security_findings": gate_verdict["blocked"],
+                        "execution_type": execution_type,
+                        "model_path": model_path,
+                    }
+
+                if execution_type == "pymdp":
+                    result = self._execute_pymdp_script(
+                        model_path, options, timeout=timeout, cancel_token=cancel_token
+                    )
+                elif execution_type == "rxinfer":
+                    result = self._execute_rxinfer_config(
+                        model_path, options, timeout=timeout, cancel_token=cancel_token
+                    )
+                elif execution_type == "discopy":
+                    result = self._execute_discopy_diagram(
+                        model_path, options, timeout=timeout, cancel_token=cancel_token
+                    )
+                elif execution_type == "jax":
+                    result = self._execute_jax_script(
+                        model_path, options, timeout=timeout, cancel_token=cancel_token
+                    )
+                elif execution_type == "lean":
+                    # Cancellable GNN-side: the token rides into the fep-lean
+                    # bridge dispatch through the shared envelope (pre-spawn and
+                    # mid-flight cooperative checks). The bridge process itself
+                    # has no in-process cooperative protocol yet — that is the
+                    # held fep-side substance.
+                    result = self._execute_lean_verification(
+                        model_path, options, timeout=timeout, cancel_token=cancel_token
+                    )
+                elif execution_type == "activeinference_jl":
+                    result = self._execute_activeinference_script(
+                        model_path, options, timeout=timeout, cancel_token=cancel_token
+                    )
+                elif execution_type == "numpyro":
+                    result = self._execute_numpyro_script(
+                        model_path, options, timeout=timeout, cancel_token=cancel_token
+                    )
+                elif execution_type == "pytorch":
+                    result = self._execute_pytorch_script(
+                        model_path, options, timeout=timeout, cancel_token=cancel_token
+                    )
+                elif execution_type == "ngclearn":
+                    result = self._execute_ngclearn_script(
+                        model_path, options, timeout=timeout, cancel_token=cancel_token
+                    )
+                elif execution_type == "stan":
+                    result = self._execute_stan_script(
+                        model_path, options, timeout=timeout, cancel_token=cancel_token
+                    )
+                elif execution_type == "bnlearn":
+                    result = self._execute_bnlearn_script(
+                        model_path, options, timeout=timeout, cancel_token=cancel_token
+                    )
+                elif execution_type == "thrml":
+                    from .thrml.thrml_runner import execute_thrml_script
+
+                    result = execute_thrml_script(
+                        model_path,
+                        output_dir=(options or {}).get("output_dir"),
+                        timeout=timeout if timeout is not None else 300,
+                        cancel_token=cancel_token,
+                    )
+                elif execution_type == "cpomdp":
+                    from .preconditions import script_readiness
+
+                    local_timeout = timeout if timeout is not None else 300
+                    deadline, readiness_error = script_readiness(
+                        "cpomdp", local_timeout
+                    )
+                    precondition = _execution_precondition(
+                        local_timeout, cancel_token, deadline_monotonic=deadline
+                    )
+                    if precondition is not None:
+                        result = precondition
+                    elif readiness_error is not None:
+                        result = readiness_error
+                    else:
+                        output = Path(
+                            (options or {}).get("output_dir") or Path(model_path).parent
+                        ).resolve()
+                        output.mkdir(parents=True, exist_ok=True)
+                        result = run_subprocess_envelope(
+                            [sys.executable, str(Path(model_path).resolve())],
+                            env={"CPOMDP_OUTPUT_DIR": str(output)},
+                            cwd=str(output),
+                            timeout=local_timeout,
+                            deadline_monotonic=deadline,
+                            cancel_token=cancel_token,
+                        )
+                else:
+                    result = {
+                        "success": False,
+                        "error": f"Unsupported execution type: {execution_type}",
+                    }
+
+                result["execution_type"] = execution_type
+                result["model_path"] = model_path
+                # Optional diagnostics share the invocation ceiling and containment.
+                diagnostic_precondition = _execution_precondition(5, cancel_token)
+                if (
+                    result.get("success")
+                    and not result.get("cache_hit")
+                    and diagnostic_precondition is not None
+                ):
+                    result.setdefault("execution_device", "unknown")
+                    result["execution_device_note"] = (
+                        "Hardware diagnostic omitted: "
+                        + str(diagnostic_precondition.get("error"))
+                    )
+                else:
+                    try:
+                        devices = (
+                            get_available_hardware()
+                            if result.get("success")
+                            and not result.get("cache_hit")
+                            and cancel_token is None
+                            else get_available_hardware(cancel_token=cancel_token)
+                            if result.get("success") and not result.get("cache_hit")
+                            else ["cpu"]
+                        )
+                        result.setdefault(
+                            "execution_device", devices[0] if devices else "cpu"
+                        )
+                    except _HardwareContainmentFailure as error:
+                        result["execution_result_success"] = bool(result.get("success"))
+                        result.update(
+                            success=False,
+                            status="failed",
+                            error_type="ProcessCleanupFailure",
+                            error=str(error),
+                            execution_device="unknown",
+                        )
+                        result["hardware_probe"] = {
+                            key: error.envelope.get(key)
+                            for key in (
+                                "error_type",
+                                "execution_error_type",
+                                "containment",
+                                "cleanup_verified",
+                                "streams_drained",
+                                "duration_seconds",
+                            )
+                        }
+                        for key in ("cleanup_verified", "streams_drained"):
+                            result["execution_" + key] = result.get(key)
+                            result[key] = error.envelope.get(key)
+                    except Exception as error:
+                        logger.debug(
+                            "Device discovery failed; falling back to cpu: %s", error
+                        )
+                        result.setdefault("execution_device", "cpu")
+                        result["execution_device_fallback"] = (
+                            f"cpu: device discovery failed ({error})"
+                        )
+
+                result["execution_time"] = time.monotonic() - start_time
+                # Log execution
+                self.execution_log.append(result)
+
+                return result
+
+            except Exception as e:
                 return {
                     "success": False,
-                    "error": (
-                        f"Pre-execution security gate blocked {model_path}: "
-                        f"{gate_verdict['reason']}"
-                    ),
-                    "error_type": gate_verdict.get("error_type", "SecurityGateBlocked"),
-                    "security_findings": gate_verdict["blocked"],
+                    "error": str(e),
+                    "error_type": type(e).__name__,
                     "execution_type": execution_type,
                     "model_path": model_path,
                 }
-
-            start_time = time.time()
-
-            if execution_type == "pymdp":
-                result = self._execute_pymdp_script(
-                    model_path, options, timeout=timeout, cancel_token=cancel_token
-                )
-            elif execution_type == "rxinfer":
-                result = self._execute_rxinfer_config(
-                    model_path, options, timeout=timeout, cancel_token=cancel_token
-                )
-            elif execution_type == "discopy":
-                result = self._execute_discopy_diagram(
-                    model_path, options, timeout=timeout, cancel_token=cancel_token
-                )
-            elif execution_type == "jax":
-                result = self._execute_jax_script(
-                    model_path, options, timeout=timeout, cancel_token=cancel_token
-                )
-            elif execution_type == "lean":
-                # Cancellable GNN-side: the token rides into the fep-lean
-                # bridge dispatch through the shared envelope (pre-spawn and
-                # mid-flight cooperative checks). The bridge process itself
-                # has no in-process cooperative protocol yet — that is the
-                # held fep-side substance.
-                result = self._execute_lean_verification(
-                    model_path, options, timeout=timeout, cancel_token=cancel_token
-                )
-            elif execution_type == "activeinference_jl":
-                result = self._execute_activeinference_script(
-                    model_path, options, timeout=timeout, cancel_token=cancel_token
-                )
-            elif execution_type == "numpyro":
-                result = self._execute_numpyro_script(
-                    model_path, options, timeout=timeout, cancel_token=cancel_token
-                )
-            elif execution_type == "pytorch":
-                result = self._execute_pytorch_script(
-                    model_path, options, timeout=timeout, cancel_token=cancel_token
-                )
-            elif execution_type == "ngclearn":
-                result = self._execute_ngclearn_script(
-                    model_path, options, timeout=timeout, cancel_token=cancel_token
-                )
-            elif execution_type == "stan":
-                result = self._execute_stan_script(model_path, options, timeout=timeout)
-            elif execution_type == "bnlearn":
-                result = self._execute_bnlearn_script()
-            else:
-                result = {
-                    "success": False,
-                    "error": f"Unsupported execution type: {execution_type}",
-                }
-
-            execution_time = time.time() - start_time
-            result["execution_time"] = execution_time
-            result["execution_type"] = execution_type
-            result["model_path"] = model_path
-            # Hardware context
-            try:
-                devices = get_available_hardware()
-                result.setdefault("execution_device", devices[0] if devices else "cpu")
-            except Exception as e:
-                logger.debug("Device discovery failed; falling back to cpu: %s", e)
-                result.setdefault("execution_device", "cpu")
-                result["execution_device_fallback"] = (
-                    f"cpu: device discovery failed ({e})"
-                )
-
-            # Log execution
-            self.execution_log.append(result)
-
-            return result
-
-        except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "error_type": type(e).__name__,
-                "execution_type": execution_type,
-                "model_path": model_path,
-            }
 
     def run_simulation(self, simulation_config: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -469,6 +665,9 @@ class GNNExecutor:
         token cancels the run pre-spawn or mid-flight GNN-side (the fep-lean
         bridge process itself has no in-process cooperative protocol).
         """
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
         state = _runner_state("lean")
         if not state.available or state.runner is None:
             return {"success": False, "error": "fep_lean unavailable"}
@@ -481,7 +680,7 @@ class GNNExecutor:
             opts.get("receipt"),
             model=opts.get("model", "finite"),
             fail_on_warnings=bool(opts.get("fail_on_warnings", True)),
-            timeout=opts.get("timeout") or timeout or 1800,
+            timeout=opts.get("timeout", timeout if timeout is not None else 1800),
             cancel_token=cancel_token,
         )
 
@@ -498,7 +697,9 @@ class GNNExecutor:
             (cache_key, cached_envelope); cache_key is None when the cache
             is disabled, cached_envelope is None on miss.
         """
-        if not self._cache.enabled:
+        from gnn.pipeline.run_context import current_run_context
+
+        if not self._cache.enabled or current_run_context() is not None:
             return None, None
         cache_key = cache_key_for_script(content_path, interpreter=interpreter)
         return cache_key, self._cache.lookup(cache_key)
@@ -519,13 +720,19 @@ class GNNExecutor:
         cancel_token: Optional[CancelToken] = None,
     ) -> Dict[str, Any]:
         """Execute a PyMDP script with graceful recovery for tests."""
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
         script = Path(script_path)
         if script.suffix.lower() not in {".py"}:
             return {
-                "success": True,
-                "stdout": f"Input {script.name} treated as source model; render/execute pipeline required for full simulation.",
+                "success": False,
+                "status": "skipped",
+                "skipped": True,
+                "error_type": "RenderedScriptRequired",
+                "stdout": f"Input {script.name} requires rendering before simulation.",
                 "stderr": "",
-                "return_code": 0,
+                "return_code": -1,
             }
         cache_key, cached = self._dispatch_cache_lookup(sys.executable, script_path)
         if cached is not None:
@@ -554,6 +761,9 @@ class GNNExecutor:
         synthesizes its envelope from the runner's verdict and the evidence
         sidecars it persists beside the script.
         """
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
         cache_key, cached = self._dispatch_cache_lookup("julia", config_path)
         if cached is not None:
             cached["cache_hit"] = True
@@ -562,7 +772,9 @@ class GNNExecutor:
 
         script = Path(config_path)
         success = execute_rxinfer_script(
-            script, timeout=timeout or 300, cancel_token=cancel_token
+            script,
+            timeout=timeout if timeout is not None else 300,
+            cancel_token=cancel_token,
         )
         envelope = _synthesize_rxinfer_envelope(script, success)
         self._store_dispatch_envelope(cache_key, envelope)
@@ -577,13 +789,16 @@ class GNNExecutor:
         cancel_token: Optional[CancelToken] = None,
     ) -> Dict[str, Any]:
         """Execute a DisCoPy diagram."""
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
         cache_key, cached = self._dispatch_cache_lookup(sys.executable, diagram_path)
         if cached is not None:
             cached["cache_hit"] = True
             return cached
         envelope = run_subprocess_envelope(
             [sys.executable, diagram_path],
-            timeout=timeout or 300,
+            timeout=timeout if timeout is not None else 300,
             cancel_token=cancel_token,
         )
         self._store_dispatch_envelope(cache_key, envelope)
@@ -598,13 +813,16 @@ class GNNExecutor:
         cancel_token: Optional[CancelToken] = None,
     ) -> Dict[str, Any]:
         """Execute a JAX script."""
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
         cache_key, cached = self._dispatch_cache_lookup(sys.executable, script_path)
         if cached is not None:
             cached["cache_hit"] = True
             return cached
         envelope = run_subprocess_envelope(
             [sys.executable, script_path],
-            timeout=timeout or 300,
+            timeout=timeout if timeout is not None else 300,
             cancel_token=cancel_token,
         )
         self._store_dispatch_envelope(cache_key, envelope)
@@ -622,13 +840,16 @@ class GNNExecutor:
         Shared by the numpyro, pytorch, and ngclearn dispatches; mirrors the
         JAX envelope contract.
         """
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
         cache_key, cached = self._dispatch_cache_lookup(sys.executable, script_path)
         if cached is not None:
             cached["cache_hit"] = True
             return cached
         envelope = run_subprocess_envelope(
             [sys.executable, script_path],
-            timeout=timeout or 300,
+            timeout=timeout if timeout is not None else 300,
             cancel_token=cancel_token,
         )
         self._store_dispatch_envelope(cache_key, envelope)
@@ -643,6 +864,9 @@ class GNNExecutor:
         cancel_token: Optional[CancelToken] = None,
     ) -> Dict[str, Any]:
         """Execute a NumPyro script."""
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
         return self._execute_python_script(
             script_path, timeout, cancel_token=cancel_token
         )
@@ -656,6 +880,9 @@ class GNNExecutor:
         cancel_token: Optional[CancelToken] = None,
     ) -> Dict[str, Any]:
         """Execute a PyTorch script."""
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
         return self._execute_python_script(
             script_path, timeout, cancel_token=cancel_token
         )
@@ -669,6 +896,9 @@ class GNNExecutor:
         cancel_token: Optional[CancelToken] = None,
     ) -> Dict[str, Any]:
         """Execute an ngc-learn script."""
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
         return self._execute_python_script(
             script_path, timeout, cancel_token=cancel_token
         )
@@ -682,6 +912,9 @@ class GNNExecutor:
         cancel_token: Optional[CancelToken] = None,
     ) -> Dict[str, Any]:
         """Execute a rendered ActiveInference.jl script."""
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
         script = Path(script_path)
         project_dir = Path(__file__).parent / "activeinference_jl"
         cache_key, cached = self._dispatch_cache_lookup("julia", script_path)
@@ -694,7 +927,7 @@ class GNNExecutor:
         env.setdefault("JULIA_PROJECT", str(project_dir))
         envelope = run_subprocess_envelope(
             ["julia", f"--project={project_dir}", str(script)],  # nosec B607 B603
-            timeout=timeout or 600,
+            timeout=timeout if timeout is not None else 600,
             env=env,
             cwd=str(script.parent),
             cancel_token=cancel_token,
@@ -707,33 +940,53 @@ class GNNExecutor:
         script_path: str,
         options: Optional[Dict[str, Any]] = None,
         timeout: Optional[int] = None,
+        *,
+        cancel_token: Optional[CancelToken] = None,
     ) -> Dict[str, Any]:
         """Execute a rendered Stan driver; skip cleanly without cmdstanpy."""
-        state = _runner_state("stan")
-        if not state.available:
-            return {
-                "success": False,
-                "skipped": True,
-                "status": "skipped",
-                "error": "cmdstanpy/CmdStan not installed (uv sync --extra stan)",
-            }
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
         from .stan.stan_runner import execute_stan_script
 
         opts = options or {}
         output_dir = opts.get("output_dir") or Path(script_path).parent
-        return execute_stan_script(script_path, output_dir, timeout=timeout or 1800)
+        return execute_stan_script(
+            script_path,
+            output_dir,
+            timeout=timeout if timeout is not None else 1800,
+            cancel_token=cancel_token,
+        )
 
-    def _execute_bnlearn_script(self) -> Dict[str, Any]:
-        """bnlearn is render-only: the executor registry never runs it."""
-        return {
-            "success": False,
-            "skipped": True,
-            "status": "skipped",
-            "error": (
-                "bnlearn is render-only; rendered bnlearn scripts execute via "
-                "the Step 12 script path (BNLEARN_OUTPUT_DIR) with dependency skips"
-            ),
-        }
+    def _execute_bnlearn_script(
+        self,
+        script_path: str | None = None,
+        options: Optional[Dict[str, Any]] = None,
+        timeout: Optional[int] = None,
+        *,
+        cancel_token: Optional[CancelToken] = None,
+    ) -> Dict[str, Any]:
+        """Run the maintained language-aware bnlearn backend with skip receipts."""
+        precondition = _execution_precondition(timeout, cancel_token)
+        if precondition is not None:
+            return precondition
+        if script_path is None:
+            return {
+                "success": False,
+                "skipped": True,
+                "status": "skipped",
+                "error": "Supply a rendered bnlearn script; output uses BNLEARN_OUTPUT_DIR",
+            }
+        from .bnlearn.bnlearn_runner import execute_bnlearn_script
+
+        source = Path(script_path).resolve()
+        output = Path((options or {}).get("output_dir") or source.parent).resolve()
+        return execute_bnlearn_script(
+            source,
+            output,
+            timeout=timeout if timeout is not None else 1800,
+            cancel_token=cancel_token,
+        )
 
     def execute_simulation_from_gnn(
         self,
@@ -868,12 +1121,21 @@ def list_frameworks() -> list[dict[str, Any]]:
     the registry shape without importing the private ``_framework_specs``
     helper.
     """
+    from dataclasses import asdict
+
     return [
         {
             "framework": spec.framework_dir_key,
             "result_key": spec.result_key,
             "available": bool(spec.available),
             "operation": spec.operation_name,
+            "readiness": asdict(spec.diagnosis)
+            if spec.diagnosis is not None
+            else {
+                "framework": spec.framework_dir_key,
+                "available": spec.available,
+                "reason_code": "ready" if spec.available else "runner_unavailable",
+            },
         }
         for spec in _framework_specs()
     ]
@@ -881,13 +1143,14 @@ def list_frameworks() -> list[dict[str, Any]]:
 
 def execute_script_safely(
     script_path: Union[str, Path],
-    timeout: int = 3600,
+    timeout: float | None = 3600,
     capture_output: bool = True,
     cwd: Optional[Union[str, Path]] = None,
     env: Optional[Dict[str, str]] = None,
     args: Optional[Sequence[str]] = None,
     cancel_token: Optional[CancelToken] = None,
     cache: Optional[ExecutionResultCache] = None,
+    deadline_monotonic: Optional[float] = None,
 ) -> Dict[str, Any]:
     """Execute a Python script via ``subprocess.run`` with a structured envelope.
 
@@ -906,6 +1169,7 @@ def execute_script_safely(
         cancel_token:   Optional cooperative cancellation token; when cancelled
                         mid-flight the run is group-killed and reported as
                         ``error_type="Cancelled"``.
+        deadline_monotonic: Absolute monotonic deadline including readiness and cleanup.
         cache:          Execution result cache; None falls back to the shared
                         module instance (active only when ``GNN_EXEC_CACHE`` is
                         truthy or the instance was built with ``enabled=True``).
@@ -932,6 +1196,12 @@ def execute_script_safely(
             - ``cancelled`` (bool): True when the run was cancelled via the
               cancel token (additive envelope key, False on every other path).
     """
+    precondition = _execution_precondition(
+        timeout, cancel_token, deadline_monotonic=deadline_monotonic
+    )
+    if precondition is not None:
+        precondition["script_path"] = str(script_path)
+        return precondition
     script = Path(script_path)
     if not script.exists():
         return {
@@ -996,7 +1266,9 @@ def execute_script_safely(
     script_args = list(args) if args is not None else []
     effective_cache = cache if cache is not None else _EXECUTION_RESULT_CACHE
     cache_key: Optional[str] = None
-    if effective_cache.enabled:
+    from gnn.pipeline.run_context import current_run_context
+
+    if effective_cache.enabled and current_run_context() is None:
         # Cache consult happens AFTER the security gate, so gate-blocked
         # scripts can never be served from (or written into) the cache.
         cache_key = cache_key_for_script(
@@ -1019,6 +1291,7 @@ def execute_script_safely(
         env=env,
         capture_output=capture_output,
         cancel_token=cancel_token,
+        deadline_monotonic=deadline_monotonic,
     )
     envelope["script_path"] = str(script)
     # Failures, timeouts, and cancels are never stored.

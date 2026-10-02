@@ -287,6 +287,38 @@ class TestTypeCategoryPieChart:
         assert path is not None
         _assert_png_written(path)
 
+    @pytest.mark.parametrize("container_shape", [False, True])
+    def test_supported_api_shapes_keep_labels_and_percentage_text(
+        self, container_shape: bool, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        from types import SimpleNamespace
+
+        from matplotlib.axes import Axes
+
+        from gnn.type_checker.visualizer import (
+            _pie_parts,
+            generate_type_category_pie_chart,
+        )
+
+        original = Axes.pie
+        observed: list[str] = []
+
+        def pie(ax: Any, *args: Any, **kwargs: Any) -> Any:
+            wedges, texts, percentages = _pie_parts(original(ax, *args, **kwargs))
+            observed.extend(text.get_text() for text in percentages)
+            if container_shape:
+                return SimpleNamespace(wedges=wedges, texts=(texts, percentages))
+            return wedges, texts, percentages
+
+        monkeypatch.setattr(Axes, "pie", pie)
+        path = generate_type_category_pie_chart(
+            {"type_analysis": [{"type_distribution": {"float": 3, "int": 1}}]},
+            tmp_path,
+        )
+        assert path is not None
+        _assert_png_written(path)
+        assert observed == ["75.0%", "25.0%"]
+
 
 class TestBoxplotTickLabels:
     """Box plots must use ``tick_labels=`` (``labels=`` removed in 3.11)."""

@@ -17,6 +17,7 @@ We are committed to ensuring the security of the GeneralizedNotationNotation (GN
 
 | Version | Supported | Security Coverage |
 | ------- | ------------------ | ----------------- |
+| 4.0.0   | ✅ Full support | Current-run identity and bounded execution contracts |
 | 3.6.0   | ✅ Full support | Complete security framework |
 | 3.5.0   | ✅ Full support | Complete security framework |
 | 3.3.0   | ✅ Full support | Complete security framework |

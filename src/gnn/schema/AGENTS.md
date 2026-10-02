@@ -35,7 +35,9 @@ the semantic-fidelity pipeline.
 ## Module Structure
 
 - `__init__.py` — thin re-export surface (`__all__`).
-- `parser.py` — the implementation (regex parsers, dataclasses, validators).
+- `parser.py` — section/connection/state parsers and the public compatibility surface.
+- `types.py` — declaration and diagnostic dataclasses, re-exported by parser and package.
+- `parameter_dimensions.py` — parameter assignment parsing and declared-shape checks.
 
 ## Dependencies
 

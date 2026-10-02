@@ -61,7 +61,7 @@ class TestExtractContinuousDimensions:
     def test_per_factor_block_dims_and_provenance(self) -> None:
         extractor = POMDPExtractor()
         dims = extractor._extract_continuous_dimensions(
-            {}, _factor_block(), {"num_timesteps": 15}
+            {}, _factor_block(), {"num_timesteps": 15, "num_factors": 2}
         )
         assert dims == (2, 2, 0, 15)
         assert extractor._dimension_sources == {

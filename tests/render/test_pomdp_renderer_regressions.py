@@ -29,6 +29,13 @@ def test_discrete_pomdp_models_render_to_julia_frameworks(
 ) -> None:
     pomdp = extract_pomdp_from_file(DISCRETE_DIR / filename, strict_validation=True)
     assert pomdp is not None
+    if filename == "tmaze_epistemic.md":
+        # The authored transition contains zero-mass columns. Strict v4
+        # rendering must reject them rather than invent a transition policy.
+        with pytest.raises(ValueError, match="positive finite mass"):
+            POMDPRenderProcessor(tmp_path)._pomdp_to_gnn_spec(pomdp)
+        assert not list(tmp_path.rglob("*.jl"))
+        return
     spec = POMDPRenderProcessor(tmp_path)._pomdp_to_gnn_spec(pomdp)
 
     b_matrix = np.asarray(spec["initialparameterization"]["B"], dtype=float)

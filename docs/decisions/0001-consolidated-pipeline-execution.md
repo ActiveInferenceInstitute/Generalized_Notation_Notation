@@ -32,6 +32,12 @@ tests, docs, MCP metadata, and users rely on.
 
 ## Decision
 
+The 2026-10-01 current-run ownership amendment requires a killable subprocess
+boundary for top-level runs, including `--consolidated-steps`. Receipts record
+the fallback reason. The standalone callback API remains cooperative only.
+See [the migration contract](../development/run_ownership_migration.md) for
+selection, evidence, deadlines, and compatibility limits.
+
 1. **The 25-step numbered-script contract is preserved as the CLI surface.**
    `step_registry.py` remains the single source for step metadata and wiring;
    numbered scripts keep existing and remain directly runnable.

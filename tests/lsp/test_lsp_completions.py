@@ -404,9 +404,7 @@ class TestPyglsDidChange:
         captured: list[tuple[str, list[Any]]] = []
         monkeypatch.setattr(
             "gnn.lsp._publish_to_server",
-            lambda server, uri, diagnostics: captured.append(
-                (uri, list(diagnostics))
-            ),
+            lambda server, uri, diagnostics: captured.append((uri, list(diagnostics))),
         )
         server = create_server()
         assert server is not None
@@ -497,7 +495,9 @@ class TestPyglsDidChange:
                 DidChangeTextDocumentParams(
                     text_document=VersionedTextDocumentIdentifier(uri=uri, version=2),
                     content_changes=[
-                        TextDocumentContentChangeWholeDocument(text=DIAGNOSTIC_PROBE_GNN)
+                        TextDocumentContentChangeWholeDocument(
+                            text=DIAGNOSTIC_PROBE_GNN
+                        )
                     ],
                 )
             )

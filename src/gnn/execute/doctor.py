@@ -8,17 +8,15 @@ instead of re-assembling the answer from scattered probes:
 1. **Per-framework availability** — the canonical
    ``FRAMEWORK_IMPORT_CHECK``/``check_framework`` primitives from
    ``gnn.utils.runtime_safety.framework_availability`` (the same source
-   Step 11/12 use to decide run vs. skip), extended with the
-   Julia-toolchain gate that ``execute.planning`` applies to the Julia
+   Step 11/12 use to decide run vs. skip), including the committed-project package gate for the Julia
    frameworks (``rxinfer``, ``activeinference_jl``).
 2. **Step 12 execution readiness** — ``gnn.execute.planning.plan_execute``
    dry-run over a target/output directory pair, classified by the same
    four planner statuses (``ready`` / ``no_render_output`` /
    ``no_executable_scripts`` / ``invalid_frameworks``).
 
-The probe is strictly offline: importability checks, one PATH lookup for
-the Julia toolchain, and directory reads. No scripts run, no files are
-written, and no Julia package probing happens (mirroring ``plan_execute``).
+The probe is offline: supervised import/package loading and directory reads.
+It executes no rendered models and performs no installs or Pkg operations.
 
 The MCP exposure is the thin ``get_doctor_report_mcp`` wrapper in this
 package's ``mcp.py`` behind the canonical ``run_tool_envelope``.
@@ -32,7 +30,9 @@ from typing import Any, Dict, Optional, Union
 
 from gnn.utils.runtime_safety.framework_availability import (
     FRAMEWORK_IMPORT_CHECK,
+    FRAMEWORK_JULIA_PACKAGES,
     FRAMEWORK_PROBE_STATEMENT,
+    FrameworkStatus,
     check_framework,
 )
 
@@ -62,15 +62,36 @@ def _python_framework_entry(name: str) -> Dict[str, Any]:
     }
     if name in FRAMEWORK_PROBE_STATEMENT:
         entry["toolchain_probe"] = FRAMEWORK_PROBE_STATEMENT[name]
-    if not status.available:
-        entry["missing_module"] = status.missing_module
-        entry["install_hint"] = status.install_hint
+    entry.update(_readiness_fields(status))
     return entry
 
 
-def _julia_framework_entry(available: bool) -> Dict[str, Any]:
-    """Build the report entry for one Julia-gated framework."""
-    return {"kind": "julia_toolchain", "available": available}
+def _readiness_fields(status: FrameworkStatus) -> Dict[str, Any]:
+    """The shared structured diagnosis, including supervision evidence."""
+    entry: Dict[str, Any] = {"available": status.available}
+    if not status.available:
+        for key in ("missing_module", "install_hint", "reason_code", "reason"):
+            entry[key] = getattr(status, key)
+    for key in (
+        "execution_error_type",
+        "cleanup_verified",
+        "streams_drained",
+        "runtime_version",
+        "backend_version",
+    ):
+        value = getattr(status, key)
+        if value is not None:
+            entry[key] = value
+    return entry
+
+
+def _julia_framework_entry(name: str) -> Dict[str, Any]:
+    """Load the registered packages in the committed project, without installs."""
+    return {
+        "kind": "julia_project",
+        "probe_packages": list(FRAMEWORK_JULIA_PACKAGES[name]),
+        **_readiness_fields(check_framework(name, logger=logger)),
+    }
 
 
 def collect_doctor_report(
@@ -97,14 +118,14 @@ def collect_doctor_report(
           frameworks (``FRAMEWORK_IMPORT_CHECK``) carry ``kind`` =
           ``"python_import"`` with ``probe_module``, importability, and the
           ``install_hint``/``missing_module`` fields when unavailable; Julia
-          frameworks carry ``kind`` = ``"julia_toolchain"`` whose availability
-          mirrors the ``julia`` section.
+          frameworks carry ``kind`` = ``"julia_project"`` and the committed-project
+          package diagnosis; the ``julia`` section separately reports PATH evidence.
         - ``julia``: the shared ``check_julia_availability`` PATH probe.
         - ``frameworks_available`` / ``frameworks_missing``: name lists.
         - ``execution``: the full ``plan_execute`` dry-run plan, or
           ``{"status": "not_probed", "reason": ...}`` when no directory pair
           was supplied.
-        - ``execution_ready``: ``plan["status"] == "ready"``; ``None`` when
+        - ``execution_ready``: at least one entry in ``would_execute``; ``None`` when
           the execution section was not probed.
 
     Raises:
@@ -123,7 +144,7 @@ def collect_doctor_report(
     for name in sorted(FRAMEWORK_IMPORT_CHECK):
         frameworks_section[name] = _python_framework_entry(name)
     for name in sorted(_JULIA_FRAMEWORKS):
-        frameworks_section[name] = _julia_framework_entry(julia_available)
+        frameworks_section[name] = _julia_framework_entry(name)
 
     available_names = sorted(
         name for name, entry in frameworks_section.items() if entry["available"]
@@ -154,6 +175,6 @@ def collect_doctor_report(
             frameworks=frameworks,
         )
         report["execution"] = plan
-        report["execution_ready"] = plan["status"] == "ready"
+        report["execution_ready"] = bool(plan["would_execute"])
 
     return report

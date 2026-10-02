@@ -112,9 +112,7 @@ def test_lightweight_parse_receipt_plain_continuous_exemplar() -> None:
         )
         if space is None:
             continue
-        if detect_pomdp_space_model_kinds(space) == frozenset(
-            {ModelKind.CONTINUOUS}
-        ):
+        if detect_pomdp_space_model_kinds(space) == frozenset({ModelKind.CONTINUOUS}):
             singleton_path = candidate
             break
     if singleton_path is None:
@@ -167,9 +165,7 @@ def test_run_pymdp_refuses_composed_without_pymdp(
     def _boom() -> Any:
         raise AssertionError("_require_pymdp_1 must not run for refusals")
 
-    monkeypatch.setattr(
-        "gnn.execute.pymdp.simulation._require_pymdp_1", _boom
-    )
+    monkeypatch.setattr("gnn.execute.pymdp.simulation._require_pymdp_1", _boom)
     spec = {"initialparameterization": {**_LGSSM_BLOCK, "nr_agents": 2}}
     success, receipt = run_pymdp_simulation(spec, tmp_path)
     assert success is False
@@ -186,9 +182,7 @@ def test_run_pymdp_discrete_still_reaches_pymdp_import(
     def _boom() -> Any:
         raise ImportError("pymdp unavailable (pinned test)")
 
-    monkeypatch.setattr(
-        "gnn.execute.pymdp.simulation._require_pymdp_1", _boom
-    )
+    monkeypatch.setattr("gnn.execute.pymdp.simulation._require_pymdp_1", _boom)
     success, receipt = run_pymdp_simulation(dict(_DISCRETE_SPEC), tmp_path)
     assert success is False
     assert "pymdp unavailable (pinned test)" in receipt["error"]

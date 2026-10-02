@@ -10,6 +10,7 @@ The generated HTML is fully self-contained — no external dependencies, no
 server needed. Open the file in any browser to watch the animation.
 """
 
+import html as html_module
 import json
 import logging
 from pathlib import Path
@@ -20,18 +21,16 @@ logger = logging.getLogger(__name__)
 
 def _normalize_beliefs(data: Dict[str, Any]) -> List[List[float]]:
     """Extract beliefs as a list of rows from the results dict."""
-    beliefs = data.get("beliefs")
-    if beliefs is None:
-        bbf = data.get("beliefs_by_factor", {})
-        if isinstance(bbf, dict) and bbf:
-            beliefs = next(iter(bbf.values()))
-    if not beliefs or not isinstance(beliefs, list):
+    from gnn.analysis.result_adapter import result_views
+
+    views = result_views(data)
+    if not views:
         return []
-    rows = []
-    for row in beliefs:
-        if isinstance(row, list):
-            rows.append([float(x) for x in row])
-    return rows
+    if len(views) != 1:
+        raise ValueError(
+            "Multiple native marginals require separate visualization panels"
+        )
+    return [list(map(float, row)) for row in next(iter(views.values()))["beliefs"]]
 
 
 def _normalize_observations(data: Dict[str, Any]) -> List[int]:
@@ -109,6 +108,36 @@ def generate_animated_html(
     Returns:
         Path to the generated HTML file
     """
+    from tempfile import TemporaryDirectory
+
+    from gnn.analysis.result_adapter import model_family, result_views
+
+    from .family_visuals import artifact_component, continuous_html
+
+    views = result_views(data)
+    if model_family(data) == "continuous":
+        return continuous_html(data, output_path, model_name)
+    if len(views) > 1:
+        panels = []
+        with TemporaryDirectory(prefix="gnn-marginal-html-") as directory:
+            for name, view in views.items():
+                path = Path(directory) / f"{artifact_component(name)}.html"
+                generate_animated_html(view, path, f"{model_name}: {name}")
+                panels.append(
+                    f'<h2>{html_module.escape(name)}</h2><iframe title="{html_module.escape(name)}" style="width:100%;height:850px;border:0" srcdoc="{html_module.escape(path.read_text())}"></iframe>'
+                )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(
+            '<!doctype html><html lang="en"><meta charset="utf-8"><title>'
+            + html_module.escape(model_name)
+            + "</title><body>"
+            + "".join(panels)
+            + "</body></html>",
+            encoding="utf-8",
+        )
+        return str(output_path)
+    if views:
+        data = next(iter(views.values()))
     beliefs = _normalize_beliefs(data)
     observations = _normalize_observations(data)
     true_states = _normalize_true_states(data)

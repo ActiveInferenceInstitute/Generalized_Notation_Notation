@@ -31,6 +31,8 @@ from typing import Any, Dict
 
 import pytest
 
+from gnn.utils.runtime_safety.framework_availability import FrameworkStatus
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from gnn.execute import processor as execute_processor
@@ -463,16 +465,20 @@ print(json.dumps(result))
             "framework": "jax",
             "executor": sys.executable,
         }
-        original_method = execute_processor._is_python_framework_dependency_available
-        execute_processor._is_python_framework_dependency_available = (
-            lambda *args, **kwargs: False
+        original_method = execute_processor._check_framework_by_name
+        execute_processor._check_framework_by_name = lambda *args, **kwargs: (
+            FrameworkStatus(
+                "jax",
+                False,
+                "jax",
+                reason_code="missing_module",
+                reason="Dependency not installed: jax",
+            )
         )
         try:
             result = execute_single_script(script_info, results_dir, False, logger)
         finally:
-            execute_processor._is_python_framework_dependency_available = (
-                original_method
-            )
+            execute_processor._check_framework_by_name = original_method
         assert result.get("skipped") is True
         assert result.get("success") is False
         assert "Dependency not installed" in (result.get("error") or "")

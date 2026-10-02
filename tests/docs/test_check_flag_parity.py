@@ -81,3 +81,17 @@ def test_caps_file_matches_gate_keys() -> None:
     caps = gate.load_caps()
     assert set(caps) == set(gate.CAP_KEYS)
     assert all(isinstance(v, int) and v >= 0 for v in caps.values())
+
+
+def test_documented_short_aliases_count_without_foreign_or_prefix_matches(
+    tmp_path, monkeypatch
+):
+    gate = _load_gate()
+    doc = tmp_path / "options.md"
+    doc.write_text(
+        "Use `-f`, `-o`, `--target-dir`. Foreign `-I`, `-foo` and `-off` are not aliases.\n"
+    )
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    monkeypatch.setattr(gate, "iter_doc_files", lambda: [doc])
+    monkeypatch.setattr(gate, "cli_parser_flags", lambda: {"-f", "-o", "--target-dir"})
+    assert set(gate.collect_doc_tokens()) == {"-f", "-o", "--target-dir"}

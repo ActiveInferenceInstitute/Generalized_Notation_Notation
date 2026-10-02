@@ -2,8 +2,8 @@
 
 This guide details the architecture of the Generalized Notation Notation (GNN) system. It complements `DOCS.md` and `docs/pipeline/README.md` with an implementation-oriented perspective for developers.
 
-**Last Updated**: 2026-09-21
-**Version**: [pyproject.toml](pyproject.toml) (canonical · 3.6.0)
+**Last Updated**: 2026-10-02
+**Version**: [pyproject.toml](pyproject.toml) (canonical · 4.0.0)
 **Status**: Maintained
 **Pipeline Steps**: 25 (0-24)
 
@@ -13,7 +13,7 @@ This guide details the architecture of the Generalized Notation Notation (GNN) s
 
 - **Thin Orchestrators**: Numbered scripts delegate to modules, maintaining clear separation of concerns
 - **Explicit Dependencies**: All module dependencies are explicitly declared and validated
-- **Deterministic Outputs**: Pipeline runs produce identical results given identical inputs
+- **Bound Scientific Claims**: Deterministic contracts and seeded stochastic runs bind inputs, dependency versions, inference semantics, and retained numerical witnesses; numerical equivalence requires its own comparison
 - **Reproducible Runs**: Complete audit trail and environment capture for scientific reproducibility
 - **Standardized Interfaces**: Consistent exit codes, logging, and configuration patterns across all modules
 
@@ -47,7 +47,7 @@ graph TB
   B --> F["Infrastructure Layer<br/>(utils/, pipeline/)"]
   F --> B
 
-  D --> G["External Integrations<br/>(PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn)"]
+  D --> G["External Integrations<br/>(live framework registry; experimental cpomdp and THRML selected explicitly)"]
   D --> H["AI Services<br/>(Ollama, OpenAI, OpenRouter, Perplexity)"]
   D --> I["Scientific Frameworks<br/>(JAX, DisCoPy, NetworkX)"]
 
@@ -160,7 +160,7 @@ A strict acceptance gate, `scripts/run_v3_orchestration_acceptance.py`, exercise
 Version 3.2.0 makes every exemplar under `input/gnn_files/` render *and* execute on every framework that can represent it, and flag the rest explicitly:
 
 - **Model kinds**: `src/gnn/render/pomdp_contract.py` (`detect_model_kind`) classifies every spec: a discrete kind (flat, factored, hierarchical, multi-agent, learning, or the structural no-parameterization wrapper) over the categorical `A/B/C/D[/E]` contract, or the continuous linear-Gaussian kind (`F/H/Q/R`, `prior_mean/prior_cov`, optional closed-loop `goal_mean/control_gain`). Continuous blocks pass through the render processor verbatim.
-- **Framework capabilities**: `src/gnn/render/framework_registry.py` is the single declaration of the ten frameworks and carries `supports_continuous` per entry. Frameworks without continuous support (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) return the `unsupported` render status for continuous models; it is counted separately in `render_processing_summary.json` and never reaches Step 12.
+- **Framework capabilities**: `src/gnn/render/framework_registry.py` is the single declaration of the registered frameworks and carries `supports_continuous` per entry. Frameworks without continuous support (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) return the `unsupported` render status for continuous models; it is counted separately in `render_processing_summary.json` and never reaches Step 12.
 - **Shared LGSSM generator**: `src/gnn/render/continuous_script.py` produces the online Kalman filter (Joseph-form update, closed-loop control) used by the JAX, NumPyro, PyTorch and Stan renderers; RxInfer.jl keeps its native continuous strategy.
 - **Stan execution**: `src/gnn/render/stan/stan_renderer.py` emits runnable HMM and LGSSM programs plus a cmdstanpy driver, and `src/gnn/execute/stan/` runs them (skipped, not failed, without `cmdstanpy`/CmdStan).
 - **Step 12 summary merge**: `src/gnn/execute/processor.py` merges the prior `execution_summary.json` so one durable summary covers every input folder, mirroring Step 11.
@@ -179,6 +179,33 @@ payload, durable `gnn-run-v2` run identity with verified `gnn reproduce`, and a
 dedicated `torch` optional extra for the Step 11/12 PyTorch backend. The
 manuscript remediation gates are reconciled onto `src/gnn/`. See
 `CHANGELOG.md` §3.3.0.
+
+## Current-run Contracts and Experimental Backends (v4.0.0)
+
+The immutable execution context binds run identity, path-derived model IDs,
+source hashes, resolved configuration, selected frameworks, and the monotonic
+deadline. Both execution modes consume that selection. Aggregation, website
+assembly, and reports consume current-run evidence; an exclusive output lease
+prevents concurrent writers. Required unfinished work prevents a successful
+final summary. See the [v4 migration](docs/development/run_ownership_migration.md).
+
+Experimental backends extend the existing numbered steps through the same
+registry and contracts. [THRML](docs/gnn/implementations/thrml.md) separates
+import-free categorical validation/admission in `render/thrml/adapter.py`,
+script emission and native factor sampling in `render/thrml/`, leased process
+execution in `execute/thrml/`, and sample-bound analysis in `analysis/thrml/`.
+THRML and JAX load inside supervised children; the planning and execution parent
+does not import them. The public CLI, Python API, and MCP dispatch share the
+renderer options contract.
+
+The admitted THRML model is a finite positive categorical trajectory conditioned
+on observations and a fixed action sequence. Independent components retain
+separate identities and traces. Explicit observation compositions preserve their
+conditional independence and axis mappings. Unsupported coupling, structural
+zeros, continuous state, and action search are refused before native sampling.
+Resource estimates govern admission; the process watchdog and measured usage
+remain separate evidence. CPU/JAX acceptance does not establish operation on a
+thermodynamic processor, and empirical marginals do not prove Gibbs convergence.
 
 ## Current Implementation Status
 
@@ -375,7 +402,7 @@ Each agent implements comprehensive performance monitoring:
 
 ---
 
-**Architecture Version**: [pyproject.toml](pyproject.toml) (canonical · 3.6.0)
+**Architecture Version**: [pyproject.toml](pyproject.toml) (canonical · 4.0.0)
 **Last Updated**: 2026-09-21
 **Status**: Maintained
 **Compliance**: Thin orchestrator pattern

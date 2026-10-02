@@ -51,8 +51,15 @@ def _pipeline_args(output_dir: Path) -> PipelineArguments:
 
 
 @pytest.fixture(autouse=True)
-def _isolated_parsed_model_carrier() -> Iterator[None]:
-    """Keep the executor's parsed-model carrier cache out of test state."""
+def _isolated_parsed_model_carrier(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[None]:
+    """Isolate the carrier and use a scientifically valid mechanics fixture."""
+    source = tmp_path_factory.mktemp("mechanics_input")
+    (source / "simple_mdp.md").write_bytes(
+        (PROJECT_ROOT / "input/gnn_files/discrete/simple_mdp.md").read_bytes()
+    )
+    monkeypatch.setattr(sys.modules[__name__], "BASICS_DIR", source)
     clear_parsed_model_carrier()
     yield
     clear_parsed_model_carrier()
@@ -511,17 +518,19 @@ class TestInProcessTimeoutAndCapture:
         # the additive force_killed flag.
         assert "abandoned" in step_result["stderr"]
         assert "daemon" in step_result["stderr"]
-        assert step_result["force_killed"] is True
+        assert step_result["force_killed"] is False
         assert step_result["execution_mode"] == "consolidated"
 
-        # Receipt schema unchanged: same keys as a completing in-process run.
+        # Timeout extends the completing receipt with explicit cooperative
+        # containment evidence; it cannot claim a hard process kill.
         monkeypatch.setattr(
             step_executor, "resolve_step_function", lambda name: fast_step
         )
         normal = execute_step_in_process(
             "3_gnn.py", _pipeline_args(tmp_path / "normal"), LOGGER
         )
-        assert set(step_result) == set(normal)
+        assert set(step_result) - set(normal) == {"containment", "worker_stopped"}
+        assert set(normal).issubset(step_result)
         assert normal["force_killed"] is False
 
     def test_captured_output_lands_in_receipt_and_console(
@@ -609,7 +618,7 @@ class TestInProcessForceKill:
 
         assert step_result["exit_code"] == -1
         assert step_result["status"] == "FAILED"
-        assert step_result["force_killed"] is True
+        assert step_result["force_killed"] is False
         assert "TIMEOUT" in step_result["stderr"]
         assert "cancel token" in step_result["stderr"]
         assert "abandoned" not in step_result["stderr"]
@@ -640,7 +649,7 @@ class TestInProcessForceKill:
         elapsed = time.monotonic() - started
 
         assert step_result["exit_code"] == -1
-        assert step_result["force_killed"] is True
+        assert step_result["force_killed"] is False
         assert "abandoned" in step_result["stderr"]
         assert "daemon" in step_result["stderr"]
         assert elapsed < 1 + 0.2 + 5
@@ -691,7 +700,7 @@ class TestInProcessForceKill:
             "writing_hang did not write its partial artifact before the "
             "timeout expired (worker thread scheduled late)"
         )
-        assert step_result["force_killed"] is True
+        assert step_result["force_killed"] is False
 
         step_output = tmp_path / "3_gnn_output"
         artifact = step_output / "partial_artifact.txt"
@@ -700,7 +709,7 @@ class TestInProcessForceKill:
         assert artifact.read_text(encoding="utf-8") == "mid-write"
         payload = json.loads(marker.read_text(encoding="utf-8"))
         assert payload["step"] == "3_gnn"
-        assert payload["force_killed"] is True
+        assert payload["force_killed"] is False
         assert "partial_artifact.txt" in payload["possibly_partial"]
 
         # A later successful run of the same step re-authors the directory.
@@ -768,7 +777,7 @@ class TestInProcessForceKill:
                 step_result = future.result(timeout=10)
             finally:
                 release.set()
-        assert step_result["force_killed"] is True
+        assert step_result["force_killed"] is False
 
     def test_receipt_schema_additive_over_subprocess_tier(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

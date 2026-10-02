@@ -1,54 +1,54 @@
 #!/usr/bin/env python3
-"""
-Dry-run execution planning for GNN Step 12.
+"""Dry-run execution planning for GNN Step 12.
 
-``plan_execute`` composes the same discovery / render-contract / dependency
-primitives that :func:`execute.processor.process_execute` uses at run time,
-but performs **no script execution and no Julia package probing**. It answers
-"what would Step 12 do?" for preflight checks, CI gates, and interactive
-debugging: which rendered scripts would run, which would be skipped because
-their backend dependency is absent, and which the render-summary contract
-references but cannot discover on disk.
-
-The planner is deliberately cheap and deterministic: it only does
-filesystem reads, a JSON contract load, and Python-side importability probes
-(``gnn.utils.runtime_safety.framework_availability.is_framework_available``) plus a PATH-only
-Julia lookup (``execute.julia_setup.check_julia_availability``). It never
-shells out to ``julia --project=... -e 'using ...'`` (that is the expensive
-per-package probe used at run time by
-:func:`execute.julia_env.check_julia_dependencies`).
+The planner reads discovery and render contracts, then uses the same bounded,
+interpreter-specific readiness diagnosis as execution. Known Julia backends
+load packages from their committed projects without installs. Rendered model
+scripts are never executed by the planner.
 """
 
 from __future__ import annotations
 
 import logging
-import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from gnn.utils.runtime_safety.framework_availability import is_framework_available
+from gnn.utils.runtime_safety.framework_availability import (
+    FrameworkStatus,
+    check_framework,
+    is_framework_available,
+)
 
 from .detection import (
     _resolve_render_output_dir,
     find_executable_scripts,
     parse_frameworks_parameter,
 )
-from .julia_setup import check_julia_availability
 from .metadata import _load_render_summary_contract
 from .types import ExecutionPlan
 
 logger = logging.getLogger(__name__)
 
 # Frameworks that run under a Julia interpreter. Their run-time availability
-# is gated on a Julia toolchain; for planning we only check that ``julia`` is
-# on PATH (not the heavier per-package probe).
+# uses the shared committed-project package probe in planning and execution.
 _JULIA_FRAMEWORKS = frozenset({"rxinfer", "activeinference_jl"})
 
 # Frameworks whose Python dependency importability is probed via the shared
 # ``gnn.utils.runtime_safety.framework_availability`` helper (mirrors
 # ``execute.processor._is_python_framework_dependency_available``).
 _PYTHON_FRAMEWORKS = frozenset(
-    {"pymdp", "jax", "discopy", "pytorch", "numpyro", "stan", "bnlearn", "ngclearn"}
+    {
+        "pymdp",
+        "jax",
+        "discopy",
+        "pytorch",
+        "numpyro",
+        "stan",
+        "bnlearn",
+        "ngclearn",
+        "cpomdp",
+        "thrml",
+    }
 )
 
 
@@ -60,8 +60,6 @@ def _python_dependency_available(framework: str, executor: str) -> bool:
     the current Python interpreter is only run when its framework module
     imports cleanly.
     """
-    if executor != sys.executable:
-        return True
     if framework not in _PYTHON_FRAMEWORKS:
         return True
     return is_framework_available(framework, executor=executor, logger=logger)
@@ -83,12 +81,6 @@ def _script_entry(script: Dict[str, Any]) -> Dict[str, str]:
     }
 
 
-def _julia_available() -> bool:
-    """PATH-only Julia availability (no version/package probe) for planning."""
-    available, _path = check_julia_availability()
-    return bool(available)
-
-
 def _disposition(
     script: Dict[str, Any],
 ) -> str:
@@ -97,14 +89,18 @@ def _disposition(
     The classification is the same predicate ``execute_single_script`` applies
     before dispatching, minus the security gate (which is a run-time-only
     concern): Python frameworks skip when their module is not importable, and
-    Julia frameworks skip when no ``julia`` binary is on PATH.
+    Julia frameworks use the same committed-project readiness diagnosis.
     """
     framework = str(script["framework"])
     executor = str(script["executor"])
     if framework == "unknown":
         return "unknown"
     if framework in _JULIA_FRAMEWORKS:
-        return "execute" if _julia_available() else "skip_dependency"
+        return (
+            "execute"
+            if check_framework(framework, executor=executor, logger=logger).available
+            else "skip_dependency"
+        )
     if framework in _PYTHON_FRAMEWORKS:
         return (
             "execute"
@@ -241,12 +237,43 @@ def plan_execute(
 
     plan["total_scripts"] = len(executable_scripts)
 
+    probe_statuses: dict[tuple[str, str], FrameworkStatus] = {}
     for script in executable_scripts:
         entry = _script_entry(script)
-        disposition = _disposition(script)
+        framework, executor = str(script["framework"]), str(script["executor"])
+        status = None
+        if framework in _PYTHON_FRAMEWORKS | _JULIA_FRAMEWORKS:
+            key = (framework, executor)
+            if key not in probe_statuses:
+                probe_statuses[key] = check_framework(
+                    framework, executor=executor, logger=logger
+                )
+            status = probe_statuses[key]
+            disposition = "execute" if status.available else "skip_dependency"
+        else:
+            disposition = _disposition(script)
         if disposition == "execute":
             plan["would_execute"].append(entry)
         elif disposition == "skip_dependency":
+            entry["reason_code"] = (
+                status.reason_code or "unavailable" if status else "missing_executor"
+            )
+            entry["reason"] = (
+                status.reason or "Framework unavailable"
+                if status
+                else "Julia executable not found on PATH"
+            )
+            if status and status.install_hint:
+                entry["install_hint"] = status.install_hint
+            if status:
+                for diagnostic_key in (
+                    "execution_error_type",
+                    "cleanup_verified",
+                    "streams_drained",
+                ):
+                    value = getattr(status, diagnostic_key)
+                    if value is not None:
+                        entry[diagnostic_key] = value
             plan["would_skip_dependency"].append(entry)
         else:
             plan["unknown_framework_scripts"].append(entry)

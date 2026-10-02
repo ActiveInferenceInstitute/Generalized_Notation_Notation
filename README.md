@@ -61,6 +61,8 @@
 **New in v3.3.0 ("One Corpus")**: every model file under `input/` now lives inside `input/gnn_files` (the two former top-level fixture directories are folded in), `gnn.*` is the single canonical import surface from an installed wheel, and the POMDP extractor is headless-consumable via `gnn extract FILE` / `python -m gnn.extract` with structured extraction errors (`GNN-E002` shape mismatch, `GNN-E006` parameter parse), canonical `(next_state, previous_state, action)` B-orientation enforcement plus `canonicalize_pomdp()`, factor counts and dimension provenance in `to_dict()`, a `torch>=2.13.0` optional extra for the Step 11 render + Step 12 execute PyTorch backend, and durable `gnn-run-v2` run identity with verified `gnn reproduce`. See [CHANGELOG.md](./CHANGELOG.md) §3.3.0.
 **New in v3.4.0 ("Model-Kind Truth")**: the ~110-file documentation corpus and the rendered manuscript now treat discrete, continuous, and multi-agent models as first-class kinds (exemplar-kind split, framework+kind capability tables), the manuscript's version/module/tool/test counts are auto-injected from a snapshot-based committed-byte census (`src/gnn/manuscript/variables.py`) instead of hard-coded literals, `gnn doctor` composes a per-framework capability + execution-readiness report (MCP `get_doctor_report`, 142 registered tools), bnlearn gains a render+execute Step 12 lane (Python `bnlearn` / R `bnlearn`), and Step 6 ships B-orientation diagnostics with an opt-in `--transpose-b` canonical transposition.
 **New in v3.5.0 ("Surface Truth & Integration")**: website step-20 statuses come from the recorded pipeline execution summary instead of directory heuristics, MCP speaks the standard 2024-11-05 protocol in both transports with three new tools (`extract_pomdp`, `generate_dependency_graph`, `template.pull`) plus a `gnn_delete_run` parity tool (registry 142→146), `DELETE /api/v1/runs/{run_hash}` gains full run control (cancellation with process-group teardown, artifact removal, honest timeout status), GUI launches are HTTP-verified with one shared status schema and a new `gnn gui` CLI subcommand, one canonical framework tuple drives every framework list, and LSP diagnostics track in-editor edits.
+**New in v4.0.0 ("Current-run Reliability")**: frozen model selection and stable path identities bind artifacts to one invocation; strict probability and Gaussian validation rejects malformed scientific inputs; execution and LLM calls share bounded process supervision; full-corpus LLM scheduling reports incomplete work accurately; manuscript gates bind rendered Markdown/TeX to the token commit; and released [cpomdp](docs/gnn/implementations/cpomdp.md) and [THRML](docs/gnn/implementations/thrml.md) require explicit experimental selection. THRML estimates finite categorical posterior trajectories under fixed actions; its CPU/JAX simulation does not establish hardware execution. Read the [v4 migration](docs/development/run_ownership_migration.md) before consuming new run artifacts.
+
 **New in v3.6.0 ("Composability & Offline Truth")**: the step-20 website gains per-model detail pages (`model/<slug>.html`, full GNN source per model), breadcrumbs in every page shell, and client-side search (`search-index.json` + inline vanilla-JS filter, offline-true); `generate_website(..., filesystem=False)` renders a complete site with zero disk collection and the step catalogue moves to a dependency-free leaf module (`website/steps.py`); generated pages are fully offline (system font stack, JSON-LD + meta description per page, atomic manifest write); the complexity estimator ships as a subpackage with `benchmark`/`estimate` CLI subcommands; the dashboard folds into MCP artifact tools; all six website dead-seams are wired-or-removed (the `website_html_filename` knob is gone end-to-end); the render and execute processors are band-split into packages (`render/pomdp_processor/`, `render/processor/`, `execute/processor/`); and GEO-INFER consumer conformance is pinned by a dedicated test suite.
 📖 **DOI:** [10.5281/zenodo.7803328](https://doi.org/10.5281/zenodo.7803328)  
 📁 **Archive:** [zenodo.org/records/7803328](https://zenodo.org/records/7803328)
@@ -141,7 +143,7 @@ The GNN pipeline is composed of **25 specialized modules**, each acting as an ag
 | **8** | **[Viz](src/gnn/visualization/)** | Static visualization of matrices and network logic. | [🤖 Agent](src/gnn/visualization/AGENTS.md) • [📝 Code](src/gnn/8_visualization.py) |
 | **9** | **[Adv. Viz](src/gnn/advanced_visualization/)** | Interactive diagrams and complex visual analysis. | [🤖 Agent](src/gnn/advanced_visualization/AGENTS.md) • [📝 Code](src/gnn/9_advanced_viz.py) |
 | **10** | **[Ontology](src/gnn/ontology/)** | Semantic mapping to Active Inference definitions. | [🤖 Agent](src/gnn/ontology/AGENTS.md) • [📝 Code](src/gnn/10_ontology.py) |
-| **11** | **[Render](src/gnn/render/)** | Code generation for PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, ngclearn (`render/framework_registry.py`) | [🤖 Agent](src/gnn/render/AGENTS.md) • [📝 Code](src/gnn/11_render.py) |
+| **11** | **[Render](src/gnn/render/)** | Registry-declared code generation; cpomdp and THRML require explicit experimental selection. | [🤖 Agent](src/gnn/render/AGENTS.md) • [📝 Code](src/gnn/11_render.py) |
 | **12** | **[Execute](src/gnn/execute/)** | Simulation runner and runtime management. | [🤖 Agent](src/gnn/execute/AGENTS.md) • [📝 Code](src/gnn/12_execute.py) |
 | **13** | **[LLM](src/gnn/llm/)** | Neurosymbolic analysis and text generation. | [🤖 Agent](src/gnn/llm/AGENTS.md) • [📝 Code](src/gnn/13_llm.py) |
 | **14** | **[ML](src/gnn/ml_integration/)** | Integration with external ML frameworks. | [🤖 Agent](src/gnn/ml_integration/AGENTS.md) • [📝 Code](src/gnn/14_ml_integration.py) |
@@ -475,15 +477,40 @@ graph TB
 
 ### 🧭 Model Kinds and Framework Support
 
-Every exemplar under `input/gnn_files/` renders **and executes** on every
-framework that can represent it, and is explicitly flagged on the ones that
-cannot. `render.pomdp_contract.detect_model_kind` classifies each file;
-`render/framework_registry.py` declares per-framework capabilities.
+Model-family support is declared in
+`src/gnn/render/framework_registry.py` and checked against each source by
+`gnn.render.pomdp_contract.detect_model_kind` and the renderer's semantic
+contract. A registered backend does not imply support for every composition or
+verified execution in the current environment. Current-run receipts record
+which models were admitted, executed, and analyzed.
 
 | Model kind | Exemplar folders | Renders + executes on | Render status `unsupported` on |
 |---|---|---|---|
-| Discrete-state POMDP / HMM (categorical `A/B/C/D[/E]`; flat, factored, hierarchical, multi-agent, learning) | `basics/`, `discrete/`, `hierarchical/`, `learning/`, `multiagent/`, `pomdp_gridworld/`, `precision/`, `pymdp_scaling_study/`, `structured/` | PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn | — |
-| Continuous-state linear-Gaussian (`F/H/Q/R`, `prior_mean/prior_cov`, optional closed-loop `goal_mean/control_gain`) | `continuous/` | JAX, NumPyro (+NUTS), PyTorch, Stan (Kalman marginal likelihood), RxInfer.jl (native LGSSM) — all via a Kalman filter with closed-loop control when declared | PyMDP, ActiveInference.jl, DisCoPy, bnlearn (categorical backends) |
+| Discrete-state POMDP / HMM (categorical `A/B/C/D[/E]`; composition support is backend-specific) | `basics/`, `discrete/`, `hierarchical/`, `learning/`, `multiagent/`, `pomdp_gridworld/`, `precision/`, `pymdp_scaling_study/`, `structured/` | Maintained base categorical routes: PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn | Individual composition refusals are recorded per source/framework |
+| Continuous-state linear-Gaussian (`F/H/Q/R`, `prior_mean/prior_cov`, optional closed-loop `goal_mean/control_gain`) | `continuous/` | JAX, NumPyro (+NUTS), PyTorch, Stan (Kalman marginal likelihood), RxInfer.jl (native LGSSM); filtering, smoothing, inference mode and controller semantics remain backend-specific | PyMDP, ActiveInference.jl, DisCoPy, bnlearn (categorical backends) |
+
+The table describes the maintained family routes; renderer-specific restrictions
+still apply. Implemented bnlearn and ngc-learn execution is declared by the live
+executor registry. Experimental routes are selected separately:
+
+| Backend | Admitted contract | Explicitly unsupported |
+|---|---|---|
+| [cpomdp](docs/gnn/implementations/cpomdp.md), `cpomdp==0.4.4` | Linear-Gaussian filtering and resource-admitted EFE control; passive models perform no search | Categorical models and over-budget policy enumeration |
+| [THRML](docs/gnn/implementations/thrml.md), `thrml==0.1.4` | Strictly positive finite categorical models; fixed-action full-sequence Gibbs smoothing; explicit independent components and declared observation compositions | Structural zeros, continuous/hybrid models, coupled agents, undeclared factor dependencies, and action optimization |
+
+Install and select THRML explicitly. Backend options in `input/config.yaml` are
+resolved into the run context; the single-file CLI accepts a JSON override:
+
+```bash
+uv sync --extra thrml
+uv run --extra thrml gnn render input/gnn_files/thrml/categorical_smoothing.md \
+  --framework thrml --output /tmp/gnn-thrml-example.py \
+  --options '{"observations":[0,1,0],"transition_actions":[1,0]}' --json
+```
+
+The [THRML guide](docs/gnn/implementations/thrml.md) covers pipeline selection,
+Python and MCP interfaces, resource admission, output validation, and evidence
+limits. Sampling does not by itself prove convergence or exact inference.
 
 `unsupported` is a first-class render status: it is excluded from success rates,
 listed under `unsupported_framework_renderings` in `render_processing_summary.json`,
@@ -492,9 +519,8 @@ means a *toolchain* is missing on the machine (Julia, `torch`, `cmdstanpy`/CmdSt
 not that the model is unrepresentable. Live counts always come from the two summary
 files; the prose above does not carry numbers.
 
-**Reference environment (all toolchains installed, 2026-09-07).** The maintained
-development environment provisions every Step 12 backend, so no compatible model
-is ever `skipped` for a missing toolchain: Python backends via
+**Historical reference environment (2026-09-07).** This recorded setup predates
+the experimental v4 backends. Its Python backends were provisioned via
 `uv sync --extra dev --extra torch --extra ml-ai --extra geo-infer --extra bnlearn`
 (torch ≥ 2.13.0, NumPyro, DisCoPy, pymdp, bnlearn + pgmpy for the
 categorical exports), Julia 1.12+ via juliaup/brew with the two pinned project
@@ -697,8 +723,8 @@ The GNN framework is built around a modular architecture, where each pipeline st
 | `visualization` | 8 | Generates graphical representations of GNN models. | `matplotlib`, `plotly`, `graphviz` |
 | `advanced_visualization` | 9 | Provides advanced, interactive and dashboard visualizations. | `plotly`, D3/HTML output, `matplotlib`, `networkx` |
 | `ontology` | 10 | Maps GNN concepts to Active Inference ontology terms. | Ontology Mapper, Knowledge Graph |
-| `render` | 11 | Renders GNN models into executable code for various backends. | Code Generators (PyMDP, RxInfer, JAX, ActInf.jl, PyTorch, NumPyro, Stan, DisCoPy, bnlearn, ngclearn) |
-| `execute` | 12 | Executes the rendered code using the specified backend. | PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan (cmdstanpy), bnlearn (`src/gnn/execute/bnlearn/`), and fep_lean (Lean 4) document verification via `src/gnn/execute/lean/` |
+| `render` | 11 | Renders GNN models into executable code for various backends. | Live framework registry, including explicitly selected experimental cpomdp and THRML |
+| `execute` | 12 | Executes rendered code with shared readiness, output ownership, deadlines, and result validation. | Live executor registry, including bnlearn, ngc-learn, experimental THRML, and fep_lean (Lean 4) document verification |
 | `llm` | 13 | Integrates Large Language Models for analysis, generation, and insights. | Ollama (local default), OpenAI, OpenRouter, Perplexity |
 | `ml_integration` | 14 | Integrates with machine learning frameworks for advanced analysis. | `scikit-learn`, `tensorflow`, `pytorch` |
 | `audio` | 15 | Generates audio representations of GNN model dynamics. | `SAPF`, `Pedalboard`, Audio Synthesis Engines |

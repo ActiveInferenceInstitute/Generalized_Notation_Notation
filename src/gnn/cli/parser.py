@@ -12,6 +12,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from gnn.frameworks import RENDER_FRAMEWORKS
+
 
 def _pipeline_step(value: str) -> int:
     """Parse one pipeline step number for argparse."""
@@ -128,20 +130,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--framework",
         "-f",
         default="pymdp",
-        choices=[
-            "pymdp",
-            "rxinfer",
-            "activeinference_jl",
-            "jax",
-            "numpyro",
-            "stan",
-            "pytorch",
-            "discopy",
-            "bnlearn",
-        ],
+        choices=RENDER_FRAMEWORKS,
         help="Target framework",
     )
     render_p.add_argument("--output", "-o", type=Path, help="Output file path")
+    render_p.add_argument(
+        "--options",
+        default="{}",
+        help="JSON object of validated framework render options",
+    )
     render_p.add_argument(
         "--json", action="store_true", help="Output standard JSON envelope"
     )

@@ -183,9 +183,7 @@ class TestStartLspDispatch:
         assert written == []
 
     @pytest.mark.unit
-    def test_fallback_loop_when_pygls_unavailable(
-        self, monkeypatch: Any
-    ) -> None:
+    def test_fallback_loop_when_pygls_unavailable(self, monkeypatch: Any) -> None:
         """Without pygls, start_lsp must serve the injected JSON-RPC loop."""
         import gnn.lsp as lsp_server
 
@@ -194,9 +192,7 @@ class TestStartLspDispatch:
         def recorder() -> None:
             launched.append(1)
 
-        reader, writer, written = self._session(
-            [self._INITIALIZE, None]
-        )
+        reader, writer, written = self._session([self._INITIALIZE, None])
         monkeypatch.setattr(lsp_server, "start_server", recorder)
         monkeypatch.setattr(cli_lsp, "read_message", reader)
         monkeypatch.setattr(cli_lsp, "write_message", writer)

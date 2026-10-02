@@ -79,9 +79,7 @@ class TestServeWebsiteDispatch:
         assert cli._cmd_serve(args) == cli.EXIT_SUCCESS
         assert calls[0][1]["port"] == 8090
 
-    def test_api_port_default_resolution(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_api_port_default_resolution(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from gnn.api import app as api_app
 
         calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []

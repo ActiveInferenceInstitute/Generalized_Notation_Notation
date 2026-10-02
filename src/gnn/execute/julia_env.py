@@ -9,7 +9,6 @@ check. Extracted from ``execute.processor``.
 
 import logging
 import os
-import subprocess  # nosec B404
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -92,75 +91,24 @@ def check_julia_dependencies(
     Returns:
         True if dependencies ok, False otherwise.
     """
-    if log is None:
-        log = logger
-    try:
-        # check basic julia availability
-        subprocess.run(
-            ["julia", "--version"], capture_output=True, check=True, timeout=10
-        )  # nosec B607 B603
+    from gnn.utils.runtime_safety.framework_availability import (
+        FRAMEWORK_JULIA_PACKAGES,
+        check_framework,
+    )
 
-        requested = set(frameworks or ["rxinfer", "activeinference_jl"])
-
-        # Each Julia-backed framework ships its own committed project
-        # environment (Project.toml + Manifest.toml), so the package check must
-        # run against that environment's ``--project``. A bare ``julia -e
-        # "using ..."`` resolves against the global depot and always fails on a
-        # clean machine, which previously skipped every Julia script.
-        framework_projects = {
-            "rxinfer": (
-                _julia_project_for_framework("rxinfer"),
-                ["JSON", "Distributions", "StatsBase", "RxInfer"],
-            ),
-            "activeinference_jl": (
-                _julia_project_for_framework("activeinference_jl"),
-                ["JSON", "Distributions", "StatsBase", "ActiveInference"],
-            ),
-        }
-
-        for framework in sorted(requested):
-            entry = framework_projects.get(framework)
-            if entry is None:
-                log.warning(f"Unknown Julia framework '{framework}'; skipping check")
-                continue
-            project_dir, packages = entry
-            if project_dir is None:
-                return False
-            using_clause = ", ".join(packages)
-            # The probe script is built by f-string from the *hardcoded*
-            # ``packages`` list literal directly above — repo-controlled
-            # input, never client-supplied — so no injection vector exists.
-            # The invocation below is already the argv-list form (no shell):
-            # each element is passed verbatim as one argument, and the
-            # script body rides the final ``-e`` operand, so even a
-            # hypothetical hostile package name could not escape the argv.
-            # Do not introduce client input into this construction.
-            check_script = f"using {using_clause}"
-            result = subprocess.run(  # nosec B607 B603
-                [
-                    "julia",
-                    "--startup-file=no",
-                    f"--project={project_dir}",
-                    "-e",
-                    check_script,
-                ],
-                capture_output=True,
-                text=True,
-                timeout=120,
-                env=julia_subprocess_env(),
-            )
-
-            if result.returncode != 0:
-                if verbose:
-                    log.warning(
-                        f"Julia package check failed for {framework}: {result.stderr}"
-                    )
-                return False
-
-        return True
-    except (
-        subprocess.CalledProcessError,
-        FileNotFoundError,
-        subprocess.TimeoutExpired,
-    ):
-        return False
+    log = log or logger
+    for framework in sorted(set(frameworks or FRAMEWORK_JULIA_PACKAGES)):
+        if framework not in FRAMEWORK_JULIA_PACKAGES:
+            log.warning("Unknown Julia framework '%s'; skipping check", framework)
+            continue
+        status = check_framework(framework, logger=log)
+        if not status.available:
+            if verbose:
+                log.warning(
+                    "Julia readiness failed for %s: %s (%s)",
+                    framework,
+                    status.reason,
+                    status.reason_code,
+                )
+            return False
+    return True

@@ -66,13 +66,29 @@ token checker).
 
 ## Dependencies
 
+`substitution.py` is the shared grammar/exclusion/injection contract used by the
+token and hydration gates. Prefer the template injector when importable; only
+template absence permits the headless fallback. Active preamble checks strip
+comments and fences before checking declarations.
+
+`gate_baseline.py` reads immutable evidence at a resolved PR merge base without
+checking out source. Both sides run the HEAD audit implementation. Only an
+unchanged diagnostic with identical supporting bytes may warn, naming the full
+base SHA; new/worse drift and unavailable history fail. Main and scheduled gates
+remain strict. If main is stale, fix main first.
+
+The hydration guard also requires rendered Markdown and TeX to carry the token
+map's commit stamp. This closes the prose-only bypass while retaining byte and
+digest comparisons. The stamp does not independently prove renderer execution.
+
 - Stdlib (`ast`, `hashlib`, `json`, `re`, `subprocess`, `fnmatch`,
-  `pathlib`, `tomllib`) plus `yaml` (optional). No `gnn.*` imports — the
-  producer must stay headless-importable.
+  `pathlib`, `tomllib`) plus `yaml` (optional). Internal manuscript modules
+  stay headless; importing them does not start pipeline or backend runtimes.
 
 ## Testing
 
 ```bash
 uv run --extra dev python -m pytest tests/main/test_manuscript_variables.py tests/main/test_manuscript_variables_api.py -q
 uv run --extra dev python -m pytest tests/test_manuscript_latex_log.py -q
+uv run --extra dev python -m pytest tests/main/test_manuscript_gate_baseline.py -q
 ```

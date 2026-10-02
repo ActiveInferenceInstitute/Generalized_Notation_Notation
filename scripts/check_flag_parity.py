@@ -148,7 +148,21 @@ def iter_doc_files() -> list[Path]:
 
 
 def collect_doc_tokens() -> dict[str, set[str]]:
-    """Map every lowercase ``--flag``-shaped token to the files mentioning it."""
+    """Map long flags and actual CLI short aliases to maintained mentions."""
+    short_flags = sorted(
+        flag
+        for flag in cli_parser_flags()
+        if flag.startswith("-") and not flag.startswith("--")
+    )
+    short_pattern = (
+        re.compile(
+            r"(?<![A-Za-z0-9_-])(?:"
+            + "|".join(re.escape(flag) for flag in short_flags)
+            + r")(?![A-Za-z0-9_-])"
+        )
+        if short_flags
+        else None
+    )
     tokens: dict[str, set[str]] = {}
     for path in iter_doc_files():
         rel = path.relative_to(ROOT).as_posix()
@@ -156,7 +170,10 @@ def collect_doc_tokens() -> dict[str, set[str]]:
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        for match in FLAG_TOKEN_RE.finditer(text):
+        matches = list(FLAG_TOKEN_RE.finditer(text))
+        if short_pattern is not None:
+            matches.extend(short_pattern.finditer(text))
+        for match in matches:
             tokens.setdefault(match.group(0), set()).add(rel)
     return tokens
 
@@ -259,6 +276,26 @@ def registered_flags() -> set[str]:
         flags.update(action.option_strings)
     flags |= cli_parser_flags()
     flags -= {"-h", "--help"}
+    # Maintained first-party gates and generated-script runtimes have their own
+    # CLIs. Read their actual argparse registrations without executing them.
+    for relative in (
+        "scripts/check_manuscript_tokens.py",
+        "scripts/check_hydrated_prose.py",
+        "src/gnn/render/thrml/runtime.py",
+    ):
+        for node in ast.walk(ast.parse((ROOT / relative).read_text(encoding="utf-8"))):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add_argument"
+            ):
+                flags.update(
+                    arg.value
+                    for arg in node.args
+                    if isinstance(arg, ast.Constant)
+                    and isinstance(arg.value, str)
+                    and arg.value.startswith("--")
+                )
     return flags | static_registered_flags(set(ArgumentParser.ARGUMENT_DEFINITIONS))
 
 

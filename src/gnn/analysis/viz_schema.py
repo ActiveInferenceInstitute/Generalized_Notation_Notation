@@ -31,6 +31,9 @@ VISUALIZATION_FRAMEWORK_DIRS = {
     "pytorch",
     "numpyro",
     "bnlearn",
+    "cpomdp",
+    "thrml",
+    "ngclearn",
     # stan renders + executes; its results were previously attributed to
     # "unknown" by _framework_from_path_or_payload.
     "stan",

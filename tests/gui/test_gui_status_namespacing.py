@@ -74,9 +74,7 @@ class TestGuiStatusNamespacing:
 
     @pytest.mark.unit
     @pytest.mark.fast
-    def test_gui3_status_joins_namespaced_root(
-        self, isolated_temp_dir: Any
-    ) -> None:
+    def test_gui3_status_joins_namespaced_root(self, isolated_temp_dir: Any) -> None:
         target = isolated_temp_dir / "input"
         output = isolated_temp_dir / "output"
         _write_target(target)
@@ -97,9 +95,7 @@ class TestGuiStatusNamespacing:
 
         assert (step_dir / "gui_1_status.json").is_file()
         assert (step_dir / "gui_2_status.json").is_file()
-        gui_3_status = json.loads(
-            (step_dir / "design_studio_status.json").read_text()
-        )
+        gui_3_status = json.loads((step_dir / "design_studio_status.json").read_text())
 
         assert gui_3_status["gui_type"] == "design_studio"
         assert gui_3_status["launched"] is False

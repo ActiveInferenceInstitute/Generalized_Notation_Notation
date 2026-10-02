@@ -11,6 +11,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 SRC = Path(__file__).resolve().parents[2]
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
@@ -27,10 +29,22 @@ EXPECTED_FRAMEWORKS = {
     "numpyro",
     "pytorch",
     "ngclearn",
+    "thrml",
     "lean",
     "stan",
     "bnlearn",
 }
+
+
+@pytest.fixture(autouse=True)
+def deterministic_registry_readiness(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep metadata assertions separate from native package-load acceptance."""
+    from gnn.execute.executor import _RunnerState
+
+    monkeypatch.setattr(
+        "gnn.execute.executor._runner_state",
+        lambda framework: _RunnerState(True, None),
+    )
 
 
 def test_list_frameworks_returns_one_record_per_registered_backend() -> None:
@@ -38,7 +52,15 @@ def test_list_frameworks_returns_one_record_per_registered_backend() -> None:
     assert isinstance(records, list)
     assert {r["framework"] for r in records} == EXPECTED_FRAMEWORKS
     for record in records:
-        assert set(record) == {"framework", "result_key", "available", "operation"}
+        assert set(record) == {
+            "framework",
+            "result_key",
+            "available",
+            "operation",
+            "readiness",
+        }
+        assert record["readiness"]["framework"] == record["framework"]
+        assert record["readiness"]["available"] is record["available"]
         assert record["result_key"].endswith("_executions")
         assert isinstance(record["available"], bool)
         assert record["operation"].startswith("execute_")

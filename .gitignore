@@ -96,6 +96,8 @@ output/PIPELINE_REPORT.md
 output/semantic_fidelity/
 output/cross_framework/
 output/model_family_acceptance/
+output/v3_run_manifest/
+output/.gnn_run.lock
 /out/
 
 # Historical or redirected pipeline output under src/ may be generated as well, but should be ignored.
@@ -129,6 +131,8 @@ coverage.xml
 *.log
 nosetests.xml
 coverage.json
+/junit/*.xml
+/junit/*.json
 src/tests/htmlcov/
 */htmlcov/
 
