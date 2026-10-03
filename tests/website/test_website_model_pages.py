@@ -25,6 +25,7 @@ import os
 import re
 import sys
 from datetime import datetime
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
@@ -194,8 +195,82 @@ def _h1_text_window(page_html: str, span: int = 120) -> str:
 
 
 def _inline_scripts(page_html: str) -> list[str]:
-    """Attribute-less inline <script> bodies (the vanilla search JS)."""
-    return re.findall(r"<script>(.*?)</script>", page_html, re.DOTALL)
+    """Complete attribute-less script bodies, preserving their raw JavaScript."""
+
+    class InlineScriptParser(HTMLParser):
+        def __init__(self) -> None:
+            super().__init__(convert_charrefs=False)
+            self.scripts: list[str] = []
+            self.body: list[str] | None = None
+
+        def handle_starttag(
+            self, tag: str, attrs: list[tuple[str, str | None]]
+        ) -> None:
+            if tag == "script":
+                self.body = [] if not attrs else None
+
+        def handle_startendtag(
+            self, tag: str, attrs: list[tuple[str, str | None]]
+        ) -> None:
+            # An XML-style empty tag supplies no complete HTML script body.
+            pass
+
+        def handle_data(self, data: str) -> None:
+            if self.body is not None:
+                self.body.append(data)
+
+        def handle_endtag(self, tag: str) -> None:
+            if tag == "script" and self.body is not None:
+                self.scripts.append("".join(self.body))
+                self.body = None
+
+    parser = InlineScriptParser()
+    parser.feed(page_html)
+    parser.close()
+    return parser.scripts
+
+
+class TestInlineScriptExtraction:
+    """The search-script checks consume complete HTML raw-text elements."""
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        ("page_html", "expected"),
+        [
+            ("<SCRIPT>const upper = true;</SCRIPT>", ["const upper = true;"]),
+            ("<ScRiPt >mixed();</sCrIpT \n>", ["mixed();"]),
+            (
+                "<script>first();</script><script>second();</script>",
+                ["first();", "second();"],
+            ),
+            ("<script></script>", [""]),
+            ("<script>closed();</script><script>unfinished();", ["closed();"]),
+            ("<script>unfinished();</script", []),
+            ("<script/>not_a_complete_body();", []),
+            ("<!-- <script>commented();</script> -->", []),
+            ("<script src='external.js'>external();</script>", []),
+            ("<script TYPE='application/json'>{\"value\":1}</script>", []),
+            ("<script nonce='abc'>attributed();</script>", []),
+            (
+                "<script src='external.js'></script><SCRIPT>local();</SCRIPT>",
+                ["local();"],
+            ),
+        ],
+    )
+    def test_extracts_only_complete_attribute_less_scripts(
+        self, page_html: str, expected: list[str]
+    ) -> None:
+        assert _inline_scripts(page_html) == expected
+
+    @pytest.mark.unit
+    def test_preserves_raw_javascript_without_decoding_or_parsing_markup(self) -> None:
+        body = (
+            '\nconst markup = "<div>&lt; &#38; &amp;</div>";\n'
+            'const nested = "<script>literal</scriptx>";\n'
+            "// <!-- a raw JavaScript comment -->\n"
+            "if (left < right && right > 0) { use(markup); }\n"
+        )
+        assert _inline_scripts(f"<script>{body}</script>") == [body]
 
 
 class TestModelPageGeneration:
@@ -408,7 +483,9 @@ class TestSearchIndex:
         site, _ = _build_multi_model_site(tmp_path)
         standalone = json.loads((site / "search-index.json").read_text("utf-8"))
         listing = (site / "gnn_files.html").read_text(encoding="utf-8")
-        inline = json.loads(_SEARCH_DATA_RE.search(listing).group(1))
+        payload_match = _SEARCH_DATA_RE.search(listing)
+        assert payload_match is not None, "inline search data payload missing"
+        inline = json.loads(payload_match.group(1))
 
         assert inline == standalone
 
@@ -559,7 +636,9 @@ class TestDeepLinksAndHygiene:
 
         # Only the *new* markup on the listing page: payload + inline JS.
         listing = (site / "gnn_files.html").read_text(encoding="utf-8")
-        payload = _SEARCH_DATA_RE.search(listing).group(1)
+        payload_match = _SEARCH_DATA_RE.search(listing)
+        assert payload_match is not None, "inline search data payload missing"
+        payload = payload_match.group(1)
         scripts = "\n".join(_inline_scripts(listing))
         for snippet in (payload, scripts):
             assert "http://" not in snippet and "https://" not in snippet

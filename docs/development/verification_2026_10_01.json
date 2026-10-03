@@ -1,8 +1,15 @@
 {
   "schema": "gnn_v4_acceptance_receipt_v1",
   "baseline_commit": "536d949829f6aed11dc540e5c5dec77578b25016",
-  "status": "module_entry_source_ready_renewed_manuscript_wheel_gates_pairs_publication_pending",
-  "publication": "companion_draft_pr45_open_GNN_not_published",
+  "status": "test_only_CodeQL_repair_renewed_counts_artifacts_and_final_acceptance_pending",
+  "publication": {
+    "gnn_draft_pr": 251,
+    "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/pull/251",
+    "published_head": "0fce04d0357e5e26204f0049261a5aff225dd2f6",
+    "main_published": false,
+    "companion_draft_pr": 45,
+    "final_pair_pending": true
+  },
   "native_backend_receipts": {
     "full_reported/receipts.json": {
       "raw_receipt_sha256": "2924e73d31e245a8a9cebf88435b7fe344af171fb2fd7276e2884055e95a953f",
@@ -11528,5 +11535,99 @@
     "historical_candidate_inventory_sha256": "88f994d5f022ad7728c4ce7bd731ddedf9ba9c3819453be51b9a4cc018595863",
     "historical_candidate_preserved": true,
     "production_python_changes": false
+  },
+  "renewed_manuscript_ae34cfb": {
+    "source_content_commit": "ae34cfbdcab00b51f9fc454c4fb50a67013e9a2f",
+    "artifact_commit": "0fce04d0357e5e26204f0049261a5aff225dd2f6",
+    "template_commit": "f1914383a08f0f4195134ed33a359b7aacc4f978",
+    "render_seconds": 117.3279656249997,
+    "render_observed_descendants": 149,
+    "changed_artifacts": 49,
+    "independent_controls": 57,
+    "pdf_privacy_reviewed": 11,
+    "strict_committed_fresh": "passed",
+    "candidate_review_sha256": "ca827a26dff96152aea3a7fb4c9ba24e16b96c72bbe2404b5e82cb3f0ce53d1e",
+    "committed_review_sha256": "c73a42c8216488c1cee6dea01929f3561449549eced9aa2139dc474450f6a8a7",
+    "acceptance": "historical_after_test_only_CodeQL_repair_requires_count_and_render_renewal"
+  },
+  "renewed_installed_ae34cfb": {
+    "source_content_commit": "ae34cfbdcab00b51f9fc454c4fb50a67013e9a2f",
+    "artifact_commit": "0fce04d0357e5e26204f0049261a5aff225dd2f6",
+    "wheel_sha256": "36e71bebe855711b12751d5d58feaeac5d45f53c12e21eb5481e80405c41b907",
+    "passed_per_split": 324,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "supported_python_splits": [
+      "3.11",
+      "3.12"
+    ],
+    "raw_receipt_sha256_311": "54777aecc9a60833fac57a1a63f6aa8021a94f9165ae9495a6a67de2d6339b87",
+    "raw_receipt_sha256_312": "8434666d1dfd2aa1c1c6a5b6ab53e46af97ddb8948e6e369ad5f5dd89473e32d",
+    "independent_read_only_rebinding_sha256": "fe125b731a4f2248a716999ed9cafdae1790194af871265268d0d35f317bb772",
+    "independent_regular_namespace_members": 1183,
+    "independent_installed_record_hashes": 1192,
+    "resource_boundary": "Actual tests and cleanup passed. Runner did not continuously monitor shared storage; no continuous floor-compliance claim.",
+    "resource_boundary_sha256": "eaebd6da1167698d3bba64dbcc27dbfe0a575e4f6159768bbb3f41181852beab",
+    "original_private_admission_gaps_sha256": "15f61588af320f6b97aa4f2e34ea82e42856e280017c5e45725a8cfed75f7470",
+    "original_private_admission_claim": "Not fail-closed for symlink and incomplete/duplicate RECORD controls; independent stricter actual-namespace rebinding passed, private helper repair pending.",
+    "native_pipeline_cases_launched": 0
+  },
+  "storage_limited_default_attempt_ae34cfb": {
+    "source_content_commit": "ae34cfbdcab00b51f9fc454c4fb50a67013e9a2f",
+    "artifact_commit": "0fce04d0357e5e26204f0049261a5aff225dd2f6",
+    "status": "failed_partial_resource_floor_then_private_cleanup_guard_error",
+    "complete_junit": false,
+    "accepted": false,
+    "progress_observed_percent": 94,
+    "reason": "Shared free storage fell below 4GiB; the private guardian then raised EPERM signalling the ended process group. No full-suite pass is claimed.",
+    "log_sha256": "3a515a37560b4599346ac8227c4e00cf6580b4aad4cb3c9cbc3c3eb5ad7e7147",
+    "cohort_recovery_sha256": "333fd4229ba9e87ef4e7ef2c354f31635057d41e9e671b07dd23a731b414a414",
+    "marker_bound_children_recovered": 8,
+    "surviving_recovered_children": 0,
+    "retry": "Use reviewed public envelope, storage cancellation and two workers after owned scratch retirement."
+  },
+  "owned_disposable_scratch_retirement": {
+    "removed_completed_test_trees": 4,
+    "inventoried_entries": 234740,
+    "deduplicated_witness_objects": 320,
+    "actual_reclaimed_bytes": 5586034688,
+    "raw_receipt_sha256": "a2245b8ccf5fb1c3cff346afc69bd460312a7d736c36548001685c34d73c186a",
+    "canonical_sources_pins_lake_wheels_git_and_raw_receipts_preserved": true
+  },
+  "website_inline_script_CodeQL_repair": {
+    "status": "GO_final_test_only_source_frozen",
+    "alert": 17,
+    "rule": "py/bad-tag-filter",
+    "alert_classification": "test",
+    "inherited_main_commit": "536d949829f6aed11dc540e5c5dec77578b25016",
+    "inherited_alert_created": "2026-09-26",
+    "production_exploit_path": "not_demonstrated",
+    "triage_sha256": "043e40e2c3ced9b340533ecb8f5d6f9b68962e5165e5818bf6c09c1ddd38d555",
+    "repair": "Standard HTMLParser preserves complete attribute-less raw script bodies; explicit match assertions remove two inherited test typing errors.",
+    "changed_test_file": "tests/website/test_website_model_pages.py",
+    "candidate_sha256": "addc306789557b99b729c12fcff7c4386d081c343a6a6576ca1f5da0a1db9989",
+    "meaningful_regression_cases": 13,
+    "baseline_regression_failed": 4,
+    "website_tests_passed": 207,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "owner_receipt_sha256": "55335b056d9a15ceb53be726989cb29e9840a724aa024e69c8022d32f16c1831",
+    "static": "Ruff,format,mypy_test_module,diff_passed",
+    "hosted_CodeQL_closure": "pending_actual_rerun",
+    "independent_final_review_sha256": "af1f0df8e7d0e859142cd33120d11d700d6820c5f45ec15a55c9aaf892ab9853",
+    "independent_controls": 16,
+    "independent_changed_file_cases_passed": 40
+  },
+  "private_complete_verification_wrapper": {
+    "raw_sha256": "1d7198ae617d8832a06719073291f2dfab4ba4837d947f257f0e3ecc6d7c684d",
+    "independent_review_sha256": "282f088f83f35b00164f45413d24705419c41d4dd8712ece4580395ee4c613d4",
+    "policy_controls": 15,
+    "storage_cancel_controls": 4,
+    "bounded_git_controls": 2,
+    "default_workers": 2,
+    "inclusive_budget_seconds": 1800,
+    "claim": "Reviewed assembly only; new actual full-suite run pending."
   }
 }

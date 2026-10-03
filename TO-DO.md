@@ -6,7 +6,8 @@
 
 ## v4.0.0 — Active implementation
 
-The final installed-module configuration repair is independently approved.
+The installed-module configuration repair and inherited CodeQL test-helper
+repair are independently reviewed.
 Renew the source freeze, SC22 artifacts, ordinary wheels and complete default/
 pipeline/MCP gates. Historical source-452 refresh failures remain in the evidence
 ledger. Full native LLM prompt coverage and a version-specific archive DOI remain
