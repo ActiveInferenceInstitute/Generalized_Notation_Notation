@@ -351,6 +351,7 @@ def test_real_readiness_probe_timeout_is_failed_step12_work(
         "time.sleep(20)\n"
     )
     wrapper.chmod(0o700)
+    started = time.monotonic()
     try:
         result = single.execute_single_script(
             {
@@ -362,8 +363,11 @@ def test_real_readiness_probe_timeout_is_failed_step12_work(
             tmp_path / "output",
             False,
             logging.getLogger(__name__),
-            timeout=0.8,
+            # Include interpreter and psutil startup while still timing out
+            # the real ten-second child and twenty-second readiness wrapper.
+            timeout=3,
         )
+        assert time.monotonic() - started < 4
         assert result["status"] == "timed_out" and not result["skipped"], result
         assert result["reason_code"] == "probe_timeout"
         assert result["cleanup_verified"] and result["streams_drained"]
