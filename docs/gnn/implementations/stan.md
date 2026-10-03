@@ -67,10 +67,17 @@ uv run python -c "import cmdstanpy; cmdstanpy.install_cmdstan()"   # CmdStan too
 uv run python src/gnn/main.py --only-steps "3,11,12" --target-dir input/gnn_files/discrete
 ```
 
+CmdStan installs under `~/.cmdstan` by default and requires a working C++
+compiler and build tools. The download is explicitly opt-in; neither Step 1
+nor a readiness probe invokes `install_cmdstan()`. Record the installed
+CmdStan version alongside execution receipts.
+
 Without `cmdstanpy` *and* a CmdStan toolchain, Step 12 marks Stan scripts as
 `skipped` with the install hint (`gnn.utils.runtime_safety.framework_availability` probes
-`cmdstanpy.cmdstan_path()`); a missing toolchain is never recorded as a failed
-execution.
+`cmdstanpy.cmdstan_path()`); a missing toolchain is recorded with `reason_code: missing_toolchain`,
+while a missing driver uses `missing_module`. An import failure or the bounded
+30-second readiness timeout uses `probe_failed` or `probe_timeout`, without
+claiming that the package is absent.
 
 ## Structural sketch (`render_stan`)
 

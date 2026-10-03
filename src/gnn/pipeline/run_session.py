@@ -51,6 +51,8 @@ class RunSession(BaseModel):
     run_hash: str = ""
     units: List[WorkUnit] = Field(default_factory=list)
     schema_version: str = "1.0"
+    final_status: Optional[str] = None
+    evidence_integrity: Dict[str, Any] = Field(default_factory=dict)
 
 
 def _compute_session_hash(unit_ids: List[str], hash_length: int = 12) -> str:
@@ -230,7 +232,14 @@ def status_report(session: RunSession) -> dict:
         "by_status": by_status,
         "completed": completed,
         "percent_complete": percent_complete,
-        "done": total > 0 and completed == total,
+        "done": total > 0
+        and completed == total
+        and (
+            session.created_by != "gnn.main"
+            or session.final_status in ("SUCCESS", "SUCCESS_WITH_WARNINGS")
+        ),
+        "final_status": session.final_status,
+        "evidence_integrity": session.evidence_integrity,
     }
 
 

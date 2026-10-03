@@ -29,6 +29,7 @@ EXPECTED_FRAMEWORK_KEYS: set[Any] = {
     "numpyro_executions",
     "pytorch_executions",
     "ngclearn_executions",
+    "thrml_executions",
     "lean_executions",
     "stan_executions",
     "bnlearn_executions",
@@ -36,13 +37,14 @@ EXPECTED_FRAMEWORK_KEYS: set[Any] = {
 
 
 def test_framework_spec_registry_matches_summary_contract() -> None:
-    specs = executor_module._framework_specs()
+    specs = executor_module._framework_specs(resolve_availability=False)
 
     assert [spec.framework_dir_key for spec in specs] == list(
         executor_module.FRAMEWORK_DIR_NAMES
     )
     assert {spec.result_key for spec in specs} == EXPECTED_FRAMEWORK_KEYS
     assert all(spec.runner is not None or not spec.available for spec in specs)
+    assert all(spec.readiness_pending for spec in specs)
 
 
 def test_executor_covers_all_frameworks(tmp_path: Path) -> None:

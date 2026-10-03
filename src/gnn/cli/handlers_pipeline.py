@@ -17,7 +17,7 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .commands import (
     EXTRACT_DEFECT_EMPTY_SKELETON,
@@ -25,6 +25,7 @@ from .commands import (
     build_parse_payload,
     extract_payload_defect,
     find_render_artifact,
+    render_processing_succeeded,
     run_validation_checks,
 )
 from .helpers import (
@@ -324,6 +325,9 @@ def _cmd_render(args: argparse.Namespace) -> int:
     from gnn.render import process_render
 
     framework = str(args.framework)
+    options = json.loads(getattr(args, "options", "{}"))
+    if not isinstance(options, dict):
+        raise ValueError("--options requires a JSON object")
     with tempfile.TemporaryDirectory(prefix="gnn-render-") as td:
         tmp_root = Path(td)
         input_dir = tmp_root / "input"
@@ -342,9 +346,10 @@ def _cmd_render(args: argparse.Namespace) -> int:
             frameworks=[framework],
             strict_validation=False,
             strict_framework_success=True,
+            backend_options={framework: options},
         )
 
-        if ok not in (True, 0):
+        if not render_processing_succeeded(ok):
             logger.error(
                 "Render failed for %s using framework %s", args.file, framework
             )
@@ -361,28 +366,27 @@ def _cmd_render(args: argparse.Namespace) -> int:
                 )
             return EXIT_ERROR
 
-        artifact: Optional[Path] = None
-        if args.output:
-            artifact = find_render_artifact(render_dir, framework)
-            if artifact is None:
-                logger.error(
-                    "Render completed but no %s artifact was found in %s",
-                    framework,
-                    render_dir,
+        artifact = find_render_artifact(render_dir, framework, require_current=True)
+        if artifact is None:
+            logger.error(
+                "Render completed but no %s artifact was found in %s",
+                framework,
+                render_dir,
+            )
+            if is_json:
+                _print_envelope(
+                    "error",
+                    error={
+                        "code": "render_error",
+                        "message": (
+                            f"Render completed but no {framework} artifact "
+                            f"was found in {render_dir}"
+                        ),
+                    },
+                    command="render",
                 )
-                if is_json:
-                    _print_envelope(
-                        "error",
-                        error={
-                            "code": "render_error",
-                            "message": (
-                                f"Render completed but no {framework} artifact "
-                                f"was found in {render_dir}"
-                            ),
-                        },
-                        command="render",
-                    )
-                return EXIT_ERROR
+            return EXIT_ERROR
+        if args.output:
             args.output.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(artifact, args.output)
 

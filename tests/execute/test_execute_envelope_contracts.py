@@ -37,6 +37,7 @@ from gnn.execute.rxinfer import rxinfer_runner
 from gnn.execute.rxinfer.rxinfer_runner import execute_rxinfer_script
 from gnn.execute.stan.stan_runner import execute_stan_script
 from gnn.execute.subprocess_envelope import CancelToken
+from gnn.utils.runtime_safety.framework_availability import FrameworkStatus
 
 
 def _envelope(**overrides: Any) -> Dict[str, Any]:
@@ -303,6 +304,10 @@ def test_activeinference_package_probe_failure_returns_false(
 def test_stan_script_default_call_shape_and_result_mapping(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setattr(
+        "gnn.execute.stan.stan_runner._check_stan_status",
+        lambda *args, **kwargs: FrameworkStatus("stan", available=True),
+    )
     script = tmp_path / "m_stan.py"
     script.write_text("print('ok')\n")
     out_dir = tmp_path / "stan_out"
@@ -316,7 +321,8 @@ def test_stan_script_default_call_shape_and_result_mapping(
 
     assert out_dir.is_dir()  # created up front so the child can write into it
     assert spy.calls[0]["command"] == [sys.executable, str(script)]
-    assert spy.calls[0]["kwargs"]["timeout"] == 1800
+    assert 0 < spy.calls[0]["kwargs"]["timeout"] <= 1800
+    assert spy.calls[0]["kwargs"]["deadline_monotonic"] is not None
     assert spy.calls[0]["kwargs"]["env"] == {"STAN_OUTPUT_DIR": str(out_dir)}
     assert spy.calls[0]["kwargs"]["cwd"] == str(out_dir)
     assert result == {
@@ -334,6 +340,10 @@ def test_stan_script_default_call_shape_and_result_mapping(
 def test_stan_script_failure_maps_envelope_and_honors_overrides(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setattr(
+        "gnn.execute.stan.stan_runner._check_stan_status",
+        lambda *args, **kwargs: FrameworkStatus("stan", available=True),
+    )
     script = tmp_path / "m_stan.py"
     script.write_text("print('ok')\n")
     out_dir = tmp_path / "stan_out"
@@ -348,7 +358,8 @@ def test_stan_script_failure_maps_envelope_and_honors_overrides(
     )
 
     assert spy.calls[0]["command"] == ["custompython", str(script)]
-    assert spy.calls[0]["kwargs"]["timeout"] == 60
+    assert 0 < spy.calls[0]["kwargs"]["timeout"] <= 60
+    assert spy.calls[0]["kwargs"]["deadline_monotonic"] is not None
     assert result["success"] is False
     assert result["return_code"] == 2
     assert result["stderr"] == "compile failed"
@@ -603,8 +614,9 @@ def test_pymdp_non_py_source_model_path_is_not_cached(
     second = executor._execute_pymdp_script(str(model))
 
     assert spy.calls == []  # canned path never spawns, never caches
-    assert "treated as source model" in first["stdout"]
-    assert "treated as source model" in second["stdout"]
+    assert not first["success"] and first["skipped"]
+    assert first["error_type"] == "RenderedScriptRequired"
+    assert not second["success"] and second["skipped"]
     assert "cache_hit" not in first
     assert "cache_hit" not in second
     assert not (tmp_path / "cache").exists()

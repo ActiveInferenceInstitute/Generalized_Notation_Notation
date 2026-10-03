@@ -12,6 +12,8 @@ import json
 import logging
 import os
 import threading
+import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -170,7 +172,7 @@ def _aggregation(receipt: dict[str, Any]) -> list[tuple[str, str, str, int]]:
     ]
 
 
-def test_parallel_consolidated_produces_mixed_receipts(
+def test_parallel_consolidated_preserves_hard_process_boundary(
     isolated_run: PipelineArguments, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _inject_steps(monkeypatch, isolated_run)
@@ -185,13 +187,15 @@ def test_parallel_consolidated_produces_mixed_receipts(
     )
     serial_tier_calls: list[str] = []
     real_iteration = orchestrator._execute_pipeline_iteration
+
+    def record_serial_iteration(*call_args: Any) -> Any:
+        serial_tier_calls.append(call_args[1])
+        return real_iteration(*call_args)
+
     monkeypatch.setattr(
         orchestrator,
         "_execute_pipeline_iteration",
-        lambda *call_args: (
-            serial_tier_calls.append(call_args[1]),
-            real_iteration(*call_args),
-        ),
+        record_serial_iteration,
     )
 
     assert orchestrator.main(isolated_run) == 0
@@ -199,9 +203,9 @@ def test_parallel_consolidated_produces_mixed_receipts(
 
     modes = {step["script_name"]: step["execution_mode"] for step in receipt["steps"]}
     assert modes == {
-        "0_template.py": "consolidated",
-        "3_gnn.py": "consolidated",
-        "5_type_checker.py": "consolidated",
+        "0_template.py": "subprocess",
+        "3_gnn.py": "subprocess",
+        "5_type_checker.py": "subprocess",
         "9_advanced_viz.py": "subprocess",
     }
     # Dependency ordering preserved: wave 1, then the shared wave, then viz.
@@ -212,8 +216,11 @@ def test_parallel_consolidated_produces_mixed_receipts(
     # single-step serial iteration helper.
     assert sorted(serial_tier_calls) == ["0_template.py", "9_advanced_viz.py"]
     # Consolidated workers ran under the run's GNN_RUN_ID scope.
-    consolidated_run_ids = {call[2] for call in calls if call[0] == "consolidated"}
-    assert consolidated_run_ids == {receipt["run_id"]}
+    assert not any(call[0] == "consolidated" for call in calls)
+    assert all(
+        step["execution_fallback_reason"] == "hard_deadline_requires_process_boundary"
+        for step in receipt["steps"]
+    )
     assert "GNN_RUN_ID" not in os.environ
 
 
@@ -249,7 +256,7 @@ def test_serial_and_parallel_consolidated_aggregation_match(
     ]
 
 
-def test_parallel_consolidated_runs_step_functions_in_process(
+def test_parallel_consolidated_does_not_start_uncontained_threads(
     isolated_run: PipelineArguments, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _inject_steps(monkeypatch, isolated_run)
@@ -284,10 +291,49 @@ def test_parallel_consolidated_runs_step_functions_in_process(
     receipt = read_receipt(isolated_run)
 
     # The real executor ran the (fake) module functions in-process.
-    assert sorted(executed) == ["0_template", "3_gnn", "5_type_checker"]
+    assert executed == []
     modes = {step["script_name"]: step["execution_mode"] for step in receipt["steps"]}
-    assert modes["3_gnn.py"] == "consolidated"
+    assert modes["3_gnn.py"] == "subprocess"
     assert modes["9_advanced_viz.py"] == "subprocess"
     assert all(step["status"] == "SUCCESS" for step in receipt["steps"])
     for stem in ("0_template", "3_gnn", "5_type_checker"):
-        assert (isolated_run.output_dir / f"{stem}_output" / "marker.txt").is_file()
+        assert not (isolated_run.output_dir / f"{stem}_output" / "marker.txt").is_file()
+
+
+def test_parallel_receipts_measure_workers_before_ordered_future_collection(
+    isolated_run: PipelineArguments, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A completed sibling keeps its own runtime while an earlier task waits."""
+    _inject_steps(monkeypatch, isolated_run)
+    finished_fast = threading.Event()
+    observed: dict[str, tuple[float, float]] = {}
+    fake = _subprocess_fake([], threading.Lock())
+
+    def worker(script_name, *args, **kwargs):
+        started = time.monotonic()
+        if script_name == "3_gnn.py":
+            assert finished_fast.wait(timeout=5)
+            time.sleep(0.15)
+        elif script_name == "5_type_checker.py":
+            time.sleep(0.03)
+            finished_fast.set()
+        result = fake(script_name, *args, **kwargs)
+        observed[script_name] = (started, time.monotonic())
+        return result
+
+    monkeypatch.setattr(orchestrator, "execute_pipeline_step", worker)
+    assert orchestrator.main(isolated_run) == 0
+    records = {
+        step["script_name"]: step for step in read_receipt(isolated_run)["steps"]
+    }
+    for name in ("3_gnn.py", "5_type_checker.py"):
+        actual_start, actual_end = observed[name]
+        assert records[name]["duration_seconds"] >= actual_end - actual_start > 0
+        recorded_wall_duration = (
+            datetime.fromisoformat(records[name]["end_time"])
+            - datetime.fromisoformat(records[name]["start_time"])
+        ).total_seconds()
+        assert abs(recorded_wall_duration - records[name]["duration_seconds"]) < 0.05
+    assert datetime.fromisoformat(
+        records["5_type_checker.py"]["end_time"]
+    ) < datetime.fromisoformat(records["3_gnn.py"]["end_time"])

@@ -7,8 +7,9 @@ Pins two invariants the 2026-08-05 red-team review found broken:
    substring scan misrouted ``temporal_hierarchy.md`` on the word
    "Hierarchy" in its name and made every exemplar one doc-comment away
    from a render failure).
-2. Every GNN exemplar renders through the real pipeline path (the
-   "30/30 render" contract), with the intended kind taxonomy.
+2. Every model receives its intended structural taxonomy and an explicit
+   rendered, scientifically invalid, or unsupported outcome. Strict rendering
+   preserves authored values and never silently normalizes malformed examples.
 
 Pure Python — no Julia required, zero skips.
 """
@@ -17,6 +18,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from gnn.extract.pomdp_extractor import extract_pomdp_from_file
@@ -40,7 +42,15 @@ from gnn.render.rxinfer.rxinfer_renderer import render_gnn_to_rxinfer
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 GNN_FILES = PROJECT_ROOT / "input" / "gnn_files"
 
-EXEMPLAR_COUNT = 36
+EXEMPLAR_COUNT = 38
+INVALID_SOURCE_CONDITIONALS = {
+    "basics/dynamic_perception.md": "probability mass must be one",
+    "basics/static_perception.md": "probability mass must be one",
+    "discrete/hmm_baseline.md": "probability mass must be one",
+    "discrete/tmaze_epistemic.md": "positive finite mass",
+    "hierarchical/hierarchical_pomdp.md": "probability mass must be one",
+    "hierarchical/temporal_hierarchy.md": "probability mass must be one",
+}
 
 # The intended kind for every non-flat exemplar; everything else is FLAT.
 EXPECTED_NON_FLAT = {
@@ -49,6 +59,7 @@ EXPECTED_NON_FLAT = {
     "continuous/ngclearn_lgssm.md": ModelKind.CONTINUOUS,
     "continuous/predictive_coding_agent.md": ModelKind.CONTINUOUS,
     "continuous/multi_agent_lgssm.md": ModelKind.MULTI_AGENT,
+    "continuous/independent_gaussian_agents.md": ModelKind.MULTI_AGENT,
     "continuous/stochastic_dynamics.md": ModelKind.CONTINUOUS,
     "continuous/factored_continuous_lgssm.md": ModelKind.CONTINUOUS,
     "continuous/hybrid_discrete_continuous.md": ModelKind.HYBRID,
@@ -97,7 +108,12 @@ class TestExemplarKindTaxonomy:
         for gnn_file in _exemplar_files():
             rel = str(gnn_file.relative_to(GNN_FILES))
             expected = EXPECTED_NON_FLAT.get(rel, ModelKind.FLAT)
-            actual = detect_model_kind(_canonical_spec(gnn_file))
+            # Structural classification is independent of numeric validity;
+            # strict construction/refusal is checked separately below.
+            pomdp = extract_pomdp_from_file(gnn_file, strict_validation=True)
+            assert pomdp is not None
+            raw_spec = pomdp_to_gnn_spec(pomdp, preserve_discrete_structure=True)
+            actual = detect_model_kind(raw_spec)
             if actual != expected:
                 mismatches.append(
                     f"{rel}: expected {expected.value}, got {actual.value}"
@@ -105,22 +121,21 @@ class TestExemplarKindTaxonomy:
         assert not mismatches, "kind misdetections:\n" + "\n".join(mismatches)
 
     def test_all_exemplars_render(self, tmp_path: Path) -> None:
-        """The full-corpus render contract, through the public renderer entry.
-
-        Every plain kind renders — natively for flat / hierarchical two-level /
-        factored / continuous / learning, and via the documented joint
-        composition for multi-agent and 3+-level hierarchical. The one
-        composed spec (continuous × multi-agent) is receipted
-        ``unsupported-composition`` instead of silently rendered as the
-        single-winner family.
-        """
+        """Every selected source gets a strict, explicit scientific outcome."""
         failures = []
+        outcomes = {"rendered": set(), "invalid": set(), "unsupported": set()}
         for gnn_file in _exemplar_files():
             pomdp = extract_pomdp_from_file(gnn_file, strict_validation=True)
             assert pomdp is not None, f"extraction failed for {gnn_file}"
-            spec = pomdp_to_gnn_spec(pomdp)
             script = tmp_path / f"{gnn_file.stem}_rxinfer.jl"
             rel = str(gnn_file.relative_to(GNN_FILES))
+            if rel in INVALID_SOURCE_CONDITIONALS:
+                with pytest.raises(ValueError, match=INVALID_SOURCE_CONDITIONALS[rel]):
+                    pomdp_to_gnn_spec(pomdp, native_agents=True)
+                assert not script.exists()
+                outcomes["invalid"].add(rel)
+                continue
+            spec = pomdp_to_gnn_spec(pomdp, native_agents=True)
             receipted = {
                 "continuous/multi_agent_lgssm.md": "unsupported-composition",
                 "continuous/hybrid_discrete_continuous.md": ("unsupported-composition"),
@@ -133,13 +148,21 @@ class TestExemplarKindTaxonomy:
                 assert not success
                 assert receipted[rel] in message
                 assert not script.exists()
+                outcomes["unsupported"].add(rel)
                 continue
             success, message, _warnings = render_gnn_to_rxinfer(spec, script)
             if not success:
                 failures.append(f"{gnn_file.name}: {message}")
             else:
                 assert script.exists() and script.stat().st_size > 0
+                outcomes["rendered"].add(rel)
         assert not failures, "render failures:\n" + "\n".join(failures)
+        assert outcomes["invalid"] == set(INVALID_SOURCE_CONDITIONALS)
+        assert len(outcomes["rendered"]) == 27
+        assert len(outcomes["unsupported"]) == 5
+        assert set.union(*outcomes.values()) == {
+            str(path.relative_to(GNN_FILES)) for path in _exemplar_files()
+        }
 
 
 class TestStructuralDetection:
@@ -282,8 +305,20 @@ class TestStrategyDispatchAndCodegen:
 
     def test_hierarchical_two_level_generates_native_script(self) -> None:
         gnn_file = GNN_FILES / "hierarchical" / "hierarchical_pomdp.md"
+        pomdp = extract_pomdp_from_file(gnn_file, strict_validation=True)
+        assert pomdp is not None
+        # An explicit test conditional, not a repair of the authored example
+        # whose A_level2 columns have mass two. Distinct contexts stay distinct.
+        likelihood = [[0.6, 0.1], [0.1, 0.6], [0.2, 0.1], [0.1, 0.2]]
+        pomdp.matrices["A_level2"] = likelihood
+        spec = build_canonical_pomdp_spec(pomdp_to_gnn_spec(pomdp))
+        expected = np.kron(np.asarray(pomdp.matrices["A_level1"]), likelihood)
+        np.testing.assert_allclose(
+            spec["initialparameterization"]["A"], expected, rtol=0, atol=1e-15
+        )
+        assert spec["structured_pomdp"]["matrices"]["A_level2"] == likelihood
         code = HierarchicalStrategy().generate_model_code(
-            _canonical_spec(gnn_file), "hierarchical_pomdp"
+            spec, "hierarchical_valid_test_fixture"
         )
         assert "hierarchical_pomdp_model" in code
         assert "hierarchical_constraints()" in code
@@ -294,8 +329,37 @@ class TestStrategyDispatchAndCodegen:
     def test_hierarchical_three_level_renders_joint_composition(self) -> None:
         """3+ declared levels use the documented joint-composition path."""
         gnn_file = GNN_FILES / "hierarchical" / "temporal_hierarchy.md"
+        pomdp = extract_pomdp_from_file(gnn_file, strict_validation=True)
+        assert pomdp is not None
+        # Each fixture column is an explicitly authored conditional. They are
+        # asymmetric and distinguish all levels without normalizing the source.
+        likelihoods = {
+            "A_level0": [
+                [0.8, 0.1, 0.1, 0.2],
+                [0.1, 0.8, 0.1, 0.3],
+                [0.1, 0.1, 0.8, 0.5],
+            ],
+            "A_level1": [
+                [0.7, 0.1, 0.1],
+                [0.1, 0.7, 0.1],
+                [0.1, 0.1, 0.7],
+                [0.1, 0.1, 0.1],
+            ],
+            "A_level2": [[0.8, 0.1], [0.1, 0.8], [0.1, 0.1]],
+        }
+        pomdp.matrices.update(likelihoods)
+        spec = build_canonical_pomdp_spec(pomdp_to_gnn_spec(pomdp))
+        expected = np.kron(
+            likelihoods["A_level0"],
+            np.kron(likelihoods["A_level1"], likelihoods["A_level2"]),
+        )
+        np.testing.assert_allclose(
+            spec["initialparameterization"]["A"], expected, rtol=0, atol=1e-15
+        )
+        for key, value in likelihoods.items():
+            assert spec["structured_pomdp"]["matrices"][key] == value
         code = HierarchicalStrategy().generate_model_code(
-            _canonical_spec(gnn_file), "temporal_hierarchy"
+            spec, "temporal_hierarchy_valid_test_fixture"
         )
         assert 'const MODEL_KIND = "hierarchical"' in code
         # Joint composition means the flat pomdp_model, not the native chain.
@@ -434,7 +498,9 @@ class TestContinuousNativeCodegen:
             "model_parameters": {},
             "initialparameterization": dict(TestStructuralDetection._BASE_INITIAL),
         }
-        with pytest.raises(ValueError, match="missing the continuous parameterization"):
+        with pytest.raises(
+            ValueError, match=r"continuous spec is missing.*'F'.*'prior_cov'"
+        ):
             ContinuousStrategy().generate_model_code(spec, "no_lgssm")
 
     def test_partial_continuous_parameterization_names_the_gap(self) -> None:

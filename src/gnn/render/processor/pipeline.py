@@ -54,6 +54,25 @@ def process_render(
     Returns:
         True if processing succeeded, False otherwise
     """
+    from gnn.pipeline.run_context import current_run_context
+
+    context = current_run_context()
+    configuration_source = kwargs.get("resolved_config", kwargs.get("input_config"))
+    if configuration_source is None and context is not None:
+        configuration_source = context.input_config
+    if configuration_source is not None:
+        if not isinstance(configuration_source, dict):
+            raise ValueError("Render configuration must be a mapping")
+        render_configuration = configuration_source.get("render", {})
+        if not isinstance(render_configuration, dict):
+            raise ValueError("render configuration must be a mapping")
+        configured_options = render_configuration.get("backend_options", {})
+        if not isinstance(configured_options, dict):
+            raise ValueError("render.backend_options must be a mapping")
+        explicit_options = kwargs.get("backend_options", {})
+        if not isinstance(explicit_options, dict):
+            raise ValueError("backend_options must be a mapping")
+        kwargs["backend_options"] = {**configured_options, **explicit_options}
     try:
         logger.info(f"Processing GNN files in: {target_dir}")
         logger.info(f"Output directory: {output_dir}")

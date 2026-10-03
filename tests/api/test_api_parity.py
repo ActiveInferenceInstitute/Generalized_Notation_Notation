@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import importlib.util
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Set
 
@@ -636,6 +637,41 @@ def test_models_ontology_query_filters_matches(client: TestClient) -> None:
     envelope = _assert_envelope(response.json())
     assert envelope["data"]["matching_models"] == []
     assert envelope["data"]["query_ontology"] == "no-such-ontology-term-xyz"
+
+
+@pytest.mark.unit
+def test_registry_requests_are_isolated_and_leave_tracked_output_unchanged(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Real concurrent registry snapshots cannot share or retain scratch files."""
+    import gnn.model_registry
+
+    tracked = Path("output/model_registry_api/model_registry.json")
+    before = tracked.read_bytes()
+    original = gnn.model_registry.process_model_registry
+    scratch_paths: List[Path] = []
+
+    def capture_scratch(**kwargs: Any) -> Any:
+        scratch_paths.append(kwargs["output_dir"])
+        return original(**kwargs)
+
+    monkeypatch.setattr(gnn.model_registry, "process_model_registry", capture_scratch)
+
+    def query(term: str) -> Any:
+        return client.get(
+            "/api/v1/models",
+            params={"target_dir": "input/gnn_files/discrete", "query_ontology": term},
+        )
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        responses = list(pool.map(query, ["", "absent-a", "", "absent-b"]))
+    assert all(response.status_code == 200 for response in responses)
+    assert responses[0].json()["data"]["total_models"] > 0
+    assert responses[1].json()["data"]["matching_models"] == []
+    assert responses[3].json()["data"]["matching_models"] == []
+    assert len(set(scratch_paths)) == 4
+    assert all(not path.exists() for path in scratch_paths)
+    assert tracked.read_bytes() == before
 
 
 @pytest.mark.unit

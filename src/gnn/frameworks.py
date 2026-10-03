@@ -33,6 +33,8 @@ ALL_FRAMEWORKS: Final[tuple[str, ...]] = (
     "numpyro",
     "stan",
     "bnlearn",
+    "cpomdp",
+    "thrml",
     "ngclearn",
     "lean",
 )
@@ -47,4 +49,10 @@ LITE_FRAMEWORKS: Final[tuple[str, ...]] = (
     "bnlearn",
 )
 
-__all__ = ["ALL_FRAMEWORKS", "LITE_FRAMEWORKS"]
+# The execution-only Lean bridge has no renderer. This leaf subset lets the
+# CLI build without importing optional scientific dependencies.
+RENDER_FRAMEWORKS: Final[tuple[str, ...]] = tuple(
+    name for name in ALL_FRAMEWORKS if name != "lean"
+)
+
+__all__ = ["ALL_FRAMEWORKS", "LITE_FRAMEWORKS", "RENDER_FRAMEWORKS"]

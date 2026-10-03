@@ -29,7 +29,9 @@ from gnn.validation.orientation import scan_b_orientation, transpose_b_to_canoni
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CORPUS_DIR = REPO_ROOT / "input" / "gnn_files"
 
-_DECL = "B[2,2,2,type=float]  # Transition matrix: B[next_state, previous_state, actions]"
+_DECL = (
+    "B[2,2,2,type=float]  # Transition matrix: B[next_state, previous_state, actions]"
+)
 
 # Textbook layout, action-outer: values[a][p][n], every row sums to 1.
 _TEXTBOOK_3D_LITERAL = """B={

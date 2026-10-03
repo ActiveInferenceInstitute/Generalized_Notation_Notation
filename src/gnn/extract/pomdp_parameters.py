@@ -35,6 +35,9 @@ class POMDPParametersMixin(POMDPExtractorSupportMixin):
     _FACTOR_CONTINUOUS_KEY = re.compile(
         r"^(F|H|Q|R|prior_mean|prior_cov|goal_mean|control_gain)_f(\d+)$"
     )
+    _AGENT_CONTINUOUS_KEY = re.compile(
+        r"^(F|H|Q|R|prior_mean|prior_cov|goal_mean|control_gain)_agent([1-9]\d*)$"
+    )
 
     def _is_continuous_model(
         self, gnn_section: Optional[str], initial_params: Dict[str, Any]
@@ -48,6 +51,8 @@ class POMDPParametersMixin(POMDPExtractorSupportMixin):
             return True
         if any(self._FACTOR_CONTINUOUS_KEY.match(key) for key in initial_params):
             return True
+        if any(self._AGENT_CONTINUOUS_KEY.match(key) for key in initial_params):
+            return True
         return all(key in initial_params for key in ("F", "H", "Q", "R"))
 
     def _extract_continuous_dimensions(
@@ -57,86 +62,86 @@ class POMDPParametersMixin(POMDPExtractorSupportMixin):
         model_parameters: Dict[str, Any],
     ) -> Tuple[int, int, int, Optional[int]]:
         """Dimensions of a linear-Gaussian model: n from F, m from H."""
-        # Per-factor block (F_fN/H_fN/...): the joint dimensions come from
-        # factor 1. Per-factor shape validation lives in
-        # render.continuous_common.extract_factored_continuous_spec, so the
-        # plain per-key shape loop below is deliberately skipped here. When
-        # plain F/H/Q/R are all present too, the plain block wins and the
-        # plain path below runs unchanged.
-        factor_keys = [
-            key for key in initial_params if self._FACTOR_CONTINUOUS_KEY.match(key)
-        ]
-        if (
-            factor_keys
-            and "F_f1" in initial_params
-            and not all(k in initial_params for k in ("F", "H", "Q", "R"))
-        ):
-            f_shape = self._nested_shape(initial_params["F_f1"])
-            if len(f_shape) != 2 or f_shape[0] != f_shape[1]:
-                raise ValueError(f"F_f1 must be a square matrix, got shape {f_shape}")
-            h_shape = self._nested_shape(initial_params["H_f1"])
-            if len(h_shape) != 2 or h_shape[1] != f_shape[0]:
-                raise ValueError(
-                    f"H_f1 must have shape [m, n] with n={f_shape[0]}, got {h_shape}"
-                )
-            num_states, num_observations = f_shape[0], h_shape[0]
+        if any(self._AGENT_CONTINUOUS_KEY.fullmatch(key) for key in initial_params):
+            from gnn.render.multi_agent_continuous import (
+                extract_multi_agent_continuous_specs,
+            )
+
+            agents = extract_multi_agent_continuous_specs(
+                {
+                    "initialparameterization": initial_params,
+                    "model_parameters": model_parameters,
+                }
+            )
+            first = next(iter(agents.values()))
             self._dimension_sources = {
-                "num_states": "per_factor_block",
-                "num_observations": "per_factor_block",
-                "num_actions": "default",
-                "num_timesteps": "default",
+                "num_states": "per_agent_block",
+                "num_observations": "per_agent_block",
+                "num_actions": "declared_continuous_controls",
+                "num_timesteps": "ModelParameters",
             }
-            # One continuous control channel when a control variable is declared.
-            num_actions = 1 if state_space_info.get("action_variables") else 0
-            num_timesteps: Optional[int] = None
-            raw_t = model_parameters.get("num_timesteps")
-            if raw_t is not None:
-                try:
-                    num_timesteps = int(raw_t)
-                    self._dimension_sources["num_timesteps"] = "ModelParameters"
-                except (TypeError, ValueError):
-                    num_timesteps = None
-            return num_states, num_observations, num_actions, num_timesteps
-        missing = [k for k in self.CONTINUOUS_REQUIRED_KEYS if k not in initial_params]
-        if missing:
-            raise ValueError(
-                f"continuous model is missing linear-Gaussian parameters {missing}"
+            return (
+                first.n,
+                first.m,
+                int(any(agent.has_control for agent in agents.values())),
+                first.num_timesteps,
             )
-        f_shape = self._nested_shape(initial_params["F"])
-        h_shape = self._nested_shape(initial_params["H"])
-        if len(f_shape) != 2 or f_shape[0] != f_shape[1]:
-            raise ValueError(f"F must be a square matrix, got shape {f_shape}")
-        if len(h_shape) != 2 or h_shape[1] != f_shape[0]:
-            raise ValueError(
-                f"H must have shape [m, n] with n={f_shape[0]}, got {h_shape}"
-            )
-        num_states, num_observations = f_shape[0], h_shape[0]
-        self._dimension_sources = {
-            "num_states": "variable_dimensions",
-            "num_observations": "variable_dimensions",
-            "num_actions": "default",
-            "num_timesteps": "default",
+        from gnn.render.continuous_common import (
+            extract_continuous_spec,
+            extract_factored_continuous_spec,
+        )
+
+        spec = {
+            "initialparameterization": initial_params,
+            "model_parameters": model_parameters,
         }
-        for key, expected in (
-            ("Q", [num_states, num_states]),
-            ("R", [num_observations, num_observations]),
-            ("prior_cov", [num_states, num_states]),
-            ("prior_mean", [num_states]),
+        factor_keys = [
+            key for key in initial_params if self._FACTOR_CONTINUOUS_KEY.fullmatch(key)
+        ]
+        if factor_keys and not all(
+            key in initial_params for key in self.CONTINUOUS_REQUIRED_KEYS
         ):
-            shape = self._nested_shape(initial_params[key])
-            if shape != expected:
-                raise ValueError(f"{key} has shape {shape}, expected {expected}")
-        # One continuous control channel when a control variable is declared.
-        num_actions = 1 if state_space_info.get("action_variables") else 0
-        num_timesteps = None
-        raw_t = model_parameters.get("num_timesteps")
-        if raw_t is not None:
-            try:
-                num_timesteps = int(raw_t)
-                self._dimension_sources["num_timesteps"] = "ModelParameters"
-            except (TypeError, ValueError):
-                num_timesteps = None
-        return num_states, num_observations, num_actions, num_timesteps
+            validated_factors = extract_factored_continuous_spec(spec)
+            first_factor = validated_factors.factors[0]
+            states, observations, timesteps = (
+                first_factor.n,
+                first_factor.m,
+                validated_factors.num_timesteps,
+            )
+            dimension_source = "per_factor_block"
+        else:
+            missing = [
+                key
+                for key in self.CONTINUOUS_REQUIRED_KEYS
+                if key not in initial_params
+            ]
+            if missing:
+                raise ValueError(
+                    f"continuous model is missing linear-Gaussian parameters {missing}"
+                )
+            validated = extract_continuous_spec(spec)
+            states, observations, timesteps = (
+                validated.n,
+                validated.m,
+                validated.num_timesteps,
+            )
+            dimension_source = "variable_dimensions"
+        self._dimension_sources = {
+            "num_states": dimension_source,
+            "num_observations": dimension_source,
+            "num_actions": "declared_continuous_controls"
+            if state_space_info.get("action_variables")
+            else "default",
+            "num_timesteps": "ModelParameters"
+            if "num_timesteps" in model_parameters
+            else "default",
+        }
+        return (
+            states,
+            observations,
+            int(bool(state_space_info.get("action_variables"))),
+            timesteps if "num_timesteps" in model_parameters else None,
+        )
 
     def _collect_continuous_parameters(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Return the linear-Gaussian parameter block (no discrete stand-in)."""
@@ -153,7 +158,9 @@ class POMDPParametersMixin(POMDPExtractorSupportMixin):
                     value = float(value)
                 out[key] = value
         for key in params:
-            if self._FACTOR_CONTINUOUS_KEY.match(key):
+            if self._FACTOR_CONTINUOUS_KEY.match(
+                key
+            ) or self._AGENT_CONTINUOUS_KEY.fullmatch(key):
                 value = params[key]
                 if key.startswith("control_gain_f"):
                     # scalar declared as {(v)} parses to [v] (per-factor twin)

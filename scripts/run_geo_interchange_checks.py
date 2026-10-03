@@ -76,7 +76,7 @@ def _python_path(value: Path) -> Path:
     """
     if value.is_absolute():
         return value
-    return (Path.cwd() / value).resolve()
+    return Path.cwd() / value
 
 
 def _read_pin(pin_file: Path) -> dict[str, str]:
@@ -128,6 +128,8 @@ def _validator_receipt(
     gnn_root: Path,
     gnn_python: Path,
     receipts_dir: Path,
+    *,
+    timeout: float = 1800,
 ) -> dict[str, Any]:
     """Run the pinned GEO validator; write its receipt; return parsed JSON.
 
@@ -139,7 +141,9 @@ def _validator_receipt(
     validator = geo_root / VALIDATOR_RELATIVE
     if not validator.is_file():
         _fail_usage(f"validator missing in pinned checkout: {validator}")
-    completed = subprocess.run(
+    from gnn.execute.subprocess_envelope import run_subprocess_envelope
+
+    completed = run_subprocess_envelope(
         [
             str(geo_python),
             str(validator),
@@ -149,22 +153,26 @@ def _validator_receipt(
             str(gnn_python),
         ],
         env=os.environ.copy(),
-        capture_output=True,
-        text=True,
-        timeout=1800,
+        timeout=timeout,
+        sandbox=False,
     )
-    if completed.stdout:
-        sys.stdout.write(completed.stdout)
-    if completed.stderr:
-        sys.stderr.write(completed.stderr)
-    if completed.returncode != 0:
+    if completed["stdout"]:
+        sys.stdout.write(completed["stdout"])
+    if completed["stderr"]:
+        sys.stderr.write(completed["stderr"])
+    if not completed["success"]:
         _write_receipt(
             receipts_dir,
             "validator-failed.json",
             json.dumps(
                 {
-                    "returncode": completed.returncode,
-                    "stderr_tail": completed.stderr[-4000:],
+                    "returncode": completed["return_code"],
+                    "stderr_tail": completed["stderr"][-4000:],
+                    "stdout_tail": completed["stdout"][-4000:],
+                    "error_type": completed.get("error_type"),
+                    "execution_error_type": completed.get("execution_error_type"),
+                    "cleanup_verified": completed.get("cleanup_verified"),
+                    "streams_drained": completed.get("streams_drained"),
                 },
                 indent=2,
                 sort_keys=True,
@@ -172,18 +180,18 @@ def _validator_receipt(
             + "\n",
         )
         raise SystemExit(
-            f"interchange validator failed (exit {completed.returncode}); "
+            f"interchange validator failed (exit {completed['return_code']}); "
             f"see {receipts_dir / 'validator-failed.json'}"
         )
     try:
         receipt, _ = json.JSONDecoder().raw_decode(
-            completed.stdout, completed.stdout.index("{")
+            completed["stdout"], completed["stdout"].index("{")
         )
     except ValueError as error:
         _write_receipt(
             receipts_dir,
             "validator-unparseable.txt",
-            completed.stdout[-8000:],
+            completed["stdout"][-8000:],
         )
         raise SystemExit(f"validator printed unparseable JSON receipt: {error}")
     _write_receipt(

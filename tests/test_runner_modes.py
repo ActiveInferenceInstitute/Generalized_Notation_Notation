@@ -90,14 +90,14 @@ def run_fast_pipeline_tests(
     logger.info("To customize timeout: export FAST_TESTS_TIMEOUT=<seconds>")
 
     try:
-        import pytest_timeout
+        import pytest_timeout  # type: ignore[import-untyped]
 
         has_timeout = True
     except ImportError:
         has_timeout = False
 
     try:
-        import xdist  # noqa: F401 - presence check for parallel execution
+        import xdist  # type: ignore[import-untyped]  # noqa: F401 - presence check for parallel execution
 
         has_xdist = True
     except ImportError:

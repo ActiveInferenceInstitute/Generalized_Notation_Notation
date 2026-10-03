@@ -8,7 +8,7 @@
 
 **Category**: AI Enhancement / Analysis
 
-**Status**: Production Ready
+**Status**: Maintained; live provider/model acceptance is explicit
 
 **Last Updated**: 2026-09-24
 
@@ -38,19 +38,19 @@
 ### Public Functions
 
 #### `process_llm(target_dir: Path, output_dir: Path, verbose: bool = False, **kwargs) -> bool`
-**Description**: Main LLM processing function with automatic Ollama recovery. Processes GNN files using LLM analysis with multi-provider support.
+**Description**: Main corpus processor: deterministic structural analysis for every selected model, then summaries for every model, then fair prompt rounds on the configured provider/model.
 
 **Parameters**:
 - `target_dir` (Path): Directory containing GNN files to analyze
 - `output_dir` (Path): Output directory for LLM analyses
 - `verbose` (bool): Enable verbose logging (default: False)
-- `llm_timeout` (int, optional): Timeout budget for the step in seconds (default: 600; also settable via `input/config.yaml` `llm.timeout_seconds`)
-- `max_files` (int, optional): Cap on the number of GNN files processed per run (also settable via `llm.max_files`)
+- `llm_timeout` (int, optional): Timeout budget for the step in seconds (automatic default: 600 per selected model; also settable via `input/config.yaml` `llm.timeout_seconds`)
+- `max_files` (int, optional): Explicit optional cap on files; no default sampling (also settable via `llm.max_files`)
 - `custom_prompts` (list, optional): Custom prompt payloads; each becomes a per-file output
 - `max_prompt_timeout` (int, optional): Per-prompt timeout in seconds (default: 45; also `llm.prompt_timeout`)
 - `**kwargs`: Additional LLM processing options
 
-Provider and model selection are driven by environment variables and `input/config.yaml` (see Configuration), not by `process_llm` kwargs.
+`resolved_config`/`input_config` or `llm_config` inject configuration; pipeline calls use the immutable run context. Explicit `provider`/`model` kwargs win over configured defaults.
 
 **Returns**: `bool` - True if processing succeeded, False otherwise
 
@@ -114,7 +114,7 @@ success = process_llm(
 ## LLM Providers
 
 ### Supported Providers (`LLMProcessor` / `ProviderType`)
-1. **Ollama** — local inference via the `ollama` Python client when functional, else CLI recovery (`ollama chat` JSON mode when supported, else `ollama run`). Default model tag `smollm2:135m-instruct-q4_K_S` (`llm.defaults.DEFAULT_OLLAMA_MODEL`; overridable via `OLLAMA_MODEL`, `OLLAMA_TEST_MODEL`, or `input/config.yaml` `llm.model`).
+1. **Ollama** — local inference through bounded HTTP chat on Ollama 0.35 or later. Whole messages and role/generation options are preserved; input truncation and context shifting are disabled. Default model tag `smollm2:135m-instruct-q4_K_S` (`llm.defaults.DEFAULT_OLLAMA_MODEL`; overridable via `OLLAMA_MODEL`, `OLLAMA_TEST_MODEL`, or `input/config.yaml` `llm.model`).
 2. **OpenAI** — cloud API when `OPENAI_API_KEY` is set.
 3. **OpenRouter** — when `OPENROUTER_API_KEY` is set.
 4. **Perplexity** — when `PERPLEXITY_API_KEY` is set.
@@ -127,15 +127,13 @@ success = process_llm(
 | `llm/llm_processor.py` | `LLMProcessor` merges `get_default_provider_configs()` into `provider_configs` so env vars apply even when the caller passes `None`/`{}` |
 | `llm/processor.py` | `_start_ollama_if_needed`, `_select_best_ollama_model`, `_model_is_cached`; step-13 orchestration and `provider_matrix` |
 
-**Model selection** (`_select_best_ollama_model`): `OLLAMA_MODEL` or `OLLAMA_TEST_MODEL` → optional `input/config.yaml` `llm.model` if that name matches an installed tag → built-in preference list (smaller models first: `smollm2`, `tinyllama`, `gemma3:4b`, `gemma2:2b`, …) → first `ollama list` entry → `llm.defaults.DEFAULT_OLLAMA_MODEL`.
+**Whole-context acceptance**: Ollama runtime capability is checked within the request budget. A source that exceeds the configured model context remains unfinished with a failure receipt. The pipeline does not shorten the source or select another model. HTTP responses are bounded at 8 MiB, with 1 MiB per streaming record. The supervised request worker provides hard containment; standalone DNS and transport threads are not a process sandbox.
 
-**Request wiring**: The tag chosen above is passed to `LLMProcessor.get_response` as `model_name` for every structured PromptType prompt and for custom prompts (same value as cache keys). `AnalysisType.SUMMARY` tasks prefer **Ollama first** when registered, then OpenAI / OpenRouter / Perplexity, so local runs are not blocked by exhausted cloud quota when a key is still present. For per-file summaries, `process_llm` passes the resolved tag into `analyze_gnn_file_with_llm` so it matches the prompt loop. Override defaults with `OLLAMA_MODEL` or `input/config.yaml` `llm.model`. To avoid OpenAI retries when quota is zero, unset `OPENAI_API_KEY` for local-only runs.
+**Step-13 model selection**: explicit `model` → `OLLAMA_MODEL`/`OLLAMA_TEST_MODEL` → resolved `llm.model` → `DEFAULT_OLLAMA_MODEL`. Provider selection is explicit `provider` → configured `llm.provider` → `DEFAULT_PROVIDER` → Ollama. The pipeline never substitutes providers/models or starts/pulls a daemon automatically. Separate selection helpers remain callable separately.
 
-### Recovery Mechanism
-1. `LLMProcessor` loads API keys from the environment; Ollama is enabled unless `OLLAMA_DISABLED` is truthy (`1`, `true`).
-2. Step 13 (`process_llm`) probes the Ollama CLI (`ollama list`) and records status in `provider_matrix.ollama`.
-3. If the unified processor initializes, prompts use the selected local model; on failure, structured fallbacks and cache still write outputs.
-4. If no provider works, processing continues with recovery text and logged warnings.
+Every selected model receives structural analysis before provider initialization. Summary requests cover the corpus before additional prompts. Each request runs in a killable subprocess with the 45-second ceiling intersected with the run's remaining budget. Full messages, model, provider and generation settings bind caches; source bytes, prompt definitions, effective selection/budget options and the complete-context policy bind version-two checkpoints. `resume=True` reuses only verified matching responses.
+
+`llm_results.json` records structural/prompt/summary coverage and unfinished work. Required incomplete work returns `False` and reports `partial` or `timed_out`; an empty selection records `skipped`. Recovery text never counts as a successful response. Credentials remain in the inherited environment and are excluded from request payloads and receipts.
 
 ---
 
@@ -146,7 +144,7 @@ success = process_llm(
 Runtime knobs come from `process_llm` kwargs and `input/config.yaml` (`llm:` section); provider/model selection comes from environment variables.
 
 #### `process_llm` kwargs
-- `llm_timeout` (int): Step timeout budget in seconds (default: `600`; `llm.timeout_seconds`)
+- `llm_timeout` (int): Step timeout budget in seconds (automatic default: `600` per selected model; explicit `llm.timeout_seconds` wins)
 - `max_files` (int): Cap on GNN files processed per run (`llm.max_files`)
 - `custom_prompts` (list): Extra prompts run per file (in addition to the structured prompt set)
 - `max_prompt_timeout` (int): Per-prompt timeout in seconds (default: `45`; `llm.prompt_timeout`)
@@ -155,8 +153,8 @@ Runtime knobs come from `process_llm` kwargs and `input/config.yaml` (`llm:` sec
 - `OLLAMA_MODEL`: Model tag for requests (default `llm.defaults.DEFAULT_OLLAMA_MODEL`)
 - `OLLAMA_TEST_MODEL`: Overrides model name in tests when set
 - `OLLAMA_MAX_TOKENS`: Default `num_predict` cap (default `256` in processor config)
-- `OLLAMA_TIMEOUT`: Client/CLI subprocess timeout in seconds (default `60` in env wiring; provider default 30s unless configured)
-- `OLLAMA_HOST`: Optional base URL for the Python `ollama` client (empty = client default)
+- `OLLAMA_TIMEOUT`: Standalone HTTP request budget in seconds (default `60`); pipeline requests remain capped at 45 seconds
+- `OLLAMA_HOST`: HTTP(S) daemon URL or host:port; default `http://127.0.0.1:11434`, without URL credentials
 - `OLLAMA_DISABLED`: Set to `1` or `true` to skip registering Ollama as a provider
 - `OLLAMA_AUTO_START`: Set to `1` to allow starting the Ollama daemon when installed but not running
 - `OLLAMA_AUTO_PULL`: Set to `1` to allow pulling the default model when no model is installed
@@ -175,9 +173,9 @@ Runtime knobs come from `process_llm` kwargs and `input/config.yaml` (`llm:` sec
 
 ### Core Dependencies (installed by `uv sync`; no dedicated pip extra for this module)
 - `openai` — OpenAI/OpenRouter API access
-- `ollama` (PyPI) — Python client; if import fails or `chat` is missing, `OllamaProvider` uses the `ollama` CLI when on `PATH`
+- `ollama` (PyPI) — SDK remains a declared dependency; maintained chat transport uses the standard library HTTP API and needs neither SDK imports nor CLI recovery
 
-Local inference additionally requires the Ollama runtime (CLI/daemon from https://ollama.com), which is not a pip package.
+Local inference additionally requires the Ollama 0.35 or later daemon (from https://ollama.com), which is not a pip package.
 
 There is no Anthropic provider module; `ANTHROPIC_API_KEY` only influences the provider matrix and error attribution.
 
@@ -691,7 +689,7 @@ any signature change.
 
 **Last Updated**: 2026-09-24
 **Maintainer**: GNN Pipeline Team
-**Status**: Production Ready
+**Status**: Maintained; live provider/model acceptance is explicit
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
 **Architecture Compliance**: Thin Orchestrator Pattern
 

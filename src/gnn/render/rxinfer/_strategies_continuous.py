@@ -14,6 +14,9 @@ def _generate_continuous_code(
     gnn_spec: Dict[str, Any], model_name: str, kind_value: str
 ) -> str:
     """Generate the native linear-Gaussian RxInfer.jl script."""
+    from gnn.render.continuous_common import extract_continuous_spec
+
+    extract_continuous_spec(gnn_spec)
     initial = gnn_spec.get("initialparameterization") or {}
     missing = [key for key in _REQUIRED_KEYS if key not in initial]
     if missing:
@@ -44,11 +47,11 @@ def _generate_continuous_code(
     )
     spec_json = json.dumps(gnn_spec, sort_keys=True)
     spec_json_b64 = base64.b64encode(spec_json.encode("utf-8")).decode("ascii")
-    model_name_literal = json.dumps(str(model_display_name))
+    model_name_literal = json.dumps(str(model_display_name)).replace("$", r"\$")
 
     code = f'''#!/usr/bin/env julia
 # RxInfer.jl linear-Gaussian state-space simulation — genuine @model + infer()
-# Generated from GNN Model: {model_display_name}
+# Generated from GNN Model: {json.dumps(str(model_display_name))}
 #
 # Structure (the continuous parameterization the GNN file declares):
 #   x[1]  ~ MvNormal(prior_mean, prior_cov)
@@ -486,23 +489,16 @@ end
 
 function main()
 results = run_simulation()
-function sanitize!(x)
-    if isa(x, Float64)
-        if isnan(x) || isinf(x)
-            return 0.0
-        end
-        return x
-    elseif isa(x, Vector)
-        return [sanitize!(v) for v in x]
+function require_finite(x)
+    if isa(x, AbstractFloat) && !isfinite(x)
+        error("Continuous result contains nonfinite scientific values")
+    elseif isa(x, AbstractVector)
+        foreach(require_finite, x)
     elseif isa(x, Dict)
-        for (k, v) in x
-            x[k] = sanitize!(v)
-        end
-        return x
+        foreach(require_finite, values(x))
     end
-    return x
 end
-results = sanitize!(results)
+require_finite(results)
 open("simulation_results.json", "w") do file
     JSON.print(file, results, 2)
 end

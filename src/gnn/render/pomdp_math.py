@@ -68,28 +68,27 @@ def _mixed_radix_digit(action: int, radices: List[int], index: int) -> int:
     return 0
 
 
-def _normalise_prob_vector(values: np.ndarray) -> np.ndarray:
-    """Normalize prob vector."""
-    vector = np.asarray(values, dtype=np.float64).flatten()
-    total = float(vector.sum())
-    if not np.isfinite(total) or total <= 0:
-        return np.ones(max(vector.shape[0], 1), dtype=np.float64) / max(
-            vector.shape[0], 1
-        )
-    return vector / total
+def _normalise_prob_vector(
+    values: np.ndarray, *, allow_weights: bool = False
+) -> np.ndarray:
+    """Validate source probabilities before bounded decimal mass correction."""
+    from gnn.render.pomdp_contract import normalise_vector
+
+    return np.asarray(
+        normalise_vector(values, name="source prior", allow_weights=allow_weights),
+        dtype=np.float64,
+    )
 
 
-def _normalise_columns(matrix: np.ndarray) -> np.ndarray:
-    """Normalize columns."""
-    out = np.asarray(matrix, dtype=np.float64).copy()
-    if out.ndim != 2:
-        raise ValueError(f"expected 2D matrix, got shape {out.shape}")
-    column_sums = out.sum(axis=0, keepdims=True)
-    zero_columns = column_sums <= 0
-    column_sums = np.where(zero_columns, 1.0, column_sums)
-    out = out / column_sums
-    if zero_columns.any():
-        rows = out.shape[0]
-        for column in np.where(zero_columns.flatten())[0]:
-            out[:, column] = 1.0 / rows
-    return out
+def _normalise_columns(
+    matrix: np.ndarray, *, allow_weights: bool = False
+) -> np.ndarray:
+    """Preserve source likelihood semantics; invalid columns are errors."""
+    from gnn.render.pomdp_contract import normalise_matrix_columns
+
+    return np.asarray(
+        normalise_matrix_columns(
+            matrix, name="source likelihood", allow_weights=allow_weights
+        ),
+        dtype=np.float64,
+    )

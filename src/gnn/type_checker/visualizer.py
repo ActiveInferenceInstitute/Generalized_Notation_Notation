@@ -7,9 +7,31 @@ Generates visual abstracts, mosaics, and distributions of typing statuses across
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Protocol, cast
 
 logger = logging.getLogger(__name__)
+
+
+class _PieContainer(Protocol):
+    """Runtime shape of Matplotlib 3.11's pie result, independent of type definitions."""
+
+    wedges: Any
+    texts: Any
+
+
+def _pie_parts(result: object) -> tuple[Any, Any, Any]:
+    """Adapt both supported Matplotlib API shapes at one typed boundary."""
+    if hasattr(result, "wedges"):
+        container = cast(_PieContainer, result)
+        text_groups = list(container.texts)
+        return (
+            container.wedges,
+            text_groups[0] if text_groups else [],
+            text_groups[1] if len(text_groups) > 1 else [],
+        )
+    parts = cast(tuple[Any, ...], result)
+    return parts[0], parts[1], parts[2] if len(parts) > 2 else []
+
 
 MATPLOTLIB_AVAILABLE = False
 try:
@@ -329,15 +351,7 @@ def generate_type_category_pie_chart(
         )
         # matplotlib >= 3.11 returns a PieContainer (no len()); older versions
         # return a (wedges, texts[, autotexts]) tuple.
-        if hasattr(pie_result, "wedges"):
-            wedges = pie_result.wedges
-            text_groups = list(pie_result.texts)
-            texts = text_groups[0] if text_groups else []
-            autotexts = text_groups[1] if len(text_groups) > 1 else []
-        else:
-            wedges = pie_result[0]
-            texts = pie_result[1]
-            autotexts = pie_result[2] if len(pie_result) > 2 else []
+        wedges, texts, autotexts = _pie_parts(pie_result)
 
         ax.legend(
             wedges,

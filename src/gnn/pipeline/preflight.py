@@ -144,13 +144,24 @@ def validate_config(config_path: Optional[Path] = None) -> PreflightReport:
     report.add_pass("Config is valid YAML")
 
     # Validate known sections
-    if "llm" in config:
+    if "llm" in config and not isinstance(config["llm"], dict):
+        report.add_issue("config", "error", "llm must be a YAML mapping")
+    elif "llm" in config:
         llm = config["llm"]
         if "model" in llm:
             report.add_pass(f"LLM model configured: {llm['model']}")
         if "timeout_seconds" in llm:
             timeout = llm["timeout_seconds"]
-            if not isinstance(timeout, (int, float)) or timeout < 0:
+            import math
+
+            if timeout is None:
+                report.add_pass("LLM timeout: automatic (600s per selected model)")
+            elif (
+                isinstance(timeout, bool)
+                or not isinstance(timeout, (int, float))
+                or not math.isfinite(timeout)
+                or timeout <= 0
+            ):
                 report.add_issue(
                     "config", "error", f"Invalid llm.timeout_seconds: {timeout}"
                 )

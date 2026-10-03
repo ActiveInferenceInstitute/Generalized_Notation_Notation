@@ -67,7 +67,7 @@ class RxInferRenderer:
             if pomdp_space is None:
                 raise ValueError(f"No valid POMDP matrices found in {gnn_file_path}")
             gnn_spec = POMDPRenderProcessor(output_path.parent)._pomdp_to_gnn_spec(
-                pomdp_space
+                pomdp_space, native_agents=True
             )
             rxinfer_code = self._generate_rxinfer_simulation_code(
                 gnn_spec, gnn_file_path.stem
@@ -145,6 +145,12 @@ class RxInferRenderer:
         # with a misleading missing-matrices error. Refuse with the explicit
         # unsupported-composition receipt instead.
         kinds = detect_model_kinds(gnn_spec)
+        if kinds == frozenset({ModelKind.MULTI_AGENT, ModelKind.CONTINUOUS}):
+            from gnn.render.multi_agent_continuous import (
+                generate_multi_agent_continuous_script,
+            )
+
+            return generate_multi_agent_continuous_script(gnn_spec, "rxinfer")
         if ModelKind.CONTINUOUS in kinds and len(kinds) > 1:
             raise ValueError(unsupported_composition_reason(kinds))
         if ModelKind.NONSTATIONARY in kinds:
@@ -157,7 +163,13 @@ class RxInferRenderer:
             # canonicalising would demand categorical matrices that do not
             # exist. The continuous strategy validates its own contract.
             return self._generate_canonical_rxinfer_code(gnn_spec, model_name)
-        canonical_spec = build_canonical_pomdp_spec(gnn_spec)
+        from gnn.render.multi_agent_common import has_native_multi_agent_structure
+
+        canonical_spec = (
+            gnn_spec
+            if has_native_multi_agent_structure(gnn_spec)
+            else build_canonical_pomdp_spec(gnn_spec)
+        )
         # Renderer options may set inference_mode ("batch" | "online"); a GNN
         # file's own ModelParameters declaration wins over the option so the
         # spec stays authoritative.

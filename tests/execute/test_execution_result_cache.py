@@ -316,3 +316,50 @@ def test_concurrent_store_and_lookup_smoke(tmp_path: Path) -> None:
 
     assert errors == []
     assert cache.stats == {"hits": 100, "misses": 0, "writes": 100}
+
+
+@pytest.mark.parametrize("method", ["safe", "direct"])
+def test_cached_success_cannot_override_pre_cancel_or_invalid_budget(
+    tmp_path, monkeypatch, method
+):
+    import sys
+
+    from gnn.execute.executor import GNNExecutor, execute_script_safely
+    from gnn.execute.subprocess_envelope import CancelToken
+
+    script = tmp_path / "cached.py"
+    script.write_text("raise RuntimeError('must not start')\n")
+    cache = ExecutionResultCache(cache_dir=tmp_path / "cache", enabled=True)
+    cache.store(
+        cache_key_for_script(script, interpreter=sys.executable), _success_envelope()
+    )
+    monkeypatch.setenv("GNN_ALLOW_UNSAFE_EXEC", "1")
+    token = CancelToken()
+    token.cancel("already stopped")
+    dispatch = (
+        (lambda **kw: execute_script_safely(script, cache=cache, **kw))
+        if method == "safe"
+        else (
+            lambda **kw: GNNExecutor(
+                str(tmp_path / "out"), cache=cache
+            )._execute_jax_script(str(script), **kw)
+        )
+    )
+    result = dispatch(cancel_token=token)
+    assert not result["success"] and result["error_type"] == "Cancelled"
+    for timeout in [True, 0, float("nan"), float("inf"), -1]:
+        result = dispatch(timeout=timeout)
+        assert (
+            not result["success"] and result["error_type"] == "InvalidExecutionTimeout"
+        )
+        assert not result.get("cache_hit")
+
+
+def test_unrendered_pymdp_source_has_no_execution_success(tmp_path):
+    from gnn.execute.executor import GNNExecutor
+
+    source = tmp_path / "model.md"
+    source.write_text("# Model source\n")
+    result = GNNExecutor(str(tmp_path / "out"))._execute_pymdp_script(str(source))
+    assert not result["success"] and result["skipped"]
+    assert result["error_type"] == "RenderedScriptRequired"

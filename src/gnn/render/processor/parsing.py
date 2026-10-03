@@ -83,6 +83,9 @@ def _internal_representation_to_mapping(gnn_spec: Any) -> Dict[str, Any]:
 
 def _rehydrate_file_backed_parse_summary(
     gnn_spec: Dict[str, Any],
+    *,
+    native_agents: bool = False,
+    preserve_discrete_structure: bool = False,
 ) -> Dict[str, Any]:
     """Turn the lightweight public parser summary back into a renderable spec.
 
@@ -112,7 +115,11 @@ def _rehydrate_file_backed_parse_summary(
         raise ValueError(
             f"Parsed GNN source is not a renderable POMDP specification: {source_path}"
         )
-    return pomdp_to_gnn_spec(pomdp_space)
+    return pomdp_to_gnn_spec(
+        pomdp_space,
+        native_agents=native_agents,
+        preserve_discrete_structure=preserve_discrete_structure,
+    )
 
 
 def _normalize_initial_vectors(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:

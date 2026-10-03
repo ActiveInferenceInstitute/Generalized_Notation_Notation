@@ -217,7 +217,7 @@ separately so that the boundary between hand-written source and
 reproducible output stays explicit.
 
 The \texttt{src/} tree is the executable core of GNN. It is organized
-into 43 Python packages spanning 699 source files and roughly 208936
+into 43 Python packages spanning 741 source files and roughly 219604
 lines of code. Alongside these packages sit the 25 top-level step
 modules (0--24) that implement the numbered pipeline as thin
 orchestrators delegating into the packages, each module owning one stage
@@ -230,16 +230,16 @@ claim the manuscript makes about pipeline behavior should be traceable
 to one of these step modules rather than to descriptive prose alone.
 
 The \texttt{input/} tree holds the model corpora that exercise the
-pipeline. Its \texttt{gnn\_files/} subtree contains 11 corpus
-directories organized by model family, together totaling 36 example
-files --- 28 discrete-state specifications and 8 continuous
+pipeline. Its \texttt{gnn\_files/} subtree contains 12 corpus
+directories organized by model family, together totaling 38 example
+files --- 29 discrete-state specifications and 9 continuous
 linear-Gaussian specifications, the partition the manuscript's
 model-kind accounting uses (sec.~3.2). The cold-start
 index \breaktt{input/gnn\_files/INDEX.md} catalogues every exemplar with
 its kind and task folder, and the \texttt{recursive/} directory is
 reserved for bounded \texttt{-\/-autonomous} proposal-loop runs, holding
 no committed models. Every model file under \texttt{input/} lives in
-that subtree, so the 36-file count covers the whole tree. A
+that subtree, so the 38-file count covers the whole tree. A
 \breaktt{model\_family\_manifest.json} enumerates the 9 registered
 families and their target directories. This manifest is the
 \end{frame}
@@ -264,7 +264,7 @@ actually computes.
 
 \begin{frame}[fragile,allowframebreaks]{Supplemental Source Surface}
 The \texttt{docs/} tree is the prose and reference surface, comprising
-631 files of specification, tutorial, and design documentation for the
+635 files of specification, tutorial, and design documentation for the
 GNN language and its Active Inference grounding (Smékal and Friedman
 2023). It is the place to verify that a manuscript statement about GNN
 syntax or semantics matches the documented language rather than a

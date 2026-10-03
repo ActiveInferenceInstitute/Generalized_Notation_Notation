@@ -75,8 +75,12 @@ B={
 }
 
 C={(0.1, 0.1, 1.0)}
-D={(0.333, 0.333, 0.333)}
-E={(0.333, 0.333, 0.333)}
+# v4 precision correction: the three equal entries declare uniform prior and
+# habit distributions. The previous (0.333, 0.333, 0.333) had mass 0.999 and
+# was not a probability distribution. Use repr(1/3) in both vectors; do not
+# normalize malformed source distributions silently at render time.
+D={(0.3333333333333333, 0.3333333333333333, 0.3333333333333333)}
+E={(0.3333333333333333, 0.3333333333333333, 0.3333333333333333)}
 
 # High sensory precision: agent trusts its observations
 ω={(4.0)}

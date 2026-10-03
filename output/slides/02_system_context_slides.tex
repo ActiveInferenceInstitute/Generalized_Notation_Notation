@@ -317,11 +317,15 @@ exemplar folders are the committed corpus under
 \protect\breaktt{input/gnn\_files/}. Renderer(s)/Executor(s) cells are
 generated from the registry flags (see
 tbl.~4): the two parameterization rows
-carry their own flag sets, and multi-agent inherits the discrete row's
-coverage because its per-agent matrix keys canonicalize through the same
-discrete A/B/C/D render path; \protect\texttt{recursive/} is reserved
-for bounded \protect\texttt{-\/-autonomous} proposal-loop runs and holds
-no committed models.}\label{tbl:model_kinds}\tabularnewline
+carry their own flag sets, excluding continuous-only targets from
+categorical coverage. These flags do not establish universal multi-agent
+support: THRML accepts independent categorical components, and coupled
+models require a backend-specific representation and acceptance
+evidence. Native independent linear-Gaussian agent exemplars are
+verified on JAX and RxInfer in the v4 acceptance ledger;
+\protect\texttt{recursive/} is reserved for bounded
+\protect\texttt{-\/-autonomous} proposal-loop runs and holds no
+committed models.}\label{tbl:model_kinds}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 Model kind
@@ -353,16 +357,19 @@ Executor(s)
 Discrete categorical &
 \texttt{A}/\texttt{B}/\texttt{C}/\texttt{D}{[}/\texttt{E}{]}
 (column-stochastic \texttt{B} slices) &
-\breaktt{input/gnn\_files/discrete/} & all 10 registry frameworks & all
-10 registry frameworks \\
+\breaktt{input/gnn\_files/discrete/} & PyMDP, RxInfer.jl,
+ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, THRML
+& PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro,
+Stan, bnlearn, THRML \\
 Continuous linear-Gaussian & \texttt{F}/\texttt{H}/\texttt{Q}/\texttt{R}
 + priors (optional closed-loop pair) &
 \breaktt{input/gnn\_files/continuous/} & RxInfer.jl, JAX, PyTorch,
-NumPyro, Stan, ngc-learn & RxInfer.jl, JAX, PyTorch, NumPyro, Stan,
-ngc-learn \\
-Multi-agent & \texttt{nr\_agents} + per-agent matrix keys
-(\texttt{A\_agent1}, \ldots) & \breaktt{input/gnn\_files/multiagent/} &
-all 10 registry frameworks & all 10 registry frameworks \\
+NumPyro, Stan, cpomdp, ngc-learn & RxInfer.jl, JAX, PyTorch, NumPyro,
+Stan, cpomdp, ngc-learn \\
+Multi-agent & \texttt{nr\_agents} + per-agent categorical or
+linear-Gaussian parameters & \breaktt{input/gnn\_files/multiagent/} &
+Model/backend dependent composition & Model/backend dependent; explicit
+acceptance required \\
 Recursive & --- & \breaktt{input/gnn\_files/recursive/} & --- & --- \\
 \bottomrule\noalign{}
 \end{longtable}
@@ -457,7 +464,7 @@ Q(\pi) \;=\; \sigma\!\left(\ln E - G\right)
 }\end{equation}
 
 The discrete categorical kind is the language's original and most
-densely exercised target: 28 of the 36 exemplar specifications in the
+densely exercised target: 29 of the 38 exemplar specifications in the
 corpus are discrete-state. The discrete family folder holds the kind's
 core set --- from minimal \texttt{markov\_chain.md} and
 \texttt{hmm\_baseline.md} fixtures through epistemic planning
@@ -556,7 +563,7 @@ position, and whose control input pushes the believed position toward
 \texttt{goal\_mean} with gain \texttt{control\_gain}. The other
 continuous exemplars are passive: \breaktt{predictive\_coding\_agent.md}
 and \breaktt{stochastic\_dynamics.md} filter without steering. In total
-the corpus ships 8 continuous linear-Gaussian exemplars in the
+the corpus ships 9 continuous linear-Gaussian exemplars in the
 continuous family folder. Symbolically the kind reuses letters the
 discrete vocabulary already claims --- most prominently \texttt{F},
 which names the state-transition matrix here and the variational free
@@ -792,7 +799,7 @@ that produced it and forward to every step that depends on it.
 \begin{frame}[fragile,allowframebreaks]{The Processing Pipeline}
 \begin{figure}
 \centering
-\includegraphics[width=0.9\linewidth,height=0.40\textheight,keepaspectratio,alt={The 25-step GNN processing pipeline as a directed acyclic graph, laid out left to right by topological layer and colored by execution phase (legend, upper right). Each node is the thin step orchestrator under src/gnn/ named in tbl.~; each arrow is a hard data dependency parsed from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, so any artifact can be traced back to the step that produced it. Parsing (Step 3) fans out to nearly every later step, and analysis (Step 16) collects enrichment from execution, visualization, and the LLM step. The figure is generated from src/gnn/STEP\_INDEX.md at commit 3cf4f3f5c; its footer restates the step count, the number of hard dependencies, and the layout rule.}]{../figures/gnn_pipeline_dag.png}
+\includegraphics[width=0.9\linewidth,height=0.40\textheight,keepaspectratio,alt={The 25-step GNN processing pipeline as a directed acyclic graph, laid out left to right by topological layer and colored by execution phase (legend, upper right). Each node is the thin step orchestrator under src/gnn/ named in tbl.~; each arrow is a hard data dependency parsed from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, so any artifact can be traced back to the step that produced it. Parsing (Step 3) fans out to nearly every later step, and analysis (Step 16) collects enrichment from execution, visualization, and the LLM step. The figure is generated from src/gnn/STEP\_INDEX.md at commit 88f24cb7c; its footer restates the step count, the number of hard dependencies, and the layout rule.}]{../figures/gnn_pipeline_dag.png}
 \caption{The 25-step GNN processing pipeline as a directed acyclic
 graph, laid out left to right by topological layer and colored by
 execution phase (legend, upper right). Each node is the thin step
@@ -803,7 +810,7 @@ parsed from the Data Dependency Graph block of
 back to the step that produced it. Parsing (Step 3) fans out to nearly
 every later step, and analysis (Step 16) collects enrichment from
 execution, visualization, and the LLM step. The figure is generated from
-\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit 3cf4f3f5c; its footer
+\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit 88f24cb7c; its footer
 restates the step count, the number of hard dependencies, and the layout
 rule.}\label{fig:pipeline}
 \end{figure}
@@ -899,7 +906,7 @@ analysis \& executive reports \\
 \begin{frame}[fragile,allowframebreaks]{The Processing Pipeline}
 This staged design keeps the architecture modular. The implementation is
 organized into 43 source packages, one cluster of responsibilities per
-concern, and is documented across 631 documentation files so that each
+concern, and is documented across 635 documentation files so that each
 step's contract, inputs, and outputs are specified independently of the
 others. New backends or analyses attach to the graph by declaring their
 dependencies rather than by editing a monolith, and the deterministic
@@ -929,15 +936,15 @@ specification at their center.
 \begin{frame}[fragile,allowframebreaks]{The Triple Play}
 \begin{figure}
 \centering
-\includegraphics[width=0.7\linewidth,height=0.40\textheight,keepaspectratio,alt={The Triple Play: one GNN text specification (left) and its three coordinated projections (right) --- the human-readable text form, graphical model visualizations, and executable simulation code. All three arrows originate at the same source box because all three projections are generated from one parsed document, which is why they cannot drift apart; the executable node states that 10 of 10 registered backends run at Step 12 and previews three of them by name. Counts are producer tokens at commit 3cf4f3f5c, and the panel is generated by scripts/manuscript\_fig\_triple\_play.py. Take-away: a model is authored once and then read, seen, and run from that single source.}]{../figures/gnn_triple_play.png}
+\includegraphics[width=0.7\linewidth,height=0.40\textheight,keepaspectratio,alt={The Triple Play: one GNN text specification (left) and its three coordinated projections (right) --- the human-readable text form, graphical model visualizations, and executable simulation code. All three arrows originate at the same source box because all three projections are generated from one parsed document, which is why they cannot drift apart; the executable node states that 12 of 12 registered backends run at Step 12 and previews three of them by name. Counts are producer tokens at commit 88f24cb7c, and the panel is generated by scripts/manuscript\_fig\_triple\_play.py. Take-away: a model is authored once and then read, seen, and run from that single source.}]{../figures/gnn_triple_play.png}
 \caption{The Triple Play: one GNN text specification (left) and its
 three coordinated projections (right) --- the human-readable text form,
 graphical model visualizations, and executable simulation code. All
 three arrows originate at the same source box because all three
 projections are generated from one parsed document, which is why they
-cannot drift apart; the executable node states that 10 of 10 registered
+cannot drift apart; the executable node states that 12 of 12 registered
 backends run at Step 12 and previews three of them by name. Counts are
-producer tokens at commit 3cf4f3f5c, and the panel is generated by
+producer tokens at commit 88f24cb7c, and the panel is generated by
 \protect\breaktt{scripts/manuscript\_fig\_triple\_play.py}. Take-away: a
 model is authored once and then read, seen, and run from that single
 source.}\label{fig:triple_play}

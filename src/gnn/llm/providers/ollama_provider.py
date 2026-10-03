@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
-"""
-Ollama LLM Provider
+"""Ollama chat transport with intact messages and one request budget.
 
-Local provider using the `ollama` Python package when available; otherwise falls
-back to the `ollama` CLI (`ollama chat` with JSON when supported, else `ollama run`).
-
-Requirements:
-- PyPI `ollama` client is a **core** dependency (`uv sync`); still install the **Ollama CLI** from https://ollama.com for local inference
-- Run `ollama serve` and pull a model, e.g. `ollama pull smollm2:135m-instruct-q4_K_S`
+Use the local runtime's HTTP API directly: older Python SDKs cannot express
+``truncate=False``/``shift=False`` and the CLI cannot preserve chat options.
+No Python client or CLI executable is required; an explicitly configured
+Ollama daemon and model must already be available. Pipeline calls additionally
+run in a killable request worker, which owns the authoritative hard deadline.
 """
 
 from __future__ import annotations
 
+import asyncio
+import http.client
 import json
 import logging
+import math
 import os
-import shutil
-import subprocess  # nosec B404
-from typing import Any, AsyncGenerator, Dict, List, Optional, cast
+import re
+import socket
+import threading
+import time
+from typing import Any, AsyncGenerator, List, Optional
+from urllib.parse import SplitResult, urlsplit
 
 from ..defaults import DEFAULT_OLLAMA_MODEL
 from .base_provider import (
@@ -29,12 +33,175 @@ from .base_provider import (
 )
 
 logger = logging.getLogger(__name__)
+_MAX_RESPONSE_BYTES = 8 * 1024 * 1024
+_MAX_STREAM_LINE_BYTES = 1024 * 1024
+
+
+def _positive_timeout(value: Any) -> float:
+    if isinstance(value, bool):
+        raise ValueError("Ollama timeout must be finite and positive")
+    timeout = float(value)
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise ValueError("Ollama timeout must be finite and positive")
+    return timeout
+
+
+def _endpoint(value: str) -> SplitResult:
+    # OLLAMA_HOST commonly uses host:port without a URL scheme.
+    parsed = urlsplit(value if "://" in value else f"http://{value}")
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("Ollama host must be an HTTP(S) URL without credentials")
+    _ = parsed.port  # Validate the port before any network operation.
+    return parsed
+
+
+class _ChatRequest:
+    """Own a single connection; reads never renew the original deadline."""
+
+    def __init__(self, endpoint: SplitResult, timeout: float) -> None:
+        self.deadline = time.monotonic() + timeout
+        connection_type = (
+            http.client.HTTPSConnection
+            if endpoint.scheme == "https"
+            else http.client.HTTPConnection
+        )
+        self.connection = connection_type(
+            endpoint.hostname or "localhost", endpoint.port, timeout=timeout
+        )
+        self.path = endpoint.path.rstrip("/") + "/api/chat"
+        self.version_path = endpoint.path.rstrip("/") + "/api/version"
+        self.tags_path = endpoint.path.rstrip("/") + "/api/tags"
+        self.response: http.client.HTTPResponse | None = None
+        self.socket: socket.socket | None = None
+        self.bytes_read = 0
+        self.server_version: str | None = None
+        self._expired = False
+        self._guard = threading.Timer(self.remaining(), self._expire)
+        self._guard.daemon = True
+        self._guard.start()
+
+    def remaining(self) -> float:
+        remaining = self.deadline - time.monotonic()
+        if self._expired or remaining <= 0:
+            raise TimeoutError("Ollama request deadline exhausted")
+        return remaining
+
+    def open(self, payload: dict[str, Any]) -> None:
+        self.check_version()
+        body = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8")
+        self._exchange("POST", self.path, body)
+
+    def check_version(self) -> None:
+        """Verify the runtime's strict-context controls before using its API."""
+        self._exchange("GET", self.version_path)
+        version_response = json.loads(self.read_all())
+        version = (
+            version_response.get("version")
+            if isinstance(version_response, dict)
+            else None
+        )
+        if (
+            not isinstance(version, str)
+            or re.fullmatch(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", version)
+            is None
+        ):
+            raise RuntimeError(
+                "Ollama whole-context policy requires a verified stable runtime >=0.35.0; malformed or prerelease version"
+            )
+        if tuple(map(int, version.split("."))) < (0, 35, 0):
+            raise RuntimeError(
+                f"Ollama {version} cannot verify the whole-context policy; stable runtime >=0.35.0 required"
+            )
+        self.server_version = version
+        if self.response is not None:
+            self.response.close()
+
+    def _exchange(self, method: str, path: str, body: bytes | None = None) -> None:
+        self.connection.timeout = self.remaining()
+        self.socket = None
+        try:
+            self.connection.request(
+                method, path, body, {"Content-Type": "application/json"}
+            )
+            # Retain the socket when HTTP/1.0 detaches it from HTTPConnection.
+            # The response's file object still owns its descriptor.
+            self.socket = self.connection.sock
+            if self.socket is not None:
+                self.socket.settimeout(self.remaining())
+            self.response = self.connection.getresponse()
+        except Exception:
+            self.remaining()  # Convert deadline-interrupted headers to timeout.
+            raise
+        self.remaining()
+        if self.response.status != 200:
+            body = self.read_all()
+            try:
+                error = json.loads(body).get("error", "request rejected")
+            except (ValueError, AttributeError):
+                error = "request rejected"
+            # Never redirect/retry a scientific prompt or place it in argv.
+            raise RuntimeError(
+                f"Ollama HTTP {self.response.status}: {str(error)[:1024]}"
+            )
+
+    def read_chunk(self) -> bytes:
+        if self.response is None:
+            raise RuntimeError("Ollama response not opened")
+        remaining = self.remaining()
+        if self.response.isclosed():
+            return b""
+        if self.socket is not None:
+            self.socket.settimeout(remaining)
+        try:
+            chunk = self.response.read1(65536)
+        except Exception:
+            self.remaining()
+            raise
+        self.remaining()
+        self.bytes_read += len(chunk)
+        if self.bytes_read > _MAX_RESPONSE_BYTES:
+            raise RuntimeError("Ollama response exceeds the 8 MiB transport limit")
+        return chunk
+
+    def read_all(self) -> bytes:
+        chunks = []
+        while chunk := self.read_chunk():
+            chunks.append(chunk)
+        return b"".join(chunks)
+
+    def _interrupt_socket(self) -> None:
+        for active_socket in (self.socket, self.connection.sock):
+            if active_socket is not None:
+                try:
+                    active_socket.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
+
+    def _expire(self) -> None:
+        self._expired = True
+        self._interrupt_socket()
+
+    def close(self) -> None:
+        # Interrupt an in-progress read on cancellation as well as closing the
+        # response file. The outer worker remains the hard containment boundary.
+        self._interrupt_socket()
+        self._guard.cancel()
+        self._guard.join()
+        if self.response is not None:
+            self.response.close()
+        self.connection.close()
 
 
 class OllamaProvider(BaseLLMProvider):
-    """Ollama implementation of the LLM provider interface."""
+    """Ollama implementation of the unchanged LLM provider interface."""
 
-    # Include quality local models; smaller/faster ones prioritized for reliability
     AVAILABLE_MODELS = (
         "smollm2:135m-instruct-q4_K_S",
         "gemma3:4b",
@@ -44,317 +211,261 @@ class OllamaProvider(BaseLLMProvider):
         "qwen2:7b",
         "llama3.1:70b",
     )
-
     DEFAULT_MODEL = DEFAULT_OLLAMA_MODEL
 
     def __init__(self, api_key: Optional[str] = None, **kwargs: Any) -> None:
-        """Initialize the instance."""
+        """Resolve explicit host/options without starting or changing a model."""
         super().__init__(api_key=api_key, **kwargs)
-        self.base_url = kwargs.get("base_url")  # optional custom host
+        self.base_url = (
+            kwargs.get("base_url")
+            or os.getenv("OLLAMA_HOST")
+            or "http://127.0.0.1:11434"
+        )
         self.default_model_override = kwargs.get("default_model")
         self.default_max_tokens = kwargs.get("default_max_tokens", 256)
-        if kwargs.get("timeout") is not None:
-            self.default_timeout = float(kwargs["timeout"])
-        else:
-            self.default_timeout = float(os.getenv("OLLAMA_TIMEOUT", "60"))
-        self._ollama: Any = None
-        self._use_cli = False
+        self.default_timeout = _positive_timeout(
+            kwargs.get("timeout")
+            if kwargs.get("timeout") is not None
+            else os.getenv("OLLAMA_TIMEOUT", "60")
+        )
+        self._endpoint: SplitResult | None = None
 
     @property
     def provider_type(self) -> ProviderType:
-        """Provide provider type behavior."""
+        """Return the provider type."""
         return ProviderType.OLLAMA
 
     @property
     def default_model(self) -> str:
-        """Provide default model behavior."""
+        """Return the exact configured default model."""
         return self.default_model_override or self.DEFAULT_MODEL
 
     @property
     def available_models(self) -> List[str]:
-        """Provide available models behavior."""
+        """Return the advertised models without selecting a replacement."""
         return list(self.AVAILABLE_MODELS)
 
     def initialize(self) -> bool:
-        # Prefer Python client
-        """Provide initialize behavior."""
+        """Initialize transport configuration; model preflight stays explicit."""
         try:
-            import ollama
-
-            # Verify the imported module is the real ollama package and not a
-            # namespace collision (e.g., a local file named ollama.py).
-            if not hasattr(ollama, "chat"):
-                logger.warning(
-                    "Imported 'ollama' module lacks 'chat' attribute. "
-                    "Namespace collision or outdated package detected. "
-                    "Falling back to CLI. "
-                    f"Module location: {getattr(ollama, '__file__', 'unknown')}"
-                )
-                # Fall through to CLI recovery instead of failing outright
-                raise ImportError("ollama package is not functional")
-            self._ollama = ollama
-            try:
-                _ = self._ollama.list()
-            except Exception as e:
-                logger.debug(f"Ollama list models failed (non-fatal): {e}")
+            self._endpoint = _endpoint(self.base_url)
             self._is_initialized = True
-            logger.info("Ollama provider initialized (python client)")
             return True
-        except ImportError:
-            # Recovery to CLI if available
-            if shutil.which("ollama"):
-                self._use_cli = True
-                self._is_initialized = True
-                logger.info("Ollama provider initialized (CLI recovery)")
-                return True
-            logger.warning(
-                "Ollama not available. Install python client with 'uv pip install ollama' or install Ollama CLI from https://ollama.ai"
-            )
-            return False
-        except Exception as e:
-            logger.error(f"Failed to initialize Ollama: {e}")
+        except (TypeError, ValueError):
+            logger.error("Invalid Ollama HTTP transport configuration")
+            self._is_initialized = False
             return False
 
     def validate_config(self, config: LLMConfig) -> bool:
-        # Ollama accepts many models; don't strictly enforce model list
-        """Validate config."""
-        if config.max_tokens is not None and config.max_tokens <= 0:
-            logger.error("max_tokens must be positive")
+        """Reject invalid generation options and budgets before dispatch."""
+        tokens = (
+            config.max_tokens
+            if config.max_tokens is not None
+            else self.default_max_tokens
+        )
+        if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens <= 0:
             return False
-        if config.temperature is not None and not (0.0 <= config.temperature <= 2.0):
-            logger.error("temperature must be between 0.0 and 2.0")
+        if config.temperature is not None and (
+            not math.isfinite(config.temperature)
+            or not 0.0 <= config.temperature <= 2.0
+        ):
             return False
+        if config.timeout is not None:
+            try:
+                _positive_timeout(config.timeout)
+            except (TypeError, ValueError):
+                return False
         return True
 
-    async def generate_response(
-        self,
-        messages: List[LLMMessage],
-        config: Optional[LLMConfig] = None,
-    ) -> LLMResponse:
-        """Generate response."""
-        if not self.is_initialized:
+    def _request(
+        self, messages: List[LLMMessage], config: LLMConfig, *, stream: bool
+    ) -> tuple[_ChatRequest, dict[str, Any]]:
+        if not self.is_initialized or self._endpoint is None:
             raise RuntimeError("Ollama provider not initialized")
-
-        if config is None:
-            config = LLMConfig()
-
         if not self.validate_config(config):
             raise ValueError("Invalid configuration parameters")
+        timeout = min(
+            self.default_timeout,
+            _positive_timeout(config.timeout)
+            if config.timeout is not None
+            else self.default_timeout,
+        )
+        options = {
+            "num_predict": config.max_tokens
+            if config.max_tokens is not None
+            else self.default_max_tokens,
+            "temperature": config.temperature
+            if config.temperature is not None
+            else 0.2,
+        }
+        for key in ("top_p", "frequency_penalty", "presence_penalty"):
+            value = getattr(config, key)
+            if value is not None:
+                options[key] = value
+        payload = {
+            "model": config.model or self.default_model,
+            "messages": [
+                {"role": msg.role, "content": msg.content} for msg in messages
+            ],
+            "options": options,
+            "stream": stream,
+            "truncate": False,
+            "shift": False,
+        }
+        return _ChatRequest(self._endpoint, timeout), payload
 
-        # Convert to Ollama message format
-        ollama_messages = [
-            {"role": msg.role, "content": msg.content} for msg in messages
-        ]
+    @staticmethod
+    def _validate_response(response: Any, model: str) -> dict[str, Any]:
+        if not isinstance(response, dict):
+            raise RuntimeError("Ollama returned a malformed chat response")
+        if response.get("error"):
+            raise RuntimeError(f"Ollama rejected chat: {str(response['error'])[:1024]}")
+        if response.get("model") != model:
+            raise RuntimeError("Ollama response model differs from configured model")
+        message = response.get("message")
+        if not isinstance(message, dict) or not isinstance(message.get("content"), str):
+            raise RuntimeError("Ollama returned a malformed chat message")
+        return response
+
+    async def preflight_model(
+        self, model: str, timeout: Optional[float] = None
+    ) -> dict[str, Any]:
+        """Verify the exact model on the configured HTTP host without generation."""
+        transport, _ = self._request(
+            [], LLMConfig(model=model, timeout=timeout), stream=False
+        )
+
+        def call() -> dict[str, Any]:
+            try:
+                transport.check_version()
+                transport._exchange("GET", transport.tags_path)
+                tags = json.loads(transport.read_all())
+                models = tags.get("models") if isinstance(tags, dict) else None
+                if not isinstance(models, list):
+                    raise RuntimeError("Ollama returned a malformed model inventory")
+                if not any(
+                    isinstance(entry, dict) and entry.get("name") == model
+                    for entry in models
+                ):
+                    raise RuntimeError(
+                        "Configured Ollama model is not installed on the configured HTTP host"
+                    )
+                transport.remaining()
+                return {
+                    "model": model,
+                    "server_version": transport.server_version,
+                    "context_policy": "whole-context-v1",
+                    "status": "ready",
+                }
+            finally:
+                transport.close()
 
         try:
-            import asyncio
+            result = await asyncio.to_thread(call)
+        finally:
+            transport.close()
+        transport.remaining()
+        return result
 
-            # CLI path yields a plain dict; the Python client yields an
-            # untyped ChatResponse object, so keep both branches reachable.
-            response: Any
-            if self._use_cli:
-                # Build prompt by joining message contents, preserving order
-                prompt = "\n\n".join(m.content for m in messages)
-                model = config.model or self.default_model
+    async def generate_response(
+        self, messages: List[LLMMessage], config: Optional[LLMConfig] = None
+    ) -> LLMResponse:
+        """Generate from all messages without SDK/CLI retries or truncation."""
+        transport, payload = self._request(
+            messages, config or LLMConfig(), stream=False
+        )
 
-                def _call_cli() -> Dict[str, Any]:
-                    """Handle call cli for internal callers."""
-                    import time as _t
-
-                    # Prefer JSON mode via `ollama chat` if available; recovery to `ollama run`
-                    try:
-                        logger.debug(
-                            f"Ollama CLI chat: model={model}, timeout={self.default_timeout}s"
-                        )
-                        t0 = _t.monotonic()
-                        completed = subprocess.run(  # nosec B607 B603
-                            ["ollama", "chat", model, "--json"],
-                            input=json.dumps(
-                                {
-                                    "messages": [
-                                        {"role": m.role, "content": m.content}
-                                        for m in messages
-                                    ],
-                                    "options": {
-                                        "num_predict": config.max_tokens
-                                        or self.default_max_tokens,
-                                        "temperature": config.temperature
-                                        if config.temperature is not None
-                                        else 0.2,
-                                    },
-                                }
-                            ),
-                            capture_output=True,
-                            text=True,
-                            check=False,
-                            timeout=self.default_timeout,
-                        )
-                        elapsed = _t.monotonic() - t0
-                        logger.debug(
-                            f"Ollama CLI chat completed: rc={completed.returncode}, elapsed={elapsed:.1f}s"
-                        )
-                        if completed.returncode != 0 and completed.stderr:
-                            logger.debug(
-                                f"Ollama CLI chat stderr: {completed.stderr[:200]}"
-                            )
-                        if completed.returncode == 0 and completed.stdout.strip():
-                            return cast("dict[str, Any]", json.loads(completed.stdout))
-                    except Exception as json_error:
-                        logger.debug(f"JSON mode failed: {json_error}")
-                    # Recovery to `ollama run`
-                    logger.debug(
-                        f"Falling back to CLI 'ollama run' with timeout {self.default_timeout}s"
-                    )
-                    t0 = _t.monotonic()
-                    completed = subprocess.run(  # nosec B607 B603
-                        ["ollama", "run", model, prompt],
-                        capture_output=True,
-                        text=True,
-                        check=False,
-                        timeout=self.default_timeout,
-                    )
-                    elapsed = _t.monotonic() - t0
-                    logger.debug(
-                        f"Ollama CLI run completed: rc={completed.returncode}, elapsed={elapsed:.1f}s"
-                    )
-                    if completed.returncode != 0 and completed.stderr:
-                        logger.debug(f"Ollama CLI run stderr: {completed.stderr[:200]}")
-                    return {
-                        "model": model,
-                        "message": {"content": completed.stdout.strip()},
-                    }
-
-                response = await asyncio.to_thread(_call_cli)
-            else:
-                # Python client - returns ChatResponse object
-                def _call_py() -> Any:
-                    """Handle call py for internal callers."""
-                    return self._ollama.chat(
-                        model=config.model or self.default_model,
-                        messages=ollama_messages,
-                        options={
-                            "num_predict": config.max_tokens or self.default_max_tokens,
-                            "temperature": config.temperature
-                            if config.temperature is not None
-                            else 0.2,
-                        },
-                    )
-
-                response = await asyncio.to_thread(_call_py)
-
-            # Handle both dict responses (CLI) and ChatResponse objects (Python client)
-            if isinstance(response, dict):
-                content = response.get("message", {}).get("content", "")
-                model_used = response.get("model", config.model or self.default_model)
-                metadata_dict = {k: v for k, v in response.items() if k != "message"}
-            else:
-                # ChatResponse object from Python client
-                content = (
-                    getattr(response.message, "content", "")
-                    if hasattr(response, "message")
-                    else ""
+        def call() -> dict[str, Any]:
+            try:
+                transport.open(payload)
+                response = self._validate_response(
+                    json.loads(transport.read_all()), payload["model"]
                 )
-                model_used = getattr(
-                    response, "model", config.model or self.default_model
-                )
-                # Convert ChatResponse to dict for metadata
-                metadata_dict = {"model": model_used}
-                if hasattr(response, "done"):
-                    metadata_dict["done"] = response.done
-                if hasattr(response, "eval_count"):
-                    metadata_dict["eval_count"] = response.eval_count
-                if hasattr(response, "eval_duration"):
-                    metadata_dict["eval_duration"] = response.eval_duration
+                transport.remaining()
+                return response
+            finally:
+                transport.close()
 
-            return LLMResponse(
-                content=content,
-                model_used=model_used,
-                provider=self.provider_type.value,
-                usage=None,
-                finish_reason=None,
-                metadata={"raw": metadata_dict},
-            )
-        except Exception as e:
-            logger.error(f"Ollama chat failed: {e}")
-            raise
+        try:
+            response = await asyncio.to_thread(call)
+        finally:
+            transport.close()
+        transport.remaining()
+        if (
+            response.get("done") is not True
+            or not response["message"]["content"].strip()
+        ):
+            raise RuntimeError("Ollama returned an unfinished or empty chat response")
+        usage = {}
+        for source, target in (
+            ("prompt_eval_count", "prompt_tokens"),
+            ("eval_count", "completion_tokens"),
+        ):
+            value = response.get(source)
+            if isinstance(value, int) and not isinstance(value, bool):
+                usage[target] = value
+        return LLMResponse(
+            content=response["message"]["content"],
+            model_used=response["model"],
+            provider=self.provider_type.value,
+            usage=usage or None,
+            finish_reason=response.get("done_reason"),
+            metadata={
+                "raw": {
+                    key: value for key, value in response.items() if key != "message"
+                },
+                "transport": "ollama_http_chat",
+                "truncate": False,
+                "shift": False,
+                "server_version": transport.server_version,
+                "context_policy": "whole-context-v1",
+            },
+        )
 
     async def generate_stream(
-        self,
-        messages: List[LLMMessage],
-        config: Optional[LLMConfig] = None,
+        self, messages: List[LLMMessage], config: Optional[LLMConfig] = None
     ) -> AsyncGenerator[str, None]:
-        """Generate stream."""
-        if not self.is_initialized:
-            raise RuntimeError("Ollama provider not initialized")
-
-        if config is None:
-            config = LLMConfig(stream=True)
-        else:
-            config.stream = True
-
-        if not self.validate_config(config):
-            raise ValueError("Invalid configuration parameters")
-
-        # Ollama's Python client supports streaming via generate with stream=True
+        """Stream role-preserving chat with one budget across every chunk."""
+        transport, payload = self._request(messages, config or LLMConfig(), stream=True)
+        buffer = b""
+        done = False
         try:
-            import asyncio
-
-            if self._use_cli:
-                # CLI streaming not standardized; emit single chunk
-                def _call_cli_once() -> str:
-                    """Handle call cli once for internal callers."""
-                    import time as _t
-
-                    prompt = "\n\n".join(m.content for m in messages)
-                    model = config.model or self.default_model
-                    logger.debug(
-                        f"Ollama CLI stream: model={model}, timeout={self.default_timeout}s"
+            await asyncio.to_thread(transport.open, payload)
+            while not done:
+                chunk = await asyncio.to_thread(transport.read_chunk)
+                buffer += chunk
+                lines = buffer.split(b"\n")
+                buffer = lines.pop()
+                if not chunk and buffer:
+                    lines.append(buffer)
+                    buffer = b""
+                if len(buffer) > _MAX_STREAM_LINE_BYTES or any(
+                    len(line) > _MAX_STREAM_LINE_BYTES for line in lines
+                ):
+                    raise RuntimeError(
+                        "Ollama stream line exceeds the 1 MiB transport limit"
                     )
-                    t0 = _t.monotonic()
-                    completed = subprocess.run(  # nosec B607 B603
-                        ["ollama", "run", model, prompt],
-                        capture_output=True,
-                        text=True,
-                        check=False,
-                        timeout=self.default_timeout,
+                for line in lines:
+                    if not line.strip():
+                        continue
+                    transport.remaining()
+                    response = self._validate_response(
+                        json.loads(line), payload["model"]
                     )
-                    elapsed = _t.monotonic() - t0
-                    logger.debug(
-                        f"Ollama CLI stream completed: rc={completed.returncode}, elapsed={elapsed:.1f}s"
+                    transport.remaining()
+                    if response["message"]["content"]:
+                        yield response["message"]["content"]
+                    transport.remaining()
+                    if response.get("done") is True:
+                        done = True
+                        break
+                if not chunk and not done:
+                    raise RuntimeError(
+                        "Ollama stream ended without a completed response"
                     )
-                    return completed.stdout
-
-                text = await asyncio.to_thread(_call_cli_once)
-                yield text
-            else:
-
-                def _iter() -> Any:
-                    """Handle iter for internal callers."""
-                    return self._ollama.generate(
-                        model=config.model or self.default_model,
-                        prompt="\n\n".join(
-                            m.content for m in messages if m.role in ("system", "user")
-                        ),
-                        stream=True,
-                        options={
-                            "num_predict": config.max_tokens or self.default_max_tokens,
-                            "temperature": config.temperature
-                            if config.temperature is not None
-                            else 0.2,
-                        },
-                    )
-
-                iterator = await asyncio.to_thread(_iter)
-                for chunk in iterator:
-                    if isinstance(chunk, dict):
-                        token = chunk.get("response") or ""
-                    else:
-                        token = str(chunk)
-                    if token:
-                        yield token
-        except Exception as e:
-            logger.error(f"Ollama streaming failed: {e}")
-            raise
+        finally:
+            transport.close()
+        transport.remaining()
 
     def analyze(self, content: str, task: str) -> str:
         """Perform analysis on GNN content."""
@@ -362,11 +473,19 @@ class OllamaProvider(BaseLLMProvider):
         import concurrent.futures
 
         prompt = f"Analyze this GNN model for {task}: {content}"
+        deadline = time.monotonic() + self.default_timeout
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = False
+        else:
+            running_loop = True
 
         async def _run() -> LLMResponse:
             """Run operation."""
             return await self.generate_response(
-                [LLMMessage(role="user", content=prompt)]
+                [LLMMessage(role="user", content=prompt)],
+                LLMConfig(timeout=_positive_timeout(deadline - time.monotonic())),
             )
 
         def _extract(result: Any) -> str:
@@ -374,23 +493,19 @@ class OllamaProvider(BaseLLMProvider):
             return result.content if hasattr(result, "content") else str(result)
 
         try:
-            result = asyncio.run(_run())
+            if running_loop:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                    future = pool.submit(lambda: asyncio.run(_run()))
+                    result = future.result(
+                        timeout=_positive_timeout(deadline - time.monotonic())
+                    )
+            else:
+                result = asyncio.run(_run())
             return _extract(result)
-        except RuntimeError:
-
-            def _thread_run() -> LLMResponse:
-                """Handle thread run for internal callers."""
-                return asyncio.run(_run())
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                future = pool.submit(_thread_run)
-                return _extract(future.result(timeout=30))
         except Exception as e:
             logger.error(f"Ollama analysis failed: {e}")
             return f"Analysis failed: {e}"
 
     async def close(self) -> None:
-        # No persistent connection to close for Ollama
-        """Close operation."""
+        """Close the provider; each request owns and closes its connection."""
         self._is_initialized = False
-        logger.info("Ollama provider closed")

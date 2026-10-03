@@ -3,16 +3,15 @@
 LLM processor module for GNN analysis.
 """
 
-import inspect
 import json
 import logging
+import math
 import os
 import re
 import shutil
 import subprocess  # nosec B404
-from datetime import datetime
 from pathlib import Path
-from typing import Any, List, cast
+from typing import Any, Callable, List, cast
 
 try:
     import yaml
@@ -28,26 +27,14 @@ from gnn.pipeline.config import get_pipeline_config
 
 
 def _get_llm_config() -> dict:
-    """Read LLM configuration from input/config.yaml, with pipeline config recovery."""
-    try:
-        if os.getenv("GNN_TESTING_NO_LLM_CONFIG"):
-            return {}
+    """Use the resolved invocation snapshot; never infer a checkout location."""
+    from gnn.pipeline.run_context import effective_input_config
 
-        # Resolve input/config.yaml relative to project root (src/../input/config.yaml)
-        config_path = (
-            Path(__file__).resolve().parent.parent.parent / "input" / "config.yaml"
-        )
-        if config_path.exists():
-            if yaml is None:
-                _logger.debug(
-                    "PyYAML not available; skipping input/config.yaml LLM section"
-                )
-                return {}
-            with open(config_path, "r") as f:
-                full_config = yaml.safe_load(f) or {}
-            return cast("dict[Any, Any]", full_config.get("llm", {}))
-    except Exception as e:
-        _logger.debug("LLM config YAML load failed: %s", e)
+    resolved = effective_input_config()
+    if resolved is not None:
+        return cast("dict[Any, Any]", resolved.get("llm", {}))
+    if os.getenv("GNN_TESTING_NO_LLM_CONFIG"):
+        return {}
     # Recovery to pipeline config system
     try:
         config = get_pipeline_config()
@@ -176,12 +163,7 @@ def _model_is_cached(model_name: str, logger: logging.Logger) -> bool:
 
 import asyncio
 
-from gnn.utils.logging_utils import (
-    log_step_error,
-    log_step_start,
-    log_step_success,
-    log_step_warning,
-)
+from gnn.utils.logging_utils import log_step_error
 
 from .defaults import DEFAULT_OLLAMA_MODEL
 
@@ -435,17 +417,26 @@ def _select_best_ollama_model(
     return cast("str", default_model)
 
 
-from .analyzer import analyze_gnn_file_with_llm
+from .analyzer import analyze_gnn_file_with_llm as analyze_gnn_file_with_llm
 from .cache import LLMCache
 from .generator import (
-    generate_code_suggestions,
-    generate_documentation,
-    generate_llm_summary,
-    generate_model_insights,
+    generate_code_suggestions as generate_code_suggestions,
+)
+from .generator import (
+    generate_documentation as generate_documentation,
+)
+from .generator import (
+    generate_llm_summary as generate_llm_summary,
+)
+from .generator import (
+    generate_model_insights as generate_model_insights,
 )
 from .llm_processor import LLMProcessor, ProviderType
-from .prompts import PromptType, get_prompt
+from .prompts import PromptType as PromptType
+from .prompts import get_prompt as get_prompt
 from .providers.base_provider import LLMConfig, LLMMessage
+
+_LIVE_PROCESSOR_CLASS = LLMProcessor
 
 _AUTH_ERROR_MARKERS = ("401", "403", "invalid_api_key", "incorrect api key")
 
@@ -489,6 +480,11 @@ async def _execute_prompt(
     max_prompt_timeout: float,
     failed_auth_providers: set[str],
     auth_errors: list[dict[str, Any]],
+    outcomes: dict[str, Any] | None = None,
+    provider_type: ProviderType | None = None,
+    isolated: bool = False,
+    endpoint_url: str | None = None,
+    remaining_budget: Callable[[], float] | None = None,
 ) -> str:
     """Run one LLM prompt with cache lookup, timeout, and auth fail-fast.
 
@@ -497,7 +493,7 @@ async def _execute_prompt(
 
     Args:
         processor: Initialized multi-provider processor (required non-None).
-        cache: Response cache keyed on content + model + prompt text.
+        cache: Response cache bound to content and the full request definition.
         cache_content: Raw GNN content used in the cache key.
         model_name: Model tag passed to the provider and cache key.
         messages: Chat messages for this prompt.
@@ -509,9 +505,48 @@ async def _execute_prompt(
         failed_auth_providers: Providers that already failed auth (mutated).
         auth_errors: Auth-failure records for the run summary (mutated).
     """
-    cached = cache.get(cache_content, model_name, prompt_text)
-    if cached is not None:
+    if outcomes is not None:
+        outcomes[label] = {"status": "failed"}
+    import time
+
+    prompt_deadline = time.monotonic() + max_prompt_timeout
+
+    def check_deadline() -> None:
+        if time.monotonic() >= prompt_deadline or (
+            remaining_budget is not None and remaining_budget() <= 0
+        ):
+            raise asyncio.TimeoutError("Required prompt work exceeded its deadline")
+
+    if provider_type and provider_type.value in failed_auth_providers:
+        return _prompt_fallback_text(label, custom)
+    request_definition = json.dumps(
+        {
+            "schema_version": 2,
+            "provider": provider_type.value if provider_type else "default",
+            "model": model_name,
+            "messages": [
+                {"role": message.role, "content": message.content, "name": message.name}
+                for message in messages
+            ],
+            "prompt_text": prompt_text,
+            "max_tokens": max_tokens,
+            "temperature": 0.2,
+        },
+        sort_keys=True,
+    )
+    cached = cache.get(cache_content, model_name, request_definition)
+    if isinstance(cached, str) and cached.strip():
+        if time.monotonic() >= prompt_deadline or (
+            remaining_budget is not None and remaining_budget() <= 0
+        ):
+            if outcomes is not None:
+                outcomes[label] = {"status": "timed_out"}
+            return (
+                f"Prompt cache retrieval timed out after {max_prompt_timeout} seconds"
+            )
         logger.info(f"  ⚡ Cache HIT for {label}")
+        if outcomes is not None:
+            outcomes[label] = {"status": "success", "cached": True}
         return cached
 
     # Fail fast when the provider that would serve this request already
@@ -527,27 +562,52 @@ async def _execute_prompt(
         return _prompt_fallback_text(label, custom)
 
     try:
-        resp = await asyncio.wait_for(
-            processor.get_response(
-                messages=messages,
-                model_name=model_name,
+        check_deadline()
+        request_timeout = max(0.0, prompt_deadline - time.monotonic())
+        if remaining_budget is not None:
+            request_timeout = min(request_timeout, remaining_budget())
+        if isolated:
+            from .request_worker import isolated_request
+
+            resp = await isolated_request(
+                provider=(provider_type or ProviderType.OLLAMA).value,
+                model=model_name,
+                messages=[
+                    {"role": msg.role, "content": msg.content} for msg in messages
+                ],
                 max_tokens=max_tokens,
-                temperature=0.2,
-                config=LLMConfig(timeout=60),
-            ),
-            timeout=max_prompt_timeout,
-        )
+                timeout=request_timeout,
+                endpoint_url=endpoint_url,
+            )
+        else:
+            resp = await asyncio.wait_for(
+                processor.get_response(
+                    messages=messages,
+                    model_name=model_name,
+                    provider_type=provider_type,
+                    max_tokens=max_tokens,
+                    temperature=0.2,
+                    config=LLMConfig(timeout=request_timeout),
+                ),
+                timeout=request_timeout,
+            )
+        check_deadline()
         content = resp.content if hasattr(resp, "content") else str(resp)
         if not content or content.strip() == "":
             kind = "custom prompt" if custom else "prompt"
-            content = (
+            return (
                 f"No response generated for {kind} {label}. This may indicate "
                 "that the LLM provider is not available or not responding."
             )
-        cache.put(cache_content, model_name, prompt_text, content)
+        cache.put(cache_content, model_name, request_definition, content)
+        check_deadline()
+        if outcomes is not None:
+            outcomes[label] = {"status": "success", "cached": False}
         logger.debug("  ✅ Prompt completed successfully")
         return content
     except asyncio.TimeoutError:
+        if outcomes is not None:
+            outcomes[label] = {"status": "timed_out"}
         error_msg = f"Prompt execution timed out after {max_prompt_timeout} seconds"
         logger.error(f"  ❌ {error_msg}")
         return error_msg
@@ -583,14 +643,29 @@ def _optional_positive_int(value: Any) -> int | None:
 
 
 def _resolve_llm_budget_seconds(
-    kwargs: dict[str, Any], llm_config: dict[str, Any]
-) -> int:
+    kwargs: dict[str, Any], llm_config: dict[str, Any], selected_count: int = 1
+) -> float:
     """Resolve the total LLM budget from CLI kwargs, then config, then default."""
     for key in ("total_budget", "llm_timeout"):
-        budget = _optional_positive_int(kwargs.get(key))
-        if budget is not None:
-            return budget
-    return _optional_positive_int(llm_config.get("timeout_seconds")) or 600
+        value = kwargs.get(key)
+        if value is not None:
+            if (
+                isinstance(value, bool)
+                or not math.isfinite(float(value))
+                or float(value) <= 0
+            ):
+                raise ValueError(f"{key} must be finite and positive")
+            return float(value)
+    value = llm_config.get("timeout_seconds")
+    if value is not None:
+        if (
+            isinstance(value, bool)
+            or not math.isfinite(float(value))
+            or float(value) <= 0
+        ):
+            raise ValueError("LLM timeout_seconds must be finite and positive")
+        return float(value)
+    return 600 * max(1, selected_count)
 
 
 def _resolve_llm_max_files(
@@ -598,10 +673,19 @@ def _resolve_llm_max_files(
 ) -> int | None:
     """Resolve the optional file cap for bounded pipeline LLM runs."""
     for key in ("max_files", "llm_max_files"):
-        max_files = _optional_positive_int(kwargs.get(key))
-        if max_files is not None:
-            return max_files
-    return _optional_positive_int(llm_config.get("max_files"))
+        value = kwargs.get(key)
+        if value is not None:
+            if isinstance(value, bool) or str(value) != str(
+                _optional_positive_int(value)
+            ):
+                raise ValueError(f"{key} must be a positive integer")
+            return int(value)
+    value = llm_config.get("max_files")
+    if value is not None and (
+        isinstance(value, bool) or str(value) != str(_optional_positive_int(value))
+    ):
+        raise ValueError("LLM max_files must be a positive integer")
+    return _optional_positive_int(value)
 
 
 def _llm_file_sort_key(path: Path) -> tuple[int, str]:
@@ -640,466 +724,11 @@ def process_llm(
 async def _process_llm_async(
     target_dir: Path, output_dir: Path, verbose: bool, **kwargs: Any
 ) -> bool:
-    """Async implementation of process_llm."""
-    import time as _time
+    """Delegate corpus scheduling while preserving public helper injection."""
+    import sys
 
-    logger = logging.getLogger("llm")
+    from .corpus_runner import run_corpus
 
-    # Initialize processor variable for cleanup in finally block
-    processor = None
-
-    # Initialize LLM response cache
-    cache = LLMCache(cache_dir=output_dir / ".cache")
-
-    # Total budget: CLI overrides config so long pipeline runs can scale the LLM step.
-    llm_config = _get_llm_config()
-    TOTAL_BUDGET_SECONDS = _resolve_llm_budget_seconds(kwargs, llm_config)
-    budget_start = _time.monotonic()
-
-    def _budget_remaining() -> float:
-        """Handle budget remaining for internal callers."""
-        return max(0.0, TOTAL_BUDGET_SECONDS - (_time.monotonic() - budget_start))
-
-    try:
-        log_step_start(logger, "Processing LLM with enhanced Ollama integration")
-
-        # Check if Ollama is available and running with model detection
-        ollama_available, ollama_models = _start_ollama_if_needed(logger)
-
-        # Select best model if Ollama is available
-        selected_model = None
-        if ollama_available and ollama_models:
-            selected_model = _select_best_ollama_model(ollama_models, logger)
-        elif ollama_available:
-            # Ollama running but no models listed - use default
-            selected_model = _select_best_ollama_model([], logger)
-        else:
-            logger.info(
-                "ℹ️ Proceeding with recovery LLM analysis (no live model interaction)"
-            )
-
-        results_dir = output_dir
-        results_dir.mkdir(parents=True, exist_ok=True)
-
-        results: dict[str, Any] = {
-            "timestamp": datetime.now().isoformat(),
-            "processed_files": 0,
-            "success": True,
-            "errors": [],
-            "auth_errors": [],
-            "provider_matrix": {
-                "ollama": {
-                    "available": ollama_available,
-                    "models": ollama_models,
-                    "selected_model": selected_model,
-                },
-                "openai": {
-                    "available": bool(os.getenv("OPENAI_API_KEY")),
-                    "models": ["gpt-4", "gpt-3.5-turbo"]
-                    if os.getenv("OPENAI_API_KEY")
-                    else [],
-                    "selected_model": None,
-                },
-                "anthropic": {
-                    "available": bool(os.getenv("ANTHROPIC_API_KEY")),
-                    "models": ["claude-3", "claude-2"]
-                    if os.getenv("ANTHROPIC_API_KEY")
-                    else [],
-                    "selected_model": None,
-                },
-            },
-            "analysis_results": [],
-            "model_insights": [],
-            "code_suggestions": [],
-            "documentation_generated": [],
-        }
-
-        # Track providers with auth failures to fail-fast on subsequent calls
-        failed_auth_providers: set[Any] = set()
-
-        # Find GNN files (recursive to handle subdirectory structure)
-        discovered_gnn_files = sorted(target_dir.rglob("*.md"), key=_llm_file_sort_key)
-        max_files = _resolve_llm_max_files(kwargs, llm_config)
-        gnn_files = (
-            discovered_gnn_files[:max_files]
-            if max_files is not None
-            else discovered_gnn_files
-        )
-        if max_files is not None and len(discovered_gnn_files) > len(gnn_files):
-            logger.info(
-                "LLM file selection limited to %s/%s files by config",
-                len(gnn_files),
-                len(discovered_gnn_files),
-            )
-
-        results["total_files_discovered"] = len(discovered_gnn_files)
-        results["selected_files"] = len(gnn_files)
-        results["skipped_files"] = max(0, len(discovered_gnn_files) - len(gnn_files))
-        results["file_selection"] = {
-            "max_files": max_files,
-            "policy": "sorted, non-scaling fixtures first",
-            "selected_paths": [str(path) for path in gnn_files],
-        }
-
-        if not gnn_files:
-            logger.warning("No GNN files found for LLM processing")
-            results["success"] = False
-            results["errors"].append("No GNN files found")
-        else:
-            # Initialize LLM processor (prioritize Ollama)
-            processor_initialized = False
-            try:
-                # Create processor with Ollama prioritized
-                processor = LLMProcessor(
-                    preferred_providers=[
-                        ProviderType.OLLAMA,
-                        ProviderType.OPENAI,
-                        ProviderType.OPENROUTER,
-                        ProviderType.PERPLEXITY,
-                    ]
-                )
-                processor_initialized = await processor.initialize()
-
-                if not processor_initialized:
-                    logger.warning(
-                        "LLM processor initialization failed - using recovery analysis"
-                    )
-                else:
-                    logger.info(
-                        f"LLM processor initialized with providers: {[p.value for p in processor.get_available_providers()]}"
-                    )
-            except Exception as e:
-                logger.warning(
-                    f"LLM processor initialization failed: {e} - using recovery analysis"
-                )
-                processor_initialized = False
-                processor = cast(Any, None)
-
-            # Process each GNN file
-            for file_idx, gnn_file in enumerate(gnn_files, 1):
-                # Check total budget before starting a new file
-                remaining = _budget_remaining()
-                if remaining < 30:
-                    logger.warning(
-                        f"⏱️ Budget exhausted after {file_idx - 1}/{len(gnn_files)} files — skipping remaining"
-                    )
-                    break
-                logger.info(
-                    f"📄 File {file_idx}/{len(gnn_files)}: {gnn_file.name} (budget: {remaining:.0f}s remaining)"
-                )
-                try:
-                    # Await the coroutine since we're in an async context
-                    resolved_ollama_for_summary = (
-                        (selected_model if selected_model else DEFAULT_OLLAMA_MODEL)
-                        if ollama_available
-                        else None
-                    )
-                    analysis_candidate = analyze_gnn_file_with_llm(
-                        gnn_file,
-                        verbose,
-                        ollama_model=resolved_ollama_for_summary,
-                        attempt_llm=processor_initialized,
-                    )
-                    file_analysis = (
-                        await analysis_candidate
-                        if inspect.isawaitable(analysis_candidate)
-                        else analysis_candidate
-                    )
-                    results["analysis_results"].append(file_analysis)
-
-                    # Generate insights
-                    insights = generate_model_insights(file_analysis)
-                    results["model_insights"].append(insights)
-
-                    # Generate code suggestions
-                    suggestions = generate_code_suggestions(file_analysis)
-                    results["code_suggestions"].append(suggestions)
-
-                    # Generate documentation
-                    docs = generate_documentation(file_analysis)
-                    results["documentation_generated"].append(docs)
-
-                    # If LLM processor is available, run structured prompts and save outputs
-                    if processor_initialized and processor:
-                        with open(gnn_file, "r") as f:
-                            gnn_content = f.read()
-
-                        # --- BEGIN ONTOLOGY INJECTION ---
-                        ontology_file = (
-                            output_dir.parent
-                            / "10_ontology_output"
-                            / "ontology_results.json"
-                        )
-                        if ontology_file.exists():
-                            try:
-                                with open(ontology_file, "r") as fn:
-                                    ont_data = json.load(fn)
-                                gnn_content += f"\n\n--- INJECTED ACTIVE INFERENCE ONTOLOGY META ---\n{json.dumps(ont_data, indent=2)}\n"
-                                logger.info(
-                                    "🧠 Injected Neurosymbolic Ontology context into LLM prompt."
-                                )
-                            except Exception as oe:
-                                logger.warning(
-                                    f"Could not inject ontology metadata: {oe}"
-                                )
-                        # --- END ONTOLOGY INJECTION ---
-                        # --- BEGIN CROSS-FRAMEWORK INJECTION ---
-                        try:
-                            comparison_meta = _collect_cross_framework_summary(
-                                output_dir, gnn_file.stem
-                            )
-                        except Exception as comparison_error:
-                            logger.warning(
-                                f"Could not collect cross-framework metadata: {comparison_error}"
-                            )
-                            comparison_meta = None
-                        if comparison_meta:
-                            gnn_content += (
-                                "\n\n--- INJECTED CROSS-FRAMEWORK COMPARISON META ---\n"
-                                f"{json.dumps(comparison_meta, indent=2)}\n"
-                            )
-                            logger.info(
-                                "🔬 Injected cross-framework comparison context into LLM prompt."
-                            )
-                        # --- END CROSS-FRAMEWORK INJECTION ---
-                        # Build custom prompt sequence including user-requested prompts
-                        prompt_sequence: list[Any] = [
-                            PromptType.SUMMARIZE_CONTENT,
-                            PromptType.EXPLAIN_MODEL,
-                            PromptType.IDENTIFY_COMPONENTS,
-                            PromptType.ANALYZE_STRUCTURE,
-                            PromptType.EXTRACT_PARAMETERS,
-                            PromptType.PRACTICAL_APPLICATIONS,
-                        ]
-
-                        # Allow custom_prompts to be overridden via kwargs
-                        custom_prompts = kwargs.get(
-                            "custom_prompts",
-                            [
-                                (
-                                    "technical_description",
-                                    "Describe this GNN model comprehensively, in technical detail.",
-                                ),
-                                (
-                                    "nontechnical_description",
-                                    "Describe this GNN model comprehensively, in non-technical language suitable for a broad audience.",
-                                ),
-                                (
-                                    "runtime_behavior",
-                                    "Describe what happens when this GNN model runs and how it would behave in different settings or domains.",
-                                ),
-                            ],
-                        )
-
-                        per_file_dir = results_dir / f"prompts_{gnn_file.stem}"
-                        per_file_dir.mkdir(parents=True, exist_ok=True)
-
-                        prompt_outputs: dict[Any, Any] = {}
-                        # Use selected model or recovery
-                        ollama_model = (
-                            selected_model if selected_model else DEFAULT_OLLAMA_MODEL
-                        )
-                        try:
-                            ollama_model = _validate_model_name(ollama_model)
-                        except ModelNameValidationError as e:
-                            # Flag-injection guard: never interpolate an
-                            # unvalidated model name into an ollama CLI flag.
-                            logger.warning(
-                                f"⚠️ Invalid model name; falling back to default: {e}"
-                            )
-                            ollama_model = DEFAULT_OLLAMA_MODEL
-                        logger.info(f"🤖 Using model '{ollama_model}' for LLM prompts")
-                        # Per-prompt timeout: config-driven, recovery to kwargs.
-                        # Loop-invariant, shared by structured and custom prompts.
-                        max_prompt_timeout = kwargs.get(
-                            "max_prompt_timeout",
-                            llm_config.get("prompt_timeout", 45),
-                        )
-
-                        # Ensure model is available — use pre-pull guard to skip if cached
-                        if (
-                            ollama_available
-                            and ollama_model not in ollama_models
-                            and _env_flag("OLLAMA_AUTO_PULL")
-                        ):
-                            if _model_is_cached(ollama_model, logger):
-                                logger.info(
-                                    f"⏭️ Skipping pull — '{ollama_model}' already cached"
-                                )
-                            else:
-                                logger.info(
-                                    f"📥 Pulling model '{ollama_model}' (not cached)..."
-                                )
-                                try:
-                                    install_result = subprocess.run(  # nosec B607 B603
-                                        ["ollama", "pull", ollama_model],
-                                        capture_output=True,
-                                        text=True,
-                                        timeout=120,
-                                    )
-                                    if install_result.returncode == 0:
-                                        logger.info(
-                                            f"✅ Model '{ollama_model}' pulled successfully"
-                                        )
-                                    else:
-                                        logger.warning(
-                                            f"⚠️ Failed to pull model '{ollama_model}': {install_result.stderr}"
-                                        )
-                                except subprocess.TimeoutExpired:
-                                    logger.warning(
-                                        "⚠️ Model pull timed out after 120s — continuing with recovery"
-                                    )
-                                except Exception as e:
-                                    logger.warning(
-                                        f"⚠️ Could not pull model '{ollama_model}': {e}"
-                                    )
-
-                        for idx, ptype in enumerate(prompt_sequence, start=1):
-                            # Check budget before each prompt
-                            if _budget_remaining() < 30:
-                                logger.warning(
-                                    f"⏱️ Budget exhausted ({TOTAL_BUDGET_SECONDS}s), skipping remaining prompts for {gnn_file.name}"
-                                )
-                                break
-                            prompt_cfg = get_prompt(ptype, gnn_content)
-                            messages: list[Any] = [
-                                LLMMessage(
-                                    role="system", content=prompt_cfg["system_message"]
-                                ),
-                                LLMMessage(
-                                    role="user", content=prompt_cfg["user_prompt"]
-                                ),
-                            ]
-
-                            # Log progress
-                            logger.info(
-                                f"  📝 Running prompt {idx}/{len(prompt_sequence)}: {ptype.value}"
-                            )
-
-                            prompt_outputs[ptype.value] = await _execute_prompt(
-                                processor,
-                                cache,
-                                cache_content=gnn_content,
-                                model_name=ollama_model,
-                                messages=messages,
-                                prompt_text=prompt_cfg["user_prompt"],
-                                label=ptype.value,
-                                custom=False,
-                                max_tokens=min(512, prompt_cfg.get("max_tokens", 512)),
-                                max_prompt_timeout=max_prompt_timeout,
-                                failed_auth_providers=failed_auth_providers,
-                                auth_errors=results["auth_errors"],
-                            )
-
-                            # Write to file
-                            out_path = per_file_dir / f"{ptype.value}.md"
-                            with open(out_path, "w") as outf:
-                                outf.write(f"# {ptype.name}\n\n")
-                                outf.write(prompt_outputs[ptype.value] or "")
-
-                        # Run custom free-form prompts
-                        for cust_idx, (key, user_prompt) in enumerate(
-                            custom_prompts, start=1
-                        ):
-                            # Check budget before each custom prompt
-                            if _budget_remaining() < 30:
-                                logger.warning(
-                                    f"⏱️ Budget exhausted ({TOTAL_BUDGET_SECONDS}s), skipping remaining custom prompts for {gnn_file.name}"
-                                )
-                                break
-                            logger.info(
-                                f"  📝 Running custom prompt {cust_idx}/{len(custom_prompts)}: {key}"
-                            )
-
-                            messages = [
-                                LLMMessage(
-                                    role="system",
-                                    content="You are an expert in Active Inference and GNN specifications.",
-                                ),
-                                LLMMessage(
-                                    role="user",
-                                    content=f"{user_prompt}\n\nGNN Model Content:\n{gnn_content}",
-                                ),
-                            ]
-
-                            prompt_outputs[key] = await _execute_prompt(
-                                processor,
-                                cache,
-                                cache_content=gnn_content,
-                                model_name=ollama_model,
-                                messages=messages,
-                                prompt_text=user_prompt,
-                                label=key,
-                                custom=True,
-                                max_tokens=512,
-                                max_prompt_timeout=max_prompt_timeout,
-                                failed_auth_providers=failed_auth_providers,
-                                auth_errors=results["auth_errors"],
-                            )
-
-                            out_path = per_file_dir / f"{key}.md"
-                            with open(out_path, "w") as outf:
-                                title = key.replace("_", " ").title()
-                                outf.write(f"# {title}\n\n")
-                                outf.write(f"Prompt:\n\n> {user_prompt}\n\n")
-                                outf.write("Response:\n\n")
-                                outf.write(prompt_outputs[key] or "")
-
-                        # Attach to file analysis record
-                        file_analysis["llm_prompt_outputs"] = prompt_outputs
-
-                except Exception as e:
-                    error_info: dict[str, Any] = {
-                        "file": str(gnn_file),
-                        "error": str(e),
-                        "error_type": type(e).__name__,
-                    }
-                    results["errors"].append(error_info)
-                    logger.error(f"Error processing {gnn_file}: {e}")
-                finally:
-                    results["processed_files"] += 1
-
-        # Save detailed results (include cache stats)
-        results["cache_stats"] = cache.summary()
-        results_file = results_dir / "llm_results.json"
-        with open(results_file, "w") as f:
-            json.dump(results, f, indent=2)
-
-        # Generate summary report
-        summary = generate_llm_summary(results)
-        summary_file = results_dir / "llm_summary.md"
-        with open(summary_file, "w") as f:
-            f.write(summary)
-
-        # Log cache summary
-        cs = cache.summary()
-        logger.info(
-            f"📦 Cache: {cs['hits']} hits, {cs['misses']} misses, {cs['writes']} new entries ({cs['hit_ratio_pct']}% hit ratio)"
-        )
-
-        # Surface auth errors in final status
-        if results["auth_errors"]:
-            providers_failed = [e["provider"] for e in results["auth_errors"]]
-            log_step_warning(
-                logger,
-                f"LLM processing completed with auth errors for: {', '.join(providers_failed)}",
-            )
-            logger.warning(
-                "💡 Check your API keys — invalid keys waste time on retries"
-            )
-            # Mark as not fully successful so pipeline reports SUCCESS_WITH_WARNINGS
-            return False
-        elif results["success"]:
-            log_step_success(logger, "LLM processing completed successfully")
-        else:
-            log_step_error(logger, "LLM processing failed")
-
-        return cast("bool", results["success"])
-
-    except Exception as e:
-        log_step_error(logger, f"LLM processing failed: {e}")
-        return False
-    finally:
-        # Close processor connections
-        if processor:
-            await processor.close()
+    return await run_corpus(
+        target_dir, output_dir, verbose, kwargs, sys.modules[__name__]
+    )

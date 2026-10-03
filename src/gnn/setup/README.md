@@ -228,3 +228,9 @@ system requirement validation, and the JAX stack probe.
 - **[AGENTS](AGENTS.md)** — agent-facing overview
 - **[SPEC](SPEC.md)** — component breakdown
 - **[SKILL](SKILL.md)** — capability card
+
+Explicit backend groups include `torch`, `stan`, `bnlearn`, `ngclearn`, and
+`cpomdp`. The Stan extra supplies cmdstanpy; CmdStan requires the separate
+opt-in installation described in [Stan installation](../../../docs/gnn/implementations/stan.md#installation).
+Readiness diagnostics distinguish a missing Python module from a missing
+toolchain, unsupported interpreter/version, failed probe, and probe timeout.

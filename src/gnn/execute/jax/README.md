@@ -9,15 +9,15 @@ executor for sparse factor-separable active inference.
 - **Script Discovery**: Finds rendered JAX scripts under `output/11_render_output/<model>/jax/`
 - **Device Selection**: `device` argument → `JAX_PLATFORM_NAME` (`cpu`, `gpu`, `tpu`); Step 12 honours `GNN_JAX_PLATFORM`
 - **Output Routing**: `JAX_OUTPUT_DIR` / `GNN_OUTPUT_DIR` point the script at the Step 12 tree
-- **Availability Check**: `is_jax_available()` logs the JAX version and visible devices
+- **Availability Check**: `is_jax_available()` uses a bounded child probe; optional packages stay outside the caller process
 - **Kronecker Executor**: `execute_kronecker_factorized` / `run_kronecker_factorized_execution` (`jax_kronecker_factorized_v1`)
 
 ## Requirements
 
 Pinned in `pyproject.toml` and installed by a plain `uv sync`:
 
-- `jax[cpu]>=0.7.0,<0.11` and `jaxlib>=0.7.0,<0.11`
-- `flax>=0.7.0`, `optax>=0.1.0` (used by the combined JAX template)
+- `jax[cpu]>=0.7.0,<0.12` and `jaxlib>=0.7.0,<0.12`
+- `flax>=0.7.0,<0.12.7` on Python 3.11; `flax>=0.12.9` on Python 3.12 and later; `optax>=0.1.0` (used by the combined JAX template)
 - `numpy`
 
 GPU/TPU builds of `jaxlib` are a user-side install; the pipeline only requires the CPU build.

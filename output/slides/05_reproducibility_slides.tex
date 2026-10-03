@@ -282,7 +282,7 @@ warning, and the run exits 2 --- the pipeline's documented warning code
 registered family rather than a single one, drive the manifest through
 the model-family acceptance gate given below: pointing
 \texttt{-\/-target-dir} at \texttt{input/gnn\_files} covers that tree's
-11 corpus directories. All 9 registered family target directories lie
+12 corpus directories. All 9 registered family target directories lie
 inside that tree, so a single invocation reaches every registered
 family.
 
@@ -418,9 +418,9 @@ a missing copy degrades rather than failing the build.
 \begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
 Because the variables file is regenerated before rendering, the counts
 in the rendered PDF track the repository state at the commit recorded in
-\breaktt{output/data/manuscript\_variables.json} (3cf4f3f5c): a code
-change that alters, for example, the test inventory (537 test files,
-5744 test functions) propagates into the prose on the next regeneration
+\breaktt{output/data/manuscript\_variables.json} (88f24cb7c): a code
+change that alters, for example, the test inventory (573 test files,
+6173 test functions) propagates into the prose on the next regeneration
 without any manual editing.
 \end{frame}
 

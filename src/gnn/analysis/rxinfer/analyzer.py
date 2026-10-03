@@ -125,9 +125,8 @@ def _normalise_beliefs(data: Dict[str, Any]) -> List[List[float]]:
     if beliefs is None:
         beliefs = data.get("beliefs_by_factor")
     rows = _as_2d_list(beliefs)
-    if rows and all(np is not None and len(r) != len(rows[0]) for r in rows):
-        # ragged rows cannot be plotted together; fall back to empty
-        return []
+    if rows and any(len(r) != len(rows[0]) for r in rows):
+        raise ValueError("Belief traces must have regular rows")
     return rows
 
 
@@ -545,6 +544,34 @@ def create_rxinfer_visualizations(
     Returns:
         List of generated file paths
     """
+    from gnn.analysis.result_adapter import model_family, result_views
+
+    from .family_visuals import artifact_component, continuous_png
+
+    views = result_views(data)
+    if model_family(data) == "continuous":
+        return [
+            continuous_png(
+                data,
+                output_dir / f"{model_name}_rxinfer_gaussian_posterior.png",
+                model_name,
+            )
+        ]
+    if len(views) > 1:
+        files = []
+        for name, view in views.items():
+            files.extend(
+                create_rxinfer_visualizations(
+                    view,
+                    output_dir,
+                    f"{model_name}_{artifact_component(name)}",
+                    verbose,
+                )
+            )
+        return files
+    original_data = data
+    if views:
+        data = next(iter(views.values()))
     visualizations: list[Any] = []
 
     if not MATPLOTLIB_AVAILABLE or plt is None or np is None:
@@ -572,6 +599,8 @@ def create_rxinfer_visualizations(
 
     # --- Strategy-declared validation fields (FP-8): field -> value summary
     data["validation_summary"] = summarize_strategy_validation(data)
+    for key in ("convergence_diagnostics", "per_factor_beliefs", "validation_summary"):
+        original_data[key] = data[key]
 
     beliefs_arr = np.asarray(beliefs, dtype=float) if beliefs else np.zeros((0, 0))
     have_beliefs = beliefs_arr.ndim >= 1

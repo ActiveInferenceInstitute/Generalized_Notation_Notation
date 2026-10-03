@@ -122,11 +122,16 @@ def _load_config(project_root: Path) -> dict:
     return loaded if isinstance(loaded, dict) else {}
 
 
-def generate_variables(project_root: Path) -> dict[str, str]:
+def generate_variables(
+    project_root: Path, *, snapshot: RepositorySnapshot | None = None
+) -> dict[str, str]:
     """Compute the manuscript token map by introspecting the live repository.
 
     Args:
         project_root: Path to the GeneralizedNotationNotation project root.
+        snapshot: Optional immutable source snapshot for PR-base audits. Config
+            metadata is read from project_root, allowing the same current
+            producer to inspect archived base evidence without checking it out.
 
     Returns:
         Flat ``dict[str, str]`` of ``UPPERCASE_KEY`` -> value. All values are
@@ -149,7 +154,7 @@ def generate_variables(project_root: Path) -> dict[str, str]:
     metadata = config.get("metadata", {}) if isinstance(config, dict) else {}
     keywords = config.get("keywords", []) if isinstance(config, dict) else []
 
-    snapshot = RepositorySnapshot(project_root)
+    snapshot = snapshot if snapshot is not None else RepositorySnapshot(project_root)
     version = _read_pyproject_version(snapshot)
     steps = _pipeline_steps(snapshot)
     purposes = _step_purposes(snapshot)

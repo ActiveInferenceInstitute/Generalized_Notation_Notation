@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "generalized-notation-notation"
-version = "3.6.0"
+version = "4.0.0"
 description = "A text-based language for standardizing Active Inference generative models"
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
@@ -140,6 +140,12 @@ stan = [
     "cmdstanpy>=1.2",
 ]
 
+# Experimental continuous active-inference backend; explicitly selected.
+# Use the released wheel on both supported JAX lock splits.
+cpomdp = ["cpomdp==0.4.4"]
+# Experimental CPU/JAX Gibbs implementation; no hardware execution claim.
+thrml = ["thrml==0.1.4"]
+
 # PyTorch backend (Step 11 render + Step 12 execute): torch>=2.13.0 resolves
 # GHSA-rrmf-rvhw-rf47 (torch.jit.script memory corruption), the advisory that
 # previously kept torch out of the default lock.
@@ -232,6 +238,10 @@ all = [
     "dask>=2023.0.0",
     "distributed>=2023.0.0",
     "ray>=2.0.0",
+
+    # Explicit experimental inference runtimes
+    "cpomdp==0.4.4",
+    "thrml==0.1.4",
 
     # Categorical Bayesian-network exports
     "bnlearn>=0.14.0",
@@ -354,10 +364,10 @@ strict_equality = true
 module = [
     "aiohttp.*",
     "dask.*",
+    "distributed.*",
     "defusedxml.*",
     "fastapi.*",
     "jax.*",
-    "jaxlib.*", 
     "jsonschema.*",
     "flax.*",
     "optax.*",
@@ -369,8 +379,6 @@ module = [
     "matplotlib.*",
     "mpl_toolkits.*",
     "networkx.*",
-    "ngclearn.*",
-    "ngcsimlib.*",
     "openai.*",
     "ollama.*",
     "pandas.*",
@@ -378,17 +386,12 @@ module = [
     "plotly.*",
     "psutil.*",
     "pygls.*",
-    "pygments.*",
     "pkg_resources.*",
-    "pytest_timeout.*",
-    "pytest_cov.*",
     "discopy.*",
     "pymdp.*",
     "ray.*",
-    "requests.*",
     "scipy.*",
     "seaborn.*",
-    "sphinx.*",
     "sklearn.*",
     "soundfile.*",
     "tensorflow.*",
@@ -396,7 +399,6 @@ module = [
     "numpyro.*",
     "uvicorn.*",
     "watchdog.*",
-    "xdist.*",
     "yaml.*",
 ]
 ignore_missing_imports = true

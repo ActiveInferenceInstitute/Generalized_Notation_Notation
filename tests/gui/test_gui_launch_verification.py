@@ -284,9 +284,7 @@ class TestGuiInteractiveSuccess:
         monkeypatch.setattr(gui2_processor, "_GUI2_PORT", serving_http)
         demo = FakeDemo()
         gui2_ui = importlib.import_module("gnn.gui.gui_2.ui")
-        monkeypatch.setattr(
-            gui2_ui, "build_visual_gui", lambda *args, **kwargs: demo
-        )
+        monkeypatch.setattr(gui2_ui, "build_visual_gui", lambda *args, **kwargs: demo)
 
         try:
             result = gui2_processor.run_gui(

@@ -36,7 +36,7 @@ def _plan(status: str = "ready") -> Dict[str, Any]:
         "render_contract_found": False,
         "status": status,
         "total_scripts": 1 if status == "ready" else 0,
-        "would_execute": [],
+        "would_execute": [{"script_name": "runnable.py"}] if status == "ready" else [],
         "would_skip_dependency": [],
         "unknown_framework_scripts": [],
         "missing_render_scripts": [],
@@ -61,22 +61,52 @@ def _patch_probes(
         )
         for name in FRAMEWORK_IMPORT_CHECK
     }
+    for name in ("rxinfer", "activeinference_jl"):
+        statuses[name] = FrameworkStatus(
+            name=name,
+            available=julia,
+            reason_code=None if julia else "executor_unavailable",
+            reason=None if julia else "Julia not found",
+        )
     monkeypatch.setattr(doctor, "check_framework", lambda name, **_: statuses[name])
     monkeypatch.setattr(
-        doctor, "check_julia_availability", lambda: (julia, "/usr/local/bin/julia" if julia else None)
+        doctor,
+        "check_julia_availability",
+        lambda: (julia, "/usr/local/bin/julia" if julia else None),
     )
     if plan is not None:
         monkeypatch.setattr(
-            doctor, "plan_execute", lambda *a, **k: plan  # type: ignore[arg-type,return-value]
+            doctor,
+            "plan_execute",
+            lambda *a, **k: plan,  # type: ignore[arg-type,return-value]
         )
     return statuses
+
+
+@pytest.mark.parametrize("runnable", [False, True])
+def test_discovered_plan_readiness_requires_a_runnable_script(
+    monkeypatch, runnable
+) -> None:
+    plan = _plan("ready")
+    plan["would_execute"] = [{"script_name": "runnable.py"}] if runnable else []
+    plan["would_skip_dependency"] = [
+        {"script_name": "missing.jl", "reason_code": "missing_module"}
+    ]
+    _patch_probes(monkeypatch, plan=plan)
+    report = doctor.collect_doctor_report(
+        target_dir="output", output_dir="output/12_execute_output"
+    )
+    assert report["execution"]["status"] == "ready"
+    assert report["execution_ready"] is runnable
 
 
 @pytest.mark.unit
 class TestFrameworkSection:
     """Per-framework records mirror the canonical registry."""
 
-    def test_every_registry_framework_is_reported(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_every_registry_framework_is_reported(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         _patch_probes(monkeypatch)
         report = doctor.collect_doctor_report()
         assert set(report["frameworks"]) == set(FRAMEWORK_IMPORT_CHECK) | {
@@ -84,7 +114,9 @@ class TestFrameworkSection:
             "activeinference_jl",
         }
 
-    def test_python_entry_shape_when_available(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_python_entry_shape_when_available(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         _patch_probes(monkeypatch, available=True)
         entry = doctor.collect_doctor_report()["frameworks"]["jax"]
         assert entry["kind"] == "python_import"
@@ -108,7 +140,9 @@ class TestFrameworkSection:
         _patch_probes(monkeypatch)
         frameworks = doctor.collect_doctor_report()["frameworks"]
         assert frameworks["stan"]["requires_toolchain_probe"] is True
-        assert frameworks["stan"]["toolchain_probe"] == FRAMEWORK_PROBE_STATEMENT["stan"]
+        assert (
+            frameworks["stan"]["toolchain_probe"] == FRAMEWORK_PROBE_STATEMENT["stan"]
+        )
         assert frameworks["pymdp"]["requires_toolchain_probe"] is False
         assert "toolchain_probe" not in frameworks["pymdp"]
 
@@ -120,7 +154,7 @@ class TestFrameworkSection:
         assert report["julia"] == {"available": False, "path": None}
         for name in ("rxinfer", "activeinference_jl"):
             entry = report["frameworks"][name]
-            assert entry["kind"] == "julia_toolchain"
+            assert entry["kind"] == "julia_project"
             assert entry["available"] is False
         assert report["frameworks_missing"] == ["activeinference_jl", "rxinfer"]
 
@@ -130,15 +164,22 @@ class TestFrameworkSection:
         _patch_probes(monkeypatch)
         report = doctor.collect_doctor_report()
         names = set(report["frameworks"])
-        assert set(report["frameworks_available"]) | set(report["frameworks_missing"]) == names
-        assert not set(report["frameworks_available"]) & set(report["frameworks_missing"])
+        assert (
+            set(report["frameworks_available"]) | set(report["frameworks_missing"])
+            == names
+        )
+        assert not set(report["frameworks_available"]) & set(
+            report["frameworks_missing"]
+        )
 
 
 @pytest.mark.unit
 class TestExecutionSection:
     """The readiness section forwards the directory pair to plan_execute."""
 
-    def test_not_probed_when_no_directories(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_not_probed_when_no_directories(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         _patch_probes(monkeypatch)
 
         def _fail(*a: Any, **k: Any) -> Dict[str, Any]:
@@ -152,35 +193,51 @@ class TestExecutionSection:
         }
         assert report["execution_ready"] is None
 
-    def test_directory_pair_requires_both_sides(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_directory_pair_requires_both_sides(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         _patch_probes(monkeypatch)
         with pytest.raises(ValueError, match="supplied together"):
             doctor.collect_doctor_report(target_dir="output")
         with pytest.raises(ValueError, match="supplied together"):
             doctor.collect_doctor_report(output_dir="output/12_execute_output")
 
-    def test_ready_plan_sets_execution_ready(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_ready_plan_sets_execution_ready(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         seen: Dict[str, Any] = {}
 
-        def _plan_capture(target_dir: Path, output_dir: Path, **kwargs: Any) -> Dict[str, Any]:
+        def _plan_capture(
+            target_dir: Path, output_dir: Path, **kwargs: Any
+        ) -> Dict[str, Any]:
             seen["args"] = (target_dir, output_dir)
             seen["kwargs"] = kwargs
             return _plan("ready")
 
-        monkeypatch.setattr(doctor, "check_framework", lambda name, **_: FrameworkStatus(name=name, available=True))
+        monkeypatch.setattr(
+            doctor,
+            "check_framework",
+            lambda name, **_: FrameworkStatus(name=name, available=True),
+        )
         monkeypatch.setattr(doctor, "check_julia_availability", lambda: (True, None))
         monkeypatch.setattr(doctor, "plan_execute", _plan_capture)
         report = doctor.collect_doctor_report(
-            target_dir="output", output_dir="output/12_execute_output", frameworks="pymdp"
+            target_dir="output",
+            output_dir="output/12_execute_output",
+            frameworks="pymdp",
         )
         assert report["execution_ready"] is True
         assert report["execution"]["status"] == "ready"
         assert seen["args"] == (Path("output"), Path("output/12_execute_output"))
         assert seen["kwargs"] == {"frameworks": "pymdp"}
 
-    def test_no_render_output_is_not_ready(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_no_render_output_is_not_ready(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         _patch_probes(monkeypatch, plan=_plan("no_render_output"))
-        report = doctor.collect_doctor_report(target_dir="output", output_dir="output/12")
+        report = doctor.collect_doctor_report(
+            target_dir="output", output_dir="output/12"
+        )
         assert report["execution_ready"] is False
         assert report["execution"]["status"] == "no_render_output"
 
@@ -203,7 +260,9 @@ class TestPayloadContract:
 
     def test_report_is_json_serializable(self, monkeypatch: pytest.MonkeyPatch) -> None:
         _patch_probes(monkeypatch, available=False, julia=False, plan=_plan("ready"))
-        report = doctor.collect_doctor_report(target_dir="output", output_dir="output/12")
+        report = doctor.collect_doctor_report(
+            target_dir="output", output_dir="output/12"
+        )
         restored = json.loads(json.dumps(report))
         assert restored == report
 
@@ -240,7 +299,9 @@ class TestMCPExposure:
         registered: Dict[str, Any] = {}
 
         class _Registry:
-            def register_tool(self, name: str, func: Any, schema: Any, description: str, **kw: Any) -> None:
+            def register_tool(
+                self, name: str, func: Any, schema: Any, description: str, **kw: Any
+            ) -> None:
                 registered[name] = {"schema": schema, "description": description, **kw}
 
         execute_mcp.register_tools(_Registry())

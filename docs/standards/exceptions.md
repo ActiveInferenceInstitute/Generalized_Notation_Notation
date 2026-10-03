@@ -7,7 +7,7 @@
   the [repository TO-DO](../../TO-DO.md) M-03 row: 304+ files carry broad
   handlers; spot-checked sites log and emit structured receipts) plus the
   file:line exemplars below, all re-verified in this tree at authoring time.
-- **Baseline:** 1181 occurrences across 657 `.py` files under `src/gnn/`
+- **Baseline:** 1171 occurrences under `src/gnn/`
   (counted by
   [`scripts/check_gnn_doc_patterns.py`](../../scripts/check_gnn_doc_patterns.py)
   `EXCEPT_EXCEPTION_BASELINE`). Historical: 1183 at the wave-6 base;
@@ -26,6 +26,10 @@
   site-render batch guards to typed sets (render ->
   `(ValueError, TypeError, KeyError, IndexError)`, writes -> `OSError`,
   model-parse skip -> `(ParseError, ValueError, OSError)`).
+
+  2026-10-01: tightened to 1171 after reviewed typed boundaries in the v4
+  reliability program. The count excludes tuple handlers and remains an
+  occurrence cap rather than a claim of complete exception correctness.
 
 ## Purpose
 

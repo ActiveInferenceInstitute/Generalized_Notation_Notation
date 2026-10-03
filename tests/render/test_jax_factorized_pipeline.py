@@ -44,7 +44,7 @@ from gnn.render.pomdp_processor import (
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 GNN_FILES = PROJECT_ROOT / "input" / "gnn_files"
 SWARM_FILE = GNN_FILES / "multiagent" / "stigmergic_swarm.md"
-FLAT_FILE = GNN_FILES / "basics" / "static_perception.md"
+FLAT_FILE = GNN_FILES / "discrete" / "simple_mdp.md"
 
 
 def _require_pomdp(state: Any) -> Any:

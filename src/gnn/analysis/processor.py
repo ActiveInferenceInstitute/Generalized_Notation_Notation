@@ -152,13 +152,15 @@ def _scope_from_execution_summary(
         if framework and not has_requested_frameworks:
             frameworks.add(framework)
         if detail.get("model_name"):
-            models.add(str(detail["model_name"]))
+            if target_model_names is None:
+                models.add(str(detail["model_name"]))
         script_path = detail.get("script_path") or detail.get("script")
         if script_path:
             parts = Path(str(script_path)).parts
             for index, part in enumerate(parts):
                 if part in _FRAMEWORK_DIR_NAMES and index >= 1:
-                    models.add(parts[index - 1])
+                    if target_model_names is None:
+                        models.add(parts[index - 1])
                     if not has_requested_frameworks:
                         frameworks.add(part)
                     break
@@ -168,16 +170,17 @@ def _scope_from_execution_summary(
 
     return {
         "frameworks": frameworks or None,
-        "models": models or None,
+        "models": models if target_model_names is not None else models or None,
     }
 
 
 def _filter_execution_summary(
     execution_summary: Dict[str, Any],
     allowed_frameworks: Optional[set[str]],
+    allowed_models: Optional[set[str]] = None,
 ) -> Dict[str, Any]:
     """Return a copy of an execution summary limited to current-run frameworks."""
-    if not allowed_frameworks:
+    if allowed_frameworks is None and allowed_models is None:
         return execution_summary
 
     filtered = deepcopy(execution_summary)
@@ -187,12 +190,25 @@ def _filter_execution_summary(
             detail
             for detail in details
             if isinstance(detail, dict)
-            and _normalize_framework_name(detail.get("framework", ""))
-            in allowed_frameworks
+            and (
+                allowed_frameworks is None
+                or _normalize_framework_name(detail.get("framework", ""))
+                in allowed_frameworks
+            )
+            and (
+                allowed_models is None
+                or str(detail.get("model_name", "")) in allowed_models
+                or any(
+                    part in allowed_models
+                    for part in Path(
+                        str(detail.get("script_path") or detail.get("script") or "")
+                    ).parts
+                )
+            )
         ]
 
     framework_status = filtered.get("framework_status")
-    if isinstance(framework_status, dict):
+    if isinstance(framework_status, dict) and allowed_frameworks is not None:
         filtered["framework_status"] = {
             framework: status
             for framework, status in framework_status.items()
@@ -343,6 +359,19 @@ def process_analysis(
             return 2
         else:
             results["processed_files"] = len(gnn_files)
+            from gnn.pipeline.artifact_ownership import execution_view
+
+            execution_dir = execution_view(
+                execution_dir, {path.stem for path in gnn_files}
+            )
+            from gnn.pipeline.run_context import current_run_context
+
+            context = current_run_context()
+            if context is not None:
+                results["run_id"] = context.run_id
+                results["model_selection"] = [
+                    m.__dict__ for m in context.selected_models(16)
+                ]
 
             # Process each GNN file
             for gnn_file in gnn_files:
@@ -395,6 +424,16 @@ def process_analysis(
                 _, execution_results_data = load_execution_summary(execution_dir)
                 if execution_results_data is not None:
                     try:
+                        from gnn.pipeline.run_context import current_run_context
+
+                        context = current_run_context()
+                        if (
+                            context is not None
+                            and execution_results_data.get("run_id") != context.run_id
+                        ):
+                            raise ValueError(
+                                "Execution summary belongs to a different run"
+                            )
                         execution_scope = _scope_from_execution_summary(
                             execution_results_data,
                             target_model_names=target_model_names,
@@ -404,6 +443,7 @@ def process_analysis(
                         scoped_execution_data = _filter_execution_summary(
                             execution_results_data,
                             execution_scope["frameworks"],
+                            target_model_names,
                         )
                         empirical_viz = visualize_simulation_results(
                             scoped_execution_data, results_dir
@@ -491,6 +531,8 @@ def process_analysis(
                 # are listed here; bnlearn is rendered and executed but has no analyzer.
                 _FRAMEWORK_ANALYZERS: list[Any] = [
                     ("pymdp", "pymdp", "PyMDP"),
+                    ("cpomdp", "cpomdp", "cpomdp"),
+                    ("thrml", "thrml", "THRML"),
                     ("activeinference_jl", "activeinference_jl", "ActiveInference.jl"),
                     ("discopy", "discopy", "DisCoPy"),
                     ("jax", "jax", "JAX"),
@@ -510,14 +552,31 @@ def process_analysis(
                         continue
                     try:
                         mod = importlib.import_module(
-                            f".{module_key}.analyzer", package="analysis"
+                            f".{module_key}.analyzer", package="gnn.analysis"
                         )
                         fw_output_dir = output_dir / dir_name
                         fw_output_dir.mkdir(parents=True, exist_ok=True)
                         logger.info(f"Generating {display_name} visualizations...")
-                        fw_viz = mod.generate_analysis_from_logs(
-                            execution_dir, fw_output_dir, verbose
-                        )
+                        if context is not None:
+                            fw_viz: list[str] = []
+                            for gnn_file in gnn_files:
+                                model_directory = execution_view(
+                                    Path(context.output_root) / "12_execute_output",
+                                    {gnn_file.stem},
+                                )
+                                if model_directory.is_dir():
+                                    fw_viz.extend(
+                                        mod.generate_analysis_from_logs(
+                                            model_directory,
+                                            fw_output_dir / gnn_file.stem,
+                                            verbose,
+                                        )
+                                        or []
+                                    )
+                        else:
+                            fw_viz = mod.generate_analysis_from_logs(
+                                execution_dir, fw_output_dir, verbose
+                            )
                         if fw_viz:
                             results["visualization_files"].extend(fw_viz)
                             logger.info(
@@ -612,12 +671,15 @@ def process_analysis(
                 try:
                     # Build framework_data structure for unified dashboard from
                     # current-schema simulation results (shared loader).
-                    framework_data_for_dashboard: dict[str, Any] = {}
+                    dashboard_models: dict[str, dict[str, Any]] = {}
                     for sim_file, raw_payload in iter_current_schema_results(
                         execution_dir, pattern="*simulation_results.json"
                     ):
                         framework = framework_from_path(sim_file)
                         if not framework:
+                            continue
+                        model_from_path = model_name_from_path(sim_file)
+                        if not model_from_path:
                             continue
                         if allowed_frameworks and framework not in allowed_frameworks:
                             continue
@@ -631,26 +693,30 @@ def process_analysis(
                         sim_data = raw_payload
                         if framework in SCHEMA_GATED_FRAMEWORKS:
                             sim_data = _current_schema_visualization_data(raw_payload)
+                        framework_data_for_dashboard = dashboard_models.setdefault(
+                            model_from_path, {}
+                        )
                         if framework not in framework_data_for_dashboard:
                             framework_data_for_dashboard[framework] = {
                                 "framework": framework,
                                 "simulation_data": sim_data,
                             }
 
-                    if len(framework_data_for_dashboard) >= 2:
-                        model_name = (
-                            gnn_files[0].stem if gnn_files else "Active Inference Model"
-                        )
+                    for model_name, framework_data_for_dashboard in sorted(
+                        dashboard_models.items()
+                    ):
+                        if len(framework_data_for_dashboard) < 2:
+                            continue
                         dashboard_viz = generate_unified_framework_dashboard(
                             framework_data_for_dashboard,
-                            viz_output_dir / "unified_dashboard",
+                            viz_output_dir / "unified_dashboard" / model_name,
                             model_name=model_name,
                         )
                         results["visualization_files"].extend(dashboard_viz)
                         logger.info(
                             f"Generated {len(dashboard_viz)} unified dashboard visualizations"
                         )
-                    else:
+                    if not dashboard_models:
                         logger.info(
                             "Less than 2 frameworks with data - skipping unified dashboard"
                         )

@@ -34,7 +34,7 @@ from gnn.execute.processor import _make_skipped_result  # noqa: E402
 
 def _write_script(tmp_path: Path) -> Path:
     script = tmp_path / "model_a_rxinfer.jl"
-    script.write_text("println(\"ok\")\n", encoding="utf-8")
+    script.write_text('println("ok")\n', encoding="utf-8")
     return script
 
 
@@ -137,7 +137,7 @@ def test_make_skipped_result_rxinfer_carries_probe_receipt(tmp_path: Path) -> No
     script_dir = tmp_path / "sample" / "model_a" / "rxinfer"
     script_dir.mkdir(parents=True)
     script = script_dir / "model_a_rxinfer.jl"
-    script.write_text("println(\"ok\")\n", encoding="utf-8")
+    script.write_text('println("ok")\n', encoding="utf-8")
     script.with_suffix(".metadata.json").write_text("{broken", encoding="utf-8")
     info = {
         "path": str(script),

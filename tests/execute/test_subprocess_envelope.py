@@ -340,6 +340,315 @@ def test_timeout_kills_whole_process_group_including_grandchildren(
     assert not sentinel.exists(), "grandchild survived the timeout group-kill"
 
 
+@pytest.mark.needs_posix
+@pytest.mark.parametrize("mode", ["timeout", "cancel", "normal_exit"])
+def test_detached_descendant_cannot_hold_pipes_or_write_after_return(
+    tmp_path: Path,
+    mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import contextlib
+
+    import psutil
+
+    from gnn.execute import subprocess_envelope as se
+
+    def unrelated_host_scan(*args: object, **kwargs: object) -> None:
+        raise AssertionError("supervision must not scan the entire host process table")
+
+    # All three real completion paths must discover and kill the detached
+    # process without psutil's recursive, host-wide process enumeration.
+    monkeypatch.setattr(psutil.Process, "children", unrelated_host_scan)
+    pid_file = tmp_path / "detached.pid"
+    observed_barrier = tmp_path / "observed"
+    sentinel = tmp_path / "late-write"
+    trackers: list[se.DescendantTracker] = []
+
+    class RecordingTracker(se.DescendantTracker):
+        def __init__(self, pid: int) -> None:
+            super().__init__(pid)
+            trackers.append(self)
+
+    monkeypatch.setattr(se, "DescendantTracker", RecordingTracker)
+    child_code = (
+        "import os,pathlib,time; "
+        f"pathlib.Path({str(pid_file)!r}).write_text(str(os.getpid())); "
+        # The write falls after execution plus its one-second cleanup bound.
+        "print('detached-partial', flush=True); time.sleep(4); "
+        f"pathlib.Path({str(sentinel)!r}).write_text('escaped'); time.sleep(30)"
+    )
+    leader_code = (
+        "import subprocess,sys,time; "
+        f"subprocess.Popen([sys.executable,'-c',{child_code!r}], start_new_session=True); "
+        f"barrier=__import__('pathlib').Path({str(observed_barrier)!r}); "
+        "deadline=time.monotonic()+3; "
+        "exec('while not barrier.exists() and time.monotonic()<deadline: time.sleep(.01)'); "
+        f"time.sleep({0.1 if mode == 'normal_exit' else 30})"
+    )
+    token = CancelToken()
+    stop_observer = threading.Event()
+
+    def release_after_observation() -> None:
+        while not stop_observer.wait(0.01):
+            if trackers and trackers[0].observed_count:
+                observed_barrier.write_text("observed")
+                if mode == "cancel":
+                    token.cancel("detached cancel")
+                return
+
+    observer = threading.Thread(target=release_after_observation)
+    observer.start()
+    started = time.monotonic()
+    try:
+        result = run_subprocess_envelope(
+            [PYTHON, "-c", leader_code],
+            timeout=1.5,
+            cancel_token=token,
+            capture_output=mode != "normal_exit",
+        )
+        assert time.monotonic() - started < 2.9, result
+        assert (
+            result["cleanup_verified"] is True and result["streams_drained"] is True
+        ), result
+        assert result["containment"] == "observed_descendants"
+        assert result["observed_descendant_count"] >= 1
+        assert observed_barrier.exists()
+        if mode == "normal_exit":
+            assert result["success"] and result["return_code"] == 0
+        else:
+            assert not result["success"]
+            assert "detached-partial" in result["stdout"]
+            assert result["error_type"] == (
+                "Cancelled" if mode == "cancel" else "TimeoutExpired"
+            )
+        assert pid_file.exists(), result
+        child = (
+            psutil.Process(int(pid_file.read_text()))
+            if psutil.pid_exists(int(pid_file.read_text()))
+            else None
+        )
+        assert child is None or child.status() == psutil.STATUS_ZOMBIE
+        assert not sentinel.exists()
+    finally:
+        stop_observer.set()
+        observer.join(timeout=1)
+        if pid_file.exists():
+            with contextlib.suppress(psutil.NoSuchProcess):
+                psutil.Process(int(pid_file.read_text())).kill()
+
+
+@pytest.mark.parametrize("timeout", [True, 0, -1, float("nan"), float("inf")])
+def test_invalid_timeout_does_not_launch(
+    timeout: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import subprocess
+
+    def fail(*args: object, **kwargs: object) -> None:
+        raise AssertionError("invalid timeout must not start a worker")
+
+    monkeypatch.setattr(subprocess, "Popen", fail)
+    result = run_subprocess_envelope([PYTHON, "-c", "pass"], timeout=timeout)  # type: ignore[arg-type]
+    assert not result["success"] and result["error_type"] == "InvalidExecutionTimeout"
+
+
+def test_unverified_cleanup_cannot_publish_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def denied(*args: object, **kwargs: object) -> None:
+        raise PermissionError("cleanup observation denied")
+
+    monkeypatch.setattr(
+        "gnn.execute.subprocess_envelope.terminate_process_tree", denied
+    )
+    result = run_subprocess_envelope([PYTHON, "-c", "print('completed')"])
+    assert not result["success"]
+    assert result["error_type"] == "ProcessCleanupFailure"
+    assert result["cleanup_verified"] is False
+    assert result["streams_drained"] is True
+    assert result["stdout"] == "completed\n"
+    assert "denied" in result["cleanup_error"]
+
+
+def test_observer_stop_failure_still_kills_live_worker(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import contextlib
+
+    import psutil
+
+    from gnn.execute import subprocess_envelope as se
+
+    class FailedStop(se.DescendantTracker):
+        def stop(self, timeout: float = 0.1) -> list[psutil.Process]:
+            super().stop(timeout)
+            raise RuntimeError("observer stop could not be certified")
+
+    monkeypatch.setattr(se, "DescendantTracker", FailedStop)
+    pid_file = tmp_path / "worker.pid"
+    code = (
+        "import os,pathlib,time; "
+        f"pathlib.Path({str(pid_file)!r}).write_text(str(os.getpid())); "
+        "print('worker-partial',flush=True); time.sleep(30)"
+    )
+    started = time.monotonic()
+    try:
+        result = run_subprocess_envelope([PYTHON, "-c", code], timeout=0.4)
+        assert time.monotonic() - started < 1.9, result
+        assert not result["success"] and result["cleanup_verified"] is False
+        assert result["error_type"] == "ProcessCleanupFailure"
+        assert result["execution_error_type"] == "TimeoutExpired"
+        assert result["streams_drained"] is True
+        assert "worker-partial" in result["stdout"]
+        assert "observer stop" in result["cleanup_error"]
+        assert not psutil.pid_exists(int(pid_file.read_text()))
+    finally:
+        if pid_file.exists():
+            with contextlib.suppress(psutil.NoSuchProcess):
+                psutil.Process(int(pid_file.read_text())).kill()
+
+
+@pytest.mark.needs_posix
+def test_denied_process_group_cleanup_cannot_publish_completed_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def denied(*args: object, **kwargs: object) -> None:
+        raise PermissionError("process-group signal denied")
+
+    monkeypatch.setattr("gnn.utils.runtime_safety.process_tree.os.killpg", denied)
+    result = run_subprocess_envelope([PYTHON, "-c", "print('completed')"])
+    assert not result["success"] and result["cleanup_verified"] is False
+    assert result["error_type"] == "ProcessCleanupFailure"
+    assert "Process-group termination was denied" in result["cleanup_error"]
+    assert result["stdout"] == "completed\n" and result["streams_drained"] is True
+
+
+@pytest.mark.needs_posix
+@pytest.mark.parametrize("absolute_budget", [False, True])
+def test_unobserved_inherited_pipe_has_bounded_failure_and_partial_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    absolute_budget: bool,
+) -> None:
+    """A missed detached child cannot turn the final drain into an infinite wait.
+
+    Deliberately suppress descendant observation to exercise its documented OS
+    boundary. The test owns and reaps the surviving process independently.
+    """
+    import contextlib
+    import json
+
+    import psutil
+
+    class NoObservation:
+        boundary = "process_group_only"
+        errors: list[str] = []
+        observed_count = 0
+        observed_processes: list[psutil.Process] = []
+
+        def __init__(self, pid: int) -> None:
+            pass
+
+        def start(self) -> None:
+            pass
+
+        def stop(self, timeout: float) -> list[psutil.Process]:
+            return []
+
+    monkeypatch.setattr(
+        "gnn.execute.subprocess_envelope.DescendantTracker", NoObservation
+    )
+    identity_file = tmp_path / "escaped.json"
+    child_code = (
+        "import json,os,pathlib,psutil,time; "
+        f"pathlib.Path({str(identity_file)!r}).write_text(json.dumps("
+        "{'pid':os.getpid(),'created':psutil.Process().create_time()})); "
+        "print('unobserved-partial',flush=True); time.sleep(30)"
+    )
+    leader_code = (
+        "import subprocess,sys,time; "
+        f"subprocess.Popen([sys.executable,'-c',{child_code!r}],start_new_session=True); "
+        "time.sleep(0.1)"
+    )
+    started = time.monotonic()
+    try:
+        result = run_subprocess_envelope(
+            [PYTHON, "-c", leader_code],
+            timeout=0.3,
+            deadline_monotonic=started + 0.8 if absolute_budget else None,
+        )
+        assert time.monotonic() - started < (0.95 if absolute_budget else 1.9), result
+        assert not result["success"]
+        assert result["error_type"] == "ProcessCleanupFailure"
+        assert result["execution_error_type"] == "TimeoutExpired"
+        assert result["cleanup_verified"] is False
+        assert result["streams_drained"] is False
+        assert result["containment"] == "process_group_only"
+        assert "unobserved-partial" in result["stdout"]
+        assert "pipes" in result["cleanup_error"]
+    finally:
+        if identity_file.exists():
+            identity = json.loads(identity_file.read_text())
+            with contextlib.suppress(psutil.NoSuchProcess):
+                child = psutil.Process(identity["pid"])
+                if child.create_time() == identity["created"]:
+                    child.kill()
+                    with contextlib.suppress(psutil.TimeoutExpired):
+                        child.wait(timeout=2)
+
+
+def test_absolute_request_deadline_reserves_cleanup_inside_short_budget(
+    tmp_path: Path,
+) -> None:
+    import psutil
+
+    pid_file = tmp_path / "worker.pid"
+    code = (
+        "import os,pathlib,time; "
+        f"pathlib.Path({str(pid_file)!r}).write_text(str(os.getpid())); "
+        "print('request-partial',flush=True); time.sleep(30)"
+    )
+    started = time.monotonic()
+    result = run_subprocess_envelope(
+        [PYTHON, "-c", code], timeout=30, deadline_monotonic=started + 0.8
+    )
+    assert time.monotonic() - started < 0.95, result
+    assert result["error_type"] == "TimeoutExpired", result
+    assert result["cleanup_verified"] is True and result["streams_drained"] is True
+    assert result["cleanup_timeout_seconds"] <= 0.2
+    assert "request-partial" in result["stdout"]
+    assert pid_file.exists(), "short budgets must still execute real work"
+    assert not psutil.pid_exists(int(pid_file.read_text()))
+
+
+@pytest.mark.parametrize("deadline", [True, float("nan"), float("inf"), "bad"])
+def test_invalid_absolute_deadline_never_launches(
+    deadline: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise AssertionError("invalid deadline must not start a worker")
+
+    monkeypatch.setattr("subprocess.Popen", fail)
+    result = run_subprocess_envelope(
+        [PYTHON, "-c", "pass"],
+        deadline_monotonic=deadline,  # type: ignore[arg-type]
+    )
+    assert result["error_type"] == "InvalidExecutionDeadline" and not result["success"]
+
+
+def test_expired_absolute_deadline_never_launches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise AssertionError("expired deadline must not start a worker")
+
+    monkeypatch.setattr("subprocess.Popen", fail)
+    result = run_subprocess_envelope(
+        [PYTHON, "-c", "pass"], deadline_monotonic=time.monotonic() - 1
+    )
+    assert result["error_type"] == "TimeoutExpired" and not result["success"]
+
+
 RSS_KEYS = ("child_peak_rss_mb", "rss_sample_interval_seconds", "rss_samples_count")
 
 

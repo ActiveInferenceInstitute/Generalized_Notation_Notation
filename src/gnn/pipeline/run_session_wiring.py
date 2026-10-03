@@ -10,12 +10,10 @@ calls a cluster. It only creates/updates/checkpoints session units and, at
 close time, emits and re-verifies run manifests from artifacts that the
 already-completed run wrote to disk.
 
-Failure policy mirrors ``gnn.main``'s wiring-degrade contract: the caller
-wraps each call so any exception here downgrades to a logged warning and
-never changes the run's exit code. Within this module, only manifest
-emission/verification at close time is guarded (warnings-only); the
-per-step session updates are trusted to surface errors to the caller's
-guard.
+An invocation with a ``RunContext`` requires verified session checkpoints:
+wiring errors propagate to the common failure finalizer. Standalone existing
+callers retain advisory guards. Terminal pipeline evidence is staged and
+verified by :mod:`pipeline.finalization` before success publication.
 
 Checkpoint location is canonical: ``<output_dir>/00_pipeline_summary/run_session.json``
 (next to ``pipeline_execution_summary.json``). Manifest emission at close
@@ -116,8 +114,7 @@ def mark_units_running(
         The updated session (input unchanged; :func:`run_session.mark` copies).
 
     Raises:
-        KeyError: If any unit id is not present in the session (caller's
-            guard downgrades this to a warning).
+        KeyError: If any unit id is not present in the session.
     """
     updated = session
     for name in script_names:
@@ -178,6 +175,14 @@ def record_step_result(
             artifact_refs=artifact_refs,
             error=error,
         )
+    unit = next(unit for unit in updated.units if unit.unit_id == script_name)
+    unit.input_identity = {
+        "run_id": step_result.get("run_id", session.session_id),
+        "model_ids": step_result.get("selected_model_ids", []),
+    }
+    unit.artifact_hashes = {
+        record["path"]: record["sha256"] for record in step_result.get("artifacts", [])
+    }
     rs.checkpoint(updated, run_session_path(output_dir))
     return updated
 
@@ -204,6 +209,13 @@ def close_run_session(
     Returns:
         The unchanged session (checkpointed to disk).
     """
+    from gnn.pipeline.run_context import current_run_context
+
+    if current_run_context() is not None:
+        # Top-level orchestration owns mandatory manifest verification and the
+        # terminal verdict. Closing a session must not emit it a second time.
+        rs.checkpoint(session, run_session_path(output_dir))
+        return session
     try:
         from gnn.pipeline.run_manifest import emit_run_manifests, verify_run_manifests
 
@@ -231,12 +243,7 @@ def open_run_session_guarded(
     pipeline_summary: Dict[str, Any],
     logger: logging.Logger,
 ) -> Optional[RunSession]:
-    """Open a run session, degrading to ``None`` on any wiring failure.
-
-    Mirrors the caller-side guard contract: any exception raised while
-    opening or checkpointing the session downgrades to a logged warning and
-    never changes the run's exit code.
-    """
+    """Open a required invocation checkpoint, or an advisory standalone session."""
     try:
         session = open_run_session(args, steps_to_execute, pipeline_summary)
         logger.info(
@@ -246,6 +253,10 @@ def open_run_session_guarded(
         )
         return session
     except Exception as open_err:
+        from gnn.pipeline.run_context import current_run_context
+
+        if current_run_context() is not None:
+            raise
         logger.warning(f"Run session open failed (continuing): {open_err}")
         return None
 
@@ -256,17 +267,16 @@ def mark_units_running_guarded(
     args: "PipelineArguments",
     logger: logging.Logger,
 ) -> Optional[RunSession]:
-    """Mark the given units RUNNING, degrading to the unchanged session.
-
-    A ``None`` session passes through untouched (no session in this run);
-    any exception downgrades to a logged warning and the original session
-    is returned so the caller keeps its prior value.
-    """
+    """Mark units RUNNING; invocation errors propagate, standalone errors warn."""
     if session is None:
         return None
     try:
         return mark_units_running(session, script_names, args.output_dir)
     except Exception as e:
+        from gnn.pipeline.run_context import current_run_context
+
+        if current_run_context() is not None:
+            raise
         logger.warning(f"Run session update failed (continuing): {e}")
         return session
 
@@ -278,16 +288,16 @@ def record_step_result_guarded(
     args: "PipelineArguments",
     logger: logging.Logger,
 ) -> Optional[RunSession]:
-    """Fold one finished step into the session, degrading on failure.
-
-    A ``None`` session passes through untouched; any exception downgrades
-    to a logged warning and the original session is returned.
-    """
+    """Bind a step receipt; invocation errors propagate, standalone errors warn."""
     if session is None:
         return None
     try:
         return record_step_result(session, script_name, step_result, args.output_dir)
     except Exception as e:
+        from gnn.pipeline.run_context import current_run_context
+
+        if current_run_context() is not None:
+            raise
         logger.warning(f"Run session update failed (continuing): {e}")
         return session
 
@@ -297,15 +307,15 @@ def close_run_session_guarded(
     args: "PipelineArguments",
     logger: logging.Logger,
 ) -> Optional[RunSession]:
-    """Close the run session, degrading to the unchanged session on failure.
-
-    A ``None`` session passes through untouched; any exception downgrades
-    to a logged warning and the original session is returned.
-    """
+    """Close a session; invocation errors propagate, standalone errors warn."""
     if session is None:
         return None
     try:
         return close_run_session(session, args.output_dir, logger)
     except Exception as close_err:
+        from gnn.pipeline.run_context import current_run_context
+
+        if current_run_context() is not None:
+            raise
         logger.warning(f"Run session close failed (continuing): {close_err}")
         return session

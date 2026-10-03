@@ -62,7 +62,7 @@ class PipelineArguments:
 
     # LLM options
     llm_tasks: str = "all"
-    llm_timeout: int = 360
+    llm_timeout: Optional[int] = None
 
     # Setup options
     recreate_venv: bool = False  # Virtual environment recreation flag
@@ -180,7 +180,7 @@ class PipelineArguments:
             )
 
         # Validate LLM timeout
-        if self.llm_timeout <= 0:
+        if self.llm_timeout is not None and self.llm_timeout <= 0:
             errors.append(f"LLM timeout must be positive: {self.llm_timeout}")
 
         # Validate step lists format

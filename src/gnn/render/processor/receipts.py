@@ -98,8 +98,15 @@ def _write_render_receipt(
         ).hexdigest(),
     }
     merged: Dict[str, Any] = {}
+    from gnn.pipeline.run_context import current_run_context
+
+    context = current_run_context()
     prior_results = prior.get("file_results", {})
-    if prior.get("receipt_identity") == identity and isinstance(prior_results, dict):
+    if (
+        context is None
+        and prior.get("receipt_identity") == identity
+        and isinstance(prior_results, dict)
+    ):
         for source, record in prior_results.items():
             path = Path(source).resolve()
             if path.is_relative_to(target_dir.resolve()) or not isinstance(
@@ -146,6 +153,12 @@ def _write_render_receipt(
                 "error": str(exc),
             }
         merged[str(path)] = record
+    from gnn.pipeline.run_context import current_run_context, model_provenance
+
+    context = current_run_context()
+    if context is not None:
+        for source, record in merged.items():
+            record.update(model_provenance(Path(source), 11))
     successful = attempts = rendered = 0
     failed: List[Dict[str, str]] = []
     unsupported: List[Dict[str, str]] = []
@@ -185,6 +198,11 @@ def _write_render_receipt(
         "failed_framework_renderings": failed,
         "unsupported_framework_renderings": unsupported,
     }
+    if context is not None:
+        summary["run_id"] = context.run_id
+        summary["model_selection"] = [
+            model.__dict__ for model in context.selected_models(11)
+        ]
     _atomic_render_json(summary_file, summary)
     return summary
 

@@ -170,7 +170,10 @@ def index_run(
     Returns:
         Path to index.json.
     """
-    history_dir = history_dir or summary_path.parent / ".history"
+    if history_dir is None:
+        history_dir = summary_path.parent / ".history"
+        if not history_dir.resolve().is_relative_to(summary_path.parent.resolve()):
+            raise ValueError("Default run history directory escapes its summary root")
     history_dir.mkdir(parents=True, exist_ok=True)
     index_path = history_dir / "index.json"
 

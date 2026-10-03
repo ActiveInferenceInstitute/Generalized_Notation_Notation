@@ -25,6 +25,7 @@ import os
 import re
 import sys
 from datetime import datetime
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
@@ -194,17 +195,89 @@ def _h1_text_window(page_html: str, span: int = 120) -> str:
 
 
 def _inline_scripts(page_html: str) -> list[str]:
-    """Attribute-less inline <script> bodies (the vanilla search JS)."""
-    return re.findall(r"<script>(.*?)</script>", page_html, re.DOTALL)
+    """Complete attribute-less script bodies, preserving their raw JavaScript."""
+
+    class InlineScriptParser(HTMLParser):
+        def __init__(self) -> None:
+            super().__init__(convert_charrefs=False)
+            self.scripts: list[str] = []
+            self.body: list[str] | None = None
+
+        def handle_starttag(
+            self, tag: str, attrs: list[tuple[str, str | None]]
+        ) -> None:
+            if tag == "script":
+                self.body = [] if not attrs else None
+
+        def handle_startendtag(
+            self, tag: str, attrs: list[tuple[str, str | None]]
+        ) -> None:
+            # An XML-style empty tag supplies no complete HTML script body.
+            pass
+
+        def handle_data(self, data: str) -> None:
+            if self.body is not None:
+                self.body.append(data)
+
+        def handle_endtag(self, tag: str) -> None:
+            if tag == "script" and self.body is not None:
+                self.scripts.append("".join(self.body))
+                self.body = None
+
+    parser = InlineScriptParser()
+    parser.feed(page_html)
+    parser.close()
+    return parser.scripts
+
+
+class TestInlineScriptExtraction:
+    """The search-script checks consume complete HTML raw-text elements."""
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        ("page_html", "expected"),
+        [
+            ("<SCRIPT>const upper = true;</SCRIPT>", ["const upper = true;"]),
+            ("<ScRiPt >mixed();</sCrIpT \n>", ["mixed();"]),
+            (
+                "<script>first();</script><script>second();</script>",
+                ["first();", "second();"],
+            ),
+            ("<script></script>", [""]),
+            ("<script>closed();</script><script>unfinished();", ["closed();"]),
+            ("<script>unfinished();</script", []),
+            ("<script/>not_a_complete_body();", []),
+            ("<!-- <script>commented();</script> -->", []),
+            ("<script src='external.js'>external();</script>", []),
+            ("<script TYPE='application/json'>{\"value\":1}</script>", []),
+            ("<script nonce='abc'>attributed();</script>", []),
+            (
+                "<script src='external.js'></script><SCRIPT>local();</SCRIPT>",
+                ["local();"],
+            ),
+        ],
+    )
+    def test_extracts_only_complete_attribute_less_scripts(
+        self, page_html: str, expected: list[str]
+    ) -> None:
+        assert _inline_scripts(page_html) == expected
+
+    @pytest.mark.unit
+    def test_preserves_raw_javascript_without_decoding_or_parsing_markup(self) -> None:
+        body = (
+            '\nconst markup = "<div>&lt; &#38; &amp;</div>";\n'
+            'const nested = "<script>literal</scriptx>";\n'
+            "// <!-- a raw JavaScript comment -->\n"
+            "if (left < right && right > 0) { use(markup); }\n"
+        )
+        assert _inline_scripts(f"<script>{body}</script>") == [body]
 
 
 class TestModelPageGeneration:
     """C2: one page per parsed model under ``model/`` with collision slugs."""
 
     @pytest.mark.unit
-    def test_model_pages_created_with_collision_suffixes(
-        self, tmp_path: Any
-    ) -> None:
+    def test_model_pages_created_with_collision_suffixes(self, tmp_path: Any) -> None:
         site, result = _build_multi_model_site(tmp_path)
 
         assert result["model_pages_created"] == 6
@@ -216,9 +289,7 @@ class TestModelPageGeneration:
             assert (site / rel).is_file()
 
     @pytest.mark.unit
-    def test_model_page_content_h1_source_link_and_tables(
-        self, tmp_path: Any
-    ) -> None:
+    def test_model_page_content_h1_source_link_and_tables(self, tmp_path: Any) -> None:
         site, _ = _build_multi_model_site(tmp_path)
         page = (site / "model/alpha-model.html").read_text(encoding="utf-8")
 
@@ -272,9 +343,7 @@ class TestBreadcrumbs:
     """C1: breadcrumb nav on every generated page, depth-correct + escaped."""
 
     @pytest.mark.unit
-    def test_breadcrumbs_present_on_every_generated_page(
-        self, tmp_path: Any
-    ) -> None:
+    def test_breadcrumbs_present_on_every_generated_page(self, tmp_path: Any) -> None:
         site, _ = _build_multi_model_site(tmp_path)
         pages = [site / f for f in (*_SITE_PAGE_FILENAMES, *_EXPECTED_MODEL_PAGES)]
         for page_path in pages:
@@ -414,7 +483,9 @@ class TestSearchIndex:
         site, _ = _build_multi_model_site(tmp_path)
         standalone = json.loads((site / "search-index.json").read_text("utf-8"))
         listing = (site / "gnn_files.html").read_text(encoding="utf-8")
-        inline = json.loads(_SEARCH_DATA_RE.search(listing).group(1))
+        payload_match = _SEARCH_DATA_RE.search(listing)
+        assert payload_match is not None, "inline search data payload missing"
+        inline = json.loads(payload_match.group(1))
 
         assert inline == standalone
 
@@ -552,12 +623,11 @@ class TestDeepLinksAndHygiene:
         for page in pages:
             html = page.read_text(encoding="utf-8")
             for attribute in ("src", "href"):
-                for match in re.findall(
-                    rf'{attribute}\s*=\s*"[^"]*"', html
-                ):
-                    assert not match.lower().startswith(
-                        f'{attribute}="http'
-                    ), (page.name, match)
+                for match in re.findall(rf'{attribute}\s*=\s*"[^"]*"', html):
+                    assert not match.lower().startswith(f'{attribute}="http'), (
+                        page.name,
+                        match,
+                    )
             assert "@import" not in html, page.name
             assert not re.search(r"url\(\s*[\"']?https?://", html), page.name
 
@@ -566,7 +636,9 @@ class TestDeepLinksAndHygiene:
 
         # Only the *new* markup on the listing page: payload + inline JS.
         listing = (site / "gnn_files.html").read_text(encoding="utf-8")
-        payload = _SEARCH_DATA_RE.search(listing).group(1)
+        payload_match = _SEARCH_DATA_RE.search(listing)
+        assert payload_match is not None, "inline search data payload missing"
+        payload = payload_match.group(1)
         scripts = "\n".join(_inline_scripts(listing))
         for snippet in (payload, scripts):
             assert "http://" not in snippet and "https://" not in snippet
@@ -580,9 +652,9 @@ class TestDeepLinksAndHygiene:
         assert {p.name for p in pages} >= set(_SITE_PAGE_FILENAMES)
         for page in pages:
             html = page.read_text(encoding="utf-8")
-            assert '<meta name="description" content="GNN Pipeline Results' in (
-                html
-            ), page.name
+            assert '<meta name="description" content="GNN Pipeline Results' in (html), (
+                page.name
+            )
             match = re.search(
                 r'<script type="application/ld\+json">(.*?)</script>',
                 html,

@@ -49,9 +49,9 @@ class TestCycleBreak:
         import gnn.website.generator as generator
 
         source = inspect.getsource(generator)
-        assert (
-            "from gnn.website.collection import collect_website_data" in source
-        ), "generator is the module-level collection importer (chosen direction)"
+        assert "from gnn.website.collection import collect_website_data" in source, (
+            "generator is the module-level collection importer (chosen direction)"
+        )
 
     def test_single_pipeline_steps_object_across_the_package(self) -> None:
         import gnn.website as website
@@ -117,7 +117,9 @@ class TestWebsiteDataFromDict:
         from gnn.website.collection import website_data_from_dict
 
         assert website_data_from_dict({})["output_dir"] is None
-        assert website_data_from_dict({}, output_dir=str("/tmp/x"))["output_dir"] == Path("/tmp/x")
+        assert website_data_from_dict({}, output_dir=str("/tmp/x"))[
+            "output_dir"
+        ] == Path("/tmp/x")
 
     def test_no_filesystem_access(self, monkeypatch: Any) -> None:
         calls = {"n": 0}
@@ -200,17 +202,13 @@ class TestPureDictGeneration:
             encoding="utf-8"
         )
         assert "model/demo-model.html" in search_index
-        listing = (tmp_path / "site" / "gnn_files.html").read_text(
-            encoding="utf-8"
-        )
+        listing = (tmp_path / "site" / "gnn_files.html").read_text(encoding="utf-8")
         assert 'href="model/demo-model.html"' in listing
 
     def test_pure_mode_requires_explicit_output_dir(self) -> None:
         from gnn.website import WebsiteGenerator
 
-        result = WebsiteGenerator().generate_website(
-            {"models": []}, filesystem=False
-        )
+        result = WebsiteGenerator().generate_website({"models": []}, filesystem=False)
         assert result["success"] is False
         assert result["errors"]
         assert "requires an explicit" in result["errors"][0]

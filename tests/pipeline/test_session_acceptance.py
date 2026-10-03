@@ -272,9 +272,7 @@ def test_verify_session_artifacts_detects_missing(tmp_path: Path) -> None:
 
     problems = verify_session_artifacts(session_path, output_dir)
     assert problems, "expected the join to report the deleted artifact"
-    assert any(
-        "recorded artifact missing on disk" in p for p in problems
-    ), problems
+    assert any("recorded artifact missing on disk" in p for p in problems), problems
 
 
 def test_verify_session_artifacts_detects_unrecorded(tmp_path: Path) -> None:
@@ -282,15 +280,11 @@ def test_verify_session_artifacts_detects_unrecorded(tmp_path: Path) -> None:
     fires an unrecorded-artifact problem."""
     session_path = _run_three_family_session(tmp_path)
     output_dir = tmp_path / "out"
-    (output_dir / "discrete" / "late_addition.json").write_text(
-        "{}", encoding="utf-8"
-    )
+    (output_dir / "discrete" / "late_addition.json").write_text("{}", encoding="utf-8")
 
     problems = verify_session_artifacts(session_path, output_dir)
     assert problems, "expected the join to report the unrecorded file"
-    assert any(
-        "unrecorded artifact on disk" in p for p in problems
-    ), problems
+    assert any("unrecorded artifact on disk" in p for p in problems), problems
 
 
 def test_verify_session_artifacts_accepts_session_instance(tmp_path: Path) -> None:
@@ -301,8 +295,7 @@ def test_verify_session_artifacts_accepts_session_instance(tmp_path: Path) -> No
     session = load_session(session_path)
 
     assert (
-        verify_session_artifacts(session, output_dir, session_file=session_path)
-        == []
+        verify_session_artifacts(session, output_dir, session_file=session_path) == []
     )
     # The checkpoint lives outside every family dir, so even without an
     # explicit exclusion it never enters the on-disk inventory.
@@ -344,6 +337,4 @@ def test_verify_session_artifacts_reports_unresolvable_dir(tmp_path: Path) -> No
 
     problems = verify_session_artifacts(session, tmp_path)
     assert problems, "expected the join to report the unresolvable directory"
-    assert any(
-        "artifact directory not found" in p for p in problems
-    ), problems
+    assert any("artifact directory not found" in p for p in problems), problems

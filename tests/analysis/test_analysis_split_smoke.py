@@ -92,9 +92,11 @@ def test_generate_unified_framework_dashboard_smoke(tmp_path: Path) -> None:
         framework_data, tmp_path / "dash", model_name="current_model"
     )
     assert isinstance(generated, list)
-    assert generated, "dashboard generated no artifacts from populated data"
-    for artifact in generated:
-        assert Path(artifact).exists()
+    assert generated == [], "unbound populated data must not establish a comparison"
+    admission = json.loads(
+        (tmp_path / "dash" / "unified_dashboard_admission.json").read_text()
+    )
+    assert "missing declared model_id" in admission["excluded"]["pymdp[0]"]
 
 
 def test_analyze_then_dashboard_chain(tmp_path: Path) -> None:

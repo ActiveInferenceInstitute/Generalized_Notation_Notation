@@ -59,6 +59,50 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
                 pomdp_space, timesteps=timesteps, simulation_params=parsed_sim_params
             )
 
+        if kwargs.get("preserve_discrete_structure"):
+            # A component-aware backend owns its bounded composition. Never
+            # allocate a dense joint tensor before that backend admits it.
+            parameters = {
+                **(pomdp_space.model_parameters or {}),
+                "num_actions": pomdp_space.num_actions,
+                "simulation_params": parsed_sim_params,
+                **({"num_timesteps": timesteps} if timesteps is not None else {}),
+            }
+            return {
+                "name": pomdp_space.model_name,
+                "model_name": pomdp_space.model_name,
+                "gnn_section": pomdp_space.gnn_section,
+                "model_kind": getattr(pomdp_space, "model_kind", "discrete"),
+                "model_parameters": parameters,
+                "initialparameterization": pomdp_space.initial_parameterization or {},
+                "structured_pomdp": {
+                    "matrices": pomdp_space.matrices or {},
+                    "matrix_provenance": pomdp_space.matrix_provenance or {},
+                    "state_factors": pomdp_space.state_factors or [],
+                    "observation_modalities": pomdp_space.observation_modalities or [],
+                    "control_factors": pomdp_space.control_factors or [],
+                    "adapter_notes": pomdp_space.adapter_notes or [],
+                },
+                "matrix_provenance": pomdp_space.matrix_provenance or {},
+                "connections": [
+                    {"source": edge[0], "relation": edge[1], "target": edge[2]}
+                    for edge in (pomdp_space.connections or [])
+                ],
+                "variables": (pomdp_space.state_variables or [])
+                + (pomdp_space.observation_variables or [])
+                + (pomdp_space.action_variables or []),
+                "canonical_pomdp_schema": "raw_discrete_components_v1",
+            }
+
+        from gnn.render.multi_agent_common import has_native_multi_agent_structure
+
+        if kwargs.get("native_agents") and has_native_multi_agent_structure(
+            {"structured_pomdp": {"matrices": pomdp_space.matrices}}
+        ):
+            return self._native_agent_pomdp_to_gnn_spec(
+                pomdp_space, timesteps=timesteps, simulation_params=parsed_sim_params
+            )
+
         initial_parameterization, matrix_provenance, canonical_model_parameters = (
             self._build_canonical_initialparameterization(pomdp_space)
         )
@@ -139,6 +183,52 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
 
         return gnn_spec
 
+    def _native_agent_pomdp_to_gnn_spec(
+        self,
+        pomdp_space: "POMDPStateSpace",
+        *,
+        timesteps: Optional[int],
+        simulation_params: Any,
+    ) -> Dict[str, Any]:
+        """Preserve native agent declarations without allocating a joint tensor."""
+        from gnn.render.multi_agent_common import validate_native_agent_groups
+
+        matrices = pomdp_space.matrices or {}
+        provenance = pomdp_space.matrix_provenance or {}
+        params = {
+            **(pomdp_space.model_parameters or {}),
+            "simulation_params": simulation_params,
+            "state_factors": pomdp_space.state_factors or [],
+            **({"num_timesteps": timesteps} if timesteps is not None else {}),
+        }
+        spec = {
+            "name": pomdp_space.model_name,
+            "model_name": pomdp_space.model_name,
+            "gnn_section": pomdp_space.gnn_section,
+            "model_kind": "multi_agent",
+            "model_parameters": params,
+            "initialparameterization": pomdp_space.initial_parameterization or {},
+            "structured_pomdp": {
+                "matrices": matrices,
+                "matrix_provenance": provenance,
+                "state_factors": pomdp_space.state_factors or [],
+                "observation_modalities": pomdp_space.observation_modalities or [],
+                "control_factors": pomdp_space.control_factors or [],
+            },
+            "matrix_provenance": provenance,
+            "canonical_pomdp_schema": "native_agent_pomdp_v1",
+            "variables": (pomdp_space.state_variables or [])
+            + (pomdp_space.observation_variables or [])
+            + (pomdp_space.action_variables or []),
+            "connections": [
+                {"source": c[0], "relation": c[1], "target": c[2]}
+                for c in (pomdp_space.connections or [])
+            ],
+            "ontology_mapping": pomdp_space.ontology_mapping or {},
+        }
+        validate_native_agent_groups(spec)
+        return spec
+
     def _continuous_pomdp_to_gnn_spec(
         self,
         pomdp_space: "POMDPStateSpace",
@@ -165,16 +255,13 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
             "num_actions": pomdp_space.num_actions,
             "passive_model": getattr(pomdp_space, "passive_model", True),
             "simulation_params": simulation_params,
-            "dt": float(raw_model_parameters.get("dt", 1.0)),
-            "random_seed": int(
-                raw_model_parameters.get(
-                    "random_seed", raw_model_parameters.get("seed", 42)
-                )
-                or 42
+            "dt": raw_model_parameters.get("dt", 1.0),
+            "random_seed": raw_model_parameters.get(
+                "random_seed", raw_model_parameters.get("seed", 42)
             ),
         }
-        if timesteps:
-            model_parameters["num_timesteps"] = int(timesteps)
+        if timesteps is not None:
+            model_parameters["num_timesteps"] = timesteps
         provenance = {
             key: {
                 "source": "InitialParameterization",
@@ -280,8 +367,8 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
             "passive_model": getattr(pomdp_space, "passive_model", False),
             "simulation_params": simulation_params,
         }
-        if timesteps:
-            model_parameters["num_timesteps"] = int(timesteps)
+        if timesteps is not None:
+            model_parameters["num_timesteps"] = timesteps
         gnn_spec: dict[str, Any] = {
             "name": pomdp_space.model_name or "Nonstationary_Model",
             "model_name": pomdp_space.model_name or "Nonstationary_Model",
@@ -343,8 +430,8 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
             "passive_model": getattr(pomdp_space, "passive_model", True),
             "simulation_params": simulation_params,
         }
-        if timesteps:
-            model_parameters["num_timesteps"] = int(timesteps)
+        if timesteps is not None:
+            model_parameters["num_timesteps"] = timesteps
         gnn_spec: dict[str, Any] = {
             "name": pomdp_space.model_name or "Structural_Model",
             "model_name": pomdp_space.model_name or "Structural_Model",

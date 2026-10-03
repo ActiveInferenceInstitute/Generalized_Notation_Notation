@@ -156,12 +156,18 @@ jobs:
             --cov=gnn --cov-report=json:junit/coverage-full-extras.json \
             --junitxml=junit/full-extras-${{ matrix.python-version }}.xml
 
+      - name: Record execution counts and source identity
+        if: always()
+        run: |
+          uv run --frozen --no-sync python scripts/test_receipt.py \
+            junit/full-extras-${{ matrix.python-version }}.xml
+
       - name: Pytest JUnit report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pytest-junit-full-extras-${{ matrix.python-version }}
-          path: junit/full-extras-${{ matrix.python-version }}.xml
+          path: junit/full-extras-${{ matrix.python-version }}.*
           if-no-files-found: warn
           retention-days: 14
 

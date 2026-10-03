@@ -119,5 +119,8 @@ from gnn.utils.runtime_safety.framework_availability import (
     FRAMEWORK_IMPORT_CHECK as _FRAMEWORK_IMPORT_CHECK,  # noqa: E402
 )
 from gnn.utils.runtime_safety.framework_availability import (
+    check_framework as _check_framework_by_name,
+)
+from gnn.utils.runtime_safety.framework_availability import (
     is_framework_available as _is_framework_available_by_name,
 )

@@ -13,6 +13,22 @@ import pytest
 from gnn.pipeline import preflight
 
 
+@pytest.mark.parametrize("value", ["null", "600"])
+def test_llm_automatic_or_positive_budget_is_valid(tmp_path: Path, value: str) -> None:
+    config = tmp_path / "config.yaml"
+    config.write_text(f"llm:\n  timeout_seconds: {value}\n")
+    assert preflight.validate_config(config).is_ok
+
+
+@pytest.mark.parametrize("value", ["true", "0", "-1", ".inf", ".nan"])
+def test_llm_budget_rejects_nonpositive_nonfinite_and_boolean(
+    tmp_path: Path, value: str
+) -> None:
+    config = tmp_path / "config.yaml"
+    config.write_text(f"llm:\n  timeout_seconds: {value}\n")
+    assert not preflight.validate_config(config).is_ok
+
+
 def test_validate_config_missing_file_reports_warning(tmp_path: Path) -> None:
     missing = tmp_path / "does_not_exist.yaml"
     report = preflight.validate_config(missing)

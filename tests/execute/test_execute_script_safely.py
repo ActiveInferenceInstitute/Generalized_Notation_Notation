@@ -344,7 +344,7 @@ def test_rxinfer_manifest_pins_5_5_0() -> None:
 def test_dask_dispatch_without_distributed_applies_configured_retries(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Without dask.distributed importable the dispatcher gathers unbounded."""
+    """Missing distributed never silently enables an unbounded gather."""
     from gnn.execute.distributed import Dispatcher
 
     monkeypatch.setitem(sys.modules, "dask.distributed", None)
@@ -368,6 +368,9 @@ def test_dask_dispatch_without_distributed_applies_configured_retries(
     )
 
     assert len(results) == 2
+    assert all(
+        item["error_type"] == "DistributedBackendUnavailable" for item in results
+    )
     assert [item["retries"] for item in submitted] == [5, 5]
     assert [item["timeout"] for item in submitted] == [1, 1]
 
@@ -468,8 +471,22 @@ class _FlippingFuture:
     def cancel(self) -> None:
         self.cancelled = True
 
+    def result(self, timeout: float) -> dict[str, Any]:
+        return {"success": True, "name": self.name}
+
 
 class _FakeDaskClient:
+    @property
+    def loop(self) -> Any:
+        return self
+
+    def add_callback(self, function: Any, *args: Any, **kwargs: Any) -> None:
+        function(*args, **kwargs)
+
+    def cancel(self, futures: list[Any], **kwargs: Any) -> None:
+        for future in futures:
+            future.cancel()
+
     def as_current(self) -> Any:
         import contextlib
 
@@ -492,7 +509,10 @@ def test_dask_gather_classifies_each_future_exactly_once(
 
     from gnn.execute.distributed import WAIT_TIMEOUT_ENV, Dispatcher
 
-    def expired_wait(futures: Any, timeout: Any = None) -> None:
+    def expired_wait(futures: Any, timeout: Any = None, **kwargs: Any) -> None:
+        import time
+
+        time.sleep(timeout)
         raise TimeoutError
 
     fake_distributed = types.ModuleType("dask.distributed")
@@ -501,6 +521,10 @@ def test_dask_gather_classifies_each_future_exactly_once(
     fake_dask.distributed = fake_distributed  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "dask", fake_dask)
     monkeypatch.setitem(sys.modules, "dask.distributed", fake_distributed)
+    fake_client = types.ModuleType("distributed.client")
+    fake_client.FutureCancelledError = type("FutureCancelledError", (Exception,), {})
+    fake_client.FuturesCancelledError = type("FuturesCancelledError", (Exception,), {})
+    monkeypatch.setitem(sys.modules, "distributed.client", fake_client)
     monkeypatch.setenv(WAIT_TIMEOUT_ENV, "1")
 
     dispatcher = Dispatcher(backend="dask", max_retries=0)

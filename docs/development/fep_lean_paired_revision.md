@@ -86,10 +86,18 @@ this exact order:
    the commit it was produced at, and amending afterwards orphans that
    reference (a phantom commit in published provenance) while the next
    hydration computes different counts, re-drifting the chain.
+   If the new GNN revision is not remotely reachable, publish the committed
+   source/artifact branch and open a draft PR before the companion re-pin.
+   Its workflow must fetch an exact commit; an unpublished local SHA cannot
+   establish hosted pairing. Keep main publication pending and make no further
+   owner-file edits after this source/artifact freeze.
 3. **fep_lean bridge re-pin**: bridge pin → emit `--refresh-digests` → emit
    `--check` (finite + continuous) → PR → merge on the fep_lean side.
 4. **GNN pin bump as the FINAL commit**: bump `.github/fep-lean-pair.json` to
-   the new reviewed fep_lean revision in the final commit, then a single push.
+   the new reviewed fep_lean revision in the final commit, then push that final
+   revision. The earlier draft-branch publication only supplies the fetchable
+   source revision; merge to GNN main requires the final paired and repository
+   gates.
 
 Ledger mentions of this discipline (e.g. the "paired-repin discipline" row in
 `TO-DO.md`) defer to this section.

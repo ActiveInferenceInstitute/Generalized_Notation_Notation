@@ -30,15 +30,15 @@ action selection.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 from typing import Any, Dict, List
 
 from gnn.render.multi_agent_common import (
-    canonicalise_b,
-    detect_agent_groups,
     detect_env_conditioned,
     detect_env_coupling,
     has_env_conditioned_action_selection,
+    validate_native_agent_groups,
 )
 
 __all__ = ["_generate_stigmergic_code"]
@@ -78,7 +78,7 @@ def _generate_stigmergic_code(
         The Julia script text. Per-agent ``pomdp_model`` inference plus a
         post-hoc shared ``env_signal`` trace; no joint state-space expansion.
     """
-    agents = detect_agent_groups(gnn_spec)
+    agents = validate_native_agent_groups(gnn_spec)
     env = detect_env_coupling(gnn_spec)
     env_cond = detect_env_conditioned(gnn_spec)
     env_action_conditioned = has_env_conditioned_action_selection(gnn_spec)
@@ -91,7 +91,6 @@ def _generate_stigmergic_code(
     agent_names = list(agents.keys())
 
     model_params = gnn_spec.get("model_parameters") or {}
-    num_actions = int(model_params.get("num_actions", 3))
     num_timesteps = int(model_params.get("num_timesteps", 20))
     seed = int(model_params.get("random_seed", model_params.get("seed", 42)))
     action_precision = float(
@@ -99,9 +98,45 @@ def _generate_stigmergic_code(
     )
     inference_iterations = int(model_params.get("inference_iterations", 20))
 
-    spec_json = json.dumps(gnn_spec, sort_keys=True)
+    # Runtime only consumes descriptors/provenance from this record. Per-agent
+    # numeric matrices are emitted below; the composed joint A/B/C/D tensors
+    # are unused and can otherwise expand one script by tens of megabytes.
+    embedded_spec = {
+        key: value
+        for key, value in gnn_spec.items()
+        if key
+        not in {
+            "initialparameterization",
+            "initial_parameterization",
+            "structured_pomdp",
+            "matrix_provenance",
+        }
+    }
+    embedded_spec["matrix_provenance"] = {
+        key: value
+        for key, value in (gnn_spec.get("matrix_provenance") or {}).items()
+        if key not in {"A", "B", "C", "D", "E"}
+    }
+    embedded_spec["matrix_provenance"].update(
+        {
+            f"{key}_{name}": metadata
+            for name, group in agents.items()
+            for key, metadata in group["matrix_provenance"].items()
+        }
+    )
+    embedded_spec["native_agent_matrix_provenance"] = {
+        name: group["matrix_provenance"] for name, group in agents.items()
+    }
+    embedded_spec["embedding_contract"] = {
+        "schema": "native_agent_metadata_v1",
+        "omitted": "unused composed joint tensors; native agent matrices emitted explicitly",
+        "source_contract_sha256": hashlib.sha256(
+            json.dumps(gnn_spec, sort_keys=True).encode()
+        ).hexdigest(),
+    }
+    spec_json = json.dumps(embedded_spec, sort_keys=True)
     spec_json_b64 = base64.b64encode(spec_json.encode("utf-8")).decode("ascii")
-    model_name_literal = json.dumps(str(model_display_name))
+    model_name_literal = json.dumps(str(model_display_name)).replace("$", r"\$")
     agent_names_literal = json.dumps(agent_names)
 
     # Per-agent matrix literals (JSON object syntax is valid Julia for
@@ -109,7 +144,7 @@ def _generate_stigmergic_code(
     # B is canonicalised to (next_state, previous_state, action) exactly as
     # the composed-joint path does, so per-agent semantics match.
     agent_as = json.dumps([m["A"] for m in ordered])
-    agent_bs = json.dumps([canonicalise_b(m["B"], num_actions) for m in ordered])
+    agent_bs = json.dumps([m["B"] for m in ordered])
     agent_cs = json.dumps([m["C"] for m in ordered])
     agent_ds = json.dumps([m["D"] for m in ordered])
 
@@ -139,7 +174,7 @@ def _generate_stigmergic_code(
 
     return f'''#!/usr/bin/env julia
 # RxInfer.jl stigmergic multi-agent simulation — native per-agent compilation
-# Generated from GNN Model: {model_display_name}
+# Generated from GNN Model: {json.dumps(str(model_display_name))}
 #
 # This script runs one genuine RxInfer.jl pomdp_model inference per agent
 # (native per-agent state spaces; NO joint state-space expansion). After all

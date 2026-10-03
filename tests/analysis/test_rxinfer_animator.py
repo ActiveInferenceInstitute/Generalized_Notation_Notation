@@ -23,7 +23,7 @@ def _build_synthetic_results(
     """Build a synthetic rxinfer_simulation_v1 result for testing."""
     beliefs = []
     for t in range(n_steps):
-        row = [0.1] * n_states
+        row = [0.2 / (n_states - 1)] * n_states
         row[t % n_states] = 0.8
         beliefs.append(row)
 

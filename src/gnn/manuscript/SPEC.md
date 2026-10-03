@@ -9,10 +9,24 @@ Deterministic `{{...}}` token production for the manuscript, plus the render cus
 - `__init__.py` - Thin re-export surface (`__all__`, ten names)
 
 ## Contract
+- `substitution.py` owns the local token grammar, exclusion set, substitution,
+  and active-preamble extraction. An importable template supplies its own
+  grammar, exclusions, and injector. Unknown tokens survive for the audit;
+  comments and prose outside LaTeX fences cannot declare preamble packages.
+- `gate_baseline.py` compares findings with immutable evidence at the PR's merge
+  base. The HEAD audit implementation evaluates both sides, so this checks
+  evidence under current semantics rather than grandfathering an older gate's
+  behavior. Only exact diagnostic and evidence fingerprints may warn; a missing
+  base or altered evidence fails. No base means a strict main/scheduled audit.
+- `hydration_issues` requires the map's commit stamp in both combined Markdown
+  and TeX in addition to the existing hydrated-tree comparison. Prose hydration
+  and manifest re-recording without rendered evidence cannot pass.
+- New manifests include normalized artifact/input digests for Git-free fresh
+  comparisons. A fresh file is never used as its own committed baseline.
 - Nothing is hard-coded: every quantitative token is computed from a repository source surface (`pyproject.toml`, `input/model_family_manifest.json`, the framework registry, `src/gnn/STEP_INDEX.md`, `CHANGELOG.md`, filesystem counts, the exemplar corpus).
 - Counts describe one commit: sources are read from the commit named by `GNN_GIT_COMMIT` (HEAD) via `git ls-tree`/`git cat-file`; without git the snapshot falls back to the working tree and reports the `unknown` sentinel, on which the token gate (`scripts/check_manuscript_tokens.py`) and the figure build fail.
 - Deterministic: no timestamps or wall-clock; two runs over an unchanged commit produce byte-identical JSON.
-- Dependency-light: standard library plus optional `yaml`; no `gnn.*` imports, so the producer stays headless-importable.
+- Dependency-light: standard library plus optional `yaml`; internal manuscript imports stay headless and do not start pipeline or backend runtimes.
 - Custody chain: `HEAD → token map → hydrated prose (output/manuscript/) → committed PDF evidence`. The record step runs after a render (`RECORD_COMMAND`); the manual half of the SC-22 ordering ritual (regen → rebuild figures → render → record → commit) is stated in `scripts/z_generate_manuscript_variables.py`, whose thin orchestration wires `generate_variables` to the template's hydration.
 
 ## Key Exports

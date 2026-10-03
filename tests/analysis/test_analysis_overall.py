@@ -456,7 +456,11 @@ class TestPostSimulationVisualization:
         assert result["framework_count"] == 2
         assert "pymdp" in result["frameworks_compared"]
         assert "rxinfer" in result["frameworks_compared"]
-        assert result["comparisons"]["fastest_execution"]["framework"] == "rxinfer"
+        assert "fastest_execution" not in result["comparisons"]
+        assert (
+            "missing declared model_id"
+            in result["comparisons"]["unavailable_metrics"]["fastest_execution"]
+        )
 
 
 class TestAnalysisModuleImports:

@@ -154,6 +154,7 @@ def render_spec_to_format_mcp(
     output_directory: str,
     framework: str = "pymdp",
     output_filename: Optional[str] = None,
+    options: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Render one GNN file to one framework through the canonical dispatch.
@@ -185,9 +186,10 @@ def render_spec_to_format_mcp(
 
         out_dir = Path(output_directory)
         parsed = parse_gnn_file(gnn_path)
-        options: Optional[Dict[str, Any]] = (
-            {"output_filename": output_filename} if output_filename else None
-        )
+        options = {
+            **(options or {}),
+            **({"output_filename": output_filename} if output_filename else {}),
+        }
         success, message, artifacts = render_gnn_spec(
             parsed, framework, out_dir, options
         )
@@ -301,6 +303,10 @@ def register_tools(mcp_instance: Any) -> None:
                 "output_filename": {
                     "type": "string",
                     "description": "Optional base filename for the output artifact (without extension)",
+                },
+                "options": {
+                    "type": "object",
+                    "description": "Framework-specific validated render options",
                 },
             },
             "required": ["gnn_file_path", "output_directory"],

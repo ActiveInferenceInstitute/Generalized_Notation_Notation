@@ -585,7 +585,10 @@ class TestResilientPageWrites:
         assert len(set(paths)) == 3  # no silent overwrite
         assert (assets / "graph.png").read_bytes() == b"first"
         assert (assets / "09_advanced_viz_output__graph.png").read_bytes() == b"second"
-        assert (assets / "graph.html").exists()
+        html_path = next(
+            entry["path"] for entry in data["visualizations"] if entry["type"] == "html"
+        )
+        assert (assets / html_path).exists()
 
     @pytest.mark.unit
     def test_gallery_page_links_both_colliding_artifacts(self, tmp_path: Any) -> None:
@@ -693,9 +696,7 @@ class TestProcessWebsiteManifest:
         assert process_website(tmp_path / "nope", tmp_path / "out") is False
 
     @pytest.mark.unit
-    def test_manifest_write_is_atomic(
-        self, tmp_path: Any, monkeypatch: Any
-    ) -> None:
+    def test_manifest_write_is_atomic(self, tmp_path: Any, monkeypatch: Any) -> None:
         """The results manifest is written via temp file + rename: a crash
         mid-write leaves any pre-existing ``website_results.json``
         byte-identical, leaves no temp residue, and generation still
@@ -719,9 +720,12 @@ class TestProcessWebsiteManifest:
 
         monkeypatch.setattr(generator_module.os, "replace", crash_on_manifest)
 
-        assert process_website(
-            target_dir=target, output_dir=out, logger=logging.getLogger("t")
-        ) is True
+        assert (
+            process_website(
+                target_dir=target, output_dir=out, logger=logging.getLogger("t")
+            )
+            is True
+        )
         assert manifest_path.read_text(encoding="utf-8") == "PRE-EXISTING"
         assert {p.name for p in out.iterdir()} == {
             "index.html",

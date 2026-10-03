@@ -474,8 +474,9 @@ class Enhanced{_to_pascal_case(model_name)}CategoricalAnalyzer:
         # Add value labels on bars
         for bar, value in zip(bars, metric_values):
             height = bar.get_height()
-            axes[1, 1].text(bar.get_x() + bar.get_width()/2., height + 0.01,
-                           f'{{value:.3f}}', ha='center', va='bottom', fontweight='bold')
+            axes[1, 1].annotate(f'{{value:.3f}}', (bar.get_x() + bar.get_width()/2., height),
+                               xytext=(0, 3), textcoords='offset points',
+                               ha='center', va='bottom', fontweight='bold')
         
         plt.tight_layout()
         
