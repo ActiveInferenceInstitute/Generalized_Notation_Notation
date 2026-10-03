@@ -66,7 +66,7 @@ uv run --frozen python scripts/pipeline/stage_03_render.py \
 
 The render needs a LaTeX installation providing the packages listed in `manuscript/preamble.md` plus `seqsplit`; the template guards `seqsplit` with `\IfFileExists`, so a missing copy degrades rather than failing the build.
 
-Because the variables file is regenerated before rendering, the counts in the rendered PDF track the repository state at the commit recorded in `output/data/manuscript_variables.json` (452c14623): a code change that alters, for example, the test inventory (572 test files, 6170 test functions) propagates into the prose on the next regeneration without any manual editing.
+Because the variables file is regenerated before rendering, the counts in the rendered PDF track the repository state at the commit recorded in `output/data/manuscript_variables.json` (ae34cfbdc): a code change that alters, for example, the test inventory (573 test files, 6171 test functions) propagates into the prose on the next regeneration without any manual editing.
 
 ## Reproducibility Contract
 
