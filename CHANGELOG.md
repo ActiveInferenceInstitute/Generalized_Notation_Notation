@@ -5,7 +5,7 @@ All notable changes to the GNN Pipeline are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
 
 
-## [4.0.0] - 2026-10-01
+## [4.0.0] - 2026-10-02
 
 **Current-run Reliability.** The 25-step pipeline now binds selection,
 configuration, source identity, output ownership and deadlines to one invocation.
@@ -16,6 +16,12 @@ and paired custody described in the scope ledger.
 
 ### Changed
 
+- Installed `python -m gnn.main` preserves the caller working directory,
+  resolved `input/config.yaml`, and relative input/output paths. Direct source
+  scripts keep repository-relative defaults; importing `gnn.main` remains free
+  of working-directory and import-path side effects.
+- Citation metadata uses v4.0.0 and the verified project concept DOI; a
+  version-specific v4 archival record remains pending.
 - Path-derived model IDs distinguish duplicate filenames and display names.
   Source consumers share a frozen manifest; analysis and website assembly run
   once per selected corpus. Reports consume current-run snapshots and durable

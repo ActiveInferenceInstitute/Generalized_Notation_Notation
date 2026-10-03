@@ -74,6 +74,16 @@ prove that remote work stopped. The pipeline supervisor verifies its owned
 process cleanup before releasing the output lease. Direct callers remain
 responsible for their own cluster's startup, shutdown, and remote containment.
 
+## Entrypoints and resolved configuration
+
+Installed `python -m gnn.main` and installed direct-file entrypoints retain the
+caller working directory. Place the configuration at `input/config.yaml` under
+that directory, or use the supported CLI/configuration surfaces; relative input
+and output paths resolve there. The pipeline freezes that resolved configuration
+in `run_context.json`. A direct repository `python src/gnn/main.py` still anchors
+its defaults to the checkout containing `pyproject.toml`. Importing `gnn.main`
+does not change the working directory or import path.
+
 ## Artifact contracts and summary states
 
 The frozen context is serialized as the `RunContext` dataclass: `run_id`, input
@@ -82,6 +92,10 @@ references and exclusions. Model IDs are SHA-256 prefixes of normalized relative
 source paths; source hashes separately bind raw bytes. Renaming a source changes
 its ID, while a content edit changes its source hash. Display names are labels.
 Do not join scientific evidence using them.
+
+Summary `step_number` preserves the one-based execution order within the run.
+Use the `script_name` prefix and step registry to identify canonical steps 0–24,
+especially when executing a subset.
 
 Step indexes carry the same model IDs and source hashes. Analysis emits one
 result per model/framework/script identity, preserving per-agent or per-factor

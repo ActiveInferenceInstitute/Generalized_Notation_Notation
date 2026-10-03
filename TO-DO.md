@@ -6,6 +6,12 @@
 
 ## v4.0.0 — Active implementation
 
+The final installed-module configuration repair is independently approved.
+Renew the source freeze, SC22 artifacts, ordinary wheels and complete default/
+pipeline/MCP gates. Historical source-452 refresh failures remain in the evidence
+ledger. Full native LLM prompt coverage and a version-specific archive DOI remain
+explicit follow-ups.
+
 The current program is [SCOPE-2026-10-01.md](SCOPE-2026-10-01.md).
 It supersedes the active rows from SCOPE-2026-09-23.md; prior scope documents,
 CHANGELOG.md and Git history preserve their audit trail. Already-landed CLI,

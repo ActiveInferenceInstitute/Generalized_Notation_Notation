@@ -74,15 +74,19 @@ SCRIPT_DIR = Path(__file__).parent  # src/
 PROJECT_ROOT = SCRIPT_DIR.parent.parent  # project root (two levels up from src/gnn/)
 
 # Script-entry side effects live inside the ``__main__`` guard below so that
-# ``import gnn.main`` stays side-effect free: no cwd change, no sys.path
-# mutation. Running ``uv run python src/gnn/main.py`` still gets src/ on sys.path
-# (required before the ``gnn.*`` imports resolve) and starts from
-# PROJECT_ROOT so relative path defaults behave as documented.
+# ``import gnn.main`` stays side-effect free. A direct repository script gets
+# src/ on sys.path and anchors relative defaults to its checkout. Package
+# module execution and installed scripts retain the caller's working directory
+# so input/config.yaml and relative input/output paths belong to that caller.
 if __name__ == "__main__":
     _src_dir = str(SCRIPT_DIR.parent)
     if _src_dir not in sys.path:
         sys.path.insert(0, _src_dir)
-    if Path.cwd() != PROJECT_ROOT:
+    if (
+        not __package__
+        and (PROJECT_ROOT / "pyproject.toml").is_file()
+        and Path.cwd() != PROJECT_ROOT
+    ):
         os.chdir(PROJECT_ROOT)
         logging.getLogger(__name__).info(
             f"Changed working directory to project root: {PROJECT_ROOT}"
