@@ -11515,5 +11515,18 @@
     "raw_readiness_receipt_sha256": "5ec4b6022aff8313f33cc7b1b33b0fceabe65fa41af54c2d548e6a216da898b0",
     "independent_review_sha256": "25e89a733e7e251b7bd1e09d4d955d4cc0a6c94b708f3dd5095beb9ef610fa42",
     "verdict": "GO_for_named_consumer_pin_final_producer_and_hosted_pending"
+  },
+  "prepublication_manuscript_metadata_renewal": {
+    "content_commit": "47a202d15a2377c3aaabc45a9f2f66e26c2ff375",
+    "actual_render_seconds": 131.05265387500003,
+    "observed_render_descendants": 150,
+    "render_execution": "passed",
+    "committed_fresh_check_before_artifact_commit": "failed_expected_old_committed_manifest",
+    "candidate_accepted": false,
+    "reason": "Rendering updated paper.date and retained a version-specific DOI for v3.4.0; metadata must be corrected in a new content commit before final rendering.",
+    "historical_candidate_receipt_sha256": "e890447ede025b483d8fe96d45cdbd6f54542da1f0cd9321966769e43c98f9c9",
+    "historical_candidate_inventory_sha256": "88f994d5f022ad7728c4ce7bd731ddedf9ba9c3819453be51b9a4cc018595863",
+    "historical_candidate_preserved": true,
+    "production_python_changes": false
   }
 }
