@@ -16,6 +16,7 @@ import json
 import os
 import signal
 import sys
+import time
 from pathlib import Path
 from typing import Any, Callable
 
@@ -120,6 +121,11 @@ async def test_cancel_midflight_keeps_cancelled_state_and_partial_output(
                 ),
                 encoding="utf-8",
             )
+            # Automatic filesystem mtimes can use a coarser clock than the
+            # invocation freshness gate. Stamp this simulated current-run
+            # receipt explicitly; stale-summary rejection is tested separately.
+            now_ns = time.time_ns()
+            os.utime(summary_path, ns=(now_ns, now_ns))
 
         proc = _BlockingProcess(
             returncode=-15,
