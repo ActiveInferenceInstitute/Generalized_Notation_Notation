@@ -154,11 +154,13 @@ def main():
             require(project.is_dir(), "Installed committed Julia project missing")
             execute(["julia", "--project=" + str(project), "-e",
                      'using Pkg; VERSION == v"1.12.7" || error("Julia version differs"); Pkg.instantiate();'], "instantiate-frozen-julia-project")
-            # Dependency imports only. Do not import GnnRxInferModels or invoke
-            # its model-specific compile_workload/sample inference scaffold.
+            # Dependency warmup includes the declared local Julia module. Its
+            # PrecompileTools sample inference is prerequisite compilation only,
+            # never acceptance of the four source-bound authored cases. The same
+            # inclusive 1200-second prerequisite deadline governs this work.
             execute(["julia", "--project=" + str(project), "-e",
-                     'using RxInfer, Distributions, JSON, StatsBase, Plots; VERSION == v"1.12.7" || error("Julia version differs"); Base.pkgversion(RxInfer) == v"5.5.0" || error("RxInfer version differs"); println(JSON.json(Dict("julia_version" => string(VERSION), "rxinfer_version" => string(Base.pkgversion(RxInfer)), "scope" => "dependency imports only; no authored model inference")));'],
-                    "warmup-frozen-julia-dependencies")
+                     'using RxInfer, Distributions, JSON, StatsBase, Plots, GnnRxInferModels; VERSION == v"1.12.7" || error("Julia version differs"); Base.pkgversion(RxInfer) == v"5.5.0" || error("RxInfer version differs"); println(JSON.json(Dict("julia_version" => string(VERSION), "rxinfer_version" => string(Base.pkgversion(RxInfer)), "scope" => "dependency and local module warmup; PrecompileTools sample inference is not authored-case acceptance", "reported_authored_cases_executed" => 0)));'],
+                    "warmup-frozen-julia-dependencies-and-local-module")
         for name, expected in binding["release_owner_inventory"].items():
             require(hashlib.sha256((source_root / name).read_bytes()).hexdigest() == expected, "Provisioning mutated a release owner")
         require(time.monotonic() < deadline, "Provisioning final deadline exhausted")
