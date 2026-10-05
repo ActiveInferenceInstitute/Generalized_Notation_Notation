@@ -224,6 +224,19 @@ Once a security vulnerability is reported, we commit to:
 - `GNN_MCP_TOKEN` / `GNN_MCP_RATE_LIMIT_PER_MINUTE` — bearer auth and
   per-client rate limiting for the MCP HTTP server.
 
+### Repository-local API filesystem scope
+
+The local API resolves request paths inside a trusted, locally managed checkout.
+Its shared path validator checks lexical containment, rejects existing symlink
+components, and checks resolved containment before directory creation or returning
+paths to the request handlers. Rejected paths produce a validation error before
+backend processing. These checks constrain request strings; they do not provide
+descriptor-based, atomic confinement against a separate actor replacing filesystem
+entries between validation and use. Authentication and non-loopback binding controls
+remain separate from this filesystem limitation. Use a checkout whose filesystem
+writers are trusted; hostile concurrent filesystem mutation is outside the current
+API contract.
+
 ### Framework-Specific Security
 
 **PyMDP Security:**
