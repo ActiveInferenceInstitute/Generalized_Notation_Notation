@@ -574,18 +574,20 @@ mjx-container[display="true"] {
 <a class="skip-link" href="#main-content">Skip to main content</a>
 <main id="main-content" tabindex="-1">
 <h1 id="sec:methods">Methods</h1>
-<p>The GeneralizedNotationNotation (GNN) method is realized as a
-sequence of deterministic transformations that take a plain-text model
-specification and carry it through parsing, validation, code generation,
-execution, and reporting. The processing pipeline is organized into 25
-numbered steps (steps 0–24), each implemented as a standalone module
-with a single responsibility. The methods below describe the path that a
-model travels from notation to executable cognitive model and back to
-analyzed results, and they state that path per model kind wherever the
-kinds part ways: the pipeline’s plumbing is kind-agnostic, but rendering
-and execution are kind-aware by design. Every quantity reported in this
-section is produced from the live repository rather than asserted by
-hand; the closing subsection makes that contract explicit.</p>
+<p>The GeneralizedNotationNotation (GNN) method carries a plain-text
+model specification through source-processing transformations, bounded
+execution, and reporting. Parsing and code generation can be
+deterministic for fixed inputs and configuration; inference may involve
+stochastic sampling and depends on the runtime, dtype, and seed. The
+processing pipeline is organized into 25 numbered steps (steps 0–24),
+each implemented as a standalone module with a single responsibility.
+The methods below describe the path that a model travels from notation
+to executable cognitive model and back to analyzed results, and they
+state that path per model kind wherever the kinds part ways: the
+pipeline’s plumbing is kind-agnostic, but rendering and execution are
+kind-aware by design. Every quantity reported in this section is
+produced from the live repository rather than asserted by hand; the
+closing subsection makes that contract explicit.</p>
 <h2 id="parsing-and-multi-format-export">Parsing and Multi-Format
 Export</h2>
 <p>The pipeline begins by ingesting GNN model files written in the
@@ -649,9 +651,11 @@ generated script; and the optional closed-loop declarations are checked
 as a pair, since a <code>goal_mean</code> without a
 <code>control_gain</code> (or the reverse) is an incomplete control
 structure rather than a passive model.</p>
-<p>Validation here is the gate that protects every later stage:
-rendering, execution, and analysis all assume a model that has already
-been certified consistent for its kind.</p>
+<p>Validation supplies explicit checks of the declared model contract
+before rendering. Passing those checks establishes their scoped
+conditions, not a certificate of every later numerical or backend
+behavior; execution and analysis retain their own validation and
+source-bound receipts.</p>
 <h2 id="rendering-to-multiple-backends">Rendering to Multiple
 Backends</h2>
 <p>The central act of the “Triple Play” is turning a validated
@@ -747,8 +751,8 @@ shows which families actually target each backend.</caption>
 <p>Because rendering is kind-aware, the registry is best read as a
 capability matrix rather than a flat list: which backends can render a
 discrete categorical model, which can render a continuous
-linear-Gaussian model, and which of them execute at Step 12. That
-per-framework, per-kind view is auto-injected below.</p>
+linear-Gaussian model, and which have execution adapters at Step 12.
+That per-framework, per-kind view is auto-injected below.</p>
 <div class="table-scroll" role="region" tabindex="0" aria-label="Scrollable table: Model kinds each render framework supports, read entirely from the flags in src/gnn/render/framework_registry.py — th…"><table id="tbl:framework_capability" data-responsive-table="true">
 <caption>Model kinds each render framework supports, read entirely from
 the flags in <code>src/gnn/render/framework_registry.py</code> — the
@@ -864,19 +868,23 @@ ngc-learn) is declared by that family but sits outside the maintained
 set, so it is never profiled; a red Render-Subdir cell would mean a
 registry entry with no subdirectory. The table is read directly from
 <code>src/gnn/render/framework_registry.py</code> and the model-family
-manifest at commit 88f24cb7c, and its footer summarizes the row counts.
+manifest at commit 8d202439e, and its footer summarizes the row counts.
 Take-away: registration, render presence, and profiling status are three
 different claims, and the table keeps them apart.</figcaption>
 </figure>
 <h3 id="rendering-by-model-kind">Rendering by Model Kind</h3>
-<p><strong>Discrete categorical models</strong> are the fully supported
-case: every registered backend declares the categorical POMDP vocabulary
-— the <code>A</code>, <code>B</code>, <code>C</code>, <code>D</code>
-matrices required and <code>E</code> optional — so the renderer can emit
-idiomatic code for all of them, and the cross-framework reference
-comparison of <span class="citation"
-data-cites="sec:artifacts_evidence">[@sec:artifacts_evidence]</span>
-anchors on exactly this breadth.</p>
+<p><strong>Discrete categorical models</strong> use the
+categorical-capable renderers, subject to each renderer’s dimension,
+parameter, and composition checks. The continuous-only cpomdp and
+ngc-learn targets report these models as <code>unsupported</code>.
+Experimental THRML must be selected explicitly: it implements
+fixed-action categorical posterior sampling, with bounded independent or
+validated joint compositions, and does not optimize policies or expected
+free energy. Registry membership therefore does not imply categorical
+support for every target or every categorical composition; the profiled
+cross-framework reference in <span class="citation"
+data-cites="sec:artifacts_evidence">[@sec:artifacts_evidence]</span> is
+a separate, selected comparison.</p>
 <p><strong>Continuous linear-Gaussian models</strong> take the native
 paths built for them. The RxInfer.jl renderer carries dedicated
 continuous strategies that emit reactive message-passing code over the
@@ -897,17 +905,18 @@ attempt the model. DisCoPy’s boundary is representative: its translator
 draws categorical POMDP string diagrams and has no linear-Gaussian
 diagram semantics, so a continuous model is reported unsupported rather
 than drawn as a discrete stand-in.</p>
-<p><strong>Composed kinds</strong> render through their substrate. A
-multi-agent model renders along the discrete path, with the per-agent
-matrix declarations mapped to per-agent structures in the target
-framework; a hierarchical model renders either composed — the per-level
-matrices composed into one joint POMDP for the categorical backends — or
-natively, through the RxInfer.jl two-level strategies; a
-parameter-learning model renders through the strategy layer that emits
-joint variational message-passing code for its Dirichlet-declared
-matrix; and the remaining structural shapes dispatch to their own
-strategy modules rather than to special cases scattered through the
-renderers.</p>
+<p><strong>Composed kinds</strong> require admission of the whole
+declared composition, not just one recognized substrate. Supported
+categorical multi-agent paths map per-agent declarations to their target
+structures. Independent continuous agents use native JAX or RxInfer.jl
+paths only when independence and a complete linear-Gaussian parameter
+block for every agent are declared; other continuous-agent compositions
+are reported <code>unsupported</code>. Supported hierarchical paths
+compose per-level matrices into a joint POMDP or use the RxInfer.jl
+two-level strategies; parameter-learning paths use strategies for the
+declared Dirichlet matrix. These paths retain backend-specific
+capability boundaries, and a recognized component does not authorize
+silently dropping another declared component.</p>
 <p><strong>Structural wrappers</strong> have no renderable form at all:
 they declare boundary structure only, with neither a categorical nor a
 continuous parameterization, so every framework reports them
@@ -935,12 +944,14 @@ as equivalent.</p>
 <p>Generated backend code is not left as a static artifact. The
 execution stage (step 12) runs the rendered models, driving the
 inference and behavior that the notation describes and producing
-concrete traces, beliefs, and outputs. All 12 registered backends —
-PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro,
-Stan, bnlearn, cpomdp, THRML, ngc-learn — have an executor at this step,
-and execution is kind-aware in the same sense rendering is: a backend
-executes the models its renderer can express, and records an explicit
-status for the ones it cannot.</p>
+concrete traces, beliefs, and outputs. The 12 render targets — PyMDP,
+RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan,
+bnlearn, cpomdp, THRML, ngc-learn — have implemented execution adapters
+at this step. This is a registry claim, not evidence that every adapter
+has run in a given environment. Model-kind admission, validated
+parameters, package and toolchain readiness, supported Python, and
+remaining budgets determine whether an execution can proceed; the
+current-run receipt records its actual outcome.</p>
 <p><strong>Discrete executors</strong> run the categorical models end to
 end, and they guard their own runtime assumptions: the generated pymdp
 scripts, for example, sanity-check the installed library for the current
@@ -964,10 +975,11 @@ fep_lean bridge contract, which is how the notation reaches a proof
 assistant without a render-registry entry. Skipped, degraded, and
 unsupported lanes are recorded as explicit statuses in the
 cross-framework comparison rather than silently omitted.</p>
-<p>This closes the loop from text to running cognitive model: the same
-specification that was type-checked and exported is now exercised
-numerically, so that claims about a model’s behavior rest on having
-actually run it rather than on inspection of the source alone.</p>
+<p>For a successfully executed, source-bound model, this closes the loop
+from text to numerical traces. Claims about its behavior require the
+actual result, inference mode, environment, and validation receipts; a
+generated script or implemented adapter alone does not establish that
+behavior.</p>
 <h2 id="long-running-orchestration-contracts">Long-Running Orchestration
 Contracts</h2>
 <p>GNN 3.0.0 extended the pipeline with three safe-by-design
@@ -1015,10 +1027,11 @@ structured findings; visualization (step 8) and the rendering of figures
 (step 9) translate model structure and results into graphical form,
 supporting the graphical leg of the Triple Play; and the reporting stage
 (step 23) assembles these artifacts into a coherent summary of what the
-model is and how it behaved. Because each stage writes its outputs to a
-known location, the chain from a notation file to a finished report is
-fully traceable, and any figure or number in a report can be followed
-back to the step and model that produced it. Analysis reads the per-kind
+model is and how it behaved. Known output locations and current-run
+identity indexes connect a notation file to its report artifacts.
+Tracing a figure or number requires its selected model identity and
+source, script, result, and artifact receipts; an output path alone is
+insufficient evidence of a current run. Analysis reads the per-kind
 rendering and execution receipts as well: a continuous model whose
 categorical-only lanes report <code>unsupported</code> yields a
 different evidence profile than one whose continuous-capable lanes
@@ -1027,7 +1040,7 @@ failed, and the reports keep those situations apart.</p>
 Auto-Injection</h2>
 <p>Every count reported in this manuscript is emitted by the producer
 <code>scripts/z_generate_manuscript_variables.py</code> from the
-repository state at commit 88f24cb7c, not typed by hand. The producer
+repository state at commit 8d202439e, not typed by hand. The producer
 reads that commit’s source surfaces directly — the step modules, the
 source tree, the model-family manifest, and the framework registry —
 together with the project’s maintained ledgers, notably the Model

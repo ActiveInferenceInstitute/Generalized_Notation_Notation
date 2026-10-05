@@ -175,3 +175,120 @@ def test_module_smoke_no_unexpected_errors(
     visualize_all_framework_outputs(_execution_tree(tmp_path), tmp_path / "viz2")
     errors = [r.getMessage() for r in caplog.records if r.levelno >= logging.ERROR]
     assert errors == [], f"unexpected ERROR-level log records: {errors}"
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected_label", "expected_updates"),
+    [
+        (
+            {"model_kind": "continuous", "beliefs": [[-2, 1], [1, -3], [1, -3]]},
+            "Posterior Mean Update (Euclidean Norm)",
+            [5.0, 0.0],
+        ),
+        (
+            {
+                "runtime_metadata": {"model_kind": "continuous"},
+                "beliefs": [[2, 1], [4, 3]],
+            },
+            "Posterior Mean Update (Euclidean Norm)",
+            [np.sqrt(8)],
+        ),
+        (
+            {"beliefs": [[1, 0], [0, 1]]},
+            "Jensen-Shannon Distance",
+            [np.sqrt(np.log(2))],
+        ),
+        ({"states": [[-2, 1], [1, -3]]}, "State Update (Euclidean Norm)", [5.0]),
+        (
+            {"model_kind": "continuous", "states": [[-2, 1], [1, -3]]},
+            "State Update (Euclidean Norm)",
+            [5.0],
+        ),
+    ],
+)
+def test_simulation_update_metric_preserves_family(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    payload: dict[str, Any],
+    expected_label: str,
+    expected_updates: list[float],
+) -> None:
+    """Gaussian means retain their values; categorical distance admits exact zeros."""
+    from gnn.analysis import simulation_visualizations as module
+
+    source = tmp_path / "implementation" / "simulation_data"
+    source.mkdir(parents=True)
+    (source / "simulation_results.json").write_text(json.dumps(payload))
+    captured: list[tuple[str, list[float], str]] = []
+    savefig = module.plt.savefig
+
+    def inspect_figure(filename: Any, **kwargs: Any) -> None:
+        if str(filename).endswith("_belief_convergence.png"):
+            ax = module.plt.gcf().axes[0]
+            captured.append(
+                (
+                    ax.get_ylabel(),
+                    list(ax.lines[0].get_ydata()),
+                    ax.lines[0].get_label(),
+                )
+            )
+        savefig(filename, **kwargs)
+
+    monkeypatch.setattr(module.plt, "savefig", inspect_figure)
+    files = module.visualize_simulation_results(
+        {
+            "execution_details": [
+                {
+                    "model_name": "metric",
+                    "framework": "jax",
+                    "implementation_directory": str(source.parent),
+                }
+            ]
+        },
+        tmp_path / "plots",
+    )
+    assert len(captured) == 1
+    assert captured[0][0] == expected_label
+    np.testing.assert_allclose(captured[0][1], expected_updates)
+    assert captured[0][2] == (
+        "State Update"
+        if "beliefs" not in payload
+        else "Posterior Mean Update"
+        if "Mean" in expected_label
+        else "Belief Update Magnitude"
+    )
+    assert all(Path(name).read_bytes().startswith(b"\x89PNG") for name in files)
+
+
+@pytest.mark.parametrize(
+    "beliefs",
+    [
+        [[-0.2, 1.2], [0.5, 0.5]],
+        [[0.2, 0.2], [0.5, 0.5]],
+        [[float("nan"), 1], [0.5, 0.5]],
+    ],
+)
+def test_simulation_update_refuses_malformed_probabilities(
+    tmp_path: Path,
+    beliefs: list[list[float]],
+) -> None:
+    """Malformed rows cannot become evidence through clipping or normalization."""
+    source = tmp_path / "implementation" / "simulation_data"
+    source.mkdir(parents=True)
+    (source / "simulation_results.json").write_text(json.dumps({"beliefs": beliefs}))
+    assert (
+        visualize_simulation_results(
+            {
+                "execution_details": [
+                    {
+                        "model_name": "invalid",
+                        "framework": "jax",
+                        "implementation_directory": str(source.parent),
+                    }
+                ]
+            },
+            tmp_path / "plots",
+        )
+        == []
+    )
+    assert not list((tmp_path / "plots").rglob("*.png"))

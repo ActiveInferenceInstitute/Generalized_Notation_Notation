@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 from types import SimpleNamespace
@@ -21,27 +22,71 @@ from gnn.manuscript.render_custody import (
 EXCLUDED = frozenset({"AGENTS.md"})
 
 
-def test_script_exclusion_contract_reexports_active_names_from_uninstalled_checkout() -> (
-    None
-):
+@pytest.mark.parametrize("configured_template", [False, True])
+@pytest.mark.parametrize("entrypoint", ["exclusions", "hydration", "stale-hydration"])
+def test_script_exclusion_contract_reexports_active_names_from_uninstalled_checkout(
+    tmp_path: Path, configured_template: bool, entrypoint: str
+) -> None:
     import sys
 
-    helper = (
-        Path(__file__).resolve().parents[2] / "scripts/lib/manuscript_exclusions.py"
-    )
-    result = subprocess.run(
-        [
+    repo = Path(__file__).resolve().parents[2]
+    env = dict(os.environ)
+    env.pop("GNN_MANUSCRIPT_BASE_REF", None)
+    env.pop("TEMPLATE_REPO_ROOT", None)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    if configured_template:
+        template = tmp_path / "template"
+        for package in ("scripts", "infrastructure", "infrastructure/rendering"):
+            directory = template / package
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / "__init__.py").write_text("")
+        (template / "infrastructure/rendering/manuscript_injection.py").write_text(
+            "import re\n"
+            "_TOKEN_RE = re.compile(r'\\{\\{([A-Z][A-Z0-9_]*)\\}\\}')\n"
+            "EXCLUDED_DOC_FILENAMES = frozenset({'AGENTS.md', 'MANUSCRIPT_STATUS.md', 'README.md', 'SYNTAX.md', 'TEMPLATE_GUIDE.md'})\n"
+            "def substitute_manuscript_text(text, variables):\n"
+            "    missing = []\n"
+            "    def replace(match):\n"
+            "        key = match.group(1)\n"
+            "        if key in variables: return variables[key]\n"
+            "        missing.append(key)\n"
+            "        return match.group(0)\n"
+            "    return _TOKEN_RE.sub(replace, text), missing\n"
+        )
+        env["TEMPLATE_REPO_ROOT"] = str(template)
+    if entrypoint == "exclusions":
+        helper = repo / "scripts/lib/manuscript_exclusions.py"
+        command = [
             sys.executable,
             "-I",
+            "-B",
             "-c",
             "import runpy,sys; contract=runpy.run_path(sys.argv[1]); assert 'AGENTS.md' in contract['EXCLUDED_DOC_FILENAMES']; assert 'SYNTAX.md' in contract['AUTHORING_GUIDE_FILENAMES']",
             str(helper),
-        ],
-        capture_output=True,
-        text=True,
-        timeout=15,
+        ]
+    else:
+        fixture = _tree(tmp_path / "project")
+        (fixture / "src").symlink_to(repo / "src", target_is_directory=True)
+        script = fixture / "scripts/check_hydrated_prose.py"
+        script.parent.mkdir()
+        script.write_bytes((repo / "scripts/check_hydrated_prose.py").read_bytes())
+        if configured_template:
+            (fixture / "manuscript/TEMPLATE_GUIDE.md").write_text("{{UNKNOWN}}\n")
+        if entrypoint == "stale-hydration":
+            (fixture / "output/manuscript/00_section.md").write_text("stale science\n")
+        command = [sys.executable, "-I", "-B", str(script)]
+    result = subprocess.run(
+        command, capture_output=True, text=True, timeout=15, env=env
     )
-    assert result.returncode == 0, result.stderr
+    assert "ModuleNotFoundError" not in result.stderr, result.stderr
+    if entrypoint == "stale-hydration":
+        assert result.returncode == 1, result.stderr
+        assert "[hydrated-prose]" in result.stderr
+        assert "00_section.md" in result.stderr
+    else:
+        assert result.returncode == 0, result.stderr
+        if entrypoint == "hydration":
+            assert "Hydrated prose and rendered commit evidence match" in result.stdout
 
 
 def _tree(root: Path) -> Path:

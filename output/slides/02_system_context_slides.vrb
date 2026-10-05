@@ -1,5 +1,5 @@
 \frametitle{The Triple Play}
-computed at parse time, so the diagram a reader sees, the notation a
-reviewer diffs, and the program a backend executes are all projections
-of one declared model kind rather than three loosely coupled guesses
-about what the file meant.
+governed per kind: renderers and executors apply the computed
+classification and their declared capability boundaries, and receipts
+distinguish successful, unsupported, skipped, partial, and failed
+outcomes for the selected model.

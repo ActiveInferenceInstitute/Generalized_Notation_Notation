@@ -3,9 +3,10 @@ The pipeline records its own evidence trail under \texttt{output/}. The
 run-level summary is written to \breaktt{output/PIPELINE\_REPORT.md}, and
 the per-step execution record --- including which steps ran, their
 status, and their artifacts --- is captured in
-\breaktt{output/00\_pipeline\_summary}. These are the artifacts a reader
-should consult to confirm that the numbers substituted into this section
-correspond to a real, reproducible pipeline run rather than to asserted
-prose. When a value would otherwise need a literal number with no
-producer behind it, the discipline is to omit the number rather than to
-hard-code it.
+\breaktt{output/00\_pipeline\_summary}. Readers should use those
+current-run records and their identity bindings to assess actual
+pipeline outcomes. Repository counts and declared capability tokens
+describe the source surface and do not by themselves establish native
+execution or scientific correctness. When a value would otherwise need a
+literal number with no producer behind it, the discipline is to omit the
+number rather than to hard-code it.

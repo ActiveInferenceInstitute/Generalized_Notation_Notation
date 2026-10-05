@@ -1,7 +1,7 @@
 {
   "figures": [
     {
-      "alt_text": "End-to-end summary panel of the GNN pipeline in seven left-to-right stage cards: a plain-text GNN document declaring A, B, C, D and E; parsing; validation and type checking with the B-tensor orientation check; code rendering to the registered backends; execution of the backends including the bnlearn lane; analysis; and cross-repository interchange with GEO-INFER and fep_lean. Step pills name the pipeline step behind each stage, a callout states the two newest capabilities, and a footer strip carries the producer's scale counts for steps, families, backends and MCP tools.",
+      "alt_text": "End-to-end summary panel of the GNN pipeline in seven left-to-right stage cards: a plain-text GNN document declaring A, B, C, D and E; parsing; validation and type checking with the B-tensor orientation check; code rendering to the registered backends; supervised dispatch through execution adapters including the bnlearn lane; analysis; and cross-repository interchange with GEO-INFER and fep_lean. Step pills name the pipeline step behind each stage, a callout states the two newest capabilities, and a footer strip carries the producer's scale counts for steps, families, backends and MCP tools.",
       "consumed_tokens": {
         "GNN_BACKEND_COUNT": "12",
         "GNN_EXECUTABLE_BACKEND_COUNT": "12",
@@ -20,18 +20,18 @@
       "filename": "gnn_graphical_abstract.png",
       "generated_by": "scripts/manuscript_fig_graphical_abstract.py",
       "label": "fig:graphical_abstract",
-      "png_sha256": "e6c3e2bb682e07cf2a7421c4e99688def19702f6093624d1d4300992dec9bfb4",
+      "png_sha256": "027018fef71c433136aa1debc5fa8f824743e1e4fb3b3394347317750db5f0fe",
       "source_sha256": {}
     },
     {
-      "alt_text": "Directed acyclic graph of the numbered GNN pipeline steps. Nodes are the step modules in src/, arranged left to right from parsing and type checking, through validation, visualization, rendering and execution, to analysis, reporting and integration. Edges run from a step to every later step that consumes its artifacts, so each output can be traced back to the step that produced it.",
+      "alt_text": "Directed acyclic graph of the numbered GNN pipeline steps. Nodes are the step modules under src/gnn/, arranged in rowwise topological order across five columns. Each node shows the complete step number and module name; the legend above the nodes identifies execution phases by color. Arrows show the required orchestration prerequisites declared in src/gnn/STEP_INDEX.md, linking each prerequisite step to its consumers. Optional artifact enrichments are documented separately.",
       "consumed_tokens": {},
       "filename": "gnn_pipeline_dag.png",
       "generated_by": "scripts/manuscript_fig_pipeline_dag.py",
       "label": "fig:pipeline",
-      "png_sha256": "f0678cd3b3615bc080acde3601dad812b4f9c666166ff92b2477db55d7d77700",
+      "png_sha256": "814ae4b757ca878eccc3d9e541af12f785d45e5555a7617bdbac590407fa8781",
       "source_sha256": {
-        "src/gnn/STEP_INDEX.md": "0e18eb9d6d27479159e78ea4d02d9b977bb39d3d51057e39bd4ebb8b40c30238"
+        "src/gnn/STEP_INDEX.md": "83870c7e82ab792def54510a7707e2b24561919580eda26f274ae4ac6a77acab"
       }
     },
     {
@@ -61,7 +61,7 @@
       }
     },
     {
-      "alt_text": "Horizontal bar chart on a logarithmic axis of repository-scale counts: pipeline steps, model families, registered backends, execution backends, MCP tools, source packages, test files, example models and documentation files. Each bar is annotated with its exact value; all values come from output/data/manuscript_variables.json.",
+      "alt_text": "Horizontal bar chart on a logarithmic axis of repository-scale counts: pipeline steps, model families, registered backends, render-target adapters, MCP tools, source packages, test files, example models and documentation files. Each bar is annotated with its exact value; all values come from output/data/manuscript_variables.json.",
       "consumed_tokens": {
         "GNN_BACKEND_COUNT": "12",
         "GNN_DOC_FILE_COUNT": "635",
@@ -77,7 +77,7 @@
       "filename": "gnn_repo_metrics.png",
       "generated_by": "scripts/manuscript_fig_repo_metrics.py",
       "label": "fig:repo_metrics",
-      "png_sha256": "fc7e6e1636b3d3577089b348e25955d7a9cea023b331679aa001e7fa82acb540",
+      "png_sha256": "17671cd663e4c3300d13575d895d2c7e3dffd0b49c1398072404dac7f4a6b329",
       "source_sha256": {}
     },
     {
@@ -94,7 +94,7 @@
       "filename": "gnn_triple_play.png",
       "generated_by": "scripts/manuscript_fig_triple_play.py",
       "label": "fig:triple_play",
-      "png_sha256": "5d48953719f0f5dd9e131a5e424ca563472bf55dd833a1c54361d0328cc0c46e",
+      "png_sha256": "8cab935b125b5fa1a84da603233e24db8eef5defb9daf0d823d7e74dea77a644",
       "source_sha256": {}
     },
     {

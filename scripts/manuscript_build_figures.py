@@ -18,7 +18,7 @@ shipping. ``png_sha256`` is the digest of the PNG this build produced, and
 ``consumed_tokens`` is the ``{key: value}`` map the generator actually read out of
 ``output/data/manuscript_variables.json`` (observed by
 ``scripts/lib/manuscript_figure_tokens.py``, not declared).
-``src/tests/test_manuscript_figure_freshness.py`` re-checks both against the
+``tests/test_manuscript_figure_freshness.py`` re-checks both against the
 committed PNG and the live token map, so a figure built before a count moved fails
 the suite. Without it, ``fig:repo_metrics`` shipped "365 test files" on the same PDF
 page as prose reading 367.
@@ -69,8 +69,8 @@ _FIGURES = [
         "End-to-end summary panel of the GNN pipeline in seven left-to-right stage "
         "cards: a plain-text GNN document declaring A, B, C, D and E; parsing; "
         "validation and type checking with the B-tensor orientation check; code "
-        "rendering to the registered backends; execution of the backends including "
-        "the bnlearn lane; analysis; and cross-repository interchange with "
+        "rendering to the registered backends; supervised dispatch through execution "
+        "adapters including the bnlearn lane; analysis; and cross-repository interchange with "
         "GEO-INFER and fep_lean. Step pills name the pipeline step behind each "
         "stage, a callout states the two newest capabilities, and a footer strip "
         "carries the producer's scale counts for steps, families, backends and "
@@ -81,11 +81,12 @@ _FIGURES = [
         "manuscript_fig_pipeline_dag.py",
         "gnn_pipeline_dag.png",
         "Directed acyclic graph of the numbered GNN pipeline steps. Nodes are the "
-        "step modules in src/, arranged left to right from parsing and type "
-        "checking, through validation, visualization, rendering and execution, to "
-        "analysis, reporting and integration. Edges run from a step to every later "
-        "step that consumes its artifacts, so each output can be traced back to the "
-        "step that produced it.",
+        "step modules under src/gnn/, arranged in rowwise topological order across "
+        "five columns. Each node shows the complete step number and module name; "
+        "the legend above the nodes identifies execution phases by color. Arrows "
+        "show the required orchestration prerequisites declared in "
+        "src/gnn/STEP_INDEX.md, linking each prerequisite step to its consumers. "
+        "Optional artifact enrichments are documented separately.",
     ),
     (
         "fig:family_matrix",
@@ -114,7 +115,7 @@ _FIGURES = [
         "manuscript_fig_repo_metrics.py",
         "gnn_repo_metrics.png",
         "Horizontal bar chart on a logarithmic axis of repository-scale counts: "
-        "pipeline steps, model families, registered backends, execution backends, "
+        "pipeline steps, model families, registered backends, render-target adapters, "
         "MCP tools, source packages, test files, example models and documentation "
         "files. Each bar is annotated with its exact value; all values come from "
         "output/data/manuscript_variables.json.",

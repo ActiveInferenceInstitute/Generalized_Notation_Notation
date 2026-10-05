@@ -282,8 +282,10 @@ executable cognitive models that can actually be run, so that the
 diagram, the equations, and the running code are all generated from one
 parsed document rather than three artifacts that merely claim to
 describe the same model. The Triple Play turns a model from a
-description scattered across media into one specification with multiple
-faithful projections (see fig.~3).
+description scattered across media into one specification with traceable
+projections (see fig.~3). Shared source identity
+supports their comparison; parameter, orientation, model-kind, and
+numerical checks are still required to establish fidelity.
 \end{frame}
 
 \begin{frame}[allowframebreaks]{Contributions}
@@ -319,8 +321,9 @@ infrastructure that makes it usable in practice:
   ngc-learn) that materialize a single GNN specification as
   backend-specific model code, of which 12 (PyMDP, RxInfer.jl,
   ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn,
-  cpomdp, THRML, ngc-learn) also execute at Step 12, realizing the
-  executable arm of the Triple Play.
+  cpomdp, THRML, ngc-learn) have Step 12 execution adapters. Actual
+  execution requires an admitted model, a ready runtime, and a
+  source-bound run receipt.
 \item
   \textbf{164 Model Context Protocol tools} that expose the pipeline's
   capabilities to agentic and programmatic clients, so the notation and
@@ -371,7 +374,8 @@ in sec.~7, the symbol and construct
 tables in sec.~9, and full source details in
 sec.~10. Read in this order, the manuscript moves from
 why a standard notation is needed, through how GNN realizes it across
-model kinds, to the evidence that the standard holds.
+model kinds, to the scoped evidence available for the notation and its
+implementations.
 \end{frame}
 
 \end{document}

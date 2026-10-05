@@ -46,8 +46,9 @@ the same letter can name different objects in different kinds — most prominent
 `F`, which is the variational free energy of [@eq:vfe] in the discrete kind and
 the state-transition matrix of [@eq:lgssm_state] in the continuous kind — so each
 row of [@tbl:actinf_symbols] names the kind its reading belongs to and the
-equation in [@sec:system_context] that fixes it, and the glossary and the formal
-statement cannot drift apart.
+equation in [@sec:system_context] that fixes it. These authored cross-references
+support review of agreement between the glossary and formal statement; their
+consistency still requires validation when either changes.
 
 | Symbol | Meaning |
 | --- | --- |
@@ -90,8 +91,9 @@ are per-kind by construction: a continuous exemplar binds `F` to
 carries the same kind-scoped reading [@tbl:actinf_symbols] fixes by hand.
 The same GNN specification feeds the project's rendering backends — including the
 {{GNN_BACKEND_COUNT}} registered targets ({{GNN_BACKEND_LIST}}), of which the
-{{GNN_EXECUTABLE_BACKEND_COUNT}} listed as executable
-({{GNN_EXECUTABLE_BACKEND_LIST}}) also run at Step {{GNN_STEP_EXECUTE}} — with
+{{GNN_EXECUTABLE_BACKEND_COUNT}} render targets with execution adapters
+({{GNN_EXECUTABLE_BACKEND_LIST}}) can be selected at Step {{GNN_STEP_EXECUTE}}
+subject to model-kind admission and runtime readiness — with
 per-kind reach recorded as explicit statuses ([@tbl:framework_capability]) — so
 that a model written once in this notation can be parsed, visualized, and
 executed across the {{GNN_STEP_COUNT}}-step pipeline ({{GNN_STEP_RANGE}})

@@ -1,6 +1,6 @@
 # Reproducibility {#sec:reproducibility}
 
-Reproducibility in GNN is not an aspiration layered on top of the system; it is the operating contract that the pipeline enforces. The {{GNN_STEP_RANGE}} processing steps are deterministic given a model specification and a target directory, and every published claim in this manuscript is traceable to a command that regenerates the underlying artifact. This section lists only commands that exist in the repository, so that a reader with a clean checkout can reproduce the pipeline, the validation gates, and this manuscript itself.
+Reproducibility in GNN is a source- and run-binding contract across the {{GNN_STEP_RANGE}} processing steps. Fixed-source parsing and token production are distinct from stochastic inference, dependency provisioning, and environment-dependent execution. Reproducing a reported outcome requires the selected inputs, configuration, source revision, dependencies, dtype, seed, and retained command and artifact receipts. This section lists only commands that exist in the repository, so that a reader with a clean checkout can reproduce the pipeline, the validation gates, and this manuscript itself.
 
 ## Pipeline Smoke Run
 
@@ -10,7 +10,7 @@ The fastest way to confirm a working installation is to drive the full pipeline 
 uv run python src/gnn/main.py --target-dir input/gnn_files/discrete --output-dir /tmp/gnn-smoke --skip-llm
 ```
 
-This parses the discrete GNN files, runs visualization and rendering across the maintained backends, and writes all artifacts under the chosen output directory. The `--skip-llm` flag keeps the run hermetic and free of external API calls: the non-LLM steps all execute, the steps that would read the skipped LLM outputs record that as a warning, and the run exits 2 — the pipeline's documented warning code (0 success, 1 error, 2 warning) — rather than 0. To exercise every registered family rather than a single one, drive the manifest through the model-family acceptance gate given below: pointing `--target-dir` at `input/gnn_files` covers that tree's {{GNN_INPUT_FAMILY_DIR_COUNT}} corpus directories. {{GNN_TARGET_DIR_COVERAGE_NOTE}}
+This parses the discrete GNN files, runs visualization and rendering across the maintained backends, and writes all artifacts under the chosen output directory. The `--skip-llm` flag disables the LLM processing step; it does not establish network isolation or guarantee that every other step executes. Default framework selection excludes the experimental targets, and dependency readiness, model-kind admission, configured steps, and budgets determine the actual work. Inspect the current-run statuses and terminal exit code (0 success, 1 error, 2 warning); missing or unfinished required work must remain a non-success outcome. To exercise every registered family rather than a single one, drive the manifest through the model-family acceptance gate given below: pointing `--target-dir` at `input/gnn_files` covers that tree's {{GNN_INPUT_FAMILY_DIR_COUNT}} corpus directories. {{GNN_TARGET_DIR_COVERAGE_NOTE}}
 
 The discrete family exercises the categorical kind end to end. The continuous linear-Gaussian kind smoke-runs the same way, and the contrast between the two runs is itself a check of the per-kind contract:
 
@@ -18,11 +18,11 @@ The discrete family exercises the categorical kind end to end. The continuous li
 uv run python src/gnn/main.py --target-dir input/gnn_files/continuous --output-dir /tmp/gnn-smoke-continuous --skip-llm
 ```
 
-This parses the continuous specifications, and the render and execute steps fan them out to the continuous-capable backends — where they render as linear-Gaussian models and run as filtering (and, for the closed-loop exemplar, belief-steering) programs — while the categorical-only backends record explicit `unsupported` statuses rather than failures. A reader comparing the two receipts sees the kind taxonomy behaving as described in [@sec:system_context]: same pipeline, same steps, per-kind rendering and execution reach.
+This selects the continuous specifications for the same pipeline. Admitted, ready continuous-capable lanes can render and execute filtering (and, for the closed-loop exemplar, belief-steering) programs; categorical-only targets record `unsupported`, while readiness and budget failures retain their own outcomes. A reader comparing the two receipts sees the kind taxonomy behaving as described in [@sec:system_context]: same pipeline, same steps, per-kind rendering and execution reach.
 
 ## Validation Gates
 
-GNN's reproducibility guarantees rest on a small set of strict, deterministic gates that bind the manuscript's quantitative claims to recomputable ledgers. The model-family acceptance gate runs the maintained families declared in the manifest and fails on any regression:
+GNN provides strict gates with distinct verification scopes. The model-family acceptance gate runs the selected manifest families and evaluates their declared acceptance profiles; its receipt must record actual execution, unsupported and skipped work, and failures:
 
 ```bash
 uv run python scripts/run_model_family_acceptance.py \
@@ -30,7 +30,7 @@ uv run python scripts/run_model_family_acceptance.py \
   --output-dir output/model_family_acceptance --strict
 ```
 
-The semantic-fidelity gate verifies that a parse → serialize → parse round trip preserves variables, edges, dimensions, parameter shapes, equations, time semantics, and ontology mappings across the {{GNN_FAMILY_COUNT}} model families; the cross-framework gate profiles the {{GNN_MAINTAINED_FRAMEWORK_COUNT}} maintained backends ({{GNN_MAINTAINED_FRAMEWORK_LIST}}) — refusing any framework outside that set — and records explicit compatible and unsupported statuses rather than silently degrading. Both write their ledgers to an output directory of your choosing:
+The semantic-fidelity gate verifies that a parse → serialize → parse round trip preserves variables, edges, dimensions, parameter shapes and values, parameter metadata, equations, time semantics, and ontology mappings across the {{GNN_FAMILY_COUNT}} model families; the cross-framework gate profiles the {{GNN_MAINTAINED_FRAMEWORK_COUNT}} maintained backends ({{GNN_MAINTAINED_FRAMEWORK_LIST}}) — refusing any framework outside that set — and records explicit compatible and unsupported statuses rather than silently degrading. Both write their ledgers to an output directory of your choosing:
 
 ```bash
 uv run python scripts/run_semantic_fidelity_gate.py \
@@ -41,7 +41,7 @@ uv run python scripts/run_cross_framework_reliability.py \
   --output-dir output/cross_framework --strict
 ```
 
-Under `--strict`, each gate exits non-zero on the first mismatch, so these commands double as assertions in an automated reproduction run. Code-quality reproducibility is enforced separately through the developer command reference: `just lint` runs the Ruff linter over `src` and `scripts`, and the broader `just quality` recipe chains formatting, terminology, documentation, type, and security checks for a full pre-commit gate.
+Under `--strict`, required mismatches make these gates exit non-zero, so these commands double as assertions in an automated reproduction run. Code-quality reproducibility is enforced separately through the developer command reference: `just lint` runs the Ruff linter over `src` and `scripts`, and the broader `just quality` recipe chains formatting, terminology, documentation, type, and security checks for a full pre-commit gate.
 
 ## Manuscript Reproducibility
 
@@ -71,7 +71,7 @@ Because the variables file is regenerated before rendering, the counts in the re
 ## Reproducibility Contract
 
 - Do not cite results that cannot be regenerated or directly traced to a command in this repository.
-- Keep generated outputs under `output/` and maintained manuscript source under `manuscript/`; treat everything in `output/` as disposable and regeneratable.
+- Keep generated outputs under `output/` and maintained manuscript source under `manuscript/`. Regenerate owned build artifacts when their inputs change, and preserve the raw command receipts and numerical results needed to substantiate historical runs.
 - Express every quantitative claim in the prose as a double-brace `{{...}}` token substituted by `scripts/z_generate_manuscript_variables.py`, never as a hard-coded number.
 - Keep private data, credentials, and unpublished sensitive details out of the manuscript and out of version control.
 - Record the exact verification commands — the smoke run, the acceptance and fidelity gates, and `just lint` — before marking this manuscript publication-ready.

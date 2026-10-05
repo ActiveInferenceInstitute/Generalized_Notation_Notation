@@ -217,17 +217,18 @@ separately so that the boundary between hand-written source and
 reproducible output stays explicit.
 
 The \texttt{src/} tree is the executable core of GNN. It is organized
-into 43 Python packages spanning 741 source files and roughly 219604
+into 43 Python packages spanning 741 source files and roughly 219718
 lines of code. Alongside these packages sit the 25 top-level step
 modules (0--24) that implement the numbered pipeline as thin
 orchestrators delegating into the packages, each module owning one stage
 of the progression from a parsed GNN text model through visualization,
-type checking, code export, and executable cognitive simulation. Every
-claim the manuscript makes about pipeline behavior should be traceable
+type checking, code export, and executable cognitive simulation. A claim
+about declared pipeline behavior should identify its source
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Supplemental Source Surface}
-to one of these step modules rather than to descriptive prose alone.
+implementation; a claim about actual execution additionally requires a
+source-bound command and result receipt.
 
 The \texttt{input/} tree holds the model corpora that exercise the
 pipeline. Its \texttt{gnn\_files/} subtree contains 12 corpus
@@ -251,13 +252,13 @@ coverage; it should be consulted directly rather than inferred from
 directory listings.
 
 The \texttt{scripts/} tree contains the thin orchestrators that gate and
-reproduce the project. These include the acceptance scripts that confirm
-the pipeline runs end to end, the reliability gates that enforce
-determinism and coverage expectations, and the manuscript variable
-producer (\breaktt{src/gnn/manuscript/variables.py} driven from this
-layer) that emits the double-brace \texttt{\{\{...\}\}} token values
-consumed throughout the manuscript. Treating these scripts as the source
-of reproduction commands keeps reported numbers bound to what the code
+reproduce the project. These include acceptance scripts that evaluate
+scoped pipeline runs, reliability gates that check selected semantic and
+coverage contracts, and the manuscript variable producer
+(\breaktt{src/gnn/manuscript/variables.py} driven from this layer) that
+emits the double-brace \texttt{\{\{...\}\}} token values consumed
+throughout the manuscript. Treating these scripts as the source of
+reproduction commands keeps reported numbers bound to what the code
 actually computes.
 
 \end{frame}
@@ -272,9 +273,11 @@ convenient paraphrase.
 
 The \texttt{output/} tree collects per-step pipeline artifacts: the data
 dumps, intermediate representations, validation reports, and the 7
-figure artifacts committed under it. Everything here is disposable and
-reproducible from the surfaces above, so it should be read as evidence
-of a run rather than as authored source. Notably,
+figure artifacts committed under it. Generated build artifacts can be
+regenerated from bound inputs, while raw receipts and numerical results
+preserve evidence of particular runs. Reproduction requires their source
+and environment bindings; the directory location alone does not
+establish current-run evidence. Notably,
 \breaktt{output/data/manuscript\_variables.json} is where the
 manuscript's substituted token values are materialized.
 \end{frame}
@@ -283,23 +286,24 @@ manuscript's substituted token values are materialized.
 Output}
 \protect\phantomsection\label{authored-source-versus-generated-output}
 \texttt{src/}, \texttt{scripts/}, \texttt{input/}, \texttt{docs/} and
-\texttt{manuscript/} are authored and reviewed; everything under
-\texttt{output/} is generated and disposable, including
-\breaktt{output/manuscript/}, which holds the token-substituted copies of
-the \texttt{manuscript/} sources rather than the sources themselves. The
-commands that regenerate the output surfaces are listed in
-sec.~6: the smoke run for the per-step
-artifacts, \breaktt{scripts/z\_generate\_manuscript\_variables.py} for
-the token map and the hydrated sections,
-\breaktt{scripts.manuscript\_build\_figures} for the 7 manuscript
-figures, and the template render stage for the PDF. Which values become
-tokens is not a matter of taste: any quantity the producer can derive
-from a source surface is a token,
-\breaktt{scripts/check\_manuscript\_tokens.py} fails the build when a
+\texttt{manuscript/} are authored and reviewed. The \texttt{output/}
+tree holds generated artifacts and retained run evidence;
+\breaktt{output/manuscript/} contains token-substituted copies of the
+authored \texttt{manuscript/} sections. Regenerate owned build artifacts
+when appropriate, while preserving the receipts required to support
+historical outcomes. The commands that regenerate the output surfaces
+are listed in sec.~6: the smoke run for the
+per-step artifacts,
+\breaktt{scripts/z\_generate\_manuscript\_variables.py} for the token map
+and the hydrated sections, \breaktt{scripts.manuscript\_build\_figures}
+for the 7 manuscript figures, and the template render stage for the PDF.
+Which values become tokens is not a matter of taste: any quantity the
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Authored Source Versus Generated
 Output}
+producer can derive from a source surface is a token,
+\breaktt{scripts/check\_manuscript\_tokens.py} fails the build when a
 section hard-codes one instead, and the resulting 93-entry map is
 committed at \breaktt{output/data/manuscript\_variables.json} for audit.
 External references are resolved from

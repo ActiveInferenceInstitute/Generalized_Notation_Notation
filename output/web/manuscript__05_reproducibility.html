@@ -639,14 +639,15 @@ mjx-container[display="true"] {
 <a class="skip-link" href="#main-content">Skip to main content</a>
 <main id="main-content" tabindex="-1">
 <h1 id="sec:reproducibility">Reproducibility</h1>
-<p>Reproducibility in GNN is not an aspiration layered on top of the
-system; it is the operating contract that the pipeline enforces. The
-0–24 processing steps are deterministic given a model specification and
-a target directory, and every published claim in this manuscript is
-traceable to a command that regenerates the underlying artifact. This
-section lists only commands that exist in the repository, so that a
-reader with a clean checkout can reproduce the pipeline, the validation
-gates, and this manuscript itself.</p>
+<p>Reproducibility in GNN is a source- and run-binding contract across
+the 0–24 processing steps. Fixed-source parsing and token production are
+distinct from stochastic inference, dependency provisioning, and
+environment-dependent execution. Reproducing a reported outcome requires
+the selected inputs, configuration, source revision, dependencies,
+dtype, seed, and retained command and artifact receipts. This section
+lists only commands that exist in the repository, so that a reader with
+a clean checkout can reproduce the pipeline, the validation gates, and
+this manuscript itself.</p>
 <h2 id="pipeline-smoke-run">Pipeline Smoke Run</h2>
 <p>The fastest way to confirm a working installation is to drive the
 full pipeline over the discrete model family without invoking the
@@ -655,50 +656,52 @@ optional LLM steps:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/gnn/main.py <span class="at">--target-dir</span> input/gnn_files/discrete <span class="at">--output-dir</span> /tmp/gnn-smoke <span class="at">--skip-llm</span></span></code></pre></div>
 <p>This parses the discrete GNN files, runs visualization and rendering
 across the maintained backends, and writes all artifacts under the
-chosen output directory. The <code>--skip-llm</code> flag keeps the run
-hermetic and free of external API calls: the non-LLM steps all execute,
-the steps that would read the skipped LLM outputs record that as a
-warning, and the run exits 2 — the pipeline’s documented warning code (0
-success, 1 error, 2 warning) — rather than 0. To exercise every
-registered family rather than a single one, drive the manifest through
-the model-family acceptance gate given below: pointing
-<code>--target-dir</code> at <code>input/gnn_files</code> covers that
-tree’s 12 corpus directories. All 9 registered family target directories
-lie inside that tree, so a single invocation reaches every registered
-family.</p>
+chosen output directory. The <code>--skip-llm</code> flag disables the
+LLM processing step; it does not establish network isolation or
+guarantee that every other step executes. Default framework selection
+excludes the experimental targets, and dependency readiness, model-kind
+admission, configured steps, and budgets determine the actual work.
+Inspect the current-run statuses and terminal exit code (0 success, 1
+error, 2 warning); missing or unfinished required work must remain a
+non-success outcome. To exercise every registered family rather than a
+single one, drive the manifest through the model-family acceptance gate
+given below: pointing <code>--target-dir</code> at
+<code>input/gnn_files</code> covers that tree’s 12 corpus directories.
+All 9 registered family target directories lie inside that tree, so a
+single invocation reaches every registered family.</p>
 <p>The discrete family exercises the categorical kind end to end. The
 continuous linear-Gaussian kind smoke-runs the same way, and the
 contrast between the two runs is itself a check of the per-kind
 contract:</p>
 <div class="sourceCode" id="cb2"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/gnn/main.py <span class="at">--target-dir</span> input/gnn_files/continuous <span class="at">--output-dir</span> /tmp/gnn-smoke-continuous <span class="at">--skip-llm</span></span></code></pre></div>
-<p>This parses the continuous specifications, and the render and execute
-steps fan them out to the continuous-capable backends — where they
-render as linear-Gaussian models and run as filtering (and, for the
-closed-loop exemplar, belief-steering) programs — while the
-categorical-only backends record explicit <code>unsupported</code>
-statuses rather than failures. A reader comparing the two receipts sees
-the kind taxonomy behaving as described in <span class="citation"
+<p>This selects the continuous specifications for the same pipeline.
+Admitted, ready continuous-capable lanes can render and execute
+filtering (and, for the closed-loop exemplar, belief-steering) programs;
+categorical-only targets record <code>unsupported</code>, while
+readiness and budget failures retain their own outcomes. A reader
+comparing the two receipts sees the kind taxonomy behaving as described
+in <span class="citation"
 data-cites="sec:system_context">[@sec:system_context]</span>: same
 pipeline, same steps, per-kind rendering and execution reach.</p>
 <h2 id="validation-gates">Validation Gates</h2>
-<p>GNN’s reproducibility guarantees rest on a small set of strict,
-deterministic gates that bind the manuscript’s quantitative claims to
-recomputable ledgers. The model-family acceptance gate runs the
-maintained families declared in the manifest and fails on any
-regression:</p>
+<p>GNN provides strict gates with distinct verification scopes. The
+model-family acceptance gate runs the selected manifest families and
+evaluates their declared acceptance profiles; its receipt must record
+actual execution, unsupported and skipped work, and failures:</p>
 <div class="sourceCode" id="cb3"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_model_family_acceptance.py <span class="dt">\</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> output/model_family_acceptance <span class="at">--strict</span></span></code></pre></div>
 <p>The semantic-fidelity gate verifies that a parse → serialize → parse
-round trip preserves variables, edges, dimensions, parameter shapes,
-equations, time semantics, and ontology mappings across the 9 model
-families; the cross-framework gate profiles the 7 maintained backends
-(PyMDP, RxInfer.jl, JAX, NumPyro, PyTorch, ActiveInference.jl, DisCoPy)
-— refusing any framework outside that set — and records explicit
-compatible and unsupported statuses rather than silently degrading. Both
-write their ledgers to an output directory of your choosing:</p>
+round trip preserves variables, edges, dimensions, parameter shapes and
+values, parameter metadata, equations, time semantics, and ontology
+mappings across the 9 model families; the cross-framework gate profiles
+the 7 maintained backends (PyMDP, RxInfer.jl, JAX, NumPyro, PyTorch,
+ActiveInference.jl, DisCoPy) — refusing any framework outside that set —
+and records explicit compatible and unsupported statuses rather than
+silently degrading. Both write their ledgers to an output directory of
+your choosing:</p>
 <div class="sourceCode" id="cb4"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_semantic_fidelity_gate.py <span class="dt">\</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
@@ -706,8 +709,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_cross_framework_reliability.py <span class="dt">\</span></span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> output/cross_framework <span class="at">--strict</span></span></code></pre></div>
-<p>Under <code>--strict</code>, each gate exits non-zero on the first
-mismatch, so these commands double as assertions in an automated
+<p>Under <code>--strict</code>, required mismatches make these gates
+exit non-zero, so these commands double as assertions in an automated
 reproduction run. Code-quality reproducibility is enforced separately
 through the developer command reference: <code>just lint</code> runs the
 Ruff linter over <code>src</code> and <code>scripts</code>, and the
@@ -742,16 +745,18 @@ so a missing copy degrades rather than failing the build.</p>
 <p>Because the variables file is regenerated before rendering, the
 counts in the rendered PDF track the repository state at the commit
 recorded in <code>output/data/manuscript_variables.json</code>
-(88f24cb7c): a code change that alters, for example, the test inventory
-(573 test files, 6173 test functions) propagates into the prose on the
+(8d202439e): a code change that alters, for example, the test inventory
+(573 test files, 6175 test functions) propagates into the prose on the
 next regeneration without any manual editing.</p>
 <h2 id="reproducibility-contract">Reproducibility Contract</h2>
 <ul>
 <li>Do not cite results that cannot be regenerated or directly traced to
 a command in this repository.</li>
 <li>Keep generated outputs under <code>output/</code> and maintained
-manuscript source under <code>manuscript/</code>; treat everything in
-<code>output/</code> as disposable and regeneratable.</li>
+manuscript source under <code>manuscript/</code>. Regenerate owned build
+artifacts when their inputs change, and preserve the raw command
+receipts and numerical results needed to substantiate historical
+runs.</li>
 <li>Express every quantitative claim in the prose as a double-brace
 <code>{{...}}</code> token substituted by
 <code>scripts/z_generate_manuscript_variables.py</code>, never as a

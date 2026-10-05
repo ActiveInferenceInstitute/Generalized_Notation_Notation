@@ -3,11 +3,13 @@ Finally, several capabilities depend on optional dependencies that are
 not part of the minimal install. The simulation frameworks themselves,
 the audio sonification path, the LLM-enhanced analysis step, and the
 interactive visualization step all require extra packages that a lean
-checkout will not have, and the corresponding pipeline steps degrade to
-recorded skips rather than failures when those dependencies are absent.
-This keeps the core parse-validate-export-visualize spine runnable in
-constrained environments, but it means a full 0--24 traversal of all 25
-steps reflects the optional surface that a particular machine has
-installed. We consider this an acceptable engineering trade for
-portability, but it is a limitation a reader should hold in mind when
-interpreting any single end-to-end run.
+checkout will not have, and readiness diagnoses distinguish absent
+packages, toolchains, unsupported Python, failed probes, and timeouts.
+Their recorded outcomes depend on the step's requirements; missing
+dependencies or required unfinished work do not establish successful
+execution. This keeps the core parse-validate-export-visualize spine
+runnable in constrained environments, but it means a full 0--24
+traversal of all 25 steps reflects the optional surface that a
+particular machine has installed. We consider this an acceptable
+engineering trade for portability, but it is a limitation a reader
+should hold in mind when interpreting any single end-to-end run.

@@ -160,7 +160,7 @@ def main() -> Path:
         exec_xy,
         4.0,
         1.5,
-        f"3. Executable Cognitive Model\n{exec_count}/{backend_count} backends run at Step {exec_step}\n{backend_preview}",
+        f"3. Executable Cognitive Model\n{exec_count}/{backend_count} targets: Step {exec_step} adapters\n{backend_preview}",
         facecolor="#b45309",
         edgecolor="#0f172a",
         fontsize=10,

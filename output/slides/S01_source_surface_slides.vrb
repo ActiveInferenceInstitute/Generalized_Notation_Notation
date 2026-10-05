@@ -1,4 +1,6 @@
 \frametitle{Authored Source Versus Generated Output}
+producer can derive from a source surface is a token,
+\breaktt{scripts/check\_manuscript\_tokens.py} fails the build when a
 section hard-codes one instead, and the resulting 93-entry map is
 committed at \breaktt{output/data/manuscript\_variables.json} for audit.
 External references are resolved from

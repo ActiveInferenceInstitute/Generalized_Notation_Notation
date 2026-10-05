@@ -381,6 +381,41 @@ class TestPostSimulationVisualization:
         assert output_file.exists()
         assert output_file.stat().st_size > 0
 
+        # Iteration VFE and timestep EFE are independent sample domains.
+        from unittest.mock import patch
+
+        from gnn.analysis import viz_plots
+
+        vfe = [float(i) for i in range(20)]
+        efe = [[float(i), float(i) + 1.0] for i in range(15)]
+        dual_output = output_dir / "vfe_efe.png"
+        with patch.object(viz_plots, "safe_savefig", return_value=str(dual_output)):
+            assert viz_plots.generate_vfe_vs_efe_plot(
+                vfe, efe, dual_output, vfe_per_iteration=True
+            ) == str(dual_output)
+            fig = viz_plots.plt.gcf()
+            try:
+                vfe_ax, efe_ax = fig.axes
+                assert not vfe_ax.get_shared_x_axes().joined(vfe_ax, efe_ax)
+                assert vfe_ax.get_xlabel() == "Inference Iteration (1-based)"
+                assert efe_ax.get_xlabel() == "Time Step"
+                assert list(vfe_ax.lines[0].get_xdata()) == list(range(1, 21))
+                assert list(efe_ax.lines[0].get_xdata()) == list(range(15))
+                assert list(vfe_ax.lines[0].get_ydata()) == vfe
+                assert list(efe_ax.lines[0].get_ydata()) == [row[0] for row in efe]
+            finally:
+                viz_plots.plt.close(fig)
+
+            # Existing callers still receive the original shared timestep plot.
+            viz_plots.generate_vfe_vs_efe_plot(vfe, efe, dual_output)
+            fig = viz_plots.plt.gcf()
+            try:
+                assert fig.axes[0].get_xlabel() == "Time Step"
+                assert list(fig.axes[0].lines[0].get_ydata()) == vfe
+                assert list(fig.axes[1].lines[0].get_ydata()) == [row[0] for row in efe]
+            finally:
+                viz_plots.plt.close(fig)
+
     def test_generate_observation_analysis(self, safe_filesystem: Any) -> None:
         """Test observation analysis visualization."""
         from gnn.analysis.post_simulation import generate_observation_analysis

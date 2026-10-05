@@ -12,7 +12,7 @@
 
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
 
-**Last Updated**: 2026-09-25
+**Last Updated**: 2026-10-05
 
 ---
 
@@ -61,7 +61,7 @@
 
 ## Result semantics and comparisons
 
-The shared result adapter validates categorical rows and Gaussian means/covariances while preserving native agent/factor views. Numerical comparisons require compatible, source-bound model and inference identities. Missing bindings or unavailable scientific quantities retain reasons; shape agreement and display names cannot establish agreement. Operational timing/counts remain descriptive unless the attempted models, configuration and environment admit a comparison. See [the v4 migration](../../../docs/development/run_ownership_migration.md#scientific-comparison-admission).
+The shared result adapter validates categorical rows and Gaussian means/covariances while preserving native agent/factor views. Consecutive categorical posteriors use Jensen–Shannon distance when SciPy is available (with a separately labeled Euclidean fallback); continuous posterior means use Euclidean mean-update distance without probability normalization. Mean updates do not measure Gaussian uncertainty: uncertainty comes from covariance. Malformed traces are refused. Numerical comparisons require compatible, source-bound model and inference identities. Missing bindings or unavailable scientific quantities retain reasons; shape agreement and display names cannot establish agreement. Operational timing/counts remain descriptive unless the attempted models, configuration and environment admit a comparison. See [the v4 migration](../../../docs/development/run_ownership_migration.md#scientific-comparison-admission).
 
 ## API Reference
 
@@ -305,7 +305,14 @@ patterns, analysis filename, plot labels, bar color) and re-exports
 `generate_analysis_from_logs` / `_generate_plots` — the public call sites
 (processor's importlib discovery, `test_numpyro_pytorch_analyzers.py`) are
 unchanged. Exports: `FlatPayloadSpec`, `compute_flat_payload_metrics` (pure),
-`discover_result_files`, `generate_analysis_from_logs`.
+`discover_result_files`, `generate_analysis_from_logs`. Trajectory plots retain
+all states; plots with more than eight states reserve a separate legend panel,
+clear of the data axes. Adaptive trajectory
+and observation plots admit at most 64 million nominal pixels at their save DPI;
+this estimates canvas allocation rather than bounding all Matplotlib buffers.
+Oversized requests raise `ValueError` without dropping states or labels. Controls
+cover 256 states and 64 observation categories; process watchdogs remain the
+runtime authority.
 
 ---
 
@@ -404,13 +411,18 @@ full step pipeline and writes `analysis_results.json` (processor.py:713) and
   - `generate_action_analysis(actions: List[int], output_path: Path, title: str = "Action Selection Analysis") -> str`
     (viz_plots.py:516) — histogram, sequence, transition matrix.
   - `generate_free_energy_plots(free_energy: List[float], output_path: Path, title: str = "Free Energy Dynamics") -> str`
-    (viz_plots.py:629) — 2x2 panel: evolution with min-EFE overlay (handles
-    per-policy 2D input), selected-EFE distribution, per-step change,
-    rolling-variance convergence.
-  - `generate_vfe_vs_efe_plot(vfe: List[float], efe: List[Any], output_path: Path, title: str = "Variational vs Expected Free Energy") -> str`
-    (viz_plots.py:821) — dual-axis VFE vs min-EFE per step.
+    — four data panels: evolution with min-EFE overlay (handles per-policy 2D
+    input), selected-EFE distribution, per-step change and rolling-variance
+    convergence. Diagnostic text occupies reserved panels outside the data axes.
+  - `generate_vfe_vs_efe_plot(vfe: List[float], efe: List[Any], output_path: Path, title: str = "Variational vs Expected Free Energy", *, vfe_per_iteration: bool = False) -> str`
+    — the default retains the existing shared timestep axes. When
+    `vfe_per_iteration=True`, separate panels use one-based inference iterations
+    for VFE and zero-based model timesteps for min-EFE. The result context supplies
+    this flag; unequal trace lengths are retained without implying alignment.
   - `generate_observation_analysis(observations: List[int], output_path: Path, title: str = "Observation Analysis") -> str`
-    (viz_plots.py:886) — frequency + sequence.
+    — frequency and time-ordered sequence views use categorical positions with
+    original numeric category labels and ordinal category colors. Labels/counts
+    are retained; oversized nominal canvases are refused before allocation.
 
 **Maintenance contract**: public re-export chain is `visualizations.py`
 (viz_plots import at visualizations.py:35-42) → `post_simulation.py`
@@ -591,7 +603,7 @@ framework names normalize via `viz_schema._normalize_framework_name`
 
 ---
 
-**Last Updated**: 2026-09-25
+**Last Updated**: 2026-10-05
 **Maintainer**: GNN Pipeline Team
 **Status**: Production Ready
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
