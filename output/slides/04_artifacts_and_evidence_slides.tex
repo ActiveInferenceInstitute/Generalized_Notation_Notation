@@ -227,7 +227,7 @@
 This section reports what the project has actually produced and how each
 quantitative claim is grounded. Every number below is substituted at
 render time from the deterministic producer, which reads the repository
-state at commit 88f24cb7c, so each figure here is regenerated from the
+state at commit 8d202439e, so each figure here is regenerated from the
 artifacts it describes rather than transcribed.
 \end{frame}
 
@@ -267,16 +267,17 @@ file of a given kind.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Model-Family Coverage}
-The per-kind evidence is generated, not asserted: families that declare
-a capability axis (the continuous family declares the continuous-render
-axis) carry a backend split in tbl.~\ref{tbl:model_families} that is
-generated from the registry's own capability flags, so the table cannot
-disagree with the code that decides renderability. Reading the ledgers
-by kind is therefore mechanical --- a continuous-family receipt shows
-the continuous-capable backends attempted and the categorical-only
-backends recorded \texttt{unsupported}, while a discrete-family receipt
-shows the categorical breadth the cross-framework gate anchors on
-(tbl.~4 is the per-kind key).
+Families that declare a capability axis (the continuous family declares
+the continuous-render axis) carry a backend split in
+tbl.~\ref{tbl:model_families} generated directly from the registry's
+declared capability flags. This avoids a manually copied registry table;
+actual model admission still depends on the full parameter and
+composition checks recorded by the renderer. The generated flags
+describe declared capability, while current-run receipts record which
+selected backends were actually attempted, unsupported, skipped, or
+failed. The profiled cross-framework reference uses the continuous
+family, so it does not establish categorical coverage across the
+registry (tbl.~4 is the per-kind key).
 
 \end{frame}
 
@@ -353,7 +354,7 @@ from the family registry rather than from a hand-maintained table.
 \begin{frame}[fragile,allowframebreaks]{Model-Family Coverage}
 \begin{figure}
 \centering
-\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={Model-family coverage across the registered rendering backends: one row per family from input/model\_family\_manifest.json, one column per backend from src/gnn/render/framework\_registry.py, and a green cell wherever the family declares that backend in its frameworks field. The right-hand count states how many backends each family declares; the grid is deliberately sparse --- most families declare a single backend, and only continuous, hierarchical, and gridworld declare several. Read it as declared intent, not as profiled outcomes: the gates described below supply the outcomes. The matrix is generated from the two registries at commit 88f24cb7c.}]{../figures/gnn_family_framework_matrix.png}
+\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={Model-family coverage across the registered rendering backends: one row per family from input/model\_family\_manifest.json, one column per backend from src/gnn/render/framework\_registry.py, and a green cell wherever the family declares that backend in its frameworks field. The right-hand count states how many backends each family declares; the grid is deliberately sparse --- most families declare a single backend, and only continuous, hierarchical, and gridworld declare several. Read it as declared intent, not as profiled outcomes: the gates described below supply the outcomes. The matrix is generated from the two registries at commit 8d202439e.}]{../figures/gnn_family_framework_matrix.png}
 \caption{Model-family coverage across the registered rendering backends:
 one row per family from
 \protect\breaktt{input/model\_family\_manifest.json}, one column per
@@ -365,7 +366,7 @@ families declare a single backend, and only continuous, hierarchical,
 and gridworld declare several. Read it as declared intent, not as
 profiled outcomes: the gates described below supply the outcomes. The
 matrix is generated from the two registries at commit
-88f24cb7c.}\label{fig:family_matrix}
+8d202439e.}\label{fig:family_matrix}
 \end{figure}
 
 \end{frame}
@@ -380,25 +381,30 @@ gates described next.
 \begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
 Cross-Framework Reliability Gates}
 \protect\phantomsection\label{semantic-fidelity-and-cross-framework-reliability-gates}
-Two reproducible-by-command gates check that GNN's promise --- one text
-model, many faithful executable renderings --- survives contact with
-real backends. Both live under \texttt{scripts/} and read the same
-family corpus described above, so they verify the artifacts the
-manuscript actually references.
+Two command-defined gates check distinct parts of GNN's shared-source
+contract on selected family fixtures. Both live under \texttt{scripts/}
+and use the family manifest described above. Their actual source-bound
+command receipts determine the scope and outcome of verification; the
+presence of a gate is not itself a passing result.
 
 The semantic-fidelity gate,
-\breaktt{scripts/run\_semantic\_fidelity\_gate.py}, checks that a model
-parsed from GNN text and then re-emitted preserves its semantic content:
-the state-space structure, the factor and modality declarations, and the
-matrix shapes implied by a discrete Active Inference generative model
-survive the round trip (Da Costa et al. 2020). It is meant to be run as
-a command and to report fidelity per model, not as a static claim baked
-into prose.
-
+\breaktt{scripts/run\_semantic\_fidelity\_gate.py}, checks
+parse--serialize--parse preservation using the versioned
+\breaktt{gnn\_semantic\_contract\_v2} contract. It compares model
+identity, variables, edges, parameter names, shapes, values and
+metadata, equations, timing, and ontology mappings; the default strict
+round trip is JSON. Parameter values and their axis order contribute to
+the contract hash, so changing values without changing shape changes the
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
 Cross-Framework Reliability Gates}
+hash. The digest binds the represented contract; it does not prove that
+extraction was correct, that generated inference implements the intended
+mathematics (Da Costa et al. 2020), or that independent numerical
+executions agree. The gate reports scoped fidelity per selected model
+and format.
+
 The cross-framework reliability gate,
 \breaktt{scripts/run\_cross\_framework\_reliability.py}, takes a single
 GNN model and renders it across multiple simulation backends, then
@@ -409,8 +415,18 @@ Inference engines spanning the Python and Julia ecosystems (Heins et al.
 2022). The family declares 5 backends (JAX, NumPyro, Stan, RxInfer.jl,
 ngc-learn); Stan, ngc-learn is declared but not among the 7 frameworks
 the gate profiles, so it is excluded from the comparison. Because the
-same source model drives all 3 renderings, disagreement between backends
-localizes a generator defect rather than a modeling choice.
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
+Cross-Framework Reliability Gates}
+same source model drives all 3 renderings, source identity helps
+investigate disagreement. The gate compares shared matrix shapes, trace
+lengths, timesteps, and reported seeds, recording absent comparable
+fields separately. These checks do not establish numerical equivalence:
+a mismatch may arise from extraction, code generation, runtime or
+toolchain behavior, inference mode, dtype, or a backend defect.
+Numerical comparisons require compatible models and inference semantics,
+explicit tolerances, and source-bound numerical witnesses.
 
 \end{frame}
 
@@ -418,10 +434,10 @@ localizes a generator defect rather than a modeling choice.
 Cross-Framework Reliability Gates}
 Both gates are stated here as commands you can run, not as asserted pass
 counts. The manuscript deliberately does not quote a fixed number of
-passing checks: the authoritative, current result is whatever those
-scripts report when executed against the corpus, and binding a frozen
-count into prose would invite exactly the drift the auto-injection
-contract exists to prevent.
+passing checks: an authoritative result is a retained command receipt
+bound to its source revision, selected corpus, environment, and
+artifacts, and binding a frozen count into prose would invite exactly
+the drift the auto-injection contract exists to prevent.
 
 A third interchange check extends the same discipline across
 repositories: \breaktt{scripts/run\_geo\_interchange\_checks.py}
@@ -443,34 +459,37 @@ what makes ``interchange'' a checkable claim rather than a promise.
 \protect\phantomsection\label{repository-scale}
 The repository's scale is itself evidence of the surface that the gates
 and pipeline cover, and it is reported in fig.~\ref{fig:repo_metrics}
-directly from the tracked files at commit 88f24cb7c.
+directly from the tracked files at commit 8d202439e.
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Repository Scale}
 \begin{figure}
 \centering
-\includegraphics[width=0.8\linewidth,height=0.40\textheight,keepaspectratio,alt={Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered backends, execution backends, Model Context Protocol tools, source packages, test files, example models, and documentation files. Every bar is annotated with its exact value, and every value is a producer token read from output/data/manuscript\_variables.json at commit 88f24cb7c --- the same token map that substitutes the prose counts, so the figure cannot disagree with the text without failing the figure-freshness suite. The two backend bars are deliberately distinct: registered backends (12) counts render targets, execution backends (12) counts the subset that runs at Step 12. Read the chart as the scale of the surface the pipeline maintains, not as a quality measure.}]{../figures/gnn_repo_metrics.png}
+\includegraphics[width=0.8\linewidth,height=0.40\textheight,keepaspectratio,alt={Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered backends, render-target execution adapters, Model Context Protocol tools, source packages, test files, example models, and documentation files. Every bar is annotated with its exact value, and every value is a producer token read from output/data/manuscript\_variables.json at commit 8d202439e --- the same token map that substitutes the prose counts. The figure-freshness suite binds the committed image digest and its recorded producer inputs and counts; semantic content and visual correctness require their own review. The two backend bars are deliberately distinct: registered backends (12) counts render targets, render-target adapters (12) counts the render-target subset with implemented Step 12 execution adapters. It excludes the separate execution-only Lean bridge and is not a count of observed native runs. Read the chart as the scale of the surface the pipeline maintains, not as a quality measure.}]{../figures/gnn_repo_metrics.png}
 \caption{Repository-scale counts on a logarithmic axis: pipeline steps,
-model families, registered backends, execution backends, Model Context
-Protocol tools, source packages, test files, example models, and
-documentation files. Every bar is annotated with its exact value, and
-every value is a producer token read from
+model families, registered backends, render-target execution adapters,
+Model Context Protocol tools, source packages, test files, example
+models, and documentation files. Every bar is annotated with its exact
+value, and every value is a producer token read from
 \protect\breaktt{output/data/manuscript\_variables.json} at commit
-88f24cb7c --- the same token map that substitutes the prose counts, so
-the figure cannot disagree with the text without failing the
-figure-freshness suite. The two backend bars are deliberately distinct:
-\emph{registered backends} (12) counts render targets, \emph{execution
-backends} (12) counts the subset that runs at Step 12. Read the chart as
-the scale of the surface the pipeline maintains, not as a quality
-measure.}\label{fig:repo_metrics}
+8d202439e --- the same token map that substitutes the prose counts. The
+figure-freshness suite binds the committed image digest and its recorded
+producer inputs and counts; semantic content and visual correctness
+require their own review. The two backend bars are deliberately
+distinct: \emph{registered backends} (12) counts render targets,
+\emph{render-target adapters} (12) counts the render-target subset with
+implemented Step 12 execution adapters. It excludes the separate
+execution-only Lean bridge and is not a count of observed native runs.
+Read the chart as the scale of the surface the pipeline maintains, not
+as a quality measure.}\label{fig:repo_metrics}
 \end{figure}
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Repository Scale}
-The test suite comprises 573 test files containing 6173 test functions,
-exercising a source base of 741 Python files across 43 packages (219604
+The test suite comprises 573 test files containing 6175 test functions,
+exercising a source base of 741 Python files across 43 packages (219718
 lines of source). The pipeline's step modules --- the thin orchestrators
 named in tbl.~2 --- number 25, one per numbered
 step. The Model Context Protocol surface --- which exposes GNN's
@@ -492,17 +511,19 @@ four support types:
 \begin{itemize}
 \tightlist
 \item
-  A passing test or validator command --- for example the
-  semantic-fidelity and cross-framework gates above, which can be re-run
-  on demand.
+  A retained passing test or validator command receipt, bound to the
+  source revision, selected inputs, environment, and artifacts --- for
+  example a scoped execution of the semantic-fidelity or cross-framework
+  gates above.
 \item
   A generated output produced by a deterministic producer, such as the
   figures rendered from the family and repository scans, or the token
   values emitted by the manuscript-variable producer that backs every
   number on this page.
 \item
-  A source ledger, manifest, or configuration file that fixes the value
-  being claimed.
+  A source ledger, manifest, or configuration file that fixes a declared
+  value or capability; actual execution still requires its own result
+  receipt.
 \item
   A resolved entry in \texttt{references.bib} for any
   external-literature claim (Friston 2010; Parr et al. 2022).
@@ -515,12 +536,13 @@ The pipeline records its own evidence trail under \texttt{output/}. The
 run-level summary is written to \breaktt{output/PIPELINE\_REPORT.md}, and
 the per-step execution record --- including which steps ran, their
 status, and their artifacts --- is captured in
-\breaktt{output/00\_pipeline\_summary}. These are the artifacts a reader
-should consult to confirm that the numbers substituted into this section
-correspond to a real, reproducible pipeline run rather than to asserted
-prose. When a value would otherwise need a literal number with no
-producer behind it, the discipline is to omit the number rather than to
-hard-code it.
+\breaktt{output/00\_pipeline\_summary}. Readers should use those
+current-run records and their identity bindings to assess actual
+pipeline outcomes. Repository counts and declared capability tokens
+describe the source surface and do not by themselves establish native
+execution or scientific correctness. When a value would otherwise need a
+literal number with no producer behind it, the discipline is to omit the
+number rather than to hard-code it.
 \end{frame}
 
 \end{document}

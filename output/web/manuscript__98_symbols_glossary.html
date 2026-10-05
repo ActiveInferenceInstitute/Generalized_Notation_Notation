@@ -801,7 +801,9 @@ the continuous kind — so each row of <span class="citation"
 data-cites="tbl:actinf_symbols">[@tbl:actinf_symbols]</span> names the
 kind its reading belongs to and the equation in <span class="citation"
 data-cites="sec:system_context">[@sec:system_context]</span> that fixes
-it, and the glossary and the formal statement cannot drift apart.</p>
+it. These authored cross-references support review of agreement between
+the glossary and formal statement; their consistency still requires
+validation when either changes.</p>
 <div class="table-scroll" role="region" tabindex="0" aria-label="Scrollable table: The Active Inference symbols a GNN specification carries, scoped by model kind and bound to the equation of [@sec:sys…"><table id="tbl:actinf_symbols" data-responsive-table="true">
 <caption>The Active Inference symbols a GNN specification carries,
 scoped by model kind and bound to the equation of <span class="citation"
@@ -1005,10 +1007,11 @@ data-cites="tbl:actinf_symbols">[@tbl:actinf_symbols]</span> fixes by
 hand. The same GNN specification feeds the project’s rendering backends
 — including the 12 registered targets (PyMDP, RxInfer.jl,
 ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn,
-cpomdp, THRML, ngc-learn), of which the 12 listed as executable (PyMDP,
-RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan,
-bnlearn, cpomdp, THRML, ngc-learn) also run at Step 12 — with per-kind
-reach recorded as explicit statuses (<span class="citation"
+cpomdp, THRML, ngc-learn), of which the 12 render targets with execution
+adapters (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch,
+NumPyro, Stan, bnlearn, cpomdp, THRML, ngc-learn) can be selected at
+Step 12 subject to model-kind admission and runtime readiness — with
+per-kind reach recorded as explicit statuses (<span class="citation"
 data-cites="tbl:framework_capability">[@tbl:framework_capability]</span>)
 — so that a model written once in this notation can be parsed,
 visualized, and executed across the 25-step pipeline (0–24) without

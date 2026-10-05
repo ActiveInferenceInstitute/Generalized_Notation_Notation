@@ -219,14 +219,14 @@ by command and recorded against the 9 model families, but this
 manuscript does not assert a particular full-suite pass rate as a
 headline number. Pass and skip counts shift with the local toolchain,
 the presence or absence of optional simulation dependencies, and whether
-the optional Ollama integration paths are exercised, so we treat the
-reproducing command as the durable claim and leave the run-specific
-tallies to the ledgers and execution traces that the pipeline writes
-alongside each run. A reader who wants a number should regenerate it in
+the optional Ollama integration paths are exercised, so we retain the
+reproducing command together with its source, environment,
+selected-input, and artifact bindings, leaving run-specific tallies in
+the ledgers and execution traces. A fresh run supplies new evidence for
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Current Limitations}
-their own environment rather than trust a transcribed digit here.
+its own environment; it does not replace a preserved historical receipt.
 
 A second limitation lives at the boundary between the model families and
 the rendering backends. GNN registers 12 simulation backends, but
@@ -234,36 +234,36 @@ coverage across the family-by-backend matrix is intentionally uneven,
 and the gaps are recorded as explicit \emph{profiled-unsupported}
 statuses rather than silently omitted. The cross-framework acceptance
 check is anchored on the continuous family, where JAX, NumPyro,
-RxInfer.jl are compared directly; the continuous and hierarchical
-families, by contrast, carry profiled-unsupported markers at the render
-and execute steps (Steps 11 and 12) for backends that cannot yet
-faithfully realize their continuous-state or temporal-depth structure.
-This is honest bookkeeping, not a defect to be hidden: an unsupported
-status with a recorded reason is more trustworthy than a forced
-translation that quietly misrepresents the model. It also reflects the
+RxInfer.jl are compared directly; selected continuous and hierarchical
+lanes carry profiled-unsupported markers at the render and execute steps
+(Steps 11 and 12) for backends that cannot yet faithfully realize their
+continuous-state or temporal-depth structure. This is honest
+bookkeeping, not a defect to be hidden: an unsupported status with a
+recorded reason is more trustworthy than a forced translation that
+quietly misrepresents the model. It also reflects the state of the
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Current Limitations}
-state of the surrounding literature, where expected-free-energy
-formulations, variational-inference reductions, and hierarchical
-active-inference methods are still being actively refined rather than
-collapsed into one settled executable recipe (Champion et al. 2024;
-Nuijten et al. 2026; Rangarajan and Rao 2026). The practical consequence
-is that not every model expressible in the GNN syntax can be executed on
-every registered backend today, and authors should consult the
-profiled-unsupported ledger that
-\breaktt{scripts/run\_model\_family\_acceptance.py} writes --- the
-command is given in sec.~6 --- before assuming a
-given family will round-trip through a given framework. The per-kind
-shape of that matrix matters as much as its gaps: the categorical-only
-backends report the continuous linear-Gaussian kind \texttt{unsupported}
-by declared capability rather than by accident, the structural kind is
+surrounding literature, where expected-free-energy formulations,
+variational-inference reductions, and hierarchical active-inference
+methods are still being actively refined rather than collapsed into one
+settled executable recipe (Champion et al. 2024; Nuijten et al. 2026;
+Rangarajan and Rao 2026). The practical consequence is that not every
+model expressible in the GNN syntax can be executed on every registered
+backend today, and authors should consult the profiled-unsupported
+ledger that \breaktt{scripts/run\_model\_family\_acceptance.py} writes
+--- the command is given in sec.~6 --- before
+assuming a given family will round-trip through a given framework. The
+per-kind shape of that matrix matters as much as its gaps: the
+categorical-only backends report the continuous linear-Gaussian kind
+\texttt{unsupported} by declared capability rather than by accident,
+structural wrappers have no renderable model body and are reported
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Current Limitations}
-render-only by design on every backend, and the recursive corpus is
-reserved for bounded autonomous runs and holds no committed models yet
---- boundaries recorded where the kinds are defined
+\texttt{unsupported}, and the recursive corpus is reserved for bounded
+proposal-only \texttt{-\/-autonomous} runs and holds no committed models
+yet --- boundaries recorded where the kinds are defined
 (sec.~3.2) rather than discovered mid-run.
 
 A third limitation is one of scope rather than capability. The formal
@@ -296,18 +296,32 @@ leave the omission to be inferred from the family tables.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Current Limitations}
+Experimental targets also have explicit admission boundaries. THRML
+performs fixed-action categorical posterior sampling with bounded
+independent or validated joint composition; it does not supply Gaussian
+inference or policy/EFE optimization. cpomdp accepts linear-Gaussian
+models with resource-admitted finite policy search, and rejects
+unsupported kinds or over-budget search rather than reducing the request
+silently. Both require explicit framework selection, so registration
+does not promote either into the default execution set.
+
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Current Limitations}
 Finally, several capabilities depend on optional dependencies that are
 not part of the minimal install. The simulation frameworks themselves,
 the audio sonification path, the LLM-enhanced analysis step, and the
 interactive visualization step all require extra packages that a lean
-checkout will not have, and the corresponding pipeline steps degrade to
-recorded skips rather than failures when those dependencies are absent.
-This keeps the core parse-validate-export-visualize spine runnable in
-constrained environments, but it means a full 0--24 traversal of all 25
-steps reflects the optional surface that a particular machine has
-installed. We consider this an acceptable engineering trade for
-portability, but it is a limitation a reader should hold in mind when
-interpreting any single end-to-end run.
+checkout will not have, and readiness diagnoses distinguish absent
+packages, toolchains, unsupported Python, failed probes, and timeouts.
+Their recorded outcomes depend on the step's requirements; missing
+dependencies or required unfinished work do not establish successful
+execution. This keeps the core parse-validate-export-visualize spine
+runnable in constrained environments, but it means a full 0--24
+traversal of all 25 steps reflects the optional surface that a
+particular machine has installed. We consider this an acceptable
+engineering trade for portability, but it is a limitation a reader
+should hold in mind when interpreting any single end-to-end run.
 \end{frame}
 
 \begin{frame}[allowframebreaks]{Next Steps}

@@ -331,8 +331,9 @@ variational free energy of eq.~6 in the discrete kind and the
 state-transition matrix of eq.~9 in the continuous
 kind --- so each row of tbl.~\ref{tbl:actinf_symbols} names the kind its
 reading belongs to and the equation in sec.~3
-that fixes it, and the glossary and the formal statement cannot drift
-apart.
+that fixes it. These authored cross-references support review of
+agreement between the glossary and formal statement; their consistency
+still requires validation when either changes.
 
 \end{frame}
 
@@ -463,13 +464,19 @@ tbl.~\ref{tbl:actinf_symbols} fixes by hand. The same GNN specification
 feeds the project's rendering backends --- including the 12 registered
 targets (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch,
 NumPyro, Stan, bnlearn, cpomdp, THRML, ngc-learn), of which the 12
-listed as executable (PyMDP, RxInfer.jl, ActiveInference.jl, JAX,
-DisCoPy, PyTorch, NumPyro, Stan, bnlearn, cpomdp, THRML, ngc-learn) also
-run at Step 12 --- with per-kind reach recorded as explicit statuses
-(tbl.~4) --- so that a model written once
-in this notation can be parsed, visualized, and executed across the
-25-step pipeline (0--24) without restating its mathematics (Smékal and
-Friedman 2023; Heins et al. 2022; Felice et al. 2021).
+render targets with execution adapters (PyMDP, RxInfer.jl,
+ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn,
+cpomdp, THRML, ngc-learn) can be selected at Step 12 subject to
+model-kind admission and runtime readiness --- with per-kind reach
+recorded as explicit statuses (tbl.~4) ---
+so that a model written once in this notation can be parsed, visualized,
+and executed across the 25-step pipeline (0--24) without restating its
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Ontology Bindings and
+Implementations}
+mathematics (Smékal and Friedman 2023; Heins et al. 2022; Felice et al.
+2021).
 \end{frame}
 
 \end{document}

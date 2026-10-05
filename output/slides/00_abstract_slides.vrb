@@ -1,12 +1,14 @@
 \frametitle{Abstract}
-fidelity and cross-framework reliability. GNN 3.0.0 layered
-safe-by-design long-running orchestration on top of this language and
-pipeline --- durable observation streams, resumable run sessions, and
-auditable container plans that generate, validate, and replay data only,
-with no live infrastructure mutation. We describe the language, the
-model kinds it denotes, the pipeline architecture, and the validation
-that confirms specifications round-trip faithfully across formats and
-execute across multiple simulation backends --- with coverage gaps
-recorded as explicit profiled-unsupported statuses rather than silently
-omitted --- establishing GNN as reproducible, interoperable
-infrastructure for communicating Active Inference models.
+cross-format semantic fidelity and cross-framework reliability. GNN
+3.0.0 layered safe-by-design long-running orchestration on top of this
+language and pipeline --- durable observation streams, resumable run
+sessions, and auditable container plans that generate, validate, and
+replay data only, with no live infrastructure mutation. We describe the
+language, the model kinds it denotes, the pipeline architecture, and the
+validation contracts and source-bound checks used to assess
+specification round trips and admitted executions across simulation
+backends --- with coverage gaps recorded as explicit
+profiled-unsupported statuses rather than silently omitted --- providing
+inspectable infrastructure for reproducing and comparing Active
+Inference models within the recorded capability and verification
+boundaries.
