@@ -124,7 +124,9 @@ def main():
         execute(["uv", "export", "--frozen", "--no-dev", "--extra", "ml-ai", "--extra", "thrml",
                  "--extra", "cpomdp", "--no-emit-project", "--output-file", str(requirements)], "export-frozen-dependencies")
         execute(["uv", "venv", "--python", sys.executable, str(environment)], "create-isolated-environment")
-        execute(["uv", "pip", "install", "--python", str(python), "--require-hashes", "-r", str(requirements)], "install-frozen-dependencies")
+        # Consume the complete pinned/hashed export without re-reading ambient
+        # project constraints as additional unpinned requirements.
+        execute(["uv", "pip", "install", "--no-config", "--python", str(python), "--require-hashes", "-r", str(requirements)], "install-frozen-dependencies")
         carried = CODE / binding["wheel_name"]
         require(carried.is_file() and not carried.is_symlink()
                 and hashlib.sha256(carried.read_bytes()).hexdigest() == binding["wheel_sha256"],
