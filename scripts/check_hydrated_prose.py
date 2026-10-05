@@ -41,7 +41,7 @@ from gnn.manuscript.render_custody import (  # noqa: E402
     HYDRATION_FIX,
     hydration_issues,
 )
-from scripts.lib.manuscript_exclusions import EXCLUDED_DOC_FILENAMES  # noqa: E402
+from gnn.manuscript.substitution import EXCLUDED_DOC_FILENAMES  # noqa: E402
 
 
 def main() -> int:
