@@ -22,11 +22,12 @@ import uuid
 CODE = Path(__file__).resolve().parent
 BASE = Path(os.environ["GNN_NATIVE_VERIFY_WORKSPACE"]).absolute()
 ROOT = Path(os.environ["GNN_NATIVE_VERIFY_SOURCE_ROOT"]).absolute()
-SOURCE = '88f24cb7cb3026ab6da66eed0d754037f763865e'
-ARTIFACT = 'a39e8720a0fb2f9a5e2deeab4ddc19394fe99e4a'
-WHEEL = '36e71bebe855711b12751d5d58feaeac5d45f53c12e21eb5481e80405c41b907'
+SOURCE = '8d202439eaa386d13a9b93888a7d560657579a4b'
+BINDING = json.loads((CODE / 'source-binding.json').read_text())
+ARTIFACT = BINDING['artifact_commit']
+WHEEL = BINDING['wheel_sha256']
 COMMON = CODE / 'common.py'
-COMMON_SHA = '74d061a42bad33a5c53d3be42f797a888acb19003bb2e5e75cb1f0bcbd85935e'
+COMMON_SHA = '9a0288d2ca39777a7cc643fe6798862655ae8823d3a648a845f44aa76c476f36'
 WORKER = CODE / 'artifacts.py'
 CASES = {
     'numpyro': [('discrete/multi_armed_bandit.md', 30), ('discrete/actinf_pomdp_agent.md', 30),
@@ -97,7 +98,7 @@ def bookend(deadline, token):
             inventory[name] = digest(path)
     require(len(inventory) >= 3154, 'Verification branch omitted released tracked files')
     binding = read_json(CODE / 'source-binding.json')
-    require(binding['expected_release_head'] == '09c0f346a10b835f4441ff61afa120899c4e9b01', 'Wrong reviewed release source')
+    require(binding['expected_release_head'] == '8d202439eaa386d13a9b93888a7d560657579a4b', 'Wrong reviewed release source')
     git(['merge-base', '--is-ancestor', binding['expected_release_head'], head], deadline, token)
     for name, expected_sha in binding['release_owner_inventory'].items():
         require(inventory.get(name) == expected_sha, 'Reviewed release owner changed:' + name)
@@ -212,6 +213,7 @@ def main():
     token = None
     before = None
     try:
+        require(BINDING['release_binding_complete'] is True and isinstance(ARTIFACT, str) and re.fullmatch(r'[0-9a-f]{40}', ARTIFACT) and isinstance(WHEEL, str) and re.fullmatch(r'[0-9a-f]{64}', WHEEL), 'Unsealed release artifact/wheel binding refused')
         require(sys.flags.isolated == 1, 'Run with ordinary installed python -I')
         for name in ('PYTHONPATH', 'PYTHONHOME', 'PYTHONSTARTUP'):
             os.environ.pop(name, None)

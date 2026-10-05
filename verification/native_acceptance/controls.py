@@ -7,7 +7,7 @@ from pathlib import Path
 import argparse,copy,hashlib,html,importlib.util,json,marshal,math,os,shutil,struct,time,types,uuid
 CODE=Path(__file__).resolve().parent
 BASE=Path(os.environ["GNN_NATIVE_VERIFY_WORKSPACE"]).absolute()
-RUNNER_SHA="5c8e09d68e0e37db2249ce3fb09b1d2419155013dca661ec2d052c7f951dce0c"
+RUNNER_SHA="82cef28587e8cfc1cceba03aa357bbb95cf33151714f292bc826a7f870fd3ab8"
 WORKER_SHA="4b75739ce163eecf5cbbdd9439db0848bf811d20c84829264ad2f26bc985b45c"
 
 def load_exact(name,digest):

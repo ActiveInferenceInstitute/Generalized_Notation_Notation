@@ -21,12 +21,11 @@ import uuid
 
 CODE = Path(__file__).resolve().parent
 HASHES = {
-    "runner.py": "5c8e09d68e0e37db2249ce3fb09b1d2419155013dca661ec2d052c7f951dce0c",
-    "common.py": "74d061a42bad33a5c53d3be42f797a888acb19003bb2e5e75cb1f0bcbd85935e",
     "artifacts.py": "4b75739ce163eecf5cbbdd9439db0848bf811d20c84829264ad2f26bc985b45c",
-    "controls.py": "6a815b2f718cf99442e7c43ffa57eb137d80681aad9c3be357b71018c145d5b8",
-    "source-binding.json": "bed9d6e8e4725d6838a1fb6a9cd8b27601c7f3e20a8d9374bc3089565d4f31d7",
-    "generalized_notation_notation-4.0.0-py3-none-any.whl": "36e71bebe855711b12751d5d58feaeac5d45f53c12e21eb5481e80405c41b907",
+    "common.py": "9a0288d2ca39777a7cc643fe6798862655ae8823d3a648a845f44aa76c476f36",
+    "controls.py": "42242fba9c5fb2bb54dccc246656bed3771c6d396c259e654afbf94dd15ea088",
+    "runner.py": "82cef28587e8cfc1cceba03aa357bbb95cf33151714f292bc826a7f870fd3ab8",
+    "source-binding.json": "2d0825506beb780bd4f04ac034690760200a58b73b17ad726402115fb83ec655"
 }
 
 
@@ -72,6 +71,14 @@ def main():
             raw = regular_bytes(CODE / name)
             require(hashlib.sha256(raw).hexdigest() == expected, "Reviewed helper changed: " + name)
             sources[name] = raw
+        binding = json.loads(sources["source-binding.json"])
+        require(binding["release_binding_complete"] is True
+                and binding["content_commit"] == "8d202439eaa386d13a9b93888a7d560657579a4b"
+                and isinstance(binding["artifact_commit"], str) and re.fullmatch(r"[0-9a-f]{40}", binding["artifact_commit"])
+                and isinstance(binding["wheel_sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", binding["wheel_sha256"]),
+                "Unsealed release artifact/wheel binding refused")
+        carried_sha = hashlib.sha256(regular_bytes(CODE / binding["wheel_name"])).hexdigest()
+        require(carried_sha == binding["wheel_sha256"], "Reviewed carried wheel changed")
         common = types.ModuleType("native_acceptance_common")
         common.__file__ = str(CODE / "common.py")
         exec(compile(sources["common.py"], common.__file__, "exec", dont_inherit=True), common.__dict__)
@@ -119,6 +126,10 @@ def main():
                 and len(native["cases"]) == 4 and all(case["accepted"] is True for case in native["cases"]),
                 "Required native case remains unfinished or unverified")
         record["native_receipt_sha256"] = hashlib.sha256(regular_bytes(paths[0])).hexdigest()
+        require(hashlib.sha256(regular_bytes(CODE / binding["wheel_name"])).hexdigest() == carried_sha, "Carried wheel changed during verification")
+        record["source_commit"] = binding["content_commit"]
+        record["artifact_commit"] = binding["artifact_commit"]
+        record["wheel_sha256"] = carried_sha
         require(all(hashlib.sha256(regular_bytes(CODE / name)).hexdigest() == expected
                     for name, expected in HASHES.items()), "Helper bytes changed during verification")
         require(time.monotonic() < work_deadline and not token.cancelled, "Group exhausted during final verification")

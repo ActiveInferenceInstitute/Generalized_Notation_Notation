@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        backend: [rxinfer]
+        backend: [numpyro, rxinfer]
     env:
       GNN_NATIVE_VERIFY_SOURCE_ROOT: ${{ github.workspace }}
       GKSwstype: "100"

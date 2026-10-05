@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import signal
@@ -49,6 +50,11 @@ def main():
     try:
         require(minimum >= 6 * 1024**3, "RESOURCE_HOLD: provisioning requires six GiB")
         binding = json.loads((CODE / "source-binding.json").read_text())
+        require(binding["release_binding_complete"] is True
+                and binding["content_commit"] == "8d202439eaa386d13a9b93888a7d560657579a4b"
+                and isinstance(binding["artifact_commit"], str) and re.fullmatch(r"[0-9a-f]{40}", binding["artifact_commit"])
+                and isinstance(binding["wheel_sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", binding["wheel_sha256"]),
+                "Unsealed release artifact/wheel binding refused")
         for name, expected in binding["release_owner_inventory"].items():
             path = source_root / name
             require(path.is_file() and not path.is_symlink() and hashlib.sha256(path.read_bytes()).hexdigest() == expected,

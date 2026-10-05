@@ -1,6 +1,6 @@
 """Exact peer-reviewed private admission helpers; no native jobs at import."""
 from pathlib import Path
-import base64, csv, hashlib, importlib.metadata as md, io, json, os, shutil, sys, time, zipfile
+import base64, csv, hashlib, importlib.metadata as md, io, json, os, re, shutil, sys, time, zipfile
 from gnn.execute.subprocess_envelope import CancelToken
 CODE = Path(__file__).resolve().parent
 BASE = Path(os.environ["GNN_NATIVE_VERIFY_WORKSPACE"]).absolute()
@@ -21,7 +21,10 @@ def verify_wheel(base, split, expected_wheel, expected_artifact):
         return checked
 
     binding = json.loads(regular_file(CODE / "source-binding.json").read_text())
-    assert binding["content_commit"] == "88f24cb7cb3026ab6da66eed0d754037f763865e", binding["content_commit"]
+    assert binding["release_binding_complete"] is True, "Unsealed release binding refused"
+    assert binding["content_commit"] == "8d202439eaa386d13a9b93888a7d560657579a4b", binding["content_commit"]
+    assert isinstance(expected_artifact, str) and re.fullmatch(r"[0-9a-f]{40}", expected_artifact)
+    assert isinstance(expected_wheel, str) and re.fullmatch(r"[0-9a-f]{64}", expected_wheel)
     assert binding["artifact_commit"] == expected_artifact, binding["artifact_commit"]
     assert binding["wheel_sha256"] == expected_wheel, binding["wheel_sha256"]
     candidates = [regular_file(path) for path in (base / "wheels").glob("*.whl")
@@ -76,6 +79,10 @@ def verify_wheel(base, split, expected_wheel, expected_artifact):
             installed_namespace[relative] = hashlib.sha256(checked_path.read_bytes()).hexdigest()
     archive_namespace = {name: hashlib.sha256(blob).hexdigest()
                          for name, blob in blobs.items() if name.startswith("gnn/")}
+    assert archive_namespace == binding["namespace_inventory"], "Wheel/source full namespace mismatch"
+    assert len(archive_namespace) == binding["namespace_source_files_bound"]
+    metadata_hashes = {name: hashlib.sha256(blob).hexdigest() for name, blob in blobs.items() if name.startswith(dist_prefix + "/")}
+    assert metadata_hashes == binding["distribution_metadata_sha256"], "Wheel metadata differs from sealed admission"
     assert installed_namespace == archive_namespace, "Installed namespace/archive byte mismatch"
     for name, blob in blobs.items():
         if name == record_name:
