@@ -1,7 +1,7 @@
 # TO-DO — GNN implementation, verification and release backlog
 
-Updated 2026-10-05. **Implementation and publication stopped at Daniel's request;
-this update scopes remaining work for handoff.** Nothing below is a completed
+Updated 2026-10-05. **Implementation and release work have resumed.** The
+scoped backlog and historical evidence remain preserved. Nothing below is a completed
 release claim. Prior evidence remains in the scope documents, verification
 ledger, commit history and reviewed release candidates.
 
@@ -28,9 +28,14 @@ failures separate. Do not sum overlapping test selections.
   [#45](https://github.com/ActiveInferenceInstitute/fep_formal/pull/45) is pushed
   at `cd97a8f8785855625da4ebadad9318a35fd63863`. Its current
   [run 37384045009](https://github.com/ActiveInferenceInstitute/fep_formal/actions/runs/37384045009),
-  attempt 1, was observed running Python and serial Lean acceptance at handoff.
-  Confirm actual terminal jobs, source/base/synthetic-tree bindings, official
-  artifacts and coverage. The older P2 run 37380889327 was cancelled after
+  attempt 1, completed with all 20 required jobs successful and documentation
+  skipped. Current source/native/artifact checks passed; Python reported 2,495
+  passed / 16 skipped with 91.40% statement coverage. Independent PDF review
+  blocked receipt promotion: 151 unresolved references and 676 literal equation
+  labels survive the existing render gate. Repair cross-reference rendering and
+  fail-closed checks, then renew exact-source hosted/native/render acceptance.
+  The passing cd97 results remain historical after any owner changes. The older
+  P2 run 37380889327 was cancelled after
   supersession. Preserve its lint failure and the local 419-node attempt
   (413 passed / six failed). The one-import repair, canonical two ignored
   prerequisites and six-only passing replay are qualified; they do not prove a
@@ -61,11 +66,13 @@ failures separate. Do not sum overlapping test selections.
   audits and fresh independent content approval. Do not broadly copy staging files.
 
 - [ ] **R4 — adopt the reviewed API policy and resolve alert #12 narrowly.**
-  Adopt the reviewed SECURITY wording for a trusted local filesystem. Attach
+  The independently reviewed trusted-filesystem SECURITY wording is published
+  on the implementation branch, and alert #12 received a narrow request-string
+  false-positive disposition. Fresh CodeQL acceptance remains required. Attach
   the qualified 95 API negative/parity cases and static guard evidence to
   [CodeQL alert #12](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/security/code-scanning/12).
-  Apply only the independently justified request-string traversal disposition
-  and renew CodeQL. **Accept:** policy adoption and a fresh current check;
+  Retain the narrowly justified request-string traversal disposition and renew
+  CodeQL. **Accept:** policy adoption and a fresh current check;
   retain the non-atomic concurrent filesystem limitation. GUI alerts #13–#16
   remain separate. This is not a general security or deployed-service certificate.
 
@@ -150,14 +157,18 @@ R1–R9. Use existing issues rather than duplicate reports.
 
 - [ ] **S2 — scientifically repair six authored examples (#250).** Establish
   intended probabilities for the unchanged-baseline invalid examples before
-  editing values. **Accept:** explicit source corrections, finite/nonnegative
+  editing values. Explicit six-model probability and behavioral proposals are
+  drafted for scientific review; repository examples remain unchanged pending
+  that review. **Accept:** explicit source corrections, finite/nonnegative
   mass, dimensions/orientation, float32/float64 preservation, parser/serializer
   round trips and fresh native family acceptance. Retain rejection witnesses;
   do not normalize, omit examples or alter validator tolerances to hide failures.
 
 - [ ] **S3 — THRML structural zeros (upstream #72).** Track
   [the validated upstream report](https://github.com/extropic-ai/thrml/issues/72).
-  Keep current strict rejection until a released fix is verified. **Accept:**
+  Upstream marked the report fixed on 2026-10-05; a released fix was not
+  established by the current release check. Keep strict rejection until a released
+  fix is verified. **Accept:**
   both supported JAX splits, exact-zero/inactive-padding NaN regressions,
   independent numerical witnesses and unchanged source/seed/sample semantics.
   No epsilon repair or widening based only on an upstream commit or shape match.
