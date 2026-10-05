@@ -1,7 +1,16 @@
 # Execute Module - Agent Scaffolding
 
 ## Module Overview
-**Purpose**: Execute rendered simulation scripts across multiple frameworks (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, Lean, bnlearn, ngc-learn). Per-folder `execution_summary.json` files are merged so the durable summary covers every input folder; frameworks a model's kind cannot use are reported `unsupported` by Step 11 and are never executed.
+**Purpose**: Execute selected rendered simulation scripts through the canonical backend registry: 13 execution targets comprising 12 render backends and the execution-only Lean bridge. These include PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, ngc-learn, cpomdp and THRML. The pipeline freezes model selection and produces one current-run aggregate; earlier unbound or different-run summaries are archived without contributing current evidence. Verified receipts may be recounted only within the same run/configuration. Step 11 reports incompatible model kinds as `unsupported`; they are never executed.
+
+THRML and cpomdp remain experimental and require explicit backend selection;
+they are excluded from the maintained `all` renderer preset. Bounded readiness
+probes use the selected interpreter/toolchain and preserve structured diagnoses
+for missing packages/toolchains, unsupported Python/package versions, probe
+timeout/failure and missing executors. A timed-out probe does not establish
+package absence, and skipped or unfinished required work cannot establish a
+successful complete run. Installation remains explicit; see
+[THRML](thrml/README.md) and [cpomdp](../render/cpomdp/README.md).
 
 **Pipeline Step**: Step 12: Execution (src/gnn/12_execute.py)
 
@@ -11,7 +20,7 @@
 
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
 
-**Last Updated**: 2026-09-26
+**Last Updated**: 2026-10-05
 
 ---
 
@@ -67,7 +76,7 @@ processor/
 - `output_dir` (Path): Output directory for execution results
 - `verbose` (bool): Enable verbose logging (default: False)
 - `frameworks` (str): Frameworks to execute ("all", "lite", or comma-separated list, default: "all")
-  - `"all"`: Execute all configured executors
+  - `"all"`: Select maintained backends from the registry; experimental THRML/cpomdp require explicit selection
   - `"lite"`: Selects PyMDP, JAX, DisCoPy, and bnlearn (bnlearn scripts skip at the shared pre-flight probe when the `bnlearn` extra is absent; see below)
 - `timeout` (int): Execution timeout per script in seconds (default: 3600)
 - `render_output_dir` (Optional[Path]): Explicit Step 11 output directory to search. This is the safest way to keep Step 12 scoped to an isolated pipeline run.
