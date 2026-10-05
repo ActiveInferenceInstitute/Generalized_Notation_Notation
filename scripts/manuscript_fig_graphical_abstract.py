@@ -334,7 +334,7 @@ def main() -> Path:
     version = tokens["GNN_VERSION"]
     exec_step = tokens["GNN_STEP_EXECUTE"]
 
-    fig, ax = plt.subplots(figsize=(11, 4.9))
+    fig, ax = plt.subplots(figsize=(_X_SPAN, _Y_SPAN))
     # Span the figure exactly: one data unit == one figure inch, so the width
     # budgets above compare like with like against measured text extents.
     fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
