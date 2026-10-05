@@ -19,7 +19,6 @@ jobs:
       matrix:
         backend: [numpyro, rxinfer]
     env:
-      GNN_NATIVE_VERIFY_WORKSPACE: ${{ runner.temp }}/gnn-native-acceptance
       GNN_NATIVE_VERIFY_SOURCE_ROOT: ${{ github.workspace }}
       GKSwstype: "100"
       JULIA_PKG_PRECOMPILE_AUTO: "0"
@@ -41,10 +40,12 @@ jobs:
           version: "1.12.7"
       - name: Provision the frozen ordinary wheel outside checkout
         env:
+          GNN_NATIVE_VERIFY_WORKSPACE: ${{ runner.temp }}/gnn-native-acceptance
           BACKEND: ${{ matrix.backend }}
         run: python verification/native_acceptance/provision.py --backend "$BACKEND"
       - name: Supervise controls and four full native replays
         env:
+          GNN_NATIVE_VERIFY_WORKSPACE: ${{ runner.temp }}/gnn-native-acceptance
           BACKEND: ${{ matrix.backend }}
           EXPECTED_ROOT_HEAD: ${{ github.sha }}
         run: |
