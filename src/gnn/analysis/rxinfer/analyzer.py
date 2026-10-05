@@ -976,7 +976,15 @@ def create_rxinfer_visualizations(
         try:
             diag = convergence_diagnostics
             fe_arr = np.asarray(free_energy, dtype=float)
-            fig, ax = plt.subplots(figsize=(12, 4.5))
+            # Keep diagnostic labels in a reserved panel, clear of VFE and ticks.
+            fig, (ax, diagnostics_ax) = plt.subplots(
+                1,
+                2,
+                figsize=(14, 4.5),
+                gridspec_kw={"width_ratios": [3, 1]},
+                layout="constrained",
+            )
+            diagnostics_ax.set_axis_off()
             ax.plot(fe_arr, color="crimson", linewidth=2, marker="o", markersize=3)
             ax.fill_between(range(len(fe_arr)), fe_arr, alpha=0.3, color="crimson")
             ax.set_xlabel("Inference Iteration")
@@ -990,11 +998,12 @@ def create_rxinfer_visualizations(
             itc = diag.get("iterations_to_convergence")
             if itc is not None and 1 <= itc <= len(fe_arr):
                 ax.axvline(x=itc - 1, color="navy", linestyle="--", alpha=0.7)
-                ax.text(
-                    itc - 1,
-                    fe_arr.max(),
+                diagnostics_ax.text(
+                    0.02,
+                    0.98,
                     f"Converged @ iter {itc}",
-                    ha="right",
+                    transform=diagnostics_ax.transAxes,
+                    va="top",
                     color="navy",
                     fontsize=9,
                     fontweight="bold",
@@ -1011,11 +1020,11 @@ def create_rxinfer_visualizations(
             annotation_lines.append(
                 f"Converged iter   : {itc if itc is not None else 'n/a'}"
             )
-            ax.text(
+            diagnostics_ax.text(
                 0.02,
-                0.98,
+                0.80,
                 "\n".join(annotation_lines),
-                transform=ax.transAxes,
+                transform=diagnostics_ax.transAxes,
                 va="top",
                 fontsize=9,
                 fontfamily="monospace",

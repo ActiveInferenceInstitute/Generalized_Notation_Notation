@@ -1,24 +1,19 @@
 """
-execute module for GNN Processing Pipeline.
+Execution API for registry-declared GNN simulation backends.
 
-Provides simulation execution across ten backends — PyMDP, RxInfer.jl,
-ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, Lean (via the
-fep_lean bridge), and bnlearn — plus the dependency/environment validators
-that gate them.
+The canonical framework registry supplies the declared implementation features
+exposed here. These features describe backend support; use
+``collect_doctor_report`` for dependency, toolchain, and execution readiness.
+The experimental cpomdp and THRML backends require explicit framework selection.
 """
 
 from typing import Any
 
 from gnn import __version__
+from gnn.frameworks import ALL_FRAMEWORKS as _ALL_FRAMEWORKS
 
 FEATURES: dict[str, Any] = {
-    "pymdp_execution": True,
-    "rxinfer_execution": True,
-    "activeinference_jl_execution": True,
-    "discopy_execution": True,
-    "jax_execution": True,
-    "numpyro_execution": True,
-    "bnlearn_execution": True,
+    **{f"{name}_execution": True for name in _ALL_FRAMEWORKS},
     "validation": True,
     "mcp_integration": True,
 }

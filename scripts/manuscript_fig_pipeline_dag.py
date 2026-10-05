@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Deterministic generator for the GNN 25-step pipeline DAG figure.
 
-Thin orchestrator: reads the real step roster, phases, and hard data
-dependencies from ``src/STEP_INDEX.md`` (the master step table plus its
-"Data Dependency Graph" mermaid block) and renders a layered, left-to-right
-directed graph. No counts, names, or edges are hard-coded — everything is
+Thin orchestrator: reads the real step roster, phases, and required orchestration
+prerequisites from ``src/gnn/STEP_INDEX.md`` (the master step table plus its
+"Data Dependency Graph" mermaid block) and renders a directed graph in rowwise
+topological order. No counts, names, or edges are hard-coded — everything is
 parsed from the source-of-truth file.
 
 Readability design: each step is a wide rounded-rectangle box (not a circle),
 sized so the full ``N module_name`` label fits without truncation. Nodes are
-placed on a hand-computed topological-depth layout (x = longest-path layer,
-y = spread within the layer) so the flow reads left-to-right with no overlap.
+wrapped across five columns in a deterministic topological order. Multiline
+labels preserve every module name at a consistent font size in print.
 
 Output: output/figures/gnn_pipeline_dag.png (>=150 DPI, headless).
 """
@@ -44,12 +44,11 @@ PHASE_COLORS: dict[str, str] = {
 
 # Box geometry in data coordinates (half-width / half-height).
 BOX_HALF_W = 1.35
-BOX_HALF_H = 0.42
+BOX_HALF_H = 0.65
 
-# Characters that fit on one line at the base font; longer labels shrink so the
-# full module name always stays inside its box (e.g. ``advanced_visualization``).
+# Character-based size hint; the final renderer bounds check rejects overflow.
 LABEL_FIT_CHARS = 16
-BASE_FONT = 10.0
+BASE_FONT = 11.0
 
 
 def parse_steps(text: str) -> dict[int, dict[str, str]]:
@@ -78,7 +77,7 @@ def parse_steps(text: str) -> dict[int, dict[str, str]]:
 
 
 def parse_dependencies(text: str, valid: set[int]) -> list[tuple[int, int]]:
-    """Parse hard prerequisite edges from the Data Dependency Graph mermaid block."""
+    """Parse required step edges from the Data Dependency Graph mermaid block."""
     # Isolate the dependency-graph mermaid block (graph TD ... ).
     start = text.find("## Data Dependency Graph")
     block = text[start:] if start != -1 else text
@@ -101,34 +100,20 @@ def parse_dependencies(text: str, valid: set[int]) -> list[tuple[int, int]]:
 def compute_layout(
     g: nx.DiGraph, steps: dict[int, dict[str, str]]
 ) -> dict[int, tuple[float, float]]:
-    """Layered left-to-right positions: x = topological depth, y = spread in layer."""
-    depth: dict[int, int] = {}
+    """Arrange a deterministic topological order in five columns for print."""
     order = (
-        list(nx.topological_sort(g))
+        list(nx.lexicographical_topological_sort(g))
         if nx.is_directed_acyclic_graph(g)
         else sorted(steps)
     )
-    for n in order:
-        preds = list(g.predecessors(n))
-        depth[n] = 0 if not preds else max(depth[p] for p in preds) + 1
-
-    # Group nodes by layer, order within a layer by step number for determinism.
-    layers: dict[int, list[int]] = {}
-    for n in sorted(steps):
-        layers.setdefault(depth[n], []).append(n)
-
-    pos: dict[int, tuple[float, float]] = {}
-    x_gap, y_gap = 3.4, 1.3
-    for layer, nodes in layers.items():
-        ordered = sorted(nodes)
-        offset = (len(ordered) - 1) / 2.0
-        for i, n in enumerate(ordered):
-            pos[n] = (layer * x_gap, (offset - i) * y_gap)
-    return pos
+    return {
+        node: ((index % 5) * 3.4, -(index // 5) * 2.0)
+        for index, node in enumerate(order)
+    }
 
 
 def draw_box(ax: Axes, x: float, y: float, label: str, color: str) -> None:
-    """Draw one rounded-rectangle step node with a centered, full-width label."""
+    """Draw a rounded step node with a centered multiline module label."""
     box = FancyBboxPatch(
         (x - BOX_HALF_W, y - BOX_HALF_H),
         2 * BOX_HALF_W,
@@ -140,10 +125,11 @@ def draw_box(ax: Axes, x: float, y: float, label: str, color: str) -> None:
         zorder=3,
     )
     ax.add_patch(box)
-    # Shrink the font for over-long labels so the full name stays inside the box.
+    # Keep a readable font floor; the renderer rejects labels that still overflow.
     font = BASE_FONT
-    if len(label) > LABEL_FIT_CHARS:
-        font = BASE_FONT * LABEL_FIT_CHARS / len(label)
+    longest_line = max(len(line) for line in label.splitlines())
+    if longest_line > LABEL_FIT_CHARS:
+        font = max(9.0, BASE_FONT * LABEL_FIT_CHARS / longest_line)
     ax.text(
         x,
         y,
@@ -171,9 +157,7 @@ def main() -> None:
 
     pos = compute_layout(g, steps)
 
-    # Canvas sized so one layout unit is ~0.52 figure inches: the boxes keep
-    # their aspect at any step count and a 10pt label stays legible when the
-    # figure is scaled into a 17cm text column (about 5pt on the page).
+    # Five-column rows keep full module labels readable in a manuscript column.
     xs = [p[0] for p in pos.values()]
     ys = [p[1] for p in pos.values()]
     unit_in = 0.52
@@ -185,10 +169,13 @@ def main() -> None:
     for a, b in edges:
         xa, ya = pos[a]
         xb, yb = pos[b]
-        # Anchor on the right edge of source and left edge of target so the
-        # arrows read as left-to-right flow and never cross box interiors.
-        start = (xa + BOX_HALF_W, ya)
-        end = (xb - BOX_HALF_W, yb)
+        # Connect same-row peers horizontally and later rows from bottom to top.
+        if ya == yb:
+            start = (xa + BOX_HALF_W, ya)
+            end = (xb - BOX_HALF_W, yb)
+        else:
+            start = (xa, ya - BOX_HALF_H)
+            end = (xb, yb + BOX_HALF_H)
         arrow = FancyArrowPatch(
             start,
             end,
@@ -204,7 +191,8 @@ def main() -> None:
     # --- boxes ------------------------------------------------------------
     for n in sorted(steps):
         x, y = pos[n]
-        label = f"{n}  {steps[n]['name']}"
+        name = steps[n]["name"].replace("_", "_\n")
+        label = f"{n}\n{name}"
         draw_box(ax, x, y, label, PHASE_COLORS[steps[n]["phase"]])
 
     # --- frame, legend, title ---------------------------------------------
@@ -218,31 +206,46 @@ def main() -> None:
     ax.legend(
         handles=legend_handles,
         title="Phase",
-        loc="upper right",
-        frameon=True,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.01),
+        ncol=len(PHASE_COLORS),
+        frameon=False,
         fontsize=10,
         title_fontsize=10.5,
     )
 
     n_steps = len(steps)
     ax.set_title(
-        "GNN 25-Step Processing Pipeline",
+        f"GNN {n_steps}-Step Processing Pipeline",
         fontsize=20,
         fontweight="bold",
-        pad=14,
+        pad=65,
     )
     ax.text(
         0.5,
         -0.02,
         f"{n_steps} steps ({min(steps)}–{max(steps)}) · "
-        f"{len(edges)} hard data dependencies · "
-        "left-to-right by topological layer, colored by execution phase",
+        f"{len(edges)} required step prerequisites · "
+        "rowwise topological order; colored by execution phase",
         transform=ax.transAxes,
         ha="center",
         va="top",
         fontsize=10,
         color="#475569",
     )
+
+    # Measure the actual renderer instead of assuming character counts imply fit.
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    for box, label in zip(ax.patches[-n_steps:], ax.texts[:n_steps], strict=True):
+        bounds = box.get_window_extent(renderer)
+        text_bounds = label.get_window_extent(renderer)
+        if not (
+            bounds.x0 <= text_bounds.x0 <= text_bounds.x1 <= bounds.x1
+            and bounds.y0 <= text_bounds.y0 <= text_bounds.y1 <= bounds.y1
+        ):
+            plt.close(fig)
+            raise ValueError(f"Pipeline label overflows its node: {label.get_text()!r}")
 
     OUT_PNG.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT_PNG, dpi=170, bbox_inches="tight", facecolor="white")

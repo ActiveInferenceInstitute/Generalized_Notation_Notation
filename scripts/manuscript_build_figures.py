@@ -18,7 +18,7 @@ shipping. ``png_sha256`` is the digest of the PNG this build produced, and
 ``consumed_tokens`` is the ``{key: value}`` map the generator actually read out of
 ``output/data/manuscript_variables.json`` (observed by
 ``scripts/lib/manuscript_figure_tokens.py``, not declared).
-``src/tests/test_manuscript_figure_freshness.py`` re-checks both against the
+``tests/test_manuscript_figure_freshness.py`` re-checks both against the
 committed PNG and the live token map, so a figure built before a count moved fails
 the suite. Without it, ``fig:repo_metrics`` shipped "365 test files" on the same PDF
 page as prose reading 367.
@@ -81,11 +81,12 @@ _FIGURES = [
         "manuscript_fig_pipeline_dag.py",
         "gnn_pipeline_dag.png",
         "Directed acyclic graph of the numbered GNN pipeline steps. Nodes are the "
-        "step modules in src/, arranged left to right from parsing and type "
-        "checking, through validation, visualization, rendering and execution, to "
-        "analysis, reporting and integration. Edges run from a step to every later "
-        "step that consumes its artifacts, so each output can be traced back to the "
-        "step that produced it.",
+        "step modules under src/gnn/, arranged in rowwise topological order across "
+        "five columns. Each node shows the complete step number and module name; "
+        "the legend above the nodes identifies execution phases by color. Arrows "
+        "show the required orchestration prerequisites declared in "
+        "src/gnn/STEP_INDEX.md, linking each prerequisite step to its consumers. "
+        "Optional artifact enrichments are documented separately.",
     ),
     (
         "fig:family_matrix",

@@ -361,6 +361,7 @@ def visualize_all_framework_outputs(
                         free_energy,
                         fe_dual_file,
                         f"Active Inference Energy Dynamics - {model_name} ({framework})",
+                        vfe_per_iteration=bool(sim_data.get("vfe_per_iteration")),
                     )
                     generated_files.append(str(fe_dual_file))
                     log.info(f"Generated dual free energy plot: {fe_dual_file.name}")
@@ -662,7 +663,19 @@ def generate_free_energy_plots(
         n_policies = 1
         fe_summary = fe_array
 
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    # Reserve a bottom row for summaries so no annotation hides a data peak.
+    fig = plt.figure(figsize=(12, 11), layout="constrained")
+    grid = fig.add_gridspec(3, 2, height_ratios=[1, 1, 0.25])
+    axes = np.array(
+        [
+            [fig.add_subplot(grid[row, column]) for column in range(2)]
+            for row in range(2)
+        ]
+    )
+    change_stats_ax = fig.add_subplot(grid[2, 0])
+    convergence_stats_ax = fig.add_subplot(grid[2, 1])
+    change_stats_ax.set_axis_off()
+    convergence_stats_ax.set_axis_off()
 
     # Main free energy plot
     ax1 = axes[0, 0]
@@ -761,11 +774,11 @@ def generate_free_energy_plots(
         # Add summary statistics
         positive_changes = np.sum(fe_diff > 0)
         negative_changes = np.sum(fe_diff < 0)
-        ax3.text(
+        change_stats_ax.text(
             0.02,
-            0.98,
+            0.80,
             f"\u2191 Increases: {positive_changes}\n\u2193 Decreases: {negative_changes}",
-            transform=ax3.transAxes,
+            transform=change_stats_ax.transAxes,
             verticalalignment="top",
             fontsize=10,
             bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
@@ -790,11 +803,11 @@ def generate_free_energy_plots(
             final_var = rolling_var[-1]
             converged = final_var < 0.1
             status = "\u2713 Converged" if converged else "\u26a0 Not Converged"
-            ax4.text(
+            convergence_stats_ax.text(
                 0.98,
-                0.98,
+                0.80,
                 f"{status}\nFinal Variance: {final_var:.4f}",
-                transform=ax4.transAxes,
+                transform=convergence_stats_ax.transAxes,
                 verticalalignment="top",
                 horizontalalignment="right",
                 fontsize=10,
@@ -816,7 +829,6 @@ def generate_free_energy_plots(
         ax4.set_title("Convergence Analysis")
 
     plt.suptitle(title, fontsize=14, fontweight="bold")
-    plt.tight_layout()
     saved = safe_savefig(output_path, log=logger)
     return saved or str(output_path)
 
@@ -826,15 +838,19 @@ def generate_vfe_vs_efe_plot(
     efe: List[Any],
     output_path: Path,
     title: str = "Variational vs Expected Free Energy",
+    *,
+    vfe_per_iteration: bool = False,
 ) -> str:
     """
-    Generate visualization comparing VFE and EFE over time.
+    Generate VFE and EFE plots using their declared independent sample domains.
 
     Args:
         vfe: List of variational free energy values (scalars)
         efe: List of expected free energy values (lists of scalars, one per policy)
         output_path: Path to save the visualization
         title: Title for the plot
+        vfe_per_iteration: Whether VFE is an inference-iteration trace rather than
+            a timestep trace. Iteration VFE and timestep EFE use separate panels.
 
     Returns:
         Path to the generated file
@@ -849,6 +865,28 @@ def generate_vfe_vs_efe_plot(
             efe_summary.append(min(efe_t) if len(efe_t) > 0 else 0)
         else:
             efe_summary.append(efe_t)
+
+    if vfe_per_iteration:
+        fig, (vfe_ax, efe_ax) = plt.subplots(
+            2, 1, figsize=(12, 7), layout="constrained"
+        )
+        vfe_ax.plot(range(1, len(vfe) + 1), vfe, "o-", color="tab:blue", linewidth=2)
+        vfe_ax.set_xlabel("Inference Iteration (1-based)")
+        vfe_ax.set_ylabel("Variational Free Energy (VFE)")
+        vfe_ax.grid(True, alpha=0.3)
+        efe_ax.plot(
+            range(len(efe_summary)),
+            efe_summary,
+            "s--",
+            color="tab:orange",
+            linewidth=2,
+        )
+        efe_ax.set_xlabel("Time Step")
+        efe_ax.set_ylabel("Min Expected Free Energy (EFE)")
+        efe_ax.grid(True, alpha=0.3)
+        fig.suptitle(title, fontsize=14, fontweight="bold")
+        saved = safe_savefig(output_path, log=logger)
+        return saved or str(output_path)
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
@@ -899,6 +937,11 @@ def generate_observation_analysis(
 
     Returns:
         Path to the generated file
+
+    Raises:
+        ValueError: No observations are supplied, or the plot would exceed
+            64,000,000 canvas pixels at its saved 300 dpi. Working buffers
+            remain subject to the watchdog.
     """
     if not observations:
         raise ValueError("No observations provided")
@@ -907,34 +950,52 @@ def generate_observation_analysis(
     unique_obs = sorted(set(observations))
     n_obs = len(unique_obs)
 
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    # Observation identifiers are categories; their numeric gaps are not distances.
+    positions = np.arange(n_obs)
+    position_by_observation = {value: index for index, value in enumerate(unique_obs)}
+    sequence_positions = [position_by_observation[value] for value in observations]
+    figure_size = (max(12, 4 + 0.4 * n_obs), max(5, 1.8 + 0.25 * n_obs))
+    # safe_savefig uses 300 dpi; this nominal-canvas estimate excludes working buffers.
+    canvas_pixels = figure_size[0] * figure_size[1] * 300**2
+    if canvas_pixels > 64_000_000:
+        raise ValueError(
+            f"Observation analysis with {n_obs} categories requires "
+            f"{canvas_pixels:,.0f} canvas pixels; limit is 64,000,000"
+        )
+    fig, axes = plt.subplots(1, 2, figsize=figure_size)
 
     # Observation frequency
     ax1 = axes[0]
     obs_counts = [np.sum(obs_array == o) for o in unique_obs]
     colors = plt.get_cmap("Pastel1")(np.linspace(0, 1, n_obs))
-    ax1.bar(unique_obs, obs_counts, color=colors, edgecolor="black")
+    ax1.bar(positions, obs_counts, color=colors, edgecolor="black")
     ax1.set_xlabel("Observation")
     ax1.set_ylabel("Count")
     ax1.set_title("Observation Frequency")
-    ax1.set_xticks(unique_obs)
-    ax1.set_xticklabels([f"O{o}" for o in unique_obs])
+    ax1.set_xticks(positions)
+    ax1.set_xticklabels(
+        [f"O{o}" for o in unique_obs],
+        rotation=90 if n_obs > 16 else 45 if n_obs > 8 else 0,
+        ha="right" if 8 < n_obs <= 16 else "center",
+    )
 
     # Observation sequence
     ax2 = axes[1]
     ax2.scatter(
         range(len(observations)),
-        observations,
-        c=observations,
+        sequence_positions,
+        c=sequence_positions,
         cmap="tab10",
         s=30,
         alpha=0.7,
     )
-    ax2.plot(range(len(observations)), observations, "gray", alpha=0.3, linewidth=0.5)
+    ax2.plot(
+        range(len(observations)), sequence_positions, "gray", alpha=0.3, linewidth=0.5
+    )
     ax2.set_xlabel("Time Step")
     ax2.set_ylabel("Observation")
     ax2.set_title("Observation Sequence")
-    ax2.set_yticks(unique_obs)
+    ax2.set_yticks(positions)
     ax2.set_yticklabels([f"O{o}" for o in unique_obs])
     ax2.grid(True, alpha=0.3)
 
