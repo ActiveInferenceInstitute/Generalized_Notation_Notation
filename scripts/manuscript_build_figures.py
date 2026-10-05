@@ -69,8 +69,8 @@ _FIGURES = [
         "End-to-end summary panel of the GNN pipeline in seven left-to-right stage "
         "cards: a plain-text GNN document declaring A, B, C, D and E; parsing; "
         "validation and type checking with the B-tensor orientation check; code "
-        "rendering to the registered backends; execution of the backends including "
-        "the bnlearn lane; analysis; and cross-repository interchange with "
+        "rendering to the registered backends; supervised dispatch through execution "
+        "adapters including the bnlearn lane; analysis; and cross-repository interchange with "
         "GEO-INFER and fep_lean. Step pills name the pipeline step behind each "
         "stage, a callout states the two newest capabilities, and a footer strip "
         "carries the producer's scale counts for steps, families, backends and "
@@ -115,7 +115,7 @@ _FIGURES = [
         "manuscript_fig_repo_metrics.py",
         "gnn_repo_metrics.png",
         "Horizontal bar chart on a logarithmic axis of repository-scale counts: "
-        "pipeline steps, model families, registered backends, execution backends, "
+        "pipeline steps, model families, registered backends, render-target adapters, "
         "MCP tools, source packages, test files, example models and documentation "
         "files. Each bar is annotated with its exact value; all values come from "
         "output/data/manuscript_variables.json.",
