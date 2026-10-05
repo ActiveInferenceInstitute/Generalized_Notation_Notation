@@ -17,12 +17,15 @@ contain historical stages; reconcile their final prepared successors before
 publication. Do not restart accepted work merely because an older ledger entry
 still says pending. Do not overwrite this handoff backlog with an older candidate.
 
-## P0 — finish the existing release safely
+## v4.0.0 — P0: finish the existing release safely
 
 These tasks depend on one another in the order below. Source custody, local
 checks, hosted checks, installed-wheel tests, native numerical witnesses, visual
 review and publication are separate evidence planes. Keep their identities and
 failures separate. Do not sum overlapping test selections.
+
+The bounded `--autonomous` mode remains proposal-only in v4.0.0; it does not
+modify its own source or grant autonomous publication authority.
 
 - [ ] **R1 — qualify the current companion run.** Fep companion PR
   [#45](https://github.com/ActiveInferenceInstitute/fep_formal/pull/45) is pushed
