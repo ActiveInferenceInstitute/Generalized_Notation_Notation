@@ -102,7 +102,7 @@ CLI `total_budget` / `llm_timeout`, configured `llm.timeout_seconds`, and an
 explicit `GNN_STEP_TIMEOUT_13` are explicit limits at their respective processor
 or orchestration boundaries; the remaining monotonic run deadline also limits
 requests and cleanup. The **900-second** entry in `step_timeouts.py` is the
-legacy outer-step default when no immutable run context provides corpus sizing;
+base outer-step default when no immutable run context provides corpus sizing;
 it is not the current processor's automatic corpus budget. The shipped
 `pipeline.timeout.total: null` derives the total run budget from selected step
 budgets. A finite positive explicit total takes precedence. Other step defaults
