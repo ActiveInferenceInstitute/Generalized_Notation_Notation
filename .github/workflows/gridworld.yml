@@ -1,101 +1,66 @@
-# Gridworld boundary check.
-#
-# OB-1 decision (2026-09-23): CI is now allowed to EMIT the volatile
-# boundary artifacts in the runner workspace and gate on the fresh tree.
-# This workflow runs the POMDP GridWorld pipeline end-to-end (the same
-# command as the `just gridworld` recipe, including its exit contract:
-# 0 = success, 2 = success with warnings), then hard-gates on
-# scripts/check_pomdp_gridworld_outputs.py. The output/ git boundary is
-# unchanged — nothing new is committed; the volatile run tree lives only
-# in the runner workspace, and the pipeline execution summary is uploaded
-# as a run receipt.
-#
-# Report-only: a red run is the drift signal — it means the committed
-# pipeline + committed Julia envs no longer satisfy the published output
-# contract.
-
-name: Gridworld boundary check
+name: Manual reported native verification
 
 on:
   workflow_dispatch:
-  schedule:
-    # Weekly Monday 03:43 UTC — does not collide with the
-    # 04:28/05:23/06:00/07:14 crons in the other workflows.
-    - cron: "43 3 * * 1"
-
-concurrency:
-  group: gridworld-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
 
+concurrency:
+  group: reported-native-verification-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  gridworld:
+  reported-native:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [numpyro, rxinfer]
     env:
-      UV_PYTHON: "3.12"
+      GNN_NATIVE_VERIFY_WORKSPACE: ${{ runner.temp }}/gnn-native-acceptance
+      GNN_NATIVE_VERIFY_SOURCE_ROOT: ${{ github.workspace }}
+      GKSwstype: "100"
+      JULIA_PKG_PRECOMPILE_AUTO: "0"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          # Pin uv to the Dockerfile bootstrap floor series (UV_VERSION=0.12.0).
-          version: "0.12"
-          enable-cache: true
-
-      - name: Install dependencies (dev)
-        run: uv sync --frozen --extra dev
-
-      # src/gnn/execute/julia_setup.py locates Julia with a single
-      # shutil.which("julia") probe, so any Julia on PATH satisfies the
-      # pipeline's executors.
-      - name: Install Julia
-        uses: julia-actions/setup-julia@fa02766e078afaaf09b14210362cee14137e6a32 # v3.0.2
+          python-version: "3.11.15"
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
-          version: "1.12"
-
-      # Headless GR/Plots for the Julia scripts: without GKSwstype the GR
-      # backend may spawn a Qt window (gksqt) and block the run
-      # (same invariant as the `just gridworld` recipe).
-      - name: Run Julia headless
-        run: echo "GKSwstype=100" >> "$GITHUB_ENV"
-
-      # Instantiate the two committed Julia envs ONCE. Instantiation
-      # failures must not hard-fail the run: the render pre-exec gate
-      # degrades gracefully (executions are skipped and reported), so a
-      # loud warning + the hard contract gate below is the correct
-      # severity for a failed env setup.
-      - name: Instantiate the committed RxInfer env
+          version: "0.12.0"
+          enable-cache: false
+      - uses: julia-actions/setup-julia@fa02766e078afaaf09b14210362cee14137e6a32 # v3.0.2
+        if: matrix.backend == 'rxinfer'
+        with:
+          version: "1.12.7"
+      - name: Provision the frozen ordinary wheel outside checkout
+        env:
+          BACKEND: ${{ matrix.backend }}
+        run: python verification/native_acceptance/provision.py --backend "$BACKEND"
+      - name: Supervise controls and four full native replays
+        env:
+          BACKEND: ${{ matrix.backend }}
+          EXPECTED_ROOT_HEAD: ${{ github.sha }}
         run: |
-          if ! julia --project=src/gnn/execute/rxinfer -e 'using Pkg; Pkg.instantiate()'; then
-            echo "::warning::julia --project=src/gnn/execute/rxinfer Pkg.instantiate() FAILED — the RxInfer execution step will degrade gracefully, the contract gate will judge the fresh tree."
-          fi
-          if ! julia --project=src/gnn/execute/activeinference_jl -e 'using Pkg; Pkg.instantiate()'; then
-            echo "::warning::julia --project=src/gnn/execute/activeinference_jl Pkg.instantiate() FAILED — the ActiveInference.jl execution step will degrade gracefully, the contract gate will judge the fresh tree."
-          fi
-
-      - name: Run the POMDP GridWorld pipeline
-        run: |
-          status=0
-          uv run python src/gnn/main.py --target-dir input/gnn_files/pomdp_gridworld --frameworks all --verbose || status=$?
-          # Thin-orchestrator exit contract (see the `just gridworld` recipe):
-          # 0 = success, 2 = success with warnings.
-          if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then
-            exit "$status"
-          fi
-
-      - name: Gate on the POMDP GridWorld output contract
-        run: uv run python scripts/check_pomdp_gridworld_outputs.py output
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+          "$GNN_NATIVE_VERIFY_WORKSPACE/py311/bin/python" -I \
+            verification/native_acceptance/supervise.py \
+            --backend "$BACKEND" --expected-root-head "$EXPECTED_ROOT_HEAD"
+      - name: Retain raw current-run evidence, including partial failures
         if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: gridworld-pipeline-summary
-          path: output/00_pipeline_summary/pipeline_execution_summary.json
-          if-no-files-found: warn
-          retention-days: 7
+          name: reported-native-${{ matrix.backend }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/gnn-native-acceptance/evidence/
+            ${{ runner.temp }}/gnn-native-acceptance/wheels/
+            ${{ runner.temp }}/gnn-native-acceptance/frozen-requirements.txt
+            verification/native_acceptance/
+            .github/workflows/gridworld.yml
+          if-no-files-found: error
+          retention-days: 14
