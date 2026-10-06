@@ -12,7 +12,7 @@ paper:
     image: "output/figures/gnn_graphical_abstract.png"
     alt: "Graphical abstract: one plain-text GNN specification flowing through parse, validate, render, execute, and analyze cards into cross-repository interchange checks against the pinned GEO-INFER and fep-lean pairs."
   version: "4.0.0"
-  date: "Unreleased candidate; manuscript authored 2026-10-02"
+  date: "Software version 4.0.0; manuscript authored 2026-10-02"
 
 authors:
   - name: "Daniel Ari Friedman"
