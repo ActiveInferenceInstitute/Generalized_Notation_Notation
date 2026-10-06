@@ -14,6 +14,8 @@ The pipeline classifies each parsed specification structurally, and it does so f
 
 {{GNN_MODEL_KIND_TABLE}}
 
+The table records registry target flags. In particular, bnlearn is render-only; a listed target adapter does not establish a runnable executor. Execution receipts record actual backend availability and outcome for the selected model.
+
 ### The Discrete Categorical Kind
 
 A discrete specification denotes a partially observable Markov decision process over a horizon $T$, factorized as in [@eq:generative_model] following the standard formulation [@dacosta2020; @smith2022].
