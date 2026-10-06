@@ -71,7 +71,9 @@ def _generate_jax_model_code(
         )
 
         time_spec = gnn_spec.get("time_specification") or gnn_spec.get("time", "")
-        time_type = time_spec.get("time_type", "") if isinstance(time_spec, dict) else time_spec
+        time_type = (
+            time_spec.get("time_type", "") if isinstance(time_spec, dict) else time_spec
+        )
         # Match declarations, never a model name or incidental prose/comment.
         time_declarations = {
             line.split("#", 1)[0].strip().lower()
@@ -82,7 +84,9 @@ def _generate_jax_model_code(
         static_model = "static" in time_declarations
         passive_model = bool(model_params.get("passive_model", False))
         if passive_model and not static_model and num_actions != 1:
-            raise ValueError("Passive filtering requires one action-independent transition slice")
+            raise ValueError(
+                "Passive filtering requires one action-independent transition slice"
+            )
         inference_only = static_model or passive_model
         estimand = "static_conditioning" if static_model else "filtering"
         if static_model:

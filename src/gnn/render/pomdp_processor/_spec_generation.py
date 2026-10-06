@@ -36,7 +36,9 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
             for key in ("time", "time_specification", "equations")
         }
         spec = self._pomdp_to_gnn_spec_body(pomdp_space, **kwargs)
-        spec.update({key: value for key, value in metadata.items() if value is not None})
+        spec.update(
+            {key: value for key, value in metadata.items() if value is not None}
+        )
         return spec
 
     def _pomdp_to_gnn_spec_body(

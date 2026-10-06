@@ -323,8 +323,14 @@ class POMDPExtractor(POMDPSectionsMixin, POMDPParametersMixin, POMDPOrientationM
             source_sections = {}
             headers = list(self.SECTION_PATTERN.finditer(content))
             for index, header in enumerate(headers):
-                end = headers[index + 1].start() if index + 1 < len(headers) else len(content)
-                source_sections[header.group(1).strip()] = content[header.end():end].strip()
+                end = (
+                    headers[index + 1].start()
+                    if index + 1 < len(headers)
+                    else len(content)
+                )
+                source_sections[header.group(1).strip()] = content[
+                    header.end() : end
+                ].strip()
 
             # Create POMDP state space
             pomdp_space = POMDPStateSpace(
