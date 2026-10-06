@@ -14,7 +14,7 @@ The pipeline classifies each parsed specification structurally, and it does so f
 
 {{GNN_MODEL_KIND_TABLE}}
 
-The table records registry target flags. In particular, bnlearn is render-only; a listed target adapter does not establish a runnable executor. Execution receipts record actual backend availability and outcome for the selected model.
+The table records registry target flags, not execution evidence. A listed target adapter does not establish that its optional runtime is installed. Execution receipts record actual backend availability and outcome for the selected model.
 
 ### The Discrete Categorical Kind
 
