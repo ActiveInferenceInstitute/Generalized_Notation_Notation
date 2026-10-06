@@ -5,7 +5,7 @@ scoped backlog and historical evidence remain preserved. Nothing below is a comp
 release claim. Prior evidence remains in the scope documents, verification
 ledger, commit history and reviewed release candidates.
 
-The implementation branch is `codex/gnn-reliability-v4`, at artifact commit
+The implementation branch is `codex/gnn-reliability-v4`. Its historical artifact commit is
 `883e44c04e95ef4c69d7f998b9669a0a0a49ad29` (A3), with qualified production source
 `8d202439eaa386d13a9b93888a7d560657579a4b`. Main was last observed at
 `536d949829f6aed11dc540e5c5dec77578b25016`. Package metadata declares 4.0.0;
@@ -71,7 +71,10 @@ modify its own source or grant autonomous publication authority.
 - [ ] **R4 — adopt the reviewed API policy and resolve alert #12 narrowly.**
   The independently reviewed trusted-filesystem SECURITY wording is published
   on the implementation branch, and alert #12 received a narrow request-string
-  false-positive disposition. Fresh CodeQL acceptance remains required. Attach
+  false-positive disposition. CodeQL passed at published head
+  `8badfad724f5a0dd2159146496f68ef71f388fb0` in
+  [run 37392490778](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37392490778).
+  Renew this check after subsequent source changes. Attach
   the qualified 95 API negative/parity cases and static guard evidence to
   [CodeQL alert #12](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/security/code-scanning/12).
   Retain the narrowly justified request-string traversal disposition and renew
@@ -160,9 +163,13 @@ R1–R9. Use existing issues rather than duplicate reports.
 
 - [ ] **S2 — scientifically repair six authored examples (#250).** Establish
   intended probabilities for the unchanged-baseline invalid examples before
-  editing values. Explicit six-model probability and behavioral proposals are
-  drafted for scientific review; repository examples remain unchanged pending
-  that review. **Accept:** explicit source corrections, finite/nonnegative
+  editing values. All six explicit probability and behavioral proposals were
+  approved on 2026-10-05, including block resets, the approximate temporal
+  controller and contingent episodic T-maze policies. Source corrections are
+  implemented locally; final independent source review and faithful native
+  execution remain pending. Equation preservation and canonical action-axis
+  metadata have been repaired; these do not establish backend acceptance.
+  **Accept:** explicit source corrections, finite/nonnegative
   mass, dimensions/orientation, float32/float64 preservation, parser/serializer
   round trips and fresh native family acceptance. Retain rejection witnesses;
   do not normalize, omit examples or alter validator tolerances to hide failures.
