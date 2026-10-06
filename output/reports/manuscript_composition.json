@@ -1,15 +1,15 @@
 {
   "algorithm": "web-renderer-combine-v1",
-  "binding_sha256": "057a16a9a8a5f29c9ba74984a7b602b4164ac4fc97eddb2f06b825a3656f831a",
+  "binding_sha256": "a7e2855d9804e8749a2e176780618f6b722be6e53170a7396b4e5e46413cf979",
   "combined_path": "output/web/_combined_manuscript.md",
-  "combined_sha256": "483400a2b82bf113d7aa5a701f4893c2ba558ae78e92245754605caacff69996",
+  "combined_sha256": "e173f3c5122a3716da5025a803c2c52a759030c9bf7c135af3e41d7bb675da31",
   "combined_size_bytes": 107192,
   "input_root_kind": "hydrated",
   "ordered_inputs": [
     {
       "ordinal": 1,
       "path": "output/manuscript/00_abstract.md",
-      "sha256": "154d6354510c5062fc794223367f3994e13ff92d11f62abcb5cc9dcff48bec30",
+      "sha256": "0c214f4b4510c00da1d91ee7319f06f1f4c76fb4dde65f8cbc3b0cf222822b16",
       "size_bytes": 4160
     },
     {
@@ -21,25 +21,25 @@
     {
       "ordinal": 3,
       "path": "output/manuscript/02_system_context.md",
-      "sha256": "7d668fdc83458f424e658c71f626f9d043f9b633a2a5bf22142ae7a27b474e46",
+      "sha256": "82f0a5d4a464901e483e33464fb29d3d5ded347608fabf41e6fd48d39bf0b4e6",
       "size_bytes": 29725
     },
     {
       "ordinal": 4,
       "path": "output/manuscript/03_methods.md",
-      "sha256": "0095907340e5daf9e68292c1e72c44c882cd97f1e45126ab80dc23c2bde1d737",
+      "sha256": "70c7e6dd4f1a72a45ec74f55faacba9dbba0394cc066a61420eed52322a8ad63",
       "size_bytes": 20560
     },
     {
       "ordinal": 5,
       "path": "output/manuscript/04_artifacts_and_evidence.md",
-      "sha256": "8a6927229eb326738c99cd72ae37fa97b9eb60bf55cac5c5b8e4aaa645ed893c",
+      "sha256": "727c227479b0af7b3c4e7a268650474b94771691e0c06e35e14675ca729d168b",
       "size_bytes": 12588
     },
     {
       "ordinal": 6,
       "path": "output/manuscript/05_reproducibility.md",
-      "sha256": "85d9961908f5576fac9481dbe521dacaea3aef1a4d083e21b0d82fa46dde4fa4",
+      "sha256": "634d0eb150072742062a1339cc0f3d9958d4cdc623e160f0178ab234ccfca554",
       "size_bytes": 7063
     },
     {
@@ -51,7 +51,7 @@
     {
       "ordinal": 8,
       "path": "output/manuscript/S01_source_surface.md",
-      "sha256": "2092784f9c610baaee17f031624ad4cbf5f7b5aa5673723b8441858b1dcc651d",
+      "sha256": "6ee5f36b4b6031a5e5abb823999829ccbe10b344bb7f374e1288e1e5ec3e86ea",
       "size_bytes": 4812
     },
     {
@@ -67,7 +67,7 @@
       "size_bytes": 234
     }
   ],
-  "ordered_inputs_sha256": "ed2f8142edf11e98f83204d661cfbfe7fb82a751ff7477b0900a0dc36acd542c",
+  "ordered_inputs_sha256": "752e2634eb24c0418a4bee5e753cbe1cc01a2b4aa1f5755d8bc5576bd9f46055",
   "project": "active/GeneralizedNotationNotation",
   "schema_version": "template-manuscript-composition-v1"
 }
