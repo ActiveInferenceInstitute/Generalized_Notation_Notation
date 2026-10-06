@@ -59,6 +59,7 @@ We are committed to ensuring the security of the GeneralizedNotationNotation (GN
 | 2026-06-24 | GHSA-fcw5-x6j4-ccmp, CVE-2026-44727 | jupyter-server | Upgraded 2.19.0 → 2.20.0 (`Nbconvert*Handler` sandbox CSP fix) |
 | 2026-06-24 | GHSA-gj48-438w-jh9v, GHSA-g75f-g53v-794x, GHSA-8rfp-98v4-mmr6 | bleach | Upgraded 6.3.0 → 6.4.0 (URI sanitization and linkify CPU exhaustion fixes) |
 | 2026-09-07 | (floors, not CVEs) | numpy, pandas, openai, pytest, mypy | Raised declared floors toward the locked generation (numpy ≥ 2.1.0, pandas ≥ 2.0, openai ≥ 1.0, pytest ≥ 8.0, mypy ≥ 1.0); `uv lock` re-resolved with zero pin changes. Closes the stale-floor drift documented in `CHANGELOG.md` [Unreleased]. |
+| 2026-10-06 | [GHSA-gh4c-6fx4-qh6g](https://github.com/advisories/GHSA-gh4c-6fx4-qh6g) | urllib3 | Raised the transitive security floor and lock from 2.7.0 to 2.8.0; fixes a loop when decoding a chunked Deflate response with trailing bytes. All other package pins remain unchanged. |
 
 > **ℹ️ Known Accepted Risks**: The following vulnerabilities are documented and accepted:
 >

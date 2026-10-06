@@ -25,6 +25,9 @@ and paired custody described in the scope ledger.
 
 ### Changed
 
+- Raised the transitive urllib3 security floor and lock to 2.8.0 for
+  GHSA-gh4c-6fx4-qh6g (chunked Deflate streaming loop), preserving all other
+  package pins and the existing optional-dependency boundary.
 - Installed `python -m gnn.main` preserves the caller working directory,
   resolved `input/config.yaml`, and relative input/output paths. Direct source
   scripts keep repository-relative defaults; importing `gnn.main` remains free

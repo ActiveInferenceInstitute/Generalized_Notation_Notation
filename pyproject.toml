@@ -334,7 +334,7 @@ constraint-dependencies = [
     "soupsieve>=2.8.4",
     "starlette>=1.0.1",
     "tornado>=6.5.8",  # GHSA-mpf4-983q-p7j4, GHSA-8423-8fgw-73vq, GHSA-wwv5-g3v4-889x
-    "urllib3>=2.7.0",
+    "urllib3>=2.8.0",  # GHSA-gh4c-6fx4-qh6g: chunked Deflate streaming loop
 ]
 
 [tool.hatch.build.targets.wheel]
