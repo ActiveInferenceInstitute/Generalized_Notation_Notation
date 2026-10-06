@@ -5,7 +5,13 @@ All notable changes to the GNN Pipeline are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
 
 
-## [4.0.0] - 2026-10-02
+## [4.0.0] - Unreleased candidate
+
+The manuscript authored epoch is 2026-10-02. The software publication date and
+final source/artifact/wheel/pair identities remain pending. Historical evidence
+retains its original hashes and scope in the
+[verification ledger](docs/development/verification_2026_10_01.json); current
+acceptance boundaries and remaining work are tracked in [TO-DO.md](TO-DO.md).
 
 **Current-run Reliability.** The 25-step pipeline now binds selection,
 configuration, source identity, output ownership and deadlines to one invocation.
@@ -74,8 +80,11 @@ and paired custody described in the scope ledger.
 Read the v4 guide for IDs, artifact schemas, stricter validation, summary states,
 budget resolution, distributed startup ownership and resume requirements. Legacy
 artifacts remain inspectable but cannot establish evidence for a fresh invocation.
-Scientific corrections to six invalid illustrative sources require separately
-justified model edits; v4 rejects them rather than silently changing their values.
+Scientific corrections to six invalid illustrative sources were approved and
+implemented locally. Independent source review covers the original tables and
+equations; added routing metadata and backend semantics still require integrated
+review and native acceptance. Preserve the historical rejection witnesses; do not
+silently normalize source values or treat metadata as execution evidence.
 
 ## [3.6.0] - 2026-09-26
 

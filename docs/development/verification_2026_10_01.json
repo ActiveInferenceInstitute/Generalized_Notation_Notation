@@ -70,7 +70,7 @@
             ],
             "control_factors": [
               {
-                "name": "\u03c0",
+                "name": "π",
                 "size": 3,
                 "dimensions": [
                   3
@@ -214,7 +214,7 @@
             ],
             "control_factors": [
               {
-                "name": "\u03c0",
+                "name": "π",
                 "size": 3,
                 "dimensions": [
                   3
@@ -521,7 +521,7 @@
             ],
             "control_factors": [
               {
-                "name": "\u03c0",
+                "name": "π",
                 "size": 3,
                 "dimensions": [
                   3
@@ -1321,7 +1321,7 @@
             ],
             "control_factors": [
               {
-                "name": "\u03c0",
+                "name": "π",
                 "size": 5,
                 "dimensions": [
                   5
@@ -1586,7 +1586,7 @@
             ],
             "control_factors": [
               {
-                "name": "\u03c0",
+                "name": "π",
                 "size": 2,
                 "dimensions": [
                   2
@@ -1777,7 +1777,7 @@
           ],
           "control_factors": [
             {
-              "name": "\u03c0",
+              "name": "π",
               "size": 2,
               "dimensions": [
                 2
@@ -4539,7 +4539,7 @@
           "pipeline_steps": [
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:28,299 [f660408c:3_gnn] 3_gnn.py - INFO - \ud83d\ude80 Starting step: Processing GNN files with full multi-format generation\n2026-10-02 10:10:28,302 [f660408c:3_gnn] 3_gnn.py - INFO - Initialized GNN parsing system with 22 supported formats (minimal preset emits 3 serializers)\n2026-10-02 10:10:28,302 [f660408c:3_gnn] 3_gnn.py - INFO - Available serializers: [<GNNFormat.MARKDOWN: 'markdown'>, <GNNFormat.JSON: 'json'>, <GNNFormat.XML: 'xml'>, <GNNFormat.YAML: 'yaml'>, <GNNFormat.SCALA: 'scala'>, <GNNFormat.PROTOBUF: 'protobuf'>, <GNNFormat.PKL: 'pkl'>, <GNNFormat.XSD: 'xsd'>, <GNNFormat.ASN1: 'asn1'>, <GNNFormat.LEAN: 'lean'>, <GNNFormat.COQ: 'coq'>, <GNNFormat.PYTHON: 'python'>, <GNNFormat.BNF: 'bnf'>, <GNNFormat.EBNF: 'ebnf'>, <GNNFormat.ISABELLE: 'isabelle'>, <GNNFormat.MAXIMA: 'maxima'>, <GNNFormat.ALLOY: 'alloy'>, <GNNFormat.Z_NOTATION: 'z_notation'>, <GNNFormat.TLA_PLUS: 'tla_plus'>, <GNNFormat.AGDA: 'agda'>, <GNNFormat.HASKELL: 'haskell'>, <GNNFormat.PICKLE: 'pickle'>]\n2026-10-02 10:10:28,303 [f660408c:3_gnn] 3_gnn.py - INFO - Found 1 potential GNN files\n2026-10-02 10:10:28,304 [f660408c:3_gnn] 3_gnn.py - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/00_pipeline_summary/selection/33dcfb04b2c54a8280462458c459330d/f8eefadbffcbedea50e6da13/3/categorical_smoothing.md\n2026-10-02 10:10:28,306 [f660408c:3_gnn] 3_gnn.py - INFO - Generated 3 formats for categorical_smoothing.md\n2026-10-02 10:10:28,307 [f660408c:3_gnn] 3_gnn.py - INFO - \u2705 Processed 1 files, generated 3 format instances across 3 formats (preset=minimal)\n",
+              "stdout": "2026-10-02 10:10:28,299 [f660408c:3_gnn] 3_gnn.py - INFO - 🚀 Starting step: Processing GNN files with full multi-format generation\n2026-10-02 10:10:28,302 [f660408c:3_gnn] 3_gnn.py - INFO - Initialized GNN parsing system with 22 supported formats (minimal preset emits 3 serializers)\n2026-10-02 10:10:28,302 [f660408c:3_gnn] 3_gnn.py - INFO - Available serializers: [<GNNFormat.MARKDOWN: 'markdown'>, <GNNFormat.JSON: 'json'>, <GNNFormat.XML: 'xml'>, <GNNFormat.YAML: 'yaml'>, <GNNFormat.SCALA: 'scala'>, <GNNFormat.PROTOBUF: 'protobuf'>, <GNNFormat.PKL: 'pkl'>, <GNNFormat.XSD: 'xsd'>, <GNNFormat.ASN1: 'asn1'>, <GNNFormat.LEAN: 'lean'>, <GNNFormat.COQ: 'coq'>, <GNNFormat.PYTHON: 'python'>, <GNNFormat.BNF: 'bnf'>, <GNNFormat.EBNF: 'ebnf'>, <GNNFormat.ISABELLE: 'isabelle'>, <GNNFormat.MAXIMA: 'maxima'>, <GNNFormat.ALLOY: 'alloy'>, <GNNFormat.Z_NOTATION: 'z_notation'>, <GNNFormat.TLA_PLUS: 'tla_plus'>, <GNNFormat.AGDA: 'agda'>, <GNNFormat.HASKELL: 'haskell'>, <GNNFormat.PICKLE: 'pickle'>]\n2026-10-02 10:10:28,303 [f660408c:3_gnn] 3_gnn.py - INFO - Found 1 potential GNN files\n2026-10-02 10:10:28,304 [f660408c:3_gnn] 3_gnn.py - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/00_pipeline_summary/selection/33dcfb04b2c54a8280462458c459330d/f8eefadbffcbedea50e6da13/3/categorical_smoothing.md\n2026-10-02 10:10:28,306 [f660408c:3_gnn] 3_gnn.py - INFO - Generated 3 formats for categorical_smoothing.md\n2026-10-02 10:10:28,307 [f660408c:3_gnn] 3_gnn.py - INFO - ✅ Processed 1 files, generated 3 format instances across 3 formats (preset=minimal)\n",
               "stderr": "",
               "memory_usage_mb": 51.34375,
               "peak_memory_mb": 51.34375,
@@ -4653,7 +4653,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:28,854 [70ba7cb5:8_visualization] 8_visualization.py - INFO - Processing visualizations [step_number=None | total_steps=None]\n2026-10-02 10:10:28,854 [70ba7cb5:8_visualization] 8_visualization.py - INFO - Visualization discovery recursive=True\n2026-10-02 10:10:32,001 [70ba7cb5:8_visualization] 8_visualization.py - INFO - \u2705 Generated 22 visualizations [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:28,854 [70ba7cb5:8_visualization] 8_visualization.py - INFO - Processing visualizations [step_number=None | total_steps=None]\n2026-10-02 10:10:28,854 [70ba7cb5:8_visualization] 8_visualization.py - INFO - Visualization discovery recursive=True\n2026-10-02 10:10:32,001 [70ba7cb5:8_visualization] 8_visualization.py - INFO - ✅ Generated 22 visualizations [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 41.28125,
               "peak_memory_mb": 50.609375,
@@ -4814,7 +4814,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:32,279 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Processing GNN files in: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/00_pipeline_summary/selection/33dcfb04b2c54a8280462458c459330d/f8eefadbffcbedea50e6da13/11\n2026-10-02 10:10:32,279 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output\n2026-10-02 10:10:32,289 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Found 1 GNN files to process\n2026-10-02 10:10:32,289 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Target frameworks: ['thrml']\n2026-10-02 10:10:32,289 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/00_pipeline_summary/selection/33dcfb04b2c54a8280462458c459330d/f8eefadbffcbedea50e6da13/11/categorical_smoothing.md\n2026-10-02 10:10:32,291 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Extracted POMDP 'THRML Positive Categorical Smoothing' with 3 states, 2 observations, 2 actions\n2026-10-02 10:10:32,291 [bbb5d9c0:11_render] gnn.render.pomdp_processor._flow - INFO - Processing POMDP 'THRML Positive Categorical Smoothing' for frameworks: ['thrml']\n2026-10-02 10:10:32,291 [bbb5d9c0:11_render] gnn.render.pomdp_processor._flow - INFO - Processing framework: thrml\n2026-10-02 10:10:32,295 [bbb5d9c0:11_render] gnn.render.pomdp_processor._flow - INFO - Created documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output/categorical_smoothing/thrml/README.md\n2026-10-02 10:10:32,296 [bbb5d9c0:11_render] gnn.render.pomdp_processor._flow - INFO - \u2705 thrml: experimental THRML categorical Gibbs script generated: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output/categorical_smoothing/thrml/THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:32,299 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Successfully processed categorical_smoothing.md\n2026-10-02 10:10:32,300 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Created overview documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output/README.md\n2026-10-02 10:10:32,300 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Render processing completed\n2026-10-02 10:10:32,300 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Files: 1/1 successful\n2026-10-02 10:10:32,300 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Framework renderings: 1/1 successful (100.0%)\n2026-10-02 10:10:32,300 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Summary saved to: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output/render_processing_summary.json\n",
+              "stdout": "2026-10-02 10:10:32,279 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Processing GNN files in: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/00_pipeline_summary/selection/33dcfb04b2c54a8280462458c459330d/f8eefadbffcbedea50e6da13/11\n2026-10-02 10:10:32,279 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output\n2026-10-02 10:10:32,289 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Found 1 GNN files to process\n2026-10-02 10:10:32,289 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Target frameworks: ['thrml']\n2026-10-02 10:10:32,289 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/00_pipeline_summary/selection/33dcfb04b2c54a8280462458c459330d/f8eefadbffcbedea50e6da13/11/categorical_smoothing.md\n2026-10-02 10:10:32,291 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Extracted POMDP 'THRML Positive Categorical Smoothing' with 3 states, 2 observations, 2 actions\n2026-10-02 10:10:32,291 [bbb5d9c0:11_render] gnn.render.pomdp_processor._flow - INFO - Processing POMDP 'THRML Positive Categorical Smoothing' for frameworks: ['thrml']\n2026-10-02 10:10:32,291 [bbb5d9c0:11_render] gnn.render.pomdp_processor._flow - INFO - Processing framework: thrml\n2026-10-02 10:10:32,295 [bbb5d9c0:11_render] gnn.render.pomdp_processor._flow - INFO - Created documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output/categorical_smoothing/thrml/README.md\n2026-10-02 10:10:32,296 [bbb5d9c0:11_render] gnn.render.pomdp_processor._flow - INFO - ✅ thrml: experimental THRML categorical Gibbs script generated: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output/categorical_smoothing/thrml/THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:32,299 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Successfully processed categorical_smoothing.md\n2026-10-02 10:10:32,300 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Created overview documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output/README.md\n2026-10-02 10:10:32,300 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Render processing completed\n2026-10-02 10:10:32,300 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Files: 1/1 successful\n2026-10-02 10:10:32,300 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Framework renderings: 1/1 successful (100.0%)\n2026-10-02 10:10:32,300 [bbb5d9c0:11_render] gnn.render.processor.pipeline - INFO - Summary saved to: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output/render_processing_summary.json\n",
               "stderr": "",
               "memory_usage_mb": 44.453125,
               "peak_memory_mb": 44.453125,
@@ -4863,7 +4863,7 @@
             },
             {
               "status": "SUCCESS_WITH_WARNINGS",
-              "stdout": "2026-10-02 10:10:32,464 [3278952b:12_execute] execute - INFO - Processing execute - searching for rendered implementations [step_number=None | total_steps=None]\n2026-10-02 10:10:32,465 [3278952b:12_execute] execute - INFO - Requested frameworks: ['thrml']\n2026-10-02 10:10:32,465 [3278952b:12_execute] execute - INFO - Found render output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output\n2026-10-02 10:10:32,467 [3278952b:12_execute] execute - INFO - Found 1 executable scripts to run\n2026-10-02 10:10:32,467 [3278952b:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py311/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:32,920 [3278952b:12_execute] execute - WARNING - sandbox_disabled_receipt: script THRML_Positive_Categorical_Smoothing_thrml.py executed WITHOUT a sandbox (GNN_SANDBOX=off, the default). Rendered scripts run with operator privileges; set GNN_SANDBOX=prefer/require for isolation.\n2026-10-02 10:10:32,920 [3278952b:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py311/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:34,490 [3278952b:12_execute] execute - INFO - \u2705 Successfully executed THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:34,491 [3278952b:12_execute] execute - INFO - Collecting execution outputs for thrml script THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:34,491 [3278952b:12_execute] execute - INFO - Extracting simulation data from collected files for thrml\n2026-10-02 10:10:34,504 [3278952b:12_execute] execute - INFO - Extracted 40 data fields from files\n2026-10-02 10:10:34,512 [3278952b:12_execute] execute - INFO - Generated execution report: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/12_execute_output/summaries/execution_report.md\n2026-10-02 10:10:34,512 [3278952b:12_execute] execute - INFO - \u2705 Execute processing completed successfully [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:32,464 [3278952b:12_execute] execute - INFO - Processing execute - searching for rendered implementations [step_number=None | total_steps=None]\n2026-10-02 10:10:32,465 [3278952b:12_execute] execute - INFO - Requested frameworks: ['thrml']\n2026-10-02 10:10:32,465 [3278952b:12_execute] execute - INFO - Found render output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/11_render_output\n2026-10-02 10:10:32,467 [3278952b:12_execute] execute - INFO - Found 1 executable scripts to run\n2026-10-02 10:10:32,467 [3278952b:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py311/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:32,920 [3278952b:12_execute] execute - WARNING - sandbox_disabled_receipt: script THRML_Positive_Categorical_Smoothing_thrml.py executed WITHOUT a sandbox (GNN_SANDBOX=off, the default). Rendered scripts run with operator privileges; set GNN_SANDBOX=prefer/require for isolation.\n2026-10-02 10:10:32,920 [3278952b:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py311/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:34,490 [3278952b:12_execute] execute - INFO - ✅ Successfully executed THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:34,491 [3278952b:12_execute] execute - INFO - Collecting execution outputs for thrml script THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:34,491 [3278952b:12_execute] execute - INFO - Extracting simulation data from collected files for thrml\n2026-10-02 10:10:34,504 [3278952b:12_execute] execute - INFO - Extracted 40 data fields from files\n2026-10-02 10:10:34,512 [3278952b:12_execute] execute - INFO - Generated execution report: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/12_execute_output/summaries/execution_report.md\n2026-10-02 10:10:34,512 [3278952b:12_execute] execute - INFO - ✅ Execute processing completed successfully [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 44.5625,
               "peak_memory_mb": 44.5625,
@@ -4912,7 +4912,7 @@
             },
             {
               "status": "SUCCESS_WITH_WARNINGS",
-              "stdout": "2026-10-02 10:10:34,862 [b521864b:16_analysis] analysis - INFO - Processing analysis [step_number=None | total_steps=None]\n2026-10-02 10:10:34,863 [b521864b:16_analysis] analysis - INFO - Step 16 GridWorld animations enabled: False\n2026-10-02 10:10:35,618 [b521864b:16_analysis] analysis - INFO - Looking for execution results in: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/00_pipeline_summary/execution_selection/33dcfb04b2c54a8280462458c459330d/11afe7008ad006056f50dea3\n2026-10-02 10:10:35,618 [b521864b:16_analysis] analysis - INFO - Found execution results directory, performing post-simulation analysis\n2026-10-02 10:10:35,694 [b521864b:16_analysis] analysis - INFO - Generated 2 empirical visualizations from execution summary\n2026-10-02 10:10:35,694 [b521864b:16_analysis] analysis - INFO - Analyzing execution results for categorical_smoothing\n2026-10-02 10:10:35,720 [b521864b:16_analysis] analysis - INFO - Post-simulation analysis completed for categorical_smoothing\n2026-10-02 10:10:35,720 [b521864b:16_analysis] analysis - INFO - Generated overall summary statistics\n2026-10-02 10:10:35,722 [b521864b:16_analysis] analysis - INFO - Generating THRML visualizations...\n2026-10-02 10:10:35,807 [b521864b:16_analysis] analysis - INFO - Generated 1 THRML visualization files\n2026-10-02 10:10:35,807 [b521864b:16_analysis] analysis - INFO - Performing cross-framework analysis...\n2026-10-02 10:10:35,808 [b521864b:16_analysis] analysis - INFO -   [thrml] Loaded simulation data from: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/00_pipeline_summary/execution_selection/33dcfb04b2c54a8280462458c459330d/11afe7008ad006056f50dea3/categorical_smoothing/thrml/simulation_data/simulation_results.json\n2026-10-02 10:10:35,809 [b521864b:16_analysis] analysis - INFO -   [thrml] Extracted: beliefs(3 steps), observations(3)\n2026-10-02 10:10:35,809 [b521864b:16_analysis] analysis - INFO - Generated framework comparison report: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/16_analysis_output/cross_framework/framework_comparison_report.md\n2026-10-02 10:10:35,988 [b521864b:16_analysis] analysis - INFO - Generated 2 cross-framework comparison visualizations\n2026-10-02 10:10:35,988 [b521864b:16_analysis] analysis - INFO - Generating comprehensive visualizations for all execution outputs...\n2026-10-02 10:10:35,990 [b521864b:16_analysis] analysis - INFO - Found 1 framework/model combinations for visualization\n2026-10-02 10:10:36,117 [b521864b:16_analysis] gnn.analysis.viz_plots - INFO - Saved visualization: categorical_smoothing_thrml_observations.png\n2026-10-02 10:10:36,117 [b521864b:16_analysis] analysis - INFO - Generated observation analysis: categorical_smoothing_thrml_observations.png\n2026-10-02 10:10:36,117 [b521864b:16_analysis] analysis - INFO - Generated 1 visualization files\n2026-10-02 10:10:36,117 [b521864b:16_analysis] analysis - INFO - Generated 1 comprehensive visualization files\n2026-10-02 10:10:36,117 [b521864b:16_analysis] analysis - INFO - Generating unified framework dashboard...\n2026-10-02 10:10:36,119 [b521864b:16_analysis] analysis - INFO - Less than 2 frameworks with data - skipping unified dashboard\n2026-10-02 10:10:36,121 [b521864b:16_analysis] gnn.analysis.generate_cross_model_report - INFO - Generating cross-model comparison report...\n2026-10-02 10:10:36,122 [b521864b:16_analysis] gnn.analysis.generate_cross_model_report - WARNING - No simulation data found \u2014 skipping cross-model report\n2026-10-02 10:10:36,123 [b521864b:16_analysis] analysis - INFO - \u2705 Analysis processing completed successfully [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:34,862 [b521864b:16_analysis] analysis - INFO - Processing analysis [step_number=None | total_steps=None]\n2026-10-02 10:10:34,863 [b521864b:16_analysis] analysis - INFO - Step 16 GridWorld animations enabled: False\n2026-10-02 10:10:35,618 [b521864b:16_analysis] analysis - INFO - Looking for execution results in: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/00_pipeline_summary/execution_selection/33dcfb04b2c54a8280462458c459330d/11afe7008ad006056f50dea3\n2026-10-02 10:10:35,618 [b521864b:16_analysis] analysis - INFO - Found execution results directory, performing post-simulation analysis\n2026-10-02 10:10:35,694 [b521864b:16_analysis] analysis - INFO - Generated 2 empirical visualizations from execution summary\n2026-10-02 10:10:35,694 [b521864b:16_analysis] analysis - INFO - Analyzing execution results for categorical_smoothing\n2026-10-02 10:10:35,720 [b521864b:16_analysis] analysis - INFO - Post-simulation analysis completed for categorical_smoothing\n2026-10-02 10:10:35,720 [b521864b:16_analysis] analysis - INFO - Generated overall summary statistics\n2026-10-02 10:10:35,722 [b521864b:16_analysis] analysis - INFO - Generating THRML visualizations...\n2026-10-02 10:10:35,807 [b521864b:16_analysis] analysis - INFO - Generated 1 THRML visualization files\n2026-10-02 10:10:35,807 [b521864b:16_analysis] analysis - INFO - Performing cross-framework analysis...\n2026-10-02 10:10:35,808 [b521864b:16_analysis] analysis - INFO -   [thrml] Loaded simulation data from: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/00_pipeline_summary/execution_selection/33dcfb04b2c54a8280462458c459330d/11afe7008ad006056f50dea3/categorical_smoothing/thrml/simulation_data/simulation_results.json\n2026-10-02 10:10:35,809 [b521864b:16_analysis] analysis - INFO -   [thrml] Extracted: beliefs(3 steps), observations(3)\n2026-10-02 10:10:35,809 [b521864b:16_analysis] analysis - INFO - Generated framework comparison report: <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/16_analysis_output/cross_framework/framework_comparison_report.md\n2026-10-02 10:10:35,988 [b521864b:16_analysis] analysis - INFO - Generated 2 cross-framework comparison visualizations\n2026-10-02 10:10:35,988 [b521864b:16_analysis] analysis - INFO - Generating comprehensive visualizations for all execution outputs...\n2026-10-02 10:10:35,990 [b521864b:16_analysis] analysis - INFO - Found 1 framework/model combinations for visualization\n2026-10-02 10:10:36,117 [b521864b:16_analysis] gnn.analysis.viz_plots - INFO - Saved visualization: categorical_smoothing_thrml_observations.png\n2026-10-02 10:10:36,117 [b521864b:16_analysis] analysis - INFO - Generated observation analysis: categorical_smoothing_thrml_observations.png\n2026-10-02 10:10:36,117 [b521864b:16_analysis] analysis - INFO - Generated 1 visualization files\n2026-10-02 10:10:36,117 [b521864b:16_analysis] analysis - INFO - Generated 1 comprehensive visualization files\n2026-10-02 10:10:36,117 [b521864b:16_analysis] analysis - INFO - Generating unified framework dashboard...\n2026-10-02 10:10:36,119 [b521864b:16_analysis] analysis - INFO - Less than 2 frameworks with data - skipping unified dashboard\n2026-10-02 10:10:36,121 [b521864b:16_analysis] gnn.analysis.generate_cross_model_report - INFO - Generating cross-model comparison report...\n2026-10-02 10:10:36,122 [b521864b:16_analysis] gnn.analysis.generate_cross_model_report - WARNING - No simulation data found — skipping cross-model report\n2026-10-02 10:10:36,123 [b521864b:16_analysis] analysis - INFO - ✅ Analysis processing completed successfully [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 44.671875,
               "peak_memory_mb": 44.671875,
@@ -4993,7 +4993,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:36,329 [948e0f58:20_website] website - INFO - Website generated: 7 pages \u2192 <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/20_website_output\n2026-10-02 10:10:36,329 [948e0f58:20_website] website - INFO - Website generated successfully with 7 pages\n",
+              "stdout": "2026-10-02 10:10:36,329 [948e0f58:20_website] website - INFO - Website generated: 7 pages → <scratch>/gnn-v4-thrml-installed/finalcustody/311/thrml/20_website_output\n2026-10-02 10:10:36,329 [948e0f58:20_website] website - INFO - Website generated successfully with 7 pages\n",
               "stderr": "",
               "memory_usage_mb": 44.84375,
               "peak_memory_mb": 44.84375,
@@ -5556,7 +5556,7 @@
           "pipeline_steps": [
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:37,659 [957cfc9c:3_gnn] 3_gnn.py - INFO - \ud83d\ude80 Starting step: Processing GNN files with full multi-format generation\n2026-10-02 10:10:37,661 [957cfc9c:3_gnn] 3_gnn.py - INFO - Initialized GNN parsing system with 22 supported formats (minimal preset emits 3 serializers)\n2026-10-02 10:10:37,661 [957cfc9c:3_gnn] 3_gnn.py - INFO - Available serializers: [<GNNFormat.MARKDOWN: 'markdown'>, <GNNFormat.JSON: 'json'>, <GNNFormat.XML: 'xml'>, <GNNFormat.YAML: 'yaml'>, <GNNFormat.SCALA: 'scala'>, <GNNFormat.PROTOBUF: 'protobuf'>, <GNNFormat.PKL: 'pkl'>, <GNNFormat.XSD: 'xsd'>, <GNNFormat.ASN1: 'asn1'>, <GNNFormat.LEAN: 'lean'>, <GNNFormat.COQ: 'coq'>, <GNNFormat.PYTHON: 'python'>, <GNNFormat.BNF: 'bnf'>, <GNNFormat.EBNF: 'ebnf'>, <GNNFormat.ISABELLE: 'isabelle'>, <GNNFormat.MAXIMA: 'maxima'>, <GNNFormat.ALLOY: 'alloy'>, <GNNFormat.Z_NOTATION: 'z_notation'>, <GNNFormat.TLA_PLUS: 'tla_plus'>, <GNNFormat.AGDA: 'agda'>, <GNNFormat.HASKELL: 'haskell'>, <GNNFormat.PICKLE: 'pickle'>]\n2026-10-02 10:10:37,663 [957cfc9c:3_gnn] 3_gnn.py - INFO - Found 1 potential GNN files\n2026-10-02 10:10:37,665 [957cfc9c:3_gnn] 3_gnn.py - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/00_pipeline_summary/selection/9cc6fdf7b3524a569ba3d9d05f882f80/12d2d0be83170ff76f64565b/3/continuous_navigation.md\n2026-10-02 10:10:37,668 [957cfc9c:3_gnn] 3_gnn.py - INFO - Generated 3 formats for continuous_navigation.md\n2026-10-02 10:10:37,669 [957cfc9c:3_gnn] 3_gnn.py - INFO - \u2705 Processed 1 files, generated 3 format instances across 3 formats (preset=minimal)\n",
+              "stdout": "2026-10-02 10:10:37,659 [957cfc9c:3_gnn] 3_gnn.py - INFO - 🚀 Starting step: Processing GNN files with full multi-format generation\n2026-10-02 10:10:37,661 [957cfc9c:3_gnn] 3_gnn.py - INFO - Initialized GNN parsing system with 22 supported formats (minimal preset emits 3 serializers)\n2026-10-02 10:10:37,661 [957cfc9c:3_gnn] 3_gnn.py - INFO - Available serializers: [<GNNFormat.MARKDOWN: 'markdown'>, <GNNFormat.JSON: 'json'>, <GNNFormat.XML: 'xml'>, <GNNFormat.YAML: 'yaml'>, <GNNFormat.SCALA: 'scala'>, <GNNFormat.PROTOBUF: 'protobuf'>, <GNNFormat.PKL: 'pkl'>, <GNNFormat.XSD: 'xsd'>, <GNNFormat.ASN1: 'asn1'>, <GNNFormat.LEAN: 'lean'>, <GNNFormat.COQ: 'coq'>, <GNNFormat.PYTHON: 'python'>, <GNNFormat.BNF: 'bnf'>, <GNNFormat.EBNF: 'ebnf'>, <GNNFormat.ISABELLE: 'isabelle'>, <GNNFormat.MAXIMA: 'maxima'>, <GNNFormat.ALLOY: 'alloy'>, <GNNFormat.Z_NOTATION: 'z_notation'>, <GNNFormat.TLA_PLUS: 'tla_plus'>, <GNNFormat.AGDA: 'agda'>, <GNNFormat.HASKELL: 'haskell'>, <GNNFormat.PICKLE: 'pickle'>]\n2026-10-02 10:10:37,663 [957cfc9c:3_gnn] 3_gnn.py - INFO - Found 1 potential GNN files\n2026-10-02 10:10:37,665 [957cfc9c:3_gnn] 3_gnn.py - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/00_pipeline_summary/selection/9cc6fdf7b3524a569ba3d9d05f882f80/12d2d0be83170ff76f64565b/3/continuous_navigation.md\n2026-10-02 10:10:37,668 [957cfc9c:3_gnn] 3_gnn.py - INFO - Generated 3 formats for continuous_navigation.md\n2026-10-02 10:10:37,669 [957cfc9c:3_gnn] 3_gnn.py - INFO - ✅ Processed 1 files, generated 3 format instances across 3 formats (preset=minimal)\n",
               "stderr": "",
               "memory_usage_mb": 48.90625,
               "peak_memory_mb": 48.90625,
@@ -5670,7 +5670,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:38,455 [c274c2f5:8_visualization] 8_visualization.py - INFO - Processing visualizations [step_number=None | total_steps=None]\n2026-10-02 10:10:38,455 [c274c2f5:8_visualization] 8_visualization.py - INFO - Visualization discovery recursive=True\n2026-10-02 10:10:42,916 [c274c2f5:8_visualization] 8_visualization.py - INFO - \u2705 Generated 24 visualizations [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:38,455 [c274c2f5:8_visualization] 8_visualization.py - INFO - Processing visualizations [step_number=None | total_steps=None]\n2026-10-02 10:10:38,455 [c274c2f5:8_visualization] 8_visualization.py - INFO - Visualization discovery recursive=True\n2026-10-02 10:10:42,916 [c274c2f5:8_visualization] 8_visualization.py - INFO - ✅ Generated 24 visualizations [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 24.765625,
               "peak_memory_mb": 49.125,
@@ -5855,7 +5855,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:43,170 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Processing GNN files in: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/00_pipeline_summary/selection/9cc6fdf7b3524a569ba3d9d05f882f80/12d2d0be83170ff76f64565b/11\n2026-10-02 10:10:43,170 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output\n2026-10-02 10:10:43,180 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Found 1 GNN files to process\n2026-10-02 10:10:43,180 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Target frameworks: ['cpomdp']\n2026-10-02 10:10:43,180 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/00_pipeline_summary/selection/9cc6fdf7b3524a569ba3d9d05f882f80/12d2d0be83170ff76f64565b/11/continuous_navigation.md\n2026-10-02 10:10:43,183 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Extracted POMDP 'Continuous State Navigation Agent' with 2 states, 2 observations, 1 actions\n2026-10-02 10:10:43,183 [ab33465f:11_render] gnn.render.pomdp_processor._flow - INFO - Processing POMDP 'Continuous State Navigation Agent' for frameworks: ['cpomdp']\n2026-10-02 10:10:43,183 [ab33465f:11_render] gnn.render.pomdp_processor._flow - INFO - Processing framework: cpomdp\n2026-10-02 10:10:43,187 [ab33465f:11_render] gnn.render.cpomdp.cpomdp_renderer - INFO - \u2705 cpomdp continuous script written to: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output/continuous_navigation/cpomdp/Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:43,187 [ab33465f:11_render] gnn.render.pomdp_processor._flow - INFO - Created documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output/continuous_navigation/cpomdp/README.md\n2026-10-02 10:10:43,188 [ab33465f:11_render] gnn.render.pomdp_processor._flow - INFO - \u2705 cpomdp: cpomdp continuous script generated (efe): <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output/continuous_navigation/cpomdp/Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:43,188 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Successfully processed continuous_navigation.md\n2026-10-02 10:10:43,189 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Created overview documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output/README.md\n2026-10-02 10:10:43,189 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Render processing completed\n2026-10-02 10:10:43,189 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Files: 1/1 successful\n2026-10-02 10:10:43,189 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Framework renderings: 1/1 successful (100.0%)\n2026-10-02 10:10:43,189 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Summary saved to: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output/render_processing_summary.json\n",
+              "stdout": "2026-10-02 10:10:43,170 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Processing GNN files in: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/00_pipeline_summary/selection/9cc6fdf7b3524a569ba3d9d05f882f80/12d2d0be83170ff76f64565b/11\n2026-10-02 10:10:43,170 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output\n2026-10-02 10:10:43,180 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Found 1 GNN files to process\n2026-10-02 10:10:43,180 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Target frameworks: ['cpomdp']\n2026-10-02 10:10:43,180 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/00_pipeline_summary/selection/9cc6fdf7b3524a569ba3d9d05f882f80/12d2d0be83170ff76f64565b/11/continuous_navigation.md\n2026-10-02 10:10:43,183 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Extracted POMDP 'Continuous State Navigation Agent' with 2 states, 2 observations, 1 actions\n2026-10-02 10:10:43,183 [ab33465f:11_render] gnn.render.pomdp_processor._flow - INFO - Processing POMDP 'Continuous State Navigation Agent' for frameworks: ['cpomdp']\n2026-10-02 10:10:43,183 [ab33465f:11_render] gnn.render.pomdp_processor._flow - INFO - Processing framework: cpomdp\n2026-10-02 10:10:43,187 [ab33465f:11_render] gnn.render.cpomdp.cpomdp_renderer - INFO - ✅ cpomdp continuous script written to: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output/continuous_navigation/cpomdp/Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:43,187 [ab33465f:11_render] gnn.render.pomdp_processor._flow - INFO - Created documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output/continuous_navigation/cpomdp/README.md\n2026-10-02 10:10:43,188 [ab33465f:11_render] gnn.render.pomdp_processor._flow - INFO - ✅ cpomdp: cpomdp continuous script generated (efe): <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output/continuous_navigation/cpomdp/Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:43,188 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Successfully processed continuous_navigation.md\n2026-10-02 10:10:43,189 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Created overview documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output/README.md\n2026-10-02 10:10:43,189 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Render processing completed\n2026-10-02 10:10:43,189 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Files: 1/1 successful\n2026-10-02 10:10:43,189 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Framework renderings: 1/1 successful (100.0%)\n2026-10-02 10:10:43,189 [ab33465f:11_render] gnn.render.processor.pipeline - INFO - Summary saved to: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output/render_processing_summary.json\n",
               "stderr": "",
               "memory_usage_mb": 36.53125,
               "peak_memory_mb": 36.53125,
@@ -5904,7 +5904,7 @@
             },
             {
               "status": "SUCCESS_WITH_WARNINGS",
-              "stdout": "2026-10-02 10:10:43,347 [c6fb7893:12_execute] execute - INFO - Processing execute - searching for rendered implementations [step_number=None | total_steps=None]\n2026-10-02 10:10:43,347 [c6fb7893:12_execute] execute - INFO - Requested frameworks: ['cpomdp']\n2026-10-02 10:10:43,348 [c6fb7893:12_execute] execute - INFO - Found render output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output\n2026-10-02 10:10:43,350 [c6fb7893:12_execute] execute - INFO - Found 1 executable scripts to run\n2026-10-02 10:10:43,350 [c6fb7893:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py311/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:43,677 [c6fb7893:12_execute] execute - WARNING - sandbox_disabled_receipt: script Continuous_State_Navigation_Agent_cpomdp.py executed WITHOUT a sandbox (GNN_SANDBOX=off, the default). Rendered scripts run with operator privileges; set GNN_SANDBOX=prefer/require for isolation.\n2026-10-02 10:10:43,677 [c6fb7893:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py311/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:44,782 [c6fb7893:12_execute] execute - INFO - \u2705 Successfully executed Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:44,782 [c6fb7893:12_execute] execute - INFO - Collecting execution outputs for cpomdp script Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:44,783 [c6fb7893:12_execute] execute - INFO - Extracting simulation data from collected files for cpomdp\n2026-10-02 10:10:44,785 [c6fb7893:12_execute] execute - INFO - Generated execution report: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/12_execute_output/summaries/execution_report.md\n2026-10-02 10:10:44,785 [c6fb7893:12_execute] execute - INFO - \u2705 Execute processing completed successfully [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:43,347 [c6fb7893:12_execute] execute - INFO - Processing execute - searching for rendered implementations [step_number=None | total_steps=None]\n2026-10-02 10:10:43,347 [c6fb7893:12_execute] execute - INFO - Requested frameworks: ['cpomdp']\n2026-10-02 10:10:43,348 [c6fb7893:12_execute] execute - INFO - Found render output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/11_render_output\n2026-10-02 10:10:43,350 [c6fb7893:12_execute] execute - INFO - Found 1 executable scripts to run\n2026-10-02 10:10:43,350 [c6fb7893:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py311/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:43,677 [c6fb7893:12_execute] execute - WARNING - sandbox_disabled_receipt: script Continuous_State_Navigation_Agent_cpomdp.py executed WITHOUT a sandbox (GNN_SANDBOX=off, the default). Rendered scripts run with operator privileges; set GNN_SANDBOX=prefer/require for isolation.\n2026-10-02 10:10:43,677 [c6fb7893:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py311/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:44,782 [c6fb7893:12_execute] execute - INFO - ✅ Successfully executed Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:44,782 [c6fb7893:12_execute] execute - INFO - Collecting execution outputs for cpomdp script Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:44,783 [c6fb7893:12_execute] execute - INFO - Extracting simulation data from collected files for cpomdp\n2026-10-02 10:10:44,785 [c6fb7893:12_execute] execute - INFO - Generated execution report: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/12_execute_output/summaries/execution_report.md\n2026-10-02 10:10:44,785 [c6fb7893:12_execute] execute - INFO - ✅ Execute processing completed successfully [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 36.96875,
               "peak_memory_mb": 36.96875,
@@ -5953,7 +5953,7 @@
             },
             {
               "status": "SUCCESS_WITH_WARNINGS",
-              "stdout": "2026-10-02 10:10:45,140 [c7bc4a14:16_analysis] analysis - INFO - Processing analysis [step_number=None | total_steps=None]\n2026-10-02 10:10:45,140 [c7bc4a14:16_analysis] analysis - INFO - Step 16 GridWorld animations enabled: False\n2026-10-02 10:10:45,523 [c7bc4a14:16_analysis] analysis - INFO - Looking for execution results in: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/00_pipeline_summary/execution_selection/9cc6fdf7b3524a569ba3d9d05f882f80/c251a9cb4090e6af3c19f660\n2026-10-02 10:10:45,524 [c7bc4a14:16_analysis] analysis - INFO - Found execution results directory, performing post-simulation analysis\n2026-10-02 10:10:45,602 [c7bc4a14:16_analysis] analysis - INFO - Generated 2 empirical visualizations from execution summary\n2026-10-02 10:10:45,602 [c7bc4a14:16_analysis] analysis - INFO - Analyzing execution results for continuous_navigation\n2026-10-02 10:10:45,602 [c7bc4a14:16_analysis] analysis - INFO - Post-simulation analysis completed for continuous_navigation\n2026-10-02 10:10:45,603 [c7bc4a14:16_analysis] analysis - INFO - Generated overall summary statistics\n2026-10-02 10:10:45,604 [c7bc4a14:16_analysis] analysis - INFO - Generating cpomdp visualizations...\n2026-10-02 10:10:45,686 [c7bc4a14:16_analysis] analysis - INFO - Generated 1 cpomdp visualization files\n2026-10-02 10:10:45,686 [c7bc4a14:16_analysis] analysis - INFO - Performing cross-framework analysis...\n2026-10-02 10:10:45,687 [c7bc4a14:16_analysis] analysis - INFO -   [cpomdp] Loaded simulation data from: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/00_pipeline_summary/execution_selection/9cc6fdf7b3524a569ba3d9d05f882f80/c251a9cb4090e6af3c19f660/continuous_navigation/cpomdp/simulation_data/simulation_results.json\n2026-10-02 10:10:45,687 [c7bc4a14:16_analysis] analysis - INFO -   [cpomdp] Extracted: beliefs(4 steps), free_energy(4)\n2026-10-02 10:10:45,687 [c7bc4a14:16_analysis] analysis - INFO - Generated framework comparison report: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/16_analysis_output/cross_framework/framework_comparison_report.md\n2026-10-02 10:10:45,871 [c7bc4a14:16_analysis] analysis - INFO - Generated 2 cross-framework comparison visualizations\n2026-10-02 10:10:45,871 [c7bc4a14:16_analysis] analysis - INFO - Generating comprehensive visualizations for all execution outputs...\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] analysis - INFO - Found 1 framework/model combinations for visualization\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] analysis - INFO - Generated 0 visualization files\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] analysis - INFO - Generated 0 comprehensive visualization files\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] analysis - INFO - Generating unified framework dashboard...\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] analysis - INFO - Less than 2 frameworks with data - skipping unified dashboard\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] gnn.analysis.generate_cross_model_report - INFO - Generating cross-model comparison report...\n2026-10-02 10:10:45,873 [c7bc4a14:16_analysis] gnn.analysis.generate_cross_model_report - WARNING - No simulation data found \u2014 skipping cross-model report\n2026-10-02 10:10:45,874 [c7bc4a14:16_analysis] analysis - INFO - \u2705 Analysis processing completed successfully [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:45,140 [c7bc4a14:16_analysis] analysis - INFO - Processing analysis [step_number=None | total_steps=None]\n2026-10-02 10:10:45,140 [c7bc4a14:16_analysis] analysis - INFO - Step 16 GridWorld animations enabled: False\n2026-10-02 10:10:45,523 [c7bc4a14:16_analysis] analysis - INFO - Looking for execution results in: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/00_pipeline_summary/execution_selection/9cc6fdf7b3524a569ba3d9d05f882f80/c251a9cb4090e6af3c19f660\n2026-10-02 10:10:45,524 [c7bc4a14:16_analysis] analysis - INFO - Found execution results directory, performing post-simulation analysis\n2026-10-02 10:10:45,602 [c7bc4a14:16_analysis] analysis - INFO - Generated 2 empirical visualizations from execution summary\n2026-10-02 10:10:45,602 [c7bc4a14:16_analysis] analysis - INFO - Analyzing execution results for continuous_navigation\n2026-10-02 10:10:45,602 [c7bc4a14:16_analysis] analysis - INFO - Post-simulation analysis completed for continuous_navigation\n2026-10-02 10:10:45,603 [c7bc4a14:16_analysis] analysis - INFO - Generated overall summary statistics\n2026-10-02 10:10:45,604 [c7bc4a14:16_analysis] analysis - INFO - Generating cpomdp visualizations...\n2026-10-02 10:10:45,686 [c7bc4a14:16_analysis] analysis - INFO - Generated 1 cpomdp visualization files\n2026-10-02 10:10:45,686 [c7bc4a14:16_analysis] analysis - INFO - Performing cross-framework analysis...\n2026-10-02 10:10:45,687 [c7bc4a14:16_analysis] analysis - INFO -   [cpomdp] Loaded simulation data from: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/00_pipeline_summary/execution_selection/9cc6fdf7b3524a569ba3d9d05f882f80/c251a9cb4090e6af3c19f660/continuous_navigation/cpomdp/simulation_data/simulation_results.json\n2026-10-02 10:10:45,687 [c7bc4a14:16_analysis] analysis - INFO -   [cpomdp] Extracted: beliefs(4 steps), free_energy(4)\n2026-10-02 10:10:45,687 [c7bc4a14:16_analysis] analysis - INFO - Generated framework comparison report: <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/16_analysis_output/cross_framework/framework_comparison_report.md\n2026-10-02 10:10:45,871 [c7bc4a14:16_analysis] analysis - INFO - Generated 2 cross-framework comparison visualizations\n2026-10-02 10:10:45,871 [c7bc4a14:16_analysis] analysis - INFO - Generating comprehensive visualizations for all execution outputs...\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] analysis - INFO - Found 1 framework/model combinations for visualization\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] analysis - INFO - Generated 0 visualization files\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] analysis - INFO - Generated 0 comprehensive visualization files\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] analysis - INFO - Generating unified framework dashboard...\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] analysis - INFO - Less than 2 frameworks with data - skipping unified dashboard\n2026-10-02 10:10:45,872 [c7bc4a14:16_analysis] gnn.analysis.generate_cross_model_report - INFO - Generating cross-model comparison report...\n2026-10-02 10:10:45,873 [c7bc4a14:16_analysis] gnn.analysis.generate_cross_model_report - WARNING - No simulation data found — skipping cross-model report\n2026-10-02 10:10:45,874 [c7bc4a14:16_analysis] analysis - INFO - ✅ Analysis processing completed successfully [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 37.140625,
               "peak_memory_mb": 37.140625,
@@ -6030,7 +6030,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:46,049 [9ed1b49f:20_website] website - INFO - Website generated: 7 pages \u2192 <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/20_website_output\n2026-10-02 10:10:46,049 [9ed1b49f:20_website] website - INFO - Website generated successfully with 7 pages\n",
+              "stdout": "2026-10-02 10:10:46,049 [9ed1b49f:20_website] website - INFO - Website generated: 7 pages → <scratch>/gnn-v4-thrml-installed/finalcustody/311/cpomdp/20_website_output\n2026-10-02 10:10:46,049 [9ed1b49f:20_website] website - INFO - Website generated successfully with 7 pages\n",
               "stderr": "",
               "memory_usage_mb": 37.375,
               "peak_memory_mb": 37.375,
@@ -6594,7 +6594,7 @@
           "pipeline_steps": [
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:27,168 [1536c757:3_gnn] 3_gnn.py - INFO - \ud83d\ude80 Starting step: Processing GNN files with full multi-format generation\n2026-10-02 10:10:27,170 [1536c757:3_gnn] 3_gnn.py - INFO - Initialized GNN parsing system with 22 supported formats (minimal preset emits 3 serializers)\n2026-10-02 10:10:27,170 [1536c757:3_gnn] 3_gnn.py - INFO - Available serializers: [<GNNFormat.MARKDOWN: 'markdown'>, <GNNFormat.JSON: 'json'>, <GNNFormat.XML: 'xml'>, <GNNFormat.YAML: 'yaml'>, <GNNFormat.SCALA: 'scala'>, <GNNFormat.PROTOBUF: 'protobuf'>, <GNNFormat.PKL: 'pkl'>, <GNNFormat.XSD: 'xsd'>, <GNNFormat.ASN1: 'asn1'>, <GNNFormat.LEAN: 'lean'>, <GNNFormat.COQ: 'coq'>, <GNNFormat.PYTHON: 'python'>, <GNNFormat.BNF: 'bnf'>, <GNNFormat.EBNF: 'ebnf'>, <GNNFormat.ISABELLE: 'isabelle'>, <GNNFormat.MAXIMA: 'maxima'>, <GNNFormat.ALLOY: 'alloy'>, <GNNFormat.Z_NOTATION: 'z_notation'>, <GNNFormat.TLA_PLUS: 'tla_plus'>, <GNNFormat.AGDA: 'agda'>, <GNNFormat.HASKELL: 'haskell'>, <GNNFormat.PICKLE: 'pickle'>]\n2026-10-02 10:10:27,172 [1536c757:3_gnn] 3_gnn.py - INFO - Found 1 potential GNN files\n2026-10-02 10:10:27,173 [1536c757:3_gnn] 3_gnn.py - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/00_pipeline_summary/selection/486166eb1cb94190b8d39b14e56b5659/f8eefadbffcbedea50e6da13/3/categorical_smoothing.md\n2026-10-02 10:10:27,174 [1536c757:3_gnn] 3_gnn.py - INFO - Generated 3 formats for categorical_smoothing.md\n2026-10-02 10:10:27,175 [1536c757:3_gnn] 3_gnn.py - INFO - \u2705 Processed 1 files, generated 3 format instances across 3 formats (preset=minimal)\n",
+              "stdout": "2026-10-02 10:10:27,168 [1536c757:3_gnn] 3_gnn.py - INFO - 🚀 Starting step: Processing GNN files with full multi-format generation\n2026-10-02 10:10:27,170 [1536c757:3_gnn] 3_gnn.py - INFO - Initialized GNN parsing system with 22 supported formats (minimal preset emits 3 serializers)\n2026-10-02 10:10:27,170 [1536c757:3_gnn] 3_gnn.py - INFO - Available serializers: [<GNNFormat.MARKDOWN: 'markdown'>, <GNNFormat.JSON: 'json'>, <GNNFormat.XML: 'xml'>, <GNNFormat.YAML: 'yaml'>, <GNNFormat.SCALA: 'scala'>, <GNNFormat.PROTOBUF: 'protobuf'>, <GNNFormat.PKL: 'pkl'>, <GNNFormat.XSD: 'xsd'>, <GNNFormat.ASN1: 'asn1'>, <GNNFormat.LEAN: 'lean'>, <GNNFormat.COQ: 'coq'>, <GNNFormat.PYTHON: 'python'>, <GNNFormat.BNF: 'bnf'>, <GNNFormat.EBNF: 'ebnf'>, <GNNFormat.ISABELLE: 'isabelle'>, <GNNFormat.MAXIMA: 'maxima'>, <GNNFormat.ALLOY: 'alloy'>, <GNNFormat.Z_NOTATION: 'z_notation'>, <GNNFormat.TLA_PLUS: 'tla_plus'>, <GNNFormat.AGDA: 'agda'>, <GNNFormat.HASKELL: 'haskell'>, <GNNFormat.PICKLE: 'pickle'>]\n2026-10-02 10:10:27,172 [1536c757:3_gnn] 3_gnn.py - INFO - Found 1 potential GNN files\n2026-10-02 10:10:27,173 [1536c757:3_gnn] 3_gnn.py - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/00_pipeline_summary/selection/486166eb1cb94190b8d39b14e56b5659/f8eefadbffcbedea50e6da13/3/categorical_smoothing.md\n2026-10-02 10:10:27,174 [1536c757:3_gnn] 3_gnn.py - INFO - Generated 3 formats for categorical_smoothing.md\n2026-10-02 10:10:27,175 [1536c757:3_gnn] 3_gnn.py - INFO - ✅ Processed 1 files, generated 3 format instances across 3 formats (preset=minimal)\n",
               "stderr": "",
               "memory_usage_mb": 50.53125,
               "peak_memory_mb": 50.53125,
@@ -6708,7 +6708,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:27,963 [1ae55a36:8_visualization] 8_visualization.py - INFO - Processing visualizations [step_number=None | total_steps=None]\n2026-10-02 10:10:27,963 [1ae55a36:8_visualization] 8_visualization.py - INFO - Visualization discovery recursive=True\n2026-10-02 10:10:31,379 [1ae55a36:8_visualization] 8_visualization.py - INFO - \u2705 Generated 22 visualizations [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:27,963 [1ae55a36:8_visualization] 8_visualization.py - INFO - Processing visualizations [step_number=None | total_steps=None]\n2026-10-02 10:10:27,963 [1ae55a36:8_visualization] 8_visualization.py - INFO - Visualization discovery recursive=True\n2026-10-02 10:10:31,379 [1ae55a36:8_visualization] 8_visualization.py - INFO - ✅ Generated 22 visualizations [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 26.375,
               "peak_memory_mb": 32.59375,
@@ -6869,7 +6869,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:31,557 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Processing GNN files in: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/00_pipeline_summary/selection/486166eb1cb94190b8d39b14e56b5659/f8eefadbffcbedea50e6da13/11\n2026-10-02 10:10:31,557 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output\n2026-10-02 10:10:31,565 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Found 1 GNN files to process\n2026-10-02 10:10:31,565 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Target frameworks: ['thrml']\n2026-10-02 10:10:31,565 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/00_pipeline_summary/selection/486166eb1cb94190b8d39b14e56b5659/f8eefadbffcbedea50e6da13/11/categorical_smoothing.md\n2026-10-02 10:10:31,566 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Extracted POMDP 'THRML Positive Categorical Smoothing' with 3 states, 2 observations, 2 actions\n2026-10-02 10:10:31,566 [f30f43f3:11_render] gnn.render.pomdp_processor._flow - INFO - Processing POMDP 'THRML Positive Categorical Smoothing' for frameworks: ['thrml']\n2026-10-02 10:10:31,566 [f30f43f3:11_render] gnn.render.pomdp_processor._flow - INFO - Processing framework: thrml\n2026-10-02 10:10:31,569 [f30f43f3:11_render] gnn.render.pomdp_processor._flow - INFO - Created documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output/categorical_smoothing/thrml/README.md\n2026-10-02 10:10:31,569 [f30f43f3:11_render] gnn.render.pomdp_processor._flow - INFO - \u2705 thrml: experimental THRML categorical Gibbs script generated: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output/categorical_smoothing/thrml/THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:31,569 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Successfully processed categorical_smoothing.md\n2026-10-02 10:10:31,570 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Created overview documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output/README.md\n2026-10-02 10:10:31,570 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Render processing completed\n2026-10-02 10:10:31,570 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Files: 1/1 successful\n2026-10-02 10:10:31,570 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Framework renderings: 1/1 successful (100.0%)\n2026-10-02 10:10:31,570 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Summary saved to: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output/render_processing_summary.json\n",
+              "stdout": "2026-10-02 10:10:31,557 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Processing GNN files in: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/00_pipeline_summary/selection/486166eb1cb94190b8d39b14e56b5659/f8eefadbffcbedea50e6da13/11\n2026-10-02 10:10:31,557 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output\n2026-10-02 10:10:31,565 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Found 1 GNN files to process\n2026-10-02 10:10:31,565 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Target frameworks: ['thrml']\n2026-10-02 10:10:31,565 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/00_pipeline_summary/selection/486166eb1cb94190b8d39b14e56b5659/f8eefadbffcbedea50e6da13/11/categorical_smoothing.md\n2026-10-02 10:10:31,566 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Extracted POMDP 'THRML Positive Categorical Smoothing' with 3 states, 2 observations, 2 actions\n2026-10-02 10:10:31,566 [f30f43f3:11_render] gnn.render.pomdp_processor._flow - INFO - Processing POMDP 'THRML Positive Categorical Smoothing' for frameworks: ['thrml']\n2026-10-02 10:10:31,566 [f30f43f3:11_render] gnn.render.pomdp_processor._flow - INFO - Processing framework: thrml\n2026-10-02 10:10:31,569 [f30f43f3:11_render] gnn.render.pomdp_processor._flow - INFO - Created documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output/categorical_smoothing/thrml/README.md\n2026-10-02 10:10:31,569 [f30f43f3:11_render] gnn.render.pomdp_processor._flow - INFO - ✅ thrml: experimental THRML categorical Gibbs script generated: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output/categorical_smoothing/thrml/THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:31,569 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Successfully processed categorical_smoothing.md\n2026-10-02 10:10:31,570 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Created overview documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output/README.md\n2026-10-02 10:10:31,570 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Render processing completed\n2026-10-02 10:10:31,570 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Files: 1/1 successful\n2026-10-02 10:10:31,570 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Framework renderings: 1/1 successful (100.0%)\n2026-10-02 10:10:31,570 [f30f43f3:11_render] gnn.render.processor.pipeline - INFO - Summary saved to: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output/render_processing_summary.json\n",
               "stderr": "",
               "memory_usage_mb": 35.890625,
               "peak_memory_mb": 35.890625,
@@ -6918,7 +6918,7 @@
             },
             {
               "status": "SUCCESS_WITH_WARNINGS",
-              "stdout": "2026-10-02 10:10:31,682 [5ab9ba2c:12_execute] execute - INFO - Processing execute - searching for rendered implementations [step_number=None | total_steps=None]\n2026-10-02 10:10:31,683 [5ab9ba2c:12_execute] execute - INFO - Requested frameworks: ['thrml']\n2026-10-02 10:10:31,683 [5ab9ba2c:12_execute] execute - INFO - Found render output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output\n2026-10-02 10:10:31,684 [5ab9ba2c:12_execute] execute - INFO - Found 1 executable scripts to run\n2026-10-02 10:10:31,685 [5ab9ba2c:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py312/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:32,239 [5ab9ba2c:12_execute] execute - WARNING - sandbox_disabled_receipt: script THRML_Positive_Categorical_Smoothing_thrml.py executed WITHOUT a sandbox (GNN_SANDBOX=off, the default). Rendered scripts run with operator privileges; set GNN_SANDBOX=prefer/require for isolation.\n2026-10-02 10:10:32,239 [5ab9ba2c:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py312/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:33,953 [5ab9ba2c:12_execute] execute - INFO - \u2705 Successfully executed THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:33,954 [5ab9ba2c:12_execute] execute - INFO - Collecting execution outputs for thrml script THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:33,954 [5ab9ba2c:12_execute] execute - INFO - Extracting simulation data from collected files for thrml\n2026-10-02 10:10:33,956 [5ab9ba2c:12_execute] execute - INFO - Extracted 40 data fields from files\n2026-10-02 10:10:33,966 [5ab9ba2c:12_execute] execute - INFO - Generated execution report: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/12_execute_output/summaries/execution_report.md\n2026-10-02 10:10:33,966 [5ab9ba2c:12_execute] execute - INFO - \u2705 Execute processing completed successfully [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:31,682 [5ab9ba2c:12_execute] execute - INFO - Processing execute - searching for rendered implementations [step_number=None | total_steps=None]\n2026-10-02 10:10:31,683 [5ab9ba2c:12_execute] execute - INFO - Requested frameworks: ['thrml']\n2026-10-02 10:10:31,683 [5ab9ba2c:12_execute] execute - INFO - Found render output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/11_render_output\n2026-10-02 10:10:31,684 [5ab9ba2c:12_execute] execute - INFO - Found 1 executable scripts to run\n2026-10-02 10:10:31,685 [5ab9ba2c:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py312/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:32,239 [5ab9ba2c:12_execute] execute - WARNING - sandbox_disabled_receipt: script THRML_Positive_Categorical_Smoothing_thrml.py executed WITHOUT a sandbox (GNN_SANDBOX=off, the default). Rendered scripts run with operator privileges; set GNN_SANDBOX=prefer/require for isolation.\n2026-10-02 10:10:32,239 [5ab9ba2c:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py312/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:33,953 [5ab9ba2c:12_execute] execute - INFO - ✅ Successfully executed THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:33,954 [5ab9ba2c:12_execute] execute - INFO - Collecting execution outputs for thrml script THRML_Positive_Categorical_Smoothing_thrml.py\n2026-10-02 10:10:33,954 [5ab9ba2c:12_execute] execute - INFO - Extracting simulation data from collected files for thrml\n2026-10-02 10:10:33,956 [5ab9ba2c:12_execute] execute - INFO - Extracted 40 data fields from files\n2026-10-02 10:10:33,966 [5ab9ba2c:12_execute] execute - INFO - Generated execution report: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/12_execute_output/summaries/execution_report.md\n2026-10-02 10:10:33,966 [5ab9ba2c:12_execute] execute - INFO - ✅ Execute processing completed successfully [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 36.59375,
               "peak_memory_mb": 36.59375,
@@ -6967,7 +6967,7 @@
             },
             {
               "status": "SUCCESS_WITH_WARNINGS",
-              "stdout": "2026-10-02 10:10:34,346 [31af3d2f:16_analysis] analysis - INFO - Processing analysis [step_number=None | total_steps=None]\n2026-10-02 10:10:34,346 [31af3d2f:16_analysis] analysis - INFO - Step 16 GridWorld animations enabled: False\n2026-10-02 10:10:35,114 [31af3d2f:16_analysis] analysis - INFO - Looking for execution results in: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/00_pipeline_summary/execution_selection/486166eb1cb94190b8d39b14e56b5659/11afe7008ad006056f50dea3\n2026-10-02 10:10:35,114 [31af3d2f:16_analysis] analysis - INFO - Found execution results directory, performing post-simulation analysis\n2026-10-02 10:10:35,228 [31af3d2f:16_analysis] analysis - INFO - Generated 2 empirical visualizations from execution summary\n2026-10-02 10:10:35,228 [31af3d2f:16_analysis] analysis - INFO - Analyzing execution results for categorical_smoothing\n2026-10-02 10:10:35,230 [31af3d2f:16_analysis] analysis - INFO - Post-simulation analysis completed for categorical_smoothing\n2026-10-02 10:10:35,230 [31af3d2f:16_analysis] analysis - INFO - Generated overall summary statistics\n2026-10-02 10:10:35,232 [31af3d2f:16_analysis] analysis - INFO - Generating THRML visualizations...\n2026-10-02 10:10:35,330 [31af3d2f:16_analysis] analysis - INFO - Generated 1 THRML visualization files\n2026-10-02 10:10:35,330 [31af3d2f:16_analysis] analysis - INFO - Performing cross-framework analysis...\n2026-10-02 10:10:35,331 [31af3d2f:16_analysis] analysis - INFO -   [thrml] Loaded simulation data from: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/00_pipeline_summary/execution_selection/486166eb1cb94190b8d39b14e56b5659/11afe7008ad006056f50dea3/categorical_smoothing/thrml/simulation_data/simulation_results.json\n2026-10-02 10:10:35,331 [31af3d2f:16_analysis] analysis - INFO -   [thrml] Extracted: beliefs(3 steps), observations(3)\n2026-10-02 10:10:35,332 [31af3d2f:16_analysis] analysis - INFO - Generated framework comparison report: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/16_analysis_output/cross_framework/framework_comparison_report.md\n2026-10-02 10:10:35,517 [31af3d2f:16_analysis] analysis - INFO - Generated 2 cross-framework comparison visualizations\n2026-10-02 10:10:35,517 [31af3d2f:16_analysis] analysis - INFO - Generating comprehensive visualizations for all execution outputs...\n2026-10-02 10:10:35,520 [31af3d2f:16_analysis] analysis - INFO - Found 1 framework/model combinations for visualization\n2026-10-02 10:10:35,658 [31af3d2f:16_analysis] gnn.analysis.viz_plots - INFO - Saved visualization: categorical_smoothing_thrml_observations.png\n2026-10-02 10:10:35,658 [31af3d2f:16_analysis] analysis - INFO - Generated observation analysis: categorical_smoothing_thrml_observations.png\n2026-10-02 10:10:35,658 [31af3d2f:16_analysis] analysis - INFO - Generated 1 visualization files\n2026-10-02 10:10:35,658 [31af3d2f:16_analysis] analysis - INFO - Generated 1 comprehensive visualization files\n2026-10-02 10:10:35,658 [31af3d2f:16_analysis] analysis - INFO - Generating unified framework dashboard...\n2026-10-02 10:10:35,660 [31af3d2f:16_analysis] analysis - INFO - Less than 2 frameworks with data - skipping unified dashboard\n2026-10-02 10:10:35,662 [31af3d2f:16_analysis] gnn.analysis.generate_cross_model_report - INFO - Generating cross-model comparison report...\n2026-10-02 10:10:35,681 [31af3d2f:16_analysis] gnn.analysis.generate_cross_model_report - WARNING - No simulation data found \u2014 skipping cross-model report\n2026-10-02 10:10:35,682 [31af3d2f:16_analysis] analysis - INFO - \u2705 Analysis processing completed successfully [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:34,346 [31af3d2f:16_analysis] analysis - INFO - Processing analysis [step_number=None | total_steps=None]\n2026-10-02 10:10:34,346 [31af3d2f:16_analysis] analysis - INFO - Step 16 GridWorld animations enabled: False\n2026-10-02 10:10:35,114 [31af3d2f:16_analysis] analysis - INFO - Looking for execution results in: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/00_pipeline_summary/execution_selection/486166eb1cb94190b8d39b14e56b5659/11afe7008ad006056f50dea3\n2026-10-02 10:10:35,114 [31af3d2f:16_analysis] analysis - INFO - Found execution results directory, performing post-simulation analysis\n2026-10-02 10:10:35,228 [31af3d2f:16_analysis] analysis - INFO - Generated 2 empirical visualizations from execution summary\n2026-10-02 10:10:35,228 [31af3d2f:16_analysis] analysis - INFO - Analyzing execution results for categorical_smoothing\n2026-10-02 10:10:35,230 [31af3d2f:16_analysis] analysis - INFO - Post-simulation analysis completed for categorical_smoothing\n2026-10-02 10:10:35,230 [31af3d2f:16_analysis] analysis - INFO - Generated overall summary statistics\n2026-10-02 10:10:35,232 [31af3d2f:16_analysis] analysis - INFO - Generating THRML visualizations...\n2026-10-02 10:10:35,330 [31af3d2f:16_analysis] analysis - INFO - Generated 1 THRML visualization files\n2026-10-02 10:10:35,330 [31af3d2f:16_analysis] analysis - INFO - Performing cross-framework analysis...\n2026-10-02 10:10:35,331 [31af3d2f:16_analysis] analysis - INFO -   [thrml] Loaded simulation data from: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/00_pipeline_summary/execution_selection/486166eb1cb94190b8d39b14e56b5659/11afe7008ad006056f50dea3/categorical_smoothing/thrml/simulation_data/simulation_results.json\n2026-10-02 10:10:35,331 [31af3d2f:16_analysis] analysis - INFO -   [thrml] Extracted: beliefs(3 steps), observations(3)\n2026-10-02 10:10:35,332 [31af3d2f:16_analysis] analysis - INFO - Generated framework comparison report: <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/16_analysis_output/cross_framework/framework_comparison_report.md\n2026-10-02 10:10:35,517 [31af3d2f:16_analysis] analysis - INFO - Generated 2 cross-framework comparison visualizations\n2026-10-02 10:10:35,517 [31af3d2f:16_analysis] analysis - INFO - Generating comprehensive visualizations for all execution outputs...\n2026-10-02 10:10:35,520 [31af3d2f:16_analysis] analysis - INFO - Found 1 framework/model combinations for visualization\n2026-10-02 10:10:35,658 [31af3d2f:16_analysis] gnn.analysis.viz_plots - INFO - Saved visualization: categorical_smoothing_thrml_observations.png\n2026-10-02 10:10:35,658 [31af3d2f:16_analysis] analysis - INFO - Generated observation analysis: categorical_smoothing_thrml_observations.png\n2026-10-02 10:10:35,658 [31af3d2f:16_analysis] analysis - INFO - Generated 1 visualization files\n2026-10-02 10:10:35,658 [31af3d2f:16_analysis] analysis - INFO - Generated 1 comprehensive visualization files\n2026-10-02 10:10:35,658 [31af3d2f:16_analysis] analysis - INFO - Generating unified framework dashboard...\n2026-10-02 10:10:35,660 [31af3d2f:16_analysis] analysis - INFO - Less than 2 frameworks with data - skipping unified dashboard\n2026-10-02 10:10:35,662 [31af3d2f:16_analysis] gnn.analysis.generate_cross_model_report - INFO - Generating cross-model comparison report...\n2026-10-02 10:10:35,681 [31af3d2f:16_analysis] gnn.analysis.generate_cross_model_report - WARNING - No simulation data found — skipping cross-model report\n2026-10-02 10:10:35,682 [31af3d2f:16_analysis] analysis - INFO - ✅ Analysis processing completed successfully [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 36.859375,
               "peak_memory_mb": 36.859375,
@@ -7048,7 +7048,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:35,906 [a01550e6:20_website] website - INFO - Website generated: 7 pages \u2192 <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/20_website_output\n2026-10-02 10:10:35,906 [a01550e6:20_website] website - INFO - Website generated successfully with 7 pages\n",
+              "stdout": "2026-10-02 10:10:35,906 [a01550e6:20_website] website - INFO - Website generated: 7 pages → <scratch>/gnn-v4-thrml-installed/finalcustody/312/thrml/20_website_output\n2026-10-02 10:10:35,906 [a01550e6:20_website] website - INFO - Website generated successfully with 7 pages\n",
               "stderr": "",
               "memory_usage_mb": 37.28125,
               "peak_memory_mb": 37.28125,
@@ -7611,7 +7611,7 @@
           "pipeline_steps": [
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:37,113 [cebd78c8:3_gnn] 3_gnn.py - INFO - \ud83d\ude80 Starting step: Processing GNN files with full multi-format generation\n2026-10-02 10:10:37,122 [cebd78c8:3_gnn] 3_gnn.py - INFO - Initialized GNN parsing system with 22 supported formats (minimal preset emits 3 serializers)\n2026-10-02 10:10:37,122 [cebd78c8:3_gnn] 3_gnn.py - INFO - Available serializers: [<GNNFormat.MARKDOWN: 'markdown'>, <GNNFormat.JSON: 'json'>, <GNNFormat.XML: 'xml'>, <GNNFormat.YAML: 'yaml'>, <GNNFormat.SCALA: 'scala'>, <GNNFormat.PROTOBUF: 'protobuf'>, <GNNFormat.PKL: 'pkl'>, <GNNFormat.XSD: 'xsd'>, <GNNFormat.ASN1: 'asn1'>, <GNNFormat.LEAN: 'lean'>, <GNNFormat.COQ: 'coq'>, <GNNFormat.PYTHON: 'python'>, <GNNFormat.BNF: 'bnf'>, <GNNFormat.EBNF: 'ebnf'>, <GNNFormat.ISABELLE: 'isabelle'>, <GNNFormat.MAXIMA: 'maxima'>, <GNNFormat.ALLOY: 'alloy'>, <GNNFormat.Z_NOTATION: 'z_notation'>, <GNNFormat.TLA_PLUS: 'tla_plus'>, <GNNFormat.AGDA: 'agda'>, <GNNFormat.HASKELL: 'haskell'>, <GNNFormat.PICKLE: 'pickle'>]\n2026-10-02 10:10:37,125 [cebd78c8:3_gnn] 3_gnn.py - INFO - Found 1 potential GNN files\n2026-10-02 10:10:37,126 [cebd78c8:3_gnn] 3_gnn.py - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/00_pipeline_summary/selection/86fd00382a754d869301c71d0d21b904/12d2d0be83170ff76f64565b/3/continuous_navigation.md\n2026-10-02 10:10:37,128 [cebd78c8:3_gnn] 3_gnn.py - INFO - Generated 3 formats for continuous_navigation.md\n2026-10-02 10:10:37,129 [cebd78c8:3_gnn] 3_gnn.py - INFO - \u2705 Processed 1 files, generated 3 format instances across 3 formats (preset=minimal)\n",
+              "stdout": "2026-10-02 10:10:37,113 [cebd78c8:3_gnn] 3_gnn.py - INFO - 🚀 Starting step: Processing GNN files with full multi-format generation\n2026-10-02 10:10:37,122 [cebd78c8:3_gnn] 3_gnn.py - INFO - Initialized GNN parsing system with 22 supported formats (minimal preset emits 3 serializers)\n2026-10-02 10:10:37,122 [cebd78c8:3_gnn] 3_gnn.py - INFO - Available serializers: [<GNNFormat.MARKDOWN: 'markdown'>, <GNNFormat.JSON: 'json'>, <GNNFormat.XML: 'xml'>, <GNNFormat.YAML: 'yaml'>, <GNNFormat.SCALA: 'scala'>, <GNNFormat.PROTOBUF: 'protobuf'>, <GNNFormat.PKL: 'pkl'>, <GNNFormat.XSD: 'xsd'>, <GNNFormat.ASN1: 'asn1'>, <GNNFormat.LEAN: 'lean'>, <GNNFormat.COQ: 'coq'>, <GNNFormat.PYTHON: 'python'>, <GNNFormat.BNF: 'bnf'>, <GNNFormat.EBNF: 'ebnf'>, <GNNFormat.ISABELLE: 'isabelle'>, <GNNFormat.MAXIMA: 'maxima'>, <GNNFormat.ALLOY: 'alloy'>, <GNNFormat.Z_NOTATION: 'z_notation'>, <GNNFormat.TLA_PLUS: 'tla_plus'>, <GNNFormat.AGDA: 'agda'>, <GNNFormat.HASKELL: 'haskell'>, <GNNFormat.PICKLE: 'pickle'>]\n2026-10-02 10:10:37,125 [cebd78c8:3_gnn] 3_gnn.py - INFO - Found 1 potential GNN files\n2026-10-02 10:10:37,126 [cebd78c8:3_gnn] 3_gnn.py - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/00_pipeline_summary/selection/86fd00382a754d869301c71d0d21b904/12d2d0be83170ff76f64565b/3/continuous_navigation.md\n2026-10-02 10:10:37,128 [cebd78c8:3_gnn] 3_gnn.py - INFO - Generated 3 formats for continuous_navigation.md\n2026-10-02 10:10:37,129 [cebd78c8:3_gnn] 3_gnn.py - INFO - ✅ Processed 1 files, generated 3 format instances across 3 formats (preset=minimal)\n",
               "stderr": "",
               "memory_usage_mb": 48.59375,
               "peak_memory_mb": 48.59375,
@@ -7725,7 +7725,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:37,812 [17c9c71d:8_visualization] 8_visualization.py - INFO - Processing visualizations [step_number=None | total_steps=None]\n2026-10-02 10:10:37,812 [17c9c71d:8_visualization] 8_visualization.py - INFO - Visualization discovery recursive=True\n2026-10-02 10:10:42,522 [17c9c71d:8_visualization] 8_visualization.py - INFO - \u2705 Generated 24 visualizations [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:37,812 [17c9c71d:8_visualization] 8_visualization.py - INFO - Processing visualizations [step_number=None | total_steps=None]\n2026-10-02 10:10:37,812 [17c9c71d:8_visualization] 8_visualization.py - INFO - Visualization discovery recursive=True\n2026-10-02 10:10:42,522 [17c9c71d:8_visualization] 8_visualization.py - INFO - ✅ Generated 24 visualizations [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 24.953125,
               "peak_memory_mb": 48.734375,
@@ -7910,7 +7910,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:42,757 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Processing GNN files in: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/00_pipeline_summary/selection/86fd00382a754d869301c71d0d21b904/12d2d0be83170ff76f64565b/11\n2026-10-02 10:10:42,757 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output\n2026-10-02 10:10:42,769 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Found 1 GNN files to process\n2026-10-02 10:10:42,769 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Target frameworks: ['cpomdp']\n2026-10-02 10:10:42,769 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/00_pipeline_summary/selection/86fd00382a754d869301c71d0d21b904/12d2d0be83170ff76f64565b/11/continuous_navigation.md\n2026-10-02 10:10:42,774 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Extracted POMDP 'Continuous State Navigation Agent' with 2 states, 2 observations, 1 actions\n2026-10-02 10:10:42,774 [bf7ba7ef:11_render] gnn.render.pomdp_processor._flow - INFO - Processing POMDP 'Continuous State Navigation Agent' for frameworks: ['cpomdp']\n2026-10-02 10:10:42,774 [bf7ba7ef:11_render] gnn.render.pomdp_processor._flow - INFO - Processing framework: cpomdp\n2026-10-02 10:10:42,777 [bf7ba7ef:11_render] gnn.render.cpomdp.cpomdp_renderer - INFO - \u2705 cpomdp continuous script written to: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output/continuous_navigation/cpomdp/Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:42,777 [bf7ba7ef:11_render] gnn.render.pomdp_processor._flow - INFO - Created documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output/continuous_navigation/cpomdp/README.md\n2026-10-02 10:10:42,777 [bf7ba7ef:11_render] gnn.render.pomdp_processor._flow - INFO - \u2705 cpomdp: cpomdp continuous script generated (efe): <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output/continuous_navigation/cpomdp/Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:42,777 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Successfully processed continuous_navigation.md\n2026-10-02 10:10:42,779 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Created overview documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output/README.md\n2026-10-02 10:10:42,779 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Render processing completed\n2026-10-02 10:10:42,779 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Files: 1/1 successful\n2026-10-02 10:10:42,779 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Framework renderings: 1/1 successful (100.0%)\n2026-10-02 10:10:42,779 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Summary saved to: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output/render_processing_summary.json\n",
+              "stdout": "2026-10-02 10:10:42,757 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Processing GNN files in: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/00_pipeline_summary/selection/86fd00382a754d869301c71d0d21b904/12d2d0be83170ff76f64565b/11\n2026-10-02 10:10:42,757 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output\n2026-10-02 10:10:42,769 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Found 1 GNN files to process\n2026-10-02 10:10:42,769 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Target frameworks: ['cpomdp']\n2026-10-02 10:10:42,769 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Processing: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/00_pipeline_summary/selection/86fd00382a754d869301c71d0d21b904/12d2d0be83170ff76f64565b/11/continuous_navigation.md\n2026-10-02 10:10:42,774 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Extracted POMDP 'Continuous State Navigation Agent' with 2 states, 2 observations, 1 actions\n2026-10-02 10:10:42,774 [bf7ba7ef:11_render] gnn.render.pomdp_processor._flow - INFO - Processing POMDP 'Continuous State Navigation Agent' for frameworks: ['cpomdp']\n2026-10-02 10:10:42,774 [bf7ba7ef:11_render] gnn.render.pomdp_processor._flow - INFO - Processing framework: cpomdp\n2026-10-02 10:10:42,777 [bf7ba7ef:11_render] gnn.render.cpomdp.cpomdp_renderer - INFO - ✅ cpomdp continuous script written to: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output/continuous_navigation/cpomdp/Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:42,777 [bf7ba7ef:11_render] gnn.render.pomdp_processor._flow - INFO - Created documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output/continuous_navigation/cpomdp/README.md\n2026-10-02 10:10:42,777 [bf7ba7ef:11_render] gnn.render.pomdp_processor._flow - INFO - ✅ cpomdp: cpomdp continuous script generated (efe): <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output/continuous_navigation/cpomdp/Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:42,777 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Successfully processed continuous_navigation.md\n2026-10-02 10:10:42,779 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Created overview documentation: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output/README.md\n2026-10-02 10:10:42,779 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Render processing completed\n2026-10-02 10:10:42,779 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Files: 1/1 successful\n2026-10-02 10:10:42,779 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Framework renderings: 1/1 successful (100.0%)\n2026-10-02 10:10:42,779 [bf7ba7ef:11_render] gnn.render.processor.pipeline - INFO - Summary saved to: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output/render_processing_summary.json\n",
               "stderr": "",
               "memory_usage_mb": 37.328125,
               "peak_memory_mb": 37.328125,
@@ -7959,7 +7959,7 @@
             },
             {
               "status": "SUCCESS_WITH_WARNINGS",
-              "stdout": "2026-10-02 10:10:42,939 [5d8d604f:12_execute] execute - INFO - Processing execute - searching for rendered implementations [step_number=None | total_steps=None]\n2026-10-02 10:10:42,939 [5d8d604f:12_execute] execute - INFO - Requested frameworks: ['cpomdp']\n2026-10-02 10:10:42,939 [5d8d604f:12_execute] execute - INFO - Found render output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output\n2026-10-02 10:10:42,941 [5d8d604f:12_execute] execute - INFO - Found 1 executable scripts to run\n2026-10-02 10:10:42,941 [5d8d604f:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py312/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:43,374 [5d8d604f:12_execute] execute - WARNING - sandbox_disabled_receipt: script Continuous_State_Navigation_Agent_cpomdp.py executed WITHOUT a sandbox (GNN_SANDBOX=off, the default). Rendered scripts run with operator privileges; set GNN_SANDBOX=prefer/require for isolation.\n2026-10-02 10:10:43,374 [5d8d604f:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py312/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:44,365 [5d8d604f:12_execute] execute - INFO - \u2705 Successfully executed Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:44,366 [5d8d604f:12_execute] execute - INFO - Collecting execution outputs for cpomdp script Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:44,367 [5d8d604f:12_execute] execute - INFO - Extracting simulation data from collected files for cpomdp\n2026-10-02 10:10:44,369 [5d8d604f:12_execute] execute - INFO - Generated execution report: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/12_execute_output/summaries/execution_report.md\n2026-10-02 10:10:44,369 [5d8d604f:12_execute] execute - INFO - \u2705 Execute processing completed successfully [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:42,939 [5d8d604f:12_execute] execute - INFO - Processing execute - searching for rendered implementations [step_number=None | total_steps=None]\n2026-10-02 10:10:42,939 [5d8d604f:12_execute] execute - INFO - Requested frameworks: ['cpomdp']\n2026-10-02 10:10:42,939 [5d8d604f:12_execute] execute - INFO - Found render output directory: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/11_render_output\n2026-10-02 10:10:42,941 [5d8d604f:12_execute] execute - INFO - Found 1 executable scripts to run\n2026-10-02 10:10:42,941 [5d8d604f:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py312/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:43,374 [5d8d604f:12_execute] execute - WARNING - sandbox_disabled_receipt: script Continuous_State_Navigation_Agent_cpomdp.py executed WITHOUT a sandbox (GNN_SANDBOX=off, the default). Rendered scripts run with operator privileges; set GNN_SANDBOX=prefer/require for isolation.\n2026-10-02 10:10:43,374 [5d8d604f:12_execute] gnn.execute.subprocess_envelope - WARNING - sandbox_disabled_receipt: <scratch>-cpomdp-py312/bin/python executed WITHOUT a sandbox (sandbox=False). The command runs with operator privileges; set GNN_SANDBOX=prefer/require and sandbox=True for isolation.\n2026-10-02 10:10:44,365 [5d8d604f:12_execute] execute - INFO - ✅ Successfully executed Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:44,366 [5d8d604f:12_execute] execute - INFO - Collecting execution outputs for cpomdp script Continuous_State_Navigation_Agent_cpomdp.py\n2026-10-02 10:10:44,367 [5d8d604f:12_execute] execute - INFO - Extracting simulation data from collected files for cpomdp\n2026-10-02 10:10:44,369 [5d8d604f:12_execute] execute - INFO - Generated execution report: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/12_execute_output/summaries/execution_report.md\n2026-10-02 10:10:44,369 [5d8d604f:12_execute] execute - INFO - ✅ Execute processing completed successfully [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 37.875,
               "peak_memory_mb": 37.875,
@@ -8008,7 +8008,7 @@
             },
             {
               "status": "SUCCESS_WITH_WARNINGS",
-              "stdout": "2026-10-02 10:10:44,776 [e37cc497:16_analysis] analysis - INFO - Processing analysis [step_number=None | total_steps=None]\n2026-10-02 10:10:44,777 [e37cc497:16_analysis] analysis - INFO - Step 16 GridWorld animations enabled: False\n2026-10-02 10:10:45,161 [e37cc497:16_analysis] analysis - INFO - Looking for execution results in: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/00_pipeline_summary/execution_selection/86fd00382a754d869301c71d0d21b904/c251a9cb4090e6af3c19f660\n2026-10-02 10:10:45,161 [e37cc497:16_analysis] analysis - INFO - Found execution results directory, performing post-simulation analysis\n2026-10-02 10:10:45,271 [e37cc497:16_analysis] analysis - INFO - Generated 2 empirical visualizations from execution summary\n2026-10-02 10:10:45,271 [e37cc497:16_analysis] analysis - INFO - Analyzing execution results for continuous_navigation\n2026-10-02 10:10:45,271 [e37cc497:16_analysis] analysis - INFO - Post-simulation analysis completed for continuous_navigation\n2026-10-02 10:10:45,271 [e37cc497:16_analysis] analysis - INFO - Generated overall summary statistics\n2026-10-02 10:10:45,272 [e37cc497:16_analysis] analysis - INFO - Generating cpomdp visualizations...\n2026-10-02 10:10:45,362 [e37cc497:16_analysis] analysis - INFO - Generated 1 cpomdp visualization files\n2026-10-02 10:10:45,362 [e37cc497:16_analysis] analysis - INFO - Performing cross-framework analysis...\n2026-10-02 10:10:45,363 [e37cc497:16_analysis] analysis - INFO -   [cpomdp] Loaded simulation data from: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/00_pipeline_summary/execution_selection/86fd00382a754d869301c71d0d21b904/c251a9cb4090e6af3c19f660/continuous_navigation/cpomdp/simulation_data/simulation_results.json\n2026-10-02 10:10:45,363 [e37cc497:16_analysis] analysis - INFO -   [cpomdp] Extracted: beliefs(4 steps), free_energy(4)\n2026-10-02 10:10:45,364 [e37cc497:16_analysis] analysis - INFO - Generated framework comparison report: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/16_analysis_output/cross_framework/framework_comparison_report.md\n2026-10-02 10:10:45,553 [e37cc497:16_analysis] analysis - INFO - Generated 2 cross-framework comparison visualizations\n2026-10-02 10:10:45,553 [e37cc497:16_analysis] analysis - INFO - Generating comprehensive visualizations for all execution outputs...\n2026-10-02 10:10:45,554 [e37cc497:16_analysis] analysis - INFO - Found 1 framework/model combinations for visualization\n2026-10-02 10:10:45,554 [e37cc497:16_analysis] analysis - INFO - Generated 0 visualization files\n2026-10-02 10:10:45,554 [e37cc497:16_analysis] analysis - INFO - Generated 0 comprehensive visualization files\n2026-10-02 10:10:45,554 [e37cc497:16_analysis] analysis - INFO - Generating unified framework dashboard...\n2026-10-02 10:10:45,555 [e37cc497:16_analysis] analysis - INFO - Less than 2 frameworks with data - skipping unified dashboard\n2026-10-02 10:10:45,555 [e37cc497:16_analysis] gnn.analysis.generate_cross_model_report - INFO - Generating cross-model comparison report...\n2026-10-02 10:10:45,556 [e37cc497:16_analysis] gnn.analysis.generate_cross_model_report - WARNING - No simulation data found \u2014 skipping cross-model report\n2026-10-02 10:10:45,556 [e37cc497:16_analysis] analysis - INFO - \u2705 Analysis processing completed successfully [step_number=None]\n",
+              "stdout": "2026-10-02 10:10:44,776 [e37cc497:16_analysis] analysis - INFO - Processing analysis [step_number=None | total_steps=None]\n2026-10-02 10:10:44,777 [e37cc497:16_analysis] analysis - INFO - Step 16 GridWorld animations enabled: False\n2026-10-02 10:10:45,161 [e37cc497:16_analysis] analysis - INFO - Looking for execution results in: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/00_pipeline_summary/execution_selection/86fd00382a754d869301c71d0d21b904/c251a9cb4090e6af3c19f660\n2026-10-02 10:10:45,161 [e37cc497:16_analysis] analysis - INFO - Found execution results directory, performing post-simulation analysis\n2026-10-02 10:10:45,271 [e37cc497:16_analysis] analysis - INFO - Generated 2 empirical visualizations from execution summary\n2026-10-02 10:10:45,271 [e37cc497:16_analysis] analysis - INFO - Analyzing execution results for continuous_navigation\n2026-10-02 10:10:45,271 [e37cc497:16_analysis] analysis - INFO - Post-simulation analysis completed for continuous_navigation\n2026-10-02 10:10:45,271 [e37cc497:16_analysis] analysis - INFO - Generated overall summary statistics\n2026-10-02 10:10:45,272 [e37cc497:16_analysis] analysis - INFO - Generating cpomdp visualizations...\n2026-10-02 10:10:45,362 [e37cc497:16_analysis] analysis - INFO - Generated 1 cpomdp visualization files\n2026-10-02 10:10:45,362 [e37cc497:16_analysis] analysis - INFO - Performing cross-framework analysis...\n2026-10-02 10:10:45,363 [e37cc497:16_analysis] analysis - INFO -   [cpomdp] Loaded simulation data from: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/00_pipeline_summary/execution_selection/86fd00382a754d869301c71d0d21b904/c251a9cb4090e6af3c19f660/continuous_navigation/cpomdp/simulation_data/simulation_results.json\n2026-10-02 10:10:45,363 [e37cc497:16_analysis] analysis - INFO -   [cpomdp] Extracted: beliefs(4 steps), free_energy(4)\n2026-10-02 10:10:45,364 [e37cc497:16_analysis] analysis - INFO - Generated framework comparison report: <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/16_analysis_output/cross_framework/framework_comparison_report.md\n2026-10-02 10:10:45,553 [e37cc497:16_analysis] analysis - INFO - Generated 2 cross-framework comparison visualizations\n2026-10-02 10:10:45,553 [e37cc497:16_analysis] analysis - INFO - Generating comprehensive visualizations for all execution outputs...\n2026-10-02 10:10:45,554 [e37cc497:16_analysis] analysis - INFO - Found 1 framework/model combinations for visualization\n2026-10-02 10:10:45,554 [e37cc497:16_analysis] analysis - INFO - Generated 0 visualization files\n2026-10-02 10:10:45,554 [e37cc497:16_analysis] analysis - INFO - Generated 0 comprehensive visualization files\n2026-10-02 10:10:45,554 [e37cc497:16_analysis] analysis - INFO - Generating unified framework dashboard...\n2026-10-02 10:10:45,555 [e37cc497:16_analysis] analysis - INFO - Less than 2 frameworks with data - skipping unified dashboard\n2026-10-02 10:10:45,555 [e37cc497:16_analysis] gnn.analysis.generate_cross_model_report - INFO - Generating cross-model comparison report...\n2026-10-02 10:10:45,556 [e37cc497:16_analysis] gnn.analysis.generate_cross_model_report - WARNING - No simulation data found — skipping cross-model report\n2026-10-02 10:10:45,556 [e37cc497:16_analysis] analysis - INFO - ✅ Analysis processing completed successfully [step_number=None]\n",
               "stderr": "",
               "memory_usage_mb": 38.140625,
               "peak_memory_mb": 38.140625,
@@ -8085,7 +8085,7 @@
             },
             {
               "status": "SUCCESS",
-              "stdout": "2026-10-02 10:10:45,783 [1a482219:20_website] website - INFO - Website generated: 7 pages \u2192 <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/20_website_output\n2026-10-02 10:10:45,783 [1a482219:20_website] website - INFO - Website generated successfully with 7 pages\n",
+              "stdout": "2026-10-02 10:10:45,783 [1a482219:20_website] website - INFO - Website generated: 7 pages → <scratch>/gnn-v4-thrml-installed/finalcustody/312/cpomdp/20_website_output\n2026-10-02 10:10:45,783 [1a482219:20_website] website - INFO - Website generated successfully with 7 pages\n",
               "stderr": "",
               "memory_usage_mb": 38.328125,
               "peak_memory_mb": 38.328125,
@@ -11629,5 +11629,568 @@
     "default_workers": 2,
     "inclusive_budget_seconds": 1800,
     "claim": "Reviewed assembly only; new actual full-suite run pending."
+  },
+  "release_doc_reconciliation": {
+    "status": "candidate_unreleased_final_source_freeze_and_acceptance_pending",
+    "precedence": "This record states current acceptance boundaries. All other top-level records retain their historical snapshot meaning, including their pending/current/final labels; none establishes acceptance of evolving source.",
+    "observed_gnn_head": "505b99c1643e7ef4a189340ab06431d82989267f",
+    "working_tree_frozen": false,
+    "software_publication_date": null,
+    "manuscript_authored_epoch": "2026-10-02",
+    "publication": {
+      "main_merge_verified": false,
+      "tag_verified": false,
+      "release_verified": false,
+      "final_pair_custody_accepted": false
+    },
+    "historical_evidence_retention": {
+      "origin_sha256": "c7e6d56ce6184a4e144780f22e20d4b3366b5badef502025543033ed99dfbcd4",
+      "scope": "Selected original A3/W2/H5 records preserved verbatim. Current/final wording and predecessor keys inside these objects refer only to that original candidate, identified by origin_sha256. Raw receipts were not rerun or independently rehashed by this reconciliation. No transfer to new source is implied.",
+      "records": {
+        "anchors": {
+          "changed_custody_owners": 5,
+          "counts_and_source_renewal": "Current 26 paths since V include five production-owner changes and two new scientific test functions. Current SC22 measures 6175/573/741/219718 and 12 render targets/164 MCP tools; A3 and ordinary W2 retain exact 745/741/1183 source closure. Actual collected test and native totals are separate.",
+          "current_reviewed_source_head": "8d202439eaa386d13a9b93888a7d560657579a4b",
+          "current_reviewed_source_tree": "a333c0c88e1afd1938d9c20c41de30dfddc0ba20",
+          "custody_owner_files": 745,
+          "manuscript_artifact_commit": "883e44c04e95ef4c69d7f998b9669a0a0a49ad29",
+          "manuscript_artifact_tree": "5f23fb9b4ae3bc12cee5a106aed630725cf06728",
+          "new_artifact_and_wheel_status": "Current A3 artifact/strictSC22, W2 structural/privacy/333installedeach/four experimental and eight reported native scopes independently qualified; final pairing/publication pending.",
+          "ordinary_wheel_sha256": "1fe1427e91fa92e981107ce7a2c99a5c1e9d18758a91c0fa9b5f48141010b35c",
+          "prior_anchors": "preserved_prior_current_planes_2026_10_05.anchors",
+          "production_python_files": 741,
+          "source_committed_independent_review": {
+            "checks": 78,
+            "receipt_sha256": "8cda8d8764bb0e4bdd4c655fadd6bb272ed2232602dd0fd53478714d6417131e",
+            "scope": "Committed one-line source and finite actual graphical renderer/bookends only; subsequent distinct current SC22/A3/W2/installed/native/hosted receipts supply their separate acceptance."
+          },
+          "source_parent": "2967b2cc9245724b4b6be4e18d5670496c790b9f"
+        },
+        "manuscript_custody": {
+          "A3_artifact_commit": "883e44c04e95ef4c69d7f998b9669a0a0a49ad29",
+          "A3_artifact_tree": "5f23fb9b4ae3bc12cee5a106aed630725cf06728",
+          "A3_strict_committed_review_sha256": "1ea6b312f1daa823b8574a8267b1d29147a4d99a0ca4ebd26c46515644813d04",
+          "actual_software_publication_date": null,
+          "authored_version_epoch_date": "2026-10-02",
+          "candidate_bound_seven_asset_observations_sha256": "1cdbdba58d28f03f8158dbb7e7920d3634dc15bee744025c22e73260ff202164",
+          "candidate_receipt_sha256": "ee3635ce6e243cbc9f81d0a58c5fb4d895d234c536d0ba873a8e140a948fa334",
+          "current_pending_seven_asset_observations_sha256": "bf19db1a3cc543117d495c61298da9bbd580d01646f5cc9f7ccfb7b1c41d84d9",
+          "figure_placement_visual_acceptance": true,
+          "final_visual_completeness_claim": false,
+          "finite_actual_PDF_visual_review_sha256": "0bd5ea2420253da77a940004dc44ae93702e5a0b0f3e7df0d601229987a1143f",
+          "historical_accepted_S93ad_SC22_independent_review_sha256": "87bd0cbee5d3d0c9d6b6ad6aa5028d9fc5d979a26149136919350b8d2be9cedb",
+          "independent_actual_SC22_review_sha256": "37b8374d986e82b85bf7a2aa8c0b7f06e9a893b95ffb41f096a1b48a406febfc",
+          "independent_seven_asset_visual_review_sha256": "bb16ef3ed5070f0087c0735ea4e72e76ba78a6be818e64296f6c92e3c78c7538",
+          "own_finite_actual_PDF_observations_sha256": "27e456c1a559443526949a1935b7bdc40b995eb766f42f3d49f43aed6dd72c83",
+          "predecessor": "preserved_prior_current_planes_2026_10_05.manuscript_custody",
+          "predecessor_tokens_hydration_custody_valid_for_old_epoch_only": true,
+          "source_commit": "8d202439eaa386d13a9b93888a7d560657579a4b",
+          "source_visual_issue": "The concrete DAG, readiness label and canvas issues are corrected. Seven current PNGs and the actual cover/all seven body figure pages pass finite independent manual review; the remaining PDF pages and slide/web views are outside this receipt.",
+          "status": "Current S8d20/A3 manuscript custody and finite figure placement/readability accepted; W2 installed/scoped native evidence is separate from publication acceptance."
+        },
+        "hosted_prepublication_acceptance": {
+          "Bandit_results": 0,
+          "MCP_capabilities": {
+            "error": 0,
+            "failure": 0,
+            "skip": 0,
+            "suite_aggregate_tests": 90,
+            "suite_seconds": 6.015,
+            "testcase_elements": 90
+          },
+          "actual_ci_checkout": "08b5d8239480a6f7e6afb2af072602240b36ac3b",
+          "all_checks_green": false,
+          "base_head": "536d949829f6aed11dc540e5c5dec77578b25016",
+          "check_failure": 3,
+          "check_snapshot": {
+            "Bandit": "success",
+            "CodeQL": "failure",
+            "actionlint": "success",
+            "analyze (python)": "success",
+            "dependency-review": "success",
+            "extras": "success",
+            "fep-lean-pair (3.11)": "failure",
+            "fep-lean-pair (3.12)": "failure",
+            "geo-infer-interchange (3.11)": "success",
+            "geo-infer-interchange (3.12)": "success",
+            "markdown-audit": "success",
+            "mcp-tool-count": "success",
+            "pipeline-contracts": "success",
+            "repo-gates": "success",
+            "security": "success",
+            "test (3.11)": "success",
+            "test (3.12)": "success",
+            "test (3.13)": "success"
+          },
+          "check_success": 15,
+          "claim_boundaries": [
+            "Nine complete official source/run-bound archives rehashed before safe ZIP parsing; producer creation timestamps fall inside unique first-attempt jobs.",
+            "All three current default jobs use distinct synthetic08b5 commit with same A3 tree and parents main536/A3; current pipeline receipt also binds actual checkout.",
+            "Do not sum overlapping split/default/pipeline/MCP lanes. 6721 JUnit aggregates comprise6711 actual testcase nodes plus10 passed subtests.",
+            "70.56-70.59% is statement coverage of default lane, not branch or combined all-repository coverage, and not Fep89%.",
+            "Current main CI workflow and its6jobs succeeded; captured18check snapshot separately has15success and3failures:CodeQL alert12 plus2old pair checks. Scoped alert12 disposition is separate; final pairing/finalP allchecks require renewal.",
+            "repo-gates attempt2success is observed in the snapshot but its full raw local-gates proof is outside this main-ci collection; attempt1 checkouttimeout must remain retained.",
+            "Actual W2 namespace/test source closure was independently reviewed separately; no hosted wheel/native inference claim is manufactured from defaultCI.",
+            "This reviewer performed only safe read-only requalification of retained evidence, no tests/inference/network/source or external mutation."
+          ],
+          "companion_qualification_sha256": "8f34fc87cf18f12de57a1b38a0103a934c413b32687f61747d64f7fcee217444",
+          "default_splits": [
+            {
+              "actual_testcase_elements": 6711,
+              "errors": 0,
+              "failed": 0,
+              "passed_subtests": 10,
+              "pytest_passed_cases": 6711,
+              "python_split": "3.11",
+              "reported_JUnit_tests": 6721,
+              "skipped": 0,
+              "statement_coverage": {
+                "covered_lines": 56383,
+                "excluded_lines": 740,
+                "missing_lines": 23494,
+                "num_statements": 79877,
+                "percent_covered": 70.58727793983249,
+                "percent_covered_display": "71",
+                "percent_statements_covered": 70.58727793983249,
+                "percent_statements_covered_display": "71"
+              },
+              "suite_seconds": 671.214
+            },
+            {
+              "actual_testcase_elements": 6711,
+              "errors": 0,
+              "failed": 0,
+              "passed_subtests": 10,
+              "pytest_passed_cases": 6711,
+              "python_split": "3.12",
+              "reported_JUnit_tests": 6721,
+              "skipped": 0,
+              "statement_coverage": {
+                "covered_lines": 56360,
+                "excluded_lines": 740,
+                "missing_lines": 23517,
+                "num_statements": 79877,
+                "percent_covered": 70.55848366864053,
+                "percent_covered_display": "71",
+                "percent_statements_covered": 70.55848366864053,
+                "percent_statements_covered_display": "71"
+              },
+              "suite_seconds": 673.36
+            },
+            {
+              "actual_testcase_elements": 6711,
+              "errors": 0,
+              "failed": 0,
+              "passed_subtests": 10,
+              "pytest_passed_cases": 6711,
+              "python_split": "3.13",
+              "reported_JUnit_tests": 6721,
+              "skipped": 0,
+              "statement_coverage": {
+                "covered_lines": 56367,
+                "excluded_lines": 740,
+                "missing_lines": 23510,
+                "num_statements": 79877,
+                "percent_covered": 70.56724714248156,
+                "percent_covered_display": "71",
+                "percent_statements_covered": 70.56724714248156,
+                "percent_statements_covered_display": "71"
+              },
+              "suite_seconds": 542.212
+            }
+          ],
+          "extras": {
+            "passed": 28,
+            "skipped": 2
+          },
+          "independent_checks": 435,
+          "independent_review_sha256": "0a7241d9aa85b8bdded214e611d6df8bb5771a37248674981360a82a7e9a8be9",
+          "pipeline_contracts": {
+            "error": 0,
+            "failure": 0,
+            "skip": 0,
+            "suite_aggregate_tests": 294,
+            "suite_seconds": 612.745,
+            "testcase_elements": 294
+          },
+          "predecessor": "preserved_prior_current_planes_2026_10_05.before_current_A3_W2_H5_qualification.hosted_prepublication_acceptance",
+          "run_attempt": 1,
+          "run_id": 37376213050,
+          "run_url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37376213050",
+          "same_tree_distinct_commit_identity_verified": true,
+          "source_head": "883e44c04e95ef4c69d7f998b9669a0a0a49ad29",
+          "source_tree": "5f23fb9b4ae3bc12cee5a106aed630725cf06728",
+          "status": "GO_FOR_EXACT_A3_HOSTED_DEFAULT_PIPELINE_MCP_EVIDENCE_WITH_EXPLICIT_REMAINING_CHECKS"
+        },
+        "reported_native_current_S8d20_A3_W2": {
+          "GIF_frames_decoded": 85,
+          "HTML_DATA_panels_matched": 7,
+          "PNG_pixels_decoded": 144,
+          "actual_scientific_terminal_receipt_sha256": "c62781fddcf42f92493b0cadd05cc17eecf7fae674c9898f2b891134b312a2c2",
+          "additional_five_manual_view_receipt_sha256": "05a777c23f746b37096c4ad4a7a92eeaaadd3e6aeb01308b8bdbe121eccf3e94",
+          "artifact_commit": "883e44c04e95ef4c69d7f998b9669a0a0a49ad29",
+          "browser_rendering_reviewed": false,
+          "capture": {
+            "aggregate_cap_bytes": 100663296,
+            "failed_25_second_transfer_partial_preserved": true,
+            "failed_reviewer_full_decode_replay_preserved": true,
+            "numpyro_capture_receipt_sha256": "32a7fdd34d794d6ab59665cd7f6a3ec975b5e034d47fd7587c5a86fb57631e7c",
+            "official_numpyro_SHA256": "98fa70ad41b5c7e11fad72907bf2753afb17483966c692acbea93029a4269704",
+            "official_numpyro_bytes": 29213411,
+            "official_rxinfer_SHA256": "6d17cdb9fdf6a8f9aee4b9268876f717ff2ef4908fef54c0c8463c448bfe1e54",
+            "official_rxinfer_bytes": 43042659,
+            "retained_aggregate_bytes_including_failed_partial": 95457257,
+            "rxinfer_capture_receipt_sha256": "499bf2ca345632e70c2839122a72765c30a279fab41260615ecedb84b8351256"
+          },
+          "cases": [
+            {
+              "attempts_started": 1,
+              "authored_timesteps": 30,
+              "backend": "numpyro",
+              "inference_iterations": null,
+              "model_id": "multi_armed_bandit-ec7114a92350",
+              "native_display_name": "numpyro_pomdp",
+              "native_result_sha256": "5f1c95c5ce6f8d472ea9f7f7cae4326e57ec91917a3fd87cb74af5bdbb361e6c",
+              "native_returncode": 0,
+              "pipeline_status": "SUCCESS_WITH_WARNINGS",
+              "required_artifacts_rehashed": 82,
+              "run_id": "692769bfb5704928ad5773999f063b74",
+              "runtime_script_hash_present": null,
+              "script_sha256": "79dc828eb12bb3b5ff2bf20b2ffe1203d4a029028e6967a19ef0dc0aae123265",
+              "source_relative_path": "input/gnn_files/discrete/multi_armed_bandit.md",
+              "source_sha256": "58682f353d2f5aef7ca62bbc1171c17c6f3eb5d7b502f76a284f443b59458ec2"
+            },
+            {
+              "attempts_started": 1,
+              "authored_timesteps": 30,
+              "backend": "numpyro",
+              "inference_iterations": null,
+              "model_id": "actinf_pomdp_agent-f7983265f777",
+              "native_display_name": "numpyro_pomdp",
+              "native_result_sha256": "134afce9cdb6913bd3a10f202477f6c1c43343a71a059a2ac40d6373cb9499f2",
+              "native_returncode": 0,
+              "pipeline_status": "SUCCESS_WITH_WARNINGS",
+              "required_artifacts_rehashed": 82,
+              "run_id": "671c870bd477421ea8dc2c6a103e775f",
+              "runtime_script_hash_present": null,
+              "script_sha256": "039bdafa56323f79c84a3cbd6b318733a199e88ccd850f192e0d61aac7d9b947",
+              "source_relative_path": "input/gnn_files/discrete/actinf_pomdp_agent.md",
+              "source_sha256": "ea58f38a031aab36ebf44078ebcdcc2a2ca5594a32c9a8ed92e0f09d61f579bf"
+            },
+            {
+              "attempts_started": 1,
+              "authored_timesteps": 20,
+              "backend": "numpyro",
+              "inference_iterations": null,
+              "model_id": "multi_agent_coordination-7ab71171b5c8",
+              "native_display_name": "numpyro_pomdp",
+              "native_result_sha256": "86105b39453fffd1ad088322cef4465705ea2e494476d8ccf98ddfa5ff4f6c0f",
+              "native_returncode": 0,
+              "pipeline_status": "SUCCESS_WITH_WARNINGS",
+              "required_artifacts_rehashed": 100,
+              "run_id": "bdd5fc1b1e994ab08d79fc976ac17dff",
+              "runtime_script_hash_present": null,
+              "script_sha256": "b92a70f9680e3ea6cb403f3c1405284773fae286aa75902158e3f10b799be650",
+              "source_relative_path": "input/gnn_files/multiagent/multi_agent_coordination.md",
+              "source_sha256": "38f914bb0a9c4337d2de6c425f76d879cf67af6646b3557d16508e91321c606c"
+            },
+            {
+              "attempts_started": 1,
+              "authored_timesteps": 30,
+              "backend": "numpyro",
+              "inference_iterations": null,
+              "model_id": "precision_weighted-15503f2fd117",
+              "native_display_name": "numpyro_pomdp",
+              "native_result_sha256": "19ccb768c37da47c6725dee492bd49628ff5b158e36cd069ed36e0adfd3a2f7c",
+              "native_returncode": 0,
+              "pipeline_status": "SUCCESS_WITH_WARNINGS",
+              "required_artifacts_rehashed": 94,
+              "run_id": "17e5dbcd56b74592ac24d2e74d7d7f32",
+              "runtime_script_hash_present": null,
+              "script_sha256": "cfe21d2c2fc56107543aa9ab5d5346642d8412fccfbdf13db7e097d56a263117",
+              "source_relative_path": "input/gnn_files/precision/precision_weighted.md",
+              "source_sha256": "9a20447b412088498f72713177f90fa62475b47af8d8f8fff0cc2a82507a32c9"
+            },
+            {
+              "attempts_started": 1,
+              "authored_timesteps": 20,
+              "backend": "rxinfer",
+              "inference_iterations": 20,
+              "model_id": "multi_agent_coordination-7ab71171b5c8",
+              "native_display_name": "Multi-Agent Cooperative Active Inference",
+              "native_result_sha256": "e9443d8b06ab551e5ccb8f24f79bad717e3baff2b7ec82ecb6a323400d078284",
+              "native_returncode": 0,
+              "pipeline_status": "SUCCESS_WITH_WARNINGS",
+              "required_artifacts_rehashed": 117,
+              "run_id": "38c2c8c22734435b9bfd31663f3140eb",
+              "runtime_script_hash_present": false,
+              "script_sha256": "867c71da36823b1d4160ca41a6dda82a154dfc714947a33556ea340635b5a6d7",
+              "source_relative_path": "input/gnn_files/multiagent/multi_agent_coordination.md",
+              "source_sha256": "38f914bb0a9c4337d2de6c425f76d879cf67af6646b3557d16508e91321c606c"
+            },
+            {
+              "attempts_started": 1,
+              "authored_timesteps": 30,
+              "backend": "rxinfer",
+              "inference_iterations": 20,
+              "model_id": "stigmergic_swarm-b7ca34a3e9fc",
+              "native_display_name": "Stigmergic Swarm Active Inference",
+              "native_result_sha256": "fece1cad5d5bf0ae45b6961b44f47df7bfad40439ab512322ebdc88297dedab4",
+              "native_returncode": 0,
+              "pipeline_status": "SUCCESS_WITH_WARNINGS",
+              "required_artifacts_rehashed": 149,
+              "run_id": "5ce7c68cdf30406ea2d7616470ca1bc9",
+              "runtime_script_hash_present": false,
+              "script_sha256": "e828ac706aeac1ddf4b9221f6d9ed7bed90c65ad86fa4a51748ad761bf9fbb9b",
+              "source_relative_path": "input/gnn_files/multiagent/stigmergic_swarm.md",
+              "source_sha256": "04e3f73dc1725c5baae8fce6328485116baa9c8c98572e2d388fbbf06eddc52f"
+            },
+            {
+              "attempts_started": 1,
+              "authored_timesteps": 15,
+              "backend": "rxinfer",
+              "inference_iterations": 20,
+              "model_id": "pomdp_gridworld_3x3-d607fc3ea1ce",
+              "native_display_name": "POMDP GridWorld 3x3",
+              "native_result_sha256": "952e4018ca54cb1f0c4b571070fe7425aa67c39ed23fe4456e10ca554d16f30e",
+              "native_returncode": 0,
+              "pipeline_status": "SUCCESS_WITH_WARNINGS",
+              "required_artifacts_rehashed": 104,
+              "run_id": "f56ea5d800644b6a98586bbb29efb241",
+              "runtime_script_hash_present": true,
+              "script_sha256": "33888f4c611a4d6dcc518e1e0ac118ca417b02f5d563db8caa7efc3e6ba9ad1b",
+              "source_relative_path": "input/gnn_files/pomdp_gridworld/pomdp_gridworld_3x3.md",
+              "source_sha256": "a87cdc89163bcd1b612f902d21ad16f95e3d25c7ff59e3718fa0179b1bc4d302"
+            },
+            {
+              "attempts_started": 1,
+              "authored_timesteps": 20,
+              "backend": "rxinfer",
+              "inference_iterations": 20,
+              "model_id": "two_state_bistable-28a86eca6645",
+              "native_display_name": "Two State Bistable POMDP",
+              "native_result_sha256": "13b76dc313755d3b723deb547da581a32bb82c9505a427e30e602965885aa983",
+              "native_returncode": 0,
+              "pipeline_status": "SUCCESS_WITH_WARNINGS",
+              "required_artifacts_rehashed": 95,
+              "run_id": "4f44dcf763784647bc0e3133bb6089a2",
+              "runtime_script_hash_present": true,
+              "script_sha256": "45744e64ef4204b36272591e9bc0f3cb7cd28a6acefb558217f1b5158077a65e",
+              "source_relative_path": "input/gnn_files/discrete/two_state_bistable.md",
+              "source_sha256": "a184fed13b7a446e8193549c206ade9f485cd99034097c3e67277a03fc3cab3d"
+            }
+          ],
+          "claim_boundaries": [
+            "Full authored NumPyroT30/30/20/30 and RxT20/30/15/20 with20iterations, exact eight sources/currentW2/A3; no per-case overrides.",
+            "All823 required current-run artifacts independently rehashed, current source/script/native/config/finalized seven-unit evidence bound.16 known hidden runtime lock/history members absent from upload remain explicitly NOT rehashed.",
+            "Both54control groups and native supervisors typed-zero/cleaned; every pipeline retains SUCCESS_WITH_WARNINGS/exit2 and native subprocess0/one attempt.",
+            "This reviewer independently read/hash-checked144PNG IHDRs and exact7HTML_DATA panels; separate scientific terminal0/5134 plane fully decoded144PNG and85GIFframes. Actual manual scope is exactly six scientific images, no universal144-image visual review or browserJavaScript acceptance.",
+            "Generic NumPyro native display labels remain generic. Two multi-agent Rx runtime script SHA fields are absent; external generated-script/native-result/source/identity bindings are retained, not invented internal hashes.",
+            "Precision/dtype witnesses, probabilities/shapes, source fidelity and pixels remain distinct; no numerical universal equivalence/continuous Gaussian/backend-wide acceptance is claimed.",
+            "Prior failed25-second transfer partial and prior failed reviewer60-second data replay remain retained. No new generated-script execution, native inference, package install, source edit, main merge/tag/release occurred in this review.",
+            "Five additional scientific manual views extend the preserved six to eleven; a separate116-check independent addendum views exactly eight representative original images. Original5041 data review remains distinct from144 full pixel decoding and this finite manual scope."
+          ],
+          "eight_model_representative_plot_map_sha256": "b4bd80fe57cc6f25969668f6347d5a7399e959eea30ad20cf23c621752f03692",
+          "groups": [
+            {
+              "HTML_DATA_panels_verified": 0,
+              "PNG_hash_and_IHDR_witnesses": 40,
+              "backend": "numpyro",
+              "controls": 54,
+              "dependency_provisioning_seconds": 9.97003633,
+              "hidden_runtime_inventory_absent": [
+                {
+                  "rehashed": false,
+                  "relative_path": ".gnn_run.lock",
+                  "sha256": "cc7b2bd42a10ec891e9bba51cf2641650596047ed6f9a9c285995c9b48349f2b",
+                  "source_relative_path": "input/gnn_files/discrete/multi_armed_bandit.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": "00_pipeline_summary/.history/index.json",
+                  "sha256": "7ec669a026b2e668b567bb0735c24c9b38b21a41bb0f8dc757f4da13502ba8db",
+                  "source_relative_path": "input/gnn_files/discrete/multi_armed_bandit.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": ".gnn_run.lock",
+                  "sha256": "bc9c3f66d89c677466b93ea87dd6df161232bed3bd8de81419dd8f5e9d2e0f4f",
+                  "source_relative_path": "input/gnn_files/discrete/actinf_pomdp_agent.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": "00_pipeline_summary/.history/index.json",
+                  "sha256": "3aff9e6b2b7040190bdeebf86492b6152449bc4f79cdceffcf00d4af3bee1b0c",
+                  "source_relative_path": "input/gnn_files/discrete/actinf_pomdp_agent.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": ".gnn_run.lock",
+                  "sha256": "6ceefaa39a6d150f17abc57dd9a01803120b80a5f96e26526f81bdc84f4a4181",
+                  "source_relative_path": "input/gnn_files/multiagent/multi_agent_coordination.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": "00_pipeline_summary/.history/index.json",
+                  "sha256": "bb1db21ef9bb0f33458243a424c1e4cebf30db95bdf6fa42b57cca9b2dd763da",
+                  "source_relative_path": "input/gnn_files/multiagent/multi_agent_coordination.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": ".gnn_run.lock",
+                  "sha256": "d3b6335589fd8b4358dcfb07c53ce845bfebaa3a32c06e1b3c8d321437dd367c",
+                  "source_relative_path": "input/gnn_files/precision/precision_weighted.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": "00_pipeline_summary/.history/index.json",
+                  "sha256": "2195a1c6ad9d46663798b82a9e0357caac8e53fa15e87dc1f00414a070271c35",
+                  "source_relative_path": "input/gnn_files/precision/precision_weighted.md"
+                }
+              ],
+              "native_elapsed_seconds": 101.833461554,
+              "official_archive_sha256": "98fa70ad41b5c7e11fad72907bf2753afb17483966c692acbea93029a4269704",
+              "official_artifact_id": 11372124192,
+              "required_pipeline_artifacts_rehashed": 358,
+              "supervisor_elapsed_seconds": 105.83562300000001
+            },
+            {
+              "HTML_DATA_panels_verified": 7,
+              "PNG_hash_and_IHDR_witnesses": 104,
+              "backend": "rxinfer",
+              "controls": 54,
+              "dependency_provisioning_seconds": 286.800968619,
+              "hidden_runtime_inventory_absent": [
+                {
+                  "rehashed": false,
+                  "relative_path": ".gnn_run.lock",
+                  "sha256": "56d92e1778b561bda00868f177229336d4c63a7c6405e3ab8b56f8a536dbae7b",
+                  "source_relative_path": "input/gnn_files/multiagent/multi_agent_coordination.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": "00_pipeline_summary/.history/index.json",
+                  "sha256": "e0aafea5c4b20fa6f1483086a1366045606a48473c38daabbf5a07deabf4aa5a",
+                  "source_relative_path": "input/gnn_files/multiagent/multi_agent_coordination.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": ".gnn_run.lock",
+                  "sha256": "1fd5e10083752f7ff9f24f4f53a69a7b02a138b83f941b684bca47a2c53c1aa8",
+                  "source_relative_path": "input/gnn_files/multiagent/stigmergic_swarm.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": "00_pipeline_summary/.history/index.json",
+                  "sha256": "a9db104aa69bac9bf1d82886978ab8090c7c3a940d626fbc62b8cfdc1531ca68",
+                  "source_relative_path": "input/gnn_files/multiagent/stigmergic_swarm.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": ".gnn_run.lock",
+                  "sha256": "fe17656a26015081bb4cb6530f1327feba819184bb388cf5a7c4d0fef8092946",
+                  "source_relative_path": "input/gnn_files/pomdp_gridworld/pomdp_gridworld_3x3.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": "00_pipeline_summary/.history/index.json",
+                  "sha256": "3f56d5b1208f19ec379af6029bc3789e1f8ab192b56bf8a4c6391e74522e0579",
+                  "source_relative_path": "input/gnn_files/pomdp_gridworld/pomdp_gridworld_3x3.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": ".gnn_run.lock",
+                  "sha256": "3c15cd0bf6e778e4b27423b76fcc19693914e4dfe1354ac45d30dc7442f8f235",
+                  "source_relative_path": "input/gnn_files/discrete/two_state_bistable.md"
+                },
+                {
+                  "rehashed": false,
+                  "relative_path": "00_pipeline_summary/.history/index.json",
+                  "sha256": "a79f60e8ede719fa5d8552bdc790c4bef122bae420a4d218c512f008d15927ce",
+                  "source_relative_path": "input/gnn_files/discrete/two_state_bistable.md"
+                }
+              ],
+              "native_elapsed_seconds": 218.28249493700002,
+              "official_archive_sha256": "6d17cdb9fdf6a8f9aee4b9268876f717ff2ef4908fef54c0c8463c448bfe1e54",
+              "official_artifact_id": 11373022398,
+              "required_pipeline_artifacts_rehashed": 465,
+              "supervisor_elapsed_seconds": 221.47910875000002
+            }
+          ],
+          "hidden_runtime_inventory_members_absent_and_not_rehashed": 16,
+          "independent_checks": 5041,
+          "independent_finite_manual_addendum_checks": 116,
+          "independent_finite_manual_addendum_sha256": "d5aa11ea9a838561b66da009d28a8e633f4930ca39fa2f7bee14fec7960adb2c",
+          "independent_representative_manual_images": 8,
+          "independent_review_sha256": "87014c7b8d1dc3e7b974bab8b27ab48202ee7bba30c4189cfdda47a117f239e5",
+          "manual_backend_model_case_coverage": 8,
+          "manual_image_count": 11,
+          "manual_scope": "Exactly eleven original current images, covering one posterior/diagnostic image per eight backend/source cases; not all144 manual images or browser execution.",
+          "required_current_artifacts_independently_rehashed": 823,
+          "run_attempt": 1,
+          "run_id": 37378236502,
+          "scientific_data_checks": 5134,
+          "scientific_data_receipt_sha256": "6074001dc288e909577587d18813c4e6ae420f09241efedfd5f28e39512afcc9",
+          "six_manual_view_receipt_sha256": "9d4151eb99765b3a28f18c1e585a84dd40d3ba3636da9b1aeab8145a2087f586",
+          "source_commit": "8d202439eaa386d13a9b93888a7d560657579a4b",
+          "status": "GO_FOR_SCOPED_CURRENT_H5_EIGHT_AUTHORED_NATIVE_CASES",
+          "verification_head": "1738e70f0a51a094d0ac78a4643b3273d5310e05",
+          "wheel_sha256": "1fe1427e91fa92e981107ce7a2c99a5c1e9d18758a91c0fa9b5f48141010b35c"
+        }
+      }
+    },
+    "historical_later_gnn_checks": {
+      "head": "8badfad724f5a0dd2159146496f68ef71f388fb0",
+      "successful_checks": 16,
+      "fep_pair_failures": 2,
+      "CodeQL_run": 37392490778,
+      "CodeQL_conclusion": "success",
+      "basis": "Task handoff and current backlog; not live-refetched in this documentation review."
+    },
+    "companion": {
+      "historical_head": "cd97a8f8785855625da4ebadad9318a35fd63863",
+      "historical_run": 37384045009,
+      "historical_required_jobs_successful": 20,
+      "documentation": "skipped",
+      "independent_PDF_block": {
+        "unresolved_references": 151,
+        "printed_equation_labels": 676
+      },
+      "repair_status": "Independent code review GO; repairs and regenerated dashboard published at af08d3323586e5a75ea69e207908ac6d15f5da87. Renewed source/native/render/hosted acceptance pending; schema-1 receipt deliberately rejected.",
+      "repair_head": "af08d3323586e5a75ea69e207908ac6d15f5da87",
+      "focused_review": {
+        "passed": 229,
+        "failed": 2,
+        "failures": [
+          "stale committed schema-1 render receipt",
+          "missing generated figures"
+        ],
+        "separate_post_generation_replay": {
+          "passed": 1,
+          "duration_seconds": 99.16,
+          "scope": "live source projection includes canonical author block and graphical abstract; not PDF compilation"
+        }
+      }
+    },
+    "six_model_sources": {
+      "review_sha256": "111d38fa92a68b0a631d80bfe166f13de715edfa2d88f4415fb15b443cb39103",
+      "accepted_scope": "Original source hashes: tables/equations, serialization, probability/action-slice checks and scoped independent mathematical witnesses.",
+      "excluded_scope": "Added execution-contract metadata, current routing/backend implementation, integrated/native and release acceptance."
+    },
+    "dashboard_browser": {
+      "receipt_sha256": "2d406b6a2309770034ae8ceeaba1bc0a7e6d7ee20f758f8acd171ad6ad643e61",
+      "scope": "Root mobile/desktop geometry and one search interaction on regenerated companion dashboard from uncommitted source.",
+      "excluded_scope": "PDF, all-image review, final native/source/render custody."
+    },
+    "facts_requiring_fresh_checks": [
+      "Final frozen GNN and companion source commits/trees, changed-owner inventories and accepted source/backend routing hashes.",
+      "Meaningful native semantics for the six models, including hierarchy resets, at least 200 temporal transitions and contingent episodic T-maze scoring, or explicit unsupported outcomes.",
+      "Final local and hosted check identities, attempts, failures, exact test counts and coverage per selection; current CodeQL and both pair legs.",
+      "Final ordinary wheel digest, archive/RECORD/installed namespace parity and supported-split installed/native evidence.",
+      "Current token counts, SC-22 figures/template/render/freshness/hydration/custody hashes and finite visual scope after owner/count changes.",
+      "Companion repaired PDF cross-references/labels, independent render/font/figure review, current formal/native receipts and hosted distribution/coverage checks.",
+      "Final companion main merge and GNN reciprocal pin custody, GNN main SHA/tree parity, GEO reciprocal pin and rollback anchors.",
+      "Actual software publication date, annotated tag object/peeled commit, release ID/URL and downloaded asset digest parity; version-specific DOI only if separately verified."
+    ]
   }
 }

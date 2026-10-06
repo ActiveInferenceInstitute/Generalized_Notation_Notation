@@ -8,11 +8,18 @@
 
 **Category**: Testing / Quality Assurance
 
-**Status**: Production Ready
+**Status**: Maintained; final v4 acceptance pending
 
-**Version**: 3.2.0
+**Version**: [pyproject.toml](../pyproject.toml) (canonical; v4 candidate is unreleased)
 
-**Last Updated**: 2026-09-04
+**Last Updated**: 2026-09-04 (historical module documentation)
+
+Release reconciliation: historical test counts and receipts retain their original
+source identities. A3/W2/H5 evidence in the
+[verification ledger](../docs/development/verification_2026_10_01.json) does not
+qualify the evolving six-model source and backend changes. Renew applicable
+local, hosted, installed-wheel and native checks after source freeze; report each
+selection separately without summing overlapping suites.
 
 ---
 
@@ -306,7 +313,7 @@ output/2_tests_output/
 ### Latest Execution
 - **Duration**: ~5-15 minutes for comprehensive suite
 - **Memory**: ~100-300MB during test execution
-- **Status**: Production Ready
+- **Status**: Maintained; final v4 acceptance pending
 
 ### Expected Performance
 - **Fast Tests**: 1-3 minutes

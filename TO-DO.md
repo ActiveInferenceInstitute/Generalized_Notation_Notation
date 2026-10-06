@@ -29,14 +29,18 @@ modify its own source or grant autonomous publication authority.
 
 - [ ] **R1 — qualify the current companion run.** Fep companion PR
   [#45](https://github.com/ActiveInferenceInstitute/fep_formal/pull/45) is pushed
-  at `cd97a8f8785855625da4ebadad9318a35fd63863`. Its current
+  at `af08d3323586e5a75ea69e207908ac6d15f5da87`. Its historical
   [run 37384045009](https://github.com/ActiveInferenceInstitute/fep_formal/actions/runs/37384045009),
   attempt 1, completed with all 20 required jobs successful and documentation
-  skipped. Current source/native/artifact checks passed; Python reported 2,495
+  skipped. Checks at that source epoch passed; Python reported 2,495
   passed / 16 skipped with 91.40% statement coverage. Independent PDF review
   blocked receipt promotion: 151 unresolved references and 676 literal equation
-  labels survive the existing render gate. Repair cross-reference rendering and
-  fail-closed checks, then renew exact-source hosted/native/render acceptance.
+  labels survived that render gate. The cross-reference, canonical-cover and
+  process-cleanup repairs passed independent code review and are now published
+  on the draft branch. The review recorded 229 passed and two artifact failures;
+  after figure generation, the missing-asset case passed separately. The old
+  schema-1 receipt remains rejected pending a genuine fresh render. Renew
+  exact-source hosted/native/render acceptance after source freeze.
   The passing cd97 results remain historical after any owner changes. The older
   P2 run 37380889327 was cancelled after
   supersession. Preserve its lint failure and the local 419-node attempt
@@ -50,6 +54,8 @@ modify its own source or grant autonomous publication authority.
   review the actual template/render/native/audit artifacts, font evidence, four
   figures and finite PDF views. Apply only verified `docs/render-acceptance.json`
   and `docs/render-fonts.json` output bytes, using a normal successor commit.
+  The fresh dashboard browser check covers root mobile/desktop geometry and one
+  search interaction only; it is neither PDF nor all-image visual acceptance.
   Renew current checks rather than promoting old E/C2/P2 receipts. **Accept:**
   all 20 required jobs successful, documentation lane explicitly skipped, all
   15 OS/Python distribution jobs successful, valid current coverage XML at or
@@ -57,7 +63,8 @@ modify its own source or grant autonomous publication authority.
   normal PR merge and remote main SHA parity. Preserve unrelated primary Fep work.
 
 - [ ] **R3 — seal public documentation and evidence.** Reconcile the prepared
-  eight-document release candidate with current `cd97a8f` facts and this backlog.
+  eight-document release candidate against actual current files and this backlog.
+  Preserve `cd97a8f` evidence as historical after local companion changes.
   Destinations: `CITATION.cff`, `docs/VERSION_MAP.md`, `tests/AGENTS.md`,
   `TO-DO.md`, `SCOPE-2026-10-01.md`,
   `docs/development/verification_2026_10_01.json`, `CHANGELOG.md`, `SECURITY.md`.
@@ -166,9 +173,10 @@ R1–R9. Use existing issues rather than duplicate reports.
   editing values. All six explicit probability and behavioral proposals were
   approved on 2026-10-05, including block resets, the approximate temporal
   controller and contingent episodic T-maze policies. Source corrections are
-  implemented locally; final independent source review and faithful native
-  execution remain pending. Equation preservation and canonical action-axis
-  metadata have been repaired; these do not establish backend acceptance.
+  implemented locally. Independent source review accepted the original tables,
+  equations, serialization and action slices at its recorded hashes. Added
+  execution-contract metadata and evolving backend routing remain unaccepted;
+  faithful native execution and integrated acceptance still require fresh review.
   **Accept:** explicit source corrections, finite/nonnegative
   mass, dimensions/orientation, float32/float64 preservation, parser/serializer
   round trips and fresh native family acceptance. Retain rejection witnesses;
