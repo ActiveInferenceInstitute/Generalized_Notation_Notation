@@ -246,11 +246,15 @@ def run_contract(payload: dict[str, Any]) -> dict[str, Any]:
         }
     )
     contract = validated["execution_contract"]
-    with (
-        jax.enable_x64(True)
-        if hasattr(jax, "enable_x64")
-        else jax.experimental.enable_x64()
-    ):
+    # Top-level ``jax.enable_x64`` replaced ``jax.experimental.enable_x64``;
+    # resolve by name because each jax release ships only one of them.
+    jax_api: Any = jax
+    x64_scope = (
+        jax_api.enable_x64(True)
+        if hasattr(jax_api, "enable_x64")
+        else jax_api.experimental.enable_x64()
+    )
+    with x64_scope:
         m = {
             k: jnp.asarray(v, dtype=jnp.float64)
             for k, v in validated["matrices"].items()
