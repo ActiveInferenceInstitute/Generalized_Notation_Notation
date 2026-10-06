@@ -3,9 +3,9 @@
 Verifies recursive discovery in ``gnn.render.processor``:
 
 1. ``process_render(..., recursive=True)`` walks every nested model folder.
-   All 38 model sources receive current receipts: 27 render, five unsupported
-   family compositions receive explicit receipts, and six malformed authored
-   examples fail strict scientific validation. Documentation is excluded.
+   All 38 model sources receive current receipts: 30 render and eight unsupported
+   model contracts receive explicit receipts. Private malformed fixtures retain
+   strict scientific rejection coverage. Documentation is excluded.
 2. Passing ``recursive=False`` via kwargs reverts to a top-level-only glob, so
    no nested files are found and ``process_render`` returns exit code ``2``.
 
@@ -25,26 +25,17 @@ from gnn.render.processor import process_render
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXEMPLAR_DIR = REPO_ROOT / "input" / "gnn_files"
 EXPECTED_EXEMPLAR_COUNT = 38
-EXPECTED_INVALID_SOURCES = {
-    "basics/dynamic_perception.md": "probability mass must be one",
-    "basics/static_perception.md": "probability mass must be one",
-    "discrete/hmm_baseline.md": "probability mass must be one",
-    "discrete/tmaze_epistemic.md": "positive finite mass",
-    "hierarchical/hierarchical_pomdp.md": "probability mass must be one",
-    "hierarchical/temporal_hierarchy.md": "probability mass must be one",
-}
 EXPECTED_UNSUPPORTED_SOURCES = {
+    "hierarchical/hierarchical_pomdp.md": "unsupported-execution-contract",
+    "hierarchical/temporal_hierarchy.md": "unsupported-execution-contract",
+    "discrete/tmaze_epistemic.md": "unsupported-execution-contract",
     "continuous/multi_agent_lgssm.md": "unsupported-composition",
     "continuous/hybrid_discrete_continuous.md": "unsupported-composition",
     "continuous/factored_continuous_lgssm.md": "unsupported-factored-continuous",
     "discrete/time_varying_dynamics.md": "unsupported-nonstationary",
     "discrete/regime_switched_dynamics.md": "unsupported-nonstationary",
 }
-EXPECTED_RENDERED_COUNT = (
-    EXPECTED_EXEMPLAR_COUNT
-    - len(EXPECTED_INVALID_SOURCES)
-    - len(EXPECTED_UNSUPPORTED_SOURCES)
-)
+EXPECTED_RENDERED_COUNT = EXPECTED_EXEMPLAR_COUNT - len(EXPECTED_UNSUPPORTED_SOURCES)
 
 
 def _count_exemplar_md_files() -> int:
@@ -66,8 +57,8 @@ def test_process_render_recursive_discovers_and_renders_all_exemplars(
         verbose=False,
     )
 
-    # Required invalid work prevents success even though other models render.
-    assert result is False
+    # Unsupported contracts are explicitly receipted without fabricated artifacts.
+    assert result is True
 
     summary_path = output_dir / "render_processing_summary.json"
     assert summary_path.exists(), (
@@ -88,15 +79,11 @@ def test_process_render_recursive_discovers_and_renders_all_exemplars(
     }
     assert set(summary["file_results"]) == selected
     assert not any(Path(source).name == "INDEX.md" for source in selected)
-    assert summary["successful_files"] == (
-        EXPECTED_EXEMPLAR_COUNT - len(EXPECTED_INVALID_SOURCES)
-    )
-    assert summary["failed_files"] == len(EXPECTED_INVALID_SOURCES)
-    assert summary["total_framework_attempts"] == (
-        EXPECTED_RENDERED_COUNT + len(EXPECTED_INVALID_SOURCES)
-    )
+    assert summary["successful_files"] == EXPECTED_EXEMPLAR_COUNT
+    assert summary["failed_files"] == 0
+    assert summary["total_framework_attempts"] == EXPECTED_RENDERED_COUNT
     assert summary["successful_framework_renderings"] == EXPECTED_RENDERED_COUNT
-    assert len(summary["failed_framework_renderings"]) == len(EXPECTED_INVALID_SOURCES)
+    assert summary["failed_framework_renderings"] == []
     assert len(summary["unsupported_framework_renderings"]) == len(
         EXPECTED_UNSUPPORTED_SOURCES
     )
@@ -109,14 +96,7 @@ def test_process_render_recursive_discovers_and_renders_all_exemplars(
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         }
         rendering = record["framework_results"]["rxinfer"]
-        if relative in EXPECTED_INVALID_SOURCES:
-            assert record["overall_success"] is False
-            assert rendering["success"] is False
-            assert rendering.get("unsupported") is not True
-            assert EXPECTED_INVALID_SOURCES[relative] in rendering["message"]
-            assert not rendering.get("output_files")
-            assert not rendering["artifact_identities"]
-        elif relative in EXPECTED_UNSUPPORTED_SOURCES:
+        if relative in EXPECTED_UNSUPPORTED_SOURCES:
             assert record["overall_success"] is True
             assert rendering["status"] == "unsupported"
             assert rendering["unsupported"] is True
@@ -140,9 +120,50 @@ def test_process_render_recursive_discovers_and_renders_all_exemplars(
     assert len(rendered_jl) == EXPECTED_RENDERED_COUNT
     assert not any(
         Path(source).stem in path.name
-        for source in EXPECTED_UNSUPPORTED_SOURCES | EXPECTED_INVALID_SOURCES
+        for source in EXPECTED_UNSUPPORTED_SOURCES
         for path in rendered_jl
     )
+
+
+def test_process_render_private_invalid_source_has_failed_receipt(
+    tmp_path: Path,
+) -> None:
+    """A malformed source fails the required run without a repaired artifact."""
+    source = EXEMPLAR_DIR / "basics/static_perception.md"
+    source_bytes = source.read_bytes()
+    content = source_bytes.decode()
+    valid = "A={\n  (0.9, 0.2),\n  (0.1, 0.8)\n}"
+    assert content.count(valid) == 1
+    selected = tmp_path / "input"
+    selected.mkdir()
+    malformed = selected / "invalid_likelihood.md"
+    malformed.write_text(content.replace(valid, "A={\n  (0.9, 0.1),\n  (0.2, 0.8)\n}"))
+    malformed_bytes = malformed.read_bytes()
+    output_dir = tmp_path / "output"
+    assert process_render(selected, output_dir, frameworks=["rxinfer"]) is False
+    summary = json.loads((output_dir / "render_processing_summary.json").read_text())
+    assert summary["total_files"] == summary["failed_files"] == 1
+    assert (
+        summary["successful_files"] == summary["successful_framework_renderings"] == 0
+    )
+    assert summary["total_framework_attempts"] == 1
+    assert len(summary["failed_framework_renderings"]) == 1
+    assert summary["unsupported_framework_renderings"] == []
+    assert set(summary["file_results"]) == {str(malformed.resolve())}
+    record = summary["file_results"][str(malformed.resolve())]
+    assert record["source_identity"] == {
+        "path": str(malformed.resolve()),
+        "sha256": hashlib.sha256(malformed_bytes).hexdigest(),
+    }
+    assert record["overall_success"] is False
+    receipt = record["framework_results"]["rxinfer"]
+    assert receipt["success"] is False and receipt["status"] == "failed"
+    assert receipt.get("unsupported") is not True
+    assert "probability mass must be one" in receipt["message"]
+    assert not receipt["output_files"] and not receipt["artifact_identities"]
+    assert not list(output_dir.rglob("*.jl"))
+    assert malformed.read_bytes() == malformed_bytes
+    assert source.read_bytes() == source_bytes
 
 
 def test_process_render_recursive_false_skips_nested_files(tmp_path: Path) -> None:
@@ -196,7 +217,7 @@ def test_process_render_aggregates_summary_across_invocations(tmp_path: Path) ->
         verbose=False,
         run_id="folder-aggregation-test",
     )
-    assert second is False  # The discrete folder includes two invalid sources.
+    assert second is True  # Semantic and nonstationary models are unsupported.
 
     summary = json.loads(
         (output_dir / "render_processing_summary.json").read_text(encoding="utf-8")
@@ -214,8 +235,8 @@ def test_process_render_aggregates_summary_across_invocations(tmp_path: Path) ->
         str(path.resolve()) for path in (EXEMPLAR_DIR / "discrete").glob("*.md")
     }
     assert merged_keys == first_keys | expected_discrete
-    assert summary["failed_files"] == 2
-    assert summary["successful_files"] == len(merged_keys) - 2
+    assert summary["failed_files"] == 0
+    assert summary["successful_files"] == len(merged_keys)
     assert summary["receipt_identity"]["run_id"] == "folder-aggregation-test"
 
     third = process_render(

@@ -127,17 +127,51 @@ def test_materially_invalid_source_likelihood_is_not_normalized() -> None:
 
 
 @pytest.mark.parametrize("name", ["static_perception.md", "dynamic_perception.md"])
-def test_maintained_invalid_likelihood_sources_fail_required_render_without_repair(
+def test_maintained_likelihood_sources_render_without_repair(
     tmp_path: Path, name: str
 ) -> None:
     from gnn.extract.pomdp_extractor import extract_pomdp_from_file
     from gnn.render.pomdp_processor import POMDPRenderProcessor
 
     source = Path("input/gnn_files/basics") / name
+    source_bytes = source.read_bytes()
+    space = extract_pomdp_from_file(source)
+    raw = np.asarray(space.matrices["A"]).copy()
+    np.testing.assert_array_equal(raw, [[0.9, 0.2], [0.1, 0.8]])
+    np.testing.assert_array_equal(raw.sum(axis=0), [1.0, 1.0])
+    processor = POMDPRenderProcessor(tmp_path)
+    spec = processor._pomdp_to_gnn_spec(space)
+    np.testing.assert_array_equal(spec["initialparameterization"]["A"], raw)
+    rendered = processor.process_pomdp_for_all_frameworks(
+        space, source, frameworks=["numpyro"]
+    )
+    receipt = rendered["framework_results"]["numpyro"]
+    assert receipt["success"] is True, receipt
+    assert receipt["output_files"]
+    assert all(Path(path).is_file() for path in receipt["output_files"])
+    np.testing.assert_array_equal(space.matrices["A"], raw)
+    assert source.read_bytes() == source_bytes
+
+
+@pytest.mark.parametrize("name", ["static_perception.md", "dynamic_perception.md"])
+def test_private_invalid_likelihood_sources_fail_required_render_without_repair(
+    tmp_path: Path, name: str
+) -> None:
+    from gnn.extract.pomdp_extractor import extract_pomdp_from_file
+    from gnn.render.pomdp_processor import POMDPRenderProcessor
+
+    maintained_source = Path("input/gnn_files/basics") / name
+    source_bytes = maintained_source.read_bytes()
+    content = source_bytes.decode()
+    valid = "A={\n  (0.9, 0.2),\n  (0.1, 0.8)\n}"
+    assert content.count(valid) == 1
+    source = tmp_path / name
+    source.write_text(content.replace(valid, "A={\n  (0.9, 0.1),\n  (0.2, 0.8)\n}"))
+    malformed_bytes = source.read_bytes()
     space = extract_pomdp_from_file(source)
     raw = np.asarray(space.matrices["A"]).copy()
     np.testing.assert_allclose(raw.sum(axis=0), [1.1, 0.9])
-    processor = POMDPRenderProcessor(tmp_path)
+    processor = POMDPRenderProcessor(tmp_path / "render")
     with pytest.raises(
         ValueError, match="A column 0 probability mass must be one, got 1.1"
     ):
@@ -148,7 +182,10 @@ def test_maintained_invalid_likelihood_sources_fail_required_render_without_repa
     receipt = rendered["framework_results"]["numpyro"]
     assert receipt["success"] is False and receipt["status"] == "failed"
     assert not receipt["output_files"]
+    assert not list((tmp_path / "render").rglob("*.py"))
     np.testing.assert_array_equal(space.matrices["A"], raw)
+    assert source.read_bytes() == malformed_bytes
+    assert maintained_source.read_bytes() == source_bytes
 
 
 def test_uniform_precision_source_correction_is_explicit_and_original_rejected() -> (
@@ -217,8 +254,8 @@ def test_direct_renderer_records_accepted_rounding_without_mutating_source(
     framework: str,
     tmp_path: Path,
 ) -> None:
-    from copy import deepcopy
     import importlib
+    from copy import deepcopy
 
     spec = {
         "initialparameterization": {

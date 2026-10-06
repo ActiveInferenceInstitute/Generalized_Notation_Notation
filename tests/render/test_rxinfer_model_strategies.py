@@ -16,12 +16,13 @@ Pure Python — no Julia required, zero skips.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from gnn.extract.pomdp_extractor import extract_pomdp_from_file
+from gnn.extract.pomdp_extractor import POMDPStateSpace, extract_pomdp_from_file
 from gnn.render.pomdp_contract import (
     ModelKind,
     build_canonical_pomdp_spec,
@@ -43,15 +44,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 GNN_FILES = PROJECT_ROOT / "input" / "gnn_files"
 
 EXEMPLAR_COUNT = 38
-INVALID_SOURCE_CONDITIONALS = {
-    "basics/dynamic_perception.md": "probability mass must be one",
-    "basics/static_perception.md": "probability mass must be one",
-    "discrete/hmm_baseline.md": "probability mass must be one",
-    "discrete/tmaze_epistemic.md": "positive finite mass",
-    "hierarchical/hierarchical_pomdp.md": "probability mass must be one",
-    "hierarchical/temporal_hierarchy.md": "probability mass must be one",
-}
-
 # The intended kind for every non-flat exemplar; everything else is FLAT.
 EXPECTED_NON_FLAT = {
     "continuous/continuous_navigation.md": ModelKind.CONTINUOUS,
@@ -100,6 +92,57 @@ def _canonical_spec(gnn_file: Path) -> dict:
     return build_canonical_pomdp_spec(spec)
 
 
+def _synthetic_nonsemantic_hierarchy(levels: int) -> dict:
+    """Independent codegen fixture, with no reset/timing execution contract.
+
+    These hand-authored conditionals are not derived from maintained scientific
+    exemplars. The joint likelihood reference checks only legacy composition;
+    it does not assert equivalence of flat and native hierarchical inference.
+    """
+    likelihoods = (
+        [[0.85, 0.25], [0.15, 0.75]],
+        [[0.65, 0.10], [0.35, 0.90]],
+        [[0.55, 0.20], [0.45, 0.80]],
+    )[:levels]
+    matrices = {}
+    for level, likelihood in enumerate(likelihoods, start=1):
+        matrices[f"A_level{level}"] = likelihood
+        # Level 1 uses [action][previous][next]; passive levels use
+        # [next][previous]. Both are asymmetric stochastic conditionals.
+        matrices[f"B_level{level}"] = (
+            [[[0.8, 0.2], [0.3, 0.7]]] if level == 1 else [[0.7, 0.4], [0.3, 0.6]]
+        )
+        matrices[f"C_level{level}"] = [0.0, float(level)]
+        matrices[f"D_level{level}"] = [0.6, 0.4]
+    pomdp = POMDPStateSpace(
+        num_states=2**levels,
+        num_observations=2**levels,
+        num_actions=1,
+        model_name=f"synthetic_nonsemantic_{levels}_level",
+        model_parameters={"num_timesteps": 4},
+        matrices=matrices,
+        state_factors=[
+            {"name": f"s_level{level}", "size": 2} for level in range(1, levels + 1)
+        ],
+        observation_modalities=[
+            {"name": f"o_level{level}", "size": 2} for level in range(1, levels + 1)
+        ],
+    )
+    before = deepcopy(pomdp)
+    spec = build_canonical_pomdp_spec(pomdp_to_gnn_spec(pomdp))
+    expected = np.asarray(likelihoods[0])
+    for likelihood in likelihoods[1:]:
+        expected = np.kron(expected, likelihood)
+    np.testing.assert_allclose(
+        spec["initialparameterization"]["A"], expected, rtol=0, atol=1e-15
+    )
+    np.testing.assert_allclose(expected.sum(axis=0), 1.0, rtol=0, atol=1e-15)
+    assert spec["structured_pomdp"]["matrices"] == matrices
+    assert "execution_contract" not in spec["model_parameters"]
+    assert pomdp == before
+    return spec
+
+
 class TestExemplarKindTaxonomy:
     """Every exemplar detects its intended kind through the real path."""
 
@@ -123,20 +166,17 @@ class TestExemplarKindTaxonomy:
     def test_all_exemplars_render(self, tmp_path: Path) -> None:
         """Every selected source gets a strict, explicit scientific outcome."""
         failures = []
-        outcomes = {"rendered": set(), "invalid": set(), "unsupported": set()}
+        outcomes = {"rendered": set(), "unsupported": set()}
         for gnn_file in _exemplar_files():
             pomdp = extract_pomdp_from_file(gnn_file, strict_validation=True)
             assert pomdp is not None, f"extraction failed for {gnn_file}"
             script = tmp_path / f"{gnn_file.stem}_rxinfer.jl"
             rel = str(gnn_file.relative_to(GNN_FILES))
-            if rel in INVALID_SOURCE_CONDITIONALS:
-                with pytest.raises(ValueError, match=INVALID_SOURCE_CONDITIONALS[rel]):
-                    pomdp_to_gnn_spec(pomdp, native_agents=True)
-                assert not script.exists()
-                outcomes["invalid"].add(rel)
-                continue
             spec = pomdp_to_gnn_spec(pomdp, native_agents=True)
             receipted = {
+                "hierarchical/hierarchical_pomdp.md": "unsupported-execution-contract",
+                "hierarchical/temporal_hierarchy.md": "unsupported-execution-contract",
+                "discrete/tmaze_epistemic.md": "unsupported-execution-contract",
                 "continuous/multi_agent_lgssm.md": "unsupported-composition",
                 "continuous/hybrid_discrete_continuous.md": ("unsupported-composition"),
                 "continuous/factored_continuous_lgssm.md": ("unsupported-composition"),
@@ -157,9 +197,8 @@ class TestExemplarKindTaxonomy:
                 assert script.exists() and script.stat().st_size > 0
                 outcomes["rendered"].add(rel)
         assert not failures, "render failures:\n" + "\n".join(failures)
-        assert outcomes["invalid"] == set(INVALID_SOURCE_CONDITIONALS)
-        assert len(outcomes["rendered"]) == 27
-        assert len(outcomes["unsupported"]) == 5
+        assert len(outcomes["rendered"]) == 30
+        assert len(outcomes["unsupported"]) == 8
         assert set.union(*outcomes.values()) == {
             str(path.relative_to(GNN_FILES)) for path in _exemplar_files()
         }
@@ -303,67 +342,99 @@ class TestStrategyDispatchAndCodegen:
         assert "log.(max.(E_prior, 1e-16)) .- ACTION_PRECISION .* efe_values" in code
         assert '"E" => E' in code
 
-    def test_hierarchical_two_level_generates_native_script(self) -> None:
-        gnn_file = GNN_FILES / "hierarchical" / "hierarchical_pomdp.md"
-        pomdp = extract_pomdp_from_file(gnn_file, strict_validation=True)
-        assert pomdp is not None
-        # An explicit test conditional, not a repair of the authored example
-        # whose A_level2 columns have mass two. Distinct contexts stay distinct.
-        likelihood = [[0.6, 0.1], [0.1, 0.6], [0.2, 0.1], [0.1, 0.2]]
-        pomdp.matrices["A_level2"] = likelihood
-        spec = build_canonical_pomdp_spec(pomdp_to_gnn_spec(pomdp))
-        expected = np.kron(np.asarray(pomdp.matrices["A_level1"]), likelihood)
-        np.testing.assert_allclose(
-            spec["initialparameterization"]["A"], expected, rtol=0, atol=1e-15
-        )
-        assert spec["structured_pomdp"]["matrices"]["A_level2"] == likelihood
-        code = HierarchicalStrategy().generate_model_code(
-            spec, "hierarchical_valid_test_fixture"
-        )
-        assert "hierarchical_pomdp_model" in code
-        assert "hierarchical_constraints()" in code
-        assert "hierarchical_initialization(NUM_FAST, NUM_SLOW)" in code
-        assert 'const MODEL_KIND = "hierarchical"' in code
-        assert '"slow_context"' in code
+    @pytest.mark.parametrize(
+        "name,contract",
+        [
+            ("hierarchical_pomdp", "block_reset_v1"),
+            ("temporal_hierarchy", "timed_soft_controller_v1"),
+        ],
+    )
+    def test_semantic_hierarchies_are_preserved_and_refused_by_rxinfer(
+        self, tmp_path: Path, name: str, contract: str
+    ) -> None:
+        from copy import deepcopy
 
-    def test_hierarchical_three_level_renders_joint_composition(self) -> None:
-        """3+ declared levels use the documented joint-composition path."""
-        gnn_file = GNN_FILES / "hierarchical" / "temporal_hierarchy.md"
+        gnn_file = GNN_FILES / "hierarchical" / f"{name}.md"
+        source_bytes = gnn_file.read_bytes()
         pomdp = extract_pomdp_from_file(gnn_file, strict_validation=True)
         assert pomdp is not None
-        # Each fixture column is an explicitly authored conditional. They are
-        # asymmetric and distinguish all levels without normalizing the source.
-        likelihoods = {
-            "A_level0": [
-                [0.8, 0.1, 0.1, 0.2],
-                [0.1, 0.8, 0.1, 0.3],
-                [0.1, 0.1, 0.8, 0.5],
-            ],
-            "A_level1": [
-                [0.7, 0.1, 0.1],
-                [0.1, 0.7, 0.1],
-                [0.1, 0.1, 0.7],
-                [0.1, 0.1, 0.1],
-            ],
-            "A_level2": [[0.8, 0.1], [0.1, 0.8], [0.1, 0.1]],
-        }
-        pomdp.matrices.update(likelihoods)
-        spec = build_canonical_pomdp_spec(pomdp_to_gnn_spec(pomdp))
-        expected = np.kron(
-            likelihoods["A_level0"],
-            np.kron(likelihoods["A_level1"], likelihoods["A_level2"]),
+        matrices = deepcopy(pomdp.matrices)
+        spec = pomdp_to_gnn_spec(pomdp)
+        assert spec["model_parameters"]["execution_contract"] == contract
+        assert spec["canonical_pomdp_schema"] == "raw_discrete_components_v1"
+        assert "A" not in spec["initialparameterization"]
+        assert spec["structured_pomdp"]["matrices"] == matrices
+        before = deepcopy(spec)
+        with pytest.raises(ValueError, match="unsupported-execution-contract"):
+            build_canonical_pomdp_spec(spec)
+        script = tmp_path / f"{name}.jl"
+        success, message, _warnings = render_gnn_to_rxinfer(spec, script)
+        assert success is False
+        assert (
+            message
+            == f"unsupported-execution-contract: rxinfer cannot execute {contract}"
         )
-        np.testing.assert_allclose(
-            spec["initialparameterization"]["A"], expected, rtol=0, atol=1e-15
+        assert not script.exists()
+        assert list(tmp_path.iterdir()) == []
+        assert spec == before
+        assert pomdp.matrices == matrices
+        assert gnn_file.read_bytes() == source_bytes
+
+    def test_synthetic_nonsemantic_two_level_native_emission(
+        self, tmp_path: Path
+    ) -> None:
+        spec = _synthetic_nonsemantic_hierarchy(2)
+        before = deepcopy(spec)
+        kind = detect_model_kind(spec)
+        assert kind is ModelKind.HIERARCHICAL
+        strategy = get_model_strategy(kind)
+        assert isinstance(strategy, HierarchicalStrategy)
+        assert strategy._declared_levels(spec) == {1, 2}
+        script = tmp_path / "synthetic_two_level.jl"
+        success, message, _warnings = render_gnn_to_rxinfer(spec, script)
+        assert success, message
+        code = script.read_text()
+        assert (
+            "using GnnRxInferModels:\n"
+            "hierarchical_pomdp_model, hierarchical_constraints, hierarchical_initialization"
+        ) in code
+        assert (
+            "model = hierarchical_pomdp_model(A=A, B=B, A_ctx=A_ctx, D_slow=D_slow,"
+            in code
         )
-        for key, value in likelihoods.items():
-            assert spec["structured_pomdp"]["matrices"][key] == value
-        code = HierarchicalStrategy().generate_model_code(
-            spec, "temporal_hierarchy_valid_test_fixture"
+        assert "constraints = hierarchical_constraints()" in code
+        assert (
+            "initialization = hierarchical_initialization(NUM_FAST, NUM_SLOW)" in code
         )
         assert 'const MODEL_KIND = "hierarchical"' in code
-        # Joint composition means the flat pomdp_model, not the native chain.
+        assert "const NUM_FAST = 2" in code
+        assert "const NUM_SLOW = 2" in code
+        assert '"slow_context" => context_beliefs' in code
+        assert '"hierarchical_rendering" => "native_two_level"' in code
+        assert '"context_trajectory" => "posthoc_prior_propagation"' in code
+        assert "using GnnRxInferModels: pomdp_model" not in code
+        assert spec == before
+
+    def test_synthetic_nonsemantic_three_level_flat_fallback(
+        self, tmp_path: Path
+    ) -> None:
+        spec = _synthetic_nonsemantic_hierarchy(3)
+        before = deepcopy(spec)
+        kind = detect_model_kind(spec)
+        assert kind is ModelKind.HIERARCHICAL
+        strategy = get_model_strategy(kind)
+        assert isinstance(strategy, HierarchicalStrategy)
+        assert strategy._declared_levels(spec) == {1, 2, 3}
+        script = tmp_path / "synthetic_three_level.jl"
+        success, message, _warnings = render_gnn_to_rxinfer(spec, script)
+        assert success, message
+        code = script.read_text()
+        assert 'const MODEL_KIND = "hierarchical"' in code
         assert "using GnnRxInferModels: pomdp_model" in code
+        assert "model = pomdp_model(" in code
+        assert "hierarchical_pomdp_model" not in code
+        assert "hierarchical_initialization" not in code
+        assert spec == before
 
     def test_hierarchical_missing_level_matrices_raises(self) -> None:
         spec = {
