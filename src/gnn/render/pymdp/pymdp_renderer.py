@@ -299,6 +299,11 @@ class PyMDPRenderer:
     # ------------------------------------------------------------------
     def _generate_code(self, gnn_spec: Dict[str, Any], model_name: str) -> str:
         """Generate code."""
+        from gnn.render.execution_contracts import unsupported_contract
+
+        reason = unsupported_contract(gnn_spec, "pymdp")
+        if reason:
+            raise ValueError(reason)
         model_display_name = gnn_spec.get("model_name", model_name)
         model_annotation = gnn_spec.get("annotation", "")
         init_params = gnn_spec.get("initialparameterization") or gnn_spec.get(
@@ -375,6 +380,12 @@ def render_gnn_to_pymdp(
     options: Optional[Dict[str, Any]] = None,
 ) -> Tuple[bool, str, List[str]]:
     """Public entry point for the render pipeline (Step 11)."""
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(gnn_spec, "pymdp")
+    if refusal:
+        return False, refusal, []
+
     try:
         renderer = PyMDPRenderer(options)
         return renderer.render_spec(gnn_spec, output_path)

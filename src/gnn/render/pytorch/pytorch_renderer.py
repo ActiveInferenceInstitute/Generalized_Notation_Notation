@@ -37,6 +37,12 @@ def render_gnn_to_pytorch(
     Returns:
         Tuple of (success: bool, message: str, artifact_paths: List[str])
     """
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(gnn_spec, "pytorch")
+    if refusal:
+        return False, refusal, []
+
     try:
         model_name = gnn_spec.get("modelName", "pytorch_pomdp")
         logger.info(f"Rendering GNN spec to PyTorch: {model_name}")

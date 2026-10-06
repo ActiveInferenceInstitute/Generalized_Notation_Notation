@@ -27,6 +27,12 @@ logger = logging.getLogger(__name__)
 def generate_bnlearn_code(
     model_data: Dict[str, Any], output_path: Optional[Union[str, Path]] = None
 ) -> str:
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(model_data, "bnlearn")
+    if refusal:
+        raise ValueError(refusal)
+
     if _validate_or_return_empty(model_data, "generate_bnlearn_code") is None:
         return ""
     try:

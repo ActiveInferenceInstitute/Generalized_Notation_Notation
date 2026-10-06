@@ -209,6 +209,12 @@ def render_gnn_to_rxinfer(
     Returns:
         Tuple of (success, message, warnings: List[str])
     """
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(gnn_spec, "rxinfer")
+    if refusal:
+        return False, refusal, []
+
     logger = logging.getLogger(__name__)
 
     try:

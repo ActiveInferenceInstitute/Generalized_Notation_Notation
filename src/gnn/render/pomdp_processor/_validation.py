@@ -33,6 +33,21 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
         Returns:
             Validation result dictionary
         """
+        from gnn.render.execution_contracts import (
+            execution_contract,
+            unsupported_contract,
+        )
+
+        semantic_spec = {"model_parameters": pomdp_space.model_parameters or {}}
+        if execution_contract(semantic_spec) is not None:
+            reason = unsupported_contract(semantic_spec, framework)
+            return {
+                "compatible": reason is None,
+                "unsupported": reason is not None,
+                "reason": reason,
+                "warnings": [],
+            }
+
         config = self.framework_configs[framework]
         warnings: list[Any] = []
 
@@ -264,6 +279,19 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
             Validation result dictionary
         """
         warnings: list[Any] = []
+        from gnn.render.execution_contracts import contract_payload, execution_contract
+
+        if execution_contract(gnn_spec) is not None:
+            try:
+                contract_payload(gnn_spec)
+            except (ValueError, TypeError) as exc:
+                return {
+                    "valid": False,
+                    "critical": True,
+                    "reason": str(exc),
+                    "warnings": [],
+                }
+            return {"valid": True, "critical": False, "warnings": []}
         initial_params = gnn_spec.get("initialparameterization", {})
         config = self.framework_configs[framework]
 

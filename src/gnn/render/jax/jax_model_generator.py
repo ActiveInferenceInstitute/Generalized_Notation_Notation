@@ -70,6 +70,26 @@ def _generate_jax_model_code(
             "num_timesteps", init_params.get("num_timesteps", 20)
         )
 
+        time_spec = gnn_spec.get("time_specification") or gnn_spec.get("time", "")
+        time_type = time_spec.get("time_type", "") if isinstance(time_spec, dict) else time_spec
+        # Match declarations, never a model name or incidental prose/comment.
+        time_declarations = {
+            line.split("#", 1)[0].strip().lower()
+            for line in str(time_type).splitlines()
+        }
+        if {"static", "dynamic"} <= time_declarations:
+            raise ValueError("Time cannot declare both Static and Dynamic")
+        static_model = "static" in time_declarations
+        passive_model = bool(model_params.get("passive_model", False))
+        if passive_model and not static_model and num_actions != 1:
+            raise ValueError("Passive filtering requires one action-independent transition slice")
+        inference_only = static_model or passive_model
+        estimand = "static_conditioning" if static_model else "filtering"
+        if static_model:
+            # The source's optional compatibility B does not define a time series.
+            # Explicit multi-step calls fail below rather than silently rolling out.
+            num_timesteps = 1
+
         # Convert matrices to lists for f-string insertion
         A_list = A_matrix.tolist()
         B_list = B_matrix.tolist()
@@ -91,8 +111,7 @@ No external dependencies like Flax or Optax are required.
 
 import jax
 import jax.numpy as jnp
-from jax import jit, vmap
-from functools import partial
+from jax import jit
 from typing import Dict, Any, Tuple
 import logging
 import numpy as np
@@ -104,6 +123,23 @@ logger = logging.getLogger(__name__)
 NUM_STATES = {num_states}
 NUM_OBSERVATIONS = {num_observations}
 NUM_ACTIONS = {num_actions}
+STATIC_MODEL = {static_model}
+PASSIVE_MODEL = {passive_model}
+INFERENCE_ONLY = {inference_only}
+INFERENCE_ESTIMAND = {estimand!r}
+
+
+def _check_probability_mass(values, mass):
+    """Host-side failure used by JAX callbacks, including under jit/vmap."""
+    if not np.isfinite(mass) or mass <= 0 or not np.all(np.isfinite(values)) or np.any(values < 0):
+        raise ValueError("Probability normalization requires finite nonnegative values and positive finite mass")
+
+
+def normalize_probability(values):
+    """Divide by actual positive mass; impossible evidence fails explicitly."""
+    mass = jnp.sum(values)
+    jax.debug.callback(_check_probability_mass, values, mass)
+    return values / mass
 
 
 def create_params() -> Dict[str, jnp.ndarray]:
@@ -141,9 +177,7 @@ def belief_update(params: Dict[str, jnp.ndarray], belief: jnp.ndarray,
     # Bayesian update: P(s|o) ∝ P(o|s) * P(s)
     updated_belief = belief * likelihood
     
-    # Normalize with numerical stability
-    normalizer = jnp.sum(updated_belief) + 1e-8
-    updated_belief = updated_belief / normalizer
+    updated_belief = normalize_probability(updated_belief)
     
     return updated_belief
 
@@ -173,11 +207,11 @@ def compute_expected_free_energy(params: Dict[str, jnp.ndarray], belief: jnp.nda
     # Predict next state distribution using B matrix (transitions)
     # B_matrix[:, :, action] is [num_states, num_states]
     next_belief = jnp.dot(B_matrix[:, :, action], belief)
-    next_belief = next_belief / (jnp.sum(next_belief) + 1e-8)  # Normalize
+    next_belief = normalize_probability(next_belief)  # Normalize
     
     # Predict observation distribution using A matrix
     predicted_obs = jnp.dot(A_matrix, next_belief)
-    predicted_obs = predicted_obs / (jnp.sum(predicted_obs) + 1e-8)  # Normalize
+    predicted_obs = normalize_probability(predicted_obs)  # Normalize
     
     # Compute epistemic value (expected information gain)
     # This is the negative entropy of predicted observations
@@ -258,7 +292,7 @@ def state_transition(params: Dict[str, jnp.ndarray], belief: jnp.ndarray,
     next_belief = jnp.dot(B_matrix[:, :, action], belief)
     
     # Normalize
-    next_belief = next_belief / (jnp.sum(next_belief) + 1e-8)
+    next_belief = normalize_probability(next_belief)
     
     return next_belief
 
@@ -266,12 +300,9 @@ def state_transition(params: Dict[str, jnp.ndarray], belief: jnp.ndarray,
 def simulate_step(params: Dict[str, jnp.ndarray], belief: jnp.ndarray, 
                   observation: jnp.ndarray) -> Dict[str, Any]:
     """
-    Perform one step of Active Inference simulation.
-    
-    This includes:
-    1. Belief update given observation
-    2. Action choice based on expected free energy
-    3. State prediction for chosen action
+    Condition on one observation. Static models stop at that posterior;
+    passive models predict with the sole transition slice, without planning.
+    Active models additionally select an action using the labeled heuristic.
     
     Args:
         params: Model parameters dictionary
@@ -284,6 +315,16 @@ def simulate_step(params: Dict[str, jnp.ndarray], belief: jnp.ndarray,
     # 1. Update belief based on observation
     updated_belief = belief_update(params, belief, observation)
     
+    if INFERENCE_ONLY:
+        return {{
+            'belief': updated_belief,
+            'action': None,
+            'expected_free_energy': None,
+            'all_efe_values': jnp.array([]),
+            'predicted_next_state': (updated_belief if STATIC_MODEL else
+                                     state_transition(params, updated_belief, 0)),
+        }}
+
     # 2. Choose action
     chosen_action, efe_values = choose_action(params, updated_belief)
     
@@ -302,18 +343,22 @@ def simulate_step(params: Dict[str, jnp.ndarray], belief: jnp.ndarray,
 def run_simulation(params: Dict[str, jnp.ndarray], num_steps: int, 
                    initial_belief: jnp.ndarray = None, seed: int = 42) -> Dict[str, Any]:
     """
-    Run a full Active Inference simulation interacting with a true
-    stochastic POMDP generative environment.
+    Sample observations and perform filtering (or one static conditioning).
+    Passive models have no selected actions or control objective.
     
     Args:
         params: Model parameters dictionary
         num_steps: Number of simulation timesteps
-        initial_belief: Optional initial belief (default: uniform)
+        initial_belief: Optional initial belief (default: source D)
         seed: Random seed for stochastic environment generation
         
     Returns:
         Dictionary with simulation trajectory
     """
+    if not isinstance(num_steps, int) or isinstance(num_steps, bool) or num_steps < 1:
+        raise ValueError("num_steps must be a positive integer")
+    if STATIC_MODEL and num_steps != 1:
+        raise ValueError("Time Static supports one observation; compatibility rollout is not static conditioning")
     key = jax.random.PRNGKey(seed)
     
     # Initialize belief
@@ -324,7 +369,7 @@ def run_simulation(params: Dict[str, jnp.ndarray], num_steps: int,
         
     # Initialize true state from Prior
     key, subkey = jax.random.split(key)
-    true_state_idx = jax.random.categorical(subkey, jnp.log(params['D_vector'] + 1e-8))
+    true_state_idx = jax.random.categorical(subkey, jnp.log(params['D_vector']))
     
     # Storage for trajectory
     beliefs = []
@@ -337,7 +382,7 @@ def run_simulation(params: Dict[str, jnp.ndarray], num_steps: int,
         # 1. Environment generates observation
         key, subkey = jax.random.split(key)
         obs_probs = params['A_matrix'][:, true_state_idx]
-        obs_idx = jax.random.categorical(subkey, jnp.log(obs_probs + 1e-8))
+        obs_idx = jax.random.categorical(subkey, jnp.log(obs_probs))
         
         # Create one-hot observation for the agent
         obs_one_hot = jnp.zeros(params['A_matrix'].shape[0])
@@ -348,14 +393,18 @@ def run_simulation(params: Dict[str, jnp.ndarray], num_steps: int,
         result = simulate_step(params, belief, obs_one_hot)
         
         beliefs.append(result['belief'])
-        actions.append(result['action'])
-        efes.append(result['all_efe_values'])
-        action_idx = int(result['action'])
-        
+        if not INFERENCE_ONLY:
+            actions.append(result['action'])
+            efes.append(result['all_efe_values'])
+        if STATIC_MODEL:
+            belief = result['belief']
+            continue
+        action_idx = 0 if PASSIVE_MODEL else int(result['action'])
+
         # 3. Environment transitions true state
         key, subkey = jax.random.split(key)
         next_state_probs = params['B_matrix'][:, true_state_idx, action_idx]
-        true_state_idx = jax.random.categorical(subkey, jnp.log(next_state_probs + 1e-8))
+        true_state_idx = jax.random.categorical(subkey, jnp.log(next_state_probs))
         
         # Update belief for next step (using predicted next state)
         belief = result['predicted_next_state']
@@ -365,7 +414,8 @@ def run_simulation(params: Dict[str, jnp.ndarray], num_steps: int,
         'actions': jnp.array(actions),
         'expected_free_energies': jnp.array(efes),
         'observations': jnp.array(observations_log),
-        'final_belief': belief,
+        'final_belief': beliefs[-1],
+        'next_state_prediction': belief,
     }}
 
 
@@ -375,7 +425,9 @@ def get_model_summary() -> str:
 {model_name} Model Summary (Pure JAX Implementation):
 - Number of states: {{NUM_STATES}}
 - Number of observations: {{NUM_OBSERVATIONS}}
-- Number of actions: {{NUM_ACTIONS}}
+- Declared transition slices: {{NUM_ACTIONS}}
+- Inference estimand: {{INFERENCE_ESTIMAND}}
+- Control mode: {{"none" if INFERENCE_ONLY else "active"}}
 - Parameters: A matrix, B matrix, C vector, D vector
 
 Key Functions:
@@ -409,12 +461,31 @@ def save_simulation_results(trajectory: Dict[str, Any], params: Dict[str, jnp.nd
     # Create output directory if needed
     os.makedirs(output_dir, exist_ok=True)
 
-    # Build structured results matching PyMDP format for cross-framework analysis
+    # Validate actual posterior arrays, including final_belief, before reporting.
+    beliefs = np.asarray(trajectory['beliefs'])
+    final_belief = np.asarray(trajectory['final_belief'])
+    has_beliefs = beliefs.ndim == 2 and beliefs.shape[0] > 0 and beliefs.shape[1] == NUM_STATES
+    shape_valid = has_beliefs and final_belief.shape == (NUM_STATES,)
+    checked = np.concatenate([beliefs, final_belief[None, :]], axis=0) if shape_valid else np.array([])
+    finite_nonnegative = bool(shape_valid and np.all(np.isfinite(checked)) and np.all(checked >= 0))
+    # Retain the existing runtime mass tolerance; do not fabricate a success flag.
+    mass_valid = bool(shape_valid and np.all(np.abs(checked.sum(axis=1) - 1.0) < 0.01))
+    actions = np.asarray(trajectory['actions'])
+    actions_valid = bool((actions.size == 0) if INFERENCE_ONLY else
+                         (actions.shape == (len(beliefs),) and np.all(np.isfinite(actions)) and
+                          np.all(actions == np.floor(actions)) and
+                          np.all((actions >= 0) & (actions < NUM_ACTIONS))))
+    all_valid = finite_nonnegative and mass_valid and actions_valid
     results = {{
-        "success": True,
+        "success": all_valid,
+        "inference_estimand": INFERENCE_ESTIMAND,
+        "inference_description": ("P(s | o), one observation, no transition or planning" if STATIC_MODEL else
+                                  "P(s_t | o_0:t, executed controls); no backward smoothing"),
+        "control_mode": "none" if INFERENCE_ONLY else "active",
+        "source_passive_model": PASSIVE_MODEL,
         "framework": "jax",
         "model_name": model_name,
-        "num_timesteps": int(len(trajectory['actions'])),
+        "num_timesteps": int(len(trajectory['beliefs'])),
         "timestamp": datetime.now().isoformat(),
         "simulation_trace": {{
             "observations": trajectory.get('observations', jnp.array([])).tolist(),
@@ -434,18 +505,21 @@ def save_simulation_results(trajectory: Dict[str, Any], params: Dict[str, jnp.nd
             "D_shape": list(params['D_vector'].shape),
             "num_states": NUM_STATES,
             "num_observations": NUM_OBSERVATIONS,
-            "num_actions": NUM_ACTIONS
+            "num_actions": 0 if INFERENCE_ONLY else NUM_ACTIONS,
+            "transition_slices": NUM_ACTIONS
         }},
         "metrics": {{
             "expected_free_energy": trajectory['expected_free_energies'].tolist(),
-            "expected_free_energy_convention": {EFE_CONVENTION_JAX_JSON_LITERAL},
-            "average_efe": float(jnp.mean(trajectory['expected_free_energies'])),
+            "expected_free_energy_convention": None if INFERENCE_ONLY else {EFE_CONVENTION_JAX_JSON_LITERAL},
+            "average_efe": None if INFERENCE_ONLY else float(jnp.mean(trajectory['expected_free_energies'])),
             "belief_confidence": [float(max(b)) for b in trajectory['beliefs']],
         }},
         "validation": {{
-            "all_beliefs_valid": all(abs(sum(b) - 1.0) < 0.01 for b in trajectory['beliefs']),
-            "beliefs_sum_to_one": True,
-            "actions_in_range": all(0 <= a < NUM_ACTIONS for a in trajectory['actions'])
+            "all_beliefs_valid": finite_nonnegative and mass_valid,
+            "beliefs_sum_to_one": mass_valid,
+            "belief_mass_tolerance": 0.01,
+            "max_belief_mass_error": float(np.max(np.abs(checked.sum(axis=1) - 1.0))) if finite_nonnegative else None,
+            "actions_in_range": actions_valid
         }}
     }}
 
@@ -461,7 +535,7 @@ if __name__ == "__main__":
     import os
 
     print("=" * 60)
-    print("JAX Active Inference Model: {model_name}")
+    print("JAX Model: {model_name} ({estimand})")
     print("=" * 60)
 
     # Create parameters
@@ -475,38 +549,22 @@ if __name__ == "__main__":
     # Print model summary
     print(get_model_summary())
 
-    # Test with uniform initial belief
-    print("\\n🧪 Running test simulation...")
-    initial_belief = params['D_vector']
-
-    # Create a test observation (one-hot for first observation)
-    test_obs = jnp.zeros(NUM_OBSERVATIONS)
-    test_obs = test_obs.at[0].set(1.0)
-
-    # Run one simulation step
-    result = simulate_step(params, initial_belief, test_obs)
-
-    print(f"\\n📊 Simulation Results:")
-    print(f"   Initial belief: {{initial_belief}}")
-    print(f"   Updated belief: {{result['belief']}}")
-    print(f"   Selected action: {{result['action']}}")
-    print(f"   Expected free energy: {{result['expected_free_energy']:.4f}}")
-    print(f"   EFE for all actions: {{result['all_efe_values']}}")
-
-    # Run multi-step simulation
-    print("\\n🔄 Running {num_timesteps}-step simulation...")
+    print("\\nRunning {num_timesteps} observation(s): {estimand}")
     trajectory = run_simulation(params, num_steps={num_timesteps})
-
-    print(f"   Actions taken: {{trajectory['actions']}}")
-    print(f"   Final belief: {{trajectory['final_belief']}}")
-    print(f"   Average EFE: {{jnp.mean(trajectory['expected_free_energies']):.4f}}")
+    print(f"   Final posterior: {{trajectory['final_belief']}}")
+    if not INFERENCE_ONLY:
+        print(f"   Actions taken: {{trajectory['actions']}}")
 
     # Save structured results for analysis step
     output_dir = os.environ.get('GNN_OUTPUT_DIR', 'jax_outputs')
     results_file = save_simulation_results(trajectory, params, "{model_name}", output_dir)
     print(f"\\n💾 Saved simulation results to: {{results_file}}")
 
-    print("\\n✅ JAX Active Inference model test successful!")
+    import json
+    with open(results_file) as receipt_file:
+        if not json.load(receipt_file)["success"]:
+            raise ValueError("Generated simulation failed posterior/action validation")
+    print("\\n✅ JAX model test successful!")
 '''
 
         return code

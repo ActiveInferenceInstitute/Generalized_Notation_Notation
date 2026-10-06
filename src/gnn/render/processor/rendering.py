@@ -146,9 +146,23 @@ def render_gnn_spec(
         else:
             gnn_spec_mapping = _internal_representation_to_mapping(gnn_spec)
             model_name = str(gnn_spec_mapping["model_name"])
+        from gnn.render.execution_contracts import unsupported_contract
+
+        contract_refusal = unsupported_contract(gnn_spec_mapping, target_lower)
+        if contract_refusal:
+            return False, contract_refusal, []
         files: list[Any] = []
         requested_stem = (options or {}).get("output_filename", model_name)
         output_stem = _safe_output_stem(requested_stem)
+
+        from gnn.render.execution_contracts import execution_contract
+
+        if execution_contract(gnn_spec_mapping) is not None:
+            from gnn.render.jax.jax_renderer import render_gnn_to_jax
+
+            return render_gnn_to_jax(
+                gnn_spec_mapping, output_dir / f"{output_stem}_jax.py", options
+            )
 
         from gnn.render.pomdp_contract import (
             ModelKind,

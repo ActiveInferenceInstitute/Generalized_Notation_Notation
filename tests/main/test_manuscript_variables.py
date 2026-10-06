@@ -540,7 +540,7 @@ def test_sync_preamble_metadata_repairs_drift(
 def test_config_title_page_metadata_is_written_not_typed(
     variables: dict[str, str],
 ) -> None:
-    """config.yaml's title-page version/date must equal the tokens that own them.
+    """Nonempty title-page tokens own their fields; an unreleased date does not.
 
     config.yaml is never token-substituted (the injector only processes
     ``manuscript/*.md``), so the producer must write these fields or the PDF
@@ -550,7 +550,8 @@ def test_config_title_page_metadata_is_written_not_typed(
 
     config = (_PROJECT_ROOT / "manuscript" / "config.yaml").read_text(encoding="utf-8")
     assert f'version: "{variables["GNN_VERSION"]}"' in config
-    assert f'date: "{variables["GNN_RELEASE_DATE"]}"' in config
+    if variables["GNN_RELEASE_DATE"]:
+        assert f'date: "{variables["GNN_RELEASE_DATE"]}"' in config
 
 
 def test_sync_config_metadata_repairs_drift(
@@ -572,3 +573,32 @@ def test_sync_config_metadata_repairs_drift(
     assert config_metadata_drift(tmp_path, variables) == []
     assert sync_config_metadata(tmp_path, variables) == []
     assert (manuscript / "config.yaml").read_text(encoding="utf-8") == source
+
+
+@pytest.mark.parametrize(
+    "release_date", ["", "2001-02-03"], ids=["unreleased", "released"]
+)
+def test_config_date_policy_preserves_authored_epoch_until_release(
+    tmp_path: Path, release_date: str
+) -> None:
+    """An empty token preserves the authored date; a released token owns it."""
+    manuscript = tmp_path / "manuscript"
+    manuscript.mkdir()
+    config = manuscript / "config.yaml"
+    # Synthetic dates belong only to this private fixture, never release metadata.
+    authored = 'paper:\n  version: "stale"\n  date: "2000-01-01"\n'
+    config.write_text(authored, encoding="utf-8")
+    tokens = {"GNN_VERSION": "test-version", "GNN_RELEASE_DATE": release_date}
+
+    drift = config_metadata_drift(tmp_path, tokens)
+    assert any("config.yaml: version:" in entry for entry in drift)
+    assert any("config.yaml: date:" in entry for entry in drift) == bool(release_date)
+    changes = sync_config_metadata(tmp_path, tokens)
+    assert any(entry.startswith("version:") for entry in changes)
+    assert any(entry.startswith("date:") for entry in changes) == bool(release_date)
+    expected = authored.replace('version: "stale"', 'version: "test-version"')
+    if release_date:
+        expected = expected.replace('date: "2000-01-01"', f'date: "{release_date}"')
+    assert config.read_text(encoding="utf-8") == expected
+    assert config_metadata_drift(tmp_path, tokens) == []
+    assert sync_config_metadata(tmp_path, tokens) == []

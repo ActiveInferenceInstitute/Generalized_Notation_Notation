@@ -141,6 +141,11 @@ def generate_pymdp_code(
     model_data: Dict, output_path: Optional[Union[str, Path]] = None
 ) -> str:
     """Generate Enhanced PyMDP simulation code with comprehensive visualizations."""
+    from gnn.render.execution_contracts import unsupported_contract
+
+    reason = unsupported_contract(model_data, "pymdp")
+    if reason:
+        raise ValueError(reason)
     if _validate_or_return_empty(model_data, "generate_pymdp_code") is None:
         return ""
     try:
@@ -220,6 +225,11 @@ def generate_activeinference_jl_code(
     model_data: Dict, output_path: Optional[Union[str, Path]] = None
 ) -> str:
     """Generate ActiveInference.jl code from explicit POMDP matrices."""
+    from gnn.render.execution_contracts import unsupported_contract
+
+    reason = unsupported_contract(model_data, "activeinference_jl")
+    if reason:
+        raise ValueError(reason)
     if (
         _validate_or_return_empty(model_data, "generate_activeinference_jl_code")
         is None
@@ -243,6 +253,11 @@ def generate_discopy_code(
     model_data: Dict, output_path: Optional[Union[str, Path]] = None
 ) -> str:
     """Generate DisCoPy categorical analysis code with enhanced features."""
+    from gnn.render.execution_contracts import unsupported_contract
+
+    reason = unsupported_contract(model_data, "discopy")
+    if reason:
+        raise ValueError(reason)
     if _validate_or_return_empty(model_data, "generate_discopy_code") is None:
         return ""
     try:
@@ -623,6 +638,11 @@ def generate_rxinfer_code(
     model_data: Dict, output_path: Optional[Union[str, Path]] = None
 ) -> str:
     """Generate RxInfer.jl code from explicit POMDP matrices."""
+    from gnn.render.execution_contracts import unsupported_contract
+
+    reason = unsupported_contract(model_data, "rxinfer")
+    if reason:
+        raise ValueError(reason)
     if _validate_or_return_empty(model_data, "generate_rxinfer_code") is None:
         return ""
     if not model_data.get("initialparameterization"):

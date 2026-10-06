@@ -45,6 +45,12 @@ def render_gnn_to_cpomdp(
         ``unsupported_framework_renderings``. An invalid spec, a bad option or
         a failed write returns ``(False, reason, [])``.
     """
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(gnn_spec, "cpomdp")
+    if refusal:
+        return False, refusal, []
+
     if not is_continuous_spec(gnn_spec):
         return False, UNSUPPORTED_MESSAGE, []
 

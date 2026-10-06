@@ -448,6 +448,12 @@ def render_gnn_to_discopy(
     Returns:
         Tuple of (success, message, warnings: List[str])
     """
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(gnn_spec, "discopy")
+    if refusal:
+        return False, refusal, []
+
     try:
         renderer = DisCoPyRenderer(options)
 

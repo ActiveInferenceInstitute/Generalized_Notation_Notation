@@ -49,6 +49,12 @@ def render_gnn_to_stan(
     ``output_path`` is the driver ``.py`` path; the ``.stan`` program is written
     beside it with the same stem.
     """
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(gnn_spec, "stan")
+    if refusal:
+        return False, refusal, []
+
     try:
         output_path = Path(output_path)
         stan_path = output_path.with_suffix(".stan")

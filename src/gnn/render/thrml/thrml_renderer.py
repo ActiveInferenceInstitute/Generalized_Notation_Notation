@@ -75,6 +75,12 @@ def render_gnn_to_thrml(
     gnn_spec: dict[str, Any], output_path: Path, options: dict[str, Any] | None = None
 ) -> tuple[bool, str, list[str]]:
     """Render admitted models; unsupported semantics produce no script."""
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(gnn_spec, "thrml")
+    if refusal:
+        return False, refusal, []
+
     try:
         if not isinstance(gnn_spec, dict):
             raise ValueError("THRML source must be a mapping")

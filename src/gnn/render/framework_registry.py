@@ -81,6 +81,11 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
             "unavailable_reason": None,
         },
         "jax": {
+            "execution_contracts": [
+                "block_reset_v1",
+                "timed_soft_controller_v1",
+                "episodic_contingent_v1",
+            ],
             "name": "JAX",
             "description": "High-performance numerical computing with automatic differentiation",
             "language": "Python",

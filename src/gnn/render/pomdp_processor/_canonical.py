@@ -189,6 +189,15 @@ class _CanonicalSpecMixin(_POMDPProcessorSupportMixin):
                         f"{num_actions}"
                     )
 
+        if not kronecker_factorized and any(
+            count not in (1, num_actions) for count in factor_action_counts
+        ):
+            raise ValueError(
+                "unsupported-action-composition: independently timed action counts "
+                f"{factor_action_counts} cannot be flattened into {num_actions} shared actions; "
+                "declare a supported structure-preserving execution_contract"
+            )
+
         if not a_keys:
             raise ValueError("Factored POMDP is missing A_* likelihood matrices")
         if not b_keys:

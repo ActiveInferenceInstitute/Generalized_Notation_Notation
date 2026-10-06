@@ -49,6 +49,12 @@ def render_gnn_to_ngclearn(
     Returns:
         Tuple of (success, message, generated_files)
     """
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(gnn_spec, "ngclearn")
+    if refusal:
+        return False, refusal, []
+
     try:
         if not is_continuous_spec(gnn_spec):
             return False, _DISCRETE_MESSAGE, []

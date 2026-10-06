@@ -29,6 +29,20 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
         Returns:
             GNN specification dictionary
         """
+        # Preserve source semantics across every conversion branch. Extraction
+        # callers must supply these fields; never infer them from a model name.
+        metadata = {
+            key: kwargs.get(key, getattr(pomdp_space, key, None))
+            for key in ("time", "time_specification", "equations")
+        }
+        spec = self._pomdp_to_gnn_spec_body(pomdp_space, **kwargs)
+        spec.update({key: value for key, value in metadata.items() if value is not None})
+        return spec
+
+    def _pomdp_to_gnn_spec_body(
+        self, pomdp_space: "POMDPStateSpace", **kwargs: Any
+    ) -> Dict[str, Any]:
+        """Build matrices and framework metadata without discarding source semantics."""
         # Extract optional config params
         timesteps = kwargs.get("timesteps")
         if timesteps is None and hasattr(pomdp_space, "num_timesteps"):
@@ -59,12 +73,17 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
                 pomdp_space, timesteps=timesteps, simulation_params=parsed_sim_params
             )
 
-        if kwargs.get("preserve_discrete_structure"):
+        if (
+            kwargs.get("preserve_discrete_structure")
+            or (pomdp_space.model_parameters or {}).get("execution_contract")
+            is not None
+        ):
             # A component-aware backend owns its bounded composition. Never
             # allocate a dense joint tensor before that backend admits it.
             parameters = {
                 **(pomdp_space.model_parameters or {}),
                 "num_actions": pomdp_space.num_actions,
+                "passive_model": getattr(pomdp_space, "passive_model", False),
                 "simulation_params": parsed_sim_params,
                 **({"num_timesteps": timesteps} if timesteps is not None else {}),
             }

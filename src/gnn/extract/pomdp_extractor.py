@@ -318,6 +318,14 @@ class POMDPExtractor(POMDPSectionsMixin, POMDPParametersMixin, POMDPOrientationM
                 num_states, num_observations, num_actions, num_timesteps
             )
 
+            # Preserve section bodies separately from the whitespace-normalized
+            # matrix parser. Equations are evidence, not executable expressions.
+            source_sections = {}
+            headers = list(self.SECTION_PATTERN.finditer(content))
+            for index, header in enumerate(headers):
+                end = headers[index + 1].start() if index + 1 < len(headers) else len(content)
+                source_sections[header.group(1).strip()] = content[header.end():end].strip()
+
             # Create POMDP state space
             pomdp_space = POMDPStateSpace(
                 num_states=num_states,
@@ -351,6 +359,8 @@ class POMDPExtractor(POMDPSectionsMixin, POMDPParametersMixin, POMDPOrientationM
                 num_observation_modalities=num_observation_modalities,
                 num_control_factors=num_control_factors,
                 dimension_provenance=dimension_provenance,
+                time=source_sections.get("Time"),
+                equations=source_sections.get("Equations"),
             )
 
             # Validate if strict validation enabled (discrete contract only —

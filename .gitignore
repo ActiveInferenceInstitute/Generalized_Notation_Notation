@@ -28,6 +28,8 @@ src/.pytest_cache/
 .env.local
 .env.production
 .env.development
+# Ship only the tracked placeholder template; real environment files stay ignored.
+!/src/gnn/llm/.env.example
 
 # Configuration files with secrets
 config.local.json

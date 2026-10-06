@@ -643,6 +643,12 @@ def detect_pomdp_space_model_kinds(pomdp_space: Any) -> frozenset[ModelKind]:
 
 def build_canonical_pomdp_spec(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
     """Return a copied GNN spec with canonical POMDP matrices and provenance."""
+    from gnn.render.execution_contracts import execution_contract
+
+    if execution_contract(gnn_spec) is not None:
+        raise ValueError(
+            "unsupported-execution-contract: semantic models cannot be canonicalized as flat POMDPs"
+        )
     spec = deepcopy(gnn_spec)
     initial = spec.get("initialparameterization") or spec.get(
         "initial_parameterization"

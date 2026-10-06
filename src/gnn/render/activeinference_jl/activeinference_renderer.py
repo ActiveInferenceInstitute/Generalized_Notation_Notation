@@ -94,6 +94,12 @@ def render_gnn_to_activeinference_jl(
     Returns:
         Tuple of (success: bool, message: str, artifact_uris: List[str])
     """
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(gnn_spec, "activeinference_jl")
+    if refusal:
+        return False, refusal, []
+
     try:
         logger.info(
             f"Rendering GNN specification to ActiveInference.jl script for model: {gnn_spec.get('name', 'unknown')}"

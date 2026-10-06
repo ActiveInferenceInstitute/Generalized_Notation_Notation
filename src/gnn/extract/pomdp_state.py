@@ -131,6 +131,11 @@ class POMDPStateSpace:
     # variable_dimensions|default"}}.
     dimension_provenance: Optional[Dict[str, Dict[str, Any]]] = None
 
+    # Source sections retained verbatim for downstream semantic dispatch/audit.
+    # Appended to preserve positional construction of existing payload fields.
+    time: Optional[str] = None
+    equations: Optional[str] = None
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
         return {
@@ -166,6 +171,8 @@ class POMDPStateSpace:
             "num_observation_modalities": self.num_observation_modalities,
             "num_control_factors": self.num_control_factors,
             "dimension_provenance": self.dimension_provenance,
+            "time": self.time,
+            "equations": self.equations,
         }
 
 
