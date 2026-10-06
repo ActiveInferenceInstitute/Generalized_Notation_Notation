@@ -8,18 +8,21 @@
 
 **Category**: Testing / Quality Assurance
 
-**Status**: Maintained; final v4 acceptance pending
+**Status**: Maintained; candidate checks accepted at their recorded source, final publication checks pending
 
 **Version**: [pyproject.toml](../pyproject.toml) (canonical; v4 candidate is unreleased)
 
 **Last Updated**: 2026-09-04 (historical module documentation)
 
 Release reconciliation: historical test counts and receipts retain their original
-source identities. A3/W2/H5 evidence in the
-[verification ledger](../docs/development/verification_2026_10_01.json) does not
-qualify the evolving six-model source and backend changes. Renew applicable
-local, hosted, installed-wheel and native checks after source freeze; report each
-selection separately without summing overlapping suites.
+source identities. The current
+[2026-10-06 snapshot](../SCOPE-2026-10-01.md) records 18 successful hosted checks
+at GNN `951dc7d3f58cfd3ef7106caa321c1d3c7d2ad51a`, the completed provisioned
+local suite and the independently accepted numerical/namespace scope. A3/W2/H5
+evidence remains historical in the
+[verification ledger](../docs/development/verification_2026_10_01.json).
+Renew exact-head checks after final content and companion-pin changes; report
+each selection separately without summing overlapping suites.
 
 ---
 

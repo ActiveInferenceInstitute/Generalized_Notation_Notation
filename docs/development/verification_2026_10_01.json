@@ -1,14 +1,18 @@
 {
   "schema": "gnn_v4_acceptance_receipt_v1",
   "baseline_commit": "536d949829f6aed11dc540e5c5dec77578b25016",
-  "status": "test_only_CodeQL_repair_renewed_counts_artifacts_and_final_acceptance_pending",
+  "status": "tested_candidate_snapshot_final_publication_gates_pending",
   "publication": {
     "gnn_draft_pr": 251,
     "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/pull/251",
-    "published_head": "0fce04d0357e5e26204f0049261a5aff225dd2f6",
+    "published_head": "951dc7d3f58cfd3ef7106caa321c1d3c7d2ad51a",
     "main_published": false,
     "companion_draft_pr": 45,
-    "final_pair_pending": true
+    "final_pair_pending": true,
+    "snapshot_utc": "2026-10-06T22:23:21Z",
+    "release_published": false,
+    "software_publication_date": null,
+    "post_snapshot_facts": "Public GitHub release receipt after verified publication"
   },
   "native_backend_receipts": {
     "full_reported/receipts.json": {
@@ -12192,5 +12196,83 @@
       "Final companion main merge and GNN reciprocal pin custody, GNN main SHA/tree parity, GEO reciprocal pin and rollback anchors.",
       "Actual software publication date, annotated tag object/peeled commit, release ID/URL and downloaded asset digest parity; version-specific DOI only if separately verified."
     ]
+  },
+  "historical_publication_snapshot_before_2026_10_06": {
+    "gnn_draft_pr": 251,
+    "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/pull/251",
+    "published_head": "0fce04d0357e5e26204f0049261a5aff225dd2f6",
+    "main_published": false,
+    "companion_draft_pr": 45,
+    "final_pair_pending": true
+  },
+  "closeout_snapshot_2026_10_06": {
+    "source_revision": "951dc7d3f58cfd3ef7106caa321c1d3c7d2ad51a",
+    "hosted_checks": {
+      "successful": 18,
+      "default_run": 37536084012,
+      "python_versions": [
+        "3.11",
+        "3.12",
+        "3.13"
+      ],
+      "per_environment": {
+        "testcase_nodes": 6912,
+        "subtests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "pipeline_cases": 294,
+      "mcp_cases": 90,
+      "counts_policy": "Selections overlap; do not sum"
+    },
+    "local_provisioned_suite": {
+      "passed": 7774,
+      "skipped": 51,
+      "passed_subtests": 10,
+      "exit_code": 0,
+      "runtime_seconds": 1368.95,
+      "scope": "completed prior provisioned suite; subsequent scoped source deltas independently reviewed; fresh default CI at 951dc7d3"
+    },
+    "independent_native_review": {
+      "accepted": "generic JAX filtering/static/passive repair and three generic models in float32/float64 (six full authored-source runs)",
+      "focused_cases": 263,
+      "limitation": "Older RxInfer HMM smoothing retains its original narrower receipt; #241/#250 acceptance remains open"
+    },
+    "ordinary_wheel": {
+      "python_files": 744,
+      "assets": 443,
+      "total_namespace_files": 1187,
+      "sha256": "17ab5d4617b98c0332147dd817f5ef1630e2b211358b77a0595afb0355afdcdc",
+      "namespace_matches_tracked_source": true,
+      "final_main_rebuild_pending": true
+    },
+    "fep_current_attempt": {
+      "source_revision": "958efdba8f18ab8c3d94964b2b688f1c033d01fd",
+      "run_id": 37536069831,
+      "python": {
+        "passed": 2635,
+        "failed": 2,
+        "skipped": 20,
+        "statement_coverage_percent": 91.45
+      },
+      "distribution_successes": 15,
+      "native_render": "in_progress_at_snapshot",
+      "fixture_fix": "537ecd6b4a044e2eb565b55d5bf8b258089bf236",
+      "controlled_regression": {
+        "original": "2 failed / 2 passed",
+        "repaired": "4 passed",
+        "pandoc_crossref_on_path": false
+      },
+      "independent_review": "GO, test fixture only; production and staging assertions retained"
+    },
+    "remaining": [
+      "FEP exact-head full CI/native/render and normal merge",
+      "Final GNN companion pin and SC-22 custody",
+      "Final GNN hosted checks and normal merge",
+      "Reciprocal GEO pin-only PR/checks/merge",
+      "Annotated tag, GitHub release, direct downloaded asset verification"
+    ],
+    "historical_records_preserved": true
   }
 }

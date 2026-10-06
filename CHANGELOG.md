@@ -8,7 +8,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 ## [4.0.0] - Unreleased candidate
 
 The manuscript authored epoch is 2026-10-02. The software publication date and
-final source/artifact/wheel/pair identities remain pending. Historical evidence
+final publication source/artifact/wheel/pair identities remain pending.
+The verified 2026-10-06 candidate snapshot in [the scope ledger](SCOPE-2026-10-01.md)
+records current hosted, local, numerical and namespace evidence; publication facts
+will be attached separately after all closeout gates. Historical evidence
 retains its original hashes and scope in the
 [verification ledger](docs/development/verification_2026_10_01.json); current
 acceptance boundaries and remaining work are tracked in [TO-DO.md](TO-DO.md).
@@ -81,9 +84,11 @@ Read the v4 guide for IDs, artifact schemas, stricter validation, summary states
 budget resolution, distributed startup ownership and resume requirements. Legacy
 artifacts remain inspectable but cannot establish evidence for a fresh invocation.
 Scientific corrections to six invalid illustrative sources were approved and
-implemented locally. Independent source review covers the original tables and
-equations; added routing metadata and backend semantics still require integrated
-review and native acceptance. Preserve the historical rejection witnesses; do not
+implemented. Independent review accepted the generic JAX filtering/static/passive
+repair and three generic models in float32/float64 (six full authored-source
+runs). The older
+RxInfer HMM smoothing witness retains its narrower scope; complete scientific
+acceptance for issue #250 remains pending. Preserve the historical rejection witnesses; do not
 silently normalize source values or treat metadata as execution evidence.
 
 ## [3.6.0] - 2026-09-26

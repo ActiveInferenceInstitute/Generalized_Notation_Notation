@@ -8,7 +8,8 @@ authors:
 
 title: "Generalized_Notation_Notation (GNN)"
 version: 4.0.0
-# Candidate / unreleased. Set date-released only after verified publication.
+# Prepublication snapshot; actual publication facts belong to the verified release receipt.
+# Set date-released only after verified publication.
 # The manuscript authored epoch 2026-10-02 is not a software release date.
 # Project concept DOI; a v4-specific archival DOI is not yet recorded.
 doi: 10.5281/zenodo.7803313

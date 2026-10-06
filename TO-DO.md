@@ -1,6 +1,6 @@
 # TO-DO — GNN implementation, verification and release backlog
 
-Updated 2026-10-05. **Implementation and release work have resumed.** The
+Updated 2026-10-06. **Implementation and release work have resumed.** The
 scoped backlog and historical evidence remain preserved. Nothing below is a completed
 release claim. Prior evidence remains in the scope documents, verification
 ledger, commit history and reviewed release candidates.
@@ -17,6 +17,40 @@ contain historical stages; reconcile their final prepared successors before
 publication. Do not restart accepted work merely because an older ledger entry
 still says pending. Do not overwrite this handoff backlog with an older candidate.
 
+## Verified closeout snapshot — 2026-10-06
+
+This snapshot describes tested candidate source, not a completed publication.
+GNN source `951dc7d3f58cfd3ef7106caa321c1d3c7d2ad51a` has all 18 hosted
+checks successful, including CodeQL and both paired Python environments.
+The default CI JUnit files contain 6,912 testcase nodes plus ten subtests per
+Python 3.11/3.12/3.13 environment, with no failures, errors or skips. The separate
+pipeline selection has 294 cases and MCP selection 90; these overlapping
+selections are not added together. The completed prior local provisioned suite reports
+7,774 passed, 51 skipped and ten passed subtests; subsequent scoped source
+deltas were independently reviewed and fresh default CI passed at `951dc7d3`. Earlier failed attempts remain
+historical evidence below.
+
+Independent review accepted the generic JAX filtering/static/passive repair and
+three generic models in float32/float64 (six full authored-source runs). This does
+not expand the older RxInfer HMM smoothing witness into universal backend or
+scientific acceptance. Issues #241 and #250 remain open under their stated
+acceptance criteria. The ordinary wheel has exactly 744 Python files and 443
+assets under `gnn/`, matching tracked source; hashes establish byte identity,
+not numerical proof.
+
+FEP PR #45 at `958efdba8f18ab8c3d94964b2b688f1c033d01fd` still needs a
+successful successor run: the current Python job passed 2,635 tests, skipped 20,
+and failed two supplemental staging fixtures at 91.45% coverage. Its 15
+distribution jobs passed; native/render closeout was still running at snapshot.
+The independently reviewed fixture repair adds the missing `pandoc-crossref`
+version stub and rejects unmodelled tool-version probes; with that tool absent,
+the original selection fails 2/4 and the repaired selection passes 4/4.
+Companion merge, final GNN pin/checks/merge, reciprocal GEO pin, tag and release
+remain pending. Publication identities, actual date and downloaded asset hashes
+must be recorded separately in the public release receipt after publication.
+The manuscript authored epoch remains 2026-10-02; no version-specific DOI or
+PyPI upload is claimed.
+
 ## v4.0.0 — P0: finish the existing release safely
 
 These tasks depend on one another in the order below. Source custody, local
@@ -27,7 +61,9 @@ failures separate. Do not sum overlapping test selections.
 The bounded `--autonomous` mode remains proposal-only in v4.0.0; it does not
 modify its own source or grant autonomous publication authority.
 
-- [ ] **R1 — qualify the current companion run.** Fep companion PR
+- [ ] **R1 — qualify the current companion run.** The chronology below is
+  historical; the 2026-10-06 snapshot above supersedes its live-head statement.
+  Fep companion PR
   [#45](https://github.com/ActiveInferenceInstitute/fep_formal/pull/45) is pushed
   at `af08d3323586e5a75ea69e207908ac6d15f5da87`. Its historical
   [run 37384045009](https://github.com/ActiveInferenceInstitute/fep_formal/actions/runs/37384045009),

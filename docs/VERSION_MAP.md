@@ -3,7 +3,9 @@
 One-stop map of what changed at each release and where the authoritative record
 lives. Current candidate: **4.0.0 (unreleased)** (see `pyproject.toml`, `CHANGELOG.md`).
 The manuscript authored epoch remains 2026-10-02; the actual software publication
-date, final source custody and release identity require fresh closeout checks.
+date and final publication identity require fresh closeout checks. The tested
+2026-10-06 candidate snapshot in [the scope ledger](../SCOPE-2026-10-01.md)
+records exact source/check identities and remaining publication gates.
 See [the active backlog](../TO-DO.md) and
 [the verification ledger](development/verification_2026_10_01.json).
 

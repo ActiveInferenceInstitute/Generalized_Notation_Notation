@@ -11,6 +11,13 @@ The GNN (GeneralizedNotationNotation) project maintains a comprehensive multi-la
 
 > **📖 Complete Security Documentation**: For comprehensive security information, see [Security Guide](docs/security/README.md)
 
+Candidate security evidence (2026-10-06): CodeQL is successful at
+`951dc7d3f58cfd3ef7106caa321c1d3c7d2ad51a`; final-head renewal remains required.
+Alert #12 has a narrow request-string false-positive disposition. The trusted
+filesystem policy below retains its non-atomic concurrent-mutation limitation;
+GUI complexity alerts #13–#16 remain separate. See the
+[closeout snapshot](SCOPE-2026-10-01.md) for scope and pending publication.
+
 ## Supported Versions
 
 We are committed to ensuring the security of the GeneralizedNotationNotation (GNN) project.
