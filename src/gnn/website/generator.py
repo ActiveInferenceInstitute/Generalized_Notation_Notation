@@ -592,7 +592,13 @@ class WebsiteGenerator:
                         gf.read_text(encoding="utf-8", errors="replace"), 3000
                     )
                     size = gf.stat().st_size
-                except Exception:
+                except (OSError, ValueError) as exc:
+                    logger.warning(
+                        "Could not read website source %s (%s: %s)",
+                        gf,
+                        type(exc).__name__,
+                        exc,
+                    )
                     src, size = "(could not read)", 0
                 content += f"""
 <details>
@@ -691,7 +697,13 @@ class WebsiteGenerator:
         try:
             text = Path(str(source)).read_text(encoding="utf-8", errors="replace")
             size = Path(str(source)).stat().st_size
-        except Exception:
+        except (OSError, ValueError) as exc:
+            logger.warning(
+                "Could not read model source %s (%s: %s)",
+                source,
+                type(exc).__name__,
+                exc,
+            )
             text, size = "(could not read source file)", 0
         return f"""
 <details>

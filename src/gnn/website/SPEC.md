@@ -35,6 +35,9 @@ The `src/gnn/website/` module generates static HTML websites from pipeline artif
 
 ## Standards
 
+- Unreadable source files retain their existing listing/model-page placeholders;
+  their file path and filesystem exception type are logged rather than silently
+  discarded. Other usable pages remain generated.
 - Generated sites are self-contained (inline CSS/JS; no external CDN)
 - HTML5 semantic markup with responsive CSS layouts
 - No Jinja2/Markdown/Bleach dependency — stdlib only
