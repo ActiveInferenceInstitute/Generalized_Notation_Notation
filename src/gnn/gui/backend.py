@@ -37,7 +37,11 @@ def detect_gradio_backend() -> GUIBackendStatus:
             raise AttributeError("gradio import does not expose Blocks")
         return GUIBackendStatus(name="gradio", module=gr)
     except Exception as exc:
-        return GUIBackendStatus(name=None, module=cast(Any, None), reason=str(exc))
+        return GUIBackendStatus(
+            name=None,
+            module=cast(Any, None),
+            reason=f"{type(exc).__name__}: {exc}",
+        )
 
 
 def write_text_atomically(path: Path, content: str) -> None:

@@ -15,6 +15,10 @@ Graphical user interface for GNN pipeline.
 - Interactive model editing
 - Visualization preview
 - Headless artifact generation when no GUI backend is available
+- Backend-unavailable status retains the original import/interface exception
+  type and message in its reason, including transitive dependency failures.
+  The same reason appears in headless status receipts; usable static artifacts
+  remain available.
 
 ## Key Exports
 ```python
