@@ -35,14 +35,14 @@
       }
     },
     {
-      "alt_text": "Grid of model families (rows) against rendering backends (columns). A filled cell means the family declares that backend in input/model_family_manifest.json. The grid is sparse: most families declare a single backend, and only the continuous, hierarchical and gridworld families declare several. Cells record declared coverage, not profiled outcomes.",
+      "alt_text": "Grid of model families (rows) against rendering backends (columns). A filled cell means the family declares that backend in input/model_family_manifest.json. The grid is sparse: most families declare a single backend, and only the continuous, discrete and gridworld families declare several. Cells record declared coverage, not profiled outcomes.",
       "consumed_tokens": {},
       "filename": "gnn_family_framework_matrix.png",
       "generated_by": "scripts/manuscript_fig_family_framework.py",
       "label": "fig:family_matrix",
       "png_sha256": "5f5a87bcc8f8293951120042f0b9f87f6e799fd709109e7010c8c3fdda996caa",
       "source_sha256": {
-        "input/model_family_manifest.json": "98a997ba5421174a539ae38dca31ae76cd20f72788735545e59a5eddc913d632",
+        "input/model_family_manifest.json": "41adbb30ab861d094823b69669656081bbcb603c7203bd30335555e2f60b9e3c",
         "src/gnn/render/framework_registry.py": "b58528bf54801e369b5463412ffeb4be2ee394178b0a683763c40e8eb863aade"
       }
     },
@@ -54,7 +54,7 @@
       "label": "fig:backend_matrix",
       "png_sha256": "e0813ffc2a58af9dfd95bbcce9ecc0e57feffc3240b24d74baeadbe80ad0c55a",
       "source_sha256": {
-        "input/model_family_manifest.json": "98a997ba5421174a539ae38dca31ae76cd20f72788735545e59a5eddc913d632",
+        "input/model_family_manifest.json": "41adbb30ab861d094823b69669656081bbcb603c7203bd30335555e2f60b9e3c",
         "src/gnn/manuscript/variables.py": "f0770f854a60ccabb86ac034b87646044200974ac0940426a3667851b3827a1d",
         "src/gnn/pipeline/cross_framework_reliability.py": "f541016765f8c2b843226c9127f011cc77a0e66cbad694e89853db59c6cd8101",
         "src/gnn/render/framework_registry.py": "b58528bf54801e369b5463412ffeb4be2ee394178b0a683763c40e8eb863aade"

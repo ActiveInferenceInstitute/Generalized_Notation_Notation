@@ -439,7 +439,7 @@ fig.~6.
 \begin{frame}[fragile,allowframebreaks]{Rendering to Multiple Backends}
 \begin{figure}
 \centering
-\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={The GNN rendering backend registry as a table: one row per registered backend, with its registry key, display name, implementation language, whether a render-output subdirectory exists under src/gnn/render/, and its role in the cross-framework reference comparison. Amber rows are the backends the reliability gate profiles for the continuous family; the tan row (Stan, ngc-learn) is declared by that family but sits outside the maintained set, so it is never profiled; a red Render-Subdir cell would mean a registry entry with no subdirectory. The table is read directly from src/gnn/render/framework\_registry.py and the model-family manifest at commit 4f9a165c7, and its footer summarizes the row counts. Take-away: registration, render presence, and profiling status are three different claims, and the table keeps them apart.}]{../figures/gnn_backend_capability_matrix.png}
+\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={The GNN rendering backend registry as a table: one row per registered backend, with its registry key, display name, implementation language, whether a render-output subdirectory exists under src/gnn/render/, and its role in the cross-framework reference comparison. Amber rows are the backends the reliability gate profiles for the continuous family; the tan row (Stan, ngc-learn) is declared by that family but sits outside the maintained set, so it is never profiled; a red Render-Subdir cell would mean a registry entry with no subdirectory. The table is read directly from src/gnn/render/framework\_registry.py and the model-family manifest at commit b99695547, and its footer summarizes the row counts. Take-away: registration, render presence, and profiling status are three different claims, and the table keeps them apart.}]{../figures/gnn_backend_capability_matrix.png}
 \caption{The GNN rendering backend registry as a table: one row per
 registered backend, with its registry key, display name, implementation
 language, whether a render-output subdirectory exists under
@@ -450,7 +450,7 @@ declared by that family but sits outside the maintained set, so it is
 never profiled; a red Render-Subdir cell would mean a registry entry
 with no subdirectory. The table is read directly from
 \protect\breaktt{src/gnn/render/framework\_registry.py} and the
-model-family manifest at commit 4f9a165c7, and its footer summarizes the
+model-family manifest at commit b99695547, and its footer summarizes the
 row counts. Take-away: registration, render presence, and profiling
 status are three different claims, and the table keeps them
 apart.}\label{fig:backend_matrix}
@@ -502,15 +502,18 @@ multi-agent paths map per-agent declarations to their target structures.
 Independent continuous agents use native JAX or RxInfer.jl paths only
 when independence and a complete linear-Gaussian parameter block for
 every agent are declared; other continuous-agent compositions are
-reported \texttt{unsupported}. Supported hierarchical paths compose
-per-level matrices into a joint POMDP or use the RxInfer.jl two-level
-strategies; parameter-learning paths use strategies for the declared
+reported \texttt{unsupported}. Generic hierarchical paths without a
+semantic execution contract may compose per-level matrices into a joint
+POMDP or use the RxInfer.jl two-level strategies; the maintained
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Rendering by Model Kind}
-Dirichlet matrix. These paths retain backend-specific capability
-boundaries, and a recognized component does not authorize silently
-dropping another declared component.
+\texttt{block\_reset\_v1} and \breaktt{timed\_soft\_controller\_v1}
+fixtures instead route to structure-preserving JAX execution and are
+explicitly unsupported elsewhere; parameter-learning paths use
+strategies for the declared Dirichlet matrix. These paths retain
+backend-specific capability boundaries, and a recognized component does
+not authorize silently dropping another declared component.
 
 \textbf{Structural wrappers} have no renderable form at all: they
 declare boundary structure only, with neither a categorical nor a
@@ -520,11 +523,11 @@ than silently rendering them as a discrete stand-in that would fail on
 missing matrices. The status is the design working, not a defect: a
 wrapper is an interface statement, and the pipeline's response is to say
 so in every receipt rather than to guess a model body the author never
-declared.
-
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Rendering by Model Kind}
+declared.
+
 By generating code rather than asking authors to port models by hand,
 the method keeps a single source of truth in the notation while still
 reaching the discrete message-passing libraries (Heins et al. 2022),
@@ -682,7 +685,7 @@ Auto-Injection}\label{reproducibility-and-auto-injection}
 Auto-Injection}
 Every count reported in this manuscript is emitted by the producer
 \breaktt{scripts/z\_generate\_manuscript\_variables.py} from the
-repository state at commit 4f9a165c7, not typed by hand. The producer
+repository state at commit b99695547, not typed by hand. The producer
 reads that commit's source surfaces directly --- the step modules, the
 source tree, the model-family manifest, and the framework registry ---
 together with the project's maintained ledgers, notably the Model
