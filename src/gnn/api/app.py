@@ -39,6 +39,7 @@ if _src_dir not in sys.path:
 
 from gnn.api import DEFAULT_API_HOST, DEFAULT_API_PORT, MODULE_VERSION, processor  # noqa: E402,I001
 from gnn.api.auth import api_key_middleware, require_secure_bind
+from gnn.api.process_supervision import ProcessCleanupError, supervise_api_process
 from gnn.api.models import RunHealthResponse, RunRequest, RunStatus  # noqa: E402,I001
 from gnn.api.path_utils import (  # noqa: E402,I001
     PathValidationError,
@@ -441,18 +442,11 @@ if FASTAPI_AVAILABLE:
                 start_new_session=os.name == "posix",
             )
             entry["process_id"] = getattr(process, "pid", None)
-            comm_task = asyncio.create_task(process.communicate())
-            while True:
-                done, _pending = await asyncio.wait({comm_task}, timeout=0.25)
-                if comm_task in done:
-                    break
-                if cancel_token is not None and cancel_token.cancelled:
-                    # A delete landed mid-flight: signal the process tree,
-                    # then drain the streams before reporting the outcome.
-                    processor._terminate_process_tree(process, run_hash)
-                    await comm_task
-                    break
-            _stdout, stderr = comm_task.result()
+            _stdout, stderr, cleanup = await supervise_api_process(
+                process,
+                cancelled=lambda: cancel_token is not None and cancel_token.cancelled,
+            )
+            entry["process_cleanup"] = cleanup
 
             # A delete can race this coroutine: the delete path terminates
             # the subprocess while communicate() is still draining, and the
@@ -512,6 +506,10 @@ if FASTAPI_AVAILABLE:
                     RuntimeError(f"Pipeline exited with code {exit_code}"), start
                 )
 
+        except ProcessCleanupError as e:
+            entry["process_cleanup"] = e.receipt
+            tracker.mark_failed(RuntimeError("Process cleanup could not be verified"), start)
+            logger.error("Pipeline run %s cleanup failed: %s", run_hash, e)
         except Exception as e:
             if cancel_token is not None and cancel_token.cancelled:
                 # The delete won the race during the exception; keep the

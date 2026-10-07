@@ -85,7 +85,12 @@ uvicorn gnn.api.server:app --reload
 - **Background tasks**: FastAPI BackgroundTasks for fire-and-forget job execution.
 - **CORS**: Allows localhost origins for browser-based access.
 - **Symlink-safe path validation**: `path_utils.resolve_repo_path` rejects any
-  symlink component before resolving (RED_TEAM V-05).
+  symlink or reparse component before resolving (RED_TEAM V-05). POSIX directory
+  creation is descriptor-relative; later pathname consumers require trusted
+  directory entries. Installed services set the operator-only `GNN_API_ROOT`
+  to an absolute, existing, nonredirected scratch workspace. The precise
+  guarantees and Windows limits are in
+  [filesystem boundaries](../../../docs/security/filesystem_boundaries.md).
 - **Sanitized error responses**: job failure tails redact the repository root
   and absolute paths before returning to callers (RED_TEAM V-09).
 - **Canonical JSON envelope**: successful and failed JSON responses use exactly

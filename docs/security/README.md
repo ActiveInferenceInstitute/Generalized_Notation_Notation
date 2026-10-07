@@ -12,6 +12,8 @@ This comprehensive security guide covers all aspects of GNN security, from devel
 
 ## Recent Remediation Notes
 
+- [Filesystem ownership and native cleanup boundaries](filesystem_boundaries.md): concrete concurrent-writer threat model, POSIX descriptor operations, Windows reparse and direct-worker limits, and native acceptance requirements.
+
 - [Codex Security Remediation - 2026-06-24](codex_security_remediation_2026-06-24.md): MCP execution path hardening, LLM MCP repository-local file boundaries, bnlearn generated-code escaping, safe generated artifact stems, and focused regression evidence.
 
 ## 🔐 **Core Security Principles**

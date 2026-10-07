@@ -12,7 +12,6 @@ import logging
 import os
 import re
 import shutil
-import signal
 import time
 import uuid
 from datetime import datetime
@@ -22,7 +21,7 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 from gnn.api.models import validate_step_numbers as _shared_validate_step_numbers
-from gnn.api.path_utils import resolve_repo_path
+from gnn.api.path_utils import get_repo_root, resolve_repo_path
 from gnn.api.pipeline_runner import (
     build_pipeline_command,
     normalize_summary_steps,
@@ -30,7 +29,13 @@ from gnn.api.pipeline_runner import (
     read_pipeline_summary,
     summarize_step_progress,
 )
+from gnn.api.process_supervision import (
+    ProcessCleanupError,
+    request_process_stop,
+    supervise_api_process,
+)
 from gnn.pipeline.step_registry import STEPS
+from gnn.utils.runtime_safety.filesystem import directory_handle, is_redirect
 
 # In-memory job store (cleared on restart — research tool, not production service)
 _JOBS: Dict[str, dict[str, Any]] = {}
@@ -141,35 +146,6 @@ def get_job(job_id: str) -> Optional[dict[str, Any]]:
     return serializable
 
 
-def _terminate_process_tree(proc: Any, job_id: str) -> None:
-    """Terminate a job subprocess together with its process group.
-
-    Jobs spawn the pipeline in its own session (``start_new_session``), so a
-    cancelled job can signal the whole group: rendered scripts that shell out
-    to grandchildren would otherwise survive a direct-child terminate. This
-    mirrors the process-group kill pattern in
-    ``gnn.utils.pipeline_orchestration.execution_utils`` and falls back to
-    the direct child on non-POSIX platforms or when the group is gone.
-    """
-    try:
-        if os.name == "posix":
-            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-            logger.info(f"Signalled process group of job {job_id}")
-        else:
-            proc.terminate()
-            logger.info(f"Terminated subprocess for job {job_id}")
-    except (ProcessLookupError, PermissionError, AttributeError) as exc:
-        try:
-            proc.terminate()
-            logger.info(f"Terminated subprocess (direct child) for job {job_id}: {exc}")
-        except Exception as terminate_error:
-            logger.warning(
-                f"Could not terminate process for job {job_id}: {terminate_error}"
-            )
-    except Exception as exc:
-        logger.warning(f"Could not terminate process for job {job_id}: {exc}")
-
-
 def cancel_job(job_id: str) -> bool:
     """
     Cancel a running or pending job.
@@ -186,7 +162,10 @@ def cancel_job(job_id: str) -> bool:
     # Terminate the subprocess tree if running
     proc = job.get("process")
     if proc is not None:
-        _terminate_process_tree(proc, job_id)
+        try:
+            request_process_stop(proc)
+        except (OSError, AttributeError) as exc:
+            logger.warning(f"Could not request process stop for job {job_id}: {exc}")
 
     job["status"] = "cancelled"
     job["completed_at"] = datetime.now().isoformat()
@@ -208,19 +187,44 @@ def _remove_run_artifacts(entry: dict[str, Any]) -> tuple[Optional[bool], str]:
     raw_output_dir = request.get("output_dir")
     if not raw_output_dir:
         return False, "no artifacts on disk"
-    output_dir = Path(str(raw_output_dir))
+    output_dir = Path(str(raw_output_dir)).absolute()
     try:
         resolved = output_dir.resolve()
-    except OSError as exc:
+    except (OSError, ValueError, RuntimeError) as exc:
         return False, f"could not resolve artifact directory: {exc}"
-    repo_output = (Path(__file__).resolve().parents[3] / "output").resolve()
+    try:
+        workspace = get_repo_root().resolve()
+        repo_output = (workspace / "output").resolve()
+    except (OSError, ValueError) as exc:
+        return False, f"could not resolve API workspace: {exc}"
     if resolved == repo_output:
         return False, "repository output tree retained"
-    if not resolved.exists():
-        return False, "no artifacts on disk"
+    if resolved == workspace or resolved in workspace.parents:
+        return False, "API workspace or ancestor retained"
     try:
-        shutil.rmtree(resolved)
-    except Exception as exc:  # noqa: BLE001
+        # Never resolve a requested artifact link to its target before removal.
+        # POSIX rmtree is fd-based, including its recursive symlink race checks.
+        # The opened parent also cannot be redirected by a replaced ancestor.
+        if os.name == "posix":
+            if not shutil.rmtree.avoids_symlink_attacks:
+                return False, "safe artifact removal is unavailable on this platform"
+            with directory_handle(output_dir.parent) as parent:
+                directory_entry = os.stat(output_dir.name, dir_fd=parent, follow_symlinks=False)
+                if is_redirect(directory_entry):
+                    return False, "artifact directory symlink or reparse point retained"
+                shutil.rmtree(output_dir.name, dir_fd=parent)
+        else:
+            # Windows rmtree does not descend junction targets; admission still
+            # requires directory entries trusted against concurrent replacement.
+            node = Path(output_dir.anchor)
+            for part in output_dir.parts[1:]:
+                node /= part
+                if is_redirect(node.lstat()):
+                    return False, "artifact directory symlink or reparse point retained"
+            shutil.rmtree(output_dir)
+    except FileNotFoundError:
+        return False, "no artifacts on disk"
+    except (OSError, ValueError) as exc:
         return False, f"artifact removal failed: {exc}"
     return True, ""
 
@@ -280,6 +284,11 @@ def delete_run(
 
     artifacts_removed: Optional[bool] = None
     artifacts_note = ""
+    cleanup = entry.get("process_cleanup") or {}
+    if cleanup.get("cleanup_verified") is False:
+        raise RuntimeError(
+            f"Run {key} cleanup could not be verified; record and artifacts retained"
+        )
     if remove_artifacts:
         artifacts_removed, artifacts_note = _remove_run_artifacts(entry)
 
@@ -355,7 +364,10 @@ async def execute_job_async(job_id: str) -> None:
         )
         job["process"] = proc
 
-        stdout, stderr = await proc.communicate()
+        stdout, stderr, cleanup = await supervise_api_process(
+            proc, cancelled=lambda: job["status"] == "cancelled",
+        )
+        job["process_cleanup"] = cleanup
 
         # A cancel can race this coroutine: cancel_job terminates the
         # subprocess and writes the terminal 'cancelled' state while
@@ -402,6 +414,12 @@ async def execute_job_async(job_id: str) -> None:
             job["error_message"] = _sanitize_stderr(stderr_text, repo_root)
             logger.error(f"Job {job_id} failed with exit code {proc.returncode}")
 
+    except ProcessCleanupError as e:
+        job["process_cleanup"] = e.receipt
+        job["status"] = "failed"
+        job["error_message"] = f"Process cleanup could not be verified: {e}"
+        job["completed_at"] = datetime.now().isoformat()
+        logger.error("Job %s cleanup failed: %s", job_id, e)
     except Exception as e:
         if job["status"] == "cancelled":
             # cancel_job won the race during the exception; keep its write.
