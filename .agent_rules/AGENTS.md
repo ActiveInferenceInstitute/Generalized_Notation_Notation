@@ -1,34 +1,20 @@
-# .Agent Rules - Agent Scaffolding
+# Development rules agent guide
 
-## Module Overview
+This directory maintains guidance for agents editing GNN. It contains no
+runtime code and introduces no authority to execute external actions.
 
-**Purpose**: This directory serves as the immutable foundational architecture and behavioral constitution for all AI agents (including Antigravity, Jules, and custom MCP clients) operating within the GNN ecosystem.
+Start with [README](README.md), root [AGENTS](../AGENTS.md) and
+[SPEC](../SPEC.md), then read the owning module. User instructions and current
+repository contracts take precedence over historical examples.
 
-**Pipeline Step**: Global Configuration / Cognitive Scaffolding
+The local [guide specification](SPEC.md) defines documentation obligations.
 
-**Category**: Governance / Policy
+Keep examples runnable in their declared environment. Link to live registries,
+configuration and executable gates instead of copying assumed inventories or
+pass counts. Distinguish success, warning, unsupported requests, missing
+optional dependencies and failures. Never prescribe forced success, implicit
+backend substitution or a smaller selection than requested.
 
-**Status**: Maintained
-
-**Version**: 3.0.0
-
----
-
-## Core Functionality
-
-### Primary Responsibilities
-
-1. **Policy Enforcement**: Defines non-negotiable architectural mandates (e.g., real-implementation testing, Thin Orchestrator Pattern, and God-Class Decomposition routines).
-2. **Behavioral Framing**: Governs how agents interact with the file system, manage technical debt, and format outputs.
-3. **Quality Assurance**: Outlines testing thresholds, linting guidelines, and error-handling paradigms directly accessible via the MCP framework.
-
-### Available Documentation Rulesets
-
-- **`architecture.md`**: Global systems architecture patterns.
-- **`testing.md` / `quality.md`**: Testing frameworks and static analysis mandates.
-- **`dependencies.md` / `render_frameworks.md`**: Technical limitations and optimal libraries.
-- **`gnn_standards.md`**: Domain-specific logic constraints for Active Inference modeling.
-
-## Implementation Details
-
-These rules are parsed natively by the local IDE or the Personal AI Infrastructure (PAI) orchestrator before execution initialization. No Python objects are executed here; it acts strictly as RAG context and persistent behavioral overrides.
+Review changes through their consumers, preserve unrelated files, and record
+the actual revision, commands, outcomes and platform limits. Source/manuscript
+and companion changes retain root custody obligations.

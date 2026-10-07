@@ -1,157 +1,32 @@
-# Optional Dependencies
+# Dependencies and readiness
 
-> Core functionality works without optional packages. Report unavailable optional features as explicit skipped, failed, or degraded statuses with actionable reasons.
-
-## Dependency Categories
-
-### Core (Always Installed)
-| Package | Purpose |
-|---------|---------|
-| `numpy` | Numerical computing |
-| `scipy` | Scientific computing |
-| `matplotlib` | Visualization |
-| `pyyaml` | YAML parsing |
-| `pytest` | Testing |
-| `psutil` | System monitoring |
-| `flax` | Neural networks (JAX) — **core dependency** (`pyproject.toml`), not optional |
-
-### Optional Python Packages
-| Package | Purpose | Install | Used By |
-|---------|---------|---------|---------|
-| `inferactively-pymdp` | Active Inference simulations | `uv pip install inferactively-pymdp` | Step 12 |
-| `jax`, `jaxlib` | ML/numerical | `uv pip install jax jaxlib` | Step 11 |
-| `optax` | JAX optimizers | `uv pip install optax` | Step 11 |
-| `discopy` | Categorical diagrams | `uv pip install discopy` | Step 11 |
-| `ollama` | Local LLM | `uv pip install ollama` | Step 13 |
-| `openai` | OpenAI API | `uv pip install openai` | Step 13 |
-| `networkx` | Graph analysis | `uv pip install networkx` | Visualization |
-| `plotly` | Interactive plots | `uv pip install plotly` | Step 9 |
-| `seaborn` | Statistical plots | `uv pip install seaborn` | Step 8 |
-
-### Optional System Dependencies
-| Dependency | Install | Used By |
-|------------|---------|---------|
-| Julia | [julialang.org](https://julialang.org) | RxInfer, ActiveInference.jl |
-| Ollama CLI | [ollama.ai](https://ollama.ai) | Step 13 LLM |
-| D2 | `brew install d2` | Advanced visualization |
-
----
-
-## Detection Patterns
-
-```python
-# Python package
-def check_python_dep(package: str) -> tuple[bool, str]:
-    try:
-        mod = __import__(package)
-        return True, getattr(mod, "__version__", "unknown")
-    except ImportError:
-        return False, f"Not installed. Run: uv pip install {package}"
-
-
-# Julia
-import shutil, subprocess
-
-
-def check_julia() -> tuple[bool, str]:
-    if not shutil.which("julia"):
-        return False, "Julia not found in PATH"
-    result = subprocess.run(
-        ["julia", "--version"], capture_output=True, text=True, timeout=5
-    )
-    return result.returncode == 0, result.stdout.strip()
-
-
-# System command
-def check_command(cmd: str) -> tuple[bool, str]:
-    path = shutil.which(cmd)
-    return (True, path) if path else (False, f"'{cmd}' not found")
-```
-
----
-
-## Optional Dependency Status Pattern
-
-```python
-# Pattern 1: Module-level flag
-try:
-    import pymdp
-
-    PYMDP_AVAILABLE = True
-except ImportError:
-    PYMDP_AVAILABLE = False
-    logger.info(
-        "PyMDP not available — normal if not installed. "
-        "To enable: uv pip install inferactively-pymdp."
-    )
-
-# Pattern 2: Feature flags in __init__.py
-FEATURES = {
-    "pymdp_simulation": _check_pymdp_available(),
-    "jax_rendering": _check_jax_available(),
-    "julia_execution": _check_julia_available(),
-}
-```
-
----
-
-## JAX Without Flax ⚠️
-
-The JAX renderer generates **pure JAX code** — Flax is NOT required:
-
-```python
-# Generated code uses only:
-import jax
-import jax.numpy as jnp
-from jax import random, jit, vmap
-import optax  # optional
-
-# NOT imported:
-# import flax   ← never required
-# import flax.linen as nn
-```
-
-If you encounter `ModuleNotFoundError: flax`, re-run Step 11:
-```bash
-uv run python src/gnn/11_render.py --target-dir input/gnn_files
-```
-
----
-
-## Install All Optional Deps
+[pyproject.toml](../pyproject.toml) declares core packages, extras, development
+groups and Python constraints; [uv.lock](../uv.lock) records resolved splits.
+Derive inventories from these files. PyMDP, JAX, Flax, DisCoPy and the declared
+scientific stack are core dependencies; extras are the actual named groups.
 
 ```bash
-# Python packages (recommended)
-uv sync --all-extras
-
-# Or manually:
-uv pip install inferactively-pymdp jax jaxlib optax discopy ollama openai plotly seaborn networkx
-
-# Julia packages (in Julia REPL)
-using Pkg
-# Instantiate committed RxInfer environment
-julia --startup-file=no --project=src/gnn/execute/rxinfer -e 'using Pkg; Pkg.instantiate()'
-# ActiveInference.jl (separate, not in committed project):
-julia -e 'using Pkg; Pkg.add("ActiveInference")'
-
-# System tools (macOS)
-brew install d2
-brew install --cask ollama
+uv sync --frozen --extra dev --python 3.12
+uv run --frozen --no-sync gnn health
 ```
 
----
+Read the reported diagnoses. Exit 2 reports degraded readiness; importable
+generators alone do not establish native backend execution.
 
-## Environment Variables
+Install a requested extra explicitly, such as `uv sync --frozen --extra torch`
+for PyTorch. Julia and CmdStan require native toolchain provisioning; Julia
+adapters use committed projects. See [setup](../SETUP_GUIDE.md). Installing an
+extra does not select an experimental backend.
 
-```bash
-DISABLE_PYMDP=1         # Disable PyMDP even if installed
-DISABLE_JAX=1           # Disable JAX
-DISABLE_JULIA=1         # Disable Julia
-OLLAMA_MODEL=smollm2:135m-instruct-q4_K_S  # LLM model (code default: llm.defaults.DEFAULT_OLLAMA_MODEL)
-OLLAMA_HOST=http://localhost:11434
-JAX_PLATFORM_NAME=cpu   # or gpu, tpu
-```
+Use [framework metadata](../src/gnn/frameworks.py),
+[renderer registry](../src/gnn/render/framework_registry.py) and
+[readiness](../src/gnn/utils/runtime_safety/framework_availability.py).
+Keep missing distributions, unsupported runtime/version, broken installed
+imports, missing toolchains, timed-out probes and missing executors distinct.
+An import alone cannot establish model-family or numerical acceptance.
 
----
-
-**Last Updated**: 2026-05-20 | **Status**: Maintained Standard
+Do not repair locks with floating side installations, guessed disable flags
+or duplicate declarations. For justified changes, resolve normally and verify
+each affected split, installed/native evidence and tracked-file bookends.
+New platform support follows ordinary installation and genuine acceptance as
+scoped in [TO-DO](../TO-DO.md#medium-work).

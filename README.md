@@ -1158,7 +1158,7 @@ xdg-open output/20_website_output/index.html  # Linux
 ```bash
 # Check Python version
 python --version
-# Supported: Python >= 3.11, < 3.15 (3.14 included) — install from python.org if out of range
+# Package range: Python >= 3.11, < 3.15; native readiness depends on the tested environment
 ```
 
 **📦 Dependency Issues**
@@ -1172,9 +1172,9 @@ uv run python src/gnn/main.py --only-steps 1 --recreate-uv-env --dev
 
 ```bash
 # Run with verbose logging
-python src/gnn/main.py --verbose
+uv run --frozen --no-sync python src/gnn/main.py --verbose
 # Check specific step
-python src/gnn/main.py --only-steps 5 --verbose
+uv run --frozen --no-sync python src/gnn/main.py --only-steps 5 --verbose
 ```
 
 **💾 Disk Space Issues**
@@ -1182,11 +1182,15 @@ python src/gnn/main.py --only-steps 5 --verbose
 ```bash
 # Check available space
 df -h
-# Clean output directory
-rm -rf output/*
+# Inspect a run's size before archiving or removing its owned output
+du -sh /tmp/gnn-setup-example
 ```
 
 </details>
+
+Use a dedicated output directory for each invocation. The tracked `output/`
+tree includes publication evidence; preserve it and its custody records.
+Directories from earlier runs cannot serve as current-run completion evidence.
 
 **🔗 Get Support:**
 

@@ -1,93 +1,43 @@
-# .agent_rules — GNN Pipeline Development Guidelines
+# GNN development rules
 
-**Version**: 3.0.0 | **Status**: Maintained | **Updated**: 2026-05-20
+These guides describe current contracts. Start with the root [AGENTS](../AGENTS.md)
+and [SPEC](../SPEC.md), then read the owning module. Version and dependency
+constraints are canonical in [pyproject.toml](../pyproject.toml).
 
-> **Quick Start**: Run `uv run python src/gnn/main.py --verbose` from the project root. All tooling uses `uv`.
+| Task | Guide |
+| --- | --- |
+| Thin scripts and run ownership | [Architecture](architecture.md) |
+| Module interfaces | [Module patterns](module_patterns.md) |
+| Consumer tests and evidence | [Testing](testing.md) |
+| Lint, types and documentation | [Quality](quality.md) |
+| Failure, skip and cleanup | [Error handling](error_handling.md) |
+| Installation and readiness | [Dependencies](dependencies.md) |
+| Backend scientific admission | [Render frameworks](render_frameworks.md) |
+| Model sources and extraction | [GNN standards](gnn_standards.md) |
+| MCP discovery and calls | [MCP](mcp.md) |
+| Measurement and optimization | [Performance](performance.md) |
+| Diagnosis and recovery | [Troubleshooting](troubleshooting.md) |
 
----
+Install one locked development environment before running checks:
 
-## Navigation by Task
-
-| Task | File |
-|------|------|
-| Writing a pipeline script | [architecture.md](architecture.md) |
-| Creating a new module | [module_patterns.md](module_patterns.md) |
-| Writing tests | [testing.md](testing.md) |
-| Adding MCP tools | [mcp.md](mcp.md) |
-| Understanding GNN specs | [gnn_standards.md](gnn_standards.md) |
-| Error handling / safe-to-fail | [error_handling.md](error_handling.md) |
-| Optional dependencies | [dependencies.md](dependencies.md) |
-| Render frameworks (PyMDP/JAX/etc.) | [render_frameworks.md](render_frameworks.md) |
-| Debugging issues | [troubleshooting.md](troubleshooting.md) |
-| Performance tuning | [performance.md](performance.md) |
-| Code quality standards | [quality.md](quality.md) |
-
----
-
-## Critical Standards (Must Know)
-
-### 1. Thin Orchestrator Pattern ⚠️
-Numbered scripts (`N_module.py`) are **thin orchestrators only**:
-- All domain logic lives in `src/module_name/`
-- Scripts only: argument parsing, logging setup, output directory, exit codes
-- See: [architecture.md](architecture.md)
-
-### 2. Real Implementation Testing ⚠️
-All tests use **real implementations** and real artifacts.
-- Skip gracefully when optional deps unavailable: `pytest.skip(...)`
-- See: [testing.md](testing.md)
-
-### 3. Safe-to-Fail Steps ⚠️
-Steps 8, 9, 12 (Visualization/Execute) **never stop the pipeline**:
-- Always return exit code `0`
-- Emit explicit success, skipped, failed, or degraded status artifacts with reasons
-- See: [error_handling.md](error_handling.md)
-
-### 4. Exit Codes
-| Code | Meaning | Pipeline Behavior |
-|------|---------|-------------------|
-| `0` | Success | Continue |
-| `1` | Critical Error | Stop pipeline |
-| `2` | Success with Warnings | Continue |
-
-### 5. Environment
-Always use `uv` for all operations:
 ```bash
-uv run python src/gnn/main.py --verbose    # Run pipeline
-uv run pytest tests/ -v           # Run tests
-uv pip install -e .                   # Install deps
+uv sync --frozen --extra dev --python 3.12
+uv run --frozen --no-sync gnn --help
 ```
 
----
+Use canonical `gnn.*` imports. Numbered scripts delegate to module owners;
+step names and prerequisites come from the live registry. Freeze selected
+source identities and configuration once per run. An empty model selection
+produces no work; directory contents cannot widen it or admit inherited
+artifacts as current evidence.
 
-## Pipeline Overview — 25 Steps (0–24)
+Required failures, exhausted work and failed cleanup prevent success.
+Optional unavailability has a distinct diagnosis. Continuing to later steps
+does not turn failed visualization or execution into successful work. See
+[run ownership](../docs/development/run_ownership_migration.md).
 
-| Steps | Area |
-|-------|------|
-| 0–2 | Template, Setup, Tests |
-| 3–9 | GNN Parse, Registry, Type Check, Validation, Export, Visualization |
-| 10–16 | Ontology, Render, Execute, LLM, ML, Audio, Analysis |
-| 17–24 | Integration, Security, Research, Website, MCP, GUI, Report, Intelligent Analysis |
-
----
-
-## Files in This Directory
-
-| File | Purpose |
-|------|---------|
-| `README.md` | This file — navigation and critical standards |
-| `architecture.md` | Pipeline architecture, thin orchestrator, orchestration patterns |
-| `module_patterns.md` | Module directory structure, `__init__.py`, MCP patterns |
-| `gnn_standards.md` | GNN file format, validation levels, multi-format support |
-| `testing.md` | Test framework, import patterns, fixtures, markers |
-| `quality.md` | Code quality, type hints, documentation, linting standards |
-| `error_handling.md` | Exit codes, safe-to-fail, graceful degradation, recovery |
-| `performance.md` | Benchmarks, memory optimization, caching, profiling |
-| `mcp.md` | MCP tool registration, tool structure, error handling |
-| `dependencies.md` | Core vs optional deps, detection patterns, explicit availability statuses |
-| `render_frameworks.md` | PyMDP, JAX (no Flax), RxInfer.jl, DisCoPy patterns |
-| `troubleshooting.md` | Common issues, diagnostics, recovery procedures |
-
----
-
-**Pipeline Version**: 3.0.0 | **Steps**: 25 | **Tests**: use the command of record in the repository `README.md` for current collect/pass evidence | **MCP Tools**: verify with `tests/mcp/test_mcp_audit.py`
+Count-changing source/test and manuscript changes require the complete SC-22
+ritual in [AGENTS](../AGENTS.md). Bound source changes require the
+[paired-revision procedure](../docs/development/fep_lean_paired_revision.md).
+Use [TO-DO verification](../TO-DO.md#verification-and-execution-rules) and the
+[workflows](../.github/workflows/README.md) for current gates.
