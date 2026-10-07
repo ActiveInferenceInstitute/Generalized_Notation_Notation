@@ -9,7 +9,9 @@ Framework-specific analyzer for RxInfer.jl simulation results. Part of the Analy
 ```
 analysis/rxinfer/
 ├── __init__.py          # Public API
-├── analyzer.py          # Analysis from execution logs + convergence diagnostics + per-factor beliefs
+├── analyzer.py          # Analysis orchestration and categorical plot dispatcher
+├── metrics.py           # Result normalization, convergence and per-factor beliefs
+├── result_ingestion.py  # Execution-summary discovery and JSON ingestion
 ├── animator.py          # Animated HTML visualizations
 ├── gif_animator.py      # Publication-style GIF animations + reproducibility manifest sidecar
 ├── dashboard.py         # Interactive HTML dashboard over the GIF batch (roadmap A5)
@@ -37,6 +39,12 @@ self-contained HTML page over all GIFs + manifests with category
 grouping and filtering.
 
 ### analyzer.py additions
+
+Numerical helpers live in `metrics.py`, and filesystem/JSON discovery in
+`result_ingestion.py`. Existing imports from `analyzer.py` remain available with
+the same signatures. The categorical plot dispatcher remains cohesive rather
+than being split to meet a line-count target; it consumes the same numerical
+functions. The result reader imports no numerical or plotting dependencies.
 
 - `compute_per_factor_beliefs(data)` — un-flattens joint posteriors into
   per-factor marginals using the `state_factors` echo in results JSON

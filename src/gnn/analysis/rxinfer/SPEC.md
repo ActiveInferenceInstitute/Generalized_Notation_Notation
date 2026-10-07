@@ -15,6 +15,13 @@
 
 ## Framework
 
+`result_ingestion.py` owns filesystem discovery and JSON loading.
+`metrics.py` owns result normalization and numerical diagnostics, using the
+existing shared numerical availability contract. `analyzer.py` orchestrates
+analysis and the cohesive categorical plot dispatcher. Existing analyzer
+exports and call signatures are preserved; this separation changes no
+normalization, convergence, marginalization or plot semantics.
+
 - Julia RxInfer genuine variational message-passing results (`variational_free_energy` populated with real values; previously `Float64[]`)
 - Matplotlib visualization
 
