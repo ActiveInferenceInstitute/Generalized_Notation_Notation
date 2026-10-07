@@ -90,7 +90,7 @@ def execute_rxinfer_script(
     # E-2: Validate Julia syntax before execution
     if script_path.suffix.lower() == ".jl":
         try:
-            with open(script_path, "r") as f:
+            with open(script_path, "r", encoding="utf-8") as f:
                 content = f.read()
             if not content.strip():
                 logger.error(f"Script file is empty: {script_path}")
@@ -98,8 +98,13 @@ def execute_rxinfer_script(
             logger.debug(
                 f"✅ Julia script readable: {script_path.name} ({len(content)} bytes)"
             )
-        except Exception as e:
-            logger.error(f"Could not read script: {e}")
+        except (OSError, UnicodeError) as exc:
+            logger.error(
+                "Could not read script %s (%s: %s)",
+                script_path,
+                type(exc).__name__,
+                exc,
+            )
             return False
 
     # Different handling based on file type
@@ -231,8 +236,14 @@ def execute_rxinfer_script(
             json_mod.dump(execution_log, f, indent=2)
 
         logger.debug(f"Execution logs saved to: {log_dir}")
-    except Exception as log_err:
-        logger.warning(f"Could not save execution logs: {log_err}")
+    except (OSError, UnicodeError, TypeError, ValueError) as log_err:
+        logger.warning(
+            "Could not save execution logs for %s in %s (%s: %s)",
+            script_path,
+            log_dir,
+            type(log_err).__name__,
+            log_err,
+        )
 
     return success
 

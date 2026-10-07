@@ -11,7 +11,9 @@
 
 ## Input
 
-- `.jl` scripts from `output/11_render_output/<model>/rxinfer/` (genuine `@model pomdp_model` scripts; the former TOML path is no longer supported)
+- `.jl` scripts from `output/11_render_output/<model>/rxinfer/` (genuine `@model pomdp_model` scripts)
+- Legacy `*_config.toml` inputs remain accepted by the committed
+  `rxinfer_runner.jl` adapter; the pre-execution gate scans that Julia program.
 
 ## Output
 
@@ -19,6 +21,14 @@
 - `variational_free_energy` populated with genuine VFE values (previously `Float64[]`)
 - Execution logs (stdout/stderr)
 - Convergence diagnostics (`inference_converged`, `vfe_present`)
+
+## Error Handling
+
+- Julia source is read as UTF-8. I/O or decoding failure refuses execution and
+  logs the script path and exception type before launching a subprocess.
+- Evidence persistence is best effort: expected filesystem, encoding or JSON
+  serialization failures log script, destination and typed cause without
+  replacing the completed run's boolean verdict.
 
 ## Dependencies
 
