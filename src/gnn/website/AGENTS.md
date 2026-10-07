@@ -25,6 +25,14 @@
 4. Generate cross-linked documentation
 5. Create publication-ready websites
 
+### Ownership
+
+`generator.py` composes dataset-specific content and owns per-page error
+isolation and publication. `templates.py` owns the shared offline page shell,
+styles, client search script and escaping. It consumes `pages.py` directly and
+does not import the generator or collectors. Existing generator imports and
+signatures remain available; this separation changes no generated markup.
+
 ### Key Capabilities
 - Static website generation from pipeline artifacts
 - Interactive documentation and reports

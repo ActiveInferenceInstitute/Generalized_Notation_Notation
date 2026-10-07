@@ -13,14 +13,16 @@ src/gnn/website/
 ├── processor.py       # Thin facade re-exporting renderer.process_website
 ├── renderer.py        # process_website + embed_* helpers + get_module_info
 ├── collection.py      # collect_website_data + private artifact collectors
-├── generator.py       # WebsiteGenerator / generate_website (7-page site + per-model pages + search index)
+├── generator.py       # Site orchestration and dataset-specific page content
+├── templates.py       # Offline page shell, styles, search script and escaping
 ├── inspection.py      # inspect_website / list_website_pages (pure site queries)
 └── mcp.py             # MCP tool registration (6 tools)
 ```
 
-No `templates/` or `static/` directory ships in the module and the generator
-references neither: pages are built with inline CSS/HTML and written directly
-to the output directory.
+No template engine or external static assets are needed. The presentation owner
+[`templates.py`](templates.py) composes inline CSS/HTML with the live page
+catalogue; it imports no collectors or publication code. The generator builds
+dataset-specific content, isolates page failures and writes the resulting site.
 
 ### Pipeline Integration
 

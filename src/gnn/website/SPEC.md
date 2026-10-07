@@ -9,7 +9,8 @@ The `src/gnn/website/` module generates static HTML websites from pipeline artif
 - `20_website.py`: Thin orchestrator binding `website.processor.process_website()`
 - `processor.py`: Thin facade re-exporting `renderer.process_website`
 - `collection.py`: Pipeline-artifact collectors behind `collect_website_data` (GNN files, step statuses, analysis, visualization assets, reports, MCP page data)
-- `generator.py`: Core HTML/CSS generation engine producing the 7-page site (rich pipeline-summary data folded into the generated index page), plus one per-model detail page per parsed model under `model/` and the generated `search-index.json`
+- `generator.py`: Site orchestration and dataset-specific page content producing the 7-page site, per-model detail pages and `search-index.json`; existing public entrypoints and re-exports are preserved
+- `templates.py`: Offline page shell, styles, search script and HTML escaping; depends only on the live page catalogue, never on collection or filesystem publication
 - `renderer.py`: `process_website`, embedding helpers, and module info
 - `mcp.py`: MCP tool registration for website generation operations
 
