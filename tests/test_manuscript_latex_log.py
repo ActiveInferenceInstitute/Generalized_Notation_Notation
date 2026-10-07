@@ -51,6 +51,7 @@ from gnn.manuscript.render_custody import (  # noqa: E402
     record_render_manifest,
     verify_fresh_render,
 )
+from gnn.manuscript.substitution import active_preamble  # noqa: E402
 
 LOG_PATH = REPO_ROOT / "output" / "pdf" / "_combined_manuscript.log"
 TEX_PATH = REPO_ROOT / "output" / "pdf" / "_combined_manuscript.tex"
@@ -189,7 +190,7 @@ def test_the_log_carries_no_personal_machine_paths() -> None:
 
 def test_the_preamble_declares_what_the_template_requires() -> None:
     """``listings`` and the three theorem environments are declared in-repo."""
-    preamble = PREAMBLE_PATH.read_text(encoding="utf-8")
+    preamble = active_preamble(PREAMBLE_PATH.read_text(encoding="utf-8"))
     missing = [
         name
         for name, pattern in REQUIRED_PREAMBLE_DECLARATIONS.items()
@@ -200,7 +201,9 @@ def test_the_preamble_declares_what_the_template_requires() -> None:
 
 def test_the_preamble_patterns_reject_a_preamble_without_them() -> None:
     """The patterns have teeth: a commented-out or renamed declaration is absent."""
-    stripped = "\\usepackage{xcolor}\n\\newtheorem{lemma}{Lemma}\n"
+    stripped = active_preamble(
+        "prose \\usepackage{listings}\n```latex\n% \\usepackage{listings}\n% \\newtheorem{theorem}{Theorem}\n\\usepackage{xcolor}\n\\newtheorem{lemma}{Lemma}\n```\n"
+    )
     assert all(
         pattern.search(stripped) is None
         for pattern in REQUIRED_PREAMBLE_DECLARATIONS.values()
@@ -461,6 +464,12 @@ def _hydration_fixture(tmp_path: Path) -> Path:
     )
     for name in ("preamble.md", "references.bib"):
         (out / name).write_bytes((root / "manuscript" / name).read_bytes())
+    pdf = root / "output/pdf"
+    pdf.mkdir()
+    for suffix in ("md", "tex"):
+        (pdf / f"_combined_manuscript.{suffix}").write_text(
+            "rendered at abc1234\n", encoding="utf-8"
+        )
     return root
 
 
@@ -485,7 +494,7 @@ def test_a_token_map_regenerated_without_rehydrating_fails(tmp_path: Path) -> No
         encoding="utf-8",
     )
     issues = hydration_issues(root, _EXCLUDED)
-    assert len(issues) == 1, issues
+    assert len(issues) == 3, issues
     assert "output/manuscript/05_reproducibility.md" in issues[0], issues
     assert "def5678" in issues[0], issues
 
@@ -497,7 +506,7 @@ def test_a_commit_only_regeneration_fails_too(tmp_path: Path) -> None:
         json.dumps({"GNN_GIT_COMMIT": "def5678", "GNN_STEP_COUNT": "25"}),
         encoding="utf-8",
     )
-    assert len(hydration_issues(root, _EXCLUDED)) == 1
+    assert len(hydration_issues(root, _EXCLUDED)) == 3
 
 
 def test_a_source_edit_never_hydrated_fails(tmp_path: Path) -> None:

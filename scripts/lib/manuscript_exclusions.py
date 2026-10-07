@@ -9,11 +9,9 @@ wrong files). They live here now, with the contract stated once:
 
 ``EXCLUDED_DOC_FILENAMES``
     ``manuscript/*.md`` files the render pipeline does NOT token-substitute,
-    so no scanner may treat their text as published prose. Frozen mirror of
-    ``infrastructure.rendering.manuscript_injection.EXCLUDED_DOC_FILENAMES``;
-    the token gate still prefers the template's own value when the template
-    checkout is importable, because that is what actually ships — this set is
-    the standalone fallback and the shared literal.
+    so no scanner may treat their text as published prose. Imported from the
+    shared ``gnn.manuscript.substitution`` contract, which prefers the template's
+    actual value when importable and otherwise uses the headless fallback.
 
 ``AUTHORING_GUIDE_FILENAMES``
     The subset that is a mere authoring guide (examples, commands, embedded
@@ -25,8 +23,17 @@ wrong files). They live here now, with the contract stated once:
 
 from __future__ import annotations
 
-EXCLUDED_DOC_FILENAMES = frozenset(
-    {"AGENTS.md", "MANUSCRIPT_STATUS.md", "README.md", "SYNTAX.md"}
-)
+import sys
+from pathlib import Path
+
+# These script helpers also run from an uninstalled source checkout.
+_SOURCE_ROOT = Path(__file__).resolve().parents[2] / "src"
+if str(_SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SOURCE_ROOT))
+
+
+from gnn.manuscript.substitution import EXCLUDED_DOC_FILENAMES  # noqa: E402
+
+__all__ = ["EXCLUDED_DOC_FILENAMES", "AUTHORING_GUIDE_FILENAMES"]
 
 AUTHORING_GUIDE_FILENAMES = frozenset({"SYNTAX.md", "README.md", "AGENTS.md"})

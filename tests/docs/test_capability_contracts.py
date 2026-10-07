@@ -34,9 +34,9 @@ def test_v350_version_pair_contract_fires(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A 3.5.0 release without a v4.0.0 next-target must fail the ladder."""
-    todo_text = check_capability_contracts._read("TO-DO.md").replace(
-        "**Next Target**: v4.0.0", "**Next Target**: v5.0.0"
-    )
+    # This historical contract needs an explicit historical fixture. The live
+    # roadmap need not retain these fields once the release program advances.
+    todo_text = "**Current Version**: 3.5.0\n**Next Target**: v5.0.0\n"
     _patched_read(monkeypatch, {"TO-DO.md": todo_text})
 
     assert "TO-DO.md: v3.5.0 release must set v4.0.0 as next target" in run_audit()
@@ -63,7 +63,9 @@ def test_v350_executor_registry_contract_fires(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Dropping a backend from FRAMEWORK_DIR_NAMES must fail the v3.5.0 pin."""
-    executor_text = check_capability_contracts._read("src/gnn/execute/executor_specs.py")
+    executor_text = check_capability_contracts._read(
+        "src/gnn/execute/executor_specs.py"
+    )
     match = re.search(
         r"FRAMEWORK_DIR_NAMES: tuple\[str, \.\.\.\] = \((?P<names>[^)]*)\)",
         executor_text,
@@ -82,7 +84,7 @@ def test_v350_executor_registry_contract_fires(
 
     failures = run_audit()
     assert any(
-        "FRAMEWORK_DIR_NAMES must close to eleven backends" in failure
+        "FRAMEWORK_DIR_NAMES must match maintained registry capabilities" in failure
         for failure in failures
     )
     assert any(

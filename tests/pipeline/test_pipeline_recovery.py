@@ -200,14 +200,22 @@ class TestHardwareInitialization:
         assert str(devices[0])
 
     def test_execution_hardware_recovery(
-        self, test_environment: Any, sample_gnn_file: Any
+        self, test_environment: Any, monkeypatch: pytest.MonkeyPatch
     ) -> Any:
-        """Test execution with hardware recovery."""
+        """A rendered Python workload executes on an actual CPU device."""
         from gnn.execute.executor import execute_gnn_model
 
-        result = execute_gnn_model(sample_gnn_file, test_environment / "output")
+        script = test_environment / "input" / "hardware_jax.py"
+        script.write_text("import jax\nprint(jax.devices('cpu')[0].platform)\n")
+        monkeypatch.setenv("JAX_PLATFORMS", "cpu")
+        result = execute_gnn_model(
+            str(script), "jax", {"output_dir": str(test_environment / "output")}
+        )
 
         assert result["status"] == "SUCCESS"
+        assert result["success"] is True
+        assert result["return_code"] == 0
+        assert result["stdout"].strip() == "cpu"
         assert result["execution_device"] == "cpu"
 
 

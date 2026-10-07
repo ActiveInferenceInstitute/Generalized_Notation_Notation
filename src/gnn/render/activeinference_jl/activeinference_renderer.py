@@ -15,8 +15,6 @@ from typing import Any, Dict, List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 from gnn.render.multi_agent_common import (
-    canonicalise_b,
-    detect_agent_groups,
     detect_env_conditioned,
     detect_env_coupling,
     has_native_multi_agent_structure,
@@ -96,6 +94,12 @@ def render_gnn_to_activeinference_jl(
     Returns:
         Tuple of (success: bool, message: str, artifact_uris: List[str])
     """
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(gnn_spec, "activeinference_jl")
+    if refusal:
+        return False, refusal, []
+
     try:
         logger.info(
             f"Rendering GNN specification to ActiveInference.jl script for model: {gnn_spec.get('name', 'unknown')}"
@@ -175,12 +179,12 @@ def _generate_canonical_activeinference_script(model_info: Dict[str, Any]) -> st
     action_precision = float(model_info["action_precision"])
     spec_json = str(model_info["spec_json"])
     spec_json_b64 = base64.b64encode(spec_json.encode("utf-8")).decode("ascii")
-    model_name_literal = json.dumps(model_name)
+    model_name_literal = json.dumps(model_name).replace("$", r"\$")
     b_tensor_order_literal = json.dumps("next_state_previous_state_action")
 
     return f'''#!/usr/bin/env julia
 # ActiveInference.jl discrete POMDP simulation
-# Generated from GNN Model: {model_name}
+# Generated from GNN Model: {json.dumps(model_name)}
 
 using Pkg
 using ActiveInference
@@ -948,7 +952,9 @@ def _multi_agent_model_info(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
     common runtime parameters from ``model_parameters``. No joint state
     space is composed (roadmap MAJ-03).
     """
-    agents = detect_agent_groups(gnn_spec)
+    from gnn.render.multi_agent_common import validate_native_agent_groups
+
+    agents = validate_native_agent_groups(gnn_spec)
     env = detect_env_coupling(gnn_spec)
     env_cond = detect_env_conditioned(gnn_spec)
 
@@ -1010,19 +1016,18 @@ def _generate_stigmergic_activeinference_script(model_info: Dict[str, Any]) -> s
         if env_action_conditioned
         else "post_hoc_deposit_decay_trace"
     )
-    num_actions = int(model_info.get("num_actions", 3))
     n_timesteps = int(model_info["n_timesteps"])
     random_seed = int(model_info["random_seed"])
     action_precision = float(model_info["action_precision"])
     spec_json = str(model_info["spec_json"])
     spec_json_b64 = base64.b64encode(spec_json.encode("utf-8")).decode("ascii")
-    model_name_literal = json.dumps(model_name)
+    model_name_literal = json.dumps(model_name).replace("$", r"\$")
 
     agent_names_literal = json.dumps(agents)
     agent_as = json.dumps([m["A"] for m in matrices])
     # B is canonicalised to (next_state, previous_state, action) exactly as
     # the composed-joint path does, so per-agent semantics match.
-    agent_bs = json.dumps([canonicalise_b(m["B"], num_actions) for m in matrices])
+    agent_bs = json.dumps([m["B"] for m in matrices])
     agent_cs = json.dumps([m["C"] for m in matrices])
     agent_ds = json.dumps([m["D"] for m in matrices])
 
@@ -1048,7 +1053,7 @@ def _generate_stigmergic_activeinference_script(model_info: Dict[str, Any]) -> s
 
     return f'''#!/usr/bin/env julia
 # ActiveInference.jl stigmergic multi-agent simulation
-# Generated from GNN Model: {model_name}
+# Generated from GNN Model: {json.dumps(model_name)}
 #
 # Native per-agent compilation (roadmap MAJ-03): one Active Inference agent
 # per declared agent group (no joint state-space expansion). After all

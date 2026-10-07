@@ -10,12 +10,13 @@ call time so executor-namespace monkeypatches stay observable.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from gnn.execute.executor import _RunnerState
+    from gnn.utils.runtime_safety.framework_availability import FrameworkStatus
 
 
 def _runner_state(framework_dir_key: str) -> "_RunnerState":
@@ -34,6 +35,7 @@ FRAMEWORK_DIR_NAMES: tuple[str, ...] = (
     "numpyro",
     "pytorch",
     "ngclearn",
+    "thrml",
     "lean",
     "stan",
     "bnlearn",
@@ -56,6 +58,8 @@ class ExecutorFrameworkSpec:
     unavailable_message: str
     success_log: str
     warning_log_prefix: str
+    diagnosis: "FrameworkStatus | None" = None
+    readiness_pending: bool = False
 
 
 def _run_stan_registry(
@@ -64,38 +68,59 @@ def _run_stan_registry(
     recursive_search: bool,  # noqa: ARG001 - uniform registry runner signature
     verbose: bool,
     timeout: Optional[int],
-) -> bool:
-    """Registry adapter mapping ``run_stan_scripts`` records to the bool contract.
-
-    ``run_stan_scripts`` already emits skip receipts (never FAILED) when
-    cmdstanpy is missing; the run succeeds when every record is a success
-    or a skip, including the empty-tree case.
-    """
+) -> list[dict[str, Any]]:
+    """Preserve per-script success, failure and skip receipts for aggregation."""
     from .stan.stan_runner import run_stan_scripts
 
     records = run_stan_scripts(
         render_output_dir=rendered_simulators_dir,
         output_dir=execution_output_dir,
-        timeout=timeout or 1800,
+        timeout=timeout if timeout is not None else 1800,
     )
-    return all(
-        bool(record.get("success")) or bool(record.get("skipped")) for record in records
+    return records
+
+
+def _run_bnlearn_registry(
+    rendered_simulators_dir: Path,
+    execution_output_dir: Path,
+    recursive_search: bool,
+    verbose: bool,
+    timeout: Optional[int],
+) -> list[dict[str, Any]]:
+    """Adapt the maintained runner without converting skipped work to success."""
+    from .bnlearn.bnlearn_runner import run_bnlearn_scripts
+
+    del recursive_search, verbose
+    return run_bnlearn_scripts(
+        rendered_simulators_dir,
+        execution_output_dir,
+        timeout=timeout if timeout is not None else 1800,
     )
 
 
-def _framework_specs() -> tuple[ExecutorFrameworkSpec, ...]:
-    """Return framework specs with availability resolved via _runner_state."""
-    pymdp_state = _runner_state("pymdp")
-    rxinfer_state = _runner_state("rxinfer")
-    discopy_state = _runner_state("discopy")
-    activeinference_state = _runner_state("activeinference_jl")
-    jax_state = _runner_state("jax")
-    numpyro_state = _runner_state("numpyro")
-    pytorch_state = _runner_state("pytorch")
-    ngclearn_state = _runner_state("ngclearn")
-    lean_state = _runner_state("lean")
-    stan_state = _runner_state("stan")
-    return (
+def _framework_specs(
+    *, resolve_availability: bool = True
+) -> tuple[ExecutorFrameworkSpec, ...]:
+    """Return live readiness or probe-free metadata from the same registry."""
+    from gnn.execute.executor import _RunnerState
+
+    states = {
+        key: _runner_state(key) if resolve_availability else _RunnerState(False, None)
+        for key in FRAMEWORK_DIR_NAMES
+    }
+    pymdp_state = states["pymdp"]
+    rxinfer_state = states["rxinfer"]
+    discopy_state = states["discopy"]
+    activeinference_state = states["activeinference_jl"]
+    jax_state = states["jax"]
+    numpyro_state = states["numpyro"]
+    pytorch_state = states["pytorch"]
+    ngclearn_state = states["ngclearn"]
+    thrml_state = states["thrml"]
+    lean_state = states["lean"]
+    stan_state = states["stan"]
+    bnlearn_state = states["bnlearn"]
+    specs = (
         ExecutorFrameworkSpec(
             framework_dir_key="pymdp",
             result_key="pymdp_executions",
@@ -241,6 +266,20 @@ def _framework_specs() -> tuple[ExecutorFrameworkSpec, ...]:
             warning_log_prefix="ngc-learn script execution failed",
         ),
         ExecutorFrameworkSpec(
+            framework_dir_key="thrml",
+            result_key="thrml_executions",
+            available=thrml_state.available,
+            runner=thrml_state.runner,
+            operation_name="execute_thrml_scripts",
+            start_message="Executing THRML scripts...",
+            success_message="THRML scripts executed successfully",
+            failure_message="THRML script execution failed",
+            unavailable_log="THRML runtime unavailable; uv sync --extra thrml",
+            unavailable_message="THRML runtime unavailable (uv sync --extra thrml)",
+            success_log="THRML script execution completed",
+            warning_log_prefix="THRML script execution failed",
+        ),
+        ExecutorFrameworkSpec(
             framework_dir_key="lean",
             result_key="lean_executions",
             available=lean_state.available,
@@ -282,22 +321,27 @@ def _framework_specs() -> tuple[ExecutorFrameworkSpec, ...]:
         ExecutorFrameworkSpec(
             framework_dir_key="bnlearn",
             result_key="bnlearn_executions",
-            available=False,
-            runner=None,
+            available=bnlearn_state.available,
+            runner=_run_bnlearn_registry,
             operation_name="execute_bnlearn_scripts",
             start_message="🚀 Executing bnlearn scripts...",
             success_message="bnlearn scripts executed successfully",
             failure_message="bnlearn script execution failed",
             unavailable_log=(
-                "ℹ️ bnlearn is render-only - skipping bnlearn execution "
-                "(rendered bnlearn scripts execute via the Step 12 script "
-                "path (BNLEARN_OUTPUT_DIR) with dependency skips)"
+                "ℹ️ bnlearn runtime unavailable - install with uv sync --extra bnlearn"
             ),
             unavailable_message=(
-                "bnlearn is render-only; rendered bnlearn scripts execute via "
-                "the Step 12 script path (BNLEARN_OUTPUT_DIR) with dependency skips"
+                "bnlearn runtime unavailable (uv sync --extra bnlearn; BNLEARN_OUTPUT_DIR)"
             ),
             success_log="bnlearn script execution completed",
             warning_log_prefix="bnlearn script execution failed",
         ),
+    )
+    return tuple(
+        replace(
+            spec,
+            diagnosis=states[spec.framework_dir_key].diagnosis,
+            readiness_pending=not resolve_availability,
+        )
+        for spec in specs
     )

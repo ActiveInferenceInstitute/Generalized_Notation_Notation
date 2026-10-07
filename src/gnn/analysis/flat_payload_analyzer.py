@@ -94,6 +94,10 @@ def _generate_plots(
 
     Returns True if at least one plot was written; False if matplotlib is
     unavailable or no plottable data.
+
+    Raises:
+        ValueError: The belief plot would exceed 64,000,000 canvas pixels
+            at its saved 150 dpi. Working buffers remain subject to the watchdog.
     """
     if not MATPLOTLIB_AVAILABLE or plt is None:
         logger.warning("matplotlib not available — skipping plots")
@@ -103,13 +107,40 @@ def _generate_plots(
     saved = False
 
     if beliefs.ndim == 2 and beliefs.shape[0] > 0:
-        fig, ax = plt.subplots(figsize=(10, 4))
+        legend_columns = max(1, min(4, beliefs.shape[1]))
+        legend_rows = (beliefs.shape[1] + legend_columns - 1) // legend_columns
+        legend_height = 0.7 + 0.3 * legend_rows if beliefs.shape[1] > 8 else 0
+        figure_size = (10, 4 + legend_height)
+        # Admit the nominal 150-dpi canvas; RGBA and working buffers remain watchdog-owned.
+        canvas_pixels = figure_size[0] * figure_size[1] * 150**2
+        if canvas_pixels > 64_000_000:
+            raise ValueError(
+                f"Belief trajectory with {beliefs.shape[1]} states requires "
+                f"{canvas_pixels:,.0f} canvas pixels; limit is 64,000,000"
+            )
+        if beliefs.shape[1] > 8:
+            fig, (ax, legend_ax) = plt.subplots(
+                2,
+                1,
+                figsize=figure_size,
+                gridspec_kw={"height_ratios": (4, legend_height)},
+            )
+            legend_ax.set_axis_off()
+        else:
+            fig, ax = plt.subplots(figsize=figure_size)
+            legend_ax = ax
         for s in range(beliefs.shape[1]):
             ax.plot(beliefs[:, s], label=f"State {s}", linewidth=1.5)
         ax.set_xlabel("Timestep", fontsize=14)
         ax.set_ylabel("Belief", fontsize=14)
         ax.set_title(f"{spec.title_prefix} — Belief Trajectory", fontsize=16)
-        ax.legend(fontsize=12)
+        if legend_ax is ax:
+            ax.legend(fontsize=12, ncol=legend_columns)
+        else:
+            handles, labels = ax.get_legend_handles_labels()
+            legend_ax.legend(
+                handles, labels, loc="center", fontsize=12, ncol=legend_columns
+            )
         ax.tick_params(labelsize=12)
         fig.tight_layout()
         fig.savefig(output_dir / "belief_trajectory.png", dpi=150)

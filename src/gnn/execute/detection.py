@@ -79,7 +79,9 @@ def parse_frameworks_parameter(frameworks: str, logger: Any) -> List[str]:
         List of framework names to include
     """
     if not frameworks or frameworks.lower() == "all":
-        return list(ALL_FRAMEWORKS)
+        from gnn.render.framework_registry import get_default_frameworks
+
+        return get_default_frameworks() + ["lean"]
 
     if frameworks.lower() == "lite":
         return list(LITE_FRAMEWORKS)
@@ -231,6 +233,8 @@ def find_executable_scripts(
         "stan": "stan",
         "bnlearn": "bnlearn",
         "ngclearn": "ngclearn",
+        "cpomdp": "cpomdp",
+        "thrml": "thrml",
     }
 
     # Normalise the base directory for consistent framework detection and

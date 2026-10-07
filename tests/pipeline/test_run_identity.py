@@ -228,6 +228,7 @@ def test_interrupt_restores_environment(
 
 
 def test_overlapping_top_level_calls_serialize_environment(
+    isolated_run: PipelineArguments,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from concurrent.futures import ThreadPoolExecutor
@@ -251,11 +252,11 @@ def test_overlapping_top_level_calls_serialize_environment(
 
     def second() -> int:
         second_started.set()
-        return orchestrator.main()
+        return orchestrator.main(isolated_run)
 
     monkeypatch.setattr(orchestrator, "_run_pipeline", run)
     with ThreadPoolExecutor(max_workers=2) as pool:
-        first = pool.submit(orchestrator.main)
+        first = pool.submit(orchestrator.main, isolated_run)
         try:
             assert entered.wait(5)
             other = pool.submit(second)

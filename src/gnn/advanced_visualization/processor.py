@@ -133,6 +133,12 @@ def _load_gnn_models(
 
     if not results_file.exists():
         logger.warning(f"GNN processing results not found at {results_file}")
+        from gnn.pipeline.run_context import current_run_context
+
+        if current_run_context() is not None:
+            raise ValueError(
+                "Current-run Step 3 receipt is required for advanced visualization"
+            )
         # Try to find any parsed JSON files in the GNN output directory
         parsed_files = sorted(gnn_output_dir.glob("**/*_parsed.json"))
         logger.info(f"Found {len(parsed_files)} parsed files in {gnn_output_dir}")
@@ -156,6 +162,14 @@ def _load_gnn_models(
     try:
         with open(results_file) as f:
             processing_results = json.load(f)
+        from gnn.pipeline.run_context import current_run_context
+
+        context = current_run_context()
+        if context is not None and processing_results.get("run_id") != context.run_id:
+            raise ValueError("Step 3 model inventory belongs to a different run")
+        allowed_stems = (
+            {m.artifact_stem for m in context.selected_models(9)} if context else None
+        )
 
         models = {}
         # The results file uses "processed_files" not "results"
@@ -177,6 +191,8 @@ def _load_gnn_models(
                     model_name = parsed_model_file.split("/")[-1].replace(
                         "_parsed.json", ""
                     )
+                    if allowed_stems is not None and model_name not in allowed_stems:
+                        continue
 
                     # Construct full path to parsed file
                     parsed_file = Path(parsed_model_file)
@@ -281,6 +297,12 @@ def _save_results(
             for a in results.attempts
         ],
     }
+    from gnn.pipeline.run_context import current_run_context
+
+    context = current_run_context()
+    if context is not None:
+        summary["run_id"] = context.run_id
+        summary["model_selection"] = [m.__dict__ for m in context.selected_models(9)]
 
     output_file = output_dir / "advanced_viz_summary.json"
     try:

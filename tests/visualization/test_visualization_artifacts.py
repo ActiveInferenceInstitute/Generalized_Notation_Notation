@@ -287,6 +287,38 @@ class TestTypeCategoryPieChart:
         assert path is not None
         _assert_png_written(path)
 
+    @pytest.mark.parametrize("container_shape", [False, True])
+    def test_supported_api_shapes_keep_labels_and_percentage_text(
+        self, container_shape: bool, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        from types import SimpleNamespace
+
+        from matplotlib.axes import Axes
+
+        from gnn.type_checker.visualizer import (
+            _pie_parts,
+            generate_type_category_pie_chart,
+        )
+
+        original = Axes.pie
+        observed: list[str] = []
+
+        def pie(ax: Any, *args: Any, **kwargs: Any) -> Any:
+            wedges, texts, percentages = _pie_parts(original(ax, *args, **kwargs))
+            observed.extend(text.get_text() for text in percentages)
+            if container_shape:
+                return SimpleNamespace(wedges=wedges, texts=(texts, percentages))
+            return wedges, texts, percentages
+
+        monkeypatch.setattr(Axes, "pie", pie)
+        path = generate_type_category_pie_chart(
+            {"type_analysis": [{"type_distribution": {"float": 3, "int": 1}}]},
+            tmp_path,
+        )
+        assert path is not None
+        _assert_png_written(path)
+        assert observed == ["75.0%", "25.0%"]
+
 
 class TestBoxplotTickLabels:
     """Box plots must use ``tick_labels=`` (``labels=`` removed in 3.11)."""
@@ -300,15 +332,25 @@ class TestBoxplotTickLabels:
             raw = rng.random((steps, states)) + 0.1
             return (raw / raw.sum(axis=1, keepdims=True)).tolist()
 
+        # Both traces describe the same synthetic source and inference inputs.
+        identity = {
+            "model_id": "plot-compatibility/model",
+            "source_sha256": "a" * 64,
+            "source_relative_path": "plot-compatibility/model.md",
+            "model_kind": "discrete",
+            "inference_mode": "filtering",
+            "dtype": "float64",
+            "belief_axes": ["timestep", "state"],
+            "observations": [0, 1, 0, 1, 0, 1],
+            "actions": [0, 1, 0, 1, 0, 1],
+        }
         framework_data = {
-            "pymdp": {
-                "framework": "pymdp",
-                "simulation_data": {"beliefs": beliefs(), "actions": [0, 1, 0]},
-            },
-            "jax": {
-                "framework": "jax",
-                "simulation_data": {"beliefs": beliefs(), "actions": [1, 1, 0]},
-            },
+            framework: {
+                "framework": framework,
+                **identity,
+                "simulation_data": {"beliefs": beliefs()},
+            }
+            for framework in ("pymdp", "jax")
         }
         generate_unified_framework_dashboard(framework_data, tmp_path, "Test Model")
         _assert_png_written(tmp_path / "unified_entropy_comparison.png")
@@ -474,6 +516,7 @@ def test_step8_clean_file_and_rank4_tensor_exit_zero(
 
 @pytest.mark.pipeline
 @pytest.mark.slow
+@pytest.mark.timeout(900)
 def test_step8_script_clean_corpus_exits_zero(tmp_path: Path) -> None:
     env = {**os.environ, "MPLBACKEND": "Agg"}
     proc = subprocess.run(
@@ -489,7 +532,7 @@ def test_step8_script_clean_corpus_exits_zero(tmp_path: Path) -> None:
         text=True,
         cwd=REPO_ROOT,
         env=env,
-        timeout=900,
+        timeout=890,
     )
     log = proc.stdout + proc.stderr
     assert proc.returncode == 0, log[-4000:]

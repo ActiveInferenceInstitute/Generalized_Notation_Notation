@@ -8,11 +8,21 @@
 
 **Category**: Testing / Quality Assurance
 
-**Status**: Production Ready
+**Status**: Maintained; candidate checks accepted at their recorded source, final publication checks pending
 
-**Version**: 3.2.0
+**Version**: [pyproject.toml](../pyproject.toml) (canonical; v4 candidate is unreleased)
 
-**Last Updated**: 2026-09-04
+**Last Updated**: 2026-09-04 (historical module documentation)
+
+Release reconciliation: historical test counts and receipts retain their original
+source identities. The current
+[2026-10-06 snapshot](../SCOPE-2026-10-01.md) records 18 successful hosted checks
+at GNN `951dc7d3f58cfd3ef7106caa321c1d3c7d2ad51a`, the completed provisioned
+local suite and the independently accepted numerical/namespace scope. A3/W2/H5
+evidence remains historical in the
+[verification ledger](../docs/development/verification_2026_10_01.json).
+Renew exact-head checks after final content and companion-pin changes; report
+each selection separately without summing overlapping suites.
 
 ---
 
@@ -306,7 +316,7 @@ output/2_tests_output/
 ### Latest Execution
 - **Duration**: ~5-15 minutes for comprehensive suite
 - **Memory**: ~100-300MB during test execution
-- **Status**: Production Ready
+- **Status**: Maintained; final v4 acceptance pending
 
 ### Expected Performance
 - **Fast Tests**: 1-3 minutes

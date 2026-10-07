@@ -31,8 +31,7 @@ MIN_PYTHON_VERSION = (3, 11)
 
 # Extra ``uv sync --extra …`` groups for step 1 when non-empty. Core Step 12
 # backends, LLM clients, and interactive visualization are default dependencies;
-# PyTorch and bnlearn remain manual optional backends until the current no-patch
-# torch advisory can be resolved safely.
+# PyTorch, bnlearn, Stan, cpomdp, THRML, and ngc-learn remain explicit optional backends.
 SETUP_DEFAULT_PIPELINE_EXTRAS: tuple[str, ...] = ()
 
 OPTIONAL_GROUPS: dict[str, Any] = {
@@ -44,5 +43,11 @@ OPTIONAL_GROUPS: dict[str, Any] = {
     "graphs": "Graphviz bindings for graph rendering workflows",
     "research": "Research tools (jupyterlab, sympy, numba, cython)",
     "scaling": "Scaling (dask, distributed, ray)",
+    "torch": "PyTorch tensor simulation backend",
+    "stan": "Stan Python driver (CmdStan toolchain installed separately)",
+    "bnlearn": "Bayesian network learning backend",
+    "cpomdp": "Experimental continuous POMDP inference backend",
+    "thrml": "Experimental THRML categorical Gibbs sampling backend",
+    "ngclearn": "ngc-learn runtime (Python >= 3.12)",
     "all": "All functionally distinct optional dependency groups combined",
 }

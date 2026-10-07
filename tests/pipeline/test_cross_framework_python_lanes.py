@@ -48,7 +48,7 @@ PYTHON_LANES: dict[str, tuple[Any, str, str, str, str]] = {
         "PYTORCH_OUTPUT_DIR",
         "gnn.render.pytorch.pytorch_renderer",
         "render_gnn_to_pytorch",
-        "torch not installed (uv sync)",
+        "torch not installed (uv sync --extra torch)",
     ),
     "numpyro": (
         _execute_numpyro,
@@ -85,9 +85,7 @@ class TestUnavailableReceipts:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, framework: str
     ) -> None:
         execute, _env_var, _module, _fn, detail = PYTHON_LANES[framework]
-        monkeypatch.setattr(
-            cross_framework, "is_framework_available", _never_available
-        )
+        monkeypatch.setattr(cross_framework, "is_framework_available", _never_available)
 
         fw_dir = tmp_path / framework
         run = execute({}, fw_dir)
@@ -180,9 +178,7 @@ class TestHappyPath:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """The PyMDP lane still redirects results and pins the project root."""
-        monkeypatch.setattr(
-            cross_framework, "is_framework_available", _never_available
-        )
+        monkeypatch.setattr(cross_framework, "is_framework_available", _never_available)
         # The pymdp lane disables the probe; inject a fake renderer module so
         # the lane runs without the pymdp dependency installed.
         stub = types.ModuleType("gnn.render.pymdp.pymdp_renderer")

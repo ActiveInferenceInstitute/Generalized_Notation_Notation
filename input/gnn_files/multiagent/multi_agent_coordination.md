@@ -167,6 +167,10 @@ t=Time
 
 ## ModelParameters
 
+# v4 axis clarification: numeric B_agentN values are unchanged. Each outer
+# block is an action; rows are next states and columns are previous states.
+b_tensor_order: action_next_state_previous_state
+
 num_hidden_states: 16
 num_obs: 16
 num_actions: 3

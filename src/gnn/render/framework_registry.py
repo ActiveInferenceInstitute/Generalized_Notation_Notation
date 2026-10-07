@@ -81,6 +81,11 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
             "unavailable_reason": None,
         },
         "jax": {
+            "execution_contracts": [
+                "block_reset_v1",
+                "timed_soft_controller_v1",
+                "episodic_contingent_v1",
+            ],
             "name": "JAX",
             "description": "High-performance numerical computing with automatic differentiation",
             "language": "Python",
@@ -218,6 +223,51 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
             "continuous_only": False,
             "unavailable_reason": None,
         },
+        "cpomdp": {
+            "name": "cpomdp",
+            "description": "Experimental released continuous active-inference backend",
+            "language": "Python",
+            "file_extension": ".py",
+            "supported_features": ["Kalman Filtering", "Finite Policy EFE Search"],
+            "function": "render_gnn_to_cpomdp",
+            "output_format": "python",
+            "pomdp_compatible": True,
+            "requires_matrices": [],
+            "optional_matrices": ["F", "H", "Q", "R", "prior_mean", "prior_cov"],
+            "supports_multi_modality": False,
+            "supports_multi_factor": False,
+            "available": True,
+            "supports_execution": True,
+            "supports_continuous": True,
+            "continuous_only": True,
+            "experimental": True,
+            "unavailable_reason": None,
+        },
+        "thrml": {
+            "name": "THRML",
+            "description": "Experimental released categorical Gibbs sampling backend",
+            "language": "Python",
+            "file_extension": ".py",
+            "supported_features": [
+                "Conditional Gibbs Sampling",
+                "Fixed-action Posterior Smoothing",
+                "Independent Component Composition",
+                "Bounded Factored and Observation Composition",
+            ],
+            "function": "render_gnn_to_thrml",
+            "output_format": "python",
+            "pomdp_compatible": True,
+            "requires_matrices": ["A", "B", "C", "D"],
+            "optional_matrices": ["E"],
+            "supports_multi_modality": True,
+            "supports_multi_factor": True,
+            "available": True,
+            "supports_execution": True,
+            "supports_continuous": False,
+            "continuous_only": False,
+            "experimental": True,
+            "unavailable_reason": None,
+        },
         "ngclearn": {
             "name": "ngc-learn",
             "description": "ngc-learn predictive-processing neural simulation backend",
@@ -257,6 +307,15 @@ def get_supported_frameworks() -> list[str]:
     return list(FRAMEWORK_REGISTRY.keys())
 
 
+def get_default_frameworks() -> list[str]:
+    """Return maintained targets; experimental backends require selection."""
+    return [
+        name
+        for name, spec in FRAMEWORK_REGISTRY.items()
+        if not spec.get("experimental", False)
+    ]
+
+
 def get_available_renderers() -> Dict[str, Dict[str, Any]]:
     """Return renderer metadata without POMDP validation-only fields."""
     renderer_fields = {
@@ -269,6 +328,7 @@ def get_available_renderers() -> Dict[str, Dict[str, Any]]:
         "output_format",
         "pomdp_compatible",
         "supports_execution",
+        "experimental",
     }
     return {
         name: {
@@ -293,6 +353,7 @@ def get_pomdp_framework_configs() -> Dict[str, Dict[str, Any]]:
             "supports_execution": bool(spec.get("supports_execution", True)),
             "supports_continuous": bool(spec.get("supports_continuous", False)),
             "continuous_only": bool(spec.get("continuous_only", False)),
+            "experimental": bool(spec.get("experimental", False)),
             "name": spec["name"],
         }
         for name, spec in FRAMEWORK_REGISTRY.items()

@@ -47,6 +47,7 @@ from pathlib import Path
 if str(Path(__file__).resolve().parents[3]) not in sys.path:  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
+from gnn.manuscript.substitution import hydrate_text  # noqa: E402
 from gnn.manuscript.variables import token_checksum  # noqa: E402
 
 __all__ = [
@@ -79,7 +80,6 @@ _SOURCE_MANUSCRIPT_REL = Path("manuscript")
 # the auxiliary files ``write_resolved_manuscript_tree`` copies verbatim
 # (``preamble.md`` is substituted first and then overwritten by the copy,
 # so verbatim is what ships). Every ``*.bib`` is copied verbatim too.
-_TOKEN_RE = re.compile(r"\{\{([A-Z][A-Z0-9_]*)\}\}")
 _VERBATIM_AUX = ("config.yaml", "preamble.md")
 HYDRATION_FIX = (
     "rerun the full SC-22 ritual (python -m scripts.manuscript_build_figures, "
@@ -239,6 +239,20 @@ def record_render_manifest(project_root: Path) -> dict:
             rel.as_posix(): _sha256(project_root / rel) for rel in RENDERED_ARTIFACTS
         },
         "render_inputs_sha256": _render_inputs(project_root),
+        # Preserve a trustworthy normalized baseline outside Git as well.
+        # Never substitute the fresh file for an unavailable committed blob.
+        "render_artifacts_normalized_sha256": {
+            rel.as_posix(): _artifact_digest_from_bytes(
+                rel.as_posix(),
+                (project_root / rel).read_bytes(),
+                (counts_describe_commit,),
+            )
+            for rel in RENDERED_ARTIFACTS
+        },
+        "render_inputs_normalized_sha256": {
+            rel: _normalized_text_digest(project_root / rel, (counts_describe_commit,))
+            for rel in _render_inputs(project_root)
+        },
     }
     path = manifest_path(project_root)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -276,9 +290,14 @@ def _input_tree_issues(
         path = project_root / rel
         if not path.is_file():
             issues.append(f"{rel} is gone but the custody manifest records it")
-        elif _committed_input_digest(project_root, rel, digest, stamps) != (
-            _normalized_text_digest(path, stamps) if stamps else _sha256(path)
-        ):
+        elif _committed_input_digest(
+            project_root,
+            rel,
+            manifest.get("render_inputs_normalized_sha256", {}).get(rel, digest)
+            if stamps
+            else digest,
+            stamps,
+        ) != (_normalized_text_digest(path, stamps) if stamps else _sha256(path)):
             issues.append(
                 f"{rel} changed after the render the custody manifest "
                 "describes — the committed PDF evidence is stale for this "
@@ -363,18 +382,12 @@ def custody_issues(project_root: Path) -> list[str]:
                 f"{rel} changed after the custody manifest was recorded — "
                 f"re-render and re-record: {RECORD_COMMAND}"
             )
+    for rel in RENDERED_ARTIFACTS:
+        if rel.as_posix() not in manifest.get("render_artifacts_sha256", {}):
+            issues.append(f"{rel.as_posix()} is not recorded in the custody manifest")
 
     issues.extend(_input_tree_issues(project_root, manifest))
     return issues
-
-
-def hydrate_text(text: str, variables: dict[str, str]) -> str:
-    """``{{TOKEN}}`` substitution exactly as the template injector does it.
-
-    Mirrors ``substitute_manuscript_text``: a key the map does not carry is
-    left literally in place (the token gate reports it separately).
-    """
-    return _TOKEN_RE.sub(lambda m: variables.get(m.group(1), m.group(0)), text)
 
 
 def _expected_hydrated_tree(
@@ -410,8 +423,12 @@ def hydration_issues(project_root: Path, excluded: frozenset[str]) -> list[str]:
     comparison masks only the manifest's stamp and HEAD's. Prose carrying an
     older commit is drift there too.
 
+    Both rendered Markdown and TeX must carry that same commit stamp, closing
+    the prose-only hydration bypass. This is a necessary custody condition;
+    stamps alone do not certify that the renderer actually ran.
+
     ``excluded`` is the injector's ``EXCLUDED_DOC_FILENAMES`` (the caller
-    passes the shared mirror in ``scripts/lib/manuscript_exclusions.py``).
+    passes the shared active contract from ``substitution.py``).
     Returns (does not raise) so every stale file is reported at once; the
     remedy for all of them is :data:`HYDRATION_FIX`.
     """
@@ -421,7 +438,14 @@ def hydration_issues(project_root: Path, excluded: frozenset[str]) -> list[str]:
             f"{_VARIABLES_REL.as_posix()} is missing — run "
             "scripts/z_generate_manuscript_variables.py"
         ]
-    variables = json.loads(variables_path.read_text(encoding="utf-8"))
+    try:
+        variables = json.loads(variables_path.read_text(encoding="utf-8"))
+        if not isinstance(variables, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) for k, v in variables.items()
+        ):
+            raise ValueError("expected an object containing string token values")
+    except (OSError, ValueError) as exc:
+        return [f"{_VARIABLES_REL.as_posix()} is unreadable: {exc}"]
     expected = _expected_hydrated_tree(project_root, variables, excluded)
     commit = variables.get("GNN_GIT_COMMIT")
     issues: list[str] = []
@@ -442,6 +466,19 @@ def hydration_issues(project_root: Path, excluded: frozenset[str]) -> list[str]:
                 f"{rel} has no source under {_SOURCE_MANUSCRIPT_REL.as_posix()}/ "
                 "(the injector deletes stale copies)"
             )
+    if not commit or re.fullmatch(r"[0-9a-f]{7,40}", commit) is None:
+        issues.append(f"{_VARIABLES_REL.as_posix()} carries no valid GNN_GIT_COMMIT")
+    else:
+        for rendered_rel in RENDERED_ARTIFACTS[1:]:
+            path = project_root / rendered_rel
+            if not path.is_file():
+                issues.append(
+                    f"{rendered_rel.as_posix()} is missing rendered commit evidence"
+                )
+            elif not _text_contains_stamp(path.read_text(encoding="utf-8"), commit):
+                issues.append(
+                    f"{rendered_rel.as_posix()} does not carry token map commit {commit} — prose hydration alone is not a render"
+                )
     return issues
 
 
@@ -507,14 +544,10 @@ def verify_fresh_render(project_root: Path) -> list[str]:
         committed = _git_show(project_root, rel_posix)
         if committed is not None:
             return _artifact_digest_from_bytes(rel_posix, committed, stamps)
-        path = project_root / rel_posix
-        if (
-            stamps
-            and path.is_file()
-            and _text_contains_stamp(path.read_text(encoding="utf-8"), stamp)
-        ):
-            return _artifact_digest_from_bytes(rel_posix, path.read_bytes(), stamps)
-        return recorded or (_sha256(path) if path.is_file() else None)
+        normalized: str | None = manifest.get(
+            "render_artifacts_normalized_sha256", {}
+        ).get(rel_posix, recorded)
+        return normalized
 
     inputs_match = not _input_tree_issues(project_root, manifest, stamps)
     recorded_artifacts: dict[str, str] = manifest.get("render_artifacts_sha256", {})

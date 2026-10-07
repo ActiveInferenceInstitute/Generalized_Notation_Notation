@@ -30,37 +30,11 @@ def initialize_jax_devices() -> List[Any]:
 
 
 def is_jax_available() -> bool:
-    """Check if JAX is importable and print device info."""
-    try:
-        import jax
+    """Check JAX in a supervised child of the current Python interpreter."""
+    from gnn.utils.runtime_safety.framework_availability import check_framework
 
-        # Handle different JAX versions
-        try:
-            version = jax.__version__
-        except AttributeError:
-            # For older JAX versions, try alternative version attributes
-            try:
-                import jaxlib
-
-                version = jaxlib.__version__
-            except (ImportError, AttributeError):
-                version = "unknown"
-
-        logger.info(f"JAX version: {version}")
-
-        try:
-            devices = jax.devices()
-            logger.info(f"JAX devices: {[str(d) for d in devices]}")
-        except Exception as e:
-            logger.warning(f"Could not get JAX devices: {e}")
-
-        return True
-    except ImportError as e:
-        logger.error(f"JAX not available: {e}")
-        return False
-    except Exception as e:
-        logger.error(f"Error checking JAX: {e}")
-        return False
+    diagnosis = check_framework("jax", logger=logger)
+    return diagnosis.available
 
 
 def find_jax_scripts(base_dir: Union[str, Path], recursive: bool = True) -> List[Path]:
@@ -105,31 +79,15 @@ def execute_jax_script(
 
     logger.info(f"Executing JAX script: {script_path}")
 
-    # Check JAX and related dependencies
-    # Only jax and numpy are required — generated scripts use pure JAX
-    required_deps: list[Any] = ["jax", "numpy"]
-    optional_deps: list[Any] = ["flax", "optax"]
-    missing_deps: list[Any] = []
+    from gnn.execute.preconditions import script_readiness
 
-    for dep in required_deps:
-        try:
-            __import__(dep)
-            logger.debug(f"✅ Dependency available: {dep}")
-        except ImportError:
-            missing_deps.append(dep)
-            logger.warning(f"⚠️ Missing required dependency: {dep}")
-
-    for dep in optional_deps:
-        try:
-            __import__(dep)
-            logger.debug(f"✅ Optional dependency available: {dep}")
-        except ImportError:
-            logger.info(f"ℹ️ Optional dependency not installed: {dep}")
-
-    if missing_deps:
-        logger.error(f"Missing required JAX dependencies: {', '.join(missing_deps)}")
-        logger.error("Please install missing dependencies:")
-        logger.error(f"uv pip install {' '.join(missing_deps)}")
+    deadline, readiness_error = script_readiness("jax", timeout)
+    if readiness_error is not None:
+        logger.error(
+            "JAX readiness failed (%s): %s",
+            readiness_error.get("reason_code") or readiness_error.get("error_type"),
+            readiness_error.get("reason") or readiness_error.get("error"),
+        )
         return False
 
     # Validate script syntax
@@ -167,6 +125,7 @@ def execute_jax_script(
         timeout=timeout,
         cwd=abs_script_path.parent,
         env=env,
+        deadline_monotonic=deadline,
     )
 
     if envelope["return_code"] == -1 and "error" in envelope:
@@ -247,8 +206,12 @@ def run_jax_scripts(
     ``timeout`` optionally overrides the per-script execution timeout;
     when omitted each script runs with its historical 300 s default.
     """
-    if not is_jax_available():
-        logger.error("JAX is not available, cannot execute JAX scripts")
+
+    from gnn.execute.preconditions import execution_precondition
+
+    script_timeout = timeout if timeout is not None else 300
+    if execution_precondition(script_timeout, None) is not None:
+        logger.error("Invalid or exhausted script execution budget")
         return False
 
     # Set up execution output directory
@@ -266,9 +229,15 @@ def run_jax_scripts(
     success_count = 0
     failure_count = 0
 
-    script_timeout = timeout if timeout is not None else 300
     for script_file in script_files:
-        if execute_jax_script(script_file, verbose, device, timeout=script_timeout):
+        script_output = (
+            Path(execution_output_dir) / script_file.stem
+            if execution_output_dir
+            else None
+        )
+        if execute_jax_script(
+            script_file, verbose, device, script_output, timeout=script_timeout
+        ):
             success_count += 1
         else:
             failure_count += 1

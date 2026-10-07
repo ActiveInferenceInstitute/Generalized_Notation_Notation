@@ -14,27 +14,54 @@ from typing import Any, Dict, Optional, Tuple, Union, cast
 
 logger = logging.getLogger(__name__)
 
-# Import DisCoPy functionality
-try:
+
+def gnn_file_to_discopy_diagram(*args: Any, **kwargs: Any) -> Any:
+    """Keep the earlier translation alias lazy; execution does not use it."""
     from gnn.execute.discopy_translator_module.translator import (
-        JAX_FULLY_OPERATIONAL,
-        MATPLOTLIB_AVAILABLE,
-        gnn_file_to_discopy_diagram,
-        gnn_file_to_discopy_matrix_diagram,
-    )
-    from gnn.execute.discopy_translator_module.visualize_jax_output import (
-        plot_tensor_output,
+        gnn_file_to_discopy_diagram as translate,
     )
 
-    DISCOPY_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"DisCoPy translator module not available: {e}")
-    JAX_FULLY_OPERATIONAL = False
-    MATPLOTLIB_AVAILABLE = False
-    gnn_file_to_discopy_diagram = cast(Any, None)
-    gnn_file_to_discopy_matrix_diagram = cast(Any, None)
-    plot_tensor_output = cast(Any, None)
-    DISCOPY_AVAILABLE = False
+    return translate(*args, **kwargs)
+
+
+def gnn_file_to_discopy_matrix_diagram(*args: Any, **kwargs: Any) -> Any:
+    """Keep the earlier matrix translation alias lazy."""
+    from gnn.execute.discopy_translator_module.translator import (
+        gnn_file_to_discopy_matrix_diagram as translate,
+    )
+
+    return translate(*args, **kwargs)
+
+
+def plot_tensor_output(*args: Any, **kwargs: Any) -> Any:
+    """Load visualization dependencies only for an explicit plotting call."""
+    from gnn.execute.discopy_translator_module.visualize_jax_output import (
+        plot_tensor_output as plot,
+    )
+
+    return plot(*args, **kwargs)
+
+
+def __getattr__(name: str) -> bool:
+    """Compatibility availability flags use bounded probes on explicit access."""
+    from gnn.utils.runtime_safety.framework_availability import check_framework
+
+    if name in {"DISCOPY_AVAILABLE", "JAX_FULLY_OPERATIONAL"}:
+        framework = "discopy" if name == "DISCOPY_AVAILABLE" else "jax"
+        return check_framework(framework, logger=logger).available
+    if name == "MATPLOTLIB_AVAILABLE":
+        import sys
+
+        from gnn.execute.subprocess_envelope import run_subprocess_envelope
+
+        return bool(
+            run_subprocess_envelope(
+                [sys.executable, "-c", "import matplotlib"],
+                timeout=30,
+                sandbox=False,
+            )["success"]
+        )
+    raise AttributeError(name)
 
 
 def execute_discopy_script(
@@ -68,6 +95,17 @@ def execute_discopy_script(
 
     logger.info(f"Executing DisCoPy script: {script_path}")
 
+    from gnn.execute.preconditions import script_readiness
+
+    deadline, readiness_error = script_readiness("discopy", timeout)
+    if readiness_error is not None:
+        logger.error(
+            "DisCoPy readiness failed (%s): %s",
+            readiness_error.get("reason_code") or readiness_error.get("error_type"),
+            readiness_error.get("reason") or readiness_error.get("error"),
+        )
+        return False
+
     # Validate Python syntax before execution
     try:
         with open(script_path, "r") as f:
@@ -81,7 +119,7 @@ def execute_discopy_script(
     env = os.environ.copy()
     if output_dir:
         output_dir.mkdir(parents=True, exist_ok=True)
-        env["DISCOPY_OUTPUT_DIR"] = str(output_dir)
+        env["DISCOPY_OUTPUT_DIR"] = str(output_dir.resolve())
 
     # Delegate the subprocess envelope (run + timing + error normalization) to
     # the canonical safe executor. Function-local import: executor.py imports
@@ -92,6 +130,7 @@ def execute_discopy_script(
         timeout=timeout,
         cwd=abs_script_path.parent,
         env=env,
+        deadline_monotonic=deadline,
     )
 
     if envelope["return_code"] == -1 and "error" in envelope:
@@ -426,8 +465,8 @@ def run_discopy_analysis(
         f"DisCoPy analysis summary: {successes} succeeded, {failures} failed, {total_processed} total"
     )
 
-    # Consider the overall run successful if any files were processed successfully
-    return cast("bool", failures == 0 or successes > 0)
+    # Preserve successes while requiring every selected artifact to succeed
+    return cast("bool", failures == 0)
 
 
 if __name__ == "__main__":

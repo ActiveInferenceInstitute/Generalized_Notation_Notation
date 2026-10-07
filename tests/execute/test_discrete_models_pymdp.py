@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -28,7 +29,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DISCRETE_DIR = REPO_ROOT / "input" / "gnn_files" / "discrete"
 
-# All discrete GNN model files
+# PyMDP-supported sources; the episodic T-maze is tested as unsupported below.
 DISCRETE_MODELS: list[Any] = [
     "actinf_pomdp_agent.md",
     "bnlearn_causal_model.md",
@@ -39,7 +40,6 @@ DISCRETE_MODELS: list[Any] = [
     "regime_switched_dynamics.md",
     "simple_mdp.md",
     "time_varying_dynamics.md",
-    "tmaze_epistemic.md",
     "two_state_bistable.md",
 ]
 
@@ -74,7 +74,7 @@ def _extract_and_build_spec(model_file: str, timesteps: int = 12) -> dict:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("model_file", DISCRETE_MODELS)
+@pytest.mark.parametrize("model_file", DISCRETE_MODELS + ["tmaze_epistemic.md"])
 def test_pomdp_extraction(model_file: str) -> None:
     """Every discrete model file should successfully extract a POMDPStateSpace."""
     from gnn.extract.pomdp_extractor import extract_pomdp_from_file
@@ -106,30 +106,130 @@ def test_hmm_baseline_2d_b_is_passive_single_action() -> None:
     assert (pomdp.matrices or {}).get("C") == [0.0] * 6
     assert (pomdp.matrix_provenance or {})["C"]["source"] == "passive_model_adapter"
 
+    # Approved 80% identity / 20% coarse-group channel, not normalized old data.
+    expected_a = np.array(
+        [
+            [0.56, 0.08, 0.08, 0.08],
+            [0.08, 0.56, 0.08, 0.08],
+            [0.08, 0.08, 0.56, 0.08],
+            [0.08, 0.08, 0.08, 0.56],
+            [0.04, 0.04, 0.16, 0.16],
+            [0.16, 0.16, 0.04, 0.04],
+        ]
+    )
+    np.testing.assert_array_equal(pomdp.matrices["A"], expected_a)
+    np.testing.assert_allclose(expected_a.sum(axis=0), 1, rtol=0, atol=1e-15)
+    spec = _extract_and_build_spec("hmm_baseline.md")
+    np.testing.assert_allclose(
+        spec["initialparameterization"]["A"], expected_a, rtol=0, atol=1e-15
+    )
 
-def test_tmaze_factored_matrices_are_preserved_and_composed() -> None:
-    """T-maze must retain factors and compose a joint PyMDP contract without collapsing."""
+
+def test_tmaze_source_factors_are_preserved_and_pymdp_is_unsupported(
+    tmp_path: Path,
+) -> None:
+    """Valid absorbing transitions do not imply episodic PyMDP support."""
     from gnn.extract.pomdp_extractor import extract_pomdp_from_file
     from gnn.render.pomdp_processor import POMDPRenderProcessor
+    from gnn.render.processor import render_gnn_spec
 
-    pomdp = extract_pomdp_from_file(
-        DISCRETE_DIR / "tmaze_epistemic.md", strict_validation=False
-    )
+    source = DISCRETE_DIR / "tmaze_epistemic.md"
+    pomdp = extract_pomdp_from_file(source, strict_validation=False)
     assert pomdp is not None
     raw_keys = set((pomdp.matrices or {}).keys())
     assert {"A_loc", "A_rew", "B_loc", "B_ctx", "C_rew", "D_ctx"}.issubset(raw_keys)
     assert pomdp.A_matrix is None
     assert pomdp.B_matrix is None
+    original_matrices = json.dumps(pomdp.matrices, sort_keys=True)
 
-    spec = POMDPRenderProcessor(DISCRETE_DIR)._pomdp_to_gnn_spec(pomdp, timesteps=3)
-    init = spec["initialparameterization"]
-    assert np.asarray(init["A"]).shape == (12, 8)
-    assert np.asarray(init["B"]).shape == (8, 8, 4)
-    assert np.asarray(init["C"]).shape == (12,)
-    assert np.asarray(init["D"]).shape == (8,)
-    assert set(spec["structured_pomdp"]["matrices"]).issuperset(raw_keys)
-    assert spec["matrix_provenance"]["A"]["source"] == "factored_joint_composition"
-    assert spec["matrix_provenance"]["A"]["source_keys"] == ["A_loc", "A_rew"]
+    raw_b = np.asarray(pomdp.matrices["B_loc"])
+    # For each action: destinations from center, left arm, right arm, cue.
+    for action, destinations in enumerate(
+        ([1, 1, 2, 1], [2, 1, 2, 2], [3, 1, 2, 3], [0, 1, 2, 3])
+    ):
+        np.testing.assert_array_equal(raw_b[:, :, action], np.eye(4)[:, destinations])
+    np.testing.assert_array_equal(raw_b.sum(axis=0), np.ones((4, 4)))
+
+    processor = POMDPRenderProcessor(tmp_path)
+    spec = processor._pomdp_to_gnn_spec(pomdp, timesteps=3)
+    assert spec["canonical_pomdp_schema"] == "raw_discrete_components_v1"
+    assert spec["model_parameters"]["execution_contract"] == "episodic_contingent_v1"
+    assert spec["model_parameters"]["terminal_locations"] == "[1, 2]"
+    assert "A" not in spec["initialparameterization"]
+    assert "B" not in spec["initialparameterization"]
+    for key in raw_keys:
+        np.testing.assert_array_equal(
+            spec["initialparameterization"][key], pomdp.matrices[key]
+        )
+
+    rendered = processor.process_pomdp_for_all_frameworks(
+        pomdp, source, frameworks=["pymdp"]
+    )
+    receipt = rendered["framework_results"]["pymdp"]
+    assert receipt["success"] is False and receipt["status"] == "unsupported"
+    assert not receipt["output_files"]
+    ok, reason, files = render_gnn_spec(spec, "pymdp", tmp_path / "direct")
+    assert not ok and not files
+    assert reason.startswith("unsupported-execution-contract:")
+    assert "episodic_contingent_v1" in reason
+    assert not list(tmp_path.rglob("*.py"))
+    assert json.dumps(pomdp.matrices, sort_keys=True) == original_matrices
+
+
+@pytest.mark.parametrize(
+    "matrix_name,matrix,diagnostic",
+    [
+        (
+            "A",
+            [[1.5] * 4] + [[0.0] * 4 for _ in range(5)],
+            r"A column 0 probability mass must be one, got 1.5",
+        ),
+        (
+            "B",
+            [[0.0] * 4 for _ in range(4)],
+            r"B\[:, previous_state, action\] must have positive finite mass",
+        ),
+    ],
+    ids=["excess-emission-mass", "zero-transition-mass"],
+)
+def test_invalid_probability_fixture_is_rejected_without_repair(
+    matrix_name: str, matrix: list[list[float]], diagnostic: str, tmp_path: Path
+) -> None:
+    """Deliberately malformed private copies keep rejection coverage independent of sources."""
+    from gnn.extract.pomdp_extractor import extract_pomdp_from_file
+    from gnn.render.pomdp_processor import POMDPRenderProcessor
+
+    authored = (DISCRETE_DIR / "hmm_baseline.md").read_text(encoding="utf-8")
+    declaration = (
+        matrix_name
+        + "={\n"
+        + ",\n".join(
+            "  (" + ", ".join(str(value) for value in row) + ")" for row in matrix
+        )
+        + "\n}"
+    )
+    malformed, replacements = re.subn(
+        rf"(?ms)^{matrix_name}=\{{.*?^\}}", lambda _: declaration, authored, count=1
+    )
+    assert replacements == 1 and malformed != authored
+    source = tmp_path / "invalid_probability.md"
+    source.write_text(malformed, encoding="utf-8")
+    pomdp = extract_pomdp_from_file(source, strict_validation=False)
+    assert pomdp is not None
+    np.testing.assert_array_equal(pomdp.matrices[matrix_name], matrix)
+    original_matrices = json.dumps(pomdp.matrices, sort_keys=True)
+    processor = POMDPRenderProcessor(tmp_path / "rendered")
+    with pytest.raises(ValueError, match=diagnostic):
+        processor._pomdp_to_gnn_spec(pomdp)
+    rendered = processor.process_pomdp_for_all_frameworks(
+        pomdp, source, frameworks=["pymdp"]
+    )
+    receipt = rendered["framework_results"]["pymdp"]
+    assert receipt["success"] is False and receipt["status"] == "failed"
+    assert not receipt["output_files"]
+    assert not list(tmp_path.rglob("*.py"))
+    assert source.read_text(encoding="utf-8") == malformed
+    assert json.dumps(pomdp.matrices, sort_keys=True) == original_matrices
 
 
 def test_time_varying_b_tensor_passes_through_nonstationary() -> None:

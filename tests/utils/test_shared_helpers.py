@@ -166,7 +166,7 @@ class TestFallbackDefaults:
             ("advanced_stats", False),
             ("generate_animations", True),
             ("execution_summary_detail", False),
-            ("llm_timeout", 360),
+            ("llm_timeout", None),
             ("bottleneck_threshold", 60.0),
             ("duration", 30.0),
             ("timeout", 300),

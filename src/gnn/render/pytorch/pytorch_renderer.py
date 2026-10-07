@@ -10,6 +10,7 @@ using torch.tensor operations.
 """
 
 import logging
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -36,6 +37,12 @@ def render_gnn_to_pytorch(
     Returns:
         Tuple of (success: bool, message: str, artifact_paths: List[str])
     """
+    from gnn.render.execution_contracts import unsupported_contract
+
+    refusal = unsupported_contract(gnn_spec, "pytorch")
+    if refusal:
+        return False, refusal, []
+
     try:
         model_name = gnn_spec.get("modelName", "pytorch_pomdp")
         logger.info(f"Rendering GNN spec to PyTorch: {model_name}")
@@ -58,7 +65,8 @@ def render_gnn_to_pytorch(
             return _render_continuous(gnn_spec, Path(output_path), options, model_name)
 
         # Extract matrices
-        A, B, C, D = _extract_matrices(gnn_spec)
+        provenance = deepcopy(gnn_spec.get("matrix_provenance", {}))
+        A, B, C, D = _extract_matrices(gnn_spec, provenance=provenance)
 
         # Validate shapes
         from gnn.render.matrix_utils import validate_abcd_shapes
@@ -75,7 +83,7 @@ def render_gnn_to_pytorch(
             C,
             D,
             _extract_num_timesteps(gnn_spec, options),
-            matrix_provenance=gnn_spec.get("matrix_provenance", {}),
+            matrix_provenance=provenance,
         )
 
         # Write output
@@ -119,12 +127,14 @@ def _render_continuous(
 
 def _extract_matrices(
     gnn_spec: Dict[str, Any],
+    *,
+    provenance: dict[str, Any] | None = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Extract A, B, C, D matrices from GNN spec.
 
     Delegates to the shared :func:`render.spec_matrices.extract_abcd_matrices`.
     """
-    return extract_abcd_matrices(gnn_spec)
+    return extract_abcd_matrices(gnn_spec, transformation_provenance=provenance)
 
 
 def _extract_num_timesteps(

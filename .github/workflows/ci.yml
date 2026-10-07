@@ -191,6 +191,43 @@ jobs:
         run: |
           PYTHONPATH=src uv run --extra dev python scripts/run_v3_orchestration_acceptance.py --strict
 
+  pipeline-contracts:
+    # Deterministic orchestration contracts run on every PR. Native inference,
+    # public network and toolchain acceptance have separate explicit lanes.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: src
+      PYTHONHASHSEED: "0"
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12"
+          enable-cache: true
+      - name: Install deterministic contract environment
+        run: uv sync --frozen --extra dev
+      - name: Execute pipeline contracts
+        run: |
+          uv run --frozen --no-sync python -m pytest tests/ \
+            -m "pipeline and not ollama and not env_heavy and (not toolchain or needs_posix)" \
+            -q --tb=short -rsx --junitxml=junit/pipeline-contracts.xml
+      - name: Publish contract counts and source identity
+        if: always()
+        run: uv run --frozen --no-sync python scripts/test_receipt.py junit/pipeline-contracts.xml
+      - name: Pipeline contract evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pipeline-contracts
+          path: junit/pipeline-contracts.*
+          if-no-files-found: error
+          retention-days: 14
+
   extras:
     # PR-time gate for the 12 environment-skipped tests (11 sklearn cases in
     # test_ml_integration_inference.py + 1 torch execution case in

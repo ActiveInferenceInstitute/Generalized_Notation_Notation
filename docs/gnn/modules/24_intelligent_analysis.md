@@ -166,10 +166,15 @@ Intelligent Analysis
 
 Detailed analysis result for a single pipeline step.
 
+`step_number` preserves the summary's one-based execution order. Identify the
+canonical numbered step from `script_name` and the pipeline registry. A subset
+that executes `3_gnn.py` followed by `12_execute.py` has summary positions 1 and
+2, while its canonical step IDs remain 3 and 12.
+
 ```python
 @dataclass
 class StepAnalysis:
-    step_number: int  # Pipeline step number (0-24)
+    step_number: int  # One-based execution order in this run's summary
     script_name: str  # Script filename (e.g., "3_gnn.py")
     description: str  # Human-readable step description
     status: str  # "SUCCESS", "FAILED", "WARNING", etc.
@@ -579,17 +584,17 @@ from intelligent_analysis.analyzer import (
 def sample_summary_data():
     """Minimal pipeline summary for testing."""
     return {
-        "overall_status": "SUCCESS",
-        "total_duration_seconds": 120.0,
+        "overall_status": "FAILED",
+        "total_duration_seconds": 47.5,
         "performance_summary": {
             "peak_memory_mb": 256.0,
-            "successful_steps": 5,
-            "failed_steps": 0,
+            "successful_steps": 1,
+            "failed_steps": 1,
             "warnings": 0,
         },
         "steps": [
             {
-                "step_number": 3,
+                "step_number": 1,
                 "script_name": "3_gnn.py",
                 "description": "GNN parsing",
                 "status": "SUCCESS",
@@ -600,7 +605,7 @@ def sample_summary_data():
                 "stderr": "",
             },
             {
-                "step_number": 12,
+                "step_number": 2,
                 "script_name": "12_execute.py",
                 "description": "Execute simulations",
                 "status": "FAILED",

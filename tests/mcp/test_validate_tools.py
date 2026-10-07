@@ -366,7 +366,11 @@ class TestWriteToolReference:
     def _census(self) -> dict[str, Any]:
         return {
             "tools_list": [
-                {"name": "zeta_tool", "module": "gnn.analysis", "description": "Two\nlines"},
+                {
+                    "name": "zeta_tool",
+                    "module": "gnn.analysis",
+                    "description": "Two\nlines",
+                },
                 {"name": "pipe_tool", "module": "meta", "description": "a|b | c"},
                 {"name": "alpha_tool", "module": "analysis", "description": "First"},
             ],

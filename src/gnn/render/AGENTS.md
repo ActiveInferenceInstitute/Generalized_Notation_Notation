@@ -551,3 +551,12 @@ Tool functions live in `src/gnn/render/mcp.py` and are registered in `register_t
 - **[AGENTS](AGENTS.md)**: Agentic Workflows
 - **[SPEC](SPEC.md)**: Architectural Specification
 - **[SKILL](SKILL.md)**: Capability API
+
+## Scientific backend contracts
+
+Strict source probabilities, round-trip numeric literals, continuous covariance
+validation, and explicit independent Gaussian agents are documented in
+[backend scientific contracts](../../../docs/development/backend_scientific_contracts.md).
+Native RxInfer agent projection uses `native_agent_pomdp_v1` and does not allocate
+unused composed joint tensors. `multi_agent_continuous.py` supplies validated
+independent Gaussian agent composition for JAX and RxInfer.

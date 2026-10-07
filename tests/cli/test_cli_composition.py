@@ -669,6 +669,33 @@ class TestJsonEnvelopeFlags:
             (framework_dir / "model.py").write_text(
                 "# stub artifact\n", encoding="utf-8"
             )
+            import hashlib
+
+            artifact = (framework_dir / "model.py").resolve()
+            (output_dir / "render_processing_summary.json").write_text(
+                json.dumps(
+                    {
+                        "file_results": {
+                            "model": {
+                                "framework_results": {
+                                    "pymdp": {
+                                        "success": True,
+                                        "output_files": [str(artifact)],
+                                        "artifact_identities": [
+                                            {
+                                                "path": str(artifact),
+                                                "sha256": hashlib.sha256(
+                                                    artifact.read_bytes()
+                                                ).hexdigest(),
+                                            }
+                                        ],
+                                    },
+                                }
+                            }
+                        }
+                    }
+                )
+            )
             return True
 
         monkeypatch.setattr(render_module, "process_render", fake_process_render)

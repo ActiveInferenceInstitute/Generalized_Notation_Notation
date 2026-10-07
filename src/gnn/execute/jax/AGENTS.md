@@ -93,7 +93,7 @@ See `tests/execute/test_kronecker_factorized.py` for the exactness contract.
 ## Dependencies
 
 ### Required Dependencies
-- `jax`, `jaxlib` — pinned in `pyproject.toml` (`jax[cpu]>=0.7.0,<0.11`, `jaxlib>=0.7.0,<0.11`); installed by a plain `uv sync`
+- `jax`, `jaxlib` — pinned in `pyproject.toml` (`jax[cpu]>=0.7.0,<0.12`, `jaxlib>=0.7.0,<0.12`); installed by a plain `uv sync`
 - `numpy`
 
 ### Optional Dependencies

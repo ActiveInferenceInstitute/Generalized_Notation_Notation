@@ -247,14 +247,15 @@
 \section{Reproducibility}\label{sec:reproducibility}
 
 \begin{frame}[allowframebreaks]{Reproducibility}
-Reproducibility in GNN is not an aspiration layered on top of the
-system; it is the operating contract that the pipeline enforces. The
-0--24 processing steps are deterministic given a model specification and
-a target directory, and every published claim in this manuscript is
-traceable to a command that regenerates the underlying artifact. This
-section lists only commands that exist in the repository, so that a
-reader with a clean checkout can reproduce the pipeline, the validation
-gates, and this manuscript itself.
+Reproducibility in GNN is a source- and run-binding contract across the
+0--24 processing steps. Fixed-source parsing and token production are
+distinct from stochastic inference, dependency provisioning, and
+environment-dependent execution. Reproducing a reported outcome requires
+the selected inputs, configuration, source revision, dependencies,
+dtype, seed, and retained command and artifact receipts. This section
+lists only commands that exist in the repository, so that a reader with
+a clean checkout can reproduce the pipeline, the validation gates, and
+this manuscript itself.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Pipeline Smoke Run}
@@ -271,52 +272,53 @@ LLM steps:
 
 This parses the discrete GNN files, runs visualization and rendering
 across the maintained backends, and writes all artifacts under the
-chosen output directory. The \texttt{-\/-skip-llm} flag keeps the run
-hermetic and free of external API calls: the non-LLM steps all execute,
-the steps that would read the skipped LLM outputs record that as a
-warning, and the run exits 2 --- the pipeline's documented warning code
-(0 success, 1 error, 2 warning) --- rather than 0. To exercise every
+chosen output directory. The \texttt{-\/-skip-llm} flag disables the LLM
+processing step; it does not establish network isolation or guarantee
+that every other step executes. Default framework selection excludes the
+experimental targets, and dependency readiness, model-kind admission,
+configured steps, and budgets determine the actual work. Inspect the
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Pipeline Smoke Run}
-registered family rather than a single one, drive the manifest through
-the model-family acceptance gate given below: pointing
-\texttt{-\/-target-dir} at \texttt{input/gnn\_files} covers that tree's
-11 corpus directories. All 9 registered family target directories lie
-inside that tree, so a single invocation reaches every registered
-family.
+current-run statuses and terminal exit code (0 success, 1 error, 2
+warning); missing or unfinished required work must remain a non-success
+outcome. To exercise every registered family rather than a single one,
+drive the manifest through the model-family acceptance gate given below:
+pointing \texttt{-\/-target-dir} at \texttt{input/gnn\_files} covers
+that tree's 12 corpus directories. All 9 registered family target
+directories lie inside that tree, so a single invocation reaches every
+registered family.
 
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Pipeline Smoke Run}
 The discrete family exercises the categorical kind end to end. The
 continuous linear-Gaussian kind smoke-runs the same way, and the
 contrast between the two runs is itself a check of the per-kind
 contract:
 
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Pipeline Smoke Run}
 \begin{Shaded}
 \begin{Highlighting}[]
 \ExtensionTok{uv}\NormalTok{ run python src/gnn/main.py }\AttributeTok{{-}{-}target{-}dir}\NormalTok{ input/gnn\_files/continuous }\AttributeTok{{-}{-}output{-}dir}\NormalTok{ /tmp/gnn{-}smoke{-}continuous }\AttributeTok{{-}{-}skip{-}llm}
 \end{Highlighting}
 \end{Shaded}
 
-This parses the continuous specifications, and the render and execute
-steps fan them out to the continuous-capable backends --- where they
-render as linear-Gaussian models and run as filtering (and, for the
-closed-loop exemplar, belief-steering) programs --- while the
-categorical-only backends record explicit \texttt{unsupported} statuses
-rather than failures. A reader comparing the two receipts sees the kind
-taxonomy behaving as described in sec.~3: same
-pipeline, same steps, per-kind rendering and execution reach.
+This selects the continuous specifications for the same pipeline.
+Admitted, ready continuous-capable lanes can render and execute
+filtering (and, for the closed-loop exemplar, belief-steering) programs;
+categorical-only targets record \texttt{unsupported}, while readiness
+and budget failures retain their own outcomes. A reader comparing the
+two receipts sees the kind taxonomy behaving as described in
+sec.~3: same pipeline, same steps, per-kind
+rendering and execution reach.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Validation Gates}
 \protect\phantomsection\label{validation-gates}
-GNN's reproducibility guarantees rest on a small set of strict,
-deterministic gates that bind the manuscript's quantitative claims to
-recomputable ledgers. The model-family acceptance gate runs the
-maintained families declared in the manifest and fails on any
-regression:
+GNN provides strict gates with distinct verification scopes. The
+model-family acceptance gate runs the selected manifest families and
+evaluates their declared acceptance profiles; its receipt must record
+actual execution, unsupported and skipped work, and failures:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -330,13 +332,14 @@ regression:
 
 \begin{frame}[fragile,allowframebreaks]{Validation Gates}
 The semantic-fidelity gate verifies that a parse \texorpdfstring{\ensuremath{\to}}{->} serialize \texorpdfstring{\ensuremath{\to}}{->} parse
-round trip preserves variables, edges, dimensions, parameter shapes,
-equations, time semantics, and ontology mappings across the 9 model
-families; the cross-framework gate profiles the 7 maintained backends
-(PyMDP, RxInfer.jl, JAX, NumPyro, PyTorch, ActiveInference.jl, DisCoPy)
---- refusing any framework outside that set --- and records explicit
-compatible and unsupported statuses rather than silently degrading. Both
-write their ledgers to an output directory of your choosing:
+round trip preserves variables, edges, dimensions, parameter shapes and
+values, parameter metadata, equations, time semantics, and ontology
+mappings across the 9 model families; the cross-framework gate profiles
+the 7 maintained backends (PyMDP, RxInfer.jl, JAX, NumPyro, PyTorch,
+ActiveInference.jl, DisCoPy) --- refusing any framework outside that set
+--- and records explicit compatible and unsupported statuses rather than
+silently degrading. Both write their ledgers to an output directory of
+your choosing:
 
 \end{frame}
 
@@ -355,8 +358,8 @@ write their ledgers to an output directory of your choosing:
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Validation Gates}
-Under \texttt{-\/-strict}, each gate exits non-zero on the first
-mismatch, so these commands double as assertions in an automated
+Under \texttt{-\/-strict}, required mismatches make these gates exit
+non-zero, so these commands double as assertions in an automated
 reproduction run. Code-quality reproducibility is enforced separately
 through the developer command reference: \texttt{just\ lint} runs the
 Ruff linter over \texttt{src} and \texttt{scripts}, and the broader
@@ -418,9 +421,9 @@ a missing copy degrades rather than failing the build.
 \begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
 Because the variables file is regenerated before rendering, the counts
 in the rendered PDF track the repository state at the commit recorded in
-\breaktt{output/data/manuscript\_variables.json} (3cf4f3f5c): a code
-change that alters, for example, the test inventory (537 test files,
-5744 test functions) propagates into the prose on the next regeneration
+\breaktt{output/data/manuscript\_variables.json} (a57e17d86): a code
+change that alters, for example, the test inventory (577 test files,
+6214 test functions) propagates into the prose on the next regeneration
 without any manual editing.
 \end{frame}
 
@@ -436,8 +439,9 @@ without any manual editing.
   command in this repository.
 \item
   Keep generated outputs under \texttt{output/} and maintained
-  manuscript source under \texttt{manuscript/}; treat everything in
-  \texttt{output/} as disposable and regeneratable.
+  manuscript source under \texttt{manuscript/}. Regenerate owned build
+  artifacts when their inputs change, and preserve the raw command
+  receipts and numerical results needed to substantiate historical runs.
 \item
   Express every quantitative claim in the prose as a double-brace
   \texttt{\{\{...\}\}} token substituted by

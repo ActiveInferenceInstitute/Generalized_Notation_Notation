@@ -47,9 +47,7 @@ def _make_bytes(path: Path, size: int) -> Path:
     return path
 
 
-def _run(
-    argv: list[str], tmp_path: Path, **kwargs: Any
-) -> int:
+def _run(argv: list[str], tmp_path: Path, **kwargs: Any) -> int:
     return audit_line_bands.main(
         argv, scan_root=tmp_path / "src" / "gnn", base=tmp_path, **kwargs
     )
@@ -76,9 +74,7 @@ def test_oversized_lines_fail_hard_but_pass_soft(tmp_path: Path, capsys) -> None
 
 
 def test_oversized_bytes_fail_hard(tmp_path: Path) -> None:
-    _make_bytes(
-        tmp_path / "src" / "gnn" / "wide.py", audit_line_bands.HARD_BYTES + 1
-    )
+    _make_bytes(tmp_path / "src" / "gnn" / "wide.py", audit_line_bands.HARD_BYTES + 1)
     assert _run([], tmp_path) == 1
 
 
@@ -122,9 +118,7 @@ def test_bytes_band_file_is_report_only(tmp_path: Path) -> None:
 
 def test_json_mode_parses_and_counts_hard(tmp_path: Path, capsys) -> None:
     _make_py(tmp_path / "src" / "gnn" / "big.py", 1500)
-    _make_bytes(
-        tmp_path / "src" / "gnn" / "wide.py", audit_line_bands.HARD_BYTES + 1
-    )
+    _make_bytes(tmp_path / "src" / "gnn" / "wide.py", audit_line_bands.HARD_BYTES + 1)
     assert _run(["--json"], tmp_path) == 1
     payload = json.loads(capsys.readouterr().out)
     assert payload["over_hard_count"] == 2

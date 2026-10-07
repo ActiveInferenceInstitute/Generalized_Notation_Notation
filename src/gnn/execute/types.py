@@ -35,6 +35,8 @@ ExecutionFrameworkName = Literal[
     "numpyro",
     "stan",
     "bnlearn",
+    "cpomdp",
+    "thrml",
     "ngclearn",
     "lean",
 ]

@@ -17,7 +17,12 @@
 - [PyMDP Framework Implementation](pymdp.md)
 - [CatColab Framework Implementation](catcolab.md)
 - [NumPyro Framework Implementation](numpyro.md)
+- [cpomdp Experimental Implementation](cpomdp.md)
+- [THRML Experimental Implementation](thrml.md)
 
 
 ## Implementation Details
-This is a static reference directory. The above files can be explicitly referenced by external LLMs to retrieve detailed syntax and operational knowledge for GNN generation tasks.
+This is a reference index. Model-family support, experimental selection, setup
+requirements, and acceptance limits live in each linked guide and the maintained
+render/executor registries. CatColab is an export integration. The bnlearn and
+ngclearn render/execution modules are indexed in [README.md](README.md).

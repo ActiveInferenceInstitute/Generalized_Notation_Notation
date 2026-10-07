@@ -125,9 +125,8 @@ def _normalise_beliefs(data: Dict[str, Any]) -> List[List[float]]:
     if beliefs is None:
         beliefs = data.get("beliefs_by_factor")
     rows = _as_2d_list(beliefs)
-    if rows and all(np is not None and len(r) != len(rows[0]) for r in rows):
-        # ragged rows cannot be plotted together; fall back to empty
-        return []
+    if rows and any(len(r) != len(rows[0]) for r in rows):
+        raise ValueError("Belief traces must have regular rows")
     return rows
 
 
@@ -545,6 +544,34 @@ def create_rxinfer_visualizations(
     Returns:
         List of generated file paths
     """
+    from gnn.analysis.result_adapter import model_family, result_views
+
+    from .family_visuals import artifact_component, continuous_png
+
+    views = result_views(data)
+    if model_family(data) == "continuous":
+        return [
+            continuous_png(
+                data,
+                output_dir / f"{model_name}_rxinfer_gaussian_posterior.png",
+                model_name,
+            )
+        ]
+    if len(views) > 1:
+        files = []
+        for name, view in views.items():
+            files.extend(
+                create_rxinfer_visualizations(
+                    view,
+                    output_dir,
+                    f"{model_name}_{artifact_component(name)}",
+                    verbose,
+                )
+            )
+        return files
+    original_data = data
+    if views:
+        data = next(iter(views.values()))
     visualizations: list[Any] = []
 
     if not MATPLOTLIB_AVAILABLE or plt is None or np is None:
@@ -572,6 +599,8 @@ def create_rxinfer_visualizations(
 
     # --- Strategy-declared validation fields (FP-8): field -> value summary
     data["validation_summary"] = summarize_strategy_validation(data)
+    for key in ("convergence_diagnostics", "per_factor_beliefs", "validation_summary"):
+        original_data[key] = data[key]
 
     beliefs_arr = np.asarray(beliefs, dtype=float) if beliefs else np.zeros((0, 0))
     have_beliefs = beliefs_arr.ndim >= 1
@@ -947,7 +976,15 @@ def create_rxinfer_visualizations(
         try:
             diag = convergence_diagnostics
             fe_arr = np.asarray(free_energy, dtype=float)
-            fig, ax = plt.subplots(figsize=(12, 4.5))
+            # Keep diagnostic labels in a reserved panel, clear of VFE and ticks.
+            fig, (ax, diagnostics_ax) = plt.subplots(
+                1,
+                2,
+                figsize=(14, 4.5),
+                gridspec_kw={"width_ratios": [3, 1]},
+                layout="constrained",
+            )
+            diagnostics_ax.set_axis_off()
             ax.plot(fe_arr, color="crimson", linewidth=2, marker="o", markersize=3)
             ax.fill_between(range(len(fe_arr)), fe_arr, alpha=0.3, color="crimson")
             ax.set_xlabel("Inference Iteration")
@@ -961,11 +998,12 @@ def create_rxinfer_visualizations(
             itc = diag.get("iterations_to_convergence")
             if itc is not None and 1 <= itc <= len(fe_arr):
                 ax.axvline(x=itc - 1, color="navy", linestyle="--", alpha=0.7)
-                ax.text(
-                    itc - 1,
-                    fe_arr.max(),
+                diagnostics_ax.text(
+                    0.02,
+                    0.98,
                     f"Converged @ iter {itc}",
-                    ha="right",
+                    transform=diagnostics_ax.transAxes,
+                    va="top",
                     color="navy",
                     fontsize=9,
                     fontweight="bold",
@@ -982,11 +1020,11 @@ def create_rxinfer_visualizations(
             annotation_lines.append(
                 f"Converged iter   : {itc if itc is not None else 'n/a'}"
             )
-            ax.text(
+            diagnostics_ax.text(
                 0.02,
-                0.98,
+                0.80,
                 "\n".join(annotation_lines),
-                transform=ax.transAxes,
+                transform=diagnostics_ax.transAxes,
                 va="top",
                 fontsize=9,
                 fontfamily="monospace",

@@ -44,7 +44,7 @@ The RxInfer analyzer (`src/gnn/analysis/rxinfer/`) is the deepest of these and i
 
 **Package version**: [pyproject.toml](../../../pyproject.toml) (canonical)
 
-**Last Updated**: 2026-08-07
+**Last Updated**: 2026-10-02
 
 ---
 
@@ -65,7 +65,7 @@ The RxInfer analyzer (`src/gnn/analysis/rxinfer/`) is the deepest of these and i
 - Model comparison and differential analysis
 - Distribution analysis and correlation studies
 - **PyMDP Visualization** - belief evolution, state sequences, performance metrics plots
-- **Cross-framework comparison** - uses whatever execution (Step 12) produced. `_extract_simulation_metrics` (in `analyzer.py`) prefers `simulation_data/simulation_results.json` (and other canonical JSON) before `execution_logs/*_results.json`, so backends that write full traces to `simulation_data/` (e.g. RxInfer) are not masked by sparse structured logs. DisCoPy: inline `simulation_data.analysis` / `parameters` from structured logs populate `circuit_info`; if still missing, `simulation_data/circuit_info.json` is merged when present. bnlearn structured logs populate `model_parameters` when vector traces are absent. If every run for a framework was skipped (`skipped: true` in the execution summary), logs INFO instead of WARNING for bnlearn. Otherwise missing data is reported as "[framework] No simulation data found". Python backends are in core `uv sync`; Julia coverage needs Julia + packages installed, then re-run Step 12.
+- **Cross-framework comparison** - uses whatever execution (Step 12) produced. `_extract_simulation_metrics` (in `framework_comparison.py`) prefers `simulation_data/simulation_results.json` (and other canonical JSON) before `execution_logs/*_results.json`, so backends that write full traces to `simulation_data/` (e.g. RxInfer) are not masked by sparse structured logs. DisCoPy: inline `simulation_data.analysis` / `parameters` from structured logs populate `circuit_info`; if still missing, `simulation_data/circuit_info.json` is merged when present. bnlearn structured logs populate `model_parameters` when vector traces are absent. If every run for a framework was skipped (`skipped: true` in the execution summary), logs INFO instead of WARNING for bnlearn. Otherwise missing data is reported as "[framework] No simulation data found". Optional Python backends require their declared setup extras; Julia coverage requires the pinned Julia environments before Step 12.
 - **Degraded comparison columns** - every framework entry in
   `analyze_framework_outputs` carries an explicit `status` mirroring the Step 12
   summary vocabulary (`success` | `success_with_skips` | `skipped` | `failed`;
@@ -93,7 +93,9 @@ Derived from the per-iteration VFE trace: VFE slope, convergence rate, and itera
 
 ### Per-factor belief recovery
 
-`compute_per_factor_beliefs(data)` recovers per-factor marginals from a flattened joint belief trace. Multi-factor and multi-agent models render onto a single flat joint state space — the renderer enumerates `itertools.product` over `state_factors` in list order (C order, first factor slowest-varying) — so the joint belief reshapes to a per-factor tensor and each marginal is the sum over the other axes. Factor structure is read from the `model_parameters.state_factors` echo.
+Native `beliefs_by_agent` and `beliefs_by_factor` traces remain separate through the shared result adapter. Continuous agent views carry posterior means and covariances; they are never converted to categorical confidence. A missing component trace stays unavailable instead of being reconstructed from an unrelated result.
+
+For an explicitly flattened categorical joint trace, `compute_per_factor_beliefs(data)` recovers marginals using the declared `model_parameters.state_factors` order. The product must match the joint width; C order makes the first factor slowest-varying. This recovery applies only to that declared joint representation.
 
 An **empty dict signals structural absence, not failure**: no `state_factors` (flat models, or artifacts predating the key), no beliefs, or fewer than two factors of size > 1. Size-1 factors participate in the reshape but are omitted from the output. Genuine contract violations between renderer and analyzer — malformed descriptors, duplicate factor names, ragged belief rows, a size product contradicting the joint width, a timestep with no probability mass — raise `ValueError` rather than being quietly absorbed.
 
@@ -235,7 +237,7 @@ DEFAULT_COMPLEXITY_THRESHOLDS = {
 
 ### Basic Usage
 ```python
-from analysis.processor import process_analysis
+from gnn.analysis.processor import process_analysis
 
 success = process_analysis(
     target_dir=Path("input/gnn_files"),
@@ -246,7 +248,7 @@ success = process_analysis(
 
 ### Statistical Analysis
 ```python
-from analysis.analyzer import perform_statistical_analysis
+from gnn.analysis.analyzer import perform_statistical_analysis
 
 stats = perform_statistical_analysis(Path("input/gnn_files/some_model.gnn"), verbose=True)
 print(f"Variable count: {stats['variable_statistics']['count']}")
@@ -255,7 +257,7 @@ print(f"Connection count: {stats['connection_statistics']['count']}")
 
 ### Complexity Assessment
 ```python
-from analysis.analyzer import calculate_complexity_metrics
+from gnn.analysis.analyzer import calculate_complexity_metrics
 
 metrics = calculate_complexity_metrics(parsed_model)
 print(f"Cyclomatic complexity: {metrics['cyclomatic_complexity']}")
@@ -299,15 +301,7 @@ output/16_analysis_output/
 
 ## Performance Characteristics
 
-### Latest Execution
-- **Duration**: ~2-5 seconds per model
-- **Memory**: ~50-100MB for large models
-- **Status**: ✅ Production Ready
-
-### Expected Performance
-- **Fast Path**: ~1-2s for basic statistical analysis
-- **Slow Path**: ~5-10s for comprehensive complexity analysis
-- **Memory**: ~20-50MB for typical models, ~100MB for large models
+Measure duration and memory with the same selected models, configuration and runtime when comparing implementations. Current acceptance receipts live in [the verification ledger](../../development/verification_2026_10_01.json). A per-framework timing aggregate is descriptive; different corpora or environments do not establish a speed comparison.
 
 ---
 
@@ -356,7 +350,7 @@ input/gnn_files (re-parsed) + 12_execute_output (execution results) → Analysis
 - `tests/analysis/test_analysis_extraction.py` - Result extraction tests
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/analysis/ --cov=analysis --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/analysis/ --cov=gnn.analysis --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Statistical analysis with various model sizes
@@ -424,8 +418,9 @@ See [pyproject.toml](../../../pyproject.toml).
 - Model comparison
 - Framework output analysis
 
-**Known Issues**:
-- None currently
+**Verification boundaries**:
+- Numerical comparisons require compatible, source-bound results; missing metadata produces an unavailable comparison.
+- Live optional-backend acceptance is recorded separately from dependency-light tests.
 
 ### Roadmap
 - **Next Version**: Enhanced visualization of analysis results
@@ -448,7 +443,7 @@ See [pyproject.toml](../../../pyproject.toml).
 
 ---
 
-**Last Updated**: 2026-08-07
+**Last Updated**: 2026-10-02
 **Maintainer**: GNN Pipeline Team
 **Status**: ✅ Production Ready
 **Package version**: [pyproject.toml](../../../pyproject.toml) (canonical)

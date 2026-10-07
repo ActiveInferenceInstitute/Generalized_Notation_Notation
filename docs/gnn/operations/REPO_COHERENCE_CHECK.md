@@ -1212,7 +1212,7 @@ uv run python src/gnn/2_tests.py --comprehensive
 ```
 
 ```bash
-uv run python src/gnn/3_gnn.py --test-mode
+uv run --extra dev python -m pytest tests/gnn -q
 ```
 
 # Run specific test module

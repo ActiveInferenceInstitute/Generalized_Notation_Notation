@@ -240,8 +240,10 @@ class TestPipelineWarningsFix:
         args = _PipelineArgs(output_dir=output_dir)
         logger = logging.getLogger("test")
         result = validate_step_prerequisites("16_analysis.py", args, logger)
-        # 16_analysis depends on 3_gnn and 7_export, which exist
-        assert result["passed"]
+        # Empirical analysis also requires current execution results. Existing
+        # parse/export directories cannot stand in for the missing producer.
+        assert result["passed"] is False
+        assert any("12_execute_output" in error for error in result["errors"])
 
     def test_readiness_uses_registered_gnn_extensions(self, tmp_path: Any) -> None:
         """Readiness should discover all parser-registered input extensions."""

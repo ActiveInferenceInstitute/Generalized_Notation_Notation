@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import json
 import logging
-import subprocess  # nosec B404
 import time
+from dataclasses import replace
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 from gnn.execute.executor_specs import FRAMEWORK_DIR_NAMES, ExecutorFrameworkSpec
 
@@ -86,11 +86,12 @@ def _initialize_execution_results(
         "framework_execution_dirs": {k: str(v) for k, v in framework_dirs.items()},
         "total_successes": 0,
         "total_failures": 0,
+        "required_unfinished": 0,
         "dependency_issues": [],
         "syntax_errors": [],
         "execution_details": {},
     }
-    for spec in _framework_specs():
+    for spec in _framework_specs(resolve_availability=False):
         result[spec.result_key] = []
     return result
 
@@ -98,42 +99,36 @@ def _initialize_execution_results(
 def _check_python_dependencies(
     execution_results: dict[str, Any], logger: logging.Logger
 ) -> None:
-    """Record missing Python dependencies before runner execution starts."""
-    missing_python_deps: list[str] = []
-    for dep in ["numpy", "pymdp", "flax", "jax", "optax"]:
-        try:
-            __import__(dep)
-            logger.debug(f"✅ Python dependency available: {dep}")
-        except ImportError:
-            missing_python_deps.append(dep)
-            logger.warning(f"⚠️ Python dependency missing: {dep}")
-
-    if missing_python_deps:
-        execution_results["dependency_issues"].append(
-            f"Missing Python dependencies: {', '.join(missing_python_deps)}"
-        )
+    """Record bounded core-framework diagnoses for explicit census callers."""
+    _record_readiness_census(execution_results, logger, ("jax", "pymdp"))
 
 
 def _check_julia_availability(
     execution_results: dict[str, Any], logger: logging.Logger
 ) -> None:
-    """Record Julia availability for Julia-backed execution frameworks."""
-    try:
-        result = subprocess.run(
-            ["julia", "--version"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=10,
-        )  # nosec B607 B603
-        if result.returncode == 0:
-            logger.info(f"✅ Julia available: {result.stdout.strip()}")
-        else:
-            logger.warning("⚠️ Julia not available or not working properly")
-            execution_results["dependency_issues"].append("Julia not available")
-    except FileNotFoundError:
-        logger.warning("⚠️ Julia not found in PATH")
-        execution_results["dependency_issues"].append("Julia not found in PATH")
+    """Record bounded committed-project diagnoses, without package installs."""
+    _record_readiness_census(
+        execution_results, logger, ("rxinfer", "activeinference_jl")
+    )
+
+
+def _record_readiness_census(
+    execution_results: dict[str, Any],
+    logger: logging.Logger,
+    frameworks: tuple[str, ...],
+) -> None:
+    from dataclasses import asdict
+
+    from gnn.utils.runtime_safety.framework_availability import check_framework
+
+    diagnoses = execution_results.setdefault("readiness", {})
+    for framework in frameworks:
+        diagnosis = check_framework(framework, logger=logger)
+        diagnoses[framework] = asdict(diagnosis)
+        if not diagnosis.available:
+            execution_results["dependency_issues"].append(
+                f"{framework}: {diagnosis.reason_code}: {diagnosis.reason}"
+            )
 
 
 def _validate_pymdp_script_syntax(
@@ -160,13 +155,17 @@ def _append_framework_result(
     status: str,
     message: str,
     output_dir: Path,
+    records: list[dict[str, Any]] | None = None,
+    evidence: dict[str, Any] | None = None,
 ) -> None:
-    """Append a normalized framework execution record."""
+    """Append a normalized framework record with its original script receipts."""
     execution_results[spec.result_key].append(
         {
             "status": status,
             "message": message,
             "output_dir": str(output_dir),
+            **({"script_results": records} if records is not None else {}),
+            **(evidence or {}),
         }
     )
 
@@ -180,13 +179,46 @@ def _execute_framework_spec(
     recursive: bool,
     verbose: bool,
     timeout: Optional[int] = None,
+    required_scripts: tuple[Path, ...] | None = None,
 ) -> None:
     """Execute one framework runner and record its status."""
+    from gnn.execute.preconditions import execution_precondition
+
     output_dir = framework_dirs[spec.framework_dir_key]
+    precondition = execution_precondition(timeout, None)
+    if precondition is not None:
+        _record_precondition_failure(
+            spec, output_dir, execution_results, precondition, required_scripts
+        )
+        return
     if not spec.available:
-        logger.info(spec.unavailable_log)
+        from gnn.execute.preconditions import unavailable_framework_result
+
+        evidence = (
+            unavailable_framework_result(spec.diagnosis)
+            if spec.diagnosis is not None
+            else {"success": False, "skipped": True, "reason": spec.unavailable_message}
+        )
+        required = bool(required_scripts)
+        evidence["required_work"] = required
+        if required:
+            execution_results["required_unfinished"] = (
+                execution_results.get("required_unfinished", 0) + 1
+            )
+        if not evidence["skipped"]:
+            execution_results["total_failures"] += 1
+        status = "SKIPPED" if evidence["skipped"] else "FAILED"
+        logger.warning("%s: %s", spec.framework_dir_key, evidence.get("reason"))
         _append_framework_result(
-            execution_results, spec, "SKIPPED", spec.unavailable_message, output_dir
+            execution_results,
+            spec,
+            status,
+            str(evidence.get("reason") or spec.unavailable_message),
+            output_dir,
+            records=[{"script": str(script), **evidence} for script in required_scripts]
+            if required_scripts
+            else None,
+            evidence={key: value for key, value in evidence.items() if key != "status"},
         )
         return
 
@@ -204,16 +236,60 @@ def _execute_framework_spec(
                 timeout=timeout,
             )
 
+            records = None
+            if isinstance(success, list):
+                records = success
+                if not records or all(record.get("skipped") for record in records):
+                    required = bool(records) or bool(required_scripts)
+                    if required:
+                        execution_results["required_unfinished"] = (
+                            execution_results.get("required_unfinished", 0) + 1
+                        )
+                    _append_framework_result(
+                        execution_results,
+                        spec,
+                        "SKIPPED",
+                        "No runnable scripts; inspect per-script skip receipts",
+                        output_dir,
+                        records,
+                        evidence={"required_work": required},
+                    )
+                    return
+                if any(record.get("skipped") for record in records) and all(
+                    record.get("success") or record.get("skipped") for record in records
+                ):
+                    execution_results["total_failures"] += 1
+                    _append_framework_result(
+                        execution_results,
+                        spec,
+                        "PARTIAL",
+                        "Successful scripts and unfinished skipped work",
+                        output_dir,
+                        records,
+                    )
+                    return
+                success = all(record.get("success") for record in records)
+
             if success:
                 execution_results["total_successes"] += 1
                 _append_framework_result(
-                    execution_results, spec, "SUCCESS", spec.success_message, output_dir
+                    execution_results,
+                    spec,
+                    "SUCCESS",
+                    spec.success_message,
+                    output_dir,
+                    records,
                 )
                 log_step_success(logger, spec.success_log)
             else:
                 execution_results["total_failures"] += 1
                 _append_framework_result(
-                    execution_results, spec, "FAILED", spec.failure_message, output_dir
+                    execution_results,
+                    spec,
+                    "FAILED",
+                    spec.failure_message,
+                    output_dir,
+                    records,
                 )
                 log_step_warning(logger, spec.failure_message)
     except Exception as e:
@@ -231,8 +307,49 @@ def _execute_configured_frameworks(
     verbose: bool,
     timeout: Optional[int] = None,
 ) -> None:
-    """Execute every supported framework according to current availability."""
-    for spec in _framework_specs():
+    """Probe only frameworks with scripts; preserve controlled spec seams."""
+    from gnn.execute.executor_specs import _runner_state
+
+    candidates = _framework_candidates(target_dir)
+    for spec in _framework_specs(resolve_availability=False):
+        required_scripts = candidates.get(spec.framework_dir_key, ())
+        if spec.readiness_pending:
+            if not required_scripts:
+                _append_framework_result(
+                    execution_results,
+                    spec,
+                    "SKIPPED",
+                    "No rendered scripts for this framework",
+                    framework_dirs[spec.framework_dir_key],
+                    records=[],
+                    evidence={"required_work": False},
+                )
+                continue
+            from gnn.execute.preconditions import execution_precondition
+
+            precondition = execution_precondition(timeout, None)
+            if precondition is not None:
+                _record_precondition_failure(
+                    spec,
+                    framework_dirs[spec.framework_dir_key],
+                    execution_results,
+                    precondition,
+                    required_scripts,
+                )
+                continue
+            if spec.framework_dir_key in {"stan", "bnlearn"}:
+                # These maintained list runners own per-script readiness.
+                # In particular R-only bnlearn must not require Python bnlearn.
+                spec = replace(spec, available=True, readiness_pending=False)
+            else:
+                state = _runner_state(spec.framework_dir_key)
+                spec = replace(
+                    spec,
+                    available=state.available,
+                    runner=state.runner,
+                    diagnosis=state.diagnosis,
+                    readiness_pending=False,
+                )
         _execute_framework_spec(
             spec,
             target_dir,
@@ -242,7 +359,65 @@ def _execute_configured_frameworks(
             recursive,
             verbose,
             timeout,
+            required_scripts=required_scripts,
         )
+
+
+def _framework_candidates(target_dir: Path) -> dict[str, tuple[Path, ...]]:
+    """Discover executable framework candidates once, without readiness probes."""
+    from gnn.pipeline.run_context import current_run_context
+
+    context = current_run_context()
+    candidates: dict[str, list[Path]] = {}
+    names = set(FRAMEWORK_DIR_NAMES)
+    for path in target_dir.rglob("*"):
+        if context is not None:
+            context.raise_if_expired()
+        if not path.is_file():
+            continue
+        parents = (target_dir.name, *path.relative_to(target_dir).parts[:-1])
+        key = next((part for part in reversed(parents) if part in names), None)
+        if key is None:
+            continue
+        suffix = path.suffix.lower()
+        if key == "stan":
+            executable = path.name.endswith("_stan.py")
+        elif key in {"rxinfer", "activeinference_jl"}:
+            executable = suffix == ".jl"
+        elif key == "lean":
+            executable = suffix in {".lean", ".md"}
+        elif key == "bnlearn":
+            executable = suffix in {".py", ".r"}
+        else:
+            executable = suffix == ".py"
+        if executable:
+            candidates.setdefault(key, []).append(path)
+    return {key: tuple(sorted(paths)) for key, paths in candidates.items()}
+
+
+def _record_precondition_failure(
+    spec: ExecutorFrameworkSpec,
+    output_dir: Path,
+    execution_results: dict[str, Any],
+    precondition: dict[str, Any],
+    scripts: tuple[Path, ...] | None,
+) -> None:
+    """Keep invalid or exhausted required work visible before readiness probes."""
+    execution_results["total_failures"] += 1
+    _append_framework_result(
+        execution_results,
+        spec,
+        "FAILED",
+        precondition["error"],
+        output_dir,
+        records=[{"script": str(script), **precondition} for script in scripts]
+        if scripts
+        else None,
+        evidence={
+            **{key: value for key, value in precondition.items() if key != "status"},
+            "required_work": True,
+        },
+    )
 
 
 def _write_framework_report_section(
@@ -399,22 +574,32 @@ def _write_execution_artifacts(
 
 def _count_framework_execution_records(execution_results: dict[str, Any]) -> int:
     """Count framework result records across all supported backends."""
-    return sum(len(execution_results[spec.result_key]) for spec in _framework_specs())
+    return sum(
+        sum(
+            record.get("required_work") is not False
+            for record in execution_results[spec.result_key]
+        )
+        for spec in _framework_specs(resolve_availability=False)
+    )
 
 
 def _log_execution_outcome(
     execution_results: dict[str, Any], logger: logging.Logger
 ) -> bool:
     """Log aggregate execution outcome and return success status."""
+    successful = bool(
+        execution_results["total_failures"] == 0
+        and execution_results.get("required_unfinished", 0) == 0
+    )
     total_executions = _count_framework_execution_records(execution_results)
     if total_executions == 0:
         log_step_warning(
             logger, "No simulator scripts or outputs found to execute/analyze"
         )
-        return True
+        return successful
 
     success_rate = execution_results["total_successes"] / total_executions * 100
-    log_step_success(
+    (log_step_success if successful else log_step_warning)(
         logger,
         f"Execution completed with framework-specific organization. Success rate: {success_rate:.1f}% ({execution_results['total_successes']}/{total_executions})",
     )
@@ -428,7 +613,7 @@ def _log_execution_outcome(
             f"⚠️ Syntax errors found: {len(execution_results['syntax_errors'])}"
         )
 
-    return cast("bool", execution_results["total_failures"] == 0)
+    return successful
 
 
 def execute_rendered_simulators(
@@ -467,8 +652,7 @@ def execute_rendered_simulators(
     try:
         execution_results = _initialize_execution_results(target_dir, framework_dirs)
         logger.info("🔍 Pre-execution validation and dependency checking...")
-        _check_python_dependencies(execution_results, logger)
-        _check_julia_availability(execution_results, logger)
+        # Each selected runner owns a bounded diagnosis; avoid unrelated eager imports.
 
         _execute_configured_frameworks(
             target_dir,

@@ -825,9 +825,7 @@ def test_write_marginals_row_sum_tolerance(tmp_path):
     }
     out = write_marginals(ok, tmp_path / "ok.json")
     assert json.loads(out.read_text(encoding="utf-8"))["marginals"]["m"] == ok["m"]
-    with pytest.raises(
-        ValueError, match=r"sum to 0\.8999999999999999, expected 1\.0"
-    ):
+    with pytest.raises(ValueError, match=r"sum to 0\.8999999999999999, expected 1\.0"):
         write_marginals({"c": {"low": 0.3, "mid": 0.3, "high": 0.3}}, tmp_path / "x")
 
 

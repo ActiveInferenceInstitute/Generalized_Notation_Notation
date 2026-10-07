@@ -1,7 +1,16 @@
 # Execute Module - Agent Scaffolding
 
 ## Module Overview
-**Purpose**: Execute rendered simulation scripts across multiple frameworks (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, Lean, bnlearn, ngc-learn). Per-folder `execution_summary.json` files are merged so the durable summary covers every input folder; frameworks a model's kind cannot use are reported `unsupported` by Step 11 and are never executed.
+**Purpose**: Execute selected rendered simulation scripts through the canonical backend registry: 13 execution targets comprising 12 render backends and the execution-only Lean bridge. These include PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn, ngc-learn, cpomdp and THRML. The pipeline freezes model selection and produces one current-run aggregate; earlier unbound or different-run summaries are archived without contributing current evidence. Verified receipts may be recounted only within the same run/configuration. Step 11 reports incompatible model kinds as `unsupported`; they are never executed.
+
+THRML and cpomdp remain experimental and require explicit backend selection;
+they are excluded from the maintained `all` renderer preset. Bounded readiness
+probes use the selected interpreter/toolchain and preserve structured diagnoses
+for missing packages/toolchains, unsupported Python/package versions, probe
+timeout/failure and missing executors. A timed-out probe does not establish
+package absence, and skipped or unfinished required work cannot establish a
+successful complete run. Installation remains explicit; see
+[THRML](thrml/README.md) and [cpomdp](../render/cpomdp/README.md).
 
 **Pipeline Step**: Step 12: Execution (src/gnn/12_execute.py)
 
@@ -11,7 +20,7 @@
 
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
 
-**Last Updated**: 2026-09-26
+**Last Updated**: 2026-10-05
 
 ---
 
@@ -67,7 +76,7 @@ processor/
 - `output_dir` (Path): Output directory for execution results
 - `verbose` (bool): Enable verbose logging (default: False)
 - `frameworks` (str): Frameworks to execute ("all", "lite", or comma-separated list, default: "all")
-  - `"all"`: Execute all configured executors
+  - `"all"`: Select maintained backends from the registry; experimental THRML/cpomdp require explicit selection
   - `"lite"`: Selects PyMDP, JAX, DisCoPy, and bnlearn (bnlearn scripts skip at the shared pre-flight probe when the `bnlearn` extra is absent; see below)
 - `timeout` (int): Execution timeout per script in seconds (default: 3600)
 - `render_output_dir` (Optional[Path]): Explicit Step 11 output directory to search. This is the safest way to keep Step 12 scoped to an isolated pipeline run.
@@ -130,10 +139,10 @@ if not result["success"]:
 
 
 #### `execute_rendered_simulators(target_dir: Path, output_dir: Path, logger: logging.Logger, recursive: bool = False, verbose: bool = False, **kwargs) -> bool`
-**Description**: Iterate over the `ExecutorFrameworkSpec` registry for every supported framework runner (PyMDP, RxInfer.jl, DisCoPy, ActiveInference.jl, JAX, NumPyro, PyTorch, ngc-learn, Lean, Stan, bnlearn) and write a summary JSON + markdown report under ``output_dir / "12_execute_output" / "summaries" /``. Stan runs as an availability-gated registry runner (cmdstanpy + CmdStan toolchain probe). bnlearn carries a render-only verdict: the registry never runs it and records ``"SKIPPED"`` with that reason, while rendered bnlearn scripts keep executing through the Step 12 script path (per-lane output env vars, `BNLEARN_OUTPUT_DIR`). Missing optional dependencies are recorded as ``"SKIPPED"`` instead of failures.
+**Description**: Iterate over the `ExecutorFrameworkSpec` registry for every supported framework runner (PyMDP, RxInfer.jl, DisCoPy, ActiveInference.jl, JAX, NumPyro, PyTorch, ngc-learn, Lean, Stan, bnlearn) and write a summary JSON + markdown report under ``output_dir / "12_execute_output" / "summaries" /``. Stan runs as an availability-gated registry runner (cmdstanpy + CmdStan toolchain probe). bnlearn uses the maintained language-aware runner in both registry and direct script dispatch (`BNLEARN_OUTPUT_DIR`); unavailable runtimes retain explicit skip receipts. cpomdp direct dispatch is explicitly selected and experimental; it is excluded from automatic registry execution. Missing optional dependencies are recorded as ``"SKIPPED"`` instead of failures.
 
 #### `plan_execute(target_dir: Path, output_dir: Path, frameworks: str = "all", **config) -> ExecutionPlan`
-**Description**: Dry-run Step 12 planner (``execute.planning``). Composes the same discovery / render-contract / dependency primitives as `process_execute` but runs **no scripts and no Julia package probing** — it answers "what would Step 12 do?" for preflight checks, CI gates, and interactive debugging. Returns a typed `ExecutionPlan` (``execute.types``) with `requested_frameworks`, `render_output_dir`, `render_contract_found`, `status` (`"ready"` | `"no_render_output"` | `"no_executable_scripts"` | `"invalid_frameworks"`), `total_scripts`, and per-script disposition lists (`would_execute`, `would_skip_dependency`, `unknown_framework_scripts`), plus `missing_render_scripts` and `render_failures`. Raises `ValueError` on an invalid `frameworks` argument (the same exception `process_execute` catches and converts to `return False`).
+**Description**: Dry-run Step 12 planner (``execute.planning``). Composes the same discovery / render-contract / dependency primitives as `process_execute` but runs **no rendered model scripts** and uses bounded package readiness probes, including the committed Julia projects — it answers "what would Step 12 do?" for preflight checks, CI gates, and interactive debugging. Returns a typed `ExecutionPlan` (``execute.types``) with `requested_frameworks`, `render_output_dir`, `render_contract_found`, `status` (`"ready"` | `"no_render_output"` | `"no_executable_scripts"` | `"invalid_frameworks"`), `total_scripts`, and per-script disposition lists (`would_execute`, `would_skip_dependency`, `unknown_framework_scripts`), plus `missing_render_scripts` and `render_failures`. Raises `ValueError` on an invalid `frameworks` argument (the same exception `process_execute` catches and converts to `return False`).
 
 **Example**:
 ```python
@@ -482,3 +491,27 @@ All five are registered by `register_tools()` in `src/gnn/execute/mcp.py`.
 - **[AGENTS](AGENTS.md)**: Agentic Workflows
 - **[SPEC](SPEC.md)**: Architectural Specification
 - **[SKILL](SKILL.md)**: Capability API
+
+Distributed changes must preserve submitted order and independent sibling
+receipts across typed cancellation, task errors, retries, and recoverable loss.
+Use one monotonic collection deadline shared by waits and result transfer;
+intersect it with the current invocation budget. Cancellation requests and
+queued cleanup do not certify remote worker termination. Close only owned
+clusters and connections, preserving caller-owned Ray runtimes.
+
+Run the optional real backend regressions with the `scaling` extra. Ray startup
+and task acceptance run in an owned process group under an outer deadline;
+cleanup kills only descendants of that acceptance process. Tests cover actual
+Dask cancellation during wait, worker data loss, bounded stalled transfer,
+retry exhaustion, ordered mixed receipts, and separate local-cluster cleanup.
+
+
+## v4 THRML execution
+
+`gnn.execute.thrml` exports lazy direct/batch execution, discovery, readiness and
+fresh-result validation. The registry advertises its maintained batch runner;
+explicitly rendered THRML scripts execute through bounded native readiness and
+process supervision. `GNNExecutor` dispatch and Step 12 share validation of the
+emitted execution ID, current script SHA256 and empirical sample witness.
+Unknown, stale, malformed, cancelled or unfinished evidence remains unsuccessful.
+Read [thrml/SPEC.md](thrml/SPEC.md) for exact signatures and artifact paths.

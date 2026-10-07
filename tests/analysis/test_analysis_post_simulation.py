@@ -545,7 +545,11 @@ class TestCompareFrameworkResults:
         assert comparison["framework_count"] == 2
         assert "pymdp" in comparison["frameworks_compared"]
         assert "jax" in comparison["frameworks_compared"]
-        assert comparison["comparisons"]["fastest_execution"]["framework"] == "jax"
+        assert "fastest_execution" not in comparison["comparisons"]
+        assert (
+            "missing declared model_id"
+            in comparison["comparisons"]["unavailable_metrics"]["fastest_execution"]
+        )
 
     @pytest.mark.unit
     def test_success_rates_comparison(self) -> None:

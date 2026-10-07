@@ -420,6 +420,9 @@ def validate_directory(
 
         with open(gnn_results_file, "r") as f:
             gnn_results = json.load(f)
+        from gnn.pipeline.parse_receipt import selected_parse_receipt
+
+        gnn_results = selected_parse_receipt(gnn_results, 6)
 
         active_logger.info(
             f"Loaded {len(gnn_results['processed_files'])} parsed GNN files"

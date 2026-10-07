@@ -240,7 +240,7 @@ class StepConfiguration:
                     "recursive": True,
                     "verbose": False,
                     "llm_tasks": "all",
-                    "llm_timeout": 360,
+                    "llm_timeout": None,
                 },
                 "description": "LLM Analysis & Processing",
             },

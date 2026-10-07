@@ -380,7 +380,7 @@ def test_injected_runtime_drives_the_comparison_without_julia(
     reasons = re.findall(r'<td class="reason">(.*?)</td>', text)
     assert reasons.count("julia is not on PATH") == 2
     assert reasons.count("jax not installed (uv sync)") == 1
-    assert reasons.count("torch not installed (uv sync)") == 1
+    assert reasons.count("torch not installed (uv sync --extra torch)") == 1
     assert reasons.count("numpyro not installed (uv sync)") == 1
     assert "exit code 2" in text
     assert recorded == [

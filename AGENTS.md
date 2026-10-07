@@ -198,8 +198,12 @@ flowchart TD
 
 ### Data Dependencies
 
-Edges below describe **runtime data flow**, verified against each step's
-processor. Most steps re-parse the input GNN files directly; only the edges
+Edges below describe processor-level data flow. In v4, source consumers
+receive the immutable selected-model manifest, artifact consumers receive
+current-run indexes, and Steps 23/24 receive the current summary snapshot.
+The [migration guide](docs/development/run_ownership_migration.md) governs
+identity, freshness and scheduling; directory presence cannot admit prior-run
+evidence. Most steps re-parse the input GNN files directly; only the edges
 shown move artifacts between steps. Solid arrows are artifact reads the
 consumer performs on its primary path; dotted arrows are optional enrichments
 read only when the producer's output directory exists.
@@ -289,7 +293,7 @@ deliberately broader than this artifact graph.
 - **Screen Reader Support**: Accessible output with emoji-free alternatives for assistive technologies
 - **Performance Monitoring**: Built-in timing and resource consumption tracking with visual displays
 
-### Current Validation (September 2026)
+### Historical Validation (September 2026)
 
 - **uv 0.12.0 compatibility**: Verified. `uv lock --check` passes and `uv sync --frozen` succeeds. `uv run --extra dev` executes all tests. The `uv` toolchain constraint `uv>=0.7.8` in Dockerfile is the minimum bootstrap floor.
 - **Docs audit**: `uv run --extra dev python docs/development/docs_audit.py --strict --check-anchors --no-write` reports no broken links, anchor gaps, or AGENTS/README coverage gaps.
@@ -298,7 +302,7 @@ deliberately broader than this artifact graph.
 - **Mypy**: `uv run --extra dev mypy src --config-file pyproject.toml` passes (0 errors).
 - **Tests**: command of record is `uv run --extra dev python -m pytest tests/ -q --tb=no -rsx -m "not ollama"`; the release receipt for the current version (collected/passed/skipped totals on the curated exemplar corpus) is recorded in `CHANGELOG.md` §3.3.0 (2026-09-07); re-run the command for live totals rather than trusting numbers in prose. Julia RxInfer execution uses the committed `Project.toml` under `src/gnn/execute/rxinfer/` (RxInfer 5.5.0 pinned); ActiveInference.jl uses the committed minimal env under `src/gnn/execute/activeinference_jl/`. With a local Ollama daemon and `smollm2:135m-instruct-q4_K_S` pulled, the two Ollama files are re-enabled.
 - **LLM Default Model**: `smollm2:135m-instruct-q4_K_S` via Ollama (`llm.defaults.DEFAULT_OLLAMA_MODEL`; override with `OLLAMA_MODEL` / `input/config.yaml`).
-- **Renderer inventory**: PyMDP, RxInfer, JAX, NumPyro, Stan, PyTorch, ActiveInference.jl, DisCoPy, and bnlearn have maintained render paths. The public root `output/` contract is the POMDP GridWorld full run with strict execution proof for PyMDP, RxInfer.jl, and ActiveInference.jl.
+- **Renderer inventory**: derive maintained paths and model-family support from `src/gnn/render/framework_registry.py`. Implemented bnlearn and ngc-learn execution is declared in the executor registry. Experimental cpomdp and THRML require explicit framework selection; their adapter-specific evidence is separate from the historical public GridWorld output.
 - **Default dev suite**: FastAPI, websocket bridge, and LSP tests run under the `dev` extra; browser, public-network, live GUI, audio-DSP, and Ollama integrations remain explicit opt-in surfaces rather than hidden default-suite skips.
 - **Visual Accessibility**: All pipeline steps now include enhanced visual indicators and progress tracking.
 
@@ -308,7 +312,7 @@ deliberately broader than this artifact graph.
 - **`unsupported` render status**: frameworks whose `framework_registry.py` entry has `supports_continuous: False` (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) return `status: unsupported` for continuous models; these are counted separately under `unsupported_framework_renderings` in `render_processing_summary.json`, excluded from success rates, and never executed by Step 12.
 - **Native continuous backends**: JAX, NumPyro (+NUTS), PyTorch and Stan share `render/continuous_script.py` (online Kalman filter, Joseph-form update, closed-loop control); RxInfer.jl uses its native LGSSM strategy.
 - **Stan is executable**: `render/stan/stan_renderer.py` emits an HMM (forward-algorithm marginalisation, Dirichlet priors centred on `A`) for discrete models and the Kalman marginal likelihood for continuous ones, as `<stem>_stan.stan` plus a `<stem>_stan.py` cmdstanpy driver; `src/gnn/execute/stan/` runs it and `gnn.utils.runtime_safety.framework_availability` reports `skipped` when `cmdstanpy`/CmdStan is absent (`uv sync --extra stan`).
-- **Step 12 summary merge**: `execute/processor.py` (`_merge_prior_execution_summary`) folds the previous `execution_summary.json` into the current run so the durable summary covers every input folder, mirroring Step 11.
+- **Historical Step 12 summary merge**: v3.2 combined summaries across input folders. v4 aggregates the frozen current-run selection once and excludes inherited execution artifacts from current evidence.
 - **Julia pre-exec gate**: a `julia` launcher without a working toolchain no longer blocks scripts; the probe degrades to the advisory regex sweep unless the parser itself reports a failure.
 - Live counts come from `output/11_render_output/render_processing_summary.json` and `output/12_execute_output/summaries/execution_summary.json`; see `CHANGELOG.md` §3.2.0 for the release receipt.
 
@@ -323,6 +327,32 @@ deliberately broader than this artifact graph.
 - Headless extraction (`gnn extract FILE` / `python -m gnn.extract`), canonical
   B orientation with `canonicalize_pomdp()`, factor/dimension provenance, and
   the `torch` optional extra are documented in `CHANGELOG.md` §3.3.0.
+
+### v4.0.0 "Current-run Reliability" (2026-10-01 implementation)
+
+- Frozen selection, path-derived identities, source hashes, resolved configuration,
+  current-run artifact indexes, output leases, and one monotonic deadline bind
+  each invocation. Required unfinished work prevents success. Read the
+  [migration guide](docs/development/run_ownership_migration.md) before changing
+  these contracts or consuming earlier artifacts as evidence for a new run.
+- [THRML](docs/gnn/implementations/thrml.md) uses the ordinary released
+  `thrml==0.1.4` wheel for admitted finite categorical Gibbs smoothing under
+  fixed actions. Pure validation/admission, generated native sampling,
+  supervised execution, and sample-bound analysis are separate modules.
+  Configure `render.backend_options.thrml`; direct CLI/API/MCP options share the
+  renderer's validated option set. Structural zeros, coupled agents, continuous models,
+  action search, convergence, and hardware operation are outside this contract.
+- [cpomdp](docs/gnn/implementations/cpomdp.md) remains an explicitly selected
+  experimental released-wheel backend. Admission estimates, numerical witnesses,
+  execution receipts, and formal custody retain separate claims.
+- Step 16 admits numerical comparisons only for compatible model IDs, source
+  hashes, inference semantics, inputs and declared precision. Native Gaussian
+  uncertainty comes from covariance; unbound or incompatible comparisons retain
+  refusal reasons through JSON, Markdown and plotting.
+- The [scope ledger](SCOPE-2026-10-01.md) records acceptance and deferred checks.
+  Publication requires final repository gates, manuscript rendering, paired
+  custody, hosted results, and remote commit parity; implementation prose is not
+  a substitute for those receipts.
 
 ---
 
@@ -373,7 +403,7 @@ python src/gnn/3_gnn.py --target-dir input/gnn_files --output-dir output --verbo
 
 ### Adding New Modules
 
-1. Create module directory: `src/new_module/`
+1. Create module directory: `src/gnn/new_module/`
 2. Implement `__init__.py` with public API
 3. Create `AGENTS.md` documentation
 4. Add numbered script: `N_new_module.py`
@@ -419,6 +449,11 @@ This repository shares custody pairs with two sibling repositories: fep_lean (br
 ## Manuscript custody (SC-22): count-changing PRs run the full ritual
 
 `scripts/check_hydrated_prose.py` (the `Hydrated prose matches token map` step of `local-gates.yml`'s `repo-gates` job, `just hydrated-prose`) re-substitutes `manuscript/*.md` from the committed `output/data/manuscript_variables.json` and fails when the committed `output/manuscript/` differs. **Consequence: any PR that regenerates the token map (every count-changing `src/` or `tests/` PR) must run the full SC-22 ritual before it can go green.** Regenerating the map and re-recording the custody manifest is no longer enough. The ritual: `python -m scripts.manuscript_build_figures` → the template's `stage_03_render` (fresh `docxology/template` clone with this checkout symlinked at `projects/active/GeneralizedNotationNotation`) → `scripts/z_verify_fresh_render.py` → `scripts/z_record_manuscript_render_manifest.py` → commit `output/`. The canonical statement is the `scripts/z_generate_manuscript_variables.py` docstring.
+
+If manuscript custody is red on main, repair main first. PR gates use the
+merge-base with the target SHA; only unchanged diagnostic and exact-evidence
+fingerprints may warn with the full base SHA. New or changed drift fails.
+Main and scheduled audits remain strict.
 
 ## Agent Capabilities
 
@@ -511,7 +546,9 @@ Each module provides specialized agent capabilities for different aspects of Act
 ### 🚀 **Execute Agent** - Simulation Runner
 
 - **ActiveInferenceAgent**: Primary full-fidelity execution engine
-- Multi-environment execution (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan — bnlearn is render-only with no executor)
+- Multi-environment execution follows the live executor registry, including
+  PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan,
+  bnlearn, ngc-learn, and explicitly selected experimental THRML/cpomdp.
 - Resource monitoring and optimization
 - Explicit failure, skip, and retry reporting
 - Cross-platform compatibility
@@ -632,7 +669,7 @@ uv run --extra dev python scripts/run_v3_orchestration_acceptance.py
 
 ---
 
-**Last Updated**: 2026-09-07
+**Last Updated**: 2026-10-02
 **Pipeline Version**: [pyproject.toml](pyproject.toml) (canonical)
 **Total Steps**: 25 (0-24)
 **Status**: Maintained

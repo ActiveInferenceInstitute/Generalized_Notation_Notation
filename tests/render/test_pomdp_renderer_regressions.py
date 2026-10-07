@@ -20,7 +20,6 @@ DISCRETE_DIR = REPO_ROOT / "input" / "gnn_files" / "discrete"
     ("filename", "expected_shape"),
     [
         ("actinf_pomdp_agent.md", (3, 3, 3)),
-        ("tmaze_epistemic.md", (8, 8, 4)),
     ],
 )
 @pytest.mark.parametrize("framework", ["rxinfer", "activeinference_jl"])
@@ -70,3 +69,21 @@ def test_pomdp_bnlearn_renderer_sanitizes_output_filename(tmp_path: Path) -> Non
     artifact_path.relative_to(output_dir.resolve())
     assert artifact_path.name == "escape_bnlearn.py"
     assert not (tmp_path.parent / "escape_bnlearn.py").exists()
+
+
+@pytest.mark.parametrize("framework", ["rxinfer", "activeinference_jl"])
+def test_episodic_objective_requires_explicit_backend_support(framework, tmp_path):
+    pomdp = extract_pomdp_from_file(
+        DISCRETE_DIR / "tmaze_epistemic.md", strict_validation=True
+    )
+    assert pomdp is not None
+    processor = POMDPRenderProcessor(tmp_path)
+    spec = processor._pomdp_to_gnn_spec(pomdp)
+    assert spec["canonical_pomdp_schema"] == "raw_discrete_components_v1"
+    result = processor._process_single_framework(pomdp, framework)
+    assert result["status"] == "unsupported"
+    assert "episodic_contingent_v1" in result["message"]
+    ok, message, artifacts = render_gnn_spec(spec, framework, tmp_path / framework)
+    assert not ok and not artifacts
+    assert message.startswith("unsupported-execution-contract:")
+    assert not list(tmp_path.rglob("*.jl"))

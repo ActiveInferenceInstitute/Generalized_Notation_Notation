@@ -12,7 +12,7 @@
 
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
 
-**Last Updated**: 2026-09-25
+**Last Updated**: 2026-10-05
 
 ---
 
@@ -33,7 +33,7 @@
 - Model comparison and differential analysis
 - Distribution analysis and correlation studies
 - **PyMDP Visualization** - belief evolution, state sequences, performance metrics plots
-- **Cross-framework comparison** - uses whatever execution (Step 12) produced. `_extract_simulation_metrics` (in `analyzer.py`) prefers `simulation_data/simulation_results.json` (and other canonical JSON) before `execution_logs/*_results.json`, so backends that write full traces to `simulation_data/` (e.g. RxInfer) are not masked by sparse structured logs. DisCoPy: inline `simulation_data.analysis` / `parameters` from structured logs populate `circuit_info`; if still missing, `simulation_data/circuit_info.json` is merged when present. bnlearn structured logs populate `model_parameters` when vector traces are absent. If every run for a framework was skipped (`skipped: true` in the execution summary), logs INFO instead of WARNING for bnlearn. Otherwise missing data is reported as "[framework] No simulation data found". Python backends are in core `uv sync`; Julia coverage needs Julia + packages installed, then re-run Step 12.
+- **Cross-framework comparison** - uses whatever execution (Step 12) produced. `_extract_simulation_metrics` (in `framework_comparison.py`) prefers `simulation_data/simulation_results.json` (and other canonical JSON) before `execution_logs/*_results.json`, so backends that write full traces to `simulation_data/` (e.g. RxInfer) are not masked by sparse structured logs. DisCoPy: inline `simulation_data.analysis` / `parameters` from structured logs populate `circuit_info`; if still missing, `simulation_data/circuit_info.json` is merged when present. bnlearn structured logs populate `model_parameters` when vector traces are absent. If every run for a framework was skipped (`skipped: true` in the execution summary), logs INFO instead of WARNING for bnlearn. Otherwise missing data is reported as "[framework] No simulation data found". Optional Python backends require their declared setup extras; Julia coverage requires the pinned Julia environments before Step 12.
 - **Kronecker-factorized JAX (MAJ-02)** - `extract_jax_data` dispatches on
   schema: `jax_kronecker_factorized_v1` payloads (top-level, nested
   `simulation_data`, or implementation-directory files) are extracted by
@@ -58,6 +58,10 @@
   which operate on source files rather than parsed models.
 
 ---
+
+## Result semantics and comparisons
+
+The shared result adapter validates categorical rows and Gaussian means/covariances while preserving native agent/factor views. Consecutive categorical posteriors use Jensen–Shannon distance when SciPy is available (with a separately labeled Euclidean fallback); continuous posterior means use Euclidean mean-update distance without probability normalization. Mean updates do not measure Gaussian uncertainty: uncertainty comes from covariance. Malformed traces are refused. Numerical comparisons require compatible, source-bound model and inference identities. Missing bindings or unavailable scientific quantities retain reasons; shape agreement and display names cannot establish agreement. Operational timing/counts remain descriptive unless the attempted models, configuration and environment admit a comparison. See [the v4 migration](../../../docs/development/run_ownership_migration.md#scientific-comparison-admission).
 
 ## API Reference
 
@@ -301,7 +305,14 @@ patterns, analysis filename, plot labels, bar color) and re-exports
 `generate_analysis_from_logs` / `_generate_plots` — the public call sites
 (processor's importlib discovery, `test_numpyro_pytorch_analyzers.py`) are
 unchanged. Exports: `FlatPayloadSpec`, `compute_flat_payload_metrics` (pure),
-`discover_result_files`, `generate_analysis_from_logs`.
+`discover_result_files`, `generate_analysis_from_logs`. Trajectory plots retain
+all states; plots with more than eight states reserve a separate legend panel,
+clear of the data axes. Adaptive trajectory
+and observation plots admit at most 64 million nominal pixels at their save DPI;
+this estimates canvas allocation rather than bounding all Matplotlib buffers.
+Oversized requests raise `ValueError` without dropping states or labels. Controls
+cover 256 states and 64 observation categories; process watchdogs remain the
+runtime authority.
 
 ---
 
@@ -400,13 +411,18 @@ full step pipeline and writes `analysis_results.json` (processor.py:713) and
   - `generate_action_analysis(actions: List[int], output_path: Path, title: str = "Action Selection Analysis") -> str`
     (viz_plots.py:516) — histogram, sequence, transition matrix.
   - `generate_free_energy_plots(free_energy: List[float], output_path: Path, title: str = "Free Energy Dynamics") -> str`
-    (viz_plots.py:629) — 2x2 panel: evolution with min-EFE overlay (handles
-    per-policy 2D input), selected-EFE distribution, per-step change,
-    rolling-variance convergence.
-  - `generate_vfe_vs_efe_plot(vfe: List[float], efe: List[Any], output_path: Path, title: str = "Variational vs Expected Free Energy") -> str`
-    (viz_plots.py:821) — dual-axis VFE vs min-EFE per step.
+    — four data panels: evolution with min-EFE overlay (handles per-policy 2D
+    input), selected-EFE distribution, per-step change and rolling-variance
+    convergence. Diagnostic text occupies reserved panels outside the data axes.
+  - `generate_vfe_vs_efe_plot(vfe: List[float], efe: List[Any], output_path: Path, title: str = "Variational vs Expected Free Energy", *, vfe_per_iteration: bool = False) -> str`
+    — the default retains the existing shared timestep axes. When
+    `vfe_per_iteration=True`, separate panels use one-based inference iterations
+    for VFE and zero-based model timesteps for min-EFE. The result context supplies
+    this flag; unequal trace lengths are retained without implying alignment.
   - `generate_observation_analysis(observations: List[int], output_path: Path, title: str = "Observation Analysis") -> str`
-    (viz_plots.py:886) — frequency + sequence.
+    — frequency and time-ordered sequence views use categorical positions with
+    original numeric category labels and ordinal category colors. Labels/counts
+    are retained; oversized nominal canvases are refused before allocation.
 
 **Maintenance contract**: public re-export chain is `visualizations.py`
 (viz_plots import at visualizations.py:35-42) → `post_simulation.py`
@@ -562,8 +578,9 @@ framework names normalize via `viz_schema._normalize_framework_name`
 - `mcp.list_analysis_tools_mcp` honest-availability probe (the unconditional `"available": True` reply was removed; availability is measured)
 - `visualizations.py` matplotlib routed through `viz_base.safe_savefig` (single save/close/error path; 13 duplicated boilerplate sites consolidated)
 
-**Known Issues**:
-- None currently
+**Verification boundaries**:
+- Numerical comparisons require compatible, source-bound results; missing metadata produces an unavailable comparison.
+- Live optional-backend acceptance is recorded separately from dependency-light tests.
 
 ### Roadmap
 - **Next Version**: Enhanced visualization of analysis results
@@ -586,7 +603,7 @@ framework names normalize via `viz_schema._normalize_framework_name`
 
 ---
 
-**Last Updated**: 2026-09-25
+**Last Updated**: 2026-10-05
 **Maintainer**: GNN Pipeline Team
 **Status**: Production Ready
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
@@ -599,3 +616,21 @@ framework names normalize via `viz_schema._normalize_framework_name`
 - **[AGENTS](AGENTS.md)**: Agentic Workflows
 - **[SPEC](SPEC.md)**: Architectural Specification
 - **[SKILL](SKILL.md)**: Capability API
+
+## Scientific result views
+
+`result_adapter.py` validates categorical/native marginal/Gaussian payloads and
+provides `result_views`, `structured_result_data`, and `continuous_result_metrics`.
+`rxinfer/family_visuals.py` draws actual Gaussian means and covariance intervals
+and separately labeled native views across PNG/GIF/HTML. See
+[backend scientific contracts](../../../docs/development/backend_scientific_contracts.md).
+
+
+## v4 THRML analysis
+
+[thrml/](thrml/README.md) validates native categorical sampling results before
+publishing readable posterior/predictive plots. Full-sequence smoothing,
+replicate prediction and fixed T-1 transition actions remain explicit. Independent
+component marginals are separate; empirical entropy does not establish
+convergence/calibration. Unavailable EFE/VFE and continuous covariance quantities
+remain absent with reasons. Current-run selection governs analysis dispatch.

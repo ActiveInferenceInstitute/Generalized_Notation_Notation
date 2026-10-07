@@ -9,6 +9,13 @@ import pytest
 
 import gnn.type_checker.resource_estimator as resource_estimator
 from gnn.type_checker.estimation.estimator import GNNResourceEstimator
+from gnn.type_checker.estimation.report_html import _generate_visualizations_for_html
+from tests.helpers.bar_labels import (
+    assert_bar_labels_offset_in_points,
+    assert_png_bounded,
+    figures_held_open,
+    open_bar_figures,
+)
 
 _SPEC = """## GNNSection
 ActInfPOMDP
@@ -65,3 +72,36 @@ def test_main_estimates_directory_recursive(
     exit_code = resource_estimator.main()
 
     assert exit_code == 0
+
+
+# Degenerate: near-zero estimates, where the old +0.01 data-unit label offset
+# was ~100 axes-heights above the bars; large: estimates in the thousands.
+_ESTIMATE_SCALES = {"degenerate": 1e-4, "large": 5e3}
+
+
+@pytest.mark.parametrize("case", sorted(_ESTIMATE_SCALES))
+def test_html_estimate_bar_labels_are_offset_in_points(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str
+) -> None:
+    scale = _ESTIMATE_SCALES[case]
+    results = {
+        f"model_{i}.md": {
+            "memory_estimate": scale * (i + 1),
+            "inference_estimate": scale * (i + 2),
+            "storage_estimate": scale * (i + 3),
+        }
+        for i in range(3)
+    }
+
+    with figures_held_open(monkeypatch):
+        _generate_visualizations_for_html(results, tmp_path)
+        for name in (
+            "memory_usage_html.png",
+            "inference_time_html.png",
+            "storage_requirements_html.png",
+        ):
+            assert_png_bounded(tmp_path / name)
+        figures = open_bar_figures()
+        assert len(figures) == 3
+        for fig in figures:
+            assert_bar_labels_offset_in_points(fig)

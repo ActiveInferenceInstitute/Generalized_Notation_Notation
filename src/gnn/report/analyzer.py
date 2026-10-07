@@ -184,15 +184,29 @@ def collect_pipeline_data(
         pipeline_output_dir / "00_pipeline_summary" / "pipeline_execution_summary.json",
         pipeline_output_dir / "pipeline_execution_summary.json",
     ]
+    from gnn.pipeline.run_context import current_run_context
+
+    context = current_run_context()
+    if context is not None:
+        pipeline_summary_candidates = [
+            pipeline_output_dir / "00_pipeline_summary" / "current_summary.json"
+        ]
     pipeline_summary_file = None
     for candidate in pipeline_summary_candidates:
         if candidate.exists():
             pipeline_summary_file = candidate
             break
+    if context is not None and pipeline_summary_file is None:
+        raise ValueError("Current-run report snapshot is unavailable")
     if pipeline_summary_file is not None:
         try:
             with open(pipeline_summary_file, "r", encoding="utf-8") as f:
                 pipeline_data["pipeline_summary"] = json.load(f)
+            if (
+                context is not None
+                and pipeline_data["pipeline_summary"].get("run_id") != context.run_id
+            ):
+                raise ValueError("Report snapshot belongs to a different run")
 
             # Extract performance metrics from summary
             summary = pipeline_data["pipeline_summary"]
@@ -215,6 +229,8 @@ def collect_pipeline_data(
                 )
 
         except Exception as e:
+            if context is not None:
+                raise ValueError(f"Current-run report snapshot is invalid: {e}") from e
             logger.warning(f"Failed to read pipeline summary: {e}")
 
     # Collect data from each step directory
@@ -375,7 +391,9 @@ def analyze_step_directory(
 
     try:
         # Count files and calculate sizes
-        for file_path in sorted(step_path.rglob("*")):
+        from gnn.pipeline.artifact_ownership import current_artifact_files
+
+        for file_path in current_artifact_files(step_path):
             if file_path.is_file():
                 step_data["file_count"] += 1
                 file_size_mb = file_path.stat().st_size / (1024 * 1024)
@@ -447,9 +465,11 @@ def analyze_step_specific_data(
 
     try:
         # Look for performance metrics files
-        perf_files = sorted(step_path.glob("*performance*.json")) + sorted(
-            step_path.glob("*metrics*.json")
-        )
+        from gnn.pipeline.artifact_ownership import current_artifact_files
+
+        perf_files = current_artifact_files(
+            step_path, "*performance*.json"
+        ) + current_artifact_files(step_path, "*metrics*.json")
         for perf_file in perf_files:
             try:
                 with open(perf_file, "r", encoding="utf-8") as f:
@@ -459,8 +479,8 @@ def analyze_step_specific_data(
                 logger.debug(f"Failed to read performance file {perf_file}: {e}")
 
         # Look for error logs
-        log_files = sorted(step_path.glob("*.log")) + sorted(
-            step_path.glob("*error*.json")
+        log_files = current_artifact_files(step_path, "*.log") + current_artifact_files(
+            step_path, "*error*.json"
         )
         error_logs: list[Any] = []
         for log_file in log_files:
@@ -705,7 +725,9 @@ def collect_visualizations(
 
             # Scan for visualization files
             for pattern in patterns:
-                for viz_file in sorted(step_path.rglob(pattern)):
+                from gnn.pipeline.artifact_ownership import current_artifact_files
+
+                for viz_file in current_artifact_files(step_path, pattern):
                     if viz_file.is_file():
                         try:
                             file_size = viz_file.stat().st_size

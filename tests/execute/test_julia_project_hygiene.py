@@ -24,9 +24,7 @@ from gnn.pipeline.model_family_acceptance import load_model_family_manifest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RXINFER_PROJECT = REPO_ROOT / "src/gnn/execute/rxinfer/Project.toml"
 RXINFER_MANIFEST = REPO_ROOT / "src/gnn/execute/rxinfer/Manifest.toml"
-ACTIVEINFERENCE_PROJECT = (
-    REPO_ROOT / "src/gnn/execute/activeinference_jl/Project.toml"
-)
+ACTIVEINFERENCE_PROJECT = REPO_ROOT / "src/gnn/execute/activeinference_jl/Project.toml"
 ACTIVEINFERENCE_MANIFEST = (
     REPO_ROOT / "src/gnn/execute/activeinference_jl/Manifest.toml"
 )
@@ -35,9 +33,7 @@ PLACEHOLDER_UUID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 
 def test_project_tomls_have_real_headers_and_one_julia_floor() -> None:
     rxinfer = tomllib.loads(RXINFER_PROJECT.read_text(encoding="utf-8"))
-    activeinference = tomllib.loads(
-        ACTIVEINFERENCE_PROJECT.read_text(encoding="utf-8")
-    )
+    activeinference = tomllib.loads(ACTIVEINFERENCE_PROJECT.read_text(encoding="utf-8"))
 
     for project, expected_name in (
         (rxinfer, "GnnRxInferModels"),
@@ -66,9 +62,7 @@ def test_committed_manifests_parse_with_project_hash() -> None:
 
 
 def test_continuous_family_lists_ngclearn_and_lgssm_exemplar() -> None:
-    families = load_model_family_manifest(
-        Path("input/model_family_manifest.json")
-    )
+    families = load_model_family_manifest(Path("input/model_family_manifest.json"))
     continuous = {family.name: family for family in families}["continuous"]
 
     assert continuous.frameworks is not None

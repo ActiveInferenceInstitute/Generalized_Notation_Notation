@@ -182,6 +182,19 @@ def _write_execution_summaries(
     # (mirrors the Step 11 render-summary merge).
     _merge_prior_execution_summary(execution_results, results_file, logger)
 
+    from gnn.pipeline.run_context import current_run_context, model_provenance
+
+    context = current_run_context()
+    if context is not None:
+        execution_results["run_id"] = context.run_id
+        execution_results["model_selection"] = [
+            model.__dict__ for model in context.selected_models(12)
+        ]
+        for detail in execution_results["execution_details"]:
+            detail.update(
+                model_provenance(Path(str(detail.get("script_path", ""))), 12)
+            )
+
     full_details_snapshot = copy.deepcopy(execution_results["execution_details"])
     execution_results["execution_details"] = [
         _slim_execution_detail(d) for d in full_details_snapshot

@@ -33,11 +33,12 @@ come from `output/11_render_output/render_processing_summary.json`.
 | If you want to… | Start with |
 | --- | --- |
 | Learn GNN syntax from scratch | `basics/static_perception.md` → `basics/dynamic_perception.md` |
-| Run a minimal discrete-state agent | `discrete/simple_mdp.md` → `discrete/tmaze_epistemic.md` |
+| Run a minimal discrete-state agent | `discrete/simple_mdp.md` → `discrete/two_state_bistable.md` |
 | See a canonical full Active Inference agent | `discrete/actinf_pomdp_agent.md` |
 | Compare render targets / scaling | `pymdp_scaling_study/pymdp_scaling_N4_T100.md` (then N8…N64) |
 | Continuous-state (linear-Gaussian) models — passive filtering | `continuous/damped_oscillator_bias.md`, `continuous/ngclearn_lgssm.md`, `continuous/predictive_coding_agent.md`, `continuous/stochastic_dynamics.md` |
 | Continuous-state closed-loop control on beliefs | `continuous/continuous_navigation.md` |
+| Explicit independent continuous agents (native JAX/RxInfer) | `continuous/independent_gaussian_agents.md` |
 | Composed kind set (continuous × multi-agent) | `continuous/multi_agent_lgssm.md` |
 | Factored continuous (independent per-factor LGSSM) | `continuous/factored_continuous_lgssm.md` |
 | Hybrid kind (discrete POMDP + continuous block) | `continuous/hybrid_discrete_continuous.md` |
@@ -51,13 +52,14 @@ come from `output/11_render_output/render_processing_summary.json`.
 ## Full exemplar set
 
 ### basics/
-- [dynamic_perception.md](basics/dynamic_perception.md)
-- [static_perception.md](basics/static_perception.md)
+- [dynamic_perception.md](basics/dynamic_perception.md) — illustrative invalid source pending scientific correction: likelihood columns have mass 1.1 and 0.9; required rendering fails explicitly
+- [static_perception.md](basics/static_perception.md) — illustrative invalid source pending scientific correction: likelihood columns have mass 1.1 and 0.9; required rendering fails explicitly
 
 ### continuous/
 - [continuous_navigation.md](continuous/continuous_navigation.md)
 - [factored_continuous_lgssm.md](continuous/factored_continuous_lgssm.md) — composed factored × continuous exemplar (two independent 2-dim `F_fN`/`H_fN`/`Q_fN`/`R_fN` factors, `num_factors: 2`); `detect_model_kinds` returns `{FACTORED, CONTINUOUS}` and the JAX backend renders one native LGSSM block per factor while every other continuous backend receipts it `unsupported-factored-continuous` rather than flattening the factors
 - [hybrid_discrete_continuous.md](continuous/hybrid_discrete_continuous.md) — composed hybrid × continuous exemplar (a minimal 2-state POMDP declared alongside a passive `F`/`H`/`Q`/`R` block); `detect_model_kinds` returns `{HYBRID, CONTINUOUS}` and every framework receipts it `unsupported-composition` (continuous × hybrid) rather than rendering one family
+- [independent_gaussian_agents.md](continuous/independent_gaussian_agents.md) — source-declared independent asymmetric Gaussian agents, rendered natively by JAX and RxInfer
 - [multi_agent_lgssm.md](continuous/multi_agent_lgssm.md) — composed continuous × multi-agent exemplar (`nr_agents: 2` declared alongside the `F`/`H`/`Q`/`R` block); `detect_model_kinds` returns `{CONTINUOUS, MULTI_AGENT}` and every framework receipts it `unsupported-composition` rather than rendering one family
 - [ngclearn_lgssm.md](continuous/ngclearn_lgssm.md) — passive 2-state damped-rotation linear-Gaussian model; the ngc-learn (ngclearn) backend exemplar of the continuous family
 - [predictive_coding_agent.md](continuous/predictive_coding_agent.md)
@@ -67,13 +69,13 @@ come from `output/11_render_output/render_processing_summary.json`.
 - [actinf_pomdp_agent.md](discrete/actinf_pomdp_agent.md)
 - [bnlearn_causal_model.md](discrete/bnlearn_causal_model.md)
 - [deep_planning_horizon.md](discrete/deep_planning_horizon.md)
-- [hmm_baseline.md](discrete/hmm_baseline.md)
+- [hmm_baseline.md](discrete/hmm_baseline.md) — illustrative invalid source pending scientific correction: every emission column has mass 1.5; required rendering fails explicitly
 - [markov_chain.md](discrete/markov_chain.md)
 - [multi_armed_bandit.md](discrete/multi_armed_bandit.md)
 - [regime_switched_dynamics.md](discrete/regime_switched_dynamics.md) — regime-switched transitions (`B_regime` + `b_regime_schedule`); the switching exemplar of the NONSTATIONARY kind — pymdp applies the declared schedule per step, every other categorical framework receipts `unsupported-nonstationary`
 - [simple_mdp.md](discrete/simple_mdp.md)
 - [time_varying_dynamics.md](discrete/time_varying_dynamics.md) — non-stationary time-indexed `B_t` phases (NONSTATIONARY kind; pymdp runs the phase sequence per step, hold-last beyond the declared span)
-- [tmaze_epistemic.md](discrete/tmaze_epistemic.md)
+- [tmaze_epistemic.md](discrete/tmaze_epistemic.md) — illustrative invalid source pending scientific correction: declared transition blocks contain zero-mass columns; required rendering fails explicitly
 - [two_state_bistable.md](discrete/two_state_bistable.md)
 
 ### hierarchical/

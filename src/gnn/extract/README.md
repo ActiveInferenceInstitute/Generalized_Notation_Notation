@@ -49,6 +49,18 @@ json_text = extract_to_json("input/gnn_files/example.gnn", strict_validation=Tru
 - Matrices A, B, C, D/E with nested shapes and per-matrix provenance (parameter-parse failures are recorded in `matrix_provenance` in every `on_error` mode — never silently dropped).
 - Continuous-model support (`x, F, H, Q, R` parameters) with the family (`finite` / `continuous`) reported in the payload.
 - Model name and annotation when present.
+- Optional `time` and `equations` strings containing the authored section bodies.
+  Extraction trims enclosing whitespace and preserves internal text. These
+  additive fields retain source metadata; equations are not evaluated as code.
+
+The renderer conversion preserves these fields. Generic JAX uses the Time
+declaration to distinguish one-observation static conditioning from dynamic
+filtering; passive models emit no selected actions or control objective. JAX
+HMM output is filtering, not backward smoothing. The typed-object renderer
+adapter preserves structured Time and Equations metadata as well. For passive
+two-dimensional B without C, it records the neutral compatibility C vector as
+`passive_model_adapter` provenance with the `passive_model_zero_preferences`
+adapter note, matching file extraction without changing the authored model.
 
 The `OnErrorMode` literal (`"lenient"`, `"raise"`, `"collect"`) controls how extraction errors surface; `extract_to_json` maps `raise` failures into the error envelope.
 

@@ -1,24 +1,33 @@
 # GNN Implementations Documentation
 
-**Version**: v3.2.0 Engine (Bundle v2.0.0)  
-**Last Updated**: 2026-04-14  
-**Status**: ✅ Production Ready  
-**Modules**: 38+ · **Pipeline steps**: 25 · **Renderers**: 10 backends wired under `src/gnn/render/` (8 with dedicated guides in this directory; `bnlearn` and `ngclearn` have none) · **Tests**: see [../../../README.md](../../../README.md)
+**Version**: 4.0.0 (canonical: [pyproject.toml](../../../pyproject.toml))
+
+**Last Updated**: 2026-10-02
+
+**Status**: Maintained guides; experimental status and acceptance are backend-specific
+
+**Pipeline steps**: 25 · **Renderers**: declared by `src/gnn/render/framework_registry.py`; cpomdp and THRML require explicit experimental selection · **Tests**: see [../../../README.md](../../../README.md)
 
 This directory contains documentation and references for the Implementations domain of Generalized Notation Notation (GNN).
 
 ## Available Documents
 
-- **[PyMDP](pymdp.md)**: The canonical reference implementation for discrete True POMDP simulation (`pymdp`). Reached 1.0 Correlation Baseline.
-- **[NumPyro](numpyro.md)**: Probabilistic programming for continuous distributions, uncertainty mechanics, and MCMC/SVI (`numpyro >= 0.14`). Verified as Fully Operational in March 2026.
-- **[PyTorch](pytorch.md)**: Neural Active Inference with learnable parameters, differentiable gradients, and GPU acceleration (`torch >= 2.0`). Verified as Fully Operational in March 2026.
-- **[JAX](jax.md)**: High-performance numerical computing and XLA vector-space compilation (`jax`). Reached 1.0 Correlation Baseline.
-- **[RxInfer.jl](rxinfer.md)**: Reactive message passing and declarative probabilistic programming in Julia (`RxInfer.jl`). Reached 1.0 Correlation Baseline.
+- **[PyMDP](pymdp.md)**: Native categorical Active Inference through the maintained `pymdp` Agent API; admitted composition and inference settings come from the renderer contract.
+- **[NumPyro](numpyro.md)**: Discrete and continuous probabilistic programs with preserved numeric parameters; continuous traces distinguish online filtering from optional NUTS inference.
+- **[PyTorch](pytorch.md)**: Discrete and continuous tensor programs with round-trippable scientific parameters and covariance-aware continuous output.
+- **[JAX](jax.md)**: Native categorical and linear-Gaussian programs, with explicitly represented factor and independent-agent routes.
+- **[RxInfer.jl](rxinfer.md)**: Native Julia reactive inference over categorical and Gaussian model families; posterior traces retain factor/agent identity and their declared filtering or smoothing interpretation.
 - **[ActiveInference.jl](activeinference_jl.md)**: Dedicated discrete-state Active Inference simulation in Julia (`ActiveInference.jl`).
 - **[DisCoPy](discopy.md)**: Categorical string diagrams enabling advanced symmetry representations and compositional verification semantics for Multi-Agent Topologies (`discopy`).
 - **[Stan](stan.md)**: Runnable HMM forward-algorithm programs (Dirichlet-prior A_est, NUTS or L-BFGS MAP) for discrete models and Kalman marginal-likelihood programs for continuous linear-Gaussian models, each with a cmdstanpy driver executed by Step 12 (`src/gnn/execute/stan/`).
+- **[cpomdp](cpomdp.md)**: Experimental released-wheel linear-Gaussian filtering and admitted EFE control; explicit selection and resource receipts.
+- **[THRML](thrml.md)**: Experimental released-wheel finite categorical Gibbs smoothing under fixed actions, independent components and bounded joint factor/modality composition, supervised execution, and sample-bound analysis. Structural zeros, continuous models, coupled agents, and hardware execution are outside this contract.
 
-`bnlearn` (Bayesian network structure/parameter learning) is also a wired `src/gnn/render/` backend (see `generate_bnlearn_code` in `src/gnn/render/bnlearn/bnlearn_renderer.py`) but does not yet have a dedicated guide in this directory.
+`bnlearn` (Bayesian network structure/parameter learning) and `ngclearn`
+(predictive processing) also have maintained render and execution modules under
+`src/gnn/render/` and `src/gnn/execute/`. Their availability and supported model
+kinds come from the live registries; a backend name alone does not establish
+acceptance for every model composition.
 
 ### Related integration (not a render backend)
 

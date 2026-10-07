@@ -14,6 +14,9 @@ This module is responsible for running GNN models that have been rendered into f
 | **PyTorch** | Python | `pytorch/` | `*_pytorch.py` | ✅ Full support |
 | **NumPyro** | Python | `numpyro/` | `*_numpyro.py` | ✅ Full support |
 | **Stan** | Python (cmdstanpy driver) | `stan/` | `*_stan.py` | ✅ Full support (requires `uv sync --extra stan` + CmdStan toolchain; skipped otherwise) |
+| **THRML** | Python/JAX | `thrml/` | `*_thrml.py` | Experimental categorical Gibbs smoothing; explicit `thrml` extra and selection; fresh sample/result binding |
+| **cpomdp** | Python/JAX | `cpomdp/` | `*_cpomdp.py` | Experimental continuous inference/control; explicit `cpomdp` extra and selection |
+| **ngc-learn** | Python/JAX | `ngclearn/` | `*_ngclearn.py` | Continuous predictive processing; Python >=3.12 optional runtime |
 | **Lean 4** | Lean (fep_lean bridge) | `lean/` | `*.lean` + emitted `*.md` | ✅ Full support (requires the fep_lean checkout via `FEP_LEAN_ROOT`; skipped otherwise) |
 | **bnlearn** | Python (generator-backed; `.R` lane via Rscript) | `bnlearn/` | `*_bnlearn.py`, `*.R` | ✅ Full support (requires the `bnlearn` extra or R + R `bnlearn` package; skipped otherwise) |
 JAX, NumPyro, PyTorch, and DisCoPy are **core** dependencies (`uv sync`). If the environment is incomplete, their scripts report an explicit skipped status. Requested Julia frameworks require Julia plus their package set; in strict requested-framework runs, missing packages make Step 12 fail.
@@ -41,6 +44,7 @@ src/gnn/execute/
 ├── jax/                     # JAX execution
 ├── stan/                    # Stan execution (cmdstanpy driver runner)
 ├── bnlearn/                 # bnlearn execution (generator-backed programs; Python + R lanes)
+├── thrml/                   # Experimental categorical sampling with fresh result validation
 ├── numpyro/                 # NumPyro execution
 ├── discopy/                 # DisCoPy execution
 │   └── discopy_translator_module/
@@ -84,9 +88,16 @@ Main executor class plus a small `ExecutorFrameworkSpec` registry for framework-
 - `execute_gnn_model(model_path, execution_type, options)` — Execute a rendered script
 - `run_simulation(simulation_config)` — Run a simulation from config
 - `generate_execution_report(output_file)` — Generate execution summary
-- `_execute_pymdp_script()`, `_execute_rxinfer_config()`, `_execute_discopy_diagram()`, `_execute_jax_script()`, `_execute_numpyro_script()`, `_execute_pytorch_script()`, `_execute_ngclearn_script()`, `_execute_activeinference_script()`, `_execute_stan_script()`, `_execute_bnlearn_script()`, `_execute_lean_verification()` — Framework-specific execution methods (the dispatch covers all eleven backends; bnlearn returns a skip receipt because it is render-only)
+- `_execute_pymdp_script()`, `_execute_rxinfer_config()`, `_execute_discopy_diagram()`, `_execute_jax_script()`, `_execute_numpyro_script()`, `_execute_pytorch_script()`, `_execute_ngclearn_script()`, `_execute_activeinference_script()`, `_execute_stan_script()`, `_execute_bnlearn_script()`, `_execute_lean_verification()` — Framework-specific execution methods (the standard registry includes implemented bnlearn execution; optional runtimes retain explicit skip receipts. Experimental cpomdp requires explicit selection)
 - `execute_rendered_simulators(...)` — Iterates the registry, writes `summaries/execution_summary.json`, and renders the markdown execution report (`summaries/execution_report.md`)
-- `list_frameworks()` — Introspect the registry: one record per backend with `framework`, `result_key`, `available`, and `operation`
+- `list_frameworks()` — Explicit live readiness introspection: one record per backend with `framework`, `result_key`, `available`, `operation`, and a structured `readiness` diagnosis.
+
+Registry metadata and summary counting use `_framework_specs(resolve_availability=False)`
+and never probe optional runtimes. The batch executor discovers candidates once
+and probes only their frameworks. Probe failures and cleanup uncertainty are
+failed work; missing prerequisites are visible skips. Nonempty required scripts
+that all skip or produce no execution records make batch acceptance false.
+An empty render tree remains valid zero work.
 
 ### `processor/` — Step 12 Entry Point (package facade)
 
@@ -100,7 +111,7 @@ Orchestrates multi-framework execution:
 
 ### `planning.py` — Dry-run Step 12 planning
 
-`plan_execute(target_dir, output_dir, frameworks="all", **config) -> ExecutionPlan` composes the same discovery / render-contract / dependency primitives as `process_execute` but runs **no scripts and no Julia package probing**. It returns a typed `ExecutionPlan` (defined in `types.py`) describing which rendered scripts would run, which would be skipped because their backend dependency is absent, and which the render-summary contract references but cannot discover on disk — for preflight checks, CI gates, and interactive debugging.
+`plan_execute(target_dir, output_dir, frameworks="all", **config) -> ExecutionPlan` composes the same discovery / render-contract / dependency primitives as `process_execute` but runs **no rendered model scripts** and uses bounded package readiness probes, including the committed Julia projects. It returns a typed `ExecutionPlan` (defined in `types.py`) describing which rendered scripts would run, which would be skipped because their backend dependency is absent, and which the render-summary contract references but cannot discover on disk — for preflight checks, CI gates, and interactive debugging.
 
 
 ### `pymdp/simulation.py`
@@ -192,3 +203,50 @@ previous-run results. bnlearn executes through `execute/bnlearn/` and the
 shared pre-flight probe; without its runtime the scripts are reported
 skipped. Optional dependency absence is reported as skipped, and explicitly
 requested unavailable frameworks follow the strict execution policy.
+
+Distributed collection keeps one ordered receipt per submitted script. A task
+error or cancellation preserves successful siblings, and recoverable Dask
+`lost` state remains pending until recovery or the deadline. Scheduler readiness
+does not permit an unbounded result transfer: each Dask `Future.result` and Ray
+`get` uses a short fair slice of the same monotonic budget. The backend wait
+limit (`GNN_DISTRIBUTED_WAIT_TIMEOUT`, default 7200 seconds) is intersected with
+the invocation deadline. Timeout receipts name the effective budget and retain
+model, framework, and script identity when published by Step 12.
+
+At expiry, cancellation is a request, not evidence that remote work stopped.
+Owned Dask clients and local clusters are closed separately, with cleanup waits
+bounded by the remaining invocation budget; exhausted budgets queue public
+asynchronous close requests. A preexisting Ray runtime belongs to its caller.
+Pipeline subprocess supervision supplies the hard process boundary, including
+backend startup and Ray shutdown. Direct `Dispatcher` calls require a ready
+caller-owned Dask client (`Dispatcher("dask", client=client)`) or an initialized
+Ray runtime. Initialization failure returns typed per-submission failures and
+never executes an unbounded sequential fallback. Cancellation and asynchronous
+close requests remain advisory until the supervising process verifies shutdown.
+
+The shared subprocess envelope tracks descendants while the child is alive,
+including observed children that detach into a new session. Every exit path
+shares a one-second allowance for termination, reaping, and output draining.
+The receipt exposes `containment`, `cleanup_verified`, and `streams_drained`;
+incomplete observation or inherited pipes that stay open fail with
+`ProcessCleanupFailure`, preserving partial output and any earlier timeout or
+cancellation as `execution_error_type`. This observation boundary does not
+certify containment of a process that detaches before observation. On native
+macOS and Linux, process-table scans and process groups provide this bounded
+observation boundary; hostile or sufficiently fast daemonization requires an
+operating-system sandbox. `observed_descendant_count` records how many process
+identities were retained and does not prove that no other descendants existed.
+
+Optional backend acceptance uses real LocalCluster and isolated Ray processes:
+
+```bash
+uv run --extra dev --extra scaling python -m pytest tests/execute/test_distributed_collection.py -q --tb=short
+```
+
+
+THRML direct and batch execution APIs are documented in
+[the THRML execution contract](thrml/SPEC.md). Generic Step 12 uses the same
+scientific validator and execution-ID/script-SHA binding. It keeps native results
+in the current implementation directory rather than collecting historical files
+from render directories. `GNNExecutor.execute_gnn_model(..., execution_type="thrml")`
+uses the maintained supervised runner.

@@ -313,9 +313,9 @@ def test_invalid_step_argument_fails_instead_of_silent_defaults() -> None:
 
 
 def test_only_steps_dependency_closure_is_recursive() -> None:
-    assert resolve_step_dependencies([23]) == [3, 8, 13, 23]
-    assert resolve_step_dependencies([17]) == list(range(3, 18))
-    assert resolve_step_dependencies([24]) == list(range(25))
+    assert resolve_step_dependencies([23]) == [3, 23]
+    assert resolve_step_dependencies([17]) == [3, 17]
+    assert resolve_step_dependencies([24]) == [24]
 
 
 def test_default_ontology_terms_file_resolves_to_bundled_vocabulary() -> None:

@@ -116,6 +116,27 @@ def distributed_ready() -> bool:
     return _module_available("distributed")
 
 
+def ray_ready() -> bool:
+    """Ray is importable for explicit scaling-extra integration checks."""
+    return _module_available("ray")
+
+
+@functools.lru_cache(maxsize=1)
+def cpomdp_ready() -> bool:
+    """The selected interpreter imports the cpomdp runtime under a deadline."""
+    from gnn.utils.runtime_safety.framework_availability import check_framework
+
+    return check_framework("cpomdp").available
+
+
+@functools.lru_cache(maxsize=1)
+def thrml_ready() -> bool:
+    """Released THRML and its required API load under a supervised ceiling."""
+    from gnn.utils.runtime_safety.framework_availability import check_framework
+
+    return check_framework("thrml").available
+
+
 @functools.lru_cache(maxsize=1)
 def d2_ready() -> bool:
     """The D2 visualizer module is importable."""
@@ -210,6 +231,12 @@ TOOLCHAIN_MARKERS: dict[str, tuple[Callable[[], bool], str]] = {
         distributed_ready,
         "dask.distributed is not installed (uv sync --extra scaling)",
     ),
+    "needs_cpomdp": (cpomdp_ready, "cpomdp is not installed (uv sync --extra cpomdp)"),
+    "needs_thrml": (
+        thrml_ready,
+        "THRML is not installed or its API is incompatible (uv sync --extra thrml)",
+    ),
+    "needs_ray": (ray_ready, "Ray is not installed (uv sync --extra scaling)"),
     "needs_d2": (d2_ready, "D2 visualizer module is not importable"),
     "needs_d2_cli": (d2_cli_ready, "D2 CLI not available"),
     "needs_pymdp": (

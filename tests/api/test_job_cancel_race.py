@@ -16,6 +16,7 @@ import json
 import os
 import signal
 import sys
+import time
 from pathlib import Path
 from typing import Any, Callable
 
@@ -120,6 +121,11 @@ async def test_cancel_midflight_keeps_cancelled_state_and_partial_output(
                 ),
                 encoding="utf-8",
             )
+            # Automatic filesystem mtimes can use a coarser clock than the
+            # invocation freshness gate. Stamp this simulated current-run
+            # receipt explicitly; stale-summary rejection is tested separately.
+            now_ns = time.time_ns()
+            os.utime(summary_path, ns=(now_ns, now_ns))
 
         proc = _BlockingProcess(
             returncode=-15,
@@ -313,6 +319,7 @@ async def test_cancel_kills_grandchild_process_group(
         job_mgr._JOBS[job_id]["output_dir"] = str(tmp_path)
         gc_exited = tmp_path / "grandchild_exited"
         gc_pid_file = tmp_path / "grandchild.pid"
+        gc_pid_pending = tmp_path / "grandchild.pid.tmp"
 
         grandchild_code = (
             "import atexit, os, signal, sys, time\n"
@@ -321,8 +328,9 @@ async def test_cancel_kills_grandchild_process_group(
             "        fh.write('done')\n"
             "atexit.register(_mark)\n"
             "signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))\n"
-            f"with open({str(gc_pid_file)!r}, 'w', encoding='ascii') as fh:\n"
+            f"with open({str(gc_pid_pending)!r}, 'w', encoding='ascii') as fh:\n"
             "    fh.write(str(os.getpid()))\n"
+            f"os.replace({str(gc_pid_pending)!r}, {str(gc_pid_file)!r})\n"
             "time.sleep(60)\n"
         )
         child_code = (
@@ -348,9 +356,9 @@ async def test_cancel_kills_grandchild_process_group(
 
         task = asyncio.create_task(job_mgr.execute_job_async(job_id))
 
-        # The grandchild writes its own pid file only AFTER its SIGTERM
-        # handler is installed, so file existence guarantees the handler is
-        # live and the cancel below can never win that race.
+        # The grandchild atomically publishes its closed pid file only AFTER
+        # its SIGTERM handler is installed. File existence guarantees both
+        # complete PID contents and a live handler before cancellation.
         await _poll_until(lambda: gc_pid_file.is_file())
         assert int(gc_pid_file.read_text(encoding="ascii").strip()) > 0
 

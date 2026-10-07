@@ -65,6 +65,19 @@ def render_gnn_to_jax(
         extract_factored_continuous_spec,
         is_continuous_spec,
     )
+    from gnn.render.execution_contracts import (
+        execution_contract,
+        generate_contract_script,
+    )
+
+    if execution_contract(gnn_spec) is not None:
+        return _render_to_path(
+            generate_contract_script,
+            "JAX execution contract",
+            gnn_spec,
+            output_path,
+            options,
+        )
 
     if is_continuous_spec(gnn_spec):
         # Continuous-state (linear-Gaussian) branch: no A/B/C/D exist, so the
@@ -74,6 +87,21 @@ def render_gnn_to_jax(
             generate_factored_continuous_script,
         )
         from gnn.render.pomdp_contract import ModelKind, detect_model_kinds
+
+        if detect_model_kinds(gnn_spec) == frozenset(
+            {ModelKind.MULTI_AGENT, ModelKind.CONTINUOUS}
+        ):
+            from gnn.render.multi_agent_continuous import (
+                generate_multi_agent_continuous_script,
+            )
+
+            return _render_to_path(
+                lambda spec, _opts: generate_multi_agent_continuous_script(spec, "jax"),
+                "JAX native independent continuous agents",
+                gnn_spec,
+                output_path,
+                options,
+            )
 
         if detect_model_kinds(gnn_spec) == frozenset(
             {ModelKind.FACTORED, ModelKind.CONTINUOUS}
@@ -121,6 +149,10 @@ def render_gnn_to_jax_factorized(
     ``simulation_results.json`` under ``GNN_OUTPUT_DIR`` so Step 12 collects
     and Step 16 (analysis) consumes them.
     """
+    from gnn.render.execution_contracts import execution_contract
+
+    if execution_contract(gnn_spec) is not None:
+        return render_gnn_to_jax(gnn_spec, output_path, options)
     return _render_to_path(
         _generate_jax_factorized_code,
         "JAX Kronecker-factorized",
@@ -141,6 +173,10 @@ def render_gnn_to_jax_pomdp(
     @Web: https://arxiv.org/abs/1304.1118
     @Web: https://www.cs.cmu.edu/~ggordon/jpineau-ggordon-thrun.ijcai03.pdf
     """
+    from gnn.render.execution_contracts import execution_contract
+
+    if execution_contract(gnn_spec) is not None:
+        return render_gnn_to_jax(gnn_spec, output_path, options)
     return _render_to_path(
         _generate_jax_pomdp_code, "JAX POMDP", gnn_spec, output_path, options
     )
@@ -156,6 +192,10 @@ def render_gnn_to_jax_combined(
     @Web: https://github.com/google/jax
     @Web: https://optax.readthedocs.io
     """
+    from gnn.render.execution_contracts import execution_contract
+
+    if execution_contract(gnn_spec) is not None:
+        return render_gnn_to_jax(gnn_spec, output_path, options)
     return _render_to_path(
         _generate_jax_combined_code, "JAX combined", gnn_spec, output_path, options
     )

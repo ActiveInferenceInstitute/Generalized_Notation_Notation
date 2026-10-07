@@ -35,6 +35,10 @@ class StepInfo:
         # simulation_execution, intelligence_analysis, presentation_reporting
     )
 
+    execution_scope: str = "source"
+    prerequisites: tuple[int, ...] = ()
+    optional_producers: tuple[int, ...] = ()
+
     @property
     def script_name(self) -> str:
         """Full script filename, e.g. ``11_render.py``."""
@@ -56,6 +60,7 @@ STEPS: List[StepInfo] = [
         "process_template_standardized",
         frozenset({"core"}),
         stage="discovery_schema",
+        execution_scope="corpus",
     ),
     StepInfo(
         "1_setup",
@@ -63,6 +68,7 @@ STEPS: List[StepInfo] = [
         "setup_orchestrator",
         frozenset({"core"}),
         stage="discovery_schema",
+        execution_scope="run",
     ),
     StepInfo(
         "2_tests",
@@ -70,6 +76,8 @@ STEPS: List[StepInfo] = [
         "_test_runner_wrapper",
         frozenset({"core", "tests"}),
         stage="discovery_schema",
+        execution_scope="run",
+        prerequisites=(1,),
     ),
     StepInfo(
         "3_gnn",
@@ -84,6 +92,7 @@ STEPS: List[StepInfo] = [
         "process_model_registry",
         frozenset({"core"}),
         stage="discovery_schema",
+        prerequisites=(3,),
     ),
     StepInfo(
         "5_type_checker",
@@ -91,6 +100,7 @@ STEPS: List[StepInfo] = [
         "_type_check_dispatch",
         frozenset({"core"}),
         stage="discovery_schema",
+        prerequisites=(3,),
     ),
     StepInfo(
         "6_validation",
@@ -98,6 +108,8 @@ STEPS: List[StepInfo] = [
         "process_validation",
         frozenset({"core"}),
         stage="discovery_schema",
+        execution_scope="artifacts",
+        prerequisites=(3, 5),
     ),
     StepInfo(
         "7_export",
@@ -105,6 +117,8 @@ STEPS: List[StepInfo] = [
         "_export_with_geo",
         frozenset({"core"}),
         stage="export_static_viz",
+        execution_scope="artifacts",
+        prerequisites=(3,),
     ),
     StepInfo(
         "8_visualization",
@@ -112,6 +126,7 @@ STEPS: List[StepInfo] = [
         "process_visualization",
         frozenset({"core"}),
         stage="export_static_viz",
+        prerequisites=(3,),
     ),
     StepInfo(
         "9_advanced_viz",
@@ -119,6 +134,8 @@ STEPS: List[StepInfo] = [
         "process_advanced_viz",
         frozenset({"core"}),
         stage="export_static_viz",
+        execution_scope="artifacts",
+        prerequisites=(3, 8),
     ),
     StepInfo(
         "10_ontology",
@@ -126,6 +143,7 @@ STEPS: List[StepInfo] = [
         "process_ontology",
         frozenset({"core"}),
         stage="export_static_viz",
+        prerequisites=(3,),
     ),
     StepInfo(
         "11_render",
@@ -133,6 +151,7 @@ STEPS: List[StepInfo] = [
         "process_render",
         frozenset({"core"}),
         stage="simulation_execution",
+        prerequisites=(3,),
     ),
     StepInfo(
         "12_execute",
@@ -140,6 +159,8 @@ STEPS: List[StepInfo] = [
         "process_execute",
         frozenset({"core"}),
         stage="simulation_execution",
+        execution_scope="artifacts",
+        prerequisites=(3, 11),
     ),
     StepInfo(
         "13_llm",
@@ -147,6 +168,9 @@ STEPS: List[StepInfo] = [
         "process_llm",
         frozenset({"llm"}),
         stage="intelligence_analysis",
+        execution_scope="corpus",
+        prerequisites=(3,),
+        optional_producers=(10, 12),
     ),
     StepInfo(
         "14_ml_integration",
@@ -154,6 +178,7 @@ STEPS: List[StepInfo] = [
         "process_ml_integration",
         frozenset({"core"}),
         stage="intelligence_analysis",
+        prerequisites=(3,),
     ),
     StepInfo(
         "15_audio",
@@ -161,6 +186,8 @@ STEPS: List[StepInfo] = [
         "process_audio",
         frozenset({"core"}),
         stage="simulation_execution",
+        prerequisites=(3,),
+        optional_producers=(12,),
     ),
     StepInfo(
         "16_analysis",
@@ -168,6 +195,8 @@ STEPS: List[StepInfo] = [
         "process_analysis",
         frozenset({"core"}),
         stage="simulation_execution",
+        execution_scope="corpus",
+        prerequisites=(3, 7, 12),
     ),
     StepInfo(
         "17_integration",
@@ -175,6 +204,9 @@ STEPS: List[StepInfo] = [
         "process_integration",
         frozenset({"core"}),
         stage="intelligence_analysis",
+        execution_scope="corpus",
+        prerequisites=(3,),
+        optional_producers=(11, 12),
     ),
     StepInfo(
         "18_security",
@@ -182,6 +214,7 @@ STEPS: List[StepInfo] = [
         "process_security",
         frozenset({"core"}),
         stage="intelligence_analysis",
+        prerequisites=(11,),
     ),
     StepInfo(
         "19_research",
@@ -189,6 +222,7 @@ STEPS: List[StepInfo] = [
         "process_research",
         frozenset({"core"}),
         stage="intelligence_analysis",
+        prerequisites=(3,),
     ),
     StepInfo(
         "20_website",
@@ -196,6 +230,9 @@ STEPS: List[StepInfo] = [
         "process_website",
         frozenset({"core"}),
         stage="presentation_reporting",
+        execution_scope="corpus",
+        prerequisites=(8,),
+        optional_producers=(9, 12, 16, 17, 18, 19),
     ),
     StepInfo(
         "21_mcp",
@@ -203,6 +240,7 @@ STEPS: List[StepInfo] = [
         "process_mcp",
         frozenset({"core"}),
         stage="presentation_reporting",
+        execution_scope="run",
     ),
     StepInfo(
         "22_gui",
@@ -210,6 +248,8 @@ STEPS: List[StepInfo] = [
         "process_gui",
         frozenset({"core"}),
         stage="presentation_reporting",
+        execution_scope="corpus",
+        prerequisites=(3,),
     ),
     StepInfo(
         "23_report",
@@ -217,6 +257,33 @@ STEPS: List[StepInfo] = [
         "process_report",
         frozenset({"core"}),
         stage="presentation_reporting",
+        execution_scope="run",
+        prerequisites=(3,),
+        optional_producers=(
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+        ),
     ),
     StepInfo(
         "24_intelligent_analysis",
@@ -224,6 +291,33 @@ STEPS: List[StepInfo] = [
         "process_intelligent_analysis",
         frozenset({"core"}),
         stage="presentation_reporting",
+        execution_scope="run",
+        optional_producers=(
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+        ),
     ),
 ]
 

@@ -46,7 +46,9 @@ def process_report(
         results: dict[str, Any] = {"processed_files": 0, "success": True, "errors": []}
 
         # Find GNN files
-        gnn_files = sorted(target_dir.glob("*.md"))
+        from gnn.pipeline.run_context import selected_model_sources
+
+        gnn_files = selected_model_sources(target_dir, 23)
         if gnn_files:
             results["processed_files"] = len(gnn_files)
 
@@ -103,7 +105,9 @@ def generate_comprehensive_report(
         report_dir.mkdir(parents=True, exist_ok=True)
 
         # Analyze GNN files
-        gnn_files = sorted(target_dir.glob("*.md"))
+        from gnn.pipeline.run_context import selected_model_sources
+
+        gnn_files = selected_model_sources(target_dir, 23)
 
         report_data: dict[str, Any] = {
             "timestamp": "unavailable",

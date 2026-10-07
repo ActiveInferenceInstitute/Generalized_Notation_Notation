@@ -11,6 +11,7 @@ is unavailable the snapshot degrades to the working tree and the
 from __future__ import annotations
 
 import subprocess
+import tempfile
 from collections.abc import Sequence
 from fnmatch import fnmatch
 from pathlib import Path
@@ -118,15 +119,21 @@ class RepositorySnapshot:
         if not wanted:
             return
         payload = "".join(f"{self._revision}:{rel.as_posix()}\n" for rel in wanted)
+        # The request list goes in through a file, not a pipe: writing it to a
+        # pipe while git blocks on its large stdout deadlocks on macOS, where
+        # ``subprocess`` cannot enforce its timeout inside the blocked write.
         try:
-            result = subprocess.run(
-                ["git", "cat-file", "--batch"],
-                cwd=self.project_root,
-                input=payload.encode("utf-8"),
-                capture_output=True,
-                check=False,
-                timeout=30,
-            )
+            with tempfile.TemporaryFile() as request:
+                request.write(payload.encode("utf-8"))
+                request.seek(0)
+                result = subprocess.run(
+                    ["git", "cat-file", "--batch"],
+                    cwd=self.project_root,
+                    stdin=request,
+                    capture_output=True,
+                    check=False,
+                    timeout=30,
+                )
         except (OSError, subprocess.SubprocessError):  # pragma: no cover - env
             return
         if result.returncode != 0:
@@ -165,6 +172,15 @@ class RepositorySnapshot:
                 data = candidate.read_text(encoding="utf-8", errors="replace")
         self._cache[rel] = data
         return data
+
+    def read_bytes(self, rel: Path | str) -> bytes:
+        """Read exact evidence bytes without text decoding or newline changes."""
+        if self._revision:
+            result = self._git("show", f"{self._revision}:{Path(rel).as_posix()}")
+            if result is None or result.returncode:
+                raise OSError(f"cannot read {rel} at {self.commit}")
+            return result.stdout
+        return (self.project_root / rel).read_bytes()
 
     def glob(self, prefix: str, pattern: str) -> list[Path]:
         """Snapshot equivalent of ``(project_root / prefix).rglob(pattern)``.

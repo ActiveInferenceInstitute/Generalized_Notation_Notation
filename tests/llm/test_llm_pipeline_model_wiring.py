@@ -188,7 +188,7 @@ def test_structured_prompt_get_response_passes_model_name(
 def test_process_llm_limits_files_from_config(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Full-pipeline LLM runs should use a deterministic bounded sample."""
+    """An explicit cap limits selection; unavailable required LLM work is partial."""
     target = tmp_path / "gnn_in"
     scaling = target / "pymdp_scaling_study"
     scaling.mkdir(parents=True)
@@ -246,7 +246,7 @@ def test_process_llm_limits_files_from_config(
 
         from gnn.llm.processor import process_llm
 
-        assert process_llm(target, out, verbose=False)
+        assert not process_llm(target, out, verbose=False)
 
     assert analyzed == ["a_model.md", "b_model.md"]
     assert llm_attempts == [False, False]
@@ -258,6 +258,9 @@ def test_process_llm_limits_files_from_config(
     assert results["total_files_discovered"] == 4
     assert results["selected_files"] == 2
     assert results["skipped_files"] == 2
+    assert results["status"] == "partial"
+    assert results["coverage"]["structural_completed"] == 2
+    assert results["coverage"]["summaries_completed"] == 0
 
 
 @pytest.mark.unit

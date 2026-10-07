@@ -190,13 +190,19 @@ def test_julia_package_probe_runs_headless(
 ) -> None:
     calls: List[Dict[str, Any]] = []
 
-    def fake_run(
-        cmd: List[str], **kwargs: Any
-    ) -> subprocess.CompletedProcess[str]:
-        calls.append({"cmd": cmd, "kwargs": kwargs})
-        return subprocess.CompletedProcess(cmd, returncode=0)
+    from gnn.execute import julia_setup
+    from gnn.utils.runtime_safety import framework_availability as availability
 
-    monkeypatch.setattr(julia_env.subprocess, "run", fake_run)
+    def fake_run(cmd: List[str], **kwargs: Any) -> Dict[str, Any]:
+        calls.append({"cmd": cmd, "kwargs": kwargs})
+        return {
+            "success": True,
+            "return_code": 0,
+            "stdout": 'GNN_FRAMEWORK_STATUS:{"available":true}',
+        }
+
+    monkeypatch.setattr(availability, "_run_probe_envelope", fake_run)
+    monkeypatch.setattr(julia_setup, "julia_executable", lambda: "/test/julia")
 
     assert julia_env.check_julia_dependencies(False) is True
 

@@ -53,6 +53,7 @@ def _internal_representation_to_mapping(gnn_spec: Any) -> Dict[str, Any]:
     the same concrete matrix contract as dictionary callers.
     """
     parameter_nodes = [_node_to_mapping(item) for item in gnn_spec.parameters]
+    serialized = gnn_spec.to_dict()
     parameter_values = {
         str(item["name"]): item.get("value")
         for item in parameter_nodes
@@ -64,12 +65,38 @@ def _internal_representation_to_mapping(gnn_spec: Any) -> Dict[str, Any]:
         if key.startswith("num_")
         or key
         in {
+            "execution_contract",
+            "b_tensor_order",
+            "terminal_locations",
+            "policy_horizon",
+            "timescale_ratio",
+            "timescale_ratio_1_0",
+            "timescale_ratio_2_1",
             "seed",
             "random_seed",
             "action_precision",
             "inference_iterations",
+            "passive_model",
         }
     }
+    # A two-dimensional transition matrix has no control axis. Match the
+    # file extractor's passive adapter, recording any synthetic preferences.
+    adapter_notes: List[str] = []
+    matrix_provenance: Dict[str, Any] = {}
+    if NUMPY_AVAILABLE and "B" in parameter_values:
+        if np.asarray(parameter_values["B"]).ndim == 2:
+            model_parameters.setdefault("passive_model", True)
+            if model_parameters["passive_model"] and "C" not in parameter_values:
+                likelihood = np.asarray(parameter_values.get("A"))
+                if likelihood.ndim == 2 and likelihood.shape[0] > 0:
+                    parameter_values["C"] = [0.0] * likelihood.shape[0]
+                    adapter_notes.append("passive_model_zero_preferences")
+                    matrix_provenance["C"] = {
+                        "source": "passive_model_adapter",
+                        "shape": [likelihood.shape[0]],
+                        "derived": True,
+                        "reason": "zero preferences for passive HMM/Markov model",
+                    }
     return {
         "name": gnn_spec.model_name or "model",
         "model_name": gnn_spec.model_name or "model",
@@ -78,11 +105,18 @@ def _internal_representation_to_mapping(gnn_spec: Any) -> Dict[str, Any]:
         "parameters": parameter_nodes,
         "model_parameters": model_parameters,
         "initialparameterization": parameter_values,
+        "time_specification": serialized.get("time_specification"),
+        "equations": serialized.get("equations", []),
+        "adapter_notes": adapter_notes,
+        "matrix_provenance": matrix_provenance,
     }
 
 
 def _rehydrate_file_backed_parse_summary(
     gnn_spec: Dict[str, Any],
+    *,
+    native_agents: bool = False,
+    preserve_discrete_structure: bool = False,
 ) -> Dict[str, Any]:
     """Turn the lightweight public parser summary back into a renderable spec.
 
@@ -112,7 +146,11 @@ def _rehydrate_file_backed_parse_summary(
         raise ValueError(
             f"Parsed GNN source is not a renderable POMDP specification: {source_path}"
         )
-    return pomdp_to_gnn_spec(pomdp_space)
+    return pomdp_to_gnn_spec(
+        pomdp_space,
+        native_agents=native_agents,
+        preserve_discrete_structure=preserve_discrete_structure,
+    )
 
 
 def _normalize_initial_vectors(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:

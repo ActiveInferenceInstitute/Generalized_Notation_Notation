@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, cast
 
+from gnn.pipeline.artifact_ownership import current_artifact_files
+
 logger = logging.getLogger(__name__)
 
 
@@ -80,7 +82,16 @@ def _build_report_context(
         / "00_pipeline_summary"
         / "pipeline_execution_summary.json"
     )
+    from gnn.pipeline.run_context import current_run_context
+
+    context = current_run_context()
+    if context is not None and mode == "preliminary":
+        resolved_summary_path = (
+            Path(context.output_root) / "00_pipeline_summary" / "current_summary.json"
+        )
     summary = _load_summary(resolved_summary_path)
+    if context is not None and summary.get("run_id") != context.run_id:
+        raise ValueError("Pipeline report summary belongs to a different run")
     step_dirs = _discover_step_dirs(resolved_output_dir)
     return PipelineReportContext(
         output_dir=resolved_output_dir,
@@ -123,8 +134,8 @@ def _collect_step_stats(step_dirs: List[Path]) -> Dict[str, Dict[str, Any]]:
     """Collect basic stats from each step output directory."""
     stats: dict[Any, Any] = {}
     for d in step_dirs:
-        file_count = sum(1 for f in d.rglob("*") if f.is_file())
-        total_size = sum(f.stat().st_size for f in d.rglob("*") if f.is_file())
+        file_count = len(current_artifact_files(d))
+        total_size = sum(f.stat().st_size for f in current_artifact_files(d))
         # Look for a results JSON
         results_json = None
         for candidate in [
@@ -309,7 +320,7 @@ def _section_artifacts(step_dirs: List[Path]) -> str:
     total_files = 0
     total_size = 0
     for d in step_dirs:
-        files = list(d.rglob("*"))
+        files = current_artifact_files(d)
         file_items = [f for f in files if f.is_file()]
         count = len(file_items)
         size = sum(f.stat().st_size for f in file_items)
@@ -355,7 +366,7 @@ def _section_statistics(output_dir: Path) -> str:
     # Export results
     export_dir = output_dir / "7_export_output"
     if export_dir.exists():
-        export_files = list(export_dir.rglob("*"))
+        export_files = current_artifact_files(export_dir)
         stats["Export artifacts"] = len([f for f in export_files if f.is_file()])
 
     # LLM cache stats
@@ -378,7 +389,20 @@ def _section_errors(
     step_stats: Dict[str, Dict[str, Any]],
 ) -> str:
     """Generate error summary section."""
-    errors = summary.get("errors", [])
+    errors = list(summary.get("errors", []))
+    if summary.get("error"):
+        errors.append({"step": "Pipeline", "error": summary["error"]})
+    for step in summary.get("steps", []):
+        if step.get("status") in ("FAILED", "TIMEOUT"):
+            errors.append(
+                {
+                    "step": step.get("script_name", "?"),
+                    "error": step.get("error")
+                    or step.get("stderr")
+                    or step.get("stop_reason")
+                    or "Step failed without an error message",
+                }
+            )
     auth_errors = summary.get("auth_errors", [])
 
     if not errors and not auth_errors:

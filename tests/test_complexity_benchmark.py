@@ -24,10 +24,12 @@ from typing import Any
 
 from gnn.analysis.complexity import (
     ESTIMATOR_VERSION,
-    RECEIPT_TYPE as STATIC_RECEIPT_TYPE,
     benchmark,
     estimate_model_complexity,
     to_json_text,
+)
+from gnn.analysis.complexity import (
+    RECEIPT_TYPE as STATIC_RECEIPT_TYPE,
 )
 from gnn.cli import COMMAND_HANDLERS
 from gnn.cli.parser import build_parser
@@ -131,9 +133,10 @@ def test_static_receipt_schema_on_committed_exemplar() -> None:
 def test_to_json_text_roundtrip_is_stable_on_exemplar() -> None:
     path = _require_exemplar()
     text = to_json_text(estimate_model_complexity(path))
-    assert json.loads(text)["model"]["source_sha256"] == hashlib.sha256(
-        path.read_bytes()
-    ).hexdigest()
+    assert (
+        json.loads(text)["model"]["source_sha256"]
+        == hashlib.sha256(path.read_bytes()).hexdigest()
+    )
     assert to_json_text(json.loads(text)) == text
 
 

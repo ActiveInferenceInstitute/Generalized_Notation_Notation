@@ -23,9 +23,14 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from gnn.execute.preconditions import execution_precondition
 from gnn.execute.security_gate import check_script_allowed
-from gnn.execute.subprocess_envelope import run_subprocess_envelope
-from gnn.utils.runtime_safety.framework_availability import is_framework_available
+from gnn.execute.subprocess_envelope import CancelToken, run_subprocess_envelope
+from gnn.utils.runtime_safety.framework_availability import (
+    DEFAULT_PROBE_TIMEOUT_SECONDS,
+    FrameworkStatus,
+    check_framework,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,35 +40,114 @@ OUTPUT_ENV_VAR: str = "BNLEARN_OUTPUT_DIR"
 _PYTHON_SUFFIXES = frozenset({".py"})
 _R_SUFFIXES = frozenset({".r"})
 
-_PYTHON_SKIP_REASON = "bnlearn module not installed (uv sync --extra bnlearn)"
-_R_SKIP_REASON = "Rscript/R bnlearn package not available (install.packages('bnlearn'))"
+
+def _check_bnlearn_status(
+    python_executable: str | None = None, timeout: float = DEFAULT_PROBE_TIMEOUT_SECONDS
+) -> FrameworkStatus:
+    """Retain the selected interpreter's structured dependency diagnosis."""
+    return check_framework(
+        FRAMEWORK, executor=python_executable, logger=logger, timeout=timeout
+    )
 
 
 def is_bnlearn_available(python_executable: Optional[str] = None) -> bool:
-    """True when the Python ``bnlearn`` module is importable.
+    """True when a bounded child imports Python bnlearn successfully."""
+    return _check_bnlearn_status(python_executable).available
 
-    Delegates to the shared ``gnn.utils.runtime_safety.framework_availability`` probe. With
-    ``python_executable=None`` the check is a cheap in-process
-    ``importlib.util.find_spec``; with an interpreter path it shells out so
-    the answer reflects the target interpreter's environment.
-    """
-    return is_framework_available(FRAMEWORK, executor=python_executable, logger=logger)
+
+def _check_r_bnlearn_status(
+    rscript_executable: str = "Rscript", timeout: float = DEFAULT_PROBE_TIMEOUT_SECONDS
+) -> FrameworkStatus:
+    """Distinguish absent R/package from a failed or exhausted package probe."""
+    rscript = shutil.which(rscript_executable)
+    hint = "install.packages('bnlearn')"
+    if rscript is None:
+        return FrameworkStatus(
+            FRAMEWORK,
+            False,
+            install_hint=hint,
+            reason_code="executor_unavailable",
+            reason="Rscript not found on PATH",
+        )
+    probe = run_subprocess_envelope(
+        [
+            rscript,
+            "-e",
+            "if (!requireNamespace('bnlearn', quietly=TRUE)) quit(status=42); suppressMessages(library(bnlearn))",
+        ],
+        timeout=timeout,
+        sandbox=False,
+    )
+    if probe["success"]:
+        return FrameworkStatus(FRAMEWORK, True)
+    missing = (
+        probe.get("return_code") == 42 and probe.get("cleanup_verified") is not False
+    )
+    timed_out = probe.get("error_type") == "TimeoutExpired"
+    return FrameworkStatus(
+        FRAMEWORK,
+        False,
+        missing_module="bnlearn" if missing else None,
+        install_hint=hint,
+        reason_code="missing_module"
+        if missing
+        else "probe_timeout"
+        if timed_out
+        else "probe_failed",
+        reason="R bnlearn package not installed"
+        if missing
+        else "R bnlearn package probe failed: "
+        + str(probe.get("error_type") or probe.get("return_code")),
+        execution_error_type=probe.get("execution_error_type")
+        or probe.get("error_type"),
+        cleanup_verified=probe.get("cleanup_verified"),
+        streams_drained=probe.get("streams_drained"),
+    )
 
 
 def is_r_bnlearn_available(rscript_executable: str = "Rscript") -> bool:
-    """True when Rscript exists and the R ``bnlearn`` package loads."""
-    rscript = shutil.which(rscript_executable)
-    if rscript is None:
-        logger.info("Rscript not found on PATH (R bnlearn lane unavailable)")
-        return False
-    probe = run_subprocess_envelope(
-        [rscript, "-e", "suppressMessages(library(bnlearn))"],
-        timeout=60,
-        sandbox=False,
+    """True when a bounded Rscript child loads the R bnlearn package."""
+    return _check_r_bnlearn_status(rscript_executable).available
+
+
+def _record_unavailable(
+    record: Dict[str, Any], diagnosis: FrameworkStatus
+) -> Dict[str, Any]:
+    """Only positively identified absent prerequisites qualify as skips."""
+    skipped = diagnosis.reason_code in {
+        "missing_module",
+        "missing_toolchain",
+        "executor_unavailable",
+        "unsupported_python",
+        "unsupported_version",
+    }
+    cleanup_failed = (
+        diagnosis.cleanup_verified is False or diagnosis.streams_drained is False
     )
-    if not probe["success"]:
-        logger.info("R bnlearn package probe failed: %s", probe.get("error"))
-    return bool(probe["success"])
+    error_type = (
+        "ProcessCleanupFailure"
+        if cleanup_failed
+        else diagnosis.execution_error_type
+        or ("DependencyUnavailable" if skipped else "FrameworkProbeFailure")
+    )
+    record.update(
+        skipped=skipped and not cleanup_failed,
+        status="failed"
+        if cleanup_failed
+        else "skipped"
+        if skipped
+        else "timed_out"
+        if diagnosis.reason_code == "probe_timeout"
+        else "failed",
+        reason=diagnosis.reason,
+        reason_code=diagnosis.reason_code,
+        install_hint=diagnosis.install_hint,
+        error_type=error_type,
+        execution_error_type=diagnosis.execution_error_type,
+        cleanup_verified=diagnosis.cleanup_verified,
+        streams_drained=diagnosis.streams_drained,
+    )
+    return record
 
 
 def script_language(script_path: Union[str, Path]) -> str:
@@ -93,14 +177,15 @@ def execute_bnlearn_script(
     timeout: int = 1800,
     python_executable: Optional[str] = None,
     rscript_executable: str = "Rscript",
+    cancel_token: Optional[CancelToken] = None,
 ) -> Dict[str, Any]:
     """Run one rendered bnlearn script; return a structured result dict.
 
     The execution lane is derived from the script's suffix. Missing runtimes
     produce a ``skipped`` record without spawning a subprocess.
     """
-    script = Path(script_path)
-    out_dir = Path(output_dir)
+    script = Path(script_path).resolve()
+    out_dir = Path(output_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     language = script_language(script)
     record: Dict[str, Any] = {
@@ -110,6 +195,7 @@ def execute_bnlearn_script(
         "return_code": None,
         "success": False,
         "skipped": False,
+        "status": "failed",
         "stdout": "",
         "stderr": "",
         "execution_time_seconds": 0.0,
@@ -117,6 +203,11 @@ def execute_bnlearn_script(
         # bnlearn programs are not required to write it.
         "results_file": str(out_dir / "simulation_results.json"),
     }
+
+    precondition = execution_precondition(timeout, cancel_token)
+    if precondition is not None:
+        record.update(precondition)
+        return record
 
     # Shared pre-execution security gate (fail closed; GNN_ALLOW_UNSAFE_EXEC
     # is the only operator opt-out). Runs before any lane probe, command
@@ -139,34 +230,48 @@ def execute_bnlearn_script(
         return record
 
     if language == "python":
-        if not is_bnlearn_available(python_executable):
-            record["skipped"] = True
-            record["reason"] = _PYTHON_SKIP_REASON
-            logger.info(
-                "Skipping bnlearn script (Python lane unavailable): %s", script.name
-            )
-            return record
+        diagnosis = _check_bnlearn_status(
+            python_executable, min(timeout, DEFAULT_PROBE_TIMEOUT_SECONDS)
+        )
+        if not diagnosis.available:
+            return _record_unavailable(record, diagnosis)
         command: List[str] = [python_executable or sys.executable, str(script)]
     elif language == "r":
-        if not is_r_bnlearn_available(rscript_executable):
-            record["skipped"] = True
-            record["reason"] = _R_SKIP_REASON
-            logger.info("Skipping bnlearn script (R lane unavailable): %s", script.name)
-            return record
+        diagnosis = _check_r_bnlearn_status(
+            rscript_executable, min(timeout, DEFAULT_PROBE_TIMEOUT_SECONDS)
+        )
+        if not diagnosis.available:
+            return _record_unavailable(record, diagnosis)
         command = [rscript_executable, str(script)]
     else:
         record["skipped"] = True
+        record["status"] = "unsupported"
         record["reason"] = (
             f"Unsupported bnlearn script language: {script.suffix or '<none>'}"
         )
         logger.info("Skipping bnlearn script (unknown language): %s", script.name)
         return record
 
+    precondition = execution_precondition(timeout, cancel_token)
+    if precondition is not None:
+        record.update(precondition)
+        return record
     envelope = run_subprocess_envelope(
         command,
         timeout=timeout,
         env={OUTPUT_ENV_VAR: str(out_dir)},
         cwd=str(out_dir),
+        cancel_token=cancel_token,
+    )
+    record.update(envelope)
+    record["status"] = (
+        "success"
+        if envelope["success"]
+        else "cancelled"
+        if envelope.get("cancelled")
+        else "timed_out"
+        if envelope.get("error_type") == "TimeoutExpired"
+        else "failed"
     )
     record["return_code"] = envelope["return_code"]
     record["success"] = envelope["success"]

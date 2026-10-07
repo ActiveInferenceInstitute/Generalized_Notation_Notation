@@ -21,23 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 def is_pytorch_available() -> bool:
-    """Check if PyTorch is importable and log version/device info."""
-    try:
-        import torch
+    """Check PyTorch in a supervised child of the current Python interpreter."""
+    from gnn.utils.runtime_safety.framework_availability import check_framework
 
-        version = torch.__version__
-        logger.info(f"PyTorch version: {version}")
-        if torch.cuda.is_available():
-            logger.info(f"CUDA available: {torch.cuda.get_device_name(0)}")
-        else:
-            logger.info("CUDA not available — using CPU")
-        return True
-    except ImportError as e:
-        logger.error(f"PyTorch not available: {e}")
-        return False
-    except Exception as e:
-        logger.error(f"Error checking PyTorch: {e}")
-        return False
+    diagnosis = check_framework("pytorch", logger=logger)
+    return diagnosis.available
 
 
 def find_pytorch_scripts(
@@ -78,15 +66,16 @@ def execute_pytorch_script(
 
     logger.info(f"Executing PyTorch script: {script_path}")
 
-    # Dependency check
-    for dep in ("torch", "numpy"):
-        try:
-            __import__(dep)
-            logger.debug(f"✅ Dependency available: {dep}")
-        except ImportError:
-            logger.error(f"❌ Missing required dependency: {dep}")
-            logger.error("Install PyTorch manually with: uv pip install torch")
-            return False
+    from gnn.execute.preconditions import script_readiness
+
+    deadline, readiness_error = script_readiness("pytorch", timeout)
+    if readiness_error is not None:
+        logger.error(
+            "PyTorch readiness failed (%s): %s",
+            readiness_error.get("reason_code") or readiness_error.get("error_type"),
+            readiness_error.get("reason") or readiness_error.get("error"),
+        )
+        return False
 
     # Syntax validation
     try:
@@ -103,7 +92,7 @@ def execute_pytorch_script(
         logger.info(f"Using device: {device}")
     if output_dir:
         output_dir.mkdir(parents=True, exist_ok=True)
-        env["PYTORCH_OUTPUT_DIR"] = str(output_dir)
+        env["PYTORCH_OUTPUT_DIR"] = str(output_dir.resolve())
 
     # Delegate the subprocess envelope (run + timing + error normalization) to
     # the canonical safe executor. Function-local import: executor.py imports
@@ -116,6 +105,7 @@ def execute_pytorch_script(
         timeout=timeout,
         cwd=abs_path.parent,
         env=env,
+        deadline_monotonic=deadline,
     )
 
     if envelope["return_code"] == -1 and "error" in envelope:
@@ -196,8 +186,12 @@ def run_pytorch_scripts(
     ``timeout`` optionally overrides the per-script execution timeout;
     when omitted each script runs with its historical 300 s default.
     """
-    if not is_pytorch_available():
-        logger.error("PyTorch is not available, cannot execute PyTorch scripts")
+
+    from gnn.execute.preconditions import execution_precondition
+
+    script_timeout = timeout if timeout is not None else 300
+    if execution_precondition(script_timeout, None) is not None:
+        logger.error("Invalid or exhausted script execution budget")
         return False
 
     if execution_output_dir:
@@ -215,7 +209,6 @@ def run_pytorch_scripts(
     success_count = 0
     failure_count = 0
 
-    script_timeout = timeout if timeout is not None else 300
     for script in scripts:
         out = Path(execution_output_dir) / script.stem if execution_output_dir else None
         if execute_pytorch_script(script, verbose, device, out, timeout=script_timeout):

@@ -206,16 +206,19 @@ class TestExecutePrompt:
 
     def test_cache_hit_skips_provider(self, tmp_path: Path) -> None:
         cache = LLMCache(cache_dir=tmp_path)
-        cache.put("gnn", "model", "prompt", "cached-text")
+        calls = []
 
         class P:
             def get_default_provider(self) -> None:
                 return None
 
-            def get_response(self, **kw: object) -> None:
-                raise AssertionError("provider must not be called on cache hit")
+            async def get_response(self, **kw: object) -> object:
+                calls.append(kw)
+                return type("Response", (), {"content": "cached-text"})()
 
         assert self._run(P(), cache=cache) == "cached-text"
+        assert self._run(P(), cache=cache) == "cached-text"
+        assert len(calls) == 1
 
     def test_auth_failed_provider_short_circuits(self, tmp_path: Path) -> None:
         class P:
@@ -246,7 +249,9 @@ class TestExecutePrompt:
                 return Resp()
 
         assert self._run(P(), cache=cache) == "hello"
-        assert cache.get("gnn", "model", "prompt") == "hello"
+        assert cache.summary()["writes"] == 1
+        assert self._run(P(), cache=cache) == "hello"
+        assert cache.summary()["hits"] == 1
 
     def test_empty_response_replaced_with_notice(self, tmp_path: Path) -> None:
         cache = LLMCache(cache_dir=tmp_path)

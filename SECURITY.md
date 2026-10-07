@@ -11,12 +11,20 @@ The GNN (GeneralizedNotationNotation) project maintains a comprehensive multi-la
 
 > **📖 Complete Security Documentation**: For comprehensive security information, see [Security Guide](docs/security/README.md)
 
+Candidate security evidence (2026-10-06): CodeQL is successful at
+`951dc7d3f58cfd3ef7106caa321c1d3c7d2ad51a`; final-head renewal remains required.
+Alert #12 has a narrow request-string false-positive disposition. The trusted
+filesystem policy below retains its non-atomic concurrent-mutation limitation;
+GUI complexity alerts #13–#16 remain separate. See the
+[closeout snapshot](SCOPE-2026-10-01.md) for scope and pending publication.
+
 ## Supported Versions
 
 We are committed to ensuring the security of the GeneralizedNotationNotation (GNN) project.
 
 | Version | Supported | Security Coverage |
 | ------- | ------------------ | ----------------- |
+| 4.0.0 candidate | Unreleased; final checks pending | Current-run identity and bounded execution contracts; no final release security acceptance |
 | 3.6.0   | ✅ Full support | Complete security framework |
 | 3.5.0   | ✅ Full support | Complete security framework |
 | 3.3.0   | ✅ Full support | Complete security framework |
@@ -51,6 +59,7 @@ We are committed to ensuring the security of the GeneralizedNotationNotation (GN
 | 2026-06-24 | GHSA-fcw5-x6j4-ccmp, CVE-2026-44727 | jupyter-server | Upgraded 2.19.0 → 2.20.0 (`Nbconvert*Handler` sandbox CSP fix) |
 | 2026-06-24 | GHSA-gj48-438w-jh9v, GHSA-g75f-g53v-794x, GHSA-8rfp-98v4-mmr6 | bleach | Upgraded 6.3.0 → 6.4.0 (URI sanitization and linkify CPU exhaustion fixes) |
 | 2026-09-07 | (floors, not CVEs) | numpy, pandas, openai, pytest, mypy | Raised declared floors toward the locked generation (numpy ≥ 2.1.0, pandas ≥ 2.0, openai ≥ 1.0, pytest ≥ 8.0, mypy ≥ 1.0); `uv lock` re-resolved with zero pin changes. Closes the stale-floor drift documented in `CHANGELOG.md` [Unreleased]. |
+| 2026-10-06 | [GHSA-gh4c-6fx4-qh6g](https://github.com/advisories/GHSA-gh4c-6fx4-qh6g) | urllib3 | Raised the transitive security floor and lock from 2.7.0 to 2.8.0; fixes a loop when decoding a chunked Deflate response with trailing bytes. All other package pins remain unchanged. |
 
 > **ℹ️ Known Accepted Risks**: The following vulnerabilities are documented and accepted:
 >
@@ -222,6 +231,19 @@ Once a security vulnerability is reported, we commit to:
   pre-execution AST gate (trusted-local research only).
 - `GNN_MCP_TOKEN` / `GNN_MCP_RATE_LIMIT_PER_MINUTE` — bearer auth and
   per-client rate limiting for the MCP HTTP server.
+
+### Repository-local API filesystem scope
+
+The local API resolves request paths inside a trusted, locally managed checkout.
+Its shared path validator checks lexical containment, rejects existing symlink
+components, and checks resolved containment before directory creation or returning
+paths to the request handlers. Rejected paths produce a validation error before
+backend processing. These checks constrain request strings; they do not provide
+descriptor-based, atomic confinement against a separate actor replacing filesystem
+entries between validation and use. Authentication and non-loopback binding controls
+remain separate from this filesystem limitation. Use a checkout whose filesystem
+writers are trusted; hostile concurrent filesystem mutation is outside the current
+API contract.
 
 ### Framework-Specific Security
 

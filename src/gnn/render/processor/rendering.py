@@ -33,6 +33,20 @@ def _render_continuous_target(
     from gnn.render.pomdp_contract import ModelKind, detect_model_kinds
 
     kinds = detect_model_kinds(spec)
+    if kinds == frozenset({ModelKind.MULTI_AGENT, ModelKind.CONTINUOUS}):
+        from gnn.render.multi_agent_continuous import (
+            generate_multi_agent_continuous_script,
+        )
+
+        code = generate_multi_agent_continuous_script(spec, target)
+        suffix = ".jl" if target == "rxinfer" else ".py"
+        output_file = output_dir / f"{stem}_{target}{suffix}"
+        output_file.write_text(code, encoding="utf-8")
+        return (
+            True,
+            f"{target} native independent continuous agents",
+            [str(output_file)],
+        )
     if kinds == frozenset({ModelKind.FACTORED, ModelKind.CONTINUOUS}):
         # Per-factor LGSSM path: JAX renders the factored family through the
         # per-factor generator; every other target is refused rather than
@@ -60,6 +74,7 @@ def _render_continuous_target(
         )
 
     targets = {
+        "cpomdp": ("cpomdp.cpomdp_renderer", "render_gnn_to_cpomdp", "_cpomdp.py"),
         "jax": ("jax.jax_renderer", "render_gnn_to_jax", "_jax.py"),
         "numpyro": ("numpyro.numpyro_renderer", "render_gnn_to_numpyro", "_numpyro.py"),
         "pytorch": ("pytorch.pytorch_renderer", "render_gnn_to_pytorch", "_pytorch.py"),
@@ -118,7 +133,11 @@ def render_gnn_spec(
 
         target_lower = target.lower()
         if isinstance(gnn_spec, dict):
-            gnn_spec_mapping = _rehydrate_file_backed_parse_summary(gnn_spec)
+            gnn_spec_mapping = _rehydrate_file_backed_parse_summary(
+                gnn_spec,
+                native_agents=target_lower == "rxinfer",
+                preserve_discrete_structure=target_lower == "thrml",
+            )
             model_name = str(
                 gnn_spec_mapping.get("model_name")
                 or gnn_spec_mapping.get("name")
@@ -127,11 +146,24 @@ def render_gnn_spec(
         else:
             gnn_spec_mapping = _internal_representation_to_mapping(gnn_spec)
             model_name = str(gnn_spec_mapping["model_name"])
+        from gnn.render.execution_contracts import unsupported_contract
+
+        contract_refusal = unsupported_contract(gnn_spec_mapping, target_lower)
+        if contract_refusal:
+            return False, contract_refusal, []
         files: list[Any] = []
         requested_stem = (options or {}).get("output_filename", model_name)
         output_stem = _safe_output_stem(requested_stem)
 
-        from gnn.render.continuous_common import is_continuous_spec
+        from gnn.render.execution_contracts import execution_contract
+
+        if execution_contract(gnn_spec_mapping) is not None:
+            from gnn.render.jax.jax_renderer import render_gnn_to_jax
+
+            return render_gnn_to_jax(
+                gnn_spec_mapping, output_dir / f"{output_stem}_jax.py", options
+            )
+
         from gnn.render.pomdp_contract import (
             ModelKind,
             detect_model_kinds,
@@ -152,7 +184,15 @@ def render_gnn_spec(
         factored_continuous = kinds == frozenset(
             {ModelKind.FACTORED, ModelKind.CONTINUOUS}
         )
-        if ModelKind.CONTINUOUS in kinds and len(kinds) > 1 and not factored_continuous:
+        agent_continuous = kinds == frozenset(
+            {ModelKind.MULTI_AGENT, ModelKind.CONTINUOUS}
+        )
+        if (
+            ModelKind.CONTINUOUS in kinds
+            and len(kinds) > 1
+            and not factored_continuous
+            and not agent_continuous
+        ):
             return (False, unsupported_composition_reason(kinds), [])
         # A nonstationary spec declares time-indexed (B_t) or regime-switched
         # (B_regime + schedule) transitions. Only the pymdp backend executes
@@ -162,7 +202,16 @@ def render_gnn_spec(
         if ModelKind.NONSTATIONARY in kinds and target_lower != "pymdp":
             return (False, unsupported_nonstationary_reason(kinds), [])
 
-        if is_continuous_spec(gnn_spec_mapping):
+        if target_lower == "thrml":
+            from gnn.render.thrml import render_gnn_to_thrml
+
+            output_file = output_dir / f"{output_stem}_thrml.py"
+            success, message, artifacts = render_gnn_to_thrml(
+                gnn_spec_mapping, output_file, options
+            )
+            return (success, message, artifacts if success else [])
+
+        if ModelKind.CONTINUOUS in kinds:
             return _render_continuous_target(
                 gnn_spec_mapping, target_lower, output_dir, output_stem, options
             )
@@ -195,7 +244,13 @@ def render_gnn_spec(
                     [],
                 )
 
-            if ModelKind.NONSTATIONARY in kinds:
+            from gnn.render.multi_agent_common import has_native_multi_agent_structure
+
+            if target_lower == "rxinfer" and has_native_multi_agent_structure(
+                gnn_spec_mapping
+            ):
+                canonical_spec = gnn_spec_mapping
+            elif ModelKind.NONSTATIONARY in kinds:
                 # Raw mapping passthrough: the nonstationary executor
                 # consumes B_t/B_regime plus the schedule directly, and
                 # build_canonical_pomdp_spec would drop the ^[ABCDE]_ keys

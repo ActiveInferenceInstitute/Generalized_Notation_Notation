@@ -381,6 +381,21 @@ def generate_gif_animation(
     Returns:
         Path to the generated GIF file, or "" if no beliefs
     """
+    from gnn.analysis.result_adapter import model_family, result_views
+
+    from .family_visuals import continuous_gif, marginal_gif
+
+    if fps <= 0 or dpi <= 0:
+        raise ValueError("Animation fps and dpi must be positive")
+    views = result_views(data)
+    if model_family(data) == "continuous":
+        return continuous_gif(data, output_path, model_name, fps, dpi)
+    if len(views) > 1:
+        return marginal_gif(
+            data, views, output_path, model_name, fps, dpi, generate_gif_animation
+        )
+    if views:
+        data = next(iter(views.values()))
     beliefs = _normalize_beliefs(data)
     if not beliefs:
         logger.warning("No beliefs found — cannot generate GIF")
@@ -560,18 +575,15 @@ def generate_gif_animation(
 
         if step >= 0:
             argmax_beliefs = np.argmax(beliefs_arr[: step + 1], axis=1)
-            ts = (
-                np.array(true_states[: step + 1])
-                if true_states
-                else np.zeros(step + 1, dtype=int)
-            )
-            obs = (
-                np.array(observations[: step + 1])
-                if observations
-                else np.zeros(step + 1, dtype=int)
-            )
-
-            heatmap_data = np.vstack([argmax_beliefs, ts, obs])
+            rows = [argmax_beliefs]
+            row_labels = ["MAP belief"]
+            if true_states:
+                rows.append(np.array(true_states[: step + 1]))
+                row_labels.append("True state")
+            if observations:
+                rows.append(np.array(observations[: step + 1]))
+                row_labels.append("Observation")
+            heatmap_data = np.vstack(rows)
             if norm:
                 ax2.imshow(
                     heatmap_data,
@@ -585,8 +597,8 @@ def generate_gif_animation(
                     heatmap_data, aspect="auto", cmap=cmap, interpolation="nearest"
                 )
 
-            ax2.set_yticks([0, 1, 2])
-            ax2.set_yticklabels(["Belief", "True", "Obs"], fontsize=8, color="#444")
+            ax2.set_yticks(list(range(len(row_labels))))
+            ax2.set_yticklabels(row_labels, fontsize=8, color="#444")
             ax2.set_title("State Tracking", fontsize=10, color="#222")
             ax2.set_xlabel("Timestep", fontsize=9, color="#444")
             ax2.tick_params(colors="#444", labelsize=7)

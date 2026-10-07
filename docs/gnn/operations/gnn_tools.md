@@ -208,7 +208,7 @@ GNN support is available for various IDEs:
 
 GNN tools integrate with several Active Inference frameworks:
 
-Step 11 renders to ten backends and Step 12 executes all ten (bnlearn via `src/gnn/execute/bnlearn/`, ngc-learn via `src/gnn/execute/ngclearn/`, skipping until their runtimes are installed). `uv run gnn health` reports which are importable in the current environment.
+Step 11 renders registered backends and Step 12 executes those with installed runtimes (bnlearn via `src/gnn/execute/bnlearn/`, ngc-learn via `src/gnn/execute/ngclearn/`, skipping until their runtimes are installed). `uv run gnn doctor` reports structured readiness diagnoses; cpomdp remains experimental and explicitly selected.
 
 ```mermaid
 graph LR
@@ -600,3 +600,24 @@ uv run python src/gnn/12_execute.py --frameworks "lite" --verbose  # Python-only
 For more detailed information on each module, see **[src/gnn/AGENTS.md](../../../src/gnn/AGENTS.md)**.
 
 ---
+
+## Additional maintained CLI options
+
+These flags are registered by the canonical CLI or numbered step parsers.
+Use the relevant command's help to see its exact exposure and defaults.
+
+| Command or step | Options and purpose |
+| --- | --- |
+| `gnn run`, `gnn gui`, `gnn models` | `-t` aliases the input target directory. `-o` selects output on commands that expose it. `-v` enables verbosity. |
+| `gnn render` | `-f` selects a framework and `-o` selects the output file. |
+| `gnn models list` | `-q` filters models by ontology concept substring. |
+| `gnn reproduce` | `--history-dir` selects the directory holding the run history index. |
+| `gnn pull` | `--overwrite` permits replacement of the selected destination model. |
+| Step 3 | `--serialize-preset full` serializes all formats; `minimal` emits Markdown, JSON and Python. `--enable-round-trip` enables serializer/parser checks; `--enable-cross-format` enables consistency checks. |
+| Step 7 | `--export-formats` selects the export formats exposed by this step parser. |
+| Step 2 | `--include-performance` includes performance test categories. |
+| Step 12 | `--timesteps` sets simulation length; `--simulation-params` supplies a JSON parameter object. |
+| Step 15 | `--sonification` and `--no-sonification` enable or disable model sonification. |
+| Step 22 | `--launch-editor` launches the selected oxdraw editor. |
+| Boolean parser controls | `--no-recursive`, `--no-verbose`, `--no-interactive`, `--no-estimate-resources` and `--no-execution-summary-detail` disable their corresponding positive options where exposed. |
+| Diagnostic testing | `--simulate-error` deliberately exercises the error path. |

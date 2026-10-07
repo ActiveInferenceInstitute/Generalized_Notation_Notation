@@ -23,7 +23,9 @@ class TestToolTimeoutKnob:
 
     @pytest.mark.unit
     def test_knob_times_out_slow_untimed_tool(self) -> None:
-        registry = MCP(enable_caching=False, enable_rate_limiting=False, tool_timeout=0.2)
+        registry = MCP(
+            enable_caching=False, enable_rate_limiting=False, tool_timeout=0.2
+        )
         registry.register_tool(
             name="hung_tool",
             func=lambda: __import__("time").sleep(1.5) or {"never": True},
@@ -38,7 +40,9 @@ class TestToolTimeoutKnob:
     def test_tool_explicit_timeout_overrides_knob(self) -> None:
         # The tool's own 1.5s timeout is the effective bound, so a 0.2s knob
         # must NOT cut it off; the quick body returns normally.
-        registry = MCP(enable_caching=False, enable_rate_limiting=False, tool_timeout=0.2)
+        registry = MCP(
+            enable_caching=False, enable_rate_limiting=False, tool_timeout=0.2
+        )
         registry.register_tool(
             name="own_timeout_tool",
             func=lambda: {"ok": True},
@@ -52,7 +56,9 @@ class TestToolTimeoutKnob:
     def test_explicit_timeout_beats_knob_on_timeout_path(self) -> None:
         # The effective timeout is the tool's own 0.2s (not the 1.5s knob),
         # so the hung body trips the bound at the tool's value.
-        registry = MCP(enable_caching=False, enable_rate_limiting=False, tool_timeout=1.5)
+        registry = MCP(
+            enable_caching=False, enable_rate_limiting=False, tool_timeout=1.5
+        )
         registry.register_tool(
             name="hung_own_timeout_tool",
             func=lambda: __import__("time").sleep(1.0) or {"never": True},
@@ -110,7 +116,9 @@ class TestInitializeToolTimeoutKnob:
     @pytest.mark.unit
     def test_initialize_rejects_nonpositive_tool_timeout(self) -> None:
         with pytest.raises(ValueError):
-            initialize(tool_timeout=0.0, halt_on_missing_sdk=False, force_proceed_flag=True)
+            initialize(
+                tool_timeout=0.0, halt_on_missing_sdk=False, force_proceed_flag=True
+            )
 
 
 class TestProcessorAliasMap:

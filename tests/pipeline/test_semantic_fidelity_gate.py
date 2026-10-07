@@ -22,7 +22,7 @@ SAMPLE = Path("input/gnn_files/basics/dynamic_perception.md")
 def test_semantic_contract_contains_release_fields() -> None:
     contract = build_semantic_contract(SAMPLE)
 
-    assert contract["schema"] == "gnn_semantic_contract_v1"
+    assert contract["schema"] == "gnn_semantic_contract_v2"
     assert contract["model_identity"]["model_name"]
     assert {variable["name"] for variable in contract["variables"]} >= {"A", "B"}
     assert contract["edges"]
@@ -92,3 +92,23 @@ def test_semantic_gate_fails_unsupported_success_claim(tmp_path: Path) -> None:
             formats=("pnml",),
             strict=True,
         )
+
+
+def test_semantic_compare_rejects_same_shape_changed_values() -> None:
+    original = build_semantic_contract(SAMPLE)
+    changed = deepcopy(original)
+    changed["parameter_values"]["A"][0][0] += 0.01
+    assert any(
+        d.field == "parameter_values"
+        for d in compare_semantic_contracts(original, changed)
+    )
+
+
+def test_semantic_compare_rejects_lost_parameter_provenance() -> None:
+    original = build_semantic_contract(SAMPLE)
+    changed = deepcopy(original)
+    changed["parameter_metadata"] = {"A": {"derived": True}}
+    assert any(
+        d.field == "parameter_metadata"
+        for d in compare_semantic_contracts(original, changed)
+    )

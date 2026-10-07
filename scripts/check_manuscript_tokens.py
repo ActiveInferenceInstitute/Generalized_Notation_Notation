@@ -56,7 +56,11 @@ step-number findings and the strict artifact-agreement checks are reported as
 warnings unless ``--strict`` is passed.
 
 Usage:
-    python scripts/check_manuscript_tokens.py [--strict]
+    python scripts/check_manuscript_tokens.py [--strict] [--base-ref origin/main]
+
+PR base mode evaluates immutable merge-base evidence with this implementation.
+Only unchanged findings with identical supporting bytes warn; new drift fails.
+No base argument keeps main and scheduled gates strict.
 """
 
 from __future__ import annotations
@@ -64,6 +68,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -83,24 +88,12 @@ from gnn.manuscript import (  # noqa: E402
     load_variables,
     token_checksum,
 )
+from gnn.manuscript.gate_baseline import compare_findings  # noqa: E402
+from gnn.manuscript.substitution import EXCLUDED_DOC_FILENAMES, TOKEN_RE  # noqa: E402
 from gnn.manuscript.variables import _families  # noqa: E402
 
-# The set of manuscript/*.md files the renderer does NOT substitute, taken from
-try:  # pragma: no cover - exercised only with a template checkout present
-    from infrastructure.rendering.manuscript_injection import (  # type: ignore
-        EXCLUDED_DOC_FILENAMES as _EXCLUDED_FROZEN,
-    )
-
-    _EXCLUDED = set(_EXCLUDED_FROZEN)
-except ModuleNotFoundError:
-    # Standalone fallback: the frozen mirror of the template's excluded-doc
-    # set, single-sourced with the figure build and the published-commands
-    # test so the four call sites cannot drift apart.
-    from scripts.lib.manuscript_exclusions import EXCLUDED_DOC_FILENAMES
-
-    _EXCLUDED = set(EXCLUDED_DOC_FILENAMES)
-
-_TOKEN_RE = re.compile(r"\{\{([A-Z][A-Z0-9_]*)\}\}")
+_EXCLUDED = set(EXCLUDED_DOC_FILENAMES)
+_TOKEN_RE = TOKEN_RE
 _CITE_RE = re.compile(r"@([A-Za-z][\w:-]+)")
 _BIB_KEY_RE = re.compile(r"^@\w+\{([^,]+),", re.MULTILINE)
 # Counts small enough to appear coincidentally (step numbers, dims) are not flagged.
@@ -426,7 +419,9 @@ def _working_tree_is_clean() -> bool:
     return result.returncode == 0 and not result.stdout.strip()
 
 
-def _figure_artifact_issues() -> tuple[list[str], list[str]]:
+def _figure_artifact_issues(
+    snapshot: RepositorySnapshot | None = None,
+) -> tuple[list[str], list[str]]:
     """``(png_issues, source_issues)`` comparing figure_registry.json to disk/HEAD.
 
     ``png_sha256`` must be the digest of the PNG file on disk (the artifact a
@@ -439,7 +434,7 @@ def _figure_artifact_issues() -> tuple[list[str], list[str]]:
     tree instead, and the check degrades to "figures must match the sources
     now on disk".
     """
-    clean = _working_tree_is_clean()
+    clean = snapshot is not None or _working_tree_is_clean()
     registry_path = _PROJECT_ROOT / "output" / "figures" / "figure_registry.json"
     if not registry_path.is_file():
         return [
@@ -479,8 +474,13 @@ def _figure_artifact_issues() -> tuple[list[str], list[str]]:
             )
         for rel, recorded in sorted((rec.get("source_sha256") or {}).items()):
             if clean:
-                blob = _git_blob_digest(str(rel))
-                reference = "at HEAD"
+                blob = (
+                    hashlib.sha256(snapshot.read_bytes(str(rel))).hexdigest()
+                    if snapshot is not None and snapshot.exists(str(rel))
+                    else None
+                    if snapshot is not None
+                    else _git_blob_digest(str(rel))
+                )
             else:
                 source = _PROJECT_ROOT / str(rel)
                 blob = (
@@ -488,14 +488,13 @@ def _figure_artifact_issues() -> tuple[list[str], list[str]]:
                     if source.is_file()
                     else None
                 )
-                reference = "on disk"
             if blob is None:
                 source_issues.append(
-                    f"{label}: source {rel} cannot be read {reference}"
+                    f"{label}: source {rel} cannot be read from audited evidence"
                 )
             elif blob != str(recorded):
                 source_issues.append(
-                    f"{label}: source {rel} differs {reference} from the "
+                    f"{label}: source {rel} differs from the "
                     "build-time digest — rebuild the figures on a commit the "
                     "prose describes"
                 )
@@ -540,17 +539,17 @@ def _provenance_issue(variables: Mapping[str, str]) -> str:
     return ""
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Manuscript token/citation integrity gate"
-    )
-    parser.add_argument(
-        "--strict", action="store_true", help="treat hard-coded counts as failures"
-    )
-    args = parser.parse_args()
-
+def audit_issues(
+    strict: bool,
+    *,
+    variables: dict[str, str] | None = None,
+    snapshot: RepositorySnapshot | None = None,
+) -> list[str]:
+    """Evaluate HEAD audit semantics against explicit repository evidence."""
     manuscript_dir = _PROJECT_ROOT / "manuscript"
-    variables = generate_variables(_PROJECT_ROOT)
+    variables = (
+        variables if variables is not None else generate_variables(_PROJECT_ROOT)
+    )
     known_tokens = set(variables)
 
     bib_text = (manuscript_dir / "references.bib").read_text(encoding="utf-8")
@@ -653,50 +652,64 @@ def main() -> int:
     print(f"Sections checked: {len(_section_files(manuscript_dir))}")
     print(f"Known tokens: {len(known_tokens)} | Bib keys: {len(bib_keys)}")
 
+    issues: list[str] = []
     ok = True
     if unknown_tokens:
+        issues.extend(unknown_tokens)
         ok = False
         print(f"\nUNKNOWN TOKENS ({len(unknown_tokens)}) — would render literally:")
         for u in unknown_tokens:
             print(f"  ✗ {u}")
     if dangling_cites:
+        issues.extend(dangling_cites)
         ok = False
         print(f"\nDANGLING CITATIONS ({len(dangling_cites)}):")
         for d in sorted(set(dangling_cites)):
             print(f"  ✗ {d}")
+    if malformed_xrefs:
+        issues.extend(malformed_xrefs)
+        ok = False
     figure_issues = _figure_registry_issues(
         manuscript_dir, _section_files(manuscript_dir)
     )
     if figure_issues:
+        issues.extend(figure_issues)
         ok = False
         print(f"\nFIGURE REGISTRY ({len(figure_issues)}):")
         for f in figure_issues:
             print(f"  ✗ {f}")
     crossrefs = _crossref_issues(_section_files(manuscript_dir), variables)
     if crossrefs:
+        issues.extend(crossrefs)
         ok = False
         print(f"\nUNDECLARED CROSS-REFERENCE LABELS ({len(crossrefs)}):")
         for c in crossrefs:
             print(f"  ✗ {c}")
     path_claims = _path_claim_issues(
         _section_files(manuscript_dir),
-        _families(RepositorySnapshot(_PROJECT_ROOT)),
+        _families(
+            snapshot if snapshot is not None else RepositorySnapshot(_PROJECT_ROOT)
+        ),
     )
     if path_claims:
+        issues.extend(path_claims)
         ok = False
         print(f"\nREPOSITORY PATH CLAIMS ({len(path_claims)}):")
         for c in path_claims:
             print(f"  \u2717 {c}")
     if config_drift:
+        issues.extend(f"manuscript/config.yaml: {issue}" for issue in config_drift)
         ok = False
         print(f"\nCONFIG.YAML DRIFT ({len(config_drift)}):")
         for d in config_drift:
             print(f"  ✗ {d} — run scripts/z_generate_manuscript_variables.py")
     if config_hardcoded:
+        issues.extend(config_hardcoded)
         # config.yaml counts cannot be tokenized away — always a hard failure.
         ok = False
     provenance_issue = _provenance_issue(variables)
     if provenance_issue:
+        issues.append(provenance_issue)
         # SC-23: the degraded snapshot sentinel is a published token; numbers
         # with no commit behind them are not publishable, so this is a hard
         # failure in both modes, not a strict-only one.
@@ -706,10 +719,20 @@ def main() -> int:
         print(f"\nHARD-CODED COUNTS ({len(hardcoded)}) — prefer tokens:")
         for h in sorted(set(hardcoded)):
             print(f"  ! {h}")
-        if args.strict:
+        if strict:
+            issues.extend(hardcoded)
             ok = False
-    if args.strict:
-        ok = _strict_artifact_checks(variables, ok)
+    if strict:
+        committed = _committed_variables_issue(
+            variables, _PROJECT_ROOT / "output/data/manuscript_variables.json"
+        )
+        if committed:
+            issues.append(f"output/data/manuscript_variables.json: {committed}")
+        png, sources = _figure_artifact_issues(snapshot)
+        issues.extend(png)
+        issues.extend(sources)
+        issues.extend(_unresolved_output_tokens(_PROJECT_ROOT / "output/manuscript"))
+        ok = not issues
 
     if ok and not hardcoded:
         print("\n✅ Manuscript token/citation integrity: clean")
@@ -719,7 +742,69 @@ def main() -> int:
         )
     else:
         print("\n❌ Manuscript integrity gate FAILED")
-    return 0 if ok else 1
+    return sorted(set(issues))
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Manuscript token/citation integrity gate"
+    )
+    parser.add_argument(
+        "--strict", action="store_true", help="treat hard-coded counts as failures"
+    )
+    parser.add_argument(
+        "--base-ref",
+        default=os.environ.get("GNN_MANUSCRIPT_BASE_REF") or None,
+        help="PR target ref; tolerate only exact inherited findings at merge base",
+    )
+    args = parser.parse_args()
+    import contextlib
+    import io
+
+    audit_output = io.StringIO()
+    with contextlib.redirect_stdout(audit_output):
+        issues = audit_issues(args.strict)
+    warnings = [
+        line.strip()
+        for line in audit_output.getvalue().splitlines()
+        if line.lstrip().startswith("! ")
+    ]
+    if not args.strict and warnings:
+        print("HARD-CODED COUNTS — prefer tokens:")
+        for warning in warnings:
+            print(f"  {warning}")
+    project_root = _PROJECT_ROOT
+
+    def audit_base(root: Path, sha: str) -> list[str]:
+        import contextlib
+        import io
+
+        global _PROJECT_ROOT
+        snapshot = RepositorySnapshot(project_root, sha)
+        variables = generate_variables(root, snapshot=snapshot)
+        try:
+            _PROJECT_ROOT = root
+            with contextlib.redirect_stdout(io.StringIO()):
+                return audit_issues(args.strict, variables=variables, snapshot=snapshot)
+        finally:
+            _PROJECT_ROOT = project_root
+
+    comparison = compare_findings(project_root, issues, args.base_ref, audit_base)
+    if comparison.inherited:
+        print(f"WARNING: stale base {comparison.base_sha}; fix main first")
+        for issue in comparison.inherited:
+            print(f"  unchanged inherited drift: {issue}")
+    for issue in comparison.failures:
+        print(f"  FAILED: {issue}")
+    if not comparison.failures:
+        print(
+            "No new manuscript integrity failures"
+            if comparison.inherited
+            else "Manuscript token/citation integrity: no failures (warnings above)"
+            if warnings and not args.strict
+            else "Manuscript token/citation integrity: clean"
+        )
+    return 1 if comparison.failures else 0
 
 
 if __name__ == "__main__":

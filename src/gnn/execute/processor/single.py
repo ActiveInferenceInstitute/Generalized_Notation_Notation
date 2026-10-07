@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Single-script execution: subprocess envelopes, environment, receipts."""
 
+import hashlib
 import json
 import logging
 import os
 import platform
 import subprocess  # nosec B404
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
+from uuid import uuid4
 
 from gnn.execute.data_extractors import (
     collect_execution_outputs,
@@ -29,7 +30,6 @@ from gnn.execute.julia_env import (
     GKSWSTYPE_VAR,
     _build_script_execution_command,
     _julia_project_for_framework,
-    check_julia_dependencies,
 )
 from gnn.execute.metadata import _load_rxinfer_execution_metadata_from_script
 from gnn.execute.processor.envelope import (
@@ -44,8 +44,10 @@ from gnn.execute.subprocess_envelope import (
     run_subprocess_envelope,
 )
 from gnn.execute.types import ExecutionFrameworkName, ScriptExecutionContext
-
-logger = logging.getLogger(__name__)
+from gnn.utils.runtime_safety.framework_availability import (
+    FRAMEWORK_IMPORT_CHECK,
+    FRAMEWORK_JULIA_PACKAGES,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -118,12 +120,19 @@ def _build_execution_environment(
         "numpyro": "NUMPYRO_OUTPUT_DIR",
         "pytorch": "PYTORCH_OUTPUT_DIR",
         "ngclearn": "NGCLEARN_OUTPUT_DIR",
+        "cpomdp": "CPOMDP_OUTPUT_DIR",
         "stan": "STAN_OUTPUT_DIR",
         "bnlearn": "BNLEARN_OUTPUT_DIR",
     }
     if context.framework in output_env_vars:
         simulation_data_dir.mkdir(parents=True, exist_ok=True)
         env[output_env_vars[context.framework]] = str(simulation_data_dir)
+
+    if context.framework == "thrml":
+        implementation_dir = results_dir / context.model_name / context.framework
+        implementation_dir.mkdir(parents=True, exist_ok=True)
+        env["THRML_OUTPUT_DIR"] = str(implementation_dir)
+        env["GNN_THRML_EXECUTION_ID"] = uuid4().hex
 
     return env
 
@@ -225,18 +234,26 @@ def execute_single_script(
     executor = context.executor
     model_name = context.model_name
     framework = context.framework
+    from gnn.execute.preconditions import execution_precondition, script_deadline
+
+    precondition = execution_precondition(timeout, None)
+    if precondition is not None:
+        return {**_new_execution_result(context), **precondition}
+    deadline = script_deadline(timeout)
     from gnn.execute import processor as _processor_facade
 
-    # Pre-flight skip: do not run Python frameworks when optional dependency is missing
-    if (
-        executor == sys.executable
-        and not _processor_facade._is_python_framework_dependency_available(
-            framework, executor, logger
+    # Probe the actual interpreter and committed environment before dispatch.
+    if framework in FRAMEWORK_IMPORT_CHECK or framework in FRAMEWORK_JULIA_PACKAGES:
+        dependency_status = _processor_facade._check_framework_by_name(
+            framework,
+            executor=executor,
+            logger=logger,
+            deadline_monotonic=deadline,
         )
-    ):
-        return _make_skipped_result(
-            script_info, framework, model_name, executor, logger
-        )
+        if not dependency_status.available:
+            return _make_skipped_result(
+                script_info, framework, model_name, executor, logger, dependency_status
+            )
 
     # Prepare execution result
     exec_result = _new_execution_result(context)
@@ -275,90 +292,14 @@ def execute_single_script(
                 f"Executing {script_info['framework']} script: {script_info['name']}"
             )
 
-        # Check if the executor is available
-        try:
-            # For Python scripts, check if Python is available (most are Python scripts)
-            if executor in ["python", "python3"]:
-                subprocess.run(
-                    [executor, "--version"],  # nosec B603
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                    check=True,
-                )
-
-                # For PyMDP, specifically check if it's importable
-                if framework == "pymdp":
-                    try:
-                        import_check = subprocess.run(  # nosec B603
-                            [executor, "-c", 'import pymdp; print("ok")'],
-                            capture_output=True,
-                            text=True,
-                            timeout=5,
-                        )
-                        if import_check.returncode != 0:
-                            logger.warning(
-                                f"PyMDP package appears missing or broken: {import_check.stderr}"
-                            )
-                            exec_result["error"] = (
-                                f"PyMDP dependency missing: {import_check.stderr}"
-                            )
-                            if not _gnn_allow_missing_deps():
-                                # SC-34: continuation is opt-in. Default is a
-                                # structured fast failure instead of a doomed run.
-                                exec_result["error_type"] = "DependencyMissing"
-                                exec_result["return_code"] = NEVER_STARTED
-                                logger.error(
-                                    f"Failing fast for {script_info['name']}: PyMDP "
-                                    "unavailable (set GNN_ALLOW_MISSING_DEPS=1 to "
-                                    "attempt continuation)"
-                                )
-                                return exec_result
-                            # Opt-in continuation: might still be a local import.
-                    except Exception as e:
-                        logger.debug(f"Error checking PyMDP importability: {e}")
-
-            # For Julia scripts, check availability and dependencies
-            elif executor == "julia":
-                if not check_julia_dependencies(verbose, logger, [framework]):
-                    skipped = _make_skipped_result(
-                        script_info, framework, model_name, executor, logger
-                    )
-                    skipped["error"] = (
-                        f"Julia packages required for {framework} are not available"
-                    )
-                    return skipped
-
-                subprocess.run(
-                    [executor, "--version"],  # nosec B603
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                    check=True,
-                )
-            # For other executors, try a basic check
-            else:
-                subprocess.run(
-                    [executor, "--version"],  # nosec B603
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                    check=True,
-                )
-        except (
-            subprocess.CalledProcessError,
-            FileNotFoundError,
-            subprocess.TimeoutExpired,
-        ) as e:
-            exec_result["error"] = (
-                f"Executor '{executor}' is not available or not working: {e}"
-            )
-            exec_result["error_type"] = "ExecutorUnavailable"
-            exec_result["return_code"] = NEVER_STARTED
-            logger.warning(
-                f"Executor unavailable for {script_info['name']}: {executor}"
-            )
-            return exec_result
+        # Structured readiness already validates the actual interpreter and
+        # imports under supervision. Dispatch only the requested script here;
+        # redundant raw version/import probes cannot contain their descendants.
+        precondition = execution_precondition(
+            timeout, None, deadline_monotonic=deadline
+        )
+        if precondition is not None:
+            return {**exec_result, **precondition}
 
         # Execute the script with improved error handling. Failure carriers use
         # ``subprocess.CompletedProcess`` so the success and failure paths share
@@ -415,6 +356,8 @@ def execute_single_script(
             base_command = _build_script_execution_command(context, sandbox_prefix)
 
             for rep in range(K):
+                if framework == "thrml":
+                    env["GNN_THRML_EXECUTION_ID"] = uuid4().hex
                 exec_result["attempts_started"] = rep + 1
                 rep_start = datetime.now()
                 # Canonical subprocess envelope (MAJ-10): one structured
@@ -424,6 +367,7 @@ def execute_single_script(
                 envelope = run_subprocess_envelope(
                     base_command,
                     timeout=timeout,
+                    deadline_monotonic=deadline,
                     cwd=script_path.parent,
                     env=env,
                     sandbox=False,
@@ -450,7 +394,20 @@ def execute_single_script(
                     exec_result.get("cancelled", False) or envelope.get("cancelled")
                 )
 
+                for receipt_key in (
+                    "containment",
+                    "observed_descendant_count",
+                    "cleanup_verified",
+                    "streams_drained",
+                    "cleanup_timeout_seconds",
+                    "cleanup_error",
+                    "execution_error_type",
+                ):
+                    if receipt_key in envelope:
+                        exec_result[receipt_key] = envelope[receipt_key]
+
                 if envelope.get("error_type") == "TimeoutExpired":
+                    exec_result["status"] = "timed_out"
                     exec_result["execution_time"] = elapsed_rep
                     exec_result["error"] = (
                         f"Script execution timed out after {timeout} seconds"
@@ -511,6 +468,18 @@ def execute_single_script(
                         else:
                             exec_result["error_type"] = "RuntimeError"
 
+                    if envelope.get("error_type") == "ProcessCleanupFailure":
+                        exec_result["error_type"] = "ProcessCleanupFailure"
+                        exec_result["error"] = envelope.get(
+                            "error", "Subprocess cleanup could not be verified"
+                        )
+                    elif envelope.get("error_type") == "Cancelled":
+                        exec_result["status"] = "cancelled"
+                        exec_result["error_type"] = "Cancelled"
+                        exec_result["error"] = envelope.get(
+                            "error", "Script execution cancelled"
+                        )
+
                     logger.warning(
                         f"⚠️ Script {script_info['name']} failed with return code "
                         f"{run_result.returncode} (rep {rep + 1}/{K})"
@@ -520,6 +489,44 @@ def execute_single_script(
                     result = run_result
                     broke_early = True
                     break
+
+                result = run_result
+                if framework == "thrml":
+                    from gnn.execute.thrml import validate_native_result
+
+                    artifact = (
+                        Path(env["THRML_OUTPUT_DIR"])
+                        / "simulation_data"
+                        / "simulation_results.json"
+                    )
+                    if (
+                        artifact.is_symlink()
+                        or not artifact.is_file()
+                        or artifact.stat().st_size > 16 * 1024 * 1024
+                    ):
+                        raise ValueError(
+                            "THRML native result is missing, unsafe, or exceeds 16 MiB"
+                        )
+                    payload = json.loads(artifact.read_text(encoding="utf-8"))
+                    analysis = validate_native_result(
+                        payload,
+                        execution_id=env["GNN_THRML_EXECUTION_ID"],
+                        script_sha256=hashlib.sha256(
+                            script_path.read_bytes()
+                        ).hexdigest(),
+                    )
+                    precondition = execution_precondition(
+                        timeout, None, deadline_monotonic=deadline
+                    )
+                    if precondition is not None:
+                        raise TimeoutError(
+                            "THRML deadline exhausted during result validation"
+                        )
+                    exec_result["scientific_analysis"] = analysis
+                    exec_result["native_result_file"] = str(artifact)
+                    exec_result["execution_metadata"].update(
+                        payload["runtime_metadata"]
+                    )
 
                 durations_success.append(elapsed_rep)
                 result = run_result
@@ -546,16 +553,25 @@ def execute_single_script(
                 if verbose and result.stdout:
                     logger.info(f"Script output: {result.stdout[:200]}...")
         except Exception as e:
+            exec_result["success"] = False
+            exec_result["status"] = (
+                "timed_out" if isinstance(e, TimeoutError) else "failed"
+            )
             exec_result["execution_time"] = exec_result.get("execution_time", 0)
             exec_result["error"] = f"Script execution failed: {e}"
             exec_result["error_type"] = type(e).__name__
-            exec_result["return_code"] = INTERNAL_ERROR
-            exec_result["stdout"] = ""
-            exec_result["stderr"] = str(e)
-            logger.warning(f"❌ Script {script_info['name']} execution failed: {e}")
-            result = subprocess.CompletedProcess(
-                args=[], returncode=INTERNAL_ERROR, stdout="", stderr=str(e)
+            exec_result["return_code"] = (
+                result.returncode if result is not None else INTERNAL_ERROR
             )
+            exec_result["stdout"] = result.stdout if result is not None else ""
+            exec_result["stderr"] = result.stderr if result is not None else str(e)
+            if result is not None and result.returncode == 0:
+                exec_result["execution_result_success"] = True
+            logger.warning(f"❌ Script {script_info['name']} execution failed: {e}")
+            if result is None:
+                result = subprocess.CompletedProcess(
+                    args=[], returncode=INTERNAL_ERROR, stdout="", stderr=str(e)
+                )
 
         # Ensure result is defined before using it
         if result is None:
@@ -589,6 +605,7 @@ def execute_single_script(
             "script_name": script_info["name"],
             "script_path": str(script_path),
             "success": exec_result["success"],
+            "status": exec_result["status"],
             "return_code": exec_result.get("return_code"),
             "execution_time": exec_result.get("execution_time", 0),
             "timestamp": exec_result["timestamp"],
@@ -613,6 +630,19 @@ def execute_single_script(
             "execution_time_mean",
             "execution_time_std",
             "execution_time_samples",
+            "child_peak_rss_mb",
+            "rss_sample_interval_seconds",
+            "rss_samples_count",
+            "cancelled",
+            "containment",
+            "observed_descendant_count",
+            "cleanup_verified",
+            "streams_drained",
+            "cleanup_timeout_seconds",
+            "cleanup_error",
+            "execution_error_type",
+            "error_type",
+            "error",
         ):
             if bench_key in exec_result:
                 structured_result[bench_key] = exec_result[bench_key]
@@ -728,18 +758,64 @@ def execute_single_script(
                             logger.debug("pymdp_execution_summary skipped: %s", ex)
 
             except Exception as e:
+                exec_result["execution_result_success"] = True
+                exec_result["success"] = False
+                exec_result["status"] = "failed"
+                exec_result["error_type"] = "ResultCollectionFailure"
+                exec_result["error"] = str(e)
                 logger.warning(f"Failed to collect execution outputs: {e}")
                 import traceback
 
                 logger.debug(traceback.format_exc())
 
     except subprocess.TimeoutExpired:
+        exec_result["execution_result_success"] = bool(exec_result.get("success"))
+        exec_result["success"] = False
+        exec_result["status"] = "timed_out"
+        exec_result["error_type"] = "TimeoutExpired"
         exec_result["error"] = f"Script execution timed out ({timeout} seconds)"
         logger.error(f"Script {script_info['name']} timed out")
 
     except Exception as e:
+        exec_result["execution_result_success"] = bool(exec_result.get("success"))
+        exec_result["success"] = False
+        exec_result["status"] = "failed"
         exec_result["error"] = str(e)
         exec_result["error_type"] = type(e).__name__
         logger.error(f"Error executing {script_info['name']}: {e}")
 
+    precondition = execution_precondition(timeout, None, deadline_monotonic=deadline)
+    if (
+        precondition is not None
+        and exec_result.get("error_type") != "ProcessCleanupFailure"
+    ):
+        exec_result["execution_result_success"] = bool(
+            exec_result.get("execution_result_success") or exec_result.get("success")
+        )
+        # Preserve actual child output and containment facts from the envelope.
+        exec_result.update(
+            {
+                key: precondition[key]
+                for key in ("success", "status", "error_type", "error")
+            }
+        )
+    if not exec_result.get("success") and exec_result.get("structured_result_file"):
+        receipt = Path(exec_result["structured_result_file"])
+        persisted = json.loads(receipt.read_text(encoding="utf-8"))
+        persisted.update(
+            {
+                key: exec_result[key]
+                for key in (
+                    "success",
+                    "status",
+                    "error_type",
+                    "error",
+                    "execution_result_success",
+                )
+                if key in exec_result
+            }
+        )
+        receipt.write_text(
+            json.dumps(persisted, indent=2, default=str), encoding="utf-8"
+        )
     return exec_result

@@ -38,7 +38,7 @@
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{7}{8/8}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {8}{8}}}
 \HyPL@Entry{8<</P(\376\377\0009)>>}
-\newlabel{fig:family_matrix}{{1}{9}{Model-family coverage across the registered rendering backends: one row per family from \protect \breaktt {input/model\_family\_manifest.json}, one column per backend from \protect \breaktt {src/gnn/render/framework\_registry.py}, and a green cell wherever the family declares that backend in its \protect \texttt {frameworks} field. The right-hand count states how many backends each family declares; the grid is deliberately sparse --- most families declare a single backend, and only continuous, hierarchical, and gridworld declare several. Read it as declared intent, not as profiled outcomes: the gates described below supply the outcomes. The matrix is generated from the two registries at commit 3cf4f3f5c}{fig:family_matrix}{}}
+\newlabel{fig:family_matrix}{{1}{9}{Model-family coverage across the registered rendering backends: one row per family from \protect \breaktt {input/model\_family\_manifest.json}, one column per backend from \protect \breaktt {src/gnn/render/framework\_registry.py}, and a green cell wherever the family declares that backend in its \protect \texttt {frameworks} field. The right-hand count states how many backends each family declares; the grid is deliberately sparse --- most families declare a single backend, and only continuous, hierarchical, and gridworld declare several. Read it as declared intent, not as profiled outcomes: the gates described below supply the outcomes. The matrix is generated from the two registries at commit a57e17d86}{fig:family_matrix}{}}
 \@writefile{snm}{\beamer@slide {fig:family_matrix}{9}}
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{8}{9/9}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {9}{9}}}
@@ -60,32 +60,35 @@
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{13}{14/14}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {14}{14}}}
 \HyPL@Entry{14<</P(\376\377\0001\0005)>>}
-\newlabel{repository-scale}{{15}{15}{Artifacts and Evidence}{repository-scale}{}}
-\@writefile{snm}{\beamer@slide {repository-scale}{15}}
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{14}{15/15}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {15}{15}}}
 \HyPL@Entry{15<</P(\376\377\0001\0006)>>}
-\newlabel{fig:repo_metrics}{{2}{16}{Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered backends, execution backends, Model Context Protocol tools, source packages, test files, example models, and documentation files. Every bar is annotated with its exact value, and every value is a producer token read from \protect \breaktt {output/data/manuscript\_variables.json} at commit 3cf4f3f5c --- the same token map that substitutes the prose counts, so the figure cannot disagree with the text without failing the figure-freshness suite. The two backend bars are deliberately distinct: \emph {registered backends} (10) counts render targets, \emph {execution backends} (10) counts the subset that runs at Step 12. Read the chart as the scale of the surface the pipeline maintains, not as a quality measure}{fig:repo_metrics}{}}
-\@writefile{snm}{\beamer@slide {fig:repo_metrics}{16}}
+\newlabel{repository-scale}{{16}{16}{Artifacts and Evidence}{repository-scale}{}}
+\@writefile{snm}{\beamer@slide {repository-scale}{16}}
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{15}{16/16}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {16}{16}}}
 \HyPL@Entry{16<</P(\376\377\0001\0007)>>}
+\newlabel{fig:repo_metrics}{{2}{17}{Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered backends, render-target execution adapters, Model Context Protocol tools, source packages, test files, example models, and documentation files. Every bar is annotated with its exact value, and every value is a producer token read from \protect \breaktt {output/data/manuscript\_variables.json} at commit a57e17d86 --- the same token map that substitutes the prose counts. The figure-freshness suite binds the committed image digest and its recorded producer inputs and counts; semantic content and visual correctness require their own review. The two backend bars are deliberately distinct: \emph {registered backends} (12) counts render targets, \emph {render-target adapters} (12) counts the render-target subset with implemented Step 12 execution adapters. It excludes the separate execution-only Lean bridge and is not a count of observed native runs. Read the chart as the scale of the surface the pipeline maintains, not as a quality measure}{fig:repo_metrics}{}}
+\@writefile{snm}{\beamer@slide {fig:repo_metrics}{17}}
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{16}{17/17}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {17}{17}}}
 \HyPL@Entry{17<</P(\376\377\0001\0008)>>}
-\newlabel{claim-discipline}{{18}{18}{Artifacts and Evidence}{claim-discipline}{}}
-\@writefile{snm}{\beamer@slide {claim-discipline}{18}}
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{17}{18/18}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {18}{18}}}
 \HyPL@Entry{18<</P(\376\377\0001\0009)>>}
+\newlabel{claim-discipline}{{19}{19}{Artifacts and Evidence}{claim-discipline}{}}
+\@writefile{snm}{\beamer@slide {claim-discipline}{19}}
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{18}{19/19}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {19}{19}}}
 \HyPL@Entry{19<</P(\376\377\0002\0000)>>}
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{19}{20/20}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {20}{20}}}
-\@writefile{nav}{\headcommand {\beamer@partpages {1}{20}}}
-\@writefile{nav}{\headcommand {\beamer@subsectionpages {1}{20}}}
-\@writefile{nav}{\headcommand {\beamer@sectionpages {1}{20}}}
-\@writefile{nav}{\headcommand {\beamer@documentpages {20}}}
-\@writefile{nav}{\headcommand {\gdef \inserttotalframenumber {20}}}
-\gdef \@abspage@last{20}
+\HyPL@Entry{20<</P(\376\377\0002\0001)>>}
+\@writefile{nav}{\headcommand {\slideentry {1}{0}{20}{21/21}{}{0}}}
+\@writefile{nav}{\headcommand {\beamer@framepages {21}{21}}}
+\@writefile{nav}{\headcommand {\beamer@partpages {1}{21}}}
+\@writefile{nav}{\headcommand {\beamer@subsectionpages {1}{21}}}
+\@writefile{nav}{\headcommand {\beamer@sectionpages {1}{21}}}
+\@writefile{nav}{\headcommand {\beamer@documentpages {21}}}
+\@writefile{nav}{\headcommand {\gdef \inserttotalframenumber {21}}}
+\gdef \@abspage@last{21}

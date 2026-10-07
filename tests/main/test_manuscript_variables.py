@@ -356,7 +356,11 @@ def test_framework_table_cells_track_registry_flags(
     for key, spec in specs.items():
         name = str(spec.get("name", key))
         discrete, continuous, executor = by_name[name]
-        assert discrete == ("yes" if spec.get("pomdp_compatible") else "no")
+        assert discrete == (
+            "yes"
+            if spec.get("pomdp_compatible") and not spec.get("continuous_only")
+            else "no"
+        )
         assert continuous == (
             "yes" if spec.get("supports_continuous") else "unsupported"
         )
@@ -389,7 +393,9 @@ def test_model_kind_table_rows(
         "Multi-agent",
         "Recursive",
     ]
-    assert by_kind["Multi-agent"][2:] == by_kind["Discrete categorical"][2:]
+    assert by_kind["Multi-agent"][2:] != by_kind["Discrete categorical"][2:]
+    assert "Model/backend dependent" in by_kind["Multi-agent"][2]
+    assert "explicit acceptance required" in by_kind["Multi-agent"][3]
     assert by_kind["Discrete categorical"][1] == "`input/gnn_files/discrete/`"
     assert by_kind["Continuous linear-Gaussian"][1] == "`input/gnn_files/continuous/`"
     specs = _registry_specs(snapshot)
@@ -403,6 +409,44 @@ def test_model_kind_table_rows(
     assert by_kind["Multi-agent"][1] == "`input/gnn_files/multiagent/`"
     assert by_kind["Recursive"][1] == "`input/gnn_files/recursive/`"
     assert variables["GNN_MODEL_KIND_TABLE"].rstrip().endswith("{#tbl:model_kinds}")
+
+
+def test_continuous_only_targets_never_advertise_categorical_rendering() -> None:
+    from gnn.manuscript.tables import (
+        _render_framework_capability_table,
+        _render_model_kind_table,
+    )
+
+    # Both targets enter the POMDP dispatch registry, but their actual render
+    # paths reject A/B/C/D models. Dispatch compatibility is not kind support.
+    specs = {
+        "cpomdp": {
+            "name": "cpomdp",
+            "pomdp_compatible": True,
+            "continuous_only": True,
+            "supports_continuous": True,
+            "supports_execution": True,
+        },
+        "thrml": {
+            "name": "THRML",
+            "pomdp_compatible": True,
+            "supports_execution": True,
+        },
+    }
+    assert "| cpomdp | no | yes | executor |" in (
+        _render_framework_capability_table(specs)
+    )
+    table = _render_model_kind_table(specs)
+    categorical = next(
+        row for row in table.splitlines() if row.startswith("| Discrete categorical")
+    )
+    assert "| THRML | THRML |" in categorical
+    assert "cpomdp" not in categorical
+    multi_agent = next(
+        row for row in table.splitlines() if row.startswith("| Multi-agent")
+    )
+    assert "THRML" not in multi_agent and "all " not in multi_agent
+    assert "THRML accepts independent categorical components" in table
 
 
 def test_counts_describe_the_stamped_commit_not_the_working_tree(
@@ -496,7 +540,7 @@ def test_sync_preamble_metadata_repairs_drift(
 def test_config_title_page_metadata_is_written_not_typed(
     variables: dict[str, str],
 ) -> None:
-    """config.yaml's title-page version/date must equal the tokens that own them.
+    """Nonempty title-page tokens own their fields; an unreleased date does not.
 
     config.yaml is never token-substituted (the injector only processes
     ``manuscript/*.md``), so the producer must write these fields or the PDF
@@ -506,7 +550,8 @@ def test_config_title_page_metadata_is_written_not_typed(
 
     config = (_PROJECT_ROOT / "manuscript" / "config.yaml").read_text(encoding="utf-8")
     assert f'version: "{variables["GNN_VERSION"]}"' in config
-    assert f'date: "{variables["GNN_RELEASE_DATE"]}"' in config
+    if variables["GNN_RELEASE_DATE"]:
+        assert f'date: "{variables["GNN_RELEASE_DATE"]}"' in config
 
 
 def test_sync_config_metadata_repairs_drift(
@@ -528,3 +573,32 @@ def test_sync_config_metadata_repairs_drift(
     assert config_metadata_drift(tmp_path, variables) == []
     assert sync_config_metadata(tmp_path, variables) == []
     assert (manuscript / "config.yaml").read_text(encoding="utf-8") == source
+
+
+@pytest.mark.parametrize(
+    "release_date", ["", "2001-02-03"], ids=["unreleased", "released"]
+)
+def test_config_date_policy_preserves_authored_epoch_until_release(
+    tmp_path: Path, release_date: str
+) -> None:
+    """An empty token preserves the authored date; a released token owns it."""
+    manuscript = tmp_path / "manuscript"
+    manuscript.mkdir()
+    config = manuscript / "config.yaml"
+    # Synthetic dates belong only to this private fixture, never release metadata.
+    authored = 'paper:\n  version: "stale"\n  date: "2000-01-01"\n'
+    config.write_text(authored, encoding="utf-8")
+    tokens = {"GNN_VERSION": "test-version", "GNN_RELEASE_DATE": release_date}
+
+    drift = config_metadata_drift(tmp_path, tokens)
+    assert any("config.yaml: version:" in entry for entry in drift)
+    assert any("config.yaml: date:" in entry for entry in drift) == bool(release_date)
+    changes = sync_config_metadata(tmp_path, tokens)
+    assert any(entry.startswith("version:") for entry in changes)
+    assert any(entry.startswith("date:") for entry in changes) == bool(release_date)
+    expected = authored.replace('version: "stale"', 'version: "test-version"')
+    if release_date:
+        expected = expected.replace('date: "2000-01-01"', f'date: "{release_date}"')
+    assert config.read_text(encoding="utf-8") == expected
+    assert config_metadata_drift(tmp_path, tokens) == []
+    assert sync_config_metadata(tmp_path, tokens) == []

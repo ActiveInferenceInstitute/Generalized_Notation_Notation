@@ -21,6 +21,7 @@ import numpy as np
 
 from gnn.visualization.compat.viz_compat import get_sns
 
+from .result_adapter import categorical_trace, model_family, numeric_trace
 from .viz_base import (
     MATPLOTLIB_AVAILABLE,
     plt,
@@ -145,9 +146,20 @@ def visualize_simulation_results(
 
                 # Plot traces (e.g., belief over time)
                 if "beliefs" in data or "states" in data:
+                    is_continuous = model_family(data) in {
+                        "continuous",
+                        "multi_agent_continuous",
+                    }
+                    is_posterior = "beliefs" in data
+                    trace = data.get("beliefs", data.get("states", []))
+                    beliefs = (
+                        categorical_trace(trace, name="beliefs")
+                        if is_posterior and not is_continuous
+                        else numeric_trace(
+                            trace, name="posterior means" if is_posterior else "states"
+                        )
+                    )
                     plt.figure(figsize=(10, 6))
-                    # Simplified plotting logic for arbitrary trace data
-                    beliefs = np.array(data.get("beliefs", data.get("states", [])))
                     if beliefs.ndim == 2:
                         for i in range(min(10, beliefs.shape[1])):
                             plt.plot(beliefs[:, i], label=f"State {i}")
@@ -163,45 +175,49 @@ def visualize_simulation_results(
                         plt.close()
                         visualizations.append(str(plot_file))
 
-                        # Plot JSD / distance tracking (Belief Convergence)
-                        distances: list[Any] = []
-                        try:
-                            from scipy.spatial.distance import jensenshannon
-
-                            for t in range(1, len(beliefs)):
-                                p = np.array(beliefs[t - 1]).flatten()
-                                q = np.array(beliefs[t]).flatten()
-                                p = np.clip(p, 1e-12, None)
-                                q = np.clip(q, 1e-12, None)
-                                p = p / np.sum(p)
-                                q = q / np.sum(q)
-                                if np.allclose(p, q, atol=1e-8):
-                                    val = 0.0
-                                else:
-                                    # Suppress scipy runtime warnings for edge-case slight negatives
-                                    import warnings
-
-                                    with warnings.catch_warnings():
-                                        warnings.simplefilter("ignore", RuntimeWarning)
-                                        val = jensenshannon(p, q)
-
-                                if np.isnan(val) or val < 0:
-                                    val = 0.0
-                                distances.append(val)
-                            ylabel = "Jensen-Shannon Divergence"
-                        except ImportError:
-                            for t in range(1, len(beliefs)):
-                                p = np.array(beliefs[t - 1]).flatten()
-                                q = np.array(beliefs[t]).flatten()
-                                distances.append(np.linalg.norm(q - p))
-                            ylabel = "Euclidean Distance"
+                        # Posterior means are not categorical probabilities. This
+                        # distance measures mean updates, not Gaussian uncertainty.
+                        distances: list[float] = []
+                        ylabel = (
+                            "Posterior Mean Update (Euclidean Norm)"
+                            if is_continuous and is_posterior
+                            else "State Update (Euclidean Norm)"
+                        )
+                        if is_continuous or not is_posterior:
+                            distances = np.linalg.norm(
+                                np.diff(beliefs, axis=0), axis=1
+                            ).tolist()
+                        else:
+                            try:
+                                from scipy.spatial.distance import jensenshannon
+                            except ImportError:
+                                distances = np.linalg.norm(
+                                    np.diff(beliefs, axis=0), axis=1
+                                ).tolist()
+                                ylabel = "Categorical Update (Euclidean Norm)"
+                            else:
+                                distances = [
+                                    float(jensenshannon(p, q))
+                                    for p, q in zip(
+                                        beliefs[:-1], beliefs[1:], strict=True
+                                    )
+                                ]
+                                ylabel = "Jensen-Shannon Distance"
+                        if not np.isfinite(distances).all():
+                            raise ValueError("Belief update distances must be finite")
 
                         if distances:
                             plt.figure(figsize=(10, 6))
                             plt.plot(
                                 range(1, len(beliefs)),
                                 distances,
-                                label="Belief Update Magnitude",
+                                label=(
+                                    "Posterior Mean Update"
+                                    if is_continuous and is_posterior
+                                    else "Belief Update Magnitude"
+                                    if is_posterior
+                                    else "State Update"
+                                ),
                                 color="teal",
                             )
                             plt.title(
@@ -386,15 +402,17 @@ def visualize_cross_framework_metrics(
             ax.set_ylim([0, 100])
             ax.grid(True, alpha=0.3, axis="y")
 
-            # Add value labels on bars
+            # Fixed-point offsets keep labels inside the axis near its ceiling.
             for bar, rate in zip(bars, success_rates):
                 height = bar.get_height()
-                ax.text(
-                    bar.get_x() + bar.get_width() / 2.0,
-                    height,
+                near_ceiling = height >= 90
+                ax.annotate(
                     f"{rate:.1f}%",
+                    xy=(bar.get_x() + bar.get_width() / 2.0, height),
+                    xytext=(0, -6 if near_ceiling else 6),
+                    textcoords="offset points",
                     ha="center",
-                    va="bottom",
+                    va="top" if near_ceiling else "bottom",
                     fontweight="bold",
                 )
 

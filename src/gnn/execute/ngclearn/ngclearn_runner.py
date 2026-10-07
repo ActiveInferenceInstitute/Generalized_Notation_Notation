@@ -17,28 +17,14 @@ import time as time_mod
 from pathlib import Path
 from typing import Any, List, Optional, Union
 
+from gnn.utils.runtime_safety.framework_availability import check_framework
+
 logger = logging.getLogger(__name__)
 
 
 def is_ngclearn_available() -> bool:
-    """Check if ngc-learn (and the JAX backend) is importable."""
-    try:
-        import jax
-        import ngclearn
-        import ngcsimlib  # noqa: F401 - guarded availability probe (import is the check)
-
-        logger.info(
-            f"ngc-learn version: {ngclearn.__version__} (JAX {jax.__version__})"
-        )
-        return True
-    except ImportError as e:
-        logger.info(
-            f"ngc-learn not available (install with: uv sync --extra ngclearn): {e}"
-        )
-        return False
-    except Exception as e:
-        logger.error(f"Error checking ngc-learn: {e}")
-        return False
+    """Use the same bounded interpreter diagnosis as doctor/planning/Step12."""
+    return check_framework("ngclearn", logger=logger).available
 
 
 def find_ngclearn_scripts(
@@ -77,15 +63,29 @@ def execute_ngclearn_script(
 
     logger.info(f"Executing ngc-learn script: {script_path}")
 
-    # Dependency check
-    for dep in ("ngcsimlib", "ngclearn", "jax", "numpy"):
-        try:
-            __import__(dep)
-            logger.debug(f"✅ Dependency available: {dep}")
-        except ImportError:
-            logger.error(f"❌ Missing required dependency: {dep}")
-            logger.error("Install with: uv sync --extra ngclearn")
-            return False
+    diagnosis = check_framework("ngclearn", executor=sys.executable, logger=logger)
+    if not diagnosis.available:
+        logger.info(
+            "ngc-learn skipped [%s]: %s", diagnosis.reason_code, diagnosis.reason
+        )
+        if output_dir is not None:
+            output_dir.mkdir(parents=True, exist_ok=True)
+            (output_dir / "execution_log.json").write_text(
+                json_mod.dumps(
+                    {
+                        "script": str(script_path.resolve()),
+                        "framework": "ngclearn",
+                        "success": False,
+                        "status": "skipped",
+                        "skipped": True,
+                        "reason_code": diagnosis.reason_code,
+                        "reason": diagnosis.reason,
+                        "install_hint": diagnosis.install_hint,
+                    },
+                    indent=2,
+                )
+            )
+        return False
 
     # Syntax validation
     try:

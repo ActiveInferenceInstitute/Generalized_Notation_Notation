@@ -3,13 +3,16 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: "Friedman"
     given-names: "Daniel Ari"
-    orcid: "0000-0001-6232-9096"
+    orcid: "https://orcid.org/0000-0001-6232-9096"
     affiliation: "Active Inference Institute"
 
 title: "Generalized_Notation_Notation (GNN)"
-version: 3.4.0 # Current stable release
-date-released: 2026-09-17
-doi: 10.5281/zenodo.22820299
+version: 4.0.0
+# Prepublication snapshot; actual publication facts belong to the verified release receipt.
+# Set date-released only after verified publication.
+# The manuscript authored epoch 2026-10-02 is not a software release date.
+# Project concept DOI; a v4-specific archival DOI is not yet recorded.
+doi: 10.5281/zenodo.7803313
 
 abstract: |
   Generalized Notation Notation (GNN) is a text-based language designed to standardize the representation and communication of Active Inference generative models. It aims to enhance clarity, reproducibility, and interoperability in the field of Active Inference and cognitive modeling. GNN provides a structured way to describe complex models, making them human-readable and machine-parsable. It supports a "Triple Play" approach: text-based models, graphical model visualizations, and a blueprint for executable cognitive models.

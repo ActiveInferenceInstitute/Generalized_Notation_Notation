@@ -606,6 +606,10 @@ def process_export(
                 f"Loaded {len(gnn_results['processed_files'])} parsed GNN files"
             )
 
+        from gnn.pipeline.parse_receipt import selected_parse_receipt
+
+        gnn_results = selected_parse_receipt(gnn_results, 7)
+
         # Export results
         export_results: dict[str, Any] = {
             "timestamp": datetime.datetime.now().isoformat(),

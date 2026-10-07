@@ -38,8 +38,8 @@ OUTPUT_PATH = REPO_ROOT / "output" / "figures" / "gnn_repo_metrics.png"
 # The label must name the set the token counts. GNN_BACKEND_COUNT is
 # len(FRAMEWORK_REGISTRY) — the *registered* render targets;
 # GNN_EXECUTABLE_BACKEND_COUNT is the subset with ``supports_execution``
-# (all nine since bnlearn gained ``src/gnn/execute/bnlearn/``; Lean is an
-# execute-side bridge outside the render registry), exactly as the same
+# as declared by the current render registry; Lean is an execution-only
+# bridge outside that counted set, exactly as the same
 # document's tbl:backend_registry reports. Labelling both "Registered
 # backends" would erase the registry/executor distinction; keep the two
 # labels distinct so the sets stay comparable.
@@ -47,7 +47,7 @@ METRICS: list[tuple[str, str]] = [
     ("GNN_STEP_COUNT", "Pipeline steps"),
     ("GNN_FAMILY_COUNT", "Model families"),
     ("GNN_BACKEND_COUNT", "Registered backends"),
-    ("GNN_EXECUTABLE_BACKEND_COUNT", "Execution backends"),
+    ("GNN_EXECUTABLE_BACKEND_COUNT", "Render-target adapters"),
     ("GNN_MCP_TOOL_COUNT", "MCP tools"),
     ("GNN_SRC_PACKAGE_COUNT", "Source packages"),
     ("GNN_TEST_FILE_COUNT", "Test files"),

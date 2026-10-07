@@ -29,7 +29,7 @@ constraints = [
     { name = "soupsieve", specifier = ">=2.8.4" },
     { name = "starlette", specifier = ">=1.0.1" },
     { name = "tornado", specifier = ">=6.5.8" },
-    { name = "urllib3", specifier = ">=2.7.0" },
+    { name = "urllib3", specifier = ">=2.8.0" },
 ]
 
 [[package]]
@@ -1006,6 +1006,22 @@ toml = [
 ]
 
 [[package]]
+name = "cpomdp"
+version = "0.4.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jax", version = "0.9.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "jax", version = "0.11.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "jaxtyping" },
+    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d0/37/d39993230f46d3d1035353e588906a83d74904794d541325fd3aec707b7e/cpomdp-0.4.4.tar.gz", hash = "sha256:74bafdd21cdeb0c2a1986c06fed6530c9ae0a736177d6b3c5fa0d09708cb25f8", size = 10514156, upload-time = "2026-08-04T21:32:28.039Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/bd/057da169d88a1609e018a0fc943ae1a01edd74b377eafcdffae1316ce0b3/cpomdp-0.4.4-py3-none-any.whl", hash = "sha256:8a6e48b2e3e38d321967aeabef4874b3c317a1870449bf3773d0904697174536", size = 105606, upload-time = "2026-08-04T21:32:26.247Z" },
+]
+
+[[package]]
 name = "cuda-bindings"
 version = "13.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1656,7 +1672,7 @@ wheels = [
 
 [[package]]
 name = "generalized-notation-notation"
-version = "3.6.0"
+version = "4.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1698,6 +1714,7 @@ all = [
     { name = "bleach" },
     { name = "bnlearn" },
     { name = "cmdstanpy" },
+    { name = "cpomdp" },
     { name = "cython" },
     { name = "dask" },
     { name = "distributed" },
@@ -1720,6 +1737,7 @@ all = [
     { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "soundfile" },
     { name = "sympy" },
+    { name = "thrml" },
     { name = "torch" },
     { name = "transformers" },
     { name = "uvicorn", extra = ["standard"] },
@@ -1735,6 +1753,9 @@ audio = [
 ]
 bnlearn = [
     { name = "bnlearn" },
+]
+cpomdp = [
+    { name = "cpomdp" },
 ]
 dev = [
     { name = "cmdstanpy" },
@@ -1775,6 +1796,9 @@ scaling = [
 ]
 stan = [
     { name = "cmdstanpy" },
+]
+thrml = [
+    { name = "thrml" },
 ]
 torch = [
     { name = "torch" },
@@ -1828,6 +1852,8 @@ requires-dist = [
     { name = "cmdstanpy", marker = "extra == 'all'", specifier = ">=1.2" },
     { name = "cmdstanpy", marker = "extra == 'dev'", specifier = ">=1.2" },
     { name = "cmdstanpy", marker = "extra == 'stan'", specifier = ">=1.2" },
+    { name = "cpomdp", marker = "extra == 'all'", specifier = "==0.4.4" },
+    { name = "cpomdp", marker = "extra == 'cpomdp'", specifier = "==0.4.4" },
     { name = "cython", marker = "extra == 'all'", specifier = ">=3.0.0" },
     { name = "cython", marker = "extra == 'research'", specifier = ">=3.0.0" },
     { name = "dask", marker = "extra == 'all'", specifier = ">=2023.0.0" },
@@ -1892,6 +1918,8 @@ requires-dist = [
     { name = "soundfile", marker = "extra == 'audio'", specifier = ">=0.12.0" },
     { name = "sympy", marker = "extra == 'all'", specifier = ">=1.12.0" },
     { name = "sympy", marker = "extra == 'research'", specifier = ">=1.12.0" },
+    { name = "thrml", marker = "extra == 'all'", specifier = "==0.1.4" },
+    { name = "thrml", marker = "extra == 'thrml'", specifier = "==0.1.4" },
     { name = "torch", marker = "extra == 'all'", specifier = ">=2.13.0" },
     { name = "torch", marker = "extra == 'torch'", specifier = ">=2.13.0" },
     { name = "transformers", marker = "extra == 'all'", specifier = ">=5.10.0" },
@@ -1899,7 +1927,7 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'all'", specifier = ">=0.23.0" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'api'", specifier = ">=0.23.0" },
 ]
-provides-extras = ["geo-infer", "dev", "api", "ml-ai", "audio", "gui", "graphs", "stan", "torch", "research", "scaling", "bnlearn", "ngclearn", "all"]
+provides-extras = ["geo-infer", "dev", "api", "ml-ai", "audio", "gui", "graphs", "stan", "cpomdp", "thrml", "torch", "research", "scaling", "bnlearn", "ngclearn", "all"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -7329,6 +7357,19 @@ wheels = [
 ]
 
 [[package]]
+name = "thrml"
+version = "0.1.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "equinox" },
+    { name = "jaxtyping" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/02/1a/3b646204f2a520895dcd807db4a4ab86ac466f0b82603c83a1cc1913f1f0/thrml-0.1.4.tar.gz", hash = "sha256:907e0116ee6deb5e8895c7a4f16d781d4dba5321bfb7e94f962e05bd03b59afa", size = 49656, upload-time = "2026-08-04T17:19:11.262Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/61/59/2cc5b1c611904dcde89be385472f88bf20d1e6704b09ba26e01e7b67c91e/thrml-0.1.4-py3-none-any.whl", hash = "sha256:6e2f38cecb562589d230ca063b5fcb5d2a6533201e37bb70c1f2dac4a63a0858", size = 38284, upload-time = "2026-08-04T17:19:10.145Z" },
+]
+
+[[package]]
 name = "tinycss2"
 version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -7640,11 +7681,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.7.0"
+version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63", size = 458972, upload-time = "2026-09-15T19:29:36.253Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
+    { url = "https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3", size = 135717, upload-time = "2026-09-15T19:29:34.577Z" },
 ]
 
 [[package]]

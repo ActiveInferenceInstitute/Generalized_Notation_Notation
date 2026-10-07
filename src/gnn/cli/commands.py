@@ -17,6 +17,7 @@ module at module scope. This module must never import ``gnn.api``.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -39,9 +40,16 @@ __all__ = [
     "preflight_severities",
     "publish_pipeline_report",
     "run_validation_checks",
+    "render_processing_succeeded",
 ]
 
 logger = logging.getLogger(__name__)
+
+
+def render_processing_succeeded(value: bool | int) -> bool:
+    """Distinguish Boolean failure from the integer zero exit-code contract."""
+    return value is True or (not isinstance(value, bool) and value == 0)
+
 
 #: ``extract_payload_defect`` verdict: the extractor returned its failure
 #: envelope (``{"status": "error", ...}``).
@@ -59,6 +67,9 @@ _RENDER_ARTIFACT_SUFFIXES: dict[str, frozenset[str]] = {
     "pytorch": frozenset({".py"}),
     "discopy": frozenset({".py"}),
     "bnlearn": frozenset({".py"}),
+    "ngclearn": frozenset({".py"}),
+    "cpomdp": frozenset({".py"}),
+    "thrml": frozenset({".py"}),
     "rxinfer": frozenset({".jl", ".toml"}),
     "activeinference_jl": frozenset({".jl"}),
     "stan": frozenset({".stan"}),
@@ -281,7 +292,9 @@ def _is_render_artifact(path: Path, framework: str) -> bool:
     )
 
 
-def find_render_artifact(render_dir: Path, framework: str) -> Path | None:
+def find_render_artifact(
+    render_dir: Path, framework: str, *, require_current: bool = False
+) -> Path | None:
     """Locate the primary artifact of a single-framework render.
 
     Mirrors the CLI ``gnn render`` artifact discovery: prefer outputs declared
@@ -295,14 +308,37 @@ def find_render_artifact(render_dir: Path, framework: str) -> Path | None:
             summary = json.loads(summary_path.read_text(encoding="utf-8"))
             for result in summary.get("file_results", {}).values():
                 framework_result = result.get("framework_results", {}).get(framework)
-                if framework_result:
+                if framework_result and framework_result.get("success") is True:
                     for item in framework_result.get("output_files", []):
                         candidate = Path(item)
+                        if require_current:
+                            identities = framework_result.get("artifact_identities", [])
+                            identity = next(
+                                (
+                                    entry
+                                    for entry in identities
+                                    if entry.get("path") == str(candidate.resolve())
+                                ),
+                                None,
+                            )
+                            if (
+                                candidate.is_symlink()
+                                or not candidate.resolve().is_relative_to(
+                                    render_dir.resolve()
+                                )
+                                or not candidate.is_file()
+                                or identity is None
+                                or hashlib.sha256(candidate.read_bytes()).hexdigest()
+                                != identity.get("sha256")
+                            ):
+                                continue
                         if candidate.exists() and _is_render_artifact(
                             candidate, framework
                         ):
                             return candidate
                 for item in result.get("generated_files", []):
+                    if require_current:
+                        continue
                     candidate = Path(item)
                     if (
                         candidate.exists()
@@ -312,6 +348,9 @@ def find_render_artifact(render_dir: Path, framework: str) -> Path | None:
                         return candidate
         except (json.JSONDecodeError, OSError, TypeError):
             logger.debug("Could not parse render summary at %s", summary_path)
+
+    if require_current:
+        return None
 
     candidates = sorted(
         path

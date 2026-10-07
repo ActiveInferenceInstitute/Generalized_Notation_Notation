@@ -91,7 +91,7 @@ _STAGE_SPEC: list[dict[str, object]] = [
         "title": "Execute",
         "color": _RED,
         "pill": "GNN_STEP_EXECUTE",
-        "body": "backends run, incl. bnlearn lane",
+        "body": "supervised backend dispatch",
     },
     {
         "title": "Analyze",
@@ -334,7 +334,7 @@ def main() -> Path:
     version = tokens["GNN_VERSION"]
     exec_step = tokens["GNN_STEP_EXECUTE"]
 
-    fig, ax = plt.subplots(figsize=(11, 4.9))
+    fig, ax = plt.subplots(figsize=(_X_SPAN, _Y_SPAN))
     # Span the figure exactly: one data unit == one figure inch, so the width
     # budgets above compare like with like against measured text extents.
     fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
@@ -357,7 +357,7 @@ def main() -> Path:
     subtitle_text = ax.text(
         _X_SPAN / 2,
         _SUBTITLE_Y,
-        f"GNN v{version} \u2014 one text specification, many faithful realizations",
+        f"GNN v{version} \u2014 one text specification, many traceable realizations",
         ha="center",
         va="center",
         fontsize=11,
@@ -439,9 +439,11 @@ def main() -> Path:
     )
 
     if exec_count == backend_count:
-        exec_phrase = f"all {exec_count} executing at Step {exec_step}"
+        exec_phrase = f"{exec_count} render-target adapters at Step {exec_step}"
     else:
-        exec_phrase = f"{exec_count} of {backend_count} executing at Step {exec_step}"
+        exec_phrase = (
+            f"{exec_count}/{backend_count} render-target adapters at Step {exec_step}"
+        )
     counts = (
         f"{step_count} pipeline steps ({step_range}) \u00b7 {family_count} model families "
         f"\u00b7 {backend_count} registered render backends, {exec_phrase} \u00b7 "

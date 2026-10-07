@@ -6,8 +6,9 @@
   command in this repository.
 \item
   Keep generated outputs under \texttt{output/} and maintained
-  manuscript source under \texttt{manuscript/}; treat everything in
-  \texttt{output/} as disposable and regeneratable.
+  manuscript source under \texttt{manuscript/}. Regenerate owned build
+  artifacts when their inputs change, and preserve the raw command
+  receipts and numerical results needed to substantiate historical runs.
 \item
   Express every quantitative claim in the prose as a double-brace
   \texttt{\{\{...\}\}} token substituted by

@@ -36,10 +36,6 @@ LOGGER = logging.getLogger(__name__)
 RSS_KEYS = ("child_peak_rss_mb", "rss_sample_interval_seconds", "rss_samples_count")
 TRIO_KEYS = ("memory_usage_mb", "peak_memory_mb", "memory_delta_mb")
 
-# ~50MB allocation then hold: bytearray zero-fills, so the pages are resident
-# while the envelope's poll loop samples the child tree.
-ALLOCATING_CHILD = "import time; blob = bytearray(50 * 1024 * 1024); time.sleep(0.6)"
-
 _TINY_A = [[0.9, 0.1], [0.1, 0.9]]
 _TINY_B = [[[0.9, 0.1], [0.1, 0.9]]]  # (states, states, actions): one action
 _TINY_C = [0.0, 1.0]
@@ -69,9 +65,40 @@ def _tiny_spec(horizon: int = 4) -> dict[str, Any]:
     }
 
 
-def test_envelope_child_peak_rss_tracks_allocating_child() -> None:
+def test_envelope_child_peak_rss_tracks_allocating_child(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Peak sampled across the poll slices bounds the child's real footprint."""
-    result = run_subprocess_envelope([PYTHON, "-c", ALLOCATING_CHILD])
+    from gnn.execute import subprocess_envelope
+
+    release = tmp_path / "sample-observed"
+    original_sample = subprocess_envelope._ChildRssSampler.sample
+
+    def sample_and_release(sampler: Any) -> None:
+        original_sample(sampler)
+        if sampler.peak_rss_mb is not None and sampler.peak_rss_mb >= 30.0:
+            release.touch()
+
+    monkeypatch.setattr(
+        subprocess_envelope._ChildRssSampler, "sample", sample_and_release
+    )
+    # Touch every page and hold it until the real sampler observes it. A fixed
+    # 0.6-second sleep can finish between samples when the parent is descheduled
+    # by the full suite. This handshake has a finite failure bound and exercises
+    # the production sampler rather than substituting an RSS value.
+    child = """
+import pathlib, sys, time
+release = pathlib.Path(sys.argv[1])
+blob = bytearray(50 * 1024 * 1024)
+deadline = time.monotonic() + 15
+while not release.exists():
+    for offset in range(0, len(blob), 4096):
+        blob[offset] = 1
+    if time.monotonic() >= deadline:
+        raise RuntimeError('parent did not observe resident allocation')
+    time.sleep(0.01)
+"""
+    result = run_subprocess_envelope([PYTHON, "-c", child, str(release)], timeout=20)
     assert result["success"] is True, result.get("error")
     peak = result["child_peak_rss_mb"]
     assert peak is not None, result
@@ -79,6 +106,7 @@ def test_envelope_child_peak_rss_tracks_allocating_child() -> None:
     # 0.25s cadence, so receipts never claim an exact peak (macOS included).
     assert peak >= 30.0, peak
     assert result["rss_samples_count"] > 0
+    assert release.exists()
 
 
 def test_kronecker_envelope_carries_memory_trio(

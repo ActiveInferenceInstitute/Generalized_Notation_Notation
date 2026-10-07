@@ -90,9 +90,7 @@ class TestCollectCrossFrameworkSummary:
         assert summary["comparison_html"] == (
             "12_execute_output/nested_model/nested_model_comparison.html"
         )
-        assert summary["frameworks"] == [
-            {"framework": "PyMDP", "status": "success"}
-        ]
+        assert summary["frameworks"] == [{"framework": "PyMDP", "status": "success"}]
 
     @pytest.mark.unit
     def test_absent_artifact_returns_none(self, tmp_path: Path) -> None:

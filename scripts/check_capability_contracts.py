@@ -356,10 +356,16 @@ def run_audit() -> List[str]:
         )
     else:
         backend_names = re.findall(r'"([^"]+)"', framework_names.group("names"))
-        if len(backend_names) != 11:
+        from gnn.frameworks import ALL_FRAMEWORKS
+
+        # cpomdp has a maintained direct dispatch, with no registry batch runner.
+        expected_registry = set(ALL_FRAMEWORKS) - {"cpomdp"}
+        if set(backend_names) != expected_registry or len(backend_names) != len(
+            expected_registry
+        ):
             failures.append(
                 "src/gnn/execute/executor_specs.py: "
-                "FRAMEWORK_DIR_NAMES must close to eleven backends"
+                "FRAMEWORK_DIR_NAMES must match maintained registry capabilities"
             )
         for required in ("stan", "bnlearn"):
             if required not in backend_names:
@@ -559,7 +565,7 @@ def run_audit() -> List[str]:
             )
     # The argparse surface (incl. ``--autonomous``) lives in the canonical
     # arguments package (S2-33 Step 2).
-    if "--autonomous" not in _read("src/gnn/utils/arguments/arg_parsing.py"):
+    if "--autonomous" not in _read("src/gnn/utils/arguments/argument_catalog.py"):
         failures.append("Pipeline argument parser missing --autonomous")
 
     return failures

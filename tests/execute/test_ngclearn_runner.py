@@ -7,15 +7,15 @@ the "installed" state simulate it with monkeypatching to stay deterministic on
 both python splits.
 """
 
-import builtins
 import json
 import logging
 import sys
-import types
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pytest
+
+from gnn.utils.runtime_safety.framework_availability import FrameworkStatus
 
 SRC = Path(__file__).resolve().parents[2]
 if str(SRC) not in sys.path:
@@ -85,20 +85,12 @@ class _ExecuteSafelySpy:
 
 @pytest.fixture
 def fake_ngclearn_import(monkeypatch: Any) -> None:
-    """Make the per-script dependency check see ngclearn as importable.
-
-    The probe imports modules in-process; without the py3.12 extra the real
-    import would fail, so stand in dummy modules while delegating everything
-    else to the real importer.
-    """
-    real_import = builtins.__import__
-
-    def fake_import(name: str, *args: Any, **kwargs: Any) -> Any:
-        if name in ("ngcsimlib", "ngclearn"):
-            return types.ModuleType(name)
-        return real_import(name, *args, **kwargs)
-
-    monkeypatch.setattr(builtins, "__import__", fake_import)
+    """Control the bounded diagnosis, never import optional backends in parent."""
+    monkeypatch.setattr(
+        ngclearn_runner,
+        "check_framework",
+        lambda *args, **kwargs: FrameworkStatus("ngclearn", True),
+    )
 
 
 # ── Discovery and shared probe registration ────────────────────────────────
@@ -210,7 +202,15 @@ def test_step12_preflight_skips_ngclearn_scripts_without_module(
         "size_bytes": script.stat().st_size,
     }
     monkeypatch.setattr(
-        execute_processor, "_is_framework_available_by_name", lambda *a, **k: False
+        execute_processor,
+        "_check_framework_by_name",
+        lambda *a, **k: FrameworkStatus(
+            "ngclearn",
+            False,
+            "ngclearn",
+            reason_code="missing_module",
+            reason="Dependency not installed: ngclearn",
+        ),
     )
 
     result = execute_processor.execute_single_script(
@@ -227,11 +227,13 @@ def test_step12_preflight_skips_ngclearn_scripts_without_module(
 def test_executor_reports_ngclearn_skipped_when_unavailable(
     tmp_path: Path, monkeypatch: Any
 ) -> None:
-    """Executor-level skip contract: an unavailable ngclearn runtime yields a
-    SKIPPED record carrying the install hint — never a failure — and the run
-    still reports success. Every other backend is pinned unavailable too so
-    the all-skip summary is host-independent."""
+    """A missing runtime retains its skip receipt and unfinished required work.
+
+    A nonempty selected batch cannot report success without executing its
+    required scripts. Readiness is controlled to make the proof deterministic.
+    """
     _write_render_script(tmp_path, "model_a", "a_ngclearn.py")
+
     def _all_unavailable(framework_dir_key: str) -> executor_module._RunnerState:
         return executor_module._RunnerState(False, None)
 
@@ -256,7 +258,9 @@ def test_executor_reports_ngclearn_skipped_when_unavailable(
     assert ngclearn_records[0]["status"] == "SKIPPED"
     assert "uv sync --extra ngclearn" in ngclearn_records[0]["message"]
     assert summary["total_failures"] == 0
-    assert result is True
+    assert summary["required_unfinished"] == 1
+    assert ngclearn_records[0]["required_work"] is True
+    assert result is False
 
 
 def test_plan_disposition_marks_ngclearn_dependency_skip(monkeypatch: Any) -> None:
@@ -274,3 +278,29 @@ def test_plan_disposition_marks_ngclearn_dependency_skip(monkeypatch: Any) -> No
         execute_planning, "is_framework_available", lambda *a, **k: True
     )
     assert execute_planning._disposition(script_info) == "execute"
+
+
+@pytest.mark.parametrize(
+    "reason_code",
+    ["unsupported_python", "missing_module", "probe_failed", "probe_timeout"],
+)
+def test_direct_runner_uses_structured_probe_without_parent_dependency_import(
+    tmp_path: Path, monkeypatch: Any, reason_code: str
+) -> None:
+    script = _write_render_script(tmp_path)
+    diagnosis = FrameworkStatus(
+        "ngclearn", False, reason_code=reason_code, reason="specific readiness cause"
+    )
+    calls = []
+
+    def probe(*args, **kwargs):
+        calls.append((args, kwargs))
+        return diagnosis
+
+    monkeypatch.setattr(ngclearn_runner, "check_framework", probe)
+    assert ngclearn_runner.is_ngclearn_available() is False
+    assert execute_ngclearn_script(script, output_dir=tmp_path / "receipt") is False
+    receipt = json.loads((tmp_path / "receipt/execution_log.json").read_text())
+    assert receipt["status"] == "skipped" and receipt["reason_code"] == reason_code
+    assert receipt["reason"] == diagnosis.reason
+    assert calls[1][1]["executor"] == sys.executable

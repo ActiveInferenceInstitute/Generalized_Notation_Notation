@@ -2,6 +2,10 @@
 
 This module provides comprehensive statistical analysis, performance profiling, and model evaluation capabilities for GNN models and pipeline components.
 
+## Result semantics and comparisons
+
+The shared result adapter validates categorical rows and Gaussian means/covariances while preserving native agent/factor views. Numerical comparisons require compatible, source-bound model and inference identities. Missing bindings or unavailable scientific quantities retain reasons; shape agreement and display names cannot establish agreement. Operational timing/counts remain descriptive unless the attempted models, configuration and environment admit a comparison. See [the v4 migration](../../../docs/development/run_ownership_migration.md#scientific-comparison-admission).
+
 ## Module Structure
 
 ```

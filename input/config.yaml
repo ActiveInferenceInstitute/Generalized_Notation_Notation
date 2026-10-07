@@ -11,10 +11,10 @@ pipeline:
   steps: []
 
   # Skip specific steps by number (e.g. [13] to skip LLM). Default: run all steps.
-  # Step 13 needs a local LLM (e.g. Ollama) and the model from src/llm/defaults.py or OLLAMA_MODEL.
+  # Step 13 needs a local LLM (e.g. Ollama) and the model from src/gnn/llm/defaults.py or OLLAMA_MODEL.
   skip_steps: []
 
-  # Step 2 test mode when not overridden on CLI (see src/utils/pipeline_config_merge.py)
+  # Step 2 test mode when not overridden on CLI (see src/gnn/utils/pipeline_config_merge.py)
   fast_only: true
   # comprehensive: false   # set true to run the full pytest suite in step 2
 
@@ -29,7 +29,7 @@ pipeline:
   # Timeout settings (in seconds)
   timeout:
     step: 3600 # 1 hour per step
-    total: 7200 # 2 hours total
+    total: null # Automatic sum of selected step budgets; explicit values win
 
 # Step 1 defaults (read by main.py → 1_setup). CLI flags override these when present.
 setup:
@@ -43,6 +43,17 @@ setup:
 uv:
   recreate_uv_env: false
   uv_env_dir: ".venv"
+
+# Explicit experimental backends are selected with --frameworks thrml or cpomdp.
+# Backend options are passed from the immutable resolved run configuration.
+# Direct API/CLI options override these values; package installation is explicit.
+render:
+  backend_options:
+    thrml:
+      num_samples: 2048
+      burn_in: 256
+      thin: 2
+      seed: 0
 
 # Input/output settings
 io:
@@ -123,10 +134,10 @@ testing_matrix:
   # Each key = subdirectory name in input/gnn_files/
   # Each value = list of step numbers to run on that folder
   #
-  # Every folder runs the FULL pipeline (parse -> render -> simulate ->
-  # visualize -> analyze -> report -> website). All GNN files are POMDP/pymdp
-  # renderable and RxInfer + general-framework simulatable, so every model is
-  # taken end-to-end. Step 13 (LLM) is handled globally via the llm section.
+  # Folder routing uses the frozen selected-model manifest. Scientific
+  # validation and backend capabilities determine render/execute outcomes;
+  # unsupported or malformed models retain explicit non-success receipts.
+  # Step 13 (LLM) uses the same selection and the llm configuration below.
   folders: {}
 
 # LLM settings (Step 13)
@@ -134,11 +145,12 @@ llm:
   # Default model for Ollama (overridden by OLLAMA_MODEL env var)
   model: "smollm2:135m-instruct-q4_K_S"
 
-  # Total budget for LLM processing in seconds (pipeline kills at 900s)
-  timeout_seconds: 600
+  # Automatic total budget: 600 seconds per selected model. Set a finite
+  # positive value to impose an explicit corpus-wide limit.
+  timeout_seconds: null
 
-  # Bound full-pipeline LLM work to the documented 8-file prompt sample
-  max_files: 8
+  # All selected models by default. A positive integer is an explicit cap.
+  max_files: null
 
   # Per-prompt timeout in seconds
   prompt_timeout: 45

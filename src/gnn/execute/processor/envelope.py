@@ -10,6 +10,9 @@ from gnn.execute.metadata import _load_rxinfer_execution_metadata_from_script
 from gnn.utils.runtime_safety.framework_availability import (
     FRAMEWORK_IMPORT_CHECK as _FRAMEWORK_IMPORT_CHECK,
 )
+from gnn.utils.runtime_safety.framework_availability import (
+    FrameworkStatus,
+)
 
 
 def _is_python_framework_dependency_available(
@@ -82,18 +85,23 @@ def _make_skipped_result(
     model_name: str,
     executor: str,
     logger: Any,
+    dependency_status: FrameworkStatus | None = None,
 ) -> Dict[str, Any]:
-    """Build an execution result dict for a script skipped due to missing dependency."""
+    """Build a readiness receipt, preserving uncertain and failed probes.
+
+    The existing helper name remains public. Only positively diagnosed missing
+    or unsupported dependencies may skip; probe and containment failures use
+    the same unsuccessful taxonomy as the direct executor APIs.
+    """
     module_name, install_hint = _FRAMEWORK_IMPORT_CHECK.get(framework, ("", ""))
     reason = (
         f"Dependency not installed: {module_name}"
         if module_name
         else "Dependency not installed"
     )
-    if install_hint and not logger.isEnabledFor(logging.DEBUG):
-        logger.info(
-            f"Skipping {script_info['name']} ({framework}): {module_name} not installed. Install with: {install_hint}"
-        )
+    if dependency_status is not None:
+        reason = dependency_status.reason or reason
+        install_hint = dependency_status.install_hint or ""
     envelope = _base_execution_envelope(
         script_path=str(script_info["path"]),
         script_name=script_info["name"],
@@ -105,6 +113,31 @@ def _make_skipped_result(
     )
     envelope["error"] = reason
     envelope["error_type"] = "DependencyNotInstalled"
+    if dependency_status is not None:
+        from gnn.execute.preconditions import unavailable_framework_result
+
+        envelope.update(unavailable_framework_result(dependency_status))
+        envelope["error"] = reason
+        if envelope["error_type"] not in {"ProcessCleanupFailure", "Cancelled"}:
+            envelope["error_type"] = {
+                "missing_module": "DependencyNotInstalled",
+                "missing_toolchain": "ToolchainNotInstalled",
+                "unsupported_python": "UnsupportedPython",
+                "unsupported_version": "UnsupportedDependencyVersion",
+                "probe_timeout": "DependencyProbeTimeout",
+                "probe_failed": "DependencyProbeFailed",
+                "probe_cancelled": "Cancelled",
+                "executor_unavailable": "ExecutorUnavailable",
+            }.get(dependency_status.reason_code or "", "DependencyProbeFailed")
+        for key in ("execution_error_type", "cleanup_verified", "streams_drained"):
+            value = getattr(dependency_status, key)
+            if value is not None:
+                envelope[key] = value
+    if install_hint and not logger.isEnabledFor(logging.DEBUG):
+        action = "Skipping" if envelope["skipped"] else "Cannot dispatch"
+        logger.info(
+            f"{action} {script_info['name']} ({framework}): {reason}. Remedy: {install_hint}"
+        )
     envelope["execution_metadata"] = (
         _load_rxinfer_execution_metadata_from_script(Path(script_info["path"]))
         if framework == "rxinfer"
@@ -159,4 +192,25 @@ def _make_distributed_dispatch_failure_result(
     envelope["error_type"] = "DistributedDispatchError"
     envelope["dispatch_error_type"] = type(exc).__name__
     envelope["dispatch_max_retries"] = max_retries
+    return envelope
+
+
+def _bind_dispatcher_failure(
+    script_info: Dict[str, Any],
+    failure: Dict[str, Any],
+    backend: str,
+    max_retries: int,
+) -> Dict[str, Any]:
+    """Bind a bare remote failure to the submitted script's source identity."""
+    if "script_path" in failure:
+        return failure
+    error_type = str(failure.get("error_type") or "DistributedDispatchError")
+    envelope = _make_distributed_dispatch_failure_result(
+        script_info, RuntimeError(failure.get("error", "")), backend, max_retries
+    )
+    envelope["error"] = str(failure.get("error", ""))
+    envelope["error_type"] = error_type
+    envelope["dispatch_error_type"] = str(failure.get("exception_type") or error_type)
+    if "collection_timeout_seconds" in failure:
+        envelope["collection_timeout_seconds"] = failure["collection_timeout_seconds"]
     return envelope

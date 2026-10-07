@@ -143,9 +143,12 @@ Intelligent Analysis
 
 Detailed analysis result for a single pipeline step.
 
+`step_number` preserves the summary's one-based execution order; use
+`script_name` and the pipeline registry for the canonical step ID (0–24).
+
 ```python
 class StepAnalysis:
-    step_number: int  # Pipeline step number (0-24)
+    step_number: int  # One-based execution order in this run's summary
     script_name: str  # Script filename (e.g., "3_gnn.py")
     description: str  # Human-readable step description
     status: StepStatus  # pipeline.schemas step status ("SUCCESS", "FAILED", "WARNING", etc.)
