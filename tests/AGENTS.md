@@ -8,15 +8,17 @@
 
 **Category**: Testing / Quality Assurance
 
-**Status**: Maintained; v4.0.0 published, v4.0.1 patch checks and publication pending
+**Status**: Maintained; v4.0.1 published with exact hosted acceptance
 
-**Version**: [pyproject.toml](../pyproject.toml) (canonical; v4.0.1 patch candidate)
+**Version**: [pyproject.toml](../pyproject.toml) (canonical; v4.0.1 published)
 
 **Last Updated**: 2026-09-04 (historical module documentation)
 
 Release reconciliation: historical test counts and receipts retain their original
 source identities. The [v4.0.0 publication receipt](../docs/development/gnn_4_0_0_post_publication.json)
-records the completed release. The historical
+records its completed release. The [v4.0.1 publication receipt](../docs/development/gnn_4_0_1_post_publication.json)
+records the accepted patch, exact hosted test selections and the full local
+7,789 passes plus ten subtests and 57 optional-tool skips. The historical
 [2026-10-06 snapshot](../SCOPE-2026-10-01.md) records 18 successful hosted checks
 at GNN `951dc7d3f58cfd3ef7106caa321c1d3c7d2ad51a`, the completed provisioned
 local suite and the independently accepted numerical/namespace scope. A3/W2/H5
@@ -317,7 +319,7 @@ output/2_tests_output/
 ### Latest Execution
 - **Duration**: ~5-15 minutes for comprehensive suite
 - **Memory**: ~100-300MB during test execution
-- **Status**: Maintained; final v4 acceptance pending
+- **Status**: Maintained; historical timing estimate; current exact acceptance is linked above
 
 ### Expected Performance
 - **Fast Tests**: 1-3 minutes

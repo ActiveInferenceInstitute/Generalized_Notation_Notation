@@ -1,24 +1,21 @@
 # TO-DO — GNN implementation, verification and release backlog
 
-Updated 2026-10-07. **GNN 4.0.0 is published.** Release commit:
-`1bc3a76eccccb2cc5ce8601770714075b3ec48db`; annotated tag: `v4.0.0`;
-[release notes and assets](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.0).
-The [publication receipt](docs/development/gnn_4_0_0_post_publication.json)
-records final GNN/FEP/GEO identities, successful checks and direct asset hash
-verification. The software publication date is 2026-10-07; the manuscript
-retains its 2026-10-02 authored epoch. No PyPI upload or version-specific DOI
-is claimed.
+Updated 2026-10-07. **GNN 4.0.1 is published.** Release commit:
+`17c72cf0f98d7d3bbf0159d1b1cce8c77c4e4daf`; annotated tag: `v4.0.1`;
+[release notes and assets](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1).
+The [publication receipt](docs/development/gnn_4_0_1_post_publication.json)
+records exact GNN/FEP/GEO revisions, successful hosted checks and all ten
+directly downloaded asset hashes. The immutable release manuscript retains its
+2026-10-02 authored epoch; this main renewal uses the verified publication date.
+No PyPI upload or version-specific archival DOI is claimed.
 
-The release closeout R1–R9 is complete within its recorded scope. Fourteen
-qualified issues and four superseded PRs were closed; #236, #241 and #250 were
-kept open at publication. The current maintenance change prepares their
-issue-specific closeout with fresh dispatch, native LLM and independent
-scientific evidence. Security remediation also covers twelve dependency alerts
-and four GUI complexity alerts; final remote issue/alert state is checked after
-integration. Published v4.0.0 source and assets keep their original identities.
-
-Package metadata targets **4.0.1** for the scoped source/security maintenance
-fixes. Its final source/manuscript/pair/CI checks and publication remain pending.
+The v4.0.0 R1–R9 closeout remains accepted at its historical scope and identity.
+This patch closes #236, #241 and #250 with fresh dispatch, native LLM and
+independent scientific evidence. GitHub now reports zero open issues, zero
+Dependabot alerts and zero CodeQL alerts: twelve dependency findings and four
+GUI complexity findings were fixed by provider scans, without dismissals.
+Secret scanning is disabled; no settings or credentials were changed.
+Original v4.0.0 source, assets and overview image remain intact.
 
 This is the forward backlog. Older candidate snapshots and failed attempts
 below remain historical evidence, not statements of current release status.
@@ -214,8 +211,8 @@ independent numerical checks pass. Replay times were 87.927 seconds historical
 and 233.557 seconds released, so no wall-clock improvement or historical 10×
 claim is made. The old whole-directory byte-equality target is retired because
 current analysis adds scientific/native plotting and corrected aggregation.
-Closure addresses the reported duplicate global dispatch; final hosted
-integration and remote closure remain pending for this maintenance change.
+Closure addresses the reported duplicate global dispatch; issue #236 is
+closed with its source-bound acceptance comment and the published patch receipt.
 
 ## P1 — scientific and security follow-ups
 
@@ -268,8 +265,8 @@ integration and remote closure remain pending for this maintenance change.
   covers 5,005 legacy-equivalent documents across parse/update/remove, 15 hostile
   growth samples through 2,097,196 characters, and functional live callback
   values plus unchanged-export controls. This is callback and parser evidence,
-  not browser-wide responsiveness or a general GUI security certificate. Remote
-  CodeQL closure is checked after integration.
+  not browser-wide responsiveness or a general GUI security certificate.
+  Provider scans confirm all four CodeQL findings fixed without dismissals.
 
 - [ ] **S5 — stronger filesystem/platform boundaries.** Scope descriptor-based
   operations against concurrently replaced path components and explicit Windows

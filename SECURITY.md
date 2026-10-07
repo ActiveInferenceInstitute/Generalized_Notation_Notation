@@ -2,7 +2,7 @@
 
 > **📋 Document Metadata**  
 > **Type**: Security Policy | **Audience**: All Users | **Complexity**: Intermediate  
-> **Last Updated**: 2026-09-07 | **Status**: Maintained  
+> **Last Updated**: 2026-10-07 | **Status**: Maintained\
 > **Cross-References**: [Comprehensive Security Guide](docs/security/README.md) | [Deployment Security](docs/deployment/README.md) | [MCP Security](docs/mcp/README.md)
 
 ## 🔒 Comprehensive Security Framework
@@ -11,8 +11,8 @@ The GNN (GeneralizedNotationNotation) project maintains a comprehensive multi-la
 
 > **📖 Complete Security Documentation**: For comprehensive security information, see [Security Guide](docs/security/README.md)
 
-GNN 4.0.0 was published on 2026-10-07; exact CodeQL/check and source
-identities are in the [publication receipt](docs/development/gnn_4_0_0_post_publication.json).
+GNN 4.0.1 was published on 2026-10-07; exact CodeQL/check and source
+identities are in the [publication receipt](docs/development/gnn_4_0_1_post_publication.json).
 Alert #12 retains its narrow request-string false-positive disposition. The
 trusted filesystem policy below retains its non-atomic concurrent-mutation
 limitation.
@@ -26,8 +26,10 @@ fsspec 2026.6.0, JupyterLab 4.6.4, multidict 6.9.1, Tornado 6.5.9 and virtualenv
 constraints enforce transitive security floors in the repository workflow;
 ordinary pip does not consume `[tool.uv]` constraints. The direct JupyterLab
 optional/dev floor is also raised. No new optional package becomes a core
-dependency. Remote alert closure remains pending verification after integration; passing
-a scan alone does not prove zero alerts or deployed-service security.
+dependency. Provider states now confirm all twelve dependency alerts and four
+GUI complexity alerts fixed, without dismissals. GitHub reports zero open
+Dependabot and CodeQL alerts at the receipt epoch. Secret scanning is disabled.
+This does not establish universal deployed-service security.
 
 ## Supported Versions
 
@@ -35,8 +37,8 @@ We are committed to ensuring the security of the GeneralizedNotationNotation (GN
 
 | Version | Supported | Security Coverage |
 | ------- | ------------------ | ----------------- |
-| 4.0.1 candidate | Final checks and publication pending | Scoped dependency and GUI complexity repairs; exact remote acceptance pending |
-| 4.0.0 | ✅ Current release | Current-run identity, bounded execution and qualified publication checks; post-release fixes are recorded separately |
+| 4.0.1 | Current release | Verified dependency and GUI complexity repairs; provider alert closure and exact checks recorded |
+| 4.0.0 | Previous release | Current-run identity and bounded execution; upgrade to 4.0.1 for the recorded security repairs |
 | 3.6.0   | ✅ Full support | Complete security framework |
 | 3.5.0   | ✅ Full support | Complete security framework |
 | 3.3.0   | ✅ Full support | Complete security framework |

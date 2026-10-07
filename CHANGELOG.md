@@ -7,9 +7,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
-## [4.0.1] - Unreleased patch candidate
+## [4.0.1] - 2026-10-07
 
-Patch publication follows final source, manuscript, companion and hosted checks.
+Published at [v4.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1) from `17c72cf0f98d7d3bbf0159d1b1cce8c77c4e4daf`.
+The [publication receipt](docs/development/gnn_4_0_1_post_publication.json) records
+the annotated tag, exact GNN/FEP/GEO checks and all ten directly verified assets.
+Issues #236, #241 and #250 are closed with acceptance evidence; GitHub reports
+zero open issues, zero Dependabot alerts and zero CodeQL alerts. Secret scanning
+is disabled; no settings or credentials were changed. The immutable release PDF
+keeps its 2026-10-02 authored epoch. This main documentation renewal uses the
+verified software publication date and preserves the release artifact hashes.
 
 ### Fixed
 
