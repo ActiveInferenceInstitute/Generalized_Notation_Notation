@@ -5,6 +5,12 @@ The GNN Pipeline uses a centralized, structured logging system designed for high
 
 ## Architecture
 
+`logging_utils.py` owns handler configuration, rotation, event emission and
+timing. `formatters.py` owns record formatting and its one shared thread-local
+correlation context. `visual.py` owns terminal presentation and progress state;
+it depends on formatters, never on handler configuration. Existing public names
+and signatures remain available through their prior import surfaces.
+
 ### 1. Thin Orchestrator Pattern
 Logging is initialized in the numbered step scripts (e.g., `3_gnn.py`) via `setup_step_logging()`. This ensures that logs from the step orchestrator and the underlying module implementations are unified.
 
