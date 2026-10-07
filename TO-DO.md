@@ -1,397 +1,202 @@
-# TO-DO — GNN implementation, verification and release backlog
+# TO-DO — GNN next steps
 
-Updated 2026-10-07. **GNN 4.0.1 is published.** Release commit:
-`17c72cf0f98d7d3bbf0159d1b1cce8c77c4e4daf`; annotated tag: `v4.0.1`;
-[release notes and assets](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1).
-The [publication receipt](docs/development/gnn_4_0_1_post_publication.json)
-records exact GNN/FEP/GEO revisions, successful hosted checks and all ten
-directly downloaded asset hashes. The immutable release manuscript retains its
-2026-10-02 authored epoch; this main renewal uses the verified publication date.
-No PyPI upload or version-specific archival DOI is claimed.
+Updated 2026-10-07. Baseline: [GNN 4.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1).
+Every checkbox below is remaining work. Each workstream must become focused PRs
+with an explicit owner, source baseline, acceptance evidence and dependencies.
+Remove landed work from this file; retain its evidence in the release receipts,
+[CHANGELOG.md](CHANGELOG.md) and Git history.
 
-The v4.0.0 R1–R9 closeout remains accepted at its historical scope and identity.
-This patch closes #236, #241 and #250 with fresh dispatch, native LLM and
-independent scientific evidence. GitHub now reports zero open issues, zero
-Dependabot alerts and zero CodeQL alerts: twelve dependency findings and four
-GUI complexity findings were fixed by provider scans, without dismissals.
-Secret scanning is disabled; no settings or credentials were changed.
-Original v4.0.0 source, assets and overview image remain intact.
+## Scope and delivery order
 
-This is the forward backlog. Older candidate snapshots and failed attempts
-below remain historical evidence, not statements of current release status.
-Do not restart accepted work because an older snapshot says pending. Future
-capabilities remain explicit even when the original GitHub reports are resolved.
+There are **17 workstreams: five minor, seven medium and five major**. The sizes
+describe implementation scope, not promised release versions or deadlines.
+Existing S/M/E identifiers remain stable for links and related scope documents.
+P1 denotes foundational correctness, security or capability gaps; P2 denotes
+subsequent maintainability and expansion work. Size and priority are separate.
 
-## Historical verified candidate snapshot — 2026-10-06
+| Size | Scope | Release decision |
+| --- | --- | --- |
+| Minor | Bounded documentation, diagnostics, dependency verification or publication work | Fixes and documentation can land in a patch; an artifact-only archive need not change the software version. |
+| Medium | Changes spanning shared modules, entrypoints, resource behavior or supported environments | Preserve supported public contracts; choose a patch or additive minor release from the actual behavior change. |
+| Major | New scientific semantics, source-preserving LLM capability or deeper formal guarantees | Review the contract first. Additive capabilities may fit a minor release; breaking public contracts require a major version and migration guidance. |
 
-This snapshot describes tested candidate source, not a completed publication.
-GNN source `951dc7d3f58cfd3ef7106caa321c1d3c7d2ad51a` has all 18 hosted
-checks successful, including CodeQL and both paired Python environments.
-The default CI JUnit files contain 6,912 testcase nodes plus ten subtests per
-Python 3.11/3.12/3.13 environment, with no failures, errors or skips. The separate
-pipeline selection has 294 cases and MCP selection 90; these overlapping
-selections are not added together. The completed prior local provisioned suite reports
-7,774 passed, 51 skipped and ten passed subtests; subsequent scoped source
-deltas were independently reviewed and fresh default CI passed at `951dc7d3`. Earlier failed attempts remain
-historical evidence below.
+Start with bounded M5/M4 work and S3 released-fix verification. Prioritize S5/S6
+security and coverage improvements alongside the M1/M2/M3 ownership and contract
+work. Establish M7 measurements before performance claims and M8 installation
+evidence before adding supported environments. Define S1/E4 contracts early;
+implement E1/E2/E3 only after their shared contracts and numerical acceptance
+methods are ready. E5 archival work can proceed independently.
 
-Independent review accepted the generic JAX filtering/static/passive repair and
-three generic models in float32/float64 (six full authored-source runs). This does
-not expand the older RxInfer HMM smoothing witness into universal backend or
-scientific acceptance. Issues #241 and #250 remain open under their stated
-acceptance criteria. The ordinary wheel has exactly 744 Python files and 443
-assets under `gnn/`, matching tracked source; hashes establish byte identity,
-not numerical proof.
+## Minor work
 
-FEP PR #45 at `958efdba8f18ab8c3d94964b2b688f1c033d01fd` still needs a
-successful successor run: the current Python job passed 2,635 tests, skipped 20,
-and failed two supplemental staging fixtures at 91.45% coverage. Its 15
-distribution jobs passed; native/render closeout was still running at snapshot.
-The independently reviewed fixture repair adds the missing `pandoc-crossref`
-version stub and rejects unmodelled tool-version probes; with that tool absent,
-the original selection fails 2/4 and the repaired selection passes 4/4.
-Companion merge, final GNN pin/checks/merge, reciprocal GEO pin, tag and release
-remain pending. Publication identities, actual date and downloaded asset hashes
-must be recorded separately in the public release receipt after publication.
-The manuscript authored epoch remains 2026-10-02; no version-specific DOI or
-PyPI upload is claimed.
+- [ ] **M5 — make maintained documentation consistent and runnable (P2).**
+  Scope: README, SPEC, ARCHITECTURE, AGENTS, module guides, examples and API docs;
+  clarify discovery versus selected views, current-run aggregation and supported
+  versus experimental capabilities. Derive inventories from the live registries.
+  Accept: commands exercised in their declared environments, correct paths and
+  anchors, consistent terminology and passing documentation-contract audits.
+  Deliver bounded documentation PRs; source or public-contract repairs belong in
+  the relevant medium or major workstream.
 
-## v4.0.0 — completed release closeout (historical acceptance criteria)
+- [ ] **M4 — reduce diagnostics and dependency ratchets (P2).**
+  Scope: inventory broad exceptions, hidden failure reasons, flag-documentation
+  gaps and duplicated optional-dependency declarations; repair one cause per PR
+  with typed outcomes and useful context. Accept: observable error and import
+  behavior preserved, meaningful failure cases and passing existing flag,
+  import-boundary, thin-orchestrator and dependency gates. Shared configuration
+  redesign belongs to M3.
 
-R1–R9 checkboxes record the completed release procedure and its accepted
-scope, not every historical performance or future scientific criterion.
-Original #236/#241/#250 remained open at publication. Their current closeout
-requires the issue-specific receipts below; unmet long-context coverage and
-unmeasured historical performance targets are not promoted into acceptance.
-The paragraphs below preserve historical review criteria and chronology.
+- [ ] **S3 — verify a released THRML structural-zero fix (P1).**
+  Scope: identify a released upstream version addressing
+  [inactive categorical padding](https://github.com/extropic-ai/thrml/issues/72),
+  evaluate its compatibility and test exact-zero/inactive-padding behavior on
+  both supported JAX splits. Accept: independent numerical witnesses, no NaNs,
+  unchanged source/seed/sample semantics and ordinary locked installation.
+  Keep strict rejection until those checks pass. Depends on a suitable released
+  fix; substantial adapter or inference changes require separate scope under E2.
 
-These tasks depend on one another in the order below. Source custody, local
-checks, hosted checks, installed-wheel tests, native numerical witnesses, visual
-review and publication are separate evidence planes. Keep their identities and
-failures separate. Do not sum overlapping test selections.
+- [ ] **M6 — improve scientific visualization and manuscript clarity (P2).**
+  Scope: labels, units, axes, accessible legends, animation trace identity,
+  categorical versus Gaussian uncertainty and VFE iterations versus EFE
+  timesteps. Accept: validated plotted data, source and artifact hashes, finite
+  manual/browser review with explicit coverage, and fresh template/custody
+  acceptance when manuscript inputs or counts change. Small presentation fixes
+  must preserve the scientific contract; semantic changes depend on E4.
 
-The bounded `--autonomous` mode remains proposal-only in v4.0.0; it does not
-modify its own source or grant autonomous publication authority.
+- [ ] **E5 — archive the exact released version and verify its DOI (P2).**
+  Scope: archive the released tag, distribution artifacts, manuscript, checksums
+  and citation metadata; identify the version-specific archive separately from
+  the project concept DOI. Accept: public archive/DOI resolution, matching
+  version metadata and directly downloaded artifact hash parity. A PyPI delivery
+  is a separate publication task with an identified package owner/destination,
+  accepted wheel/sdist, installation verification and credential ownership.
+  Depends on archive-provider availability and the selected release artifacts.
 
-- [x] **R1 — qualify the current companion run.** The chronology below is
-  historical; the 2026-10-06 snapshot above supersedes its live-head statement.
-  Fep companion PR
-  [#45](https://github.com/ActiveInferenceInstitute/fep_formal/pull/45) is pushed
-  at `af08d3323586e5a75ea69e207908ac6d15f5da87`. Its historical
-  [run 37384045009](https://github.com/ActiveInferenceInstitute/fep_formal/actions/runs/37384045009),
-  attempt 1, completed with all 20 required jobs successful and documentation
-  skipped. Checks at that source epoch passed; Python reported 2,495
-  passed / 16 skipped with 91.40% statement coverage. Independent PDF review
-  blocked receipt promotion: 151 unresolved references and 676 literal equation
-  labels survived that render gate. The cross-reference, canonical-cover and
-  process-cleanup repairs passed independent code review and are now published
-  on the draft branch. The review recorded 229 passed and two artifact failures;
-  after figure generation, the missing-asset case passed separately. The old
-  schema-1 receipt remains rejected pending a genuine fresh render. Renew
-  exact-source hosted/native/render acceptance after source freeze.
-  The passing cd97 results remain historical after any owner changes. The older
-  P2 run 37380889327 was cancelled after
-  supersession. Preserve its lint failure and the local 419-node attempt
-  (413 passed / six failed). The one-import repair, canonical two ignored
-  prerequisites and six-only passing replay are qualified; they do not prove a
-  fresh full suite. Use the reviewed bounded collectors, current heads, fresh
-  destinations, storage admission and observed cleanup. **Accept:** actual
-  current-source formal/native/render evidence, with failures explicitly retained.
+## Medium work
 
-- [x] **R2 — close companion render custody and main integration.** Independently
-  review the actual template/render/native/audit artifacts, font evidence, four
-  figures and finite PDF views. Apply only verified `docs/render-acceptance.json`
-  and `docs/render-fonts.json` output bytes, using a normal successor commit.
-  The fresh dashboard browser check covers root mobile/desktop geometry and one
-  search interaction only; it is neither PDF nor all-image visual acceptance.
-  Renew current checks rather than promoting old E/C2/P2 receipts. **Accept:**
-  all 20 required jobs successful, documentation lane explicitly skipped, all
-  15 OS/Python distribution jobs successful, valid current coverage XML at or
-  above the declared 89% floor, current source closure, independent review,
-  normal PR merge and remote main SHA parity. Preserve unrelated primary Fep work.
+- [ ] **M1 — extract coherent module ownership boundaries (P2).**
+  Scope: refresh the size/complexity inventory from actual source, reconcile
+  existing extractions, then prioritize RxInfer bridge/strategy/analysis,
+  website generation, GUI, schema parsing, visualization, logging, execution
+  and security owners. Accept: one justified boundary per focused PR, preserved
+  public exports/signatures, behavioral parity and failure cases, clear
+  ownership and measured complexity changes. Split responsibilities rather
+  than files solely to satisfy a line-count target.
 
-- [x] **R3 — seal public documentation and evidence.** Reconcile the prepared
-  eight-document release candidate against actual current files and this backlog.
-  Preserve `cd97a8f` evidence as historical after local companion changes.
-  Destinations: `CITATION.cff`, `docs/VERSION_MAP.md`, `tests/AGENTS.md`,
-  `TO-DO.md`, `SCOPE-2026-10-01.md`,
-  `docs/development/verification_2026_10_01.json`, `CHANGELOG.md`, `SECURITY.md`.
-  Preserve historical evidence and all failed attempts. Set the actual software
-  publication date only at closeout; keep manuscript token date 2026-10-02 as
-  its authored epoch. Record snapshot-time pending steps accurately and attach
-  post-snapshot publication facts separately. **Accept:** exact file review,
-  source/namespace parity, privacy checks, truthful state labels, link/anchor
-  audits and fresh independent content approval. Do not broadly copy staging files.
+- [ ] **M2 — unify execution and result contracts (P1).**
+  Scope: shared run context, frozen selection, scope metadata, prerequisites,
+  backend options, readiness diagnoses, model-kind adapters, outcomes and
+  artifact indexes across serial, parallel and matrix execution. Accept: thin
+  numbered orchestrators, equivalent plans/results and negative controls for
+  explicit empty selection, inherited artifacts, duplicate aggregation and
+  incompatible uncertainty. Establish the shared boundaries alongside M1;
+  public schema changes require a compatibility decision.
 
-- [x] **R4 — adopt the reviewed API policy and resolve alert #12 narrowly.**
-  The independently reviewed trusted-filesystem SECURITY wording is published
-  on the implementation branch, and alert #12 received a narrow request-string
-  false-positive disposition. CodeQL passed at published head
-  `8badfad724f5a0dd2159146496f68ef71f388fb0` in
-  [run 37392490778](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37392490778).
-  Renew this check after subsequent source changes. Attach
-  the qualified 95 API negative/parity cases and static guard evidence to
-  [CodeQL alert #12](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/security/code-scanning/12).
-  Retain the narrowly justified request-string traversal disposition and renew
-  CodeQL. **Accept:** policy adoption and a fresh current check;
-  retain the non-atomic concurrent filesystem limitation. GUI alerts #13–#16
-  remain separate. This is not a general security or deployed-service certificate.
+- [ ] **M3 — align Python, CLI, REST and MCP admission/discovery (P1).**
+  Scope: derive backend inventory, help, setup groups and schemas from shared
+  live metadata; unify option precedence, types, unknown-key handling, limits
+  and supported/unsupported diagnoses. Accept: equivalent admission and
+  outcomes through the actual public entrypoints, installed-package facade
+  isolation and documented migration for any changed public contract.
+  Depends on M2 for execution/result behavior; metadata registration alone
+  does not establish native backend readiness.
 
-- [x] **R5 — final GNN pair pin and repository checks.** Follow
-  [the canonical pairing order](docs/development/fep_lean_paired_revision.md).
-  After accepted companion main integration, make the reviewed companion pin
-  bump part of the final GNN content commit. Preserve the 25 steps, `gnn.*`,
-  proposal-only autonomous mode and the qualified package namespace.
-  **Accept:** strict manuscript/token/hydration/fresh-render checks; current
-  finite/continuous pair checks; declared repository gates; all required hosted
-  checks at the exact final head. A3's captured 18-check snapshot had 15 successes
-  and three failures (CodeQL #12 and two pair legs); it is not final green evidence.
-  Owner or count-changing edits require renewed custody/render/package acceptance.
+- [ ] **S5 — strengthen filesystem and platform boundaries (P1).**
+  Scope: define the filesystem adversary model, use descriptor-based operations
+  where concurrent path replacement matters, and scope native Windows lease,
+  process and cleanup behavior. Accept: real symlink/rename/race controls,
+  native platform tests, preserved API errors and bounded cancellation/cleanup,
+  plus independent security review. State the precise confinement guarantees
+  and remaining limits. Depends on appropriate native platform runners and
+  M2 where lease/process behavior crosses shared execution contracts.
 
-- [x] **R6 — normal GNN main integration.** Update PR
-  [#251](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/pull/251)
-  around the final implementation and evidence. Obtain final independent
-  infrastructure/security review, verify current base/head/check identities,
-  and merge normally. **Accept:** main remote SHA and tree parity, clean primary
-  checkout fast-forward, preserved rollback baseline and no force/amend/squash.
-  Preserve any intervening unrelated work.
+- [ ] **S6 — raise coverage through meaningful behavior checks (P1).**
+  Scope: produce a reproducible coverage-gap inventory, then target untested
+  failure paths and shared contracts, including optional and live surfaces in
+  explicitly provisioned lanes. Target the documented **>80% statement coverage**
+  goal on the declared supported matrix. Accept: per-environment reports,
+  externally observable behavior checks and qualified exclusions; raise the
+  enforced floor only after the evidence supports it. Keep overlapping
+  selections separate and avoid tests that merely mirror implementation.
 
-- [x] **R7 — reciprocal GEO-INFER pairing.** After GNN main M exists, update
-  GEO-INFER's `.github/gnn-pair.json` to M through a focused normal PR.
-  Inspect live GEO main first; its last reviewed snapshot is
-  `510f1008e698b45aedc4306d65caf898da6cda04`. **Accept:** a pin-only diff,
-  current Python 3.11/3.12 interchange checks, the three retained schema contracts,
-  normal merge and remote parity. Complete this before a version tag or release.
+- [ ] **M7 — measure and improve scalability and performance (P2).**
+  Scope: matched source/configuration/backend/LLM-mode corpora, phase timings,
+  CPU/wall time, RSS, artifact counts and resource admission. Include nested
+  and large inputs, repeated/concurrent runs and bounded distributed transfer.
+  Optimize demonstrably dominant bottlenecks after accepting the baseline.
+  Accept: comparable before/after receipts, explicit variance, complete selected
+  coverage and measured tradeoffs. Preserve output
+  semantics; estimated allocation and disk guards are separate from measured
+  RSS/JIT behavior. Depends on M2's identity/result contracts.
 
-- [x] **R8 — publish and directly verify v4.0.0.** Recheck tag/release absence;
-  verify that the accepted ordinary wheel's namespace matches final main M.
-  Create a normal annotated `v4.0.0` tag and GitHub release with public-safe
-  notes, wheel, manuscript PDF, source-binding/verification receipts and
-  checksums. **Accept:** tag object and peeled M parity, release URL/ID,
-  downloaded asset hash parity and a public post-publication receipt carrying
-  the GNN/Fep/GEO identities and rollback evidence. No PyPI upload or
-  version-specific archival DOI is currently claimed.
+- [ ] **M8 — broaden installed-package and platform acceptance (P2).**
+  Scope: assess Python 3.14 scientific-wheel readiness and any additional
+  supported OS/runtime split using ordinary installation outside the checkout.
+  Retain both current JAX/Matplotlib splits, API scratch isolation, registry
+  concurrency and tracked-file cleanliness. Accept: genuine imports/native
+  execution, supported-platform cancellation and memory controls under load,
+  and meaningful negative cases. GUI, network, audio and external toolchains
+  remain explicitly provisioned lanes. Depends on released dependency
+  compatibility and native runners; do not advertise support before acceptance.
 
-- [x] **R9 — attach evidence and close only qualified issues/PRs.** After the
-  resulting main change and current required checks exist, attach issue-specific
-  evidence before closing work. Keep
-  [#241](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/241)
-  and [#250](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/250)
-  open until their scientific acceptance is met. Resolve superseded PRs
-  [#226](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/pull/226),
-  [#231](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/pull/231),
-  [#248](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/pull/248)
-  and [#249](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/pull/249)
-  with explicit links to integrated behavior and evidence, not unchanged merges.
+## Major work
 
-## Historical issue acceptance map
+- [ ] **S1 — complete source-preserving long-context LLM processing (P1).**
+  Scope: design context admission and a complete multi-request/checkpoint method
+  for large selected model sources and every required prompt. Preserve exact
+  provider/model/source identities, declared budgets and original source content.
+  Accept: genuine native completion for every selected source/prompt, truthful
+  structural/native coverage and unfinished-work reporting, resumable checkpoints
+  and timeout/cancellation/context-refusal controls. No silent truncation,
+  sampling, model substitution or manufactured completion. Depends on verified
+  model/provider context admission and the M2/M3 result/configuration contracts.
 
-These criteria retain the original review scope. The opening paragraph records
-publication closeout; #236 and S1/S2 below record current maintenance evidence.
-Previously closed issues remain closed; this table does not reopen their work.
+- [ ] **E1 — extend coupled multi-agent continuous semantics (P2).**
+  Scope: reconcile existing continuous/factored/hybrid/nonstationary and
+  independent Gaussian contracts, then specify additional coupling, control
+  and observation semantics. Accept: explicit per-agent state/control identity,
+  asymmetric dimensions, composed model-kind dispatch and independent native
+  JAX/RxInfer exemplars with covariance-aware results. Unsupported compositions
+  must refuse explicitly. Depends on M2/M3 and E4's semantic witness method;
+  compatible shapes alone do not establish an inference contract.
 
-| Issues | Evidence required for closure |
-| --- | --- |
-| [#232](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/232), [#233](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/233), [#234](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/234) | Current rendered Markdown/TeX commit stamps, shared grammar and exclusions, strict main checks, unchanged-inherited-drift PR controls, preamble controls and accepted manuscript custody. |
-| [#235](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/235) | Round-trip/tiny-probability/all-rank malformed-input regressions plus the qualified four full-duration NumPyro cases and source/script/result bindings. |
-| [#236](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/236), [#237](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/237), [#239](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/239), [#240](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/240) | Frozen selection, nested/duplicate/empty/excluded cases, serial/parallel/consolidated identity agreement, current indexes and summary snapshots, once-only analysis/site assembly, stale-run refusal. |
-| [#238](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/238), [#247](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/247) | Shared structured readiness diagnoses, bounded interpreter-specific probes, registry-derived setup/help, explicit CmdStan installation and genuine retained toolchain evidence. |
-| [#242](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/242) | Qualified coordination/swarm/GridWorld/bistable RxInfer render→execute→analysis results, real family/agent/factor traces, readable PNG/GIF/HTML and current artifact custody. |
-| [#243](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/243) | One deadline, retained partial/non-success outcomes, real child/grandchild cancellation/reaping, retries/result-transfer controls and the narrow manifest ignore rule. |
-| [#244](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/244) | Fixed-point annotations and generated-code regressions; current finite plot/PDF review with clearly stated visual scope. |
-| [#245](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/245) | Current deterministic pipeline PR lane and count/source receipts for the existing weekly all-extras lane; no duplicate schedule. |
-| [#246](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/246) | Typed Dask/Ray cancellation/retrieval with successful siblings/order/script identity, genuine scaling acceptance, and Matplotlib API shapes on the supported splits. |
+- [ ] **E2 — expand THRML through separate scientific contracts (P2).**
+  Scope: evaluate coupled agents, policy/action search, continuous/hybrid
+  models and hardware execution as separately scoped extensions of the
+  [THRML adapter](docs/gnn/implementations/thrml.md). Accept: defensible model and
+  inference mappings, released compatibility on both supported splits,
+  admission/failure/resource controls and independent native witnesses.
+  Hardware, convergence, energy and speed claims each require their own direct
+  evidence. Depends on S3 where structural zeros are required, plus M2/M3/E4.
 
-## Original Step 16 duplicate-analysis report (#236)
+- [ ] **E3 — extend cpomdp control/search capabilities safely (P2).**
+  Scope: specify new control/search behavior through the
+  [cpomdp adapter](docs/gnn/implementations/cpomdp.md), preserving passive
+  no-search behavior, explicit EFE defaults and complete policy/source identity.
+  Accept: released constructor compatibility, finite/nonboolean options,
+  all-invalid rejection, independent Kalman/EFE witnesses, complete score and
+  policy receipts, and bounded evaluation/allocation/process behavior.
+  Never silently reduce requested search; allocation estimates do not certify
+  total RSS. Depends on M2/M3, E4's numerical contracts and M7 resource evidence.
 
-[The fresh closeout receipt](docs/development/issue236_analysis_dispatch_closeout_2026_10_07.json)
-verifies 11→1 original-corpus launches and 12→1 current-corpus launches on
-identical selected source bytes. Authentic four-model native result files and
-independent numerical checks pass. Replay times were 87.927 seconds historical
-and 233.557 seconds released, so no wall-clock improvement or historical 10×
-claim is made. The old whole-directory byte-equality target is retired because
-current analysis adds scientific/native plotting and corrected aggregation.
-Closure addresses the reported duplicate global dispatch; issue #236 is
-closed with its source-bound acceptance comment and the published patch receipt.
-
-## P1 — scientific and security follow-ups
-
-- [ ] **S1 — source-preserving long-context LLM capability.** The original
-  #241 scheduler/configuration/diagnostic defects are addressed; the human
-  summary now exposes prompt coverage and unfinished work. Exact native
-  `smollm2:135m-instruct-q4_K_S` completes all nine N4 prompts plus its summary
-  within the unchanged automatic 600-second/model and 45-second/request limits.
-  The [LLM receipt](docs/development/issue241_llm_acceptance_2026_10_07.json)
-  keeps that native success at its recorded producer hash, separately from
-  the current human-summary tests. Final-source large-request checks also
-  verify the repaired stdin path and context failure without a delivery timeout.
-  N32/N64 complete requests receive real context refusals: 339,390/2,664,414
-  runtime tokens versus the configured 4,096-token context. The 8,192-token
-  training metadata does not establish admission or complete-corpus coverage.
-  Preserve historical partial results and explicit failure; never truncate,
-  sample, swap models or manufacture completion. **Future accept:** a verified
-  source-preserving admission/multi-request method that completes every selected
-  model and prompt with exact provider/model/source/checkpoint identities within
-  the declared budgets. This future capability is separate from closing the
-  original missing-model, budgeting and coverage report.
-
-- [x] **S2 — scientifically repair six authored examples (#250).** The six
-  explicit probability/behavior proposals approved on 2026-10-05 now have fresh
-  independent table, orientation, dtype, serialization and native acceptance.
-  [The receipt](docs/development/issue250_scientific_acceptance_2026_10_07.json)
-  binds all six source hashes, nine actual native runs, 263 fresh test cases
-  and the strict all-six family gate. Generic static/dynamic/HMM native runs
-  cover float32/float64; the three semantic contracts execute in declared
-  float64. Float32 semantic value roundtrips are verified, float32 semantic
-  native execution is not claimed. JAX preserves the declared block resets,
-  approximate temporal clocks and episodic T-maze policy structure; other
-  backends explicitly report these contracts unsupported. No normalization,
-  dropped example or validator tolerance change is used to pass acceptance.
-
-- [ ] **S3 — THRML structural zeros (upstream #72).** Track
-  [the validated upstream report](https://github.com/extropic-ai/thrml/issues/72).
-  Upstream marked the report fixed on 2026-10-05; a released fix was not
-  established by the current release check. Keep strict rejection until a released
-  fix is verified. **Accept:**
-  both supported JAX splits, exact-zero/inactive-padding NaN regressions,
-  independent numerical witnesses and unchanged source/seed/sample semantics.
-  No epsilon repair or widening based only on an upstream commit or shape match.
-
-- [x] **S4 — GUI complexity repair (#13–#16).** The state-line parser now
-  scans delimiters linearly and bounds documents to 8,388,608 characters before
-  splitting. Save/Export admit the document before creating an output, preserving
-  existing files on rejection; refresh/live editing surface explicit errors.
-  [Independent acceptance](docs/development/gui_complexity_acceptance_2026_10_07.json)
-  covers 5,005 legacy-equivalent documents across parse/update/remove, 15 hostile
-  growth samples through 2,097,196 characters, and functional live callback
-  values plus unchanged-export controls. This is callback and parser evidence,
-  not browser-wide responsiveness or a general GUI security certificate.
-  Provider scans confirm all four CodeQL findings fixed without dismissals.
-
-- [ ] **S5 — stronger filesystem/platform boundaries.** Scope descriptor-based
-  operations against concurrently replaced path components and explicit Windows
-  lease/process support. Keep request-string containment separate from hostile
-  filesystem mutation. **Accept:** real symlink/rename/race and platform controls,
-  preserved API error contracts, bounded cleanup and fresh independent security
-  review. No claim of atomic confinement or unsupported-platform containment.
-
-- [ ] **S6 — raise measured coverage with meaningful tests.** The qualified
-  default CI statement coverage is 70.56–70.59%, above its declared 60% floor;
-  the documentation's >80% goal is not yet demonstrated. Prioritize untested
-  failure paths and shared contracts, including optional/live surfaces.
-  **Accept:** reproducible per-environment coverage reports, behavior-based tests
-  and an explicit reviewed floor change when justified. Do not inflate totals,
-  combine incompatible runs or add tests that merely mirror implementation.
-
-## P2 — modularity, composability and maintainability
-
-- [ ] **M1 — refresh the large-module backlog from actual source.** The current
-  handoff scan finds large owners including `rxinfer_bridge.py` (1,801 lines),
-  `website/generator.py` (1,665), `gui/gui_2/ui.py` (1,545),
-  `parsers/schema_parser.py` (1,534),
-  `render/activeinference_jl/activeinference_renderer.py` (1,449),
-  `visualization/matrix/visualizer.py` (1,388),
-  `utils/logging/logging_utils.py` (1,335), `pipeline/summary_wiring.py` (1,308),
-  `execute/executor.py` (1,305), and `security/processor.py` (1,235).
-  Inventory related RxInfer strategies/analyzer, framework comparison, main,
-  parser common, PyMDP simulation, API parity, setup and LLM modules as well.
-  **Accept:** one justified boundary per focused PR, preserved public exports
-  and signatures, meaningful behavioral parity/failure cases, explicit ownership
-  and measured complexity/size changes. Reconcile completed extractions first.
-
-- [ ] **M2 — unify remaining execution/result contracts.** Audit shared run
-  context, scope metadata, prerequisites, backend options, readiness diagnoses,
-  model-kind adapters, outcomes and artifact indexes for duplicated logic.
-  **Accept:** thin numbered orchestrators and common serial/parallel/matrix plans;
-  no fallback discovery for explicit empty selection, stale-summary import,
-  fabricated uncertainty or duplicate corpus aggregation.
-
-- [ ] **M3 — align Python/CLI/REST/MCP configuration and discovery.** Derive
-  backend inventory/help/setup groups and documented schemas from live metadata.
-  Test option precedence, unknown keys, invalid types, explicit limits and public
-  facade imports. **Accept:** equivalent admission/outcomes across entrypoints,
-  installed-package isolation, clear migration and coherent supported/unsupported
-  capability labels. Registry declarations alone do not prove readiness.
-
-- [ ] **M4 — reduce error/documentation/dependency ratchets.** Reinventory broad
-  exceptions, suppressed diagnostics, flag-documentation gaps and optional
-  dependency duplication. Replace one reviewed cause at a time with typed
-  outcomes and clear contextual reasons. **Accept:** ratchet improvement without
-  widening catches, hiding failures, eager optional imports or changing public
-  behavior; run the existing flag/import/thin/dependency gates.
-
-- [ ] **M5 — audit current documentation and signposts.** Review actual README,
-  SPEC, ARCHITECTURE, AGENTS, module guides, examples and API docs against source.
-  The implementation's AGENTS already includes v4/experimental/executor
-  corrections; do not copy the older September instructions over it.
-  Clarify standalone discovery versus frozen selected views and current-run
-  aggregation; derive inventories from registries. **Accept:** runnable commands,
-  verified paths/anchors, explicit release/experimental/legacy distinctions and
-  current terminology/doc-contract audits.
-
-- [ ] **M6 — preserve manuscript/visualization scientific meaning.** Audit labels,
-  units, axes, categorical versus Gaussian uncertainty, VFE iterations versus
-  EFE timesteps, accessible legends, animation traces and source provenance.
-  **Accept:** data validation, artifact hashes and finite manual/browser review
-  reported separately; real template rendering/custody after count changes.
-  Do not claim all-page review or browser behavior from static source checks.
-
-- [ ] **M7 — measure scalability and performance on matched corpora.** Benchmark
-  selected identities/coverage, phase timings, memory, artifact counts and resource
-  admission with identical source/configuration/environment. Include nested and
-  large inputs, repeated/concurrent runs and bounded distributed transfer.
-  **Accept:** reproducible receipts and explicit variance; no speed claim from
-  unmatched corpora, two noisy trials or declaration counts. Keep dense tensor
-  file/disk guardrails and resource estimates separate from measured RSS/JIT.
-
-- [ ] **M8 — broaden package/platform acceptance deliberately.** Resolve Python
-  3.14 scientific-wheel readiness and verify any added supported split outside
-  the checkout. Retain both current JAX/Matplotlib splits, API scratch isolation,
-  registry concurrency, RSS under load and zero tracked-file drift.
-  **Accept:** ordinary installation, actual imports/execution and meaningful
-  negative cases; live GUI/network/audio/toolchains remain explicit opt-ins.
-
-## P2 — additions and experimental promotion
-
-- [ ] **E1 — extend multi-agent continuous semantics.** Reconcile existing
-  continuous/factored/hybrid/nonstationary and independent Gaussian support
-  before adding coupling or new control semantics. **Accept:** composed
-  model-kind dispatch, native per-agent state/control identities, asymmetric
-  dimensions and verified JAX/RxInfer exemplars with covariance-aware metrics.
-
-- [ ] **E2 — extend THRML only through explicit scientific contracts.** Current
-  `thrml==0.1.4` is explicitly selected finite strictly positive categorical
-  fixed-action smoothing on CPU/JAX. Scope continuous/hybrid/coupled agents,
-  policy search or hardware support separately. **Accept:** defensible mapping,
-  released dependency compatibility on both splits, admission/failure/resource
-  controls and independent native witnesses. No convergence, energy or speed
-  claim without direct evidence. See [the THRML guide](docs/gnn/implementations/thrml.md).
-
-- [ ] **E3 — extend cpomdp while preserving search admission.** Current adapter
-  targets `cpomdp==0.4.4`; passive models perform no search. Keep EFE defaults,
-  nine actions for two-dimensional control or `2p+1`, and caps of 4,096 policies,
-  32,768 step evaluations and 128 MiB estimated allocation. **Accept:** exact
-  constructor compatibility, finite/nonboolean options, all-invalid rejection,
-  independent Kalman/EFE results, complete score/policy/source receipts and
-  process watchdogs. Never silently reduce requested search; allocation estimates
-  are not total RSS limits.
-
-- [ ] **E4 — strengthen formal/numerical evidence binding.** Scope independent
-  extraction and semantic witnesses beyond hash/value/shape custody.
-  **Accept:** exact translation/model/inference/dtype assumptions and compatible
-  numerical comparisons. Retained Lean statements, shape matches and hashes
-  must not be promoted into universal runtime equivalence.
-
-- [ ] **E5 — archive the actual version after publication.** Create and directly
-  verify a v4-specific archive/DOI after R8. Keep the verified concept DOI and
-  previous v3 archive separate. Any PyPI publication is a distinct release task
-  with explicit destination, artifact and credential ownership.
+- [ ] **E4 — bind formal statements to numerical semantics (P1).**
+  Scope: specify independent extraction and semantic witnesses for declared
+  finite/continuous models, translations, inference algorithms and precision
+  assumptions beyond source/hash/value/shape custody. Accept: exact assumptions,
+  compatible numerical comparisons, counterexamples/refusals for mismatched
+  semantics and source-bound formal/native/runtime evidence. Keep Lean theorem
+  statements, generated-runner execution and bridge custody distinct; universal
+  equivalence requires an actual proof. Coordinate changed FEP/GEO owners through
+  the paired-revision procedure rather than relabelling older receipts.
 
 ## Verification and execution rules
 
-Read the repository's current declared commands and CI before running work.
-Use focused checks for each change; broaden only for new failures or changed
-contracts. Existing accepted evidence is retained, not silently rerun/relabelled.
+Freeze the scope, owner, source baseline and acceptance criteria before each
+implementation PR. Use focused existing checks for the changed behavior;
+broaden only for new failures or changed contracts. Preserve public model/source
+semantics, the 25-step workflow and explicit unsupported outcomes. Autonomous
+mode remains proposal-only unless a separately scoped contract changes it.
+
 Representative repository commands are:
 
 ```bash
@@ -411,10 +216,17 @@ uv run --frozen --no-sync python scripts/check_manuscript_tokens.py --strict
 uv run --frozen --no-sync python scripts/check_hydrated_prose.py
 ```
 
-Also run the declared import, flag, thin-orchestrator, dependency, security and
-manuscript gates appropriate to the change. Inspect diffs and tracked-file
-bookends. Use fresh independent review for shared infrastructure/security.
-Preserve unrelated work, credentials and private evidence. No force push, broad
-cleanup, phantom provenance/amended custody commits, silent normalization or
-blanket issue/security closure. Resume one scoped task at a time; remove landed
-items from this backlog and retain exact evidence in history.
+Read current CI and runtime configuration for the exact commands/environments.
+Run the appropriate import, flag, thin-orchestrator, dependency and security
+gates. Changes to FEP/GEO-bound owners require the
+[paired-revision procedure](docs/development/fep_lean_paired_revision.md).
+Manuscript input/count changes require the full figure, template-render and
+custody ritual in [AGENTS.md](AGENTS.md). Keep local checks, hosted tests,
+installation, native numerical witnesses and finite visual review separate;
+report source identities, failures, optional skips and actual review coverage.
+
+Merge through the existing required gates, preserve unrelated work and inspect
+tracked-file bookends. Publication requires accepted exact-source checks, tag
+and remote parity, verified distribution contents and public download hashes.
+Retain credentials and private evidence locally. No force push, amended custody,
+silent normalization, fallback success or unsupported readiness claims.
