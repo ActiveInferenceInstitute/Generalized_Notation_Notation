@@ -22,7 +22,6 @@ observation arrays, skipping optional plots gracefully when their data is
 absent rather than raising.
 """
 
-import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -79,6 +78,7 @@ from .result_ingestion import (
 from .result_ingestion import (
     extract_simulation_data as extract_simulation_data,
 )
+from .result_ingestion import read_result_object
 
 
 def _safe_close_figures(context: str) -> None:
@@ -143,7 +143,7 @@ def generate_analysis_from_logs(
 
         for rxinfer_dir in rxinfer_dirs:
             model_name = rxinfer_dir.parent.name
-            if current_models and model_name not in current_models:
+            if current_models is not None and model_name not in current_models:
                 continue
             sim_data_dir = rxinfer_dir / "simulation_data"
             if sim_data_dir.exists():
@@ -151,8 +151,7 @@ def generate_analysis_from_logs(
                 results_file = _latest_current_results_file(sim_data_dir)
                 if results_file is not None:
                     try:
-                        with open(results_file, "r") as f:
-                            data = json.load(f)
+                        data = read_result_object(results_file)
 
                         viz_files = create_rxinfer_visualizations(
                             data, output_dir, model_name, verbose
@@ -180,7 +179,7 @@ def generate_analysis_from_logs(
                         logger.warning(f"Failed to process {results_file}: {e}")
 
     except Exception as e:
-        logger.error(f"RxInfer analysis failed: {e}")
+        logger.error("RxInfer analysis failed (%s): %s", type(e).__name__, e)
 
     return visualizations
 

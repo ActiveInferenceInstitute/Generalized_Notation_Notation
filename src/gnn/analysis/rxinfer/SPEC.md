@@ -29,3 +29,11 @@ normalization, convergence, marginalization or plot semantics.
 
 - Missing Julia results → graceful skip
 - Non-convergent inference → diagnostic warning
+- Missing execution summary permits standalone result discovery. A present
+  summary is authoritative: an explicit empty selection admits no inherited
+  result folders; invalid summary bytes/shape refuse analysis with a typed,
+  path-specific reason.
+- Result JSON must decode to an object. `RxInferResultReadError` preserves the
+  original I/O, UTF-8 or JSON exception as its cause. The legacy extraction
+  entrypoint still returns its empty/default mapping on a read failure and logs
+  the precise file and cause; it does not manufacture successful evidence.

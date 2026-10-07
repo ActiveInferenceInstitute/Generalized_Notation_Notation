@@ -12,22 +12,45 @@ from typing import Any, Dict, Optional
 logger = logging.getLogger(__name__)
 
 
+class RxInferResultReadError(ValueError):
+    """An execution evidence file cannot supply a JSON object."""
+
+    def __init__(self, path: Path, cause: Exception) -> None:
+        self.path = path
+        self.reason = f"{type(cause).__name__}: {cause}"
+        super().__init__(f"{path}: {self.reason}")
+
+
+def read_result_object(path: Path) -> dict[str, Any]:
+    """Read one UTF-8 JSON object, retaining the exact decoding/I/O cause."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise RxInferResultReadError(path, exc) from exc
+    if not isinstance(data, dict):
+        cause = ValueError(f"expected a JSON object, got {type(data).__name__}")
+        raise RxInferResultReadError(path, cause) from cause
+    return data
+
+
 def _current_rxinfer_models(execution_dir: Path) -> set[str] | None:
-    """Return model names for RxInfer entries in the current Step 12 summary."""
+    """Return current model names; only an absent summary permits standalone use.
+
+    An authoritative empty summary admits no model folders. An unreadable or
+    malformed summary raises a contextual error rather than widening selection.
+    """
     summary_file = execution_dir / "summaries" / "execution_summary.json"
     if not summary_file.exists():
         summary_file = execution_dir / "execution_summary.json"
     if not summary_file.exists():
         return None
-    try:
-        data = json.loads(summary_file.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return None
+    data = read_result_object(summary_file)
     details = data.get("execution_details")
     if not isinstance(details, list):
-        details = data.get("execution_results", [])
+        details = data.get("execution_results")
     if not isinstance(details, list):
-        return None
+        cause = ValueError("execution_details or execution_results must be a list")
+        raise RxInferResultReadError(summary_file, cause) from cause
     models = {
         str(detail.get("model_name"))
         for detail in details
@@ -35,7 +58,7 @@ def _current_rxinfer_models(execution_dir: Path) -> set[str] | None:
         and str(detail.get("framework", "")).lower() == "rxinfer"
         and detail.get("model_name")
     }
-    return models or None
+    return models
 
 
 def _latest_current_results_file(sim_data_dir: Path) -> Path | None:
@@ -47,8 +70,9 @@ def _latest_current_results_file(sim_data_dir: Path) -> Path | None:
     )
     for candidate in candidates:
         try:
-            data = json.loads(candidate.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+            data = read_result_object(candidate)
+        except RxInferResultReadError as exc:
+            logger.warning("Skipping invalid RxInfer result: %s", exc)
             continue
         if data.get("schema_version") == "rxinfer_simulation_v1":
             return candidate
@@ -85,11 +109,12 @@ def extract_simulation_data(
         if sim_data_dir.exists():
             results_files = list(sim_data_dir.glob("*simulation_results.json"))
             if results_files:
-                with open(results_files[0], "r") as f:
-                    results = json.load(f)
+                results = read_result_object(results_files[0])
                 data.update(results)
 
-    except Exception as e:
-        logger.warning(f"Failed to extract RxInfer data: {e}")
+    except (RxInferResultReadError, OSError) as exc:
+        logger.warning(
+            "Failed to extract RxInfer data (%s): %s", type(exc).__name__, exc
+        )
 
     return data
