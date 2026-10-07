@@ -51,6 +51,10 @@ Integrated with `gnn.utils.observability.performance_tracking`.
 - Appends `[⏱️ duration | 🧠 memory]` to visual logs when available.
 
 ## Handler Management
+An unavailable file/JSON log destination preserves console recovery and reports
+its path and original filesystem exception type. Only expected filesystem
+failures are caught during destination setup.
+
 To prevent duplication:
 - `PipelineLogger.initialize()` clears existing handlers on the root logger.
 - Only one `StreamHandler` and one `FileHandler` are permitted on the root logger.

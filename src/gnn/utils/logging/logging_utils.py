@@ -95,14 +95,14 @@ class BasicPipelineLogger:
                 cls._log_file_handler.setLevel(file_level)
                 cls._log_file_handler.setFormatter(file_formatter)
                 root_logger.addHandler(cls._log_file_handler)
-            except Exception as e:
+            except OSError as e:
                 console_handler.emit(
                     logging.LogRecord(
                         name="PipelineLogger",
                         level=logging.ERROR,
                         pathname="",
                         lineno=0,
-                        msg=f"Failed to setup file logging: {e}",
+                        msg=f"Failed to setup file logging in {log_dir} ({type(e).__name__}: {e})",
                         args=(),
                         exc_info=None,
                     )
@@ -383,14 +383,14 @@ class PipelineLogger(BasicPipelineLogger):
                     cls._log_file_handler.setLevel(file_level)
                     cls._log_file_handler.setFormatter(file_formatter)
                     root_logger.addHandler(cls._log_file_handler)
-            except Exception as e:
+            except OSError as e:
                 # If console handler exists, emit error
                 record = logging.LogRecord(
                     name="PipelineLogger",
                     level=logging.ERROR,
                     pathname="",
                     lineno=0,
-                    msg=f"Failed to setup file logging: {e}",
+                    msg=f"Failed to setup file logging in {log_dir} ({type(e).__name__}: {e})",
                     args=(),
                     exc_info=None,
                 )
@@ -444,8 +444,10 @@ class PipelineLogger(BasicPipelineLogger):
             json_handler.setFormatter(JSONFormatter())
 
             logging.getLogger().addHandler(json_handler)
-        except Exception as e:
-            print(f"Failed to enable JSON logging: {e}")
+        except OSError as e:
+            print(
+                f"Failed to enable JSON logging in {log_dir} ({type(e).__name__}: {e})"
+            )
 
     @classmethod
     @contextmanager
