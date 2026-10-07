@@ -1,357 +1,395 @@
-# GNN on GitHub — project hub
+# Generalized Notation Notation (GNN)
 
-**Generalized Notation Notation (GNN)** is a text-based language for [Active Inference](https://activeinference.org/) generative models. This repository implements a **25-step pipeline** (steps 0–24) that discovers and parses GNN sources (Markdown with structured sections), registers models, type-checks and validates them, exports and visualizes structure, attaches ontology annotations, **renders** executable code for multiple simulation frameworks, **executes** those scripts, and continues through LLM-assisted analysis, ML integration, audio, statistical analysis, integration/security/research steps, static site generation, MCP exposure, GUI tooling, reporting, and intelligent analysis.
+**Describe an Active Inference generative model once. Validate its structure,
+render framework-specific code, execute admitted models and inspect the evidence.**
 
-This file is the **GitHub-oriented entry point**: GNN concepts, deep links into language and pipeline docs, repository layout, CI, and local validation. The narrative overview, badges, publication block, and long examples live in the root [README.md](../README.md).
+[![Release: 4.0.1](https://img.shields.io/badge/release-4.0.1-00a6b8.svg)](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1)
+[![CI](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml)
+[![CI Python: 3.11–3.13](https://img.shields.io/badge/CI%20Python-3.11%E2%80%933.13-3776ab.svg)](workflows/ci.yml)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-lightgrey.svg)](../LICENSE.md)
 
-**Last updated**: 2026-09-02
+![GNN 4 architecture: categorical and Gaussian model specifications feed a generative model, the 25-step validation/render/execution/reporting workflow, and source-bound artifacts with frozen selections, bounded execution and FEP/GEO interchange.](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.0/GNN-4.0.0-release-overview.png)
 
----
+*The GNN 4.0.0 release artwork illustrates the current-run contracts carried
+forward in the latest maintenance release, **4.0.1**.*
 
-## Contents
+[Quick start](#quick-start) · [Examples](#choose-a-model) ·
+[Backends](#render-and-execute-backends) · [Documentation](#documentation-map) ·
+[Release & paper](#release-artifacts-and-citation) · [Roadmap](#next-steps) ·
+[Contribute](#contributing-and-support)
 
-- [What GNN is](#what-gnn-is)
-- [GNN files and data flow](#gnn-files-and-data-flow)
-- [Pipeline: all 25 steps](#pipeline-all-25-steps)
-- [Render and execute backends](#render-and-execute-backends)
-- [Interfaces: CLI, API, LSP, MCP](#interfaces-cli-api-lsp-mcp)
-- [Active Inference and cognitive modeling docs](#active-inference-and-cognitive-modeling-docs)
-- [Deep link map (docs/gnn and neighbors)](#deep-link-map-docgnn-and-neighbors)
-- [Canonical documentation](#canonical-documentation)
-- [Repository map](#repository-map)
-- [Community and policies](#community-and-policies)
-- [Automation in this folder](#automation-in-this-folder)
-  - [Directory index](#directory-index)
-  - [Dependabot](#dependabot)
-  - [Workflows](#workflows)
-  - [Why a separate docs-audit workflow](#why-a-separate-docs-audit-workflow)
-  - [Automation on a typical PR](#automation-on-a-typical-pr)
-- [Local validation](#local-validation-parity-with-automation)
-- [Related tooling docs](#related-tooling-docs)
+GNN is a human-readable, machine-parsable **Markdown notation** for
+[Active Inference](https://activeinference.org/) generative models. This
+repository provides the notation, curated model sources and a **25-step
+scientific workflow** spanning parsing, validation, visualization, simulation,
+analysis and publication. Researchers can inspect model assumptions in text;
+developers can use the installed `gnn` Python package, CLI and service interfaces.
 
----
+**Current release:** [GNN 4.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1).
+**Page updated:** 2026-10-07. Package metadata is canonical in
+[pyproject.toml](../pyproject.toml); release history is in [CHANGELOG.md](../CHANGELOG.md).
 
-## What GNN is
+## What GNN 4 delivers
 
-- **Notation**: Models are written as **Markdown** with labeled sections (for example `## GNNSection`, `## StateSpaceBlock`, `## Connections`, `## InitialParameterization`, ontology annotations). The normative and reference material is split across [docs/gnn/reference/gnn_syntax.md](../docs/gnn/reference/gnn_syntax.md) (v1.6.0 living spec), [docs/gnn/tutorials/gnn_examples_doc.md](../docs/gnn/tutorials/gnn_examples_doc.md) (examples and patterns), and the [language hub](../docs/gnn/language/README.md).
-- **Processing**: A single orchestrator ([src/gnn/main.py](../src/gnn/main.py)) runs the numbered steps in order (or a subset via `--only-steps` / `--skip-steps`). Step **3** produces parsed representations consumed by type checking, validation, export, visualization, ontology, render, LLM, and related steps; **11 → 12** is the main **generate code → run simulation** bridge. See [docs/gnn/reference/architecture_reference.md](../docs/gnn/reference/architecture_reference.md) and [docs/gnn/reference/technical_reference.md](../docs/gnn/reference/technical_reference.md).
-- **Architecture**: Each step is a **thin orchestrator** (`src/gnn/N_*.py`) delegating to `src/gnn/<module>/` with `AGENTS.md` and usually `processor.py`. Diagram and conventions: root [AGENTS.md](../AGENTS.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [src/gnn/README.md](../src/gnn/README.md).
+- **Readable model specifications.** Declare state spaces, connections,
+  parameters, equations, time and ontology annotations. Maintain categorical
+  POMDP and linear-Gaussian models with explicit model-kind admission.
+- **Validation before simulation.** Check shapes, probabilities, covariance
+  assumptions and declared scientific contracts; retain actionable failure and
+  unsupported outcomes.
+- **Framework-specific rendering and execution.** Step 11 generates code;
+  Step 12 supervises native scripts. Optional packages and toolchains are
+  installed for the selected backend and model contract.
+- **Evidence tied to one invocation.** Frozen selection, path-derived model
+  identities, source hashes, resolved configuration, artifact indexes, output
+  leases and a shared deadline bind the current run. Required unfinished work
+  prevents success. Read the [v4 migration guide](../docs/development/run_ownership_migration.md).
+- **Scientific analysis and communication.** Produce graphs, matrix views,
+  statistics, reports and static websites. Numerical comparisons require
+  compatible source identities, inference semantics, inputs and precision;
+  Gaussian uncertainty is derived from covariance.
+- **Interfaces for people and tools.** Use CLI, REST, MCP, editor/LSP and GUI
+  surfaces, with optional LLM analysis, audio and ML integrations. Durable run
+  manifests, resumable acceptance sessions and auditable container plans support
+  longer workflows.
 
----
+The **4.0.1 maintenance patch** improves GUI parsing complexity, locked dependency
+security, complete subprocess input delivery and LLM coverage diagnostics. Its
+[publication receipt](../docs/development/gnn_4_0_1_post_publication.json) records
+accepted source/tag identities, companion checks and verified release artifacts.
+Full-source long-context LLM completion and broader scientific semantics remain
+scoped in the [forward roadmap](../TO-DO.md).
 
-## GNN files and data flow
+## Start here
 
-**Typical inputs**
+| Your goal | Best starting point |
+| --- | --- |
+| Run a first model | [Quick start below](#quick-start), then the [setup guide](../SETUP_GUIDE.md) |
+| Write or understand GNN | [Language hub](../docs/gnn/language/README.md), [syntax reference](../docs/gnn/reference/gnn_syntax.md), [examples tutorial](../docs/gnn/tutorials/gnn_examples_doc.md) |
+| Choose a scientific example | [Exemplar index](../input/gnn_files/INDEX.md) and [model-family manifest](../input/model_family_manifest.json) |
+| Integrate a backend or interface | [Backend guide](../docs/gnn/integration/framework_integration_guide.md), [architecture](../ARCHITECTURE.md), [interface map](#interfaces) |
+| Inspect the release or paper | [Release artifacts and citation](#release-artifacts-and-citation) |
+| Contribute a focused improvement | [TO-DO.md](../TO-DO.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [AGENTS.md](../AGENTS.md) |
 
-- Model files under [input/gnn_files/](../input/gnn_files/) (samples and tests).
-- Defaults and knobs in [input/config.yaml](../input/config.yaml).
+## Quick start
 
-**Typical outputs**
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and use
+Python **3.12** for this example. CI also runs Python 3.11 and 3.13; additional
+platform/runtime acceptance is tracked in [TO-DO.md](../TO-DO.md).
 
-- Per-step folders under [output/](../output/) (see root README directory overview). Policy: tracked in git per [AGENTS.md](../AGENTS.md) / project conventions.
+### Install the released source
+
+```bash
+git clone --branch v4.0.1 --depth 1 https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git
+cd Generalized_Notation_Notation
+uv sync --frozen --python 3.12
+```
+
+### Inspect one model
+
+```bash
+uv run --frozen gnn validate input/gnn_files/discrete/two_state_bistable.md --strict
+uv run --frozen gnn extract input/gnn_files/discrete/two_state_bistable.md --compact
+```
+
+Validation reports **12 variables and 11 connections** for this committed
+example. Extraction returns its two states, two observations, two actions and
+source-declared parameters as structured JSON.
+
+### Run a small local workflow
+
+```bash
+uv run --frozen gnn run \
+  --target-dir input/gnn_files/basics \
+  --output-dir output/quickstart \
+  --only-steps 3 5 6 7 8 \
+  --skip-steps 0 1 2
+```
+
+This example parses, type-checks, validates, exports and visualizes the basic
+models. `--target-dir` takes a **directory**; `validate` and `extract` take a
+**file**. Pipeline prerequisites are resolved by the orchestrator. Each new run
+gets its own identity; inspect its summary and artifacts under the selected
+output directory.
+
+For simulation, use the [full quick-start guide](../docs/quickstart.md) and
+[backend setup](../SETUP_GUIDE.md). The full workflow can include native
+frameworks, Julia/Stan toolchains, GUI/audio and configured LLM providers;
+provision those dependencies and resource budgets for the steps you select.
+Configuration starts in [input/config.yaml](../input/config.yaml). LLM work
+reports coverage and context refusals; completion is accepted only for the
+source/prompt requests actually executed.
+
+## From model source to evidence
+
+A GNN model names its variables and dimensions, connects them and declares
+parameters separately. This **excerpt** comes from the
+[complete two-state model](../input/gnn_files/discrete/two_state_bistable.md):
+
+```markdown
+## StateSpaceBlock
+A[2,2,type=float]       # Likelihood: observations × hidden states
+s[2,1,type=float]       # State belief
+o[2,1,type=int]         # Observation
+
+## Connections
+s-A
+A-o
+
+## InitialParameterization
+A={
+  (0.8, 0.2),
+  (0.2, 0.8)
+}
+```
+
+The diagram is a conceptual workflow; the
+[architecture guide](../ARCHITECTURE.md) and [module registry](../AGENTS.md)
+document the actual artifact dependencies and step prerequisites.
 
 ```mermaid
 flowchart LR
-  md[GNN_Markdown] --> s3[Step3_parse]
-  s3 --> s5[Step5_typecheck]
-  s3 --> s6[Step6_validate]
-  s3 --> s8[Step8_viz]
-  s3 --> s10[Step10_ontology]
-  s3 --> s11[Step11_render]
-  s11 --> s12[Step12_execute]
-  s12 --> s16[Step16_analysis]
-  s16 --> s23[Step23_report]
+  S["GNN source + configuration"] --> I["Frozen selection + source identity"]
+  I --> V["Parse, type-check, validate"]
+  V --> R["11 · Render admitted code"]
+  R --> E["12 · Execute native scripts"]
+  E --> A["16 · Analyze compatible results"]
+  A --> P["Reports, website, run receipts"]
+  V --> D["Exports, graphs, ontology"]
 ```
 
-Troubleshooting and operator notes: [docs/gnn/operations/gnn_troubleshooting.md](../docs/gnn/operations/gnn_troubleshooting.md), [docs/gnn/operations/gnn_tools.md](../docs/gnn/operations/gnn_tools.md).
+Inputs live in [input/gnn_files/](../input/gnn_files/). Generated artifacts live
+under the selected output directory; the repository's committed [output/](../output/)
+contains publication evidence with its own recorded provenance. Consult the
+current run summary before treating an artifact as evidence for a new run.
 
----
+## Choose a model
 
-## Pipeline: all 25 steps
+| Model family or question | Example sources and guidance |
+| --- | --- |
+| Learn the notation | [Static perception](../input/gnn_files/basics/static_perception.md), [dynamic perception](../input/gnn_files/basics/dynamic_perception.md) |
+| Minimal categorical agent | [Two-state bistable POMDP](../input/gnn_files/discrete/two_state_bistable.md), [simple MDP](../input/gnn_files/discrete/simple_mdp.md) |
+| GridWorld and framework comparison | [GridWorld folder](../input/gnn_files/pomdp_gridworld/README.md) |
+| Linear-Gaussian dynamics and control | [Continuous navigation](../input/gnn_files/continuous/continuous_navigation.md), [damped oscillator](../input/gnn_files/continuous/damped_oscillator_bias.md) |
+| Explicit independent Gaussian agents | [Independent-agent exemplar](../input/gnn_files/continuous/independent_gaussian_agents.md); admitted native JAX/RxInfer contracts |
+| Hierarchy and epistemic policies | [Block-reset hierarchy](../input/gnn_files/hierarchical/hierarchical_pomdp.md), [temporal controller](../input/gnn_files/hierarchical/temporal_hierarchy.md), [episodic T-maze](../input/gnn_files/discrete/tmaze_epistemic.md); explicit JAX contracts |
+| Learning, precision and multi-agent models | [Full exemplar index](../input/gnn_files/INDEX.md), [cognitive phenomena](../docs/cognitive_phenomena/README.md) |
+| Scaling studies | [PyMDP scaling examples](../input/gnn_files/pymdp_scaling_study/README.md); compare matched run receipts |
 
-Orchestrator scripts live in [src/](../src/); module AGENTS in each folder; per-step **documentation** in [docs/gnn/modules/](../docs/gnn/modules/).
-
-| Step | Module | Orchestrator | [Module AGENTS](../src/gnn/AGENTS.md) | [Step doc](../docs/gnn/modules/README.md) |
-|-----:|--------|--------------|-----------------------------------|----------------------------------------|
-| 0 | template | [0_template.py](../src/gnn/0_template.py) | [template/AGENTS.md](../src/gnn/template/AGENTS.md) | [00_template.md](../docs/gnn/modules/00_template.md) |
-| 1 | setup | [1_setup.py](../src/gnn/1_setup.py) | [setup/AGENTS.md](../src/gnn/setup/AGENTS.md) | [01_setup.md](../docs/gnn/modules/01_setup.md) |
-| 2 | tests | [2_tests.py](../src/gnn/2_tests.py) | [tests/AGENTS.md](../tests/AGENTS.md) | [02_tests.md](../docs/gnn/modules/02_tests.md) |
-| 3 | gnn | [3_gnn.py](../src/gnn/3_gnn.py) | [gnn/AGENTS.md](../src/gnn/AGENTS.md) | [03_gnn.md](../docs/gnn/modules/03_gnn.md) |
-| 4 | model_registry | [4_model_registry.py](../src/gnn/4_model_registry.py) | [model_registry/AGENTS.md](../src/gnn/model_registry/AGENTS.md) | [04_model_registry.md](../docs/gnn/modules/04_model_registry.md) |
-| 5 | type_checker | [5_type_checker.py](../src/gnn/5_type_checker.py) | [type_checker/AGENTS.md](../src/gnn/type_checker/AGENTS.md) | [05_type_checker.md](../docs/gnn/modules/05_type_checker.md) |
-| 6 | validation | [6_validation.py](../src/gnn/6_validation.py) | [validation/AGENTS.md](../src/gnn/validation/AGENTS.md) | [06_validation.md](../docs/gnn/modules/06_validation.md) |
-| 7 | export | [7_export.py](../src/gnn/7_export.py) | [export/AGENTS.md](../src/gnn/export/AGENTS.md) | [07_export.md](../docs/gnn/modules/07_export.md) |
-| 8 | visualization | [8_visualization.py](../src/gnn/8_visualization.py) | [visualization/AGENTS.md](../src/gnn/visualization/AGENTS.md) | [08_visualization.md](../docs/gnn/modules/08_visualization.md) |
-| 9 | advanced_visualization | [9_advanced_viz.py](../src/gnn/9_advanced_viz.py) | [advanced_visualization/AGENTS.md](../src/gnn/advanced_visualization/AGENTS.md) | [09_advanced_viz.md](../docs/gnn/modules/09_advanced_viz.md) |
-| 10 | ontology | [10_ontology.py](../src/gnn/10_ontology.py) | [ontology/AGENTS.md](../src/gnn/ontology/AGENTS.md) | [10_ontology.md](../docs/gnn/modules/10_ontology.md) |
-| 11 | render | [11_render.py](../src/gnn/11_render.py) | [render/AGENTS.md](../src/gnn/render/AGENTS.md) | [11_render.md](../docs/gnn/modules/11_render.md) |
-| 12 | execute | [12_execute.py](../src/gnn/12_execute.py) | [execute/AGENTS.md](../src/gnn/execute/AGENTS.md) | [12_execute.md](../docs/gnn/modules/12_execute.md) |
-| 13 | llm | [13_llm.py](../src/gnn/13_llm.py) | [llm/AGENTS.md](../src/gnn/llm/AGENTS.md) | [13_llm.md](../docs/gnn/modules/13_llm.md) |
-| 14 | ml_integration | [14_ml_integration.py](../src/gnn/14_ml_integration.py) | [ml_integration/AGENTS.md](../src/gnn/ml_integration/AGENTS.md) | [14_ml_integration.md](../docs/gnn/modules/14_ml_integration.md) |
-| 15 | audio | [15_audio.py](../src/gnn/15_audio.py) | [audio/AGENTS.md](../src/gnn/audio/AGENTS.md) | [15_audio.md](../docs/gnn/modules/15_audio.md) |
-| 16 | analysis | [16_analysis.py](../src/gnn/16_analysis.py) | [analysis/AGENTS.md](../src/gnn/analysis/AGENTS.md) | [16_analysis.md](../docs/gnn/modules/16_analysis.md) |
-| 17 | integration | [17_integration.py](../src/gnn/17_integration.py) | [integration/AGENTS.md](../src/gnn/integration/AGENTS.md) | [17_integration.md](../docs/gnn/modules/17_integration.md) |
-| 18 | security | [18_security.py](../src/gnn/18_security.py) | [security/AGENTS.md](../src/gnn/security/AGENTS.md) | [18_security.md](../docs/gnn/modules/18_security.md) |
-| 19 | research | [19_research.py](../src/gnn/19_research.py) | [research/AGENTS.md](../src/gnn/research/AGENTS.md) | [19_research.md](../docs/gnn/modules/19_research.md) |
-| 20 | website | [20_website.py](../src/gnn/20_website.py) | [website/AGENTS.md](../src/gnn/website/AGENTS.md) | [20_website.md](../docs/gnn/modules/20_website.md) |
-| 21 | mcp | [21_mcp.py](../src/gnn/21_mcp.py) | [mcp/AGENTS.md](../src/gnn/mcp/AGENTS.md) | [21_mcp.md](../docs/gnn/modules/21_mcp.md) |
-| 22 | gui | [22_gui.py](../src/gnn/22_gui.py) | [gui/AGENTS.md](../src/gnn/gui/AGENTS.md) | [22_gui.md](../docs/gnn/modules/22_gui.md) |
-| 23 | report | [23_report.py](../src/gnn/23_report.py) | [report/AGENTS.md](../src/gnn/report/AGENTS.md) | [23_report.md](../docs/gnn/modules/23_report.md) |
-| 24 | intelligent_analysis | [24_intelligent_analysis.py](../src/gnn/24_intelligent_analysis.py) | [intelligent_analysis/AGENTS.md](../src/gnn/intelligent_analysis/AGENTS.md) | [24_intelligent_analysis.md](../docs/gnn/modules/24_intelligent_analysis.md) |
-
-**Also documented**: [init.md](../docs/gnn/modules/init.md) (template init), [main.md](../docs/gnn/modules/main.md) (orchestrator). **Infrastructure** (not separate numbered steps): [pipeline/AGENTS.md](../src/gnn/pipeline/AGENTS.md), [utils/AGENTS.md](../src/gnn/utils/AGENTS.md), [api/AGENTS.md](../src/gnn/api/AGENTS.md), [cli/AGENTS.md](../src/gnn/cli/AGENTS.md), [lsp/AGENTS.md](../src/gnn/lsp/AGENTS.md), [src/gnn/doc/AGENTS.md](../src/gnn/doc/AGENTS.md).
-
-**Run examples**
-
-```bash
-uv run python src/gnn/main.py --target-dir input/gnn_files --verbose
-uv run python src/gnn/main.py --only-steps "3,5,11,12" --verbose
-uv run python src/gnn/3_gnn.py --target-dir input/gnn_files --output-dir output --verbose
-```
-
-More command patterns: [CLAUDE.md](../CLAUDE.md), [docs/gnn/operations/gnn_tools.md](../docs/gnn/operations/gnn_tools.md).
-
----
+An exemplar's declared contract determines backend admission. Composed,
+nonstationary and coupled models have specific supported/unsupported outcomes;
+the [family manifest](../input/model_family_manifest.json) and
+[scientific acceptance receipt](../docs/development/issue250_scientific_acceptance_2026_10_07.json)
+record the selected cases and numerical evidence.
 
 ## Render and execute backends
 
-Code generation and execution are organized under [src/gnn/render/](../src/gnn/render/) and [src/gnn/execute/](../src/gnn/execute/). Documentation:
+The [renderer registry](../src/gnn/render/framework_registry.py) and
+[executor specifications](../src/gnn/execute/executor_specs.py) describe the
+maintained implementations. Generator availability, installed native
+dependencies, model admission and numerical acceptance are separate checks.
 
-| Topic | Link |
-|------|------|
-| Integration overview | [framework_integration_guide.md](../docs/gnn/integration/framework_integration_guide.md) |
-| Implementation patterns | [gnn_implementation.md](../docs/gnn/integration/gnn_implementation.md) |
-| Per-framework index | [implementations/README.md](../docs/gnn/implementations/README.md) |
-| PyMDP | [pymdp.md](../docs/gnn/implementations/pymdp.md), [docs/pymdp/gnn_pymdp.md](../docs/pymdp/gnn_pymdp.md) |
-| JAX | [jax.md](../docs/gnn/implementations/jax.md) |
-| RxInfer | [rxinfer.md](../docs/gnn/implementations/rxinfer.md), [docs/rxinfer/gnn_rxinfer.md](../docs/rxinfer/gnn_rxinfer.md) |
-| ActiveInference.jl | [activeinference_jl.md](../docs/gnn/implementations/activeinference_jl.md), [activeinference-jl.md](../docs/activeinference_jl/activeinference-jl.md) |
-| NumPyro | [numpyro.md](../docs/gnn/implementations/numpyro.md) |
-| PyTorch | [pytorch.md](../docs/gnn/implementations/pytorch.md) |
-| DisCoPy | [discopy.md](../docs/gnn/implementations/discopy.md), [docs/discopy/gnn_discopy.md](../docs/discopy/gnn_discopy.md) |
-| Stan | [stan.md](../docs/gnn/implementations/stan.md) |
-| CatColab | [catcolab.md](../docs/gnn/implementations/catcolab.md), [docs/other/catcolab/catcolab_gnn.md](../docs/other/catcolab/catcolab_gnn.md) |
+| Backend | Scope and setup reference |
+| --- | --- |
+| [PyMDP](../docs/gnn/implementations/pymdp.md) | Categorical POMDP/MDP inference and action selection |
+| [JAX](../docs/gnn/implementations/jax.md) | Admitted categorical and linear-Gaussian models, plus explicitly declared scientific/composed contracts |
+| [RxInfer.jl](../docs/gnn/implementations/rxinfer.md) | Julia message-passing implementations for admitted categorical and Gaussian contracts |
+| [ActiveInference.jl](../docs/gnn/implementations/activeinference_jl.md) | Julia categorical Active Inference |
+| [PyTorch](../docs/gnn/implementations/pytorch.md), [NumPyro](../docs/gnn/implementations/numpyro.md), [Stan](../docs/gnn/implementations/stan.md) | Framework-specific categorical and linear-Gaussian render/execute paths; install the corresponding package/toolchain |
+| [DisCoPy](../docs/gnn/implementations/discopy.md), [bnlearn](../docs/bnlearn/README.md) | Categorical diagrams and Bayesian-network workflows under their adapter contracts |
+| [ngc-learn](../src/gnn/render/ngclearn/README.md) | Continuous linear-Gaussian/predictive-coding contract; see the adapter's model admission |
+| [cpomdp](../docs/gnn/implementations/cpomdp.md) | Explicitly selected experimental released-wheel continuous backend, with bounded policy/resource options and numerical witnesses |
+| [THRML](../docs/gnn/implementations/thrml.md) | Explicitly selected experimental finite categorical Gibbs smoothing under fixed actions, using released `thrml==0.1.4` |
 
-Visualization and export docs: [integration/gnn_visualization.md](../docs/gnn/integration/gnn_visualization.md), [integration/gnn_export.md](../docs/gnn/integration/gnn_export.md). Optional Julia installs for Julia backends are called out in [CLAUDE.md](../CLAUDE.md) and [SETUP_GUIDE.md](../SETUP_GUIDE.md).
+THRML admits strictly positive models; structural zeros, continuous models,
+cross-agent coupling and action optimization are outside its current contract.
+Native sample witnesses support the reported empirical marginals; convergence,
+exact inference and hardware execution require separate evidence.
 
----
+See the [implementation index](../docs/gnn/implementations/README.md) for complete
+adapter documentation and [setup guide](../SETUP_GUIDE.md) for optional extras
+and Julia environments. [CatColab](../docs/gnn/implementations/catcolab.md) is
+covered in the related modeling documentation.
 
-## Interfaces: CLI, API, LSP, MCP
+## Pipeline: all 25 steps
 
-| Interface | Code | Documentation |
-|-----------|------|----------------|
-| CLI (`gnn` command) | [src/gnn/cli/](../src/gnn/cli/) | [cli/README.md](../src/gnn/cli/README.md), [cli/AGENTS.md](../src/gnn/cli/AGENTS.md) |
-| REST API | [src/gnn/api/](../src/gnn/api/) | [api/AGENTS.md](../src/gnn/api/AGENTS.md), [docs/api/README.md](../docs/api/README.md) |
-| LSP | [src/gnn/lsp/](../src/gnn/lsp/) | [lsp/AGENTS.md](../src/gnn/lsp/AGENTS.md), [lsp/README.md](../src/gnn/lsp/README.md) |
-| MCP tools | [src/gnn/mcp/](../src/gnn/mcp/) | [docs/gnn/mcp/README.md](../docs/gnn/mcp/README.md), [docs/gnn/mcp/tool_reference.md](../docs/gnn/mcp/tool_reference.md), [docs/gnn/testing/mcp_audit.md](../docs/gnn/testing/mcp_audit.md) |
+Numbered scripts in [src/gnn/](../src/gnn/) delegate to their module owners.
+Use selected steps for a focused task or the full pipeline for a provisioned
+workflow. The [module documentation index](../docs/gnn/modules/README.md) and
+[root AGENTS guide](../AGENTS.md) provide implementation details.
 
----
+<details>
+<summary>Expand the complete step map (0–24)</summary>
 
-## Active Inference and cognitive modeling docs
+| Step | Module guide | Purpose |
+| ---: | --- | --- |
+| 0 | [Template](../docs/gnn/modules/00_template.md) | Initialize the pipeline |
+| 1 | [Setup](../docs/gnn/modules/01_setup.md) | Inspect/setup dependencies |
+| 2 | [Tests](../docs/gnn/modules/02_tests.md) | Execute test selections |
+| 3 | [GNN](../docs/gnn/modules/03_gnn.md) | Discover and parse selected sources |
+| 4 | [Model registry](../docs/gnn/modules/04_model_registry.md) | Model metadata and versioning |
+| 5 | [Type checker](../docs/gnn/modules/05_type_checker.md) | Dimensions, types and resource estimates |
+| 6 | [Validation](../docs/gnn/modules/06_validation.md) | Semantic and consistency checks |
+| 7 | [Export](../docs/gnn/modules/07_export.md) | Generate exchange formats |
+| 8 | [Visualization](../docs/gnn/modules/08_visualization.md) | Graph and matrix views |
+| 9 | [Advanced visualization](../docs/gnn/modules/09_advanced_viz.md) | Additional plots and interactive artifacts |
+| 10 | [Ontology](../docs/gnn/modules/10_ontology.md) | Map model terms to ontology concepts |
+| 11 | [Render](../docs/gnn/modules/11_render.md) | Generate admitted backend code |
+| 12 | [Execute](../docs/gnn/modules/12_execute.md) | Supervise native simulation scripts |
+| 13 | [LLM](../docs/gnn/modules/13_llm.md) | Configured model interpretation and analysis |
+| 14 | [ML integration](../docs/gnn/modules/14_ml_integration.md) | Machine-learning integrations |
+| 15 | [Audio](../docs/gnn/modules/15_audio.md) | Sonification and audio artifacts |
+| 16 | [Analysis](../docs/gnn/modules/16_analysis.md) | Statistics and source-compatible comparison |
+| 17 | [Integration](../docs/gnn/modules/17_integration.md) | Coordinate cross-module outputs |
+| 18 | [Security](../docs/gnn/modules/18_security.md) | Security validation and access controls |
+| 19 | [Research](../docs/gnn/modules/19_research.md) | Research tooling and experimental features |
+| 20 | [Website](../docs/gnn/modules/20_website.md) | Publish static run views |
+| 21 | [MCP](../docs/gnn/modules/21_mcp.md) | Discover and expose model tools |
+| 22 | [GUI](../docs/gnn/modules/22_gui.md) | Headless artifacts and interactive editors |
+| 23 | [Report](../docs/gnn/modules/23_report.md) | Assemble current-run reports |
+| 24 | [Intelligent analysis](../docs/gnn/modules/24_intelligent_analysis.md) | Summarize the current run |
 
-| Resource | Link |
-|----------|------|
-| Active Inference (conceptual hub in this repo) | [docs/active_inference/README.md](../docs/active_inference/README.md) |
-| Learning paths | [docs/learning_paths.md](../docs/learning_paths.md) |
-| Cognitive phenomena examples | [docs/cognitive_phenomena/README.md](../docs/cognitive_phenomena/README.md) |
-| GNN + LLM / neurosymbolic | [gnn_llm_neurosymbolic_active_inference.md](../docs/gnn/advanced/gnn_llm_neurosymbolic_active_inference.md) |
-| Ontology system | [ontology_system.md](../docs/gnn/advanced/ontology_system.md) |
+</details>
 
----
+## Interfaces
 
-## Deep link map (docs/gnn and neighbors)
+| Surface | Entry point and documentation |
+| --- | --- |
+| Python | Installed `gnn.*` package; [API reference](../docs/api/README.md) |
+| CLI | `gnn`; [commands and exit codes](../src/gnn/cli/README.md) |
+| REST | `gnn serve`; [service guide](../src/gnn/api/AGENTS.md) |
+| MCP | `gnn mcp list` / `gnn mcp info`; [transport guide](../docs/gnn/mcp/README.md), [tool reference](../docs/gnn/mcp/tool_reference.md) |
+| Editor/LSP | `gnn lsp`; [LSP guide](../src/gnn/lsp/README.md) |
+| GUI | `gnn gui`; [GUI guide](../src/gnn/gui/README.md) |
+| Templates | `gnn templates list` / `gnn pull`; [template documentation](../docs/templates/README.md) |
 
-**Hub and manifest**
+## Documentation map
 
-- [docs/gnn/README.md](../docs/gnn/README.md) — full documentation index (pipelines, language, tutorials, integration).
-- [docs/gnn/AGENTS.md](../docs/gnn/AGENTS.md) — subtree manifest and metrics notes.
+| Read next | What it covers |
+| --- | --- |
+| [Guided start](../docs/START_HERE.md), [learning paths](../docs/learning_paths.md) | Onboarding for researchers and developers |
+| [GNN documentation hub](../docs/gnn/README.md), [DOCS.md](../DOCS.md) | Language, pipeline and integration maps |
+| [Syntax](../docs/gnn/reference/gnn_syntax.md), [schema](../docs/gnn/reference/gnn_schema.md), [type system](../docs/gnn/reference/gnn_type_system.md) | Model authoring and interpretation |
+| [Architecture](../ARCHITECTURE.md), [SPEC.md](../SPEC.md) | Implementation boundaries and declared behavior |
+| [Setup](../SETUP_GUIDE.md), [operations](../docs/gnn/operations/gnn_tools.md), [troubleshooting](../docs/gnn/operations/gnn_troubleshooting.md) | Installation, commands and diagnosis |
+| [Active Inference](../docs/active_inference/README.md), [cognitive models](../docs/cognitive_phenomena/README.md) | Scientific background and example domains |
+| [Testing guide](../docs/gnn/testing/README.md), [verification commands](../TO-DO.md#verification-and-execution-rules) | Acceptance and reproducibility |
+| [Durable runs](../docs/development/durable-runs.md), [orchestration contracts](../docs/pipeline/v3_orchestration.md) | Manifests, resumption and container plans |
+| [FEP/GEO paired revisions](../docs/development/fep_lean_paired_revision.md) | Cross-repository custody and coordinated owner changes |
 
-**Language and reference**
+## Release artifacts and citation
 
-- [gnn_overview.md](../docs/gnn/gnn_overview.md), [about_gnn.md](../docs/gnn/about_gnn.md), [gnn_paper.md](../docs/gnn/gnn_paper.md)
-- [reference/gnn_file_structure_doc.md](../docs/gnn/reference/gnn_file_structure_doc.md), [reference/gnn_schema.md](../docs/gnn/reference/gnn_schema.md), [reference/gnn_type_system.md](../docs/gnn/reference/gnn_type_system.md)
-- [reference/gnn_dsl_manual.md](../docs/gnn/reference/gnn_dsl_manual.md), [reference/gnn_standards.md](../docs/gnn/reference/gnn_standards.md)
+The [4.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1)
+contains the wheel, source distribution, manuscript, source-binding and
+verification receipts, plus [SHA256SUMS](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/SHA256SUMS).
+Read the [published manuscript PDF](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/GNN-4.0.1-manuscript.pdf)
+and [publication receipt](../docs/development/gnn_4_0_1_post_publication.json)
+for the accepted release epoch. Main may contain subsequent documentation work;
+release artifacts retain their original source and tag identities.
 
-**Tutorials and examples**
+For academic use, follow [CITATION.cff](../CITATION.cff). The initial publication
+is **Smékal, J., & Friedman, D. A. (2023), _Generalized Notation Notation for
+Active Inference Models_, Active Inference Journal**. The
+[project concept DOI](https://doi.org/10.5281/zenodo.7803313) and
+[historical archive](https://zenodo.org/records/7803328) are distinct from a
+version-specific archive. Exact-version archival work is tracked under E5 in
+[TO-DO.md](../TO-DO.md#minor-work).
 
-- [tutorials/quickstart_tutorial.md](../docs/gnn/tutorials/quickstart_tutorial.md), [tutorials/gnn_examples_doc.md](../docs/gnn/tutorials/gnn_examples_doc.md)
-- [advanced/advanced_modeling_patterns.md](../docs/gnn/advanced/advanced_modeling_patterns.md), [advanced/gnn_multiagent.md](../docs/gnn/advanced/gnn_multiagent.md)
+The repository is maintained by the
+[Active Inference Institute](https://activeinference.org/) community and licensed
+under [CC BY-NC-SA 4.0](../LICENSE.md).
 
-**Operations and quality**
+## Next steps
 
-- [operations/resource_metrics.md](../docs/gnn/operations/resource_metrics.md), [operations/improvement_analysis.md](../docs/gnn/operations/improvement_analysis.md), [operations/REPO_COHERENCE_CHECK.md](../docs/gnn/operations/REPO_COHERENCE_CHECK.md)
-- [testing/README.md](../docs/gnn/testing/README.md), [testing/test_patterns.md](../docs/gnn/testing/test_patterns.md)
+The [forward-only roadmap](../TO-DO.md) defines scope, priority, acceptance evidence
+and dependencies for each remaining workstream. Effort size and release version
+are separate decisions.
 
-**Templates (authoring)**
+| Effort | Upcoming scope |
+| --- | --- |
+| [Minor](../TO-DO.md#minor-work) | Documentation, diagnostics/dependency ratchets, released THRML fix verification, scientific presentation and archival publication |
+| [Medium](../TO-DO.md#medium-work) | Module ownership, execution/interface contracts, filesystem/platform boundaries, meaningful coverage, measured performance and installed-package acceptance |
+| [Major](../TO-DO.md#major-work) | Full-source long-context LLM processing, coupled continuous agents, THRML/cpomdp extensions and formal-to-numerical semantics |
 
-- [docs/templates/README.md](../docs/templates/README.md)
+## Contributing and support
 
----
+Start with [CONTRIBUTING.md](../CONTRIBUTING.md) and the
+[agent/contributor guide](../AGENTS.md). Propose focused changes with a source
+baseline and acceptance evidence; use current CI for test outcomes and timings.
 
-## Canonical documentation
+- [Issues](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues): reproducible bugs and scoped work.
+- [Discussions](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/discussions): modeling questions and ideas.
+- [SUPPORT.md](../SUPPORT.md): help and community channels.
+- [SECURITY.md](../SECURITY.md): vulnerability reporting.
+- [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md): participation standards.
+- [Contributors](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/graphs/contributors): contribution history.
 
-| Resource | Description |
-|----------|-------------|
-| [README.md](../README.md) | Main project overview, quick start, pipeline table, examples |
-| [AGENTS.md](../AGENTS.md) | Master registry of all pipeline modules and agent scaffolding |
-| [CLAUDE.md](../CLAUDE.md) | Contributor quick reference: commands, architecture, key paths |
-| [DOCS.md](../DOCS.md) | Consolidated documentation map and diagrams |
-| [ARCHITECTURE.md](../ARCHITECTURE.md) | Implementation patterns (thin orchestrators, data flow) |
-| [SETUP_GUIDE.md](../SETUP_GUIDE.md) | Installation and optional dependency groups |
-| [CONTRIBUTING.md](../CONTRIBUTING.md) | How to contribute; includes CI parity commands |
-| [SECURITY.md](../SECURITY.md) | Security policy and reporting |
-| [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) | Community standards |
-| [SUPPORT.md](../SUPPORT.md) | Help and community links |
-| [SKILL.md](../SKILL.md) | In-repo skill / tooling notes for agents |
-| [CHANGELOG.md](../CHANGELOG.md) | Release history |
-| [CITATION.cff](../CITATION.cff) | Citation metadata |
-
-### Doc tree entry points
+## Repository and automation guide
 
 | Path | Role |
-|------|------|
-| [docs/README.md](../docs/README.md) | Documentation subtree overview |
-| [docs/INDEX.md](../docs/INDEX.md) | Machine-oriented index |
-| [docs/START_HERE.md](../docs/START_HERE.md) | Guided entry into docs |
-| [docs/quickstart.md](../docs/quickstart.md) | Step-by-step first pipeline run |
-| [docs/gnn/README.md](../docs/gnn/README.md) | GNN language and pipeline doc hub |
-| [docs/development/docs_audit.py](../docs/development/docs_audit.py) | Markdown link and AGENTS/README pairing audit |
-| [docs/development/agents_readme_triple_review.md](../docs/development/agents_readme_triple_review.md) | Three-pass AGENTS/README review checklist |
+| --- | --- |
+| [src/gnn/](../src/gnn/) | Installed Python package, numbered orchestrators and module implementations |
+| [input/](../input/) | Model sources, family manifest and configuration |
+| [output/](../output/) | Committed publication artifacts and recorded provenance |
+| [tests/](../tests/) | Behavior, contract and integration checks |
+| [docs/](../docs/) | Language, framework, scientific and operator guides |
+| [scripts/](../scripts/) | Audits, acceptance tools and publication tooling |
+| [pyproject.toml](../pyproject.toml), [uv.lock](../uv.lock) | Package metadata and locked dependencies |
+| [Root README](../README.md) | Extended project narrative and examples |
 
----
+<details>
+<summary>Maintainer reference: .github files, workflows and local checks</summary>
 
-## Repository map
+### Automation in this folder
 
-| Path | Description |
-|------|-------------|
-| [src/gnn/main.py](../src/gnn/main.py) | Pipeline orchestrator (run full or selected steps) |
-| [src/gnn/AGENTS.md](../src/gnn/AGENTS.md) | Per-folder technical notes for `src/` |
-| [src/gnn/](../src/gnn/), [src/gnn/render/](../src/gnn/render/), [src/gnn/execute/](../src/gnn/execute/) | Parse, codegen, simulation |
-| [tests/](../tests/) | Pytest suite |
-| [input/gnn_files/](../input/gnn_files/) | Sample GNN models; [input/config.yaml](../input/config.yaml) defaults |
-| [output/](../output/) | Pipeline outputs (tracked per repo policy) |
-| [pyproject.toml](../pyproject.toml) | Dependencies and tool config |
-| [pytest.ini](../pytest.ini) | Test markers and pytest settings |
+[AGENTS.md](AGENTS.md) defines folder guardrails; [SPEC.md](SPEC.md) defines its
+purpose. [workflows/README.md](workflows/README.md) documents triggers and exact
+workflow commands, with [workflow AGENTS](workflows/AGENTS.md) and
+[SPEC](workflows/SPEC.md) for maintainers. Dependabot configuration is in
+[dependabot.yml](dependabot.yml); CodeQL configuration is in
+[codeql/codeql-config.yml](codeql/codeql-config.yml).
 
----
+### Workflow index
 
-## Community and policies
+| Workflow or configuration | Purpose |
+| --- | --- |
+| [ci.yml](workflows/ci.yml) | Python 3.11/3.12/3.13 tests; 3.12 lint/types/docs/capability checks; pipeline contracts; optional-dependency and Bandit lanes |
+| [local-gates.yml](workflows/local-gates.yml) | Repository, manuscript-token and hydration gates |
+| [docs-audit.yml](workflows/docs-audit.yml) | Focused strict documentation and terminology audits |
+| [mcp-audit.yml](workflows/mcp-audit.yml) | MCP inventory regression gate |
+| [codeql.yml](workflows/codeql.yml) | Python security analysis |
+| [dependency-review.yml](workflows/dependency-review.yml) | PR dependency/license review; [fork limitations](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review#dependency-review-for-forked-repositories) |
+| [supply-chain-audit.yml](workflows/supply-chain-audit.yml) | Scheduled vulnerability checks on locked exports |
+| [full-extras.yml](workflows/full-extras.yml) | Scheduled/manual all-extras installation and acceptance |
+| [gridworld.yml](workflows/gridworld.yml) | GridWorld publication checks |
+| [actionlint.yml](workflows/actionlint.yml) | Workflow YAML validation |
+| [fep-lean-paired-revision.yml](workflows/fep-lean-paired-revision.yml), [fep-lean-pair.json](fep-lean-pair.json) | Pinned FEP bridge custody checks |
+| [geo-infer-interchange.yml](workflows/geo-infer-interchange.yml), [gnn-pair.json](gnn-pair.json) | Pinned GEO interchange checks |
+| [pair-pin-freshness.yml](workflows/pair-pin-freshness.yml) | Scheduled companion-pin freshness checks |
+| [custody-re-render.yml](workflows/custody-re-render.yml) | Scheduled/manual fresh manuscript-render audit |
 
-| Link | Use |
-|------|-----|
-| [Issues](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues) | Bugs and tracked work |
-| [Discussions](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/discussions) | Ideas and Q&A |
-| [Contributors](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/graphs/contributors) | Contribution history |
+CI runs on documentation PRs too. Documentation, paired-custody, security and
+repository gates provide complementary evidence. Exact selections, environment
+requirements, schedules and permission scopes live in the workflow files.
 
-Publication reference and DOI appear in the root [README.md](../README.md) (Overview).
+### Local validation
 
----
-
-## Automation in this folder
-
-This directory holds **Dependabot** configuration and **GitHub Actions** workflows. Workflow-focused summary: [workflows/README.md](workflows/README.md). Maintainer guardrails: [AGENTS.md](AGENTS.md).
-
-### Directory index
-
-| Path | Role |
-|------|------|
-| [dependabot.yml](dependabot.yml) | Dependabot version updates (pip + GitHub Actions) |
-| [AGENTS.md](AGENTS.md) | Permissions, standards, maintenance checklist |
-| [README.md](README.md) | This hub |
-| [SPEC.md](SPEC.md) | Folder specification |
-| [workflows/ci.yml](workflows/ci.yml) | Tests (Ruff/mypy/doc audits on 3.12), v3 orchestration acceptance, Bandit SARIF |
-| [workflows/mcp-audit.yml](workflows/mcp-audit.yml) | MCP tool count audit (push/PR to `main`) |
-| [workflows/full-extras.yml](workflows/full-extras.yml) | Weekly all-extras install + full test suite |
-| [workflows/docs-audit.yml](workflows/docs-audit.yml) | Strict Markdown / doc structure audit |
-| [workflows/actionlint.yml](workflows/actionlint.yml) | Workflow YAML lint |
-| [workflows/dependency-review.yml](workflows/dependency-review.yml) | PR dependency and license gate |
-| [workflows/codeql.yml](workflows/codeql.yml) | CodeQL static analysis (Python) |
-| [workflows/supply-chain-audit.yml](workflows/supply-chain-audit.yml) | Scheduled `pip-audit` on lockfile exports |
-| [workflows/README.md](workflows/README.md) | Workflow table and local actionlint |
-| [workflows/AGENTS.md](workflows/AGENTS.md) | Workflow agent guide |
-| [workflows/SPEC.md](workflows/SPEC.md) | Workflow folder specification |
-
-### Dependabot
-
-Configured in [dependabot.yml](dependabot.yml):
-
-- **pip** (`directory: /`): weekly Monday **06:00 UTC**, target branch `main`, grouped `pip-dependencies` pattern `*`, labels `dependencies` / `python`, commit prefix `deps(pip)`, up to 15 open PRs, auto rebase.
-- **github-actions** (`directory: /`): weekly Monday **06:30 UTC**, same branch, commit prefix `deps(actions)`, labels `dependencies` / `github-actions`, auto rebase.
-
-### Workflows
-
-| Workflow | Triggers | What it runs |
-|----------|----------|--------------|
-| [ci.yml](workflows/ci.yml) | `push` and `pull_request` to `main` (`opened`, `synchronize`, `reopened`, `ready_for_review`); no path filter — runs on doc-only changes too. `workflow_dispatch` | **test**: matrix 3.11 / 3.12 / 3.13; Python 3.12 also runs Ruff format/check over `src scripts`, terminology audits, docs audit, documentation contract audit (`check_doc_contracts.py`), GNN doc patterns, mypy, collect-only, focused PyMDP/POMDP tests, MCP ≥ 140, and the v3 orchestration acceptance gate. All matrix entries run pytest with coverage, JUnit/summary. **security**: Bandit SARIF → `upload-sarif` + artifact. |
-| [mcp-audit.yml](workflows/mcp-audit.yml) | `push` / `pull_request` to `main`. `workflow_dispatch` | MCP tool count ≥ 140 via `tests.mcp.test_mcp_audit.count_mcp_tools`. |
-| [full-extras.yml](workflows/full-extras.yml) | Weekly cron Sunday 06:00 UTC (`0 6 * * 0`). `workflow_dispatch` | `uv sync --frozen --all-extras`, optional-import validation (audio, GUI, research/scaling), full pytest suite under all extras (Python 3.12). |
-| [docs-audit.yml](workflows/docs-audit.yml) | `push` / `pull_request` to `main` when paths include `**/*.md`, `docs/**`, root `AGENTS.md`, `CLAUDE.md`, `README.md`, `SKILL.md`, or `docs/development/docs_audit.py`. `workflow_dispatch` | `uv sync --frozen --extra dev`, strict docs audit with anchors, repository/doc terminology audits, and GNN doc-pattern audit. |
-| [actionlint.yml](workflows/actionlint.yml) | `push` / `pull_request` when `.github/workflows/**` changes. `workflow_dispatch` | `rhysd/actionlint@v1.7.12` |
-| [dependency-review.yml](workflows/dependency-review.yml) | `pull_request` to `main`. `workflow_dispatch` | `fail-on-severity: high`, AGPL deny list, PR comment summary on failure ([fork limitations](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review#dependency-review-for-forked-repositories)). |
-| [codeql.yml](workflows/codeql.yml) | `push` / `pull_request` (paths-ignore doc-only), weekly schedule, `workflow_dispatch` | `init` → `uv sync --frozen --extra dev` → `analyze` (Python). |
-| [supply-chain-audit.yml](workflows/supply-chain-audit.yml) | Weekly cron (`0 6 * * 1` UTC), `workflow_dispatch` | **pip-audit (core)** and **pip-audit (all extras, no dev)** via frozen `uv export`; OSV; job summaries. |
-| [fep-lean-paired-revision.yml](workflows/fep-lean-paired-revision.yml) | `push` / `pull_request` to `main`. `workflow_dispatch` | Reads and validates `.github/fep-lean-pair.json`, checks out fep_lean at exactly that pinned SHA, and runs fep_lean's **read-only** bridge surface (status, emit `--check` finite/continuous) against this GNN checkout. Blocking drift detection: a red run means the pair must be re-pinned together. Canonical custody ordering: [docs/development/fep_lean_paired_revision.md](../docs/development/fep_lean_paired_revision.md). |
-| [custody-re-render.yml](workflows/custody-re-render.yml) | Daily cron 07:14 UTC. `workflow_dispatch` | Report-only (nothing committed back) fresh manuscript render via the `docxology/template` checkout (GNN symlinked at `projects/active/`): template `stage_03_render` → render-custody manifest record → strict token gate → `tests/test_manuscript_latex_log.py`; receipts + rendered evidence uploaded as artifact. A red run means the committed chain no longer describes HEAD. |
-| [pair-pin-freshness.yml](workflows/pair-pin-freshness.yml) | Nightly cron 05:23 UTC. `workflow_dispatch` | Validates both committed pair pins and asserts each pinned companion revision is ancestor-or-equal of the companion default-branch HEAD (`scripts/check_pair_pin_freshness.py`). Exit 2 "re-pin required" names the stale pair file, pinned revision and companion tip; receipts uploaded as artifact. |
-
-**Fork PRs:** Dependency review may be limited for PRs from forks; see the link in the dependency-review row above.
-
-### Why a separate docs-audit workflow
-
-[ci.yml](workflows/ci.yml) runs on every push/PR to `main` with no path filter, and its 3.12 job already includes the doc audits. [docs-audit.yml](workflows/docs-audit.yml) is path-filtered (`**/*.md`, `docs/**`, root `AGENTS.md`/`CLAUDE.md`/`README.md`/`SKILL.md`, `docs/development/docs_audit.py`) and runs the same audit set in a lean single job, so doc-only changes get a fast, focused signal.
-
-### Automation on a typical PR
-
-```mermaid
-flowchart TB
-  pr[PR_to_main]
-  pr --> dep[dependency_review]
-  pr --> cq[CodeQL]
-  pr --> ci[CI_full_matrix_no_path_filter]
-  pr --> mc[mcp_audit_tool_count]
-  pr --> da[docs_audit_if_md_doc_or_audit_script]
-  pr --> al[actionlint_if_workflows_change]
-```
-
----
-
-## Local validation (parity with automation)
-
-From the repository root:
+From a development checkout on `main`, install the locked development tools,
+then run the documentation checks appropriate to this page:
 
 ```bash
-actionlint .github/workflows/*.yml
-
-uv sync --frozen --extra dev
-uv run --extra dev ruff format --check src scripts
-uv run --extra dev ruff check src scripts
-uv run --extra dev python scripts/check_repo_terminology.py --strict
-uv run --extra dev python scripts/check_maintained_doc_terms.py --strict
-uv run --extra dev python docs/development/docs_audit.py --strict --check-anchors --no-write
-uv run --extra dev python scripts/check_gnn_doc_patterns.py --strict
-uv run --extra dev mypy src --show-error-codes
-# Optional: external-URL health across maintained docs (informational — bot-blocked
-# hosts like crates.io/paperswithcode can false-positive; not wired into CI)
-uv run --extra dev python scripts/check_external_links.py
-uv run --extra dev bandit -r src -c pyproject.toml -q
-uv run --extra dev python -m pytest --collect-only tests/ -q --tb=no \
-  --ignore=tests/llm/test_llm_ollama.py \
-  --ignore=tests/llm/test_llm_ollama_integration.py
-uv run --extra dev python -m pytest \
-  tests/execute/test_pymdp_contracts.py \
-  tests/execute/test_discrete_models_pymdp.py \
-  tests/visualization/test_visualization_matrices.py \
-  -q --tb=short
-uv run --extra dev python -m pytest -m "not pipeline and not mcp" --tb=short -q
-# Same output as CI security job (SARIF for artifacts / code scanning):
-# uv run --extra dev bandit -r src -c pyproject.toml --severity-level medium --confidence-level medium -f sarif -o bandit-results.sarif
+uv sync --frozen --extra dev --python 3.12
+uv run --frozen --no-sync python docs/development/docs_audit.py --strict --check-anchors --no-write
+uv run --frozen --no-sync python scripts/check_doc_contracts.py --strict
+uv run --frozen --no-sync python scripts/check_repo_terminology.py --strict
+uv run --frozen --no-sync python scripts/check_maintained_doc_terms.py --strict
+uv run --frozen --no-sync python scripts/check_gnn_doc_patterns.py --strict
+uv run --frozen --no-sync python scripts/check_capability_contracts.py --strict
 ```
 
-Full local suite (broader than default CI marker filter): `uv run --extra dev python -m pytest tests/ -q --tb=no --ignore=tests/llm/test_llm_ollama.py --ignore=tests/llm/test_llm_ollama_integration.py`. Ollama integration tests may need a local daemon; see [README.md](../README.md) and [pytest.ini](../pytest.ini).
+For source changes use the [current verification commands](../TO-DO.md#verification-and-execution-rules)
+and the workflows' declared environments. Run `actionlint .github/workflows/*.yml`
+when workflow YAML changes. Count-changing manuscript/source/test edits follow
+the full rendering/custody procedure in [AGENTS.md](../AGENTS.md).
 
----
-
-## Related tooling docs
-
-- [docs/style_guide.md](../docs/style_guide.md) — documentation style
-- [docs/development/README.md](../docs/development/README.md) — development doc folder
+</details>
