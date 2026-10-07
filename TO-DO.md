@@ -194,8 +194,9 @@ methods are ready. E5 archival work can proceed independently.
 Freeze the scope, owner, source baseline and acceptance criteria before each
 implementation PR. Use focused existing checks for the changed behavior;
 broaden only for new failures or changed contracts. Preserve public model/source
-semantics, the 25-step workflow and explicit unsupported outcomes. Autonomous
-mode remains proposal-only unless a separately scoped contract changes it.
+semantics, the 25-step workflow and explicit unsupported outcomes.
+`--autonomous` remains proposal-only; expanded authority requires a separately
+scoped runtime/security contract.
 
 Representative repository commands are:
 

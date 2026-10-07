@@ -296,11 +296,11 @@ def run_audit() -> List[str]:
                 failures.append(
                     f"TO-DO.md: autonomy/self-editing claim appears before v4.0.0 in {version}"
                 )
-    if (
-        "v4.0.0" not in roadmap_sections
-        or "--autonomous" not in roadmap_sections["v4.0.0"]
+    if not re.search(
+        r"`?--autonomous`?\s+(?:mode\s+)?(?:is|remains)\s+proposal-only\b",
+        todo_text,
     ):
-        failures.append("TO-DO.md: bounded autonomous mode must be scoped under v4.0.0")
+        failures.append("TO-DO.md: --autonomous must remain explicitly proposal-only")
 
     for required in (
         "input/model_family_manifest.json",
