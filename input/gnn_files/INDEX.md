@@ -6,27 +6,17 @@ execute it through the 25-step pipeline. For syntax and file-structure rules see
 [normative syntax](../../docs/gnn/reference/gnn_syntax.md) and the tutorials in
 [docs/gnn/tutorials/](../../docs/gnn/tutorials/).
 
-**Counts (measured 2026-09-24):** 36 runnable `.md` spec files across 10 task
-folders (`INDEX.md`, `AGENTS.md` and `README.md` are non-spec scaffolds and are
-excluded by `gnn.processing.discovery.is_model_source_path`). 28 are discrete-state
-POMDP/HMM models that render and execute on the nine categorical-capable
-frameworks and are reported as `unsupported` (not failed) on ngc-learn
-(continuous-only backend); the two non-stationary discrete specs
-(`time_varying_dynamics.md`, `regime_switched_dynamics.md`) are the exception —
-pymdp renders and executes their switching semantics while every other
-categorical framework receipts them `unsupported-nonstationary` (not failed);
-5 of the 8 files under `continuous/` are pure
-continuous-state linear-Gaussian models that render and execute on JAX,
-NumPyro, PyTorch, Stan, RxInfer.jl and ngc-learn and are reported as
-`unsupported` (not failed) on PyMDP, ActiveInference.jl, DisCoPy and bnlearn;
-the remaining three are composed specs that are receipted rather than rendered:
-`multi_agent_lgssm.md` (continuous × multi-agent, `unsupported-composition`
-until per-agent continuous rendering lands), `factored_continuous_lgssm.md`
-(independent per-factor LGSSM — jax renders it, every other continuous backend
-receipts `unsupported-factored-continuous`), and `hybrid_discrete_continuous.md`
-(discrete POMDP alongside a continuous block, `unsupported-composition:
-continuous × hybrid`) — all not failed, never silently rendered. Live counts
-come from `output/11_render_output/render_processing_summary.json`.
+**Counts (measured 2026-10-07):** 38 model `.md` sources across 11 task
+folders, excluding `INDEX.md`, `AGENTS.md` and `README.md` scaffolds. Backend
+admission depends on each declared model contract; a registry entry alone does
+not establish that every exemplar runs on that backend. The six corrected
+scientific examples have source-preserving numerical/native acceptance documented
+in [the scientific receipt](../../docs/development/issue250_scientific_acceptance_2026_10_07.json).
+The block-reset hierarchy, approximate temporal controller and contingent episodic
+T-maze require explicit JAX execution; other backends report them unsupported.
+The canonical [family manifest](../model_family_manifest.json) selects these
+contracts accordingly. Live per-backend counts come from the current run's
+`output/11_render_output/render_processing_summary.json`.
 
 ## Choosing an example
 
@@ -52,8 +42,8 @@ come from `output/11_render_output/render_processing_summary.json`.
 ## Full exemplar set
 
 ### basics/
-- [dynamic_perception.md](basics/dynamic_perception.md) — illustrative invalid source pending scientific correction: likelihood columns have mass 1.1 and 0.9; required rendering fails explicitly
-- [static_perception.md](basics/static_perception.md) — illustrative invalid source pending scientific correction: likelihood columns have mass 1.1 and 0.9; required rendering fails explicitly
+- [dynamic_perception.md](basics/dynamic_perception.md) — corrected normalized likelihood; fresh authored-length JAX filtering accepted in float32 and float64
+- [static_perception.md](basics/static_perception.md) — corrected normalized likelihood; fresh authored-length JAX filtering accepted in float32 and float64
 
 ### continuous/
 - [continuous_navigation.md](continuous/continuous_navigation.md)
@@ -69,18 +59,18 @@ come from `output/11_render_output/render_processing_summary.json`.
 - [actinf_pomdp_agent.md](discrete/actinf_pomdp_agent.md)
 - [bnlearn_causal_model.md](discrete/bnlearn_causal_model.md)
 - [deep_planning_horizon.md](discrete/deep_planning_horizon.md)
-- [hmm_baseline.md](discrete/hmm_baseline.md) — illustrative invalid source pending scientific correction: every emission column has mass 1.5; required rendering fails explicitly
+- [hmm_baseline.md](discrete/hmm_baseline.md) — corrected normalized emissions; passive 50-step JAX filtering accepted in float32 and float64
 - [markov_chain.md](discrete/markov_chain.md)
 - [multi_armed_bandit.md](discrete/multi_armed_bandit.md)
 - [regime_switched_dynamics.md](discrete/regime_switched_dynamics.md) — regime-switched transitions (`B_regime` + `b_regime_schedule`); the switching exemplar of the NONSTATIONARY kind — pymdp applies the declared schedule per step, every other categorical framework receipts `unsupported-nonstationary`
 - [simple_mdp.md](discrete/simple_mdp.md)
 - [time_varying_dynamics.md](discrete/time_varying_dynamics.md) — non-stationary time-indexed `B_t` phases (NONSTATIONARY kind; pymdp runs the phase sequence per step, hold-last beyond the declared span)
-- [tmaze_epistemic.md](discrete/tmaze_epistemic.md) — illustrative invalid source pending scientific correction: declared transition blocks contain zero-mass columns; required rendering fails explicitly
+- [tmaze_epistemic.md](discrete/tmaze_epistemic.md) — approved episodic contingent policy contract; native JAX float64 acceptance with an independent 256-policy oracle
 - [two_state_bistable.md](discrete/two_state_bistable.md)
 
 ### hierarchical/
-- [hierarchical_pomdp.md](hierarchical/hierarchical_pomdp.md)
-- [temporal_hierarchy.md](hierarchical/temporal_hierarchy.md)
+- [hierarchical_pomdp.md](hierarchical/hierarchical_pomdp.md) — approved block-reset hierarchy; native JAX float64 acceptance with independent latent-path enumeration
+- [temporal_hierarchy.md](hierarchical/temporal_hierarchy.md) — approved approximate 10/100-clock soft-message controller; native JAX float64 acceptance across 200 transitions
 
 ### learning/
 - [dirichlet_likelihood_learning.md](learning/dirichlet_likelihood_learning.md)

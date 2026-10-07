@@ -1,0 +1,28 @@
+{
+  "base_commit": "1bc3a76eccccb2cc5ce8601770714075b3ec48db",
+  "lock_revision": 3,
+  "old_package_records": 353,
+  "new_package_records": 353,
+  "unchanged_raw_stanzas": 346,
+  "changed_names": [
+    "fsspec",
+    "generalized-notation-notation",
+    "jupyterlab",
+    "multidict",
+    "python-discovery",
+    "tornado",
+    "virtualenv"
+  ],
+  "patched_versions": {
+    "fsspec": "2026.6.0",
+    "jupyterlab": "4.6.4",
+    "multidict": "6.9.1",
+    "python-discovery": "1.6.1",
+    "tornado": "6.5.9",
+    "virtualenv": "21.7.13"
+  },
+  "additional_dependency_reason": "virtualenv21.7.13 requires python-discovery>=1.6.1",
+  "metadata_policy": "Preserved 346 unrelated raw package records instead of accepting resolver marker canonicalization; refreshed root metadata and manifest constraints.",
+  "lock_sha256": "6d8779a6796021a24d38d1ff2d4ab0ca19d9ffa3464db7dc98044d65811f55ff",
+  "editable_root_package_version": "4.0.1"
+}

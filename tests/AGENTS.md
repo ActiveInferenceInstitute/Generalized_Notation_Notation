@@ -8,14 +8,15 @@
 
 **Category**: Testing / Quality Assurance
 
-**Status**: Maintained; candidate checks accepted at their recorded source, final publication checks pending
+**Status**: Maintained; v4.0.0 published, v4.0.1 patch checks and publication pending
 
-**Version**: [pyproject.toml](../pyproject.toml) (canonical; v4 candidate is unreleased)
+**Version**: [pyproject.toml](../pyproject.toml) (canonical; v4.0.1 patch candidate)
 
 **Last Updated**: 2026-09-04 (historical module documentation)
 
 Release reconciliation: historical test counts and receipts retain their original
-source identities. The current
+source identities. The [v4.0.0 publication receipt](../docs/development/gnn_4_0_0_post_publication.json)
+records the completed release. The historical
 [2026-10-06 snapshot](../SCOPE-2026-10-01.md) records 18 successful hosted checks
 at GNN `951dc7d3f58cfd3ef7106caa321c1d3c7d2ad51a`, the completed provisioned
 local suite and the independently accepted numerical/namespace scope. A3/W2/H5

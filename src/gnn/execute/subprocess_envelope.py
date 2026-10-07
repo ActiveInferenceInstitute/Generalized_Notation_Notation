@@ -32,10 +32,11 @@ import logging
 import math
 import os
 import subprocess
+import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, BinaryIO, Dict, List, Optional, Union, cast
 
 from gnn.utils.runtime_safety.process_budget import resolve_process_deadlines
 from gnn.utils.runtime_safety.process_tree import (
@@ -342,8 +343,8 @@ def run_subprocess_envelope(
                         ``os.environ`` (``None`` inherits the parent env).
         capture_output: If True, capture stdout/stderr; otherwise stream to
                         the parent process.
-        input:          Text piped to the child's stdin (implies a stdin
-                        pipe; ``None`` leaves stdin attached to the parent).
+        input:          Text supplied through an owned temporary stdin
+                        descriptor; ``None`` leaves stdin attached to the parent.
         sandbox:        Apply the ``GNN_SANDBOX`` env-prefix pattern
                         (Step-12 semantics). ``True`` prefixes the command
                         with the configured sandbox backend's argument
@@ -538,14 +539,13 @@ def run_subprocess_envelope(
     total_budget_limited = (
         cleanup_ceiling is not None and deadline >= cleanup_ceiling - cleanup_allowance
     )
-    # communicate() accepts the stdin payload on the FIRST call only — every
-    # retry (timeout/cancel slices and the post-kill drain) must pass None.
-    # Re-passing input after TimeoutExpired raises ValueError ("Cannot send
-    # input after starting communication"); partial output accumulates across
-    # communicate calls internally and is returned by the final drain.
-    stdin_payload: Optional[bytes] = (
-        input.encode("utf-8") if input is not None else None
-    )
+    # A large stdin pipe can fill before the child finishes importing. After
+    # communicate(input) times out, CPython retries with communicate(None)
+    # stop registering unfinished stdin writes; repeating input is forbidden.
+    # An owned TemporaryFile descriptor supplies every byte and EOF without
+    # tying delivery to the output/deadline polling loop. It is unlinked on
+    # POSIX, never passed in argv and closed on every return/failure path.
+    stdin_file: BinaryIO | None = None
     stdout_bytes: Optional[bytes] = None
     stderr_bytes: Optional[bytes] = None
     timed_out = False
@@ -565,9 +565,26 @@ def run_subprocess_envelope(
             )
             return envelope
 
+        if input is not None:
+            stdin_file = tempfile.TemporaryFile(mode="w+b")
+            payload = input.encode("utf-8")
+            if stdin_file.write(payload) != len(payload):
+                raise OSError("Could not stage complete subprocess input")
+            stdin_file.seek(0)
+            # Staging belongs to the original budget, including cancellation.
+            if cancel_token is not None and cancel_token.cancelled:
+                _mark_cancelled(envelope, cancel_token.reason)
+                return envelope
+            if time.monotonic() >= deadline:
+                envelope.update(
+                    error="Execution budget exhausted before launch",
+                    error_type="TimeoutExpired",
+                )
+                return envelope
+
         proc = subprocess.Popen(  # nosec B603 — argument vector, no shell
             command,
-            stdin=subprocess.PIPE if stdin_payload is not None else None,
+            stdin=stdin_file,
             stdout=subprocess.PIPE if capture_output else None,
             stderr=subprocess.PIPE if capture_output else None,
             cwd=cwd,
@@ -581,18 +598,15 @@ def run_subprocess_envelope(
         while True:
             try:
                 stdout_bytes, stderr_bytes = proc.communicate(
-                    stdin_payload,
                     timeout=min(
                         _POLL_INTERVAL_SECONDS, max(0.001, deadline - time.monotonic())
                     ),
                 )
-                stdin_payload = None
                 envelope["return_code"] = proc.returncode
                 envelope["success"] = proc.returncode == 0
                 break  # process exited; final streams collected
             except subprocess.TimeoutExpired as exc:
                 stdout_bytes, stderr_bytes = exc.output, exc.stderr
-                stdin_payload = None  # input was sent on the first call only
                 if cancel_token is not None and cancel_token.cancelled:
                     _mark_cancelled(envelope, cancel_token.reason)
                     break
@@ -607,6 +621,14 @@ def run_subprocess_envelope(
         envelope["error"] = str(exc)
         envelope["error_type"] = type(exc).__name__
     finally:
+        # Popen duplicated this descriptor; closing our copy cannot interrupt
+        # the child's read. Do this before cleanup so even a cleanup exception
+        # cannot leave request bytes or an owned file descriptor behind.
+        if stdin_file is not None:
+            try:
+                stdin_file.close()
+            except OSError as close_exc:
+                _mark_cleanup_failed(envelope, close_exc)
         if proc is not None:
             cleanup_deadline = time.monotonic() + cleanup_allowance
             if cleanup_ceiling is not None:

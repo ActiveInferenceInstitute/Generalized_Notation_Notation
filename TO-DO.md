@@ -1,23 +1,31 @@
 # TO-DO — GNN implementation, verification and release backlog
 
-Updated 2026-10-06. **Implementation and release work have resumed.** The
-scoped backlog and historical evidence remain preserved. Nothing below is a completed
-release claim. Prior evidence remains in the scope documents, verification
-ledger, commit history and reviewed release candidates.
+Updated 2026-10-07. **GNN 4.0.0 is published.** Release commit:
+`1bc3a76eccccb2cc5ce8601770714075b3ec48db`; annotated tag: `v4.0.0`;
+[release notes and assets](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.0).
+The [publication receipt](docs/development/gnn_4_0_0_post_publication.json)
+records final GNN/FEP/GEO identities, successful checks and direct asset hash
+verification. The software publication date is 2026-10-07; the manuscript
+retains its 2026-10-02 authored epoch. No PyPI upload or version-specific DOI
+is claimed.
 
-The implementation branch is `codex/gnn-reliability-v4`. Its historical artifact commit is
-`883e44c04e95ef4c69d7f998b9669a0a0a49ad29` (A3), with qualified production source
-`8d202439eaa386d13a9b93888a7d560657579a4b`. Main was last observed at
-`536d949829f6aed11dc540e5c5dec77578b25016`. Package metadata declares 4.0.0;
-main integration, the version tag and GitHub release remain pending.
+The release closeout R1–R9 is complete within its recorded scope. Fourteen
+qualified issues and four superseded PRs were closed; #236, #241 and #250 were
+kept open at publication. The current maintenance change prepares their
+issue-specific closeout with fresh dispatch, native LLM and independent
+scientific evidence. Security remediation also covers twelve dependency alerts
+and four GUI complexity alerts; final remote issue/alert state is checked after
+integration. Published v4.0.0 source and assets keep their original identities.
 
-This is the active forward backlog. [SCOPE-2026-10-01.md](SCOPE-2026-10-01.md)
-and [the verification ledger](docs/development/verification_2026_10_01.json)
-contain historical stages; reconcile their final prepared successors before
-publication. Do not restart accepted work merely because an older ledger entry
-still says pending. Do not overwrite this handoff backlog with an older candidate.
+Package metadata targets **4.0.1** for the scoped source/security maintenance
+fixes. Its final source/manuscript/pair/CI checks and publication remain pending.
 
-## Verified closeout snapshot — 2026-10-06
+This is the forward backlog. Older candidate snapshots and failed attempts
+below remain historical evidence, not statements of current release status.
+Do not restart accepted work because an older snapshot says pending. Future
+capabilities remain explicit even when the original GitHub reports are resolved.
+
+## Historical verified candidate snapshot — 2026-10-06
 
 This snapshot describes tested candidate source, not a completed publication.
 GNN source `951dc7d3f58cfd3ef7106caa321c1d3c7d2ad51a` has all 18 hosted
@@ -51,7 +59,14 @@ must be recorded separately in the public release receipt after publication.
 The manuscript authored epoch remains 2026-10-02; no version-specific DOI or
 PyPI upload is claimed.
 
-## v4.0.0 — P0: finish the existing release safely
+## v4.0.0 — completed release closeout (historical acceptance criteria)
+
+R1–R9 checkboxes record the completed release procedure and its accepted
+scope, not every historical performance or future scientific criterion.
+Original #236/#241/#250 remained open at publication. Their current closeout
+requires the issue-specific receipts below; unmet long-context coverage and
+unmeasured historical performance targets are not promoted into acceptance.
+The paragraphs below preserve historical review criteria and chronology.
 
 These tasks depend on one another in the order below. Source custody, local
 checks, hosted checks, installed-wheel tests, native numerical witnesses, visual
@@ -61,7 +76,7 @@ failures separate. Do not sum overlapping test selections.
 The bounded `--autonomous` mode remains proposal-only in v4.0.0; it does not
 modify its own source or grant autonomous publication authority.
 
-- [ ] **R1 — qualify the current companion run.** The chronology below is
+- [x] **R1 — qualify the current companion run.** The chronology below is
   historical; the 2026-10-06 snapshot above supersedes its live-head statement.
   Fep companion PR
   [#45](https://github.com/ActiveInferenceInstitute/fep_formal/pull/45) is pushed
@@ -86,7 +101,7 @@ modify its own source or grant autonomous publication authority.
   destinations, storage admission and observed cleanup. **Accept:** actual
   current-source formal/native/render evidence, with failures explicitly retained.
 
-- [ ] **R2 — close companion render custody and main integration.** Independently
+- [x] **R2 — close companion render custody and main integration.** Independently
   review the actual template/render/native/audit artifacts, font evidence, four
   figures and finite PDF views. Apply only verified `docs/render-acceptance.json`
   and `docs/render-fonts.json` output bytes, using a normal successor commit.
@@ -98,7 +113,7 @@ modify its own source or grant autonomous publication authority.
   above the declared 89% floor, current source closure, independent review,
   normal PR merge and remote main SHA parity. Preserve unrelated primary Fep work.
 
-- [ ] **R3 — seal public documentation and evidence.** Reconcile the prepared
+- [x] **R3 — seal public documentation and evidence.** Reconcile the prepared
   eight-document release candidate against actual current files and this backlog.
   Preserve `cd97a8f` evidence as historical after local companion changes.
   Destinations: `CITATION.cff`, `docs/VERSION_MAP.md`, `tests/AGENTS.md`,
@@ -111,7 +126,7 @@ modify its own source or grant autonomous publication authority.
   source/namespace parity, privacy checks, truthful state labels, link/anchor
   audits and fresh independent content approval. Do not broadly copy staging files.
 
-- [ ] **R4 — adopt the reviewed API policy and resolve alert #12 narrowly.**
+- [x] **R4 — adopt the reviewed API policy and resolve alert #12 narrowly.**
   The independently reviewed trusted-filesystem SECURITY wording is published
   on the implementation branch, and alert #12 received a narrow request-string
   false-positive disposition. CodeQL passed at published head
@@ -125,7 +140,7 @@ modify its own source or grant autonomous publication authority.
   retain the non-atomic concurrent filesystem limitation. GUI alerts #13–#16
   remain separate. This is not a general security or deployed-service certificate.
 
-- [ ] **R5 — final GNN pair pin and repository checks.** Follow
+- [x] **R5 — final GNN pair pin and repository checks.** Follow
   [the canonical pairing order](docs/development/fep_lean_paired_revision.md).
   After accepted companion main integration, make the reviewed companion pin
   bump part of the final GNN content commit. Preserve the 25 steps, `gnn.*`,
@@ -136,7 +151,7 @@ modify its own source or grant autonomous publication authority.
   and three failures (CodeQL #12 and two pair legs); it is not final green evidence.
   Owner or count-changing edits require renewed custody/render/package acceptance.
 
-- [ ] **R6 — normal GNN main integration.** Update PR
+- [x] **R6 — normal GNN main integration.** Update PR
   [#251](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/pull/251)
   around the final implementation and evidence. Obtain final independent
   infrastructure/security review, verify current base/head/check identities,
@@ -144,14 +159,14 @@ modify its own source or grant autonomous publication authority.
   checkout fast-forward, preserved rollback baseline and no force/amend/squash.
   Preserve any intervening unrelated work.
 
-- [ ] **R7 — reciprocal GEO-INFER pairing.** After GNN main M exists, update
+- [x] **R7 — reciprocal GEO-INFER pairing.** After GNN main M exists, update
   GEO-INFER's `.github/gnn-pair.json` to M through a focused normal PR.
   Inspect live GEO main first; its last reviewed snapshot is
   `510f1008e698b45aedc4306d65caf898da6cda04`. **Accept:** a pin-only diff,
   current Python 3.11/3.12 interchange checks, the three retained schema contracts,
   normal merge and remote parity. Complete this before a version tag or release.
 
-- [ ] **R8 — publish and directly verify v4.0.0.** Recheck tag/release absence;
+- [x] **R8 — publish and directly verify v4.0.0.** Recheck tag/release absence;
   verify that the accepted ordinary wheel's namespace matches final main M.
   Create a normal annotated `v4.0.0` tag and GitHub release with public-safe
   notes, wheel, manuscript PDF, source-binding/verification receipts and
@@ -160,7 +175,7 @@ modify its own source or grant autonomous publication authority.
   the GNN/Fep/GEO identities and rollback evidence. No PyPI upload or
   version-specific archival DOI is currently claimed.
 
-- [ ] **R9 — attach evidence and close only qualified issues/PRs.** After the
+- [x] **R9 — attach evidence and close only qualified issues/PRs.** After the
   resulting main change and current required checks exist, attach issue-specific
   evidence before closing work. Keep
   [#241](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/241)
@@ -172,10 +187,11 @@ modify its own source or grant autonomous publication authority.
   and [#249](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/pull/249)
   with explicit links to integrated behavior and evidence, not unchanged merges.
 
-## Existing issue acceptance map
+## Historical issue acceptance map
 
-Implementation exists for the following work; final attachment/closeout follows
-R1–R9. Use existing issues rather than duplicate reports.
+These criteria retain the original review scope. The opening paragraph records
+publication closeout; #236 and S1/S2 below record current maintenance evidence.
+Previously closed issues remain closed; this table does not reopen their work.
 
 | Issues | Evidence required for closure |
 | --- | --- |
@@ -189,34 +205,51 @@ R1–R9. Use existing issues rather than duplicate reports.
 | [#245](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/245) | Current deterministic pipeline PR lane and count/source receipts for the existing weekly all-extras lane; no duplicate schedule. |
 | [#246](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/246) | Typed Dask/Ray cancellation/retrieval with successful siblings/order/script identity, genuine scaling acceptance, and Matplotlib API shapes on the supported splits. |
 
+## Original Step 16 duplicate-analysis report (#236)
+
+[The fresh closeout receipt](docs/development/issue236_analysis_dispatch_closeout_2026_10_07.json)
+verifies 11→1 original-corpus launches and 12→1 current-corpus launches on
+identical selected source bytes. Authentic four-model native result files and
+independent numerical checks pass. Replay times were 87.927 seconds historical
+and 233.557 seconds released, so no wall-clock improvement or historical 10×
+claim is made. The old whole-directory byte-equality target is retired because
+current analysis adds scientific/native plotting and corrected aggregation.
+Closure addresses the reported duplicate global dispatch; final hosted
+integration and remote closure remain pending for this maintenance change.
+
 ## P1 — scientific and security follow-ups
 
-- [ ] **S1 — complete-source LLM admission and coverage (#241).** Preserve the
-  historical partial result: 38 structural analyses, 33 summaries, 82/342
-  prompts and 260 unfinished after an explicit 900-second budget. Read-only
-  metadata declares an 8,192-token training context; complete N64/N32 sources
-  contain 2,673,574/342,214 bytes. Capacity mismatch is an inference, not an
-  exact tokenizer count or native refusal. Design verified context admission
-  or an explicitly source-preserving multi-request method; configuration changes
-  must be explicit. **Accept:** every selected model and prompt completed with
-  exact provider/model/source/prompt/checkpoint identities, truthful partial
-  failure controls, default 600 seconds/model and 45-second request ceilings.
-  Do not start a long run merely to rediscover capacity limits; never silently
-  sample, truncate, swap models or manufacture coverage.
+- [ ] **S1 — source-preserving long-context LLM capability.** The original
+  #241 scheduler/configuration/diagnostic defects are addressed; the human
+  summary now exposes prompt coverage and unfinished work. Exact native
+  `smollm2:135m-instruct-q4_K_S` completes all nine N4 prompts plus its summary
+  within the unchanged automatic 600-second/model and 45-second/request limits.
+  The [LLM receipt](docs/development/issue241_llm_acceptance_2026_10_07.json)
+  keeps that native success at its recorded producer hash, separately from
+  the current human-summary tests. Final-source large-request checks also
+  verify the repaired stdin path and context failure without a delivery timeout.
+  N32/N64 complete requests receive real context refusals: 339,390/2,664,414
+  runtime tokens versus the configured 4,096-token context. The 8,192-token
+  training metadata does not establish admission or complete-corpus coverage.
+  Preserve historical partial results and explicit failure; never truncate,
+  sample, swap models or manufacture completion. **Future accept:** a verified
+  source-preserving admission/multi-request method that completes every selected
+  model and prompt with exact provider/model/source/checkpoint identities within
+  the declared budgets. This future capability is separate from closing the
+  original missing-model, budgeting and coverage report.
 
-- [ ] **S2 — scientifically repair six authored examples (#250).** Establish
-  intended probabilities for the unchanged-baseline invalid examples before
-  editing values. All six explicit probability and behavioral proposals were
-  approved on 2026-10-05, including block resets, the approximate temporal
-  controller and contingent episodic T-maze policies. Source corrections are
-  implemented locally. Independent source review accepted the original tables,
-  equations, serialization and action slices at its recorded hashes. Added
-  execution-contract metadata and evolving backend routing remain unaccepted;
-  faithful native execution and integrated acceptance still require fresh review.
-  **Accept:** explicit source corrections, finite/nonnegative
-  mass, dimensions/orientation, float32/float64 preservation, parser/serializer
-  round trips and fresh native family acceptance. Retain rejection witnesses;
-  do not normalize, omit examples or alter validator tolerances to hide failures.
+- [x] **S2 — scientifically repair six authored examples (#250).** The six
+  explicit probability/behavior proposals approved on 2026-10-05 now have fresh
+  independent table, orientation, dtype, serialization and native acceptance.
+  [The receipt](docs/development/issue250_scientific_acceptance_2026_10_07.json)
+  binds all six source hashes, nine actual native runs, 263 fresh test cases
+  and the strict all-six family gate. Generic static/dynamic/HMM native runs
+  cover float32/float64; the three semantic contracts execute in declared
+  float64. Float32 semantic value roundtrips are verified, float32 semantic
+  native execution is not claimed. JAX preserves the declared block resets,
+  approximate temporal clocks and episodic T-maze policy structure; other
+  backends explicitly report these contracts unsupported. No normalization,
+  dropped example or validator tolerance change is used to pass acceptance.
 
 - [ ] **S3 — THRML structural zeros (upstream #72).** Track
   [the validated upstream report](https://github.com/extropic-ai/thrml/issues/72).
@@ -227,11 +260,16 @@ R1–R9. Use existing issues rather than duplicate reports.
   independent numerical witnesses and unchanged source/seed/sample semantics.
   No epsilon repair or widening based only on an upstream commit or shape match.
 
-- [ ] **S4 — GUI complexity alerts #13–#16.** Establish bounded input admission
-  or linear parsing with preserved editor behavior. **Accept:** adversarial
-  multiline/delimiter growth measurements, refusal before excessive allocation,
-  meaningful parser equivalence and live editor responsiveness. Existing bounded
-  split-line tests do not prove linear complexity for arbitrary input.
+- [x] **S4 — GUI complexity repair (#13–#16).** The state-line parser now
+  scans delimiters linearly and bounds documents to 8,388,608 characters before
+  splitting. Save/Export admit the document before creating an output, preserving
+  existing files on rejection; refresh/live editing surface explicit errors.
+  [Independent acceptance](docs/development/gui_complexity_acceptance_2026_10_07.json)
+  covers 5,005 legacy-equivalent documents across parse/update/remove, 15 hostile
+  growth samples through 2,097,196 characters, and functional live callback
+  values plus unchanged-export controls. This is callback and parser evidence,
+  not browser-wide responsiveness or a general GUI security certificate. Remote
+  CodeQL closure is checked after integration.
 
 - [ ] **S5 — stronger filesystem/platform boundaries.** Scope descriptor-based
   operations against concurrently replaced path components and explicit Windows

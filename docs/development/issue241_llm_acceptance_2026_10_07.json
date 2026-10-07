@@ -1,0 +1,583 @@
+{
+  "schema_version": 1,
+  "verified_at_utc": "2026-10-07T16:13:11.966581+00:00",
+  "issue": 241,
+  "original_report": "600-second aggregate budget processed only 5 of 41 files; missing configured Ollama model and unclear coverage.",
+  "source_epoch": "1bc3a76eccccb2cc5ce8601770714075b3ec48db",
+  "implementation_source_sha256": {
+    "src/gnn/execute/subprocess_envelope.py": "503de48dfc58337b4497a14a37c749531b720fb76431bf8a2a7a551da3f45a69",
+    "tests/execute/test_subprocess_envelope.py": "59c5b268971bddf419a21604f7bfce354b43d5fd1672fe8501cfe85bdb10b68d",
+    "src/gnn/llm/generator.py": "199f89d5ac07d3ad25fc1328cb3d1edc02df7637395c5ecc0a3243d7915462ce",
+    "tests/llm/test_llm_generator.py": "0c616bccbf2d258a163e99d7be7d98edb8e2b27f8fe95f0a375e24b275250483"
+  },
+  "changes": [
+    "Readable summaries report selection, structural/summary/prompt coverage, unfinished prompts, status, provider/model, actual budget and preflight failure attribution.",
+    "Generic supervised subprocess stdin uses an owned TemporaryFile descriptor so large inputs and EOF survive repeated deadline polling; input bytes are UTF8 exact, not placed in argv.",
+    "Owned stdin descriptors close on success/spawn failure/timeout/cancellation; a close OSError records cleanup failure while child termination/reap and stream draining continue."
+  ],
+  "tests": {
+    "command": "PYTHONPATH=src python -m pytest tests/execute/test_subprocess_envelope.py tests/execute/test_resource_measurement.py tests/llm/test_corpus_scheduling.py tests/llm/test_llm_generator.py -q --tb=short",
+    "actual_cases": 108,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "warnings": 1,
+    "warning_scope": "Existing PyMDP/JAX static-array warning; no failed assertion.",
+    "junit_sha256": "0faee6b58538d41ecd09631c7f216267e2e98036762a3ab82c814b9b9dfde64a",
+    "earlier_offline_llm_regression": {
+      "actual_cases": 283,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "opt_in_deselected": 26
+    },
+    "ruff_check": "passed",
+    "ruff_format_check": "passed"
+  },
+  "model": {
+    "tag": "smollm2:135m-instruct-q4_K_S",
+    "digest": "9a7ead04933f9ca448a9d39f86869be10eca332f30302d445f1bee4e224650db",
+    "server_version": "0.35.1",
+    "download_bytes": 102052339,
+    "native_training_context_tokens": 8192,
+    "runtime_allocated_context_tokens": 4096,
+    "exact_official_manifest_and_six_blob_digests_verified": true
+  },
+  "original_report_controls": {
+    "full_corpus_missing_model": {
+      "return_success": false,
+      "elapsed_seconds": 5.172201791021507,
+      "status": "partial",
+      "coverage": {
+        "structural_completed": 38,
+        "structural_required": 38,
+        "prompts_completed": 0,
+        "prompts_required": 342,
+        "summaries_completed": 0,
+        "summaries_required": 38
+      },
+      "budget_seconds": 22800,
+      "request_ceiling_seconds": 45.0,
+      "provider": "ollama",
+      "model": "qwen2.5:3b",
+      "selected_models": [
+        {
+          "model_id": "4be3c42d6fc6d7a5",
+          "source_path": "basics/dynamic_perception.md",
+          "source_sha256": "eed7260e9cb8e04132a49212dab35fe67ee237d38ea8561316e1964e916e1009",
+          "artifact_stem": "dynamic_perception_4be3c42d6fc6d7a5"
+        },
+        {
+          "model_id": "94dc7a09ab658a5e",
+          "source_path": "basics/static_perception.md",
+          "source_sha256": "1ddd0fbde8155e2083d586a368503278373f26f6aae11dd4a2b4adfdf5ea7b8c",
+          "artifact_stem": "static_perception_94dc7a09ab658a5e"
+        },
+        {
+          "model_id": "18e5244ebef3a33e",
+          "source_path": "continuous/continuous_navigation.md",
+          "source_sha256": "5e8f3c807c358ac198cf052cb0cd9aca3d5ae1871e1fd02884c9b001529b7ee7",
+          "artifact_stem": "continuous_navigation_18e5244ebef3a33e"
+        },
+        {
+          "model_id": "605a081368072d25",
+          "source_path": "continuous/damped_oscillator_bias.md",
+          "source_sha256": "f72184cf8427e24e0f99f3a4537d34c3421c47b45b192e6fbfa34cd116c69518",
+          "artifact_stem": "damped_oscillator_bias_605a081368072d25"
+        },
+        {
+          "model_id": "5625c82eb7dcb539",
+          "source_path": "continuous/factored_continuous_lgssm.md",
+          "source_sha256": "2931d389bfe88696599573fba0d24b1f463c4e7d0614b30687e847c026182ec5",
+          "artifact_stem": "factored_continuous_lgssm_5625c82eb7dcb539"
+        },
+        {
+          "model_id": "ed81f0337adb24c7",
+          "source_path": "continuous/hybrid_discrete_continuous.md",
+          "source_sha256": "5b85c395560099d3f3eb4a6da7bb42d1b45ae1367fb9ae4e30c663ae3a69518e",
+          "artifact_stem": "hybrid_discrete_continuous_ed81f0337adb24c7"
+        },
+        {
+          "model_id": "6c21b31312f2e246",
+          "source_path": "continuous/independent_gaussian_agents.md",
+          "source_sha256": "c1fa6481c412ef7c799e5d5eeaf9a7f773a0ba2e2dfaf7dafcb22df1ed5beb2c",
+          "artifact_stem": "independent_gaussian_agents_6c21b31312f2e246"
+        },
+        {
+          "model_id": "04ccb3175aad67ff",
+          "source_path": "continuous/multi_agent_lgssm.md",
+          "source_sha256": "41037679740bdb35c5e1dad13799a88a803a941102ae29759d4ee00958ad4623",
+          "artifact_stem": "multi_agent_lgssm_04ccb3175aad67ff"
+        },
+        {
+          "model_id": "c21c49115f431fcc",
+          "source_path": "continuous/ngclearn_lgssm.md",
+          "source_sha256": "8dd68432415e546c91952db3efd83ea76361e59e52d75bcefcc4c36e33f4496d",
+          "artifact_stem": "ngclearn_lgssm_c21c49115f431fcc"
+        },
+        {
+          "model_id": "9114b3a786ba9808",
+          "source_path": "continuous/predictive_coding_agent.md",
+          "source_sha256": "ea2fb8829b862837038139620d090a83bbfe1953943547bf487e3b69af510344",
+          "artifact_stem": "predictive_coding_agent_9114b3a786ba9808"
+        },
+        {
+          "model_id": "270aba22752f6a6d",
+          "source_path": "continuous/stochastic_dynamics.md",
+          "source_sha256": "459f23f79e521cd242d9b429d7444677d58a1c10728f0a53d467b3588f9bc049",
+          "artifact_stem": "stochastic_dynamics_270aba22752f6a6d"
+        },
+        {
+          "model_id": "f7983265f7779440",
+          "source_path": "discrete/actinf_pomdp_agent.md",
+          "source_sha256": "ea58f38a031aab36ebf44078ebcdcc2a2ca5594a32c9a8ed92e0f09d61f579bf",
+          "artifact_stem": "actinf_pomdp_agent_f7983265f7779440"
+        },
+        {
+          "model_id": "8b8e404256ee70fa",
+          "source_path": "discrete/bnlearn_causal_model.md",
+          "source_sha256": "d108293a713435c668aec0bea48bb880f760ed5bd803e61347911e02fc36d067",
+          "artifact_stem": "bnlearn_causal_model_8b8e404256ee70fa"
+        },
+        {
+          "model_id": "5cb69f546aa76e35",
+          "source_path": "discrete/deep_planning_horizon.md",
+          "source_sha256": "e8b373d391621f25c2f26f9a15e0d8d470f01b028ce83d129e1a08bdf8ad3e3b",
+          "artifact_stem": "deep_planning_horizon_5cb69f546aa76e35"
+        },
+        {
+          "model_id": "927a5c547e5d2936",
+          "source_path": "discrete/hmm_baseline.md",
+          "source_sha256": "56e062dee9ab62b8da3aca87647d05285610199befa85c340c87fee1e1784d3b",
+          "artifact_stem": "hmm_baseline_927a5c547e5d2936"
+        },
+        {
+          "model_id": "a0895f9056a885c9",
+          "source_path": "discrete/markov_chain.md",
+          "source_sha256": "0614662a15ff5ceb77b0d3002a10099b6b96e86b22757ea91c07edfb964ebcfb",
+          "artifact_stem": "markov_chain_a0895f9056a885c9"
+        },
+        {
+          "model_id": "ec7114a9235075be",
+          "source_path": "discrete/multi_armed_bandit.md",
+          "source_sha256": "58682f353d2f5aef7ca62bbc1171c17c6f3eb5d7b502f76a284f443b59458ec2",
+          "artifact_stem": "multi_armed_bandit_ec7114a9235075be"
+        },
+        {
+          "model_id": "a09b0d1f07548235",
+          "source_path": "discrete/regime_switched_dynamics.md",
+          "source_sha256": "a3f4e8fa3c4eff0b443bad2bbb112177ef5ef41cab247a7bf57b8b446cae177f",
+          "artifact_stem": "regime_switched_dynamics_a09b0d1f07548235"
+        },
+        {
+          "model_id": "9294337dc3729421",
+          "source_path": "discrete/simple_mdp.md",
+          "source_sha256": "e0d5c9850aca787b8fd8345e0b6f095e625ec2e49fa189afe806e93c5b66dc26",
+          "artifact_stem": "simple_mdp_9294337dc3729421"
+        },
+        {
+          "model_id": "d385cb2f3172e46d",
+          "source_path": "discrete/time_varying_dynamics.md",
+          "source_sha256": "8afa7dc5a9112a93281b7e087e98e3e4685d24f03581224f48d923c28bb33994",
+          "artifact_stem": "time_varying_dynamics_d385cb2f3172e46d"
+        },
+        {
+          "model_id": "5d3d9f90d1566974",
+          "source_path": "discrete/tmaze_epistemic.md",
+          "source_sha256": "78698084abe6018bd9a4a0cd5c878c15684c5c8abae3edddc50e56ae69ec9f7e",
+          "artifact_stem": "tmaze_epistemic_5d3d9f90d1566974"
+        },
+        {
+          "model_id": "28a86eca6645b90e",
+          "source_path": "discrete/two_state_bistable.md",
+          "source_sha256": "a184fed13b7a446e8193549c206ade9f485cd99034097c3e67277a03fc3cab3d",
+          "artifact_stem": "two_state_bistable_28a86eca6645b90e"
+        },
+        {
+          "model_id": "375f94c9987c9848",
+          "source_path": "hierarchical/hierarchical_pomdp.md",
+          "source_sha256": "8711b01139096d3967c9afcfaf762fbb5c93b9f650c29898441836b8957e7628",
+          "artifact_stem": "hierarchical_pomdp_375f94c9987c9848"
+        },
+        {
+          "model_id": "e48827ac9c4d5113",
+          "source_path": "hierarchical/temporal_hierarchy.md",
+          "source_sha256": "a447e60370b25b54fbf48f9d2570f93080bb639941729b22f132896d6b8f2790",
+          "artifact_stem": "temporal_hierarchy_e48827ac9c4d5113"
+        },
+        {
+          "model_id": "feaa18c1518e1238",
+          "source_path": "learning/dirichlet_likelihood_learning.md",
+          "source_sha256": "787db452dacc43987ef374864eb968032cf147029d1042774fafedfb59c571ec",
+          "artifact_stem": "dirichlet_likelihood_learning_feaa18c1518e1238"
+        },
+        {
+          "model_id": "7ab71171b5c818b3",
+          "source_path": "multiagent/multi_agent_coordination.md",
+          "source_sha256": "38f914bb0a9c4337d2de6c425f76d879cf67af6646b3557d16508e91321c606c",
+          "artifact_stem": "multi_agent_coordination_7ab71171b5c818b3"
+        },
+        {
+          "model_id": "3785514958adce18",
+          "source_path": "multiagent/multi_agent_coordination_acceptance.md",
+          "source_sha256": "7521f0651ac9d7f86c34294cd5fe00dfc7c5d096b518aa8127dfed072b90e052",
+          "artifact_stem": "multi_agent_coordination_acceptance_3785514958adce18"
+        },
+        {
+          "model_id": "b7ca34a3e9fca4fa",
+          "source_path": "multiagent/stigmergic_swarm.md",
+          "source_sha256": "04e3f73dc1725c5baae8fce6328485116baa9c8c98572e2d388fbbf06eddc52f",
+          "artifact_stem": "stigmergic_swarm_b7ca34a3e9fca4fa"
+        },
+        {
+          "model_id": "d607fc3ea1ce9bce",
+          "source_path": "pomdp_gridworld/pomdp_gridworld_3x3.md",
+          "source_sha256": "a87cdc89163bcd1b612f902d21ad16f95e3d25c7ff59e3718fa0179b1bc4d302",
+          "artifact_stem": "pomdp_gridworld_3x3_d607fc3ea1ce9bce"
+        },
+        {
+          "model_id": "7fba449ea97b77c5",
+          "source_path": "precision/curiosity_driven_agent.md",
+          "source_sha256": "e40fac659079e9fdb197a52662a0cf64b35b4271771dbc611d1ad29de31afb5f",
+          "artifact_stem": "curiosity_driven_agent_7fba449ea97b77c5"
+        },
+        {
+          "model_id": "15503f2fd117c74e",
+          "source_path": "precision/precision_weighted.md",
+          "source_sha256": "9a20447b412088498f72713177f90fa62475b47af8d8f8fff0cc2a82507a32c9",
+          "artifact_stem": "precision_weighted_15503f2fd117c74e"
+        },
+        {
+          "model_id": "c78103ff1ca23356",
+          "source_path": "structured/factorized_posterior.md",
+          "source_sha256": "948a21928905b8dbeb3b398f1745482d0fdebd2ea6fd5fe1a37ccff977e7131a",
+          "artifact_stem": "factorized_posterior_c78103ff1ca23356"
+        },
+        {
+          "model_id": "93fc148d46f56bf7",
+          "source_path": "thrml/categorical_smoothing.md",
+          "source_sha256": "49e378b68875ded5a8ef4add76aa5e692b3f589fae75f23715bbfdee0fa9ef46",
+          "artifact_stem": "categorical_smoothing_93fc148d46f56bf7"
+        },
+        {
+          "model_id": "8d9d0c2e67c4d32c",
+          "source_path": "pymdp_scaling_study/pymdp_scaling_N16_T100.md",
+          "source_sha256": "be14c234950f63ce8722072e4748022a3bb484de129f349f2e4d86b9c9346317",
+          "artifact_stem": "pymdp_scaling_N16_T100_8d9d0c2e67c4d32c"
+        },
+        {
+          "model_id": "212d3655b0f726c6",
+          "source_path": "pymdp_scaling_study/pymdp_scaling_N32_T100.md",
+          "source_sha256": "c89191de0c07db67162dfb7974f11c45a823acc02a3bc360c837232cbc2ebb25",
+          "artifact_stem": "pymdp_scaling_N32_T100_212d3655b0f726c6"
+        },
+        {
+          "model_id": "a6fdedf0d183f0a0",
+          "source_path": "pymdp_scaling_study/pymdp_scaling_N4_T100.md",
+          "source_sha256": "c54742b89e0850124459c7a16e7e279ec1a2dece202e3c4434520a696886347e",
+          "artifact_stem": "pymdp_scaling_N4_T100_a6fdedf0d183f0a0"
+        },
+        {
+          "model_id": "ec6ed5a69613287a",
+          "source_path": "pymdp_scaling_study/pymdp_scaling_N64_T100.md",
+          "source_sha256": "21b3a74a7b5a6443f0e4bd0c333f2dfa0ce9fcf2e3e1c35c0981f334d41b2d86",
+          "artifact_stem": "pymdp_scaling_N64_T100_ec6ed5a69613287a"
+        },
+        {
+          "model_id": "8008cb25dc736678",
+          "source_path": "pymdp_scaling_study/pymdp_scaling_N8_T100.md",
+          "source_sha256": "4640bdecdddc37207ee29e369371b133be507c98b29220e583c8ea660a88dc85",
+          "artifact_stem": "pymdp_scaling_N8_T100_8008cb25dc736678"
+        }
+      ],
+      "errors": [
+        {
+          "stage": "preflight",
+          "error": "Configured Ollama model is not installed"
+        }
+      ],
+      "unfinished_prompts": 342,
+      "checkpoint_fingerprint": "fea341ebc38839ffb059bca94a1e2ad9349b09a9d323892c8acf704023b13c4c",
+      "checkpoint_sha256": "bd3c9827410e3e43ddd5991bdf4ef4c953e81ecebd7b4e90be05ccb73954227b",
+      "successful_response_sha256s": {}
+    },
+    "small_complete_native": {
+      "return_success": true,
+      "elapsed_seconds": 82.37124862498604,
+      "status": "success",
+      "coverage": {
+        "structural_completed": 1,
+        "structural_required": 1,
+        "prompts_completed": 9,
+        "prompts_required": 9,
+        "summaries_completed": 1,
+        "summaries_required": 1
+      },
+      "budget_seconds": 600,
+      "request_ceiling_seconds": 45.0,
+      "provider": "ollama",
+      "model": "smollm2:135m-instruct-q4_K_S",
+      "selected_models": [
+        {
+          "model_id": "a6fdedf0d183f0a0",
+          "source_path": "pymdp_scaling_study/pymdp_scaling_N4_T100.md",
+          "source_sha256": "c54742b89e0850124459c7a16e7e279ec1a2dece202e3c4434520a696886347e",
+          "artifact_stem": "pymdp_scaling_N4_T100_a6fdedf0d183f0a0"
+        }
+      ],
+      "errors": [],
+      "unfinished_prompts": 0,
+      "checkpoint_fingerprint": "5160a67603298c0ea75fb79625f18c17bad891e15eadef3d764033065d0f80dc",
+      "checkpoint_sha256": "ba40e3d00cdde80a1cec78c9cde4586b53182fd4287c24e78381d32918605ffc",
+      "successful_response_sha256s": {
+        "a6fdedf0d183f0a0:summarize_content": "e0e3a6bbd9126f9b5d79d08dcfde7c189855d6053f81ac4a0084cbbcdda615d3",
+        "a6fdedf0d183f0a0:explain_model": "d86e273a2ee3cc61218c3daed6babacd3c721b5e7f00127db6b86b633dfb3de5",
+        "a6fdedf0d183f0a0:identify_components": "14d04b0124e25cbba8d5a41f0206df34919e92db98a81f9b6c467c0b74a103dc",
+        "a6fdedf0d183f0a0:analyze_structure": "79592d66b657ece1fdfb4ae39636aadaeb371b7b4631dfb861700fe2ca8ef50f",
+        "a6fdedf0d183f0a0:extract_parameters": "131b555b82290bd5f6ab45ad5b62d83ac9482cbd5070b6997fe1cda034ace1b4",
+        "a6fdedf0d183f0a0:practical_applications": "2ce1cacc01c3a57809e74e293973cbe76fd465c376c428a1e7217d4c75e17d26",
+        "a6fdedf0d183f0a0:technical_description": "73887cd588b7eb2db9d8fc82371454a55d4e14d5df6b9b9aff71bb724c6580be",
+        "a6fdedf0d183f0a0:nontechnical_description": "3d255021c84d23e9e1a5b781244716c61281de15232f70327c754ff7d5ba1ad6",
+        "a6fdedf0d183f0a0:runtime_behavior": "e6d2994aa411c9b02afc8c92c0bdb6a590481746be6041ac5ab56f4c2548a762"
+      }
+    },
+    "same_identity_resume": {
+      "return_success": true,
+      "elapsed_seconds": 0.06742249999660999,
+      "status": "success",
+      "coverage": {
+        "structural_completed": 1,
+        "structural_required": 1,
+        "prompts_completed": 9,
+        "prompts_required": 9,
+        "summaries_completed": 1,
+        "summaries_required": 1
+      },
+      "budget_seconds": 600,
+      "request_ceiling_seconds": 45.0,
+      "provider": "ollama",
+      "model": "smollm2:135m-instruct-q4_K_S",
+      "selected_models": [
+        {
+          "model_id": "a6fdedf0d183f0a0",
+          "source_path": "pymdp_scaling_study/pymdp_scaling_N4_T100.md",
+          "source_sha256": "c54742b89e0850124459c7a16e7e279ec1a2dece202e3c4434520a696886347e",
+          "artifact_stem": "pymdp_scaling_N4_T100_a6fdedf0d183f0a0"
+        }
+      ],
+      "errors": [],
+      "unfinished_prompts": 0,
+      "checkpoint_fingerprint": "5160a67603298c0ea75fb79625f18c17bad891e15eadef3d764033065d0f80dc",
+      "checkpoint_sha256": "ba40e3d00cdde80a1cec78c9cde4586b53182fd4287c24e78381d32918605ffc",
+      "successful_response_sha256s": {
+        "a6fdedf0d183f0a0:summarize_content": "e0e3a6bbd9126f9b5d79d08dcfde7c189855d6053f81ac4a0084cbbcdda615d3",
+        "a6fdedf0d183f0a0:explain_model": "d86e273a2ee3cc61218c3daed6babacd3c721b5e7f00127db6b86b633dfb3de5",
+        "a6fdedf0d183f0a0:identify_components": "14d04b0124e25cbba8d5a41f0206df34919e92db98a81f9b6c467c0b74a103dc",
+        "a6fdedf0d183f0a0:analyze_structure": "79592d66b657ece1fdfb4ae39636aadaeb371b7b4631dfb861700fe2ca8ef50f",
+        "a6fdedf0d183f0a0:extract_parameters": "131b555b82290bd5f6ab45ad5b62d83ac9482cbd5070b6997fe1cda034ace1b4",
+        "a6fdedf0d183f0a0:practical_applications": "2ce1cacc01c3a57809e74e293973cbe76fd465c376c428a1e7217d4c75e17d26",
+        "a6fdedf0d183f0a0:technical_description": "73887cd588b7eb2db9d8fc82371454a55d4e14d5df6b9b9aff71bb724c6580be",
+        "a6fdedf0d183f0a0:nontechnical_description": "3d255021c84d23e9e1a5b781244716c61281de15232f70327c754ff7d5ba1ad6",
+        "a6fdedf0d183f0a0:runtime_behavior": "e6d2994aa411c9b02afc8c92c0bdb6a590481746be6041ac5ab56f4c2548a762"
+      }
+    },
+    "changed_config_resume": {
+      "rejected": true,
+      "return_success": false,
+      "checkpoint_unchanged": true,
+      "checkpoint_sha256": "ba40e3d00cdde80a1cec78c9cde4586b53182fd4287c24e78381d32918605ffc"
+    }
+  },
+  "large_stdin_witness": {
+    "before": {
+      "payload_bytes": 400000,
+      "child_delay_seconds": 0.7,
+      "timeout_seconds": 2,
+      "elapsed_seconds": 2.0068877910089213,
+      "expected_stdout": "400000",
+      "success": false,
+      "return_code": -1,
+      "error_type": "TimeoutExpired",
+      "stdout": "",
+      "cleanup_status": null
+    },
+    "after": {
+      "payload_bytes": 400000,
+      "child_delay_seconds": 0.7,
+      "timeout_seconds": 2,
+      "elapsed_seconds": 0.7277683340071235,
+      "expected_stdout": "400000",
+      "success": true,
+      "return_code": 0,
+      "error_type": null,
+      "stdout": "400000\n",
+      "cleanup_verified": true,
+      "streams_drained": true
+    }
+  },
+  "whole_source_native_refusals": [
+    {
+      "source": "input/gnn_files/pymdp_scaling_study/pymdp_scaling_N32_T100.md",
+      "source_sha256": "c89191de0c07db67162dfb7974f11c45a823acc02a3bc360c837232cbc2ebb25",
+      "source_bytes": 342214,
+      "prompt": "summarize_content",
+      "prompt_definition_sha256": "21951aecf8539a22d35c19916dfeb075660834e07a3f78323fa32472416f08ea",
+      "native_error": "Ollama HTTP 400: {\"error\":{\"code\":400,\"message\":\"request (339390 tokens) exceeds the available context size (4096 tokens), try increasing it\",\"type\":\"exceed_context_size_error\",\"n_prompt_tokens\":339390,\"n_ctx\":4096}}",
+      "elapsed_seconds": 1.3156150419963524,
+      "truncate": false,
+      "shift": false
+    },
+    {
+      "source": "input/gnn_files/pymdp_scaling_study/pymdp_scaling_N64_T100.md",
+      "source_sha256": "21b3a74a7b5a6443f0e4bd0c333f2dfa0ce9fcf2e3e1c35c0981f334d41b2d86",
+      "source_bytes": 2673574,
+      "prompt": "summarize_content",
+      "prompt_definition_sha256": "31baf6d0ac18885a9b68ad05e4bdbd5ff538522698345c108c5859ccc121140d",
+      "native_error": "Ollama HTTP 400: {\"error\":{\"code\":400,\"message\":\"request (2664414 tokens) exceeds the available context size (4096 tokens), try increasing it\",\"type\":\"exceed_context_size_error\",\"n_prompt_tokens\":2664414,\"n_ctx\":4096}}",
+      "elapsed_seconds": 1.276215666992357,
+      "truncate": false,
+      "shift": false
+    }
+  ],
+  "post_transport_fix_large_corpus": {
+    "return_success": false,
+    "elapsed_seconds": 11.583351749985013,
+    "status": "partial",
+    "coverage": {
+      "structural_completed": 2,
+      "structural_required": 2,
+      "prompts_completed": 0,
+      "prompts_required": 18,
+      "summaries_completed": 0,
+      "summaries_required": 2
+    },
+    "budget_seconds": 1200,
+    "request_ceiling_seconds": 45.0,
+    "provider": "ollama",
+    "model": "smollm2:135m-instruct-q4_K_S",
+    "selected_models": [
+      {
+        "model_id": "212d3655b0f726c6",
+        "source_path": "pymdp_scaling_study/pymdp_scaling_N32_T100.md",
+        "source_sha256": "c89191de0c07db67162dfb7974f11c45a823acc02a3bc360c837232cbc2ebb25",
+        "artifact_stem": "pymdp_scaling_N32_T100_212d3655b0f726c6"
+      },
+      {
+        "model_id": "ec6ed5a69613287a",
+        "source_path": "pymdp_scaling_study/pymdp_scaling_N64_T100.md",
+        "source_sha256": "21b3a74a7b5a6443f0e4bd0c333f2dfa0ce9fcf2e3e1c35c0981f334d41b2d86",
+        "artifact_stem": "pymdp_scaling_N64_T100_ec6ed5a69613287a"
+      }
+    ],
+    "errors": [],
+    "unfinished_prompts": 18,
+    "checkpoint_fingerprint": "9bd73b36cfea295ebcae42a294e51f14c1411d879d30aa7e0218e7cf85cce159",
+    "checkpoint_sha256": "54a1966482738e923481eb99cf6541a8e894544d6aac9d899e668fcbbabaa282",
+    "successful_response_sha256s": {}
+  },
+  "final_guarded_source_native_admission": {
+    "server_version": "0.35.1",
+    "model": "smollm2:135m-instruct-q4_K_S",
+    "model_digest": "9a7ead04933f9ca448a9d39f86869be10eca332f30302d445f1bee4e224650db",
+    "source_module_hashes": {
+      "src/gnn/execute/subprocess_envelope.py": "503de48dfc58337b4497a14a37c749531b720fb76431bf8a2a7a551da3f45a69",
+      "src/gnn/llm/request_worker.py": "0fcb2d638a2e97f4cb92eec0806e2425e5aee2fa7235ec4305e1b7c0d3fd8992"
+    },
+    "requests": [
+      {
+        "source": "input/gnn_files/pymdp_scaling_study/pymdp_scaling_N32_T100.md",
+        "source_sha256": "c89191de0c07db67162dfb7974f11c45a823acc02a3bc360c837232cbc2ebb25",
+        "source_bytes": 342214,
+        "prompt": "summarize_content",
+        "prompt_definition_sha256": "21951aecf8539a22d35c19916dfeb075660834e07a3f78323fa32472416f08ea",
+        "messages_sha256": "1d35fb4ea4cd2f1026371d6782eddf179e2c5c2cb4eb5923843ced9bdfb93289",
+        "request_timeout_seconds": 45,
+        "success": false,
+        "error": "Configured LLM model context cannot admit the complete input",
+        "native_context_refusal": true,
+        "elapsed_seconds": 0.9293958340131212
+      },
+      {
+        "source": "input/gnn_files/pymdp_scaling_study/pymdp_scaling_N64_T100.md",
+        "source_sha256": "21b3a74a7b5a6443f0e4bd0c333f2dfa0ce9fcf2e3e1c35c0981f334d41b2d86",
+        "source_bytes": 2673574,
+        "prompt": "summarize_content",
+        "prompt_definition_sha256": "31baf6d0ac18885a9b68ad05e4bdbd5ff538522698345c108c5859ccc121140d",
+        "messages_sha256": "5b7635557b2145b6755a7321ea18c1a77ac3ef140664ee040f15446e7a535bb2",
+        "request_timeout_seconds": 45,
+        "success": false,
+        "error": "Configured LLM model context cannot admit the complete input",
+        "native_context_refusal": true,
+        "elapsed_seconds": 0.8014827920123935
+      }
+    ]
+  },
+  "owned_runtime_cleanup": {
+    "owned_daemon_stopped": true,
+    "owned_descendants_stopped": true,
+    "task_port_closed": true,
+    "global_daemon_or_preferences_changed": false
+  },
+  "closure_recommendation": {
+    "original_report": "Qualified closure after integration and required repository gates: missing-model preflight, corpus-proportional automatic budget, explicit configuration and readable coverage are verified.",
+    "expanded_S1_acceptance": "UNMET: successful native coverage of all 38 models and 342 prompts is not demonstrated. Complete N32/N64 inputs exceed the verified configured context. No source-preserving multi-request method is implemented or claimed.",
+    "boundaries": [
+      "N4 success covers one explicitly selected small source and 9 prompts; it does not establish whole-corpus scientific quality.",
+      "The native model limit is 8,192 tokens; increasing allocation from 4,096 to 8,192 alone cannot admit the measured N32/N64 prompts.",
+      "Structural output, recovery text and context refusals never count as successful LLM responses.",
+      "No source truncation/sampling, model/provider substitution, training, paid service, automatic download or global preference/credential changes occurred in production behavior. The one verification-model pull was explicitly authorized.",
+      "Historical partial result of 82 of 342 prompts at 900 seconds remains distinct and is not relabeled complete."
+    ]
+  },
+  "original_control_producer_binding": {
+    "small_complete": {
+      "base_commit": "1bc3a76eccccb2cc5ce8601770714075b3ec48db",
+      "source_modules": {
+        "src/gnn/llm/provider_identity.py": "400eb58c2a58deee95d7ca5180874061d8dd418f7544e9025cb64d4fa4e8e2fe",
+        "src/gnn/llm/request_worker.py": "0fcb2d638a2e97f4cb92eec0806e2425e5aee2fa7235ec4305e1b7c0d3fd8992",
+        "src/gnn/llm/analyzer.py": "203207c7b41945efc6dde1e91ce8bcd9354c8a485ffab8f6fa6917647b65cc91",
+        "src/gnn/llm/cache.py": "81e71210dec0ab05f0b49adc6c90246b6ddbd74d427f9a3c7ae90a0f3429d699",
+        "src/gnn/llm/corpus_runner.py": "b3edfe6240cc4be1976e6a2f90bc863dff7a5bc2856c7b50958f67c699cbd1ad",
+        "src/gnn/llm/__init__.py": "3d2c51eac6a364a9867c8d55f93e8fd22c5a231158624eb05862b4319df239cd",
+        "src/gnn/llm/processor.py": "5032c145a44025f57d2bfaf2235f2dea181645bbbf75109ad9f9dcf220ce3173",
+        "src/gnn/llm/prompts.py": "afdd6e4b947ecf3acf387baf54b666e44eb119f12a5c1e5a553bbcf17bb20ee0",
+        "src/gnn/llm/generator.py": "f377bf19db1a1bf77c108b2eac21b802f1c40dc5d4d4ef356671518940fd1199",
+        "src/gnn/llm/mcp.py": "57deed0917038f3fcca57fe778cd26c1b30ab3e825610114c229f40478513024",
+        "src/gnn/llm/defaults.py": "6a9839938a5cbabe03890ddbe28470d6c234b69d32979b53a33f2e1951fa1d5f",
+        "src/gnn/llm/llm_processor.py": "fd508e53347314581d27a054d0a4af50d9e4d75d147822794edfd6c69b78c996",
+        "src/gnn/llm/llm_operations.py": "35723791dfadfcb7d0a670e702597ed901d39dde12a31b067022206bf258d73c",
+        "src/gnn/llm/providers/base_provider.py": "3081ed4e76d032d9ade86f6b1129383f5231fce790ff10f126714ecd7141ae5d",
+        "src/gnn/llm/providers/__init__.py": "6d937101ddb38c2eb6eebb3c8a8107e7a0704ce40acaa779ddb782eff28685e3",
+        "src/gnn/llm/providers/openai_provider.py": "0d3c41b6aaf70b55919170297430115cf33f03d108c7cece054f50c7127b77d8",
+        "src/gnn/llm/providers/ollama_provider.py": "e1f565086dbf988b5f9b890cf56ab7d71112d972d21c7b03d9e8e5a861c43714",
+        "src/gnn/llm/providers/openrouter_provider.py": "5227c18b09f63c341e9a6c7f57482930660e4601fbe9a36922e29c63a6ab5d46",
+        "src/gnn/llm/providers/perplexity_provider.py": "11abb313732b827d8b4b1761dbda24258ff9a51d9e0ad54c9b2983746f9295f3"
+      }
+    },
+    "missing_model_all_38": {
+      "base_commit": "1bc3a76eccccb2cc5ce8601770714075b3ec48db",
+      "source_modules": {
+        "src/gnn/llm/provider_identity.py": "400eb58c2a58deee95d7ca5180874061d8dd418f7544e9025cb64d4fa4e8e2fe",
+        "src/gnn/llm/request_worker.py": "0fcb2d638a2e97f4cb92eec0806e2425e5aee2fa7235ec4305e1b7c0d3fd8992",
+        "src/gnn/llm/analyzer.py": "203207c7b41945efc6dde1e91ce8bcd9354c8a485ffab8f6fa6917647b65cc91",
+        "src/gnn/llm/cache.py": "81e71210dec0ab05f0b49adc6c90246b6ddbd74d427f9a3c7ae90a0f3429d699",
+        "src/gnn/llm/corpus_runner.py": "b3edfe6240cc4be1976e6a2f90bc863dff7a5bc2856c7b50958f67c699cbd1ad",
+        "src/gnn/llm/__init__.py": "3d2c51eac6a364a9867c8d55f93e8fd22c5a231158624eb05862b4319df239cd",
+        "src/gnn/llm/processor.py": "5032c145a44025f57d2bfaf2235f2dea181645bbbf75109ad9f9dcf220ce3173",
+        "src/gnn/llm/prompts.py": "afdd6e4b947ecf3acf387baf54b666e44eb119f12a5c1e5a553bbcf17bb20ee0",
+        "src/gnn/llm/generator.py": "f377bf19db1a1bf77c108b2eac21b802f1c40dc5d4d4ef356671518940fd1199",
+        "src/gnn/llm/mcp.py": "57deed0917038f3fcca57fe778cd26c1b30ab3e825610114c229f40478513024",
+        "src/gnn/llm/defaults.py": "6a9839938a5cbabe03890ddbe28470d6c234b69d32979b53a33f2e1951fa1d5f",
+        "src/gnn/llm/llm_processor.py": "fd508e53347314581d27a054d0a4af50d9e4d75d147822794edfd6c69b78c996",
+        "src/gnn/llm/llm_operations.py": "35723791dfadfcb7d0a670e702597ed901d39dde12a31b067022206bf258d73c",
+        "src/gnn/llm/providers/base_provider.py": "3081ed4e76d032d9ade86f6b1129383f5231fce790ff10f126714ecd7141ae5d",
+        "src/gnn/llm/providers/__init__.py": "6d937101ddb38c2eb6eebb3c8a8107e7a0704ce40acaa779ddb782eff28685e3",
+        "src/gnn/llm/providers/openai_provider.py": "0d3c41b6aaf70b55919170297430115cf33f03d108c7cece054f50c7127b77d8",
+        "src/gnn/llm/providers/ollama_provider.py": "e1f565086dbf988b5f9b890cf56ab7d71112d972d21c7b03d9e8e5a861c43714",
+        "src/gnn/llm/providers/openrouter_provider.py": "5227c18b09f63c341e9a6c7f57482930660e4601fbe9a36922e29c63a6ab5d46",
+        "src/gnn/llm/providers/perplexity_provider.py": "11abb313732b827d8b4b1761dbda24258ff9a51d9e0ad54c9b2983746f9295f3"
+      }
+    },
+    "qualification": "Native success retains the recorded producer hashes. The current human-summary delta is separately covered by current-source tests; final guarded-envelope context controls retain their own exact source binding."
+  }
+}

@@ -194,7 +194,40 @@ def generate_llm_summary(results: Dict[str, Any]) -> str:
 - **Files Processed**: {results.get("processed_files", 0)}
 - **Success**: {results.get("success", False)}
 - **Errors**: {len(results.get("errors", []))}
+"""
 
+    for label, key in (
+        ("Status", "status"),
+        ("Selected Files", "selected_files"),
+        ("Discovered Files", "total_files_discovered"),
+        ("Provider", "provider"),
+        ("Model", "selected_model"),
+        ("Budget (seconds)", "budget_seconds"),
+    ):
+        if key in results:
+            summary += f"- **{label}**: {results[key]}\n"
+
+    coverage = results.get("coverage", {})
+    if coverage:
+        summary += "\n## Selected-source Coverage\n"
+        for label, kind in (
+            ("Structural Analyses", "structural"),
+            ("LLM Summaries", "summaries"),
+            ("LLM Prompts", "prompts"),
+        ):
+            completed, required = f"{kind}_completed", f"{kind}_required"
+            if completed in coverage and required in coverage:
+                summary += (
+                    f"- **{label}**: {coverage[completed]}/{coverage[required]}\n"
+                )
+        if "unfinished_work" in results:
+            summary += f"- **Unfinished Prompts**: {len(results['unfinished_work'])}\n"
+        summary += (
+            "\nStructural analysis does not count as an LLM response. "
+            "Required unfinished prompts prevent complete-source success.\n"
+        )
+
+    summary += f"""
 ## Analysis Results
 - **Files Analyzed**: {len(results.get("analysis_results", []))}
 - **Insights Generated**: {len(results.get("model_insights", []))}
@@ -208,7 +241,8 @@ def generate_llm_summary(results: Dict[str, Any]) -> str:
     if errors:
         for error in errors:
             if isinstance(error, dict):
-                summary += f"- **{error.get('file', 'Unknown')}**: {error.get('error', 'Unknown error')}\n"
+                location = error.get("file") or error.get("stage") or "Unknown"
+                summary += f"- **{location}**: {error.get('error', 'Unknown error')}\n"
             else:
                 summary += f"- {error}\n"
     else:

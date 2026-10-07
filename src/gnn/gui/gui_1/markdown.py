@@ -6,10 +6,21 @@ Public functions: add_component_to_markdown, update_component_states, remove_com
 from __future__ import annotations
 
 import logging
-import re
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
+
+MAX_MARKDOWN_CHARS = 8 * 1024 * 1024
+
+
+def _check_editor_size(md_text: str) -> None:
+    if len(md_text) > MAX_MARKDOWN_CHARS:
+        raise ValueError("GUI Markdown exceeds the 8,388,608-character editor limit")
+
+
+def _markdown_lines(md_text: str) -> list[str]:
+    _check_editor_size(md_text)
+    return md_text.splitlines()
 
 
 # ------------------------------
@@ -23,6 +34,7 @@ def add_component_to_markdown(
     """
     Append a new component block to the markdown. Creates components section if missing.
     """
+    _check_editor_size(md_text)
     states_list = states or []
     block: list[Any] = [
         "components:",
@@ -50,7 +62,7 @@ def update_component_states(
     """
     if mode not in ("append", "replace"):
         mode = "append"
-    lines = md_text.splitlines()
+    lines = _markdown_lines(md_text)
     out: list[str] = []
     i = 0
     while i < len(lines):
@@ -88,7 +100,7 @@ def remove_component_from_markdown(md_text: str, name: str) -> str:
     """
     Remove a component block from the components list by name. Leaves other content intact.
     """
-    lines = md_text.splitlines()
+    lines = _markdown_lines(md_text)
     out: list[str] = []
     i = 0
     while i < len(lines):
@@ -113,7 +125,7 @@ def parse_components_from_markdown(md_text: str) -> list[dict[str, object]]:
     Parse components section into a list of {name, type, states} dicts (best-effort).
     """
     components: list[dict[str, object]] = []
-    lines = md_text.splitlines()
+    lines = _markdown_lines(md_text)
     i = 0
     current: dict[str, object] | None = None
     while i < len(lines):
@@ -142,7 +154,33 @@ def parse_components_from_markdown(md_text: str) -> list[dict[str, object]]:
 # State space helpers (public API)
 # ------------------------------
 
-_STATE_LINE_RE = re.compile(r"^\s*([A-Za-z][A-Za-z0-9_]*)\[(.*?)\]\s*(#\s*(.*))?$")
+
+def _parse_state_line(line: str) -> tuple[str, str, str] | None:
+    """Parse the editor's state-line grammar without delimiter backtracking."""
+    text = line.lstrip()
+    if not text or not text[0].isascii() or not text[0].isalpha():
+        return None
+    end = 1
+    while (
+        end < len(text)
+        and text[end].isascii()
+        and (text[end].isalnum() or text[end] == "_")
+    ):
+        end += 1
+    if end == len(text) or text[end] != "[":
+        return None
+    close = text.find("]", end + 1)
+    while close != -1:
+        tail = close + 1
+        while tail < len(text) and text[tail].isspace():
+            tail += 1
+        if tail == len(text) or text[tail] == "#":
+            comment = text[tail + 1 :].strip() if tail < len(text) else ""
+            return text[:end], text[end + 1 : close], comment
+        # Each whitespace suffix lies after a distinct closing bracket, so
+        # failed candidates visit at most a constant multiple of the input.
+        close = text.find("]", close + 1)
+    return None
 
 
 def parse_state_space_from_markdown(md_text: str) -> list[dict[str, object]]:
@@ -151,7 +189,7 @@ def parse_state_space_from_markdown(md_text: str) -> list[dict[str, object]]:
     Returns list of dicts: {name, dims: [int,...], type}
     """
     result: list[dict[str, object]] = []
-    lines = md_text.splitlines()
+    lines = _markdown_lines(md_text)
     in_section = False
     found_section = False
     for line in lines:
@@ -176,11 +214,9 @@ def parse_state_space_from_markdown(md_text: str) -> list[dict[str, object]]:
             found_section = True
             continue
         if in_section:
-            m = _STATE_LINE_RE.match(line)
+            m = _parse_state_line(line)
             if m:
-                name = m.group(1)
-                inside = m.group(2)
-                comment = (m.group(4) or "").strip()
+                name, inside, comment = m
                 parts = [p.strip() for p in inside.split(",") if p.strip()]
                 dims: list[int] = []
                 typ = None
@@ -204,11 +240,9 @@ def parse_state_space_from_markdown(md_text: str) -> list[dict[str, object]]:
     # Recovery: if no explicit section found, scan whole document for state-like lines
     if not result and not found_section:
         for line in lines:
-            m = _STATE_LINE_RE.match(line)
+            m = _parse_state_line(line)
             if m:
-                name = m.group(1)
-                inside = m.group(2)
-                comment = (m.group(4) or "").strip()
+                name, inside, comment = m
                 parts = [p.strip() for p in inside.split(",") if p.strip()]
                 dims = []
                 typ = None
@@ -233,7 +267,7 @@ def parse_state_space_from_markdown(md_text: str) -> list[dict[str, object]]:
 
 def _ensure_state_space_section(md_text: str) -> tuple[str, int]:
     """Handle ensure state space section for internal callers."""
-    lines = md_text.splitlines()
+    lines = _markdown_lines(md_text)
     for i, line in enumerate(lines):
         if (
             line.strip().lower().startswith("## state space")
@@ -279,17 +313,13 @@ def update_state_space_entry(
     comment: str | None = None,
 ) -> str:
     """Update state space entry."""
-    lines = md_text.splitlines()
+    lines = _markdown_lines(md_text)
     out: list[str] = []
     replaced = False
     for line in lines:
-        m = _STATE_LINE_RE.match(line)
-        if m and m.group(1) == orig_name:
-            suffix = (
-                f"  # {comment}"
-                if comment
-                else (f"  # {m.group(4).strip()}" if m.group(4) else "")
-            )
+        m = _parse_state_line(line)
+        if m and m[0] == orig_name:
+            suffix = f"  # {comment}" if comment else (f"  # {m[2]}" if m[2] else "")
             new_line = (
                 f"{new_name}[{', '.join(str(d) for d in dims)}{', type=' + typ if typ else ''}]"
                 + suffix
@@ -307,11 +337,11 @@ def update_state_space_entry(
 
 def remove_state_space_entry(md_text: str, name: str) -> str:
     """Provide remove state space entry behavior."""
-    lines = md_text.splitlines()
+    lines = _markdown_lines(md_text)
     out: list[str] = []
     for line in lines:
-        m = _STATE_LINE_RE.match(line)
-        if m and m.group(1) == name:
+        m = _parse_state_line(line)
+        if m and m[0] == name:
             continue
         out.append(line)
     return "\n".join(out) + ("\n" if not out or out[-1] != "" else "")

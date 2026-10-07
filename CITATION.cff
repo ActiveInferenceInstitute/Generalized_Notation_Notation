@@ -7,10 +7,9 @@ authors:
     affiliation: "Active Inference Institute"
 
 title: "Generalized_Notation_Notation (GNN)"
-version: 4.0.0
-# Prepublication snapshot; actual publication facts belong to the verified release receipt.
-# Set date-released only after verified publication.
-# The manuscript authored epoch 2026-10-02 is not a software release date.
+version: 4.0.1
+# 4.0.1 publication date is recorded after verified publication.
+# Manuscript authored epoch: 2026-10-02.
 # Project concept DOI; a v4-specific archival DOI is not yet recorded.
 doi: 10.5281/zenodo.7803313
 

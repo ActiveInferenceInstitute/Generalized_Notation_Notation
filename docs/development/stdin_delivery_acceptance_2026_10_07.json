@@ -1,0 +1,50 @@
+{
+  "schema": "gnn_stdin_fix_independent_review_v1",
+  "status": "GO",
+  "completed_at": "2026-10-07T16:10:06.752199+00:00",
+  "source": {
+    "path": "src/gnn/execute/subprocess_envelope.py",
+    "sha256": "503de48dfc58337b4497a14a37c749531b720fb76431bf8a2a7a551da3f45a69"
+  },
+  "focused_tests": {
+    "path": "tests/execute/test_subprocess_envelope.py",
+    "sha256": "59c5b268971bddf419a21604f7bfce354b43d5fd1672fe8501cfe85bdb10b68d",
+    "passed": 59,
+    "failure": 0,
+    "error": 0,
+    "skipped": 0,
+    "junit_sha256": "1bd919323f6fcad3ddf60c8aa1a29fd083679ee2f178651133f8c7be77af464c",
+    "observed_runtime_seconds": 19.23
+  },
+  "runtime": {
+    "python": "3.11.15",
+    "platform": "Darwin",
+    "architecture": "arm64",
+    "source_import_bound": true
+  },
+  "close_failure_witness": {
+    "receipt_sha256": "9261a23a56de9fbe9525531b8c82fa81f6c2846cec31ffec9b0820e06406ec49",
+    "injection": "Owned TemporaryFile closes its real descriptor, then raises OSError; real child sleeps after flushing stdout.",
+    "child_already_reaped_before_probe_safety_cleanup": true,
+    "file_closed": true,
+    "streams_drained": true,
+    "stdout_preserved": true,
+    "returned_error_type": "ProcessCleanupFailure",
+    "underlying_error_type": "TimeoutExpired",
+    "cleanup_verified": false,
+    "duration_seconds": 0.15334966700174846
+  },
+  "review_findings": [
+    "Complete UTF-8 bytes and EOF remain available after slow reader startup across multiple polling slices.",
+    "Temporary stdin descriptor uses public APIs; private/unlinked POSIX input is absent from argv and closed on success, spawn failure, timeout, cancellation and staged deadline expiry.",
+    "OSError during owned descriptor closure records a failed cleanup envelope and still executes descendant observation stop, termination, reaping and output draining.",
+    "Input staging is included in the original budget; staging cannot restart an expired deadline.",
+    "No private CPython communicate/input-offset state is read or modified."
+  ],
+  "limits": [
+    "Independent runtime evidence is macOS/arm64/Python3.11; cross-platform CI remains root integration work.",
+    "cleanup_verified remains false under the injected close error even though this witness reaped its child; no universal cleanup or sandbox containment claim.",
+    "Staging uses an owned temporary descriptor, not a stdin pipe; consumers that require pipe-specific seekability semantics are outside the documented text-delivery contract.",
+    "Existing scientific native, GUI and dependency receipts are retained and were not rerun."
+  ]
+}
