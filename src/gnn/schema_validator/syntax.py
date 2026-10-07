@@ -25,15 +25,20 @@ from gnn.types import (
     ValidationResult,
 )
 
+logger = logging.getLogger(__name__)
+
 # Try to import round-trip testing capabilities
 try:
     from gnn.parsers import GNNParsingSystem
 
     ROUND_TRIP_AVAILABLE = True
-except ImportError:
+except ImportError as exc:
     ROUND_TRIP_AVAILABLE = False
-
-logger = logging.getLogger(__name__)
+    logger.warning(
+        "Enhanced parser unavailable (%s: %s); using basic GNN parsing",
+        type(exc).__name__,
+        exc,
+    )
 
 
 class GNNParser(FormatDetectionMixin, SectionParsersMixin):
@@ -142,6 +147,8 @@ class GNNParser(FormatDetectionMixin, SectionParsersMixin):
           of the requested format.
         """
         if self.parsing_system and format_hint != "markdown":
+            from gnn.parsers.common import ParseError
+
             try:
                 format_enum = GNNFormat(format_hint)
             except ValueError as exc:
@@ -153,15 +160,19 @@ class GNNParser(FormatDetectionMixin, SectionParsersMixin):
 
             try:
                 result = self.parsing_system.parse_string(content, format_enum)
-            except Exception as exc:
+            except (ParseError, ValueError) as exc:
                 # GNNParsingSystem.parse_string wraps parser failures in
                 # ParseError and raises ValueError for unregistered formats;
                 # both mean the requested format cannot handle this content.
+                reason = f"{type(exc).__name__}: {exc}"
+                if exc.__cause__ is not None:
+                    cause = exc.__cause__
+                    reason += f" (caused by {type(cause).__name__}: {cause})"
                 return self._degraded_markdown_fallback(
                     content,
                     source_name,
                     format_hint,
-                    f"{type(exc).__name__}: {exc}",
+                    reason,
                 )
             if result.success:
                 return self._convert_parse_result_to_parsed_gnn(result, format_hint)

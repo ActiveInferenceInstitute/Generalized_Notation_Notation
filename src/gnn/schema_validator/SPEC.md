@@ -13,7 +13,13 @@ Syntax-level GNN validation: the regex-based parser that turns GNN source text i
 
 ## Invariants
 - Parser and validator are separated by design: `validator.py` imports `GNNParser` from `syntax.py`, never the reverse.
-- `ROUND_TRIP_AVAILABLE` degrades gracefully: when `gnn.parsers` is not importable, `GNNValidator` runs without round-trip testing rather than failing.
+- `ROUND_TRIP_AVAILABLE` degrades gracefully when the enhanced
+  `gnn.parsers.GNNParsingSystem` import fails; basic parsing and validation
+  remain available when required core types are importable.
+- `syntax.py` owns that capability flag; validator and public package exports
+  reuse it. Optional import failure logs its exception type and cause. Known
+  parser failures retain the chained source exception in `parse_degraded`;
+  the basic markdown fallback and public result shape remain available.
 - Validation levels compare through rank mapping; accepted string forms resolve to `ValidationLevel` members (`basic`/`standard`/`strict`/`research`/`round_trip`).
 
 ## Key Exports

@@ -18,9 +18,8 @@ from gnn.schema_validator.cross_format import (
     validate_cross_format_consistency,
     validate_schema_consistency,
 )
-from gnn.schema_validator.syntax import GNNParser
+from gnn.schema_validator.syntax import ROUND_TRIP_AVAILABLE, GNNParser
 from gnn.schema_validator.validator import (
-    ROUND_TRIP_AVAILABLE,
     GNNValidator,
     validate_gnn_file_comprehensive,
 )
