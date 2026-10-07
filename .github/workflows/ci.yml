@@ -27,7 +27,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.13"]
       fail-fast: false
     env:
       PYTHONPATH: src
@@ -53,104 +53,13 @@ jobs:
 
       - name: Validate JAX + PyMDP stack (core)
         run: |
-          uv run --extra dev python -c "from gnn.utils.runtime_safety.jax_stack_validation import verify_jax_pymdp_stack; verify_jax_pymdp_stack(); print('jax_stack_ok')"
-
-      - name: Ruff format check
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev ruff format --check src scripts
-
-      - name: Ruff check
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev ruff check src/gnn scripts
-
-      - name: Repository terminology audit
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev python scripts/check_repo_terminology.py --strict
-
-      - name: Maintained documentation terminology audit
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev python scripts/check_maintained_doc_terms.py --strict
-
-      - name: Documentation audit
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev python docs/development/docs_audit.py --strict --check-anchors --no-write
-
-      - name: Documentation contract audit
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev python scripts/check_doc_contracts.py --strict
-
-      - name: GNN documentation pattern audit
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev python scripts/check_gnn_doc_patterns.py --strict
-
-      - name: Import-linter boundaries
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev lint-imports
-
-      - name: Thin orchestrator line cap
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev python scripts/check_thin_orchestrators.py
-
-      - name: CLI flag parity
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev python scripts/check_flag_parity.py
-
-      - name: Dependency hygiene
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev python scripts/check_dep_hygiene.py
-
-      - name: Validate surface audit
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev python scripts/audit_validate_surface.py
-
-      - name: Capability contracts
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev python scripts/check_capability_contracts.py --strict
-
-      - name: Functional MCP and capability PR gate
-        if: matrix.python-version == '3.12'
-        run: |
-          uv run --extra dev python -m pytest \
-            tests/mcp/test_mcp_functional.py \
-            tests/mcp/test_mcp_http_auth.py \
-            tests/mcp/test_transport_reliability.py \
-            tests/render/test_framework_availability.py \
-            tests/docs/test_capability_contracts.py \
-            -q --tb=short -rs --junitxml=junit/mcp-capabilities.xml
-
-      - name: MCP and capability test evidence
-        if: always() && matrix.python-version == '3.12'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: mcp-capabilities
-          path: junit/mcp-capabilities.xml
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Mypy type check
-        if: matrix.python-version == '3.12'
-        run: uv run --extra dev mypy src/gnn --show-error-codes
-
-      - name: Pytest collect-only
-        if: matrix.python-version == '3.12'
-        run: |
-          uv run --extra dev python -m pytest --collect-only tests/ -q --tb=no \
-            -m "not ollama"
-
-      - name: Focused PyMDP/POMDP tests
-        if: matrix.python-version == '3.12'
-        run: |
-          uv run --extra dev python -m pytest \
-            tests/execute/test_pymdp_contracts.py \
-            tests/execute/test_discrete_models_pymdp.py \
-            tests/visualization/test_visualization_matrices.py \
-            -q --tb=short
+          uv run --frozen --no-sync python -c "from gnn.utils.runtime_safety.jax_stack_validation import verify_jax_pymdp_stack; verify_jax_pymdp_stack(); print('jax_stack_ok')"
 
       - name: Run unit and integration tests (parallel, skip pipeline & MCP)
         id: pytest
         run: |
           mkdir -p junit
-          uv run --extra dev python -m pytest -m "not pipeline and not mcp and not ollama and not env_heavy and not toolchain" \
+          uv run --frozen --no-sync python -m pytest -m "not pipeline and not mcp and not ollama and not env_heavy and not toolchain" \
             --tb=short \
             -q \
             -n auto --dist worksteal \
@@ -186,10 +95,199 @@ jobs:
             echo "JUnit XML is attached as artifact \`pytest-junit-${{ matrix.python-version }}\` when present."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: v3 orchestration acceptance gate
-        if: matrix.python-version == '3.12'
+  pytest312:
+    name: pytest (3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      PYTHONHASHSEED: "0"
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          # Pin uv to the Dockerfile bootstrap floor series (UV_VERSION=0.12.0).
+          version: "0.12"
+          enable-cache: true
+
+      - name: Install dependencies (dev)
+        run: uv sync --frozen --extra dev
+
+      - name: Validate JAX + PyMDP stack (core)
         run: |
-          PYTHONPATH=src uv run --extra dev python scripts/run_v3_orchestration_acceptance.py --strict
+          uv run --frozen --no-sync python -c "from gnn.utils.runtime_safety.jax_stack_validation import verify_jax_pymdp_stack; verify_jax_pymdp_stack(); print('jax_stack_ok')"
+
+      - name: Run unit and integration tests (parallel, skip pipeline & MCP)
+        id: pytest
+        run: |
+          mkdir -p junit
+          uv run --frozen --no-sync python -m pytest -m "not pipeline and not mcp and not ollama and not env_heavy and not toolchain" \
+            --tb=short \
+            -q \
+            -n auto --dist worksteal \
+            --cov=gnn --cov-report=term-missing --cov-report=json:junit/coverage-3.12.json \
+            --junitxml=junit/pytest-3.12.xml
+
+      - name: Pytest JUnit report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pytest-junit-3.12
+          path: junit/pytest-3.12.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Coverage report artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-3.12
+          path: junit/coverage-3.12.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Test job summary
+        if: always()
+        run: |
+          {
+            echo "### Tests (Python 3.12)"
+            echo ""
+            echo "Outcome: **${{ steps.pytest.outcome }}**"
+            echo ""
+            echo "JUnit XML is attached as artifact \`pytest-junit-3.12\` when present."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  quality:
+    name: quality (3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      PYTHONHASHSEED: "0"
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          # Pin uv to the Dockerfile bootstrap floor series (UV_VERSION=0.12.0).
+          version: "0.12"
+          enable-cache: true
+
+      - name: Install dependencies (dev)
+        run: uv sync --frozen --extra dev
+
+      - name: Ruff format check
+        run: uv run --frozen --no-sync ruff format --check src scripts
+
+      - name: Ruff check
+        run: uv run --frozen --no-sync ruff check src/gnn scripts
+
+      - name: Repository terminology audit
+        run: uv run --frozen --no-sync python scripts/check_repo_terminology.py --strict
+
+      - name: Maintained documentation terminology audit
+        run: uv run --frozen --no-sync python scripts/check_maintained_doc_terms.py --strict
+
+      - name: Documentation audit
+        run: uv run --frozen --no-sync python docs/development/docs_audit.py --strict --check-anchors --no-write
+
+      - name: Documentation contract audit
+        run: uv run --frozen --no-sync python scripts/check_doc_contracts.py --strict
+
+      - name: GNN documentation pattern audit
+        run: uv run --frozen --no-sync python scripts/check_gnn_doc_patterns.py --strict
+
+      - name: Import-linter boundaries
+        run: uv run --frozen --no-sync lint-imports
+
+      - name: Thin orchestrator line cap
+        run: uv run --frozen --no-sync python scripts/check_thin_orchestrators.py
+
+      - name: CLI flag parity
+        run: uv run --frozen --no-sync python scripts/check_flag_parity.py
+
+      - name: Dependency hygiene
+        run: uv run --frozen --no-sync python scripts/check_dep_hygiene.py
+
+      - name: Validate surface audit
+        run: uv run --frozen --no-sync python scripts/audit_validate_surface.py
+
+      - name: Capability contracts
+        run: uv run --frozen --no-sync python scripts/check_capability_contracts.py --strict
+
+      - name: Functional MCP and capability PR gate
+        run: |
+          uv run --frozen --no-sync python -m pytest \
+            tests/mcp/test_mcp_functional.py \
+            tests/mcp/test_mcp_http_auth.py \
+            tests/mcp/test_transport_reliability.py \
+            tests/render/test_framework_availability.py \
+            tests/docs/test_capability_contracts.py \
+            -q --tb=short -rs --junitxml=junit/mcp-capabilities.xml
+
+      - name: MCP and capability test evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mcp-capabilities
+          path: junit/mcp-capabilities.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Mypy type check
+        run: uv run --frozen --no-sync mypy src/gnn --show-error-codes
+
+      - name: Pytest collect-only
+        run: |
+          uv run --frozen --no-sync python -m pytest --collect-only tests/ -q --tb=no \
+            -m "not ollama"
+
+      - name: Focused PyMDP/POMDP tests
+        run: |
+          uv run --frozen --no-sync python -m pytest \
+            tests/execute/test_pymdp_contracts.py \
+            tests/execute/test_discrete_models_pymdp.py \
+            tests/visualization/test_visualization_matrices.py \
+            -q --tb=short
+
+      - name: v3 orchestration acceptance gate
+        run: |
+          PYTHONPATH=src uv run --frozen --no-sync python scripts/run_v3_orchestration_acceptance.py --strict
+
+  test312:
+    # Preserve the required status while independent checks run in parallel.
+    name: test (3.12)
+    needs: [pytest312, quality]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTEST_RESULT: ${{ needs.pytest312.result }}
+      QUALITY_RESULT: ${{ needs.quality.result }}
+    steps:
+      - name: Require Python 3.12 tests and quality checks
+        run: |
+          test "$PYTEST_RESULT" = success
+          test "$QUALITY_RESULT" = success
 
   pipeline-contracts:
     # Deterministic orchestration contracts run on every PR. Native inference,
@@ -232,7 +330,7 @@ jobs:
     # PR-time gate for the 12 environment-skipped tests (11 sklearn cases in
     # test_ml_integration_inference.py + 1 torch execution case in
     # test_continuous_renderers.py). Without this job they only run in the
-    # weekly scheduled full-extras workflow. See TO-DO.md MIN-T1.
+    # weekly scheduled full-extras workflow. The optional-dependency lane remains mandatory.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -261,7 +359,7 @@ jobs:
 
       - name: Extras-unlock tests (skipped by the dev-only default env)
         run: |
-          uv run --extra dev --extra ml-ai --extra torch python -m pytest \
+          uv run --frozen --no-sync python -m pytest \
             tests/ml_integration/test_ml_integration_inference.py \
             tests/render/test_continuous_renderers.py \
             -q --tb=short
@@ -296,7 +394,7 @@ jobs:
         id: bandit
         continue-on-error: true
         run: |
-          uv run --extra dev bandit -r src/gnn -c pyproject.toml \
+          uv run --frozen --no-sync bandit -r src/gnn -c pyproject.toml \
             --severity-level medium \
             --confidence-level medium \
             -f sarif \
