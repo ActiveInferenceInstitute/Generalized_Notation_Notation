@@ -1,6 +1,6 @@
 """Tests for the capability-contract ladder in scripts/check_capability_contracts.py.
 
-Public functions: test_capability_contracts_are_current,
+Public functions: test_roadmap_autonomy_contract,
 test_capability_contracts_fail_strict_by_default, test_v350_version_pair_contract_fires,
 test_autonomy_claim_before_v4_fails, test_v350_executor_registry_contract_fires
 """
@@ -26,8 +26,46 @@ def _patched_read(monkeypatch: pytest.MonkeyPatch, overrides: dict[str, str]) ->
     monkeypatch.setattr(check_capability_contracts, "_read", fake_read)
 
 
-def test_capability_contracts_are_current() -> None:
-    assert run_audit() == []
+@pytest.mark.parametrize(
+    ("policy", "version_heading", "valid"),
+    [
+        (None, None, True),
+        ("`--autonomous` remains proposal-only.", "Next steps", True),
+        ("`--autonomous` mode remains proposal-only.", "Roadmap for v4.0.0", True),
+        ("Future capabilities need review.", "Next steps", False),
+        (
+            "`--autonomous` permits source rewriting and publication.",
+            "Next steps",
+            False,
+        ),
+        ("`--autonomous` is not proposal-only.", "Next steps", False),
+        (
+            "`--autonomous` mode.\n\nA separate workflow is proposal-only.",
+            "Next steps",
+            False,
+        ),
+    ],
+)
+def test_roadmap_autonomy_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    policy: str | None,
+    version_heading: str | None,
+    valid: bool,
+) -> None:
+    """Actual roadmap audits accept bounded policies and reject excess authority."""
+    if policy is not None:
+        _patched_read(
+            monkeypatch,
+            {"TO-DO.md": f"# Roadmap\n\n## {version_heading}\n\n{policy}\n"},
+        )
+
+    failures = run_audit()
+    if valid:
+        assert failures == []
+    else:
+        assert failures == [
+            "TO-DO.md: --autonomous must remain explicitly proposal-only"
+        ]
 
 
 def test_v350_version_pair_contract_fires(
