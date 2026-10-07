@@ -1,0 +1,330 @@
+{
+  "schema": "gnn-release-post-publication/v1",
+  "version": "4.0.1",
+  "release_revision": "17c72cf0f98d7d3bbf0159d1b1cce8c77c4e4daf",
+  "release_id": 406113561,
+  "release_url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1",
+  "published_at": "2026-10-07T19:56:37Z",
+  "verified_at": "2026-10-07T19:57:33.405677+00:00",
+  "tag": "v4.0.1",
+  "annotated_tag_object": "5dca018eacb3ba34ab6e8701cf4c0c31bcafe6d9",
+  "peeled_commit": "17c72cf0f98d7d3bbf0159d1b1cce8c77c4e4daf",
+  "release_draft": false,
+  "release_prerelease": false,
+  "primary_assets": [
+    {
+      "name": "GNN-4.0.1-manuscript.pdf",
+      "id": 619660026,
+      "bytes": 1342487,
+      "sha256": "56934a5bf5cc8633ec9b18a51d7417520715343f3dd6c0185c2ceedbaca6d056",
+      "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/GNN-4.0.1-manuscript.pdf",
+      "public_download_verified": true
+    },
+    {
+      "name": "SHA256SUMS",
+      "id": 619660077,
+      "bytes": 679,
+      "sha256": "d4f8aa296b602b1135715ba20fe273e94a1a20956dea355bf8af382d9a7ca0fe",
+      "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/SHA256SUMS",
+      "public_download_verified": true
+    },
+    {
+      "name": "archive-verification.json",
+      "id": 619660078,
+      "bytes": 1283,
+      "sha256": "3e03b899761063c4c64f7e4aea426dda5ffdda89aa41e6a4b221014f78080a4e",
+      "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/archive-verification.json",
+      "public_download_verified": true
+    },
+    {
+      "name": "generalized_notation_notation-4.0.1-py3-none-any.whl",
+      "id": 619660020,
+      "bytes": 3229124,
+      "sha256": "da5bfebebad13de58d04ab66471d7eb29296a356d32b029ba8659d8e4662fa3f",
+      "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/generalized_notation_notation-4.0.1-py3-none-any.whl",
+      "public_download_verified": true
+    },
+    {
+      "name": "generalized_notation_notation-4.0.1.tar.gz",
+      "id": 619660019,
+      "bytes": 15191540,
+      "sha256": "2149a0694d75cd1dbd8c8db7d7d4136088af639f48195944e11f48dfbcb21837",
+      "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/generalized_notation_notation-4.0.1.tar.gz",
+      "public_download_verified": true
+    },
+    {
+      "name": "manuscript-render-manifest.json",
+      "id": 619660023,
+      "bytes": 4058,
+      "sha256": "66dfe0b6c020bbb72890063d59362639f9f6d4938c1f78e42b09e0089de25074",
+      "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/manuscript-render-manifest.json",
+      "public_download_verified": true
+    },
+    {
+      "name": "source-binding.json",
+      "id": 619660018,
+      "bytes": 125268,
+      "sha256": "dc3fbf9702e7561e26366dea8e90c10e4440531351c3c8e187772fb3724b4447",
+      "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/source-binding.json",
+      "public_download_verified": true
+    },
+    {
+      "name": "verification.json",
+      "id": 619660075,
+      "bytes": 25800,
+      "sha256": "4bc58b8157c145afb8c67dccf130fc5bda562321045c6410b07040dc993626d4",
+      "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/verification.json",
+      "public_download_verified": true
+    }
+  ],
+  "initial_primary_assets_verified": 8,
+  "all_primary_public_downloads_match_staged_bytes": true,
+  "checksum_lists_verified": true,
+  "verification_receipt_sha256": "4bc58b8157c145afb8c67dccf130fc5bda562321045c6410b07040dc993626d4",
+  "companion_revisions": {
+    "fep": "75a9615755ae49f093cce1015347f75595b918b9",
+    "geo": "61bed1b75a444610bfe43a7526cb0fbe7cb01764"
+  },
+  "exact_gnn_main_ci": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37668498747",
+  "exact_fep_main_ci": "https://github.com/ActiveInferenceInstitute/fep_formal/actions/runs/37662448147",
+  "exact_geo_main_ci": "https://github.com/ActiveInferenceInstitute/GEO_INFER/actions/runs/37676175433",
+  "issue_closeout": [
+    {
+      "number": 236,
+      "state": "closed",
+      "closed_at": "2026-10-07T18:46:21Z",
+      "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/236",
+      "acceptance_comment": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/236#issuecomment-6044548437",
+      "receipt": "issue236_analysis_dispatch_closeout_2026_10_07.json",
+      "receipt_sha256": "16411b629504c1cd30bc48660275a36b0ac05ed6f37a4ac7f202a43a6ff5dcdd"
+    },
+    {
+      "number": 241,
+      "state": "closed",
+      "closed_at": "2026-10-07T18:46:25Z",
+      "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/241",
+      "acceptance_comment": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/241#issuecomment-6044549225",
+      "receipt": "issue241_llm_acceptance_2026_10_07.json",
+      "receipt_sha256": "14633d2c61488a3d6ff76c7602fed284418b737354731d315655b3d444a7d2e6"
+    },
+    {
+      "number": 250,
+      "state": "closed",
+      "closed_at": "2026-10-07T18:46:29Z",
+      "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/250",
+      "acceptance_comment": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/250#issuecomment-6044549962",
+      "receipt": "issue250_scientific_acceptance_2026_10_07.json",
+      "receipt_sha256": "cf80dd4692d1b9bda63cada0148ae8364f724e888d6c2758902525c9335755bf"
+    }
+  ],
+  "security": {
+    "open_issues": 0,
+    "open_dependabot_alerts": 0,
+    "open_codeql_alerts": 0,
+    "fixed_alerts": {
+      "dependabot": [
+        {
+          "number": 194,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:04Z",
+          "dismissed": false
+        },
+        {
+          "number": 193,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:04Z",
+          "dismissed": false
+        },
+        {
+          "number": 192,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:03Z",
+          "dismissed": false
+        },
+        {
+          "number": 191,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:03Z",
+          "dismissed": false
+        },
+        {
+          "number": 190,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:03Z",
+          "dismissed": false
+        },
+        {
+          "number": 189,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:02Z",
+          "dismissed": false
+        },
+        {
+          "number": 188,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:02Z",
+          "dismissed": false
+        },
+        {
+          "number": 187,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:01Z",
+          "dismissed": false
+        },
+        {
+          "number": 186,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:01Z",
+          "dismissed": false
+        },
+        {
+          "number": 185,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:01Z",
+          "dismissed": false
+        },
+        {
+          "number": 184,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:00Z",
+          "dismissed": false
+        },
+        {
+          "number": 183,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:00Z",
+          "dismissed": false
+        }
+      ],
+      "codeql": [
+        {
+          "number": 16,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:27Z",
+          "dismissed": false
+        },
+        {
+          "number": 15,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:27Z",
+          "dismissed": false
+        },
+        {
+          "number": 14,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:27Z",
+          "dismissed": false
+        },
+        {
+          "number": 13,
+          "state": "fixed",
+          "fixed_at": "2026-10-07T18:42:27Z",
+          "dismissed": false
+        }
+      ]
+    },
+    "secret_scanning": "disabled; no settings or credentials changed"
+  },
+  "immutable_manuscript_authored_date": "2026-10-02",
+  "software_publication_date": "2026-10-07",
+  "archival": {
+    "project_concept_doi": "10.5281/zenodo.7803313",
+    "version_specific_doi": null
+  },
+  "no_pypi_upload": true,
+  "original_4_0_0_unchanged": true,
+  "receipt_scope": "The eight primary assets were verified before adding this receipt and its checksum. The final ten-asset anonymous verification is retained in the main publication record.",
+  "original_overview_image_url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.0/GNN-4.0.0-release-overview.png",
+  "final_public_download_verification": {
+    "release_id": 406113561,
+    "release_url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1",
+    "published_at": "2026-10-07T19:56:37Z",
+    "verified_at": "2026-10-07T19:58:46.499633+00:00",
+    "tag": "v4.0.1",
+    "asset_count": 10,
+    "assets": [
+      {
+        "name": "GNN-4.0.1-manuscript.pdf",
+        "id": 619660026,
+        "bytes": 1342487,
+        "sha256": "56934a5bf5cc8633ec9b18a51d7417520715343f3dd6c0185c2ceedbaca6d056",
+        "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/GNN-4.0.1-manuscript.pdf",
+        "public_download_verified": true
+      },
+      {
+        "name": "SHA256SUMS",
+        "id": 619660077,
+        "bytes": 679,
+        "sha256": "d4f8aa296b602b1135715ba20fe273e94a1a20956dea355bf8af382d9a7ca0fe",
+        "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/SHA256SUMS",
+        "public_download_verified": true
+      },
+      {
+        "name": "archive-verification.json",
+        "id": 619660078,
+        "bytes": 1283,
+        "sha256": "3e03b899761063c4c64f7e4aea426dda5ffdda89aa41e6a4b221014f78080a4e",
+        "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/archive-verification.json",
+        "public_download_verified": true
+      },
+      {
+        "name": "generalized_notation_notation-4.0.1-py3-none-any.whl",
+        "id": 619660020,
+        "bytes": 3229124,
+        "sha256": "da5bfebebad13de58d04ab66471d7eb29296a356d32b029ba8659d8e4662fa3f",
+        "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/generalized_notation_notation-4.0.1-py3-none-any.whl",
+        "public_download_verified": true
+      },
+      {
+        "name": "generalized_notation_notation-4.0.1.tar.gz",
+        "id": 619660019,
+        "bytes": 15191540,
+        "sha256": "2149a0694d75cd1dbd8c8db7d7d4136088af639f48195944e11f48dfbcb21837",
+        "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/generalized_notation_notation-4.0.1.tar.gz",
+        "public_download_verified": true
+      },
+      {
+        "name": "manuscript-render-manifest.json",
+        "id": 619660023,
+        "bytes": 4058,
+        "sha256": "66dfe0b6c020bbb72890063d59362639f9f6d4938c1f78e42b09e0089de25074",
+        "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/manuscript-render-manifest.json",
+        "public_download_verified": true
+      },
+      {
+        "name": "post-publication-receipt.json",
+        "id": 619664650,
+        "bytes": 9078,
+        "sha256": "ae7d447bbb1a3b277e7aa594b64f7f39a7a414fb2eec891907ce9d2285089b35",
+        "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/post-publication-receipt.json",
+        "public_download_verified": true
+      },
+      {
+        "name": "post-publication-receipt.sha256",
+        "id": 619664651,
+        "bytes": 96,
+        "sha256": "1424899660c249e84b6c97ea21cfaa8e8ecc962b0851634c7d991c491f580aa6",
+        "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/post-publication-receipt.sha256",
+        "public_download_verified": true
+      },
+      {
+        "name": "source-binding.json",
+        "id": 619660018,
+        "bytes": 125268,
+        "sha256": "dc3fbf9702e7561e26366dea8e90c10e4440531351c3c8e187772fb3724b4447",
+        "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/source-binding.json",
+        "public_download_verified": true
+      },
+      {
+        "name": "verification.json",
+        "id": 619660075,
+        "bytes": 25800,
+        "sha256": "4bc58b8157c145afb8c67dccf130fc5bda562321045c6410b07040dc993626d4",
+        "url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/verification.json",
+        "public_download_verified": true
+      }
+    ],
+    "all_public_downloads_match_staged_bytes": true,
+    "checksum_lists_verified": true
+  }
+}

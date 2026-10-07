@@ -12409,5 +12409,18 @@
       "No PyPI upload or version-specific archival DOI is claimed."
     ]
   },
-  "historical_snapshot_note": "The top-level candidate publication fields retain the 2026-10-06 snapshot; post_snapshot_verified_publication records the completed 2026-10-07 release without rewriting earlier failures."
+  "historical_snapshot_note": "The top-level candidate publication fields retain the 2026-10-06 snapshot; post_snapshot_verified_publication records the completed 2026-10-07 release without rewriting earlier failures.",
+  "patch_4_0_1_post_publication": {
+    "receipt": "gnn_4_0_1_post_publication.json",
+    "source_revision": "17c72cf0f98d7d3bbf0159d1b1cce8c77c4e4daf",
+    "tag": "v4.0.1",
+    "published_at": "2026-10-07T19:56:37Z",
+    "asset_count": 10,
+    "public_download_parity": true,
+    "zero_open_issues": true,
+    "zero_open_dependabot_alerts": true,
+    "zero_open_codeql_alerts": true,
+    "secret_scanning": "disabled",
+    "historical_snapshot_preserved": true
+  }
 }

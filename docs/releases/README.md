@@ -11,7 +11,17 @@ This directory contains documentation for release management, version control, a
 **Status**: ✅ Production Ready  
 **Version**: 1.0
 
-## GNN 4.0.0 publication
+## GNN 4.0.1 publication
+
+[v4.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1) was published on 2026-10-07 from
+`17c72cf0f98d7d3bbf0159d1b1cce8c77c4e4daf`. Its
+[publication receipt](../development/gnn_4_0_1_post_publication.json) records
+normal companion integration, the annotated tag, exact hosted checks, zero open
+issues and enabled Dependabot/CodeQL alerts, and ten directly verified assets.
+The immutable release PDF retains its authored date; current main publication
+metadata is renewed separately. No PyPI upload or new archival DOI is claimed.
+
+## GNN 4.0.0 publication (historical)
 
 [v4.0.0](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.0)
 was published on 2026-10-07 from `1bc3a76eccccb2cc5ce8601770714075b3ec48db`.

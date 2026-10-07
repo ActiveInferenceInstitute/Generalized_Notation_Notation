@@ -328,6 +328,13 @@ deliberately broader than this artifact graph.
   B orientation with `canonicalize_pomdp()`, factor/dimension provenance, and
   the `torch` optional extra are documented in `CHANGELOG.md` §3.3.0.
 
+### Current publication: GNN 4.0.1 (2026-10-07)
+
+The [patch publication receipt](docs/development/gnn_4_0_1_post_publication.json)
+records source/tag identities, exact GNN/FEP/GEO gates, issue acceptance and
+provider alert closure. Preserve historical receipts and their source epochs.
+The package is 4.0.1; future capability limits remain in [TO-DO.md](TO-DO.md).
+
 ### v4.0.0 "Current-run Reliability" (2026-10-01 implementation)
 
 - Frozen selection, path-derived identities, source hashes, resolved configuration,

@@ -1,13 +1,13 @@
 # GeneralizedNotationNotation (GNN)
 
-**Last Updated**: 2026-10-02
+**Last Updated**: 2026-10-07
 
 <div align="center">
 
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](./LICENSE.md)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Active Inference](https://img.shields.io/badge/Active%20Inference-Research-brightgreen.svg)](https://activeinference.org/)
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.7803328-blue.svg)](https://doi.org/10.5281/zenodo.7803328)
+[![Project DOI](https://img.shields.io/badge/Project%20DOI-10.5281%2Fzenodo.7803313-blue.svg)](https://doi.org/10.5281/zenodo.7803313)
 [![Pipeline Steps](https://img.shields.io/badge/Pipeline%20Steps-25-blue.svg)](#%EF%B8%8F-processing-pipeline)
 [![Documentation](https://img.shields.io/badge/Documentation-Maintained-success.svg)](#-documentation)
 
@@ -63,9 +63,11 @@
 **New in v3.5.0 ("Surface Truth & Integration")**: website step-20 statuses come from the recorded pipeline execution summary instead of directory heuristics, MCP speaks the standard 2024-11-05 protocol in both transports with three new tools (`extract_pomdp`, `generate_dependency_graph`, `template.pull`) plus a `gnn_delete_run` parity tool (registry 142→146), `DELETE /api/v1/runs/{run_hash}` gains full run control (cancellation with process-group teardown, artifact removal, honest timeout status), GUI launches are HTTP-verified with one shared status schema and a new `gnn gui` CLI subcommand, one canonical framework tuple drives every framework list, and LSP diagnostics track in-editor edits.
 **New in v4.0.0 ("Current-run Reliability")**: frozen model selection and stable path identities bind artifacts to one invocation; strict probability and Gaussian validation rejects malformed scientific inputs; execution and LLM calls share bounded process supervision; full-corpus LLM scheduling reports incomplete work accurately; manuscript gates bind rendered Markdown/TeX to the token commit; and released [cpomdp](docs/gnn/implementations/cpomdp.md) and [THRML](docs/gnn/implementations/thrml.md) require explicit experimental selection. THRML estimates finite categorical posterior trajectories under fixed actions; its CPU/JAX simulation does not establish hardware execution. Source-bound comparison admission also keeps unrelated models and inference modes separate and derives Gaussian uncertainty from covariance. Read the [v4 migration](docs/development/run_ownership_migration.md) before consuming new run artifacts.
 
+**Current release: [GNN 4.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1) (2026-10-07).** The maintenance patch repairs GUI parsing complexity, locked dependency findings and complete subprocess input delivery, and improves LLM coverage diagnostics. The three remaining issue reports are closed with individual acceptance receipts. [Publication evidence](docs/development/gnn_4_0_1_post_publication.json) records exact checks, companion revisions, zero open issues and enabled Dependabot/CodeQL alerts, and verified assets. [TO-DO.md](TO-DO.md) retains qualified future capabilities.
+
 **New in v3.6.0 ("Composability & Offline Truth")**: the step-20 website gains per-model detail pages (`model/<slug>.html`, full GNN source per model), breadcrumbs in every page shell, and client-side search (`search-index.json` + inline vanilla-JS filter, offline-true); `generate_website(..., filesystem=False)` renders a complete site with zero disk collection and the step catalogue moves to a dependency-free leaf module (`website/steps.py`); generated pages are fully offline (system font stack, JSON-LD + meta description per page, atomic manifest write); the complexity estimator ships as a subpackage with `benchmark`/`estimate` CLI subcommands; the dashboard folds into MCP artifact tools; all six website dead-seams are wired-or-removed (the `website_html_filename` knob is gone end-to-end); the render and execute processors are band-split into packages (`render/pomdp_processor/`, `render/processor/`, `execute/processor/`); and GEO-INFER consumer conformance is pinned by a dedicated test suite.
-📖 **DOI:** [10.5281/zenodo.7803328](https://doi.org/10.5281/zenodo.7803328)  
-📁 **Archive:** [zenodo.org/records/7803328](https://zenodo.org/records/7803328)
+📖 **Project DOI:** [10.5281/zenodo.7803313](https://doi.org/10.5281/zenodo.7803313)\
+📁 **Historical archive:** [zenodo.org/records/7803328](https://zenodo.org/records/7803328). A version-specific 4.0.1 archival DOI is not yet recorded.
 
 ### 🎯 Core Design Principles
 
