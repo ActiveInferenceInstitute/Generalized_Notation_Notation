@@ -14,6 +14,7 @@ from typing import Any, Callable
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import MaxNLocator
 from PIL import Image
 from PIL.GifImagePlugin import GifImageFile
 
@@ -31,6 +32,15 @@ def _gaussian_figure(data: dict[str, Any], model_name: str) -> tuple[Any, Any]:
     fig, axes = plt.subplots(1, 3, figsize=(14, 4))
     fig.suptitle(f"{model_name}: Gaussian posterior")
     return fig, axes
+
+
+def _unit_label(data: dict[str, Any], quantity: str) -> str:
+    """Display declared result units without inferring physical quantities."""
+    units = data.get("units", {})
+    unit = units.get(quantity) if isinstance(units, dict) else None
+    if isinstance(unit, str) and unit.strip():
+        return unit.strip()
+    return "units unspecified"
 
 
 def _draw_gaussian(axes: Any, data: dict[str, Any], count: int) -> None:
@@ -61,15 +71,33 @@ def _draw_gaussian(axes: Any, data: dict[str, Any], count: int) -> None:
     axes[0].set(
         title="Means and 95% Gaussian intervals",
         xlabel="Timestep",
-        ylabel="State value",
+        ylabel=f"State value ({_unit_label(data, 'state')})",
     )
     axes[0].legend(fontsize=7)
+    axes[0].xaxis.set_major_locator(MaxNLocator(integer=True))
     controls = data.get("controls", [])
     if len(controls):
-        axes[1].plot(np.arange(min(count, len(controls))), np.asarray(controls)[:count])
+        values = np.asarray(controls)[:count]
+        if values.ndim == 1:
+            values = values[:, None]
+        styles = (("o", "-"), ("s", "--"), ("^", "-."), ("D", ":"))
+        for column in range(values.shape[1]):
+            marker, linestyle = styles[column % len(styles)]
+            axes[1].plot(
+                np.arange(len(values)),
+                values[:, column],
+                label=f"Control {column}",
+                marker=marker,
+                linestyle=linestyle,
+                markersize=3,
+            )
         axes[1].set(
-            title="Reported controls", xlabel="Timestep", ylabel="Control value"
+            title="Reported controls",
+            xlabel="Timestep",
+            ylabel=f"Control value ({_unit_label(data, 'control')})",
         )
+        axes[1].legend(fontsize=7)
+        axes[1].xaxis.set_major_locator(MaxNLocator(integer=True))
     else:
         axes[1].text(
             0.5, 0.5, "Controls not reported", ha="center", transform=axes[1].transAxes
@@ -80,10 +108,12 @@ def _draw_gaussian(axes: Any, data: dict[str, Any], count: int) -> None:
         axes[2].set(
             title="Inference convergence", xlabel="Inference iteration", ylabel="VFE"
         )
+        axes[2].xaxis.set_major_locator(MaxNLocator(integer=True))
     else:
         axes[2].text(
             0.5, 0.5, "VFE not reported", ha="center", transform=axes[2].transAxes
         )
+        axes[2].set_axis_off()
 
 
 def continuous_png(data: dict[str, Any], output_path: Path, model_name: str) -> str:

@@ -25,6 +25,13 @@ normalization, convergence, marginalization or plot semantics.
 - Julia RxInfer genuine variational message-passing results (`variational_free_energy` populated with real values; previously `Float64[]`)
 - Matplotlib visualization
 
+Gaussian views label each reported control column by its zero-based identity,
+with a legend and distinct marker/line styles. Discrete timestep and inference
+iteration axes use integer ticks. An unreported VFE has no measured axis.
+Optional result metadata `units: {state: "...", control: "..."}` supplies the
+corresponding axis units; undeclared units are labeled `units unspecified`.
+Presentation changes do not alter means, controls or covariance values.
+
 ## Error Handling
 
 - Missing Julia results → graceful skip
