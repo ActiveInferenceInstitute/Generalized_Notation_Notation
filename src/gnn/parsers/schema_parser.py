@@ -475,7 +475,8 @@ class PKLParser(BaseGNNParser):
         super().__init__()
         self.class_pattern = re.compile(r"class\s+(\w+)\s*\{([^}]+)\}", re.DOTALL)
         self.property_pattern = re.compile(
-            r"(\w+)\s*:\s*([^=\n]+?)(?:=\s*([^\n]+))?", re.MULTILINE
+            r"^[ \t]*(\w+)[ \t]*:[ \t]*([^=\n]+?)(?:=[ \t]*([^\n]+))?[ \t]*$",
+            re.MULTILINE,
         )
         self.mapping_pattern = re.compile(
             r"(\w+)\s*:\s*Mapping<[^>]+>\s*=\s*new\s+Mapping\s*\{([^}]+)\}", re.DOTALL
