@@ -28,7 +28,7 @@
     },
     {
       "name": "discrete",
-      "description": "Discrete POMDP, passive HMM filtering and episodic contingent T-maze fixtures; JAX admits the T-maze contract and other backends explicitly report it unsupported.",
+      "description": "Discrete POMDP, passive HMM filtering and episodic contingent T-maze fixtures.",
       "target_dir": "input/gnn_files/discrete",
       "frameworks": "pymdp,jax",
       "representative_files": [
@@ -52,7 +52,7 @@
     },
     {
       "name": "hierarchical",
-      "description": "Declared block-reset hierarchy and approximate 10/100-clock soft-message controller fixtures; JAX executes their structure-preserving contracts and other backends explicitly report unsupported.",
+      "description": "Declared block-reset hierarchy and approximate 10/100-clock soft-message controller fixtures.",
       "target_dir": "input/gnn_files/hierarchical",
       "frameworks": "jax",
       "representative_files": [
