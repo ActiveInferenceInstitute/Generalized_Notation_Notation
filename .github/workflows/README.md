@@ -6,7 +6,7 @@ YAML workflows for CI, MCP tool-count audit, weekly all-extras suite, documentat
 
 | File | Triggers | Jobs / behavior |
 |------|----------|-----------------|
-| [ci.yml](ci.yml) | `push` / `pull_request` → `main` (no path filter); `workflow_dispatch` | **test**: matrix 3.11–3.13; Python 3.12 also runs Ruff format/check over `src scripts`, terminology audits, docs audit, doc contract audit, GNN doc patterns, mypy, collect-only, focused PyMDP/POMDP tests, MCP ≥ 140 (see `tests/mcp_audit_report.json`), and the v3 orchestration acceptance gate. All matrix entries run JUnit + coverage + artifact + summary. **security**: Bandit SARIF → code scanning + artifact. |
+| [ci.yml](ci.yml) | `push` / `pull_request` → `main` (no path filter); `workflow_dispatch` | Full Python 3.11/3.12/3.13 unit/integration selections with JUnit and coverage. Independent 3.12 quality checks run in parallel; `test (3.12)` accepts only successful `pytest (3.12)` and `quality (3.12)` lanes. Quality retains Ruff, types, documentation/contracts, collection, focused PyMDP/POMDP and MCP tests, and v3 orchestration acceptance. Pipeline contracts and extras retain separate mandatory lanes. Security retains Bandit SARIF, artifacts and failure on findings. |
 | [mcp-audit.yml](mcp-audit.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | MCP tool count ≥ 140 via `tests.mcp.test_mcp_audit.count_mcp_tools`. |
 | [full-extras.yml](full-extras.yml) | Weekly cron Sunday 06:00 UTC (`0 6 * * 0`); `workflow_dispatch` | `uv sync --frozen --all-extras`, optional-import checks (audio, GUI, research/scaling), full pytest suite under all extras (Python 3.12). |
 | [docs-audit.yml](docs-audit.yml) | `push` / `pull_request` when `*.md`, `docs/**`, root `AGENTS.md`/`CLAUDE.md`/`README.md`/`SKILL.md`, or `docs/development/docs_audit.py` change; `workflow_dispatch` | Strict docs audit with anchors plus repository/doc terminology and GNN doc-pattern audits. |
@@ -18,6 +18,27 @@ YAML workflows for CI, MCP tool-count audit, weekly all-extras suite, documentat
 | [pair-pin-freshness.yml](pair-pin-freshness.yml) | Nightly cron 05:23 UTC (`23 5 * * *`); `workflow_dispatch` | Validates both committed pair pins (`.github/fep-lean-pair.json`, `.github/gnn-pair.json`) and asserts each pinned revision is ancestor-or-equal of the companion default-branch HEAD via `scripts/check_pair_pin_freshness.py` (git-only; full-history checkouts, `fetch-depth: 0`). Exit 2 "re-pin required" names the stale pair file, pinned revision and companion tip; receipts uploaded as artifact. |
 
 ## Local validation
+
+### Scheduling and evidence
+
+The three Python test environments keep the same marker selection, coverage
+reports and `pytest-junit-<version>` artifacts. The quality lane emits the
+existing `mcp-capabilities` artifact; the pipeline lane emits its JUnit and
+source-bound count receipt. The required statuses `test (3.11)`, `test (3.12)`
+and `test (3.13)` retain their names.
+
+Python 3.12 quality checks and its main test suite run on separate runners.
+The aggregate `test (3.12)` job uses `always()` and requires both lane results
+to be `success`; failure, cancellation, skipping or a missing result prevents
+acceptance. Each runner installs locked dependencies once; CI commands then
+use `uv run --frozen --no-sync`. This changes scheduling and repeated setup,
+while preserving test, security and custody coverage.
+
+Assess speed from exact-run job/step timestamps and retained JUnit receipts.
+Runner availability and test-duration variance affect elapsed time; report
+before/after source identities and complete outcomes with timing comparisons.
+
+### Workflow lint
 
 ```bash
 actionlint .github/workflows/*.yml
