@@ -173,7 +173,7 @@ Models}
 \protected\def\breaktt#1{\begingroup\ttfamily\seqsplit{#1}\endgroup}
 \title{GeneralizedNotationNotation: A Text Language for Active Inference Models}
 \author{Daniel Ari Friedman}
-\date{Software version 4.0.0; manuscript authored 2026-10-02}
+\date{Software version 4.0.1; manuscript authored 2026-10-02}
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -297,9 +297,9 @@ Models}
 
 \begin{figure}
 \centering
-\includegraphics[width=1\linewidth,height=0.5\textheight,keepaspectratio,alt={The GeneralizedNotationNotation (GNN) pipeline at a glance, generated from the producer's token map at commit a57e17d86. A plain-text specification --- the StateSpaceBlock declaring the model's tensors, A, B, C, D, and E for the discrete categorical kind of eq.~ through eq.~ and its own matrix vocabulary for the other model kinds --- is parsed (Step 3), type-checked and validated (Steps 5--6), rendered as backend-specific code (Step 11), executed (Step 12), and analyzed (Step 16), before artifacts flow into the cross-repository interchange checks against the pinned GEO-INFER and fep\_lean pairs. Read the cards left to right: each header names the stage, each pill names the pipeline step (or the source role), and the body states what the stage produces. The validation stage includes the B-tensor orientation check --- every discrete B literal is read as column-stochastic B{[}s\textquotesingle, s, a{]}, and -\/-transpose-b maps row-stochastic textbook literals onto that canonical order --- and the execution stage includes the bnlearn lane, which generates runnable Python from the same parsed model and skips with a recorded status when its runtime is absent. The footer states the scale the panel summarizes: 25 pipeline steps, 9 model families, 12 registered render backends with 12 render targets having Step 12 execution adapters, and 164 Model Context Protocol tools.}]{../figures/gnn_graphical_abstract.png}
+\includegraphics[width=1\linewidth,height=0.5\textheight,keepaspectratio,alt={The GeneralizedNotationNotation (GNN) pipeline at a glance, generated from the producer's token map at commit b99695547. A plain-text specification --- the StateSpaceBlock declaring the model's tensors, A, B, C, D, and E for the discrete categorical kind of eq.~ through eq.~ and its own matrix vocabulary for the other model kinds --- is parsed (Step 3), type-checked and validated (Steps 5--6), rendered as backend-specific code (Step 11), executed (Step 12), and analyzed (Step 16), before artifacts flow into the cross-repository interchange checks against the pinned GEO-INFER and fep\_lean pairs. Read the cards left to right: each header names the stage, each pill names the pipeline step (or the source role), and the body states what the stage produces. The validation stage includes the B-tensor orientation check --- every discrete B literal is read as column-stochastic B{[}s\textquotesingle, s, a{]}, and -\/-transpose-b maps row-stochastic textbook literals onto that canonical order --- and the execution stage includes the bnlearn lane, which generates runnable Python from the same parsed model and skips with a recorded status when its runtime is absent. The footer states the scale the panel summarizes: 25 pipeline steps, 9 model families, 12 registered render backends with 12 render targets having Step 12 execution adapters, and 164 Model Context Protocol tools.}]{../figures/gnn_graphical_abstract.png}
 \caption{The GeneralizedNotationNotation (GNN) pipeline at a glance,
-generated from the producer's token map at commit a57e17d86. A
+generated from the producer's token map at commit b99695547. A
 plain-text specification --- the \protect\texttt{StateSpaceBlock}
 declaring the model's tensors, \protect\texttt{A}, \protect\texttt{B},
 \protect\texttt{C}, \protect\texttt{D}, and \protect\texttt{E} for the
@@ -854,10 +854,11 @@ model in which one level's beliefs supply another level's context ---
 \breaktt{input/gnn\_files/hierarchical/hierarchical\_pomdp.md} couples a
 fast lower level to a slow higher level that switches its context, and
 \breaktt{temporal\_hierarchy.md} develops the same structure over time.
-For categorical backends the per-level matrices are composed into one
-joint POMDP; the RxInfer.jl renderer additionally carries native
-strategies for two-level models, so a hierarchy can render either
-composed or natively depending on the target.
+These fixtures explicitly declare \texttt{block\_reset\_v1} and
+\breaktt{timed\_soft\_controller\_v1}. JAX preserves their block resets
+and approximate 10/100-clock controller semantics; other backends report
+these contracts unsupported. Generic hierarchical strategies without
+these contracts retain their separate capability boundaries.
 
 \textbf{Learning and factored.} A specification that declares a
 Dirichlet prior over one of its matrices (\texttt{dirichlet\_A}, \ldots)
@@ -961,13 +962,13 @@ variables in \texttt{Connections}, not by merging the agents into one
 joint table.
 \breaktt{input/gnn\_files/hierarchical/hierarchical\_pomdp.md} declares
 \texttt{A\_level1{[}4,4{]}} and \texttt{A\_level2{[}4,2{]}} with
-matching per-level transitions and priors --- a fast lower level whose
-beliefs a slow higher level contextualizes --- and it is these per-level
-keys that let the categorical backends compose the levels into one joint
-POMDP while the RxInfer.jl strategies render the two levels natively. In
-every case the classification is a mechanical reading of the declared
-names, which is the property that keeps the taxonomy honest: a file is
-its kind because of what it declares, not because of where it sits.
+matching per-level transitions and priors --- the
+\texttt{block\_reset\_v1} execution contract preserves those levels and
+resets through JAX rather than flattening this fixture or routing it
+through RxInfer.jl. In every case the classification is a mechanical
+reading of the declared names, which is the property that keeps the
+taxonomy honest: a file is its kind because of what it declares, not
+because of where it sits.
 
 \subsubsection{What the Kind Classification
 Governs}\label{what-the-kind-classification-governs}
@@ -1016,7 +1017,7 @@ files, including optional enrichments.
 
 \begin{figure}
 \centering
-\includegraphics[width=0.9\linewidth,height=0.5\textheight,keepaspectratio,alt={The 25-step GNN processing pipeline as a directed acyclic graph, arranged in rowwise topological order and colored by execution phase (legend above the nodes). Each node is the thin step orchestrator under src/gnn/ named in tbl.~; each arrow is a required orchestration prerequisite parsed from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, which mirrors the live step registry. Parsing (Step 3) precedes many later steps. Optional artifact enrichments are documented separately and are not shown as required edges. The figure is generated from src/gnn/STEP\_INDEX.md at commit a57e17d86; its footer restates the step count, the number of required prerequisites, and the layout rule.}]{../figures/gnn_pipeline_dag.png}
+\includegraphics[width=0.9\linewidth,height=0.5\textheight,keepaspectratio,alt={The 25-step GNN processing pipeline as a directed acyclic graph, arranged in rowwise topological order and colored by execution phase (legend above the nodes). Each node is the thin step orchestrator under src/gnn/ named in tbl.~; each arrow is a required orchestration prerequisite parsed from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, which mirrors the live step registry. Parsing (Step 3) precedes many later steps. Optional artifact enrichments are documented separately and are not shown as required edges. The figure is generated from src/gnn/STEP\_INDEX.md at commit b99695547; its footer restates the step count, the number of required prerequisites, and the layout rule.}]{../figures/gnn_pipeline_dag.png}
 \caption{The 25-step GNN processing pipeline as a directed acyclic
 graph, arranged in rowwise topological order and colored by execution
 phase (legend above the nodes). Each node is the thin step orchestrator
@@ -1026,7 +1027,7 @@ Dependency Graph block of \protect\breaktt{src/gnn/STEP\_INDEX.md}, which
 mirrors the live step registry. Parsing (Step 3) precedes many later
 steps. Optional artifact enrichments are documented separately and are
 not shown as required edges. The figure is generated from
-\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit a57e17d86; its footer
+\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit b99695547; its footer
 restates the step count, the number of required prerequisites, and the
 layout rule.}\label{fig:pipeline}
 \end{figure}
@@ -1143,7 +1144,7 @@ specification at their center.
 
 \begin{figure}
 \centering
-\includegraphics[width=0.7\linewidth,height=0.5\textheight,keepaspectratio,alt={The Triple Play: one GNN text specification (left) and its three coordinated projections (right) --- the human-readable text form, graphical model visualizations, and executable simulation code. All three arrows originate at the same source box to show their shared parsed input. Source binding, parameter validation, and semantic-fidelity checks provide evidence of agreement among the projections. The executable node summarizes 12 of 12 registered render targets with implemented Step 12 execution adapters and previews three by name; execution depends on runtime readiness, admitted model kind, and a successful source-bound run receipt. Counts are producer tokens at commit a57e17d86, and the panel is generated by scripts/manuscript\_fig\_triple\_play.py. Take-away: a model is authored once and then read, seen, and run from that single source.}]{../figures/gnn_triple_play.png}
+\includegraphics[width=0.7\linewidth,height=0.5\textheight,keepaspectratio,alt={The Triple Play: one GNN text specification (left) and its three coordinated projections (right) --- the human-readable text form, graphical model visualizations, and executable simulation code. All three arrows originate at the same source box to show their shared parsed input. Source binding, parameter validation, and semantic-fidelity checks provide evidence of agreement among the projections. The executable node summarizes 12 of 12 registered render targets with implemented Step 12 execution adapters and previews three by name; execution depends on runtime readiness, admitted model kind, and a successful source-bound run receipt. Counts are producer tokens at commit b99695547, and the panel is generated by scripts/manuscript\_fig\_triple\_play.py. Take-away: a model is authored once and then read, seen, and run from that single source.}]{../figures/gnn_triple_play.png}
 \caption{The Triple Play: one GNN text specification (left) and its
 three coordinated projections (right) --- the human-readable text form,
 graphical model visualizations, and executable simulation code. All
@@ -1154,7 +1155,7 @@ projections. The executable node summarizes 12 of 12 registered render
 targets with implemented Step 12 execution adapters and previews three
 by name; execution depends on runtime readiness, admitted model kind,
 and a successful source-bound run receipt. Counts are producer tokens at
-commit a57e17d86, and the panel is generated by
+commit b99695547, and the panel is generated by
 \protect\breaktt{scripts/manuscript\_fig\_triple\_play.py}. Take-away: a
 model is authored once and then read, seen, and run from that single
 source.}\label{fig:triple_play}
@@ -1367,7 +1368,7 @@ fig.~\ref{fig:family_matrix}.
 
 \begin{figure}
 \centering
-\includegraphics[width=0.85\linewidth,height=0.5\textheight,keepaspectratio,alt={The GNN rendering backend registry as a table: one row per registered backend, with its registry key, display name, implementation language, whether a render-output subdirectory exists under src/gnn/render/, and its role in the cross-framework reference comparison. Amber rows are the backends the reliability gate profiles for the continuous family; the tan row (Stan, ngc-learn) is declared by that family but sits outside the maintained set, so it is never profiled; a red Render-Subdir cell would mean a registry entry with no subdirectory. The table is read directly from src/gnn/render/framework\_registry.py and the model-family manifest at commit a57e17d86, and its footer summarizes the row counts. Take-away: registration, render presence, and profiling status are three different claims, and the table keeps them apart.}]{../figures/gnn_backend_capability_matrix.png}
+\includegraphics[width=0.85\linewidth,height=0.5\textheight,keepaspectratio,alt={The GNN rendering backend registry as a table: one row per registered backend, with its registry key, display name, implementation language, whether a render-output subdirectory exists under src/gnn/render/, and its role in the cross-framework reference comparison. Amber rows are the backends the reliability gate profiles for the continuous family; the tan row (Stan, ngc-learn) is declared by that family but sits outside the maintained set, so it is never profiled; a red Render-Subdir cell would mean a registry entry with no subdirectory. The table is read directly from src/gnn/render/framework\_registry.py and the model-family manifest at commit b99695547, and its footer summarizes the row counts. Take-away: registration, render presence, and profiling status are three different claims, and the table keeps them apart.}]{../figures/gnn_backend_capability_matrix.png}
 \caption{The GNN rendering backend registry as a table: one row per
 registered backend, with its registry key, display name, implementation
 language, whether a render-output subdirectory exists under
@@ -1378,7 +1379,7 @@ declared by that family but sits outside the maintained set, so it is
 never profiled; a red Render-Subdir cell would mean a registry entry
 with no subdirectory. The table is read directly from
 \protect\breaktt{src/gnn/render/framework\_registry.py} and the
-model-family manifest at commit a57e17d86, and its footer summarizes the
+model-family manifest at commit b99695547, and its footer summarizes the
 row counts. Take-away: registration, render presence, and profiling
 status are three different claims, and the table keeps them
 apart.}\label{fig:backend_matrix}
@@ -1423,12 +1424,15 @@ multi-agent paths map per-agent declarations to their target structures.
 Independent continuous agents use native JAX or RxInfer.jl paths only
 when independence and a complete linear-Gaussian parameter block for
 every agent are declared; other continuous-agent compositions are
-reported \texttt{unsupported}. Supported hierarchical paths compose
-per-level matrices into a joint POMDP or use the RxInfer.jl two-level
-strategies; parameter-learning paths use strategies for the declared
-Dirichlet matrix. These paths retain backend-specific capability
-boundaries, and a recognized component does not authorize silently
-dropping another declared component.
+reported \texttt{unsupported}. Generic hierarchical paths without a
+semantic execution contract may compose per-level matrices into a joint
+POMDP or use the RxInfer.jl two-level strategies; the maintained
+\texttt{block\_reset\_v1} and \breaktt{timed\_soft\_controller\_v1}
+fixtures instead route to structure-preserving JAX execution and are
+explicitly unsupported elsewhere; parameter-learning paths use
+strategies for the declared Dirichlet matrix. These paths retain
+backend-specific capability boundaries, and a recognized component does
+not authorize silently dropping another declared component.
 
 \textbf{Structural wrappers} have no renderable form at all: they
 declare boundary structure only, with neither a categorical nor a
@@ -1566,7 +1570,7 @@ Auto-Injection}\label{reproducibility-and-auto-injection}
 
 Every count reported in this manuscript is emitted by the producer
 \breaktt{scripts/z\_generate\_manuscript\_variables.py} from the
-repository state at commit a57e17d86, not typed by hand. The producer
+repository state at commit b99695547, not typed by hand. The producer
 reads that commit's source surfaces directly --- the step modules, the
 source tree, the model-family manifest, and the framework registry ---
 together with the project's maintained ledgers, notably the Model
@@ -1597,7 +1601,7 @@ build if a section reintroduces a literal that a token already owns.
 This section reports what the project has actually produced and how each
 quantitative claim is grounded. Every number below is substituted at
 render time from the deterministic producer, which reads the repository
-state at commit a57e17d86, so each figure here is regenerated from the
+state at commit b99695547, so each figure here is regenerated from the
 artifacts it describes rather than transcribed.
 
 \subsection{Model-Family Coverage}\label{model-family-coverage}
@@ -1680,17 +1684,16 @@ Description
 \endlastfoot
 \texttt{basics} & pymdp & Minimal perception fixtures used for parser
 and validator smoke coverage. \\
-\texttt{discrete} & pymdp & Discrete POMDP and HMM-style active
-inference fixtures. \\
+\texttt{discrete} & pymdp, jax & Discrete POMDP, passive HMM filtering
+and episodic contingent T-maze fixtures. \\
 \texttt{continuous} & jax, numpyro, stan, rxinfer, ngclearn &
 Continuous-state linear-Gaussian fixtures (F/H/Q/R + Gaussian prior;
 continuous\_navigation closes the loop on beliefs; ngc-learn LGSSM
 exemplar for the ngclearn backend). Native on RxInfer.jl, JAX, PyTorch,
 NumPyro, Stan, cpomdp, ngc-learn; reported unsupported (not failed) on
 PyMDP, ActiveInference.jl, DisCoPy, bnlearn, THRML. \\
-\texttt{hierarchical} & pymdp, rxinfer, jax & Hierarchical and temporal
-model fixtures (per-level matrices composed into a joint POMDP for
-categorical backends; RxInfer.jl renders two-level models natively). \\
+\texttt{hierarchical} & jax & Declared block-reset hierarchy and
+approximate 10/100-clock soft-message controller fixtures. \\
 \texttt{multiagent} & rxinfer & Multi-agent coordination and swarm
 fixtures. \\
 \texttt{precision} & pymdp & Precision weighting and curiosity-driven
@@ -1709,7 +1712,7 @@ from the family registry rather than from a hand-maintained table.
 
 \begin{figure}
 \centering
-\includegraphics[width=0.85\linewidth,height=0.5\textheight,keepaspectratio,alt={Model-family coverage across the registered rendering backends: one row per family from input/model\_family\_manifest.json, one column per backend from src/gnn/render/framework\_registry.py, and a green cell wherever the family declares that backend in its frameworks field. The right-hand count states how many backends each family declares; the grid is deliberately sparse --- most families declare a single backend, and only continuous, hierarchical, and gridworld declare several. Read it as declared intent, not as profiled outcomes: the gates described below supply the outcomes. The matrix is generated from the two registries at commit a57e17d86.}]{../figures/gnn_family_framework_matrix.png}
+\includegraphics[width=0.85\linewidth,height=0.5\textheight,keepaspectratio,alt={Model-family coverage across the registered rendering backends: one row per family from input/model\_family\_manifest.json, one column per backend from src/gnn/render/framework\_registry.py, and a green cell wherever the family declares that backend in its frameworks field. The right-hand count states how many backends each family declares; the grid is deliberately sparse --- most families declare a single backend, and only continuous, discrete, and gridworld declare several. Read it as declared intent, not as profiled outcomes: the gates described below supply the outcomes. The matrix is generated from the two registries at commit b99695547.}]{../figures/gnn_family_framework_matrix.png}
 \caption{Model-family coverage across the registered rendering backends:
 one row per family from
 \protect\breaktt{input/model\_family\_manifest.json}, one column per
@@ -1717,11 +1720,11 @@ backend from \protect\breaktt{src/gnn/render/framework\_registry.py}, and
 a green cell wherever the family declares that backend in its
 \protect\texttt{frameworks} field. The right-hand count states how many
 backends each family declares; the grid is deliberately sparse --- most
-families declare a single backend, and only continuous, hierarchical,
-and gridworld declare several. Read it as declared intent, not as
-profiled outcomes: the gates described below supply the outcomes. The
-matrix is generated from the two registries at commit
-a57e17d86.}\label{fig:family_matrix}
+families declare a single backend, and only continuous, discrete, and
+gridworld declare several. Read it as declared intent, not as profiled
+outcomes: the gates described below supply the outcomes. The matrix is
+generated from the two registries at commit
+b99695547.}\label{fig:family_matrix}
 \end{figure}
 
 These families are not illustrative prose: they are the inputs over
@@ -1793,18 +1796,18 @@ what makes ``interchange'' a checkable claim rather than a promise.
 
 The repository's scale is itself evidence of the surface that the gates
 and pipeline cover, and it is reported in fig.~\ref{fig:repo_metrics}
-directly from the tracked files at commit a57e17d86.
+directly from the tracked files at commit b99695547.
 
 \begin{figure}
 \centering
-\includegraphics[width=0.8\linewidth,height=0.5\textheight,keepaspectratio,alt={Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered backends, render-target execution adapters, Model Context Protocol tools, source packages, test files, example models, and documentation files. Every bar is annotated with its exact value, and every value is a producer token read from output/data/manuscript\_variables.json at commit a57e17d86 --- the same token map that substitutes the prose counts. The figure-freshness suite binds the committed image digest and its recorded producer inputs and counts; semantic content and visual correctness require their own review. The two backend bars are deliberately distinct: registered backends (12) counts render targets, render-target adapters (12) counts the render-target subset with implemented Step 12 execution adapters. It excludes the separate execution-only Lean bridge and is not a count of observed native runs. Read the chart as the scale of the surface the pipeline maintains, not as a quality measure.}]{../figures/gnn_repo_metrics.png}
+\includegraphics[width=0.8\linewidth,height=0.5\textheight,keepaspectratio,alt={Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered backends, render-target execution adapters, Model Context Protocol tools, source packages, test files, example models, and documentation files. Every bar is annotated with its exact value, and every value is a producer token read from output/data/manuscript\_variables.json at commit b99695547 --- the same token map that substitutes the prose counts. The figure-freshness suite binds the committed image digest and its recorded producer inputs and counts; semantic content and visual correctness require their own review. The two backend bars are deliberately distinct: registered backends (12) counts render targets, render-target adapters (12) counts the render-target subset with implemented Step 12 execution adapters. It excludes the separate execution-only Lean bridge and is not a count of observed native runs. Read the chart as the scale of the surface the pipeline maintains, not as a quality measure.}]{../figures/gnn_repo_metrics.png}
 \caption{Repository-scale counts on a logarithmic axis: pipeline steps,
 model families, registered backends, render-target execution adapters,
 Model Context Protocol tools, source packages, test files, example
 models, and documentation files. Every bar is annotated with its exact
 value, and every value is a producer token read from
 \protect\breaktt{output/data/manuscript\_variables.json} at commit
-a57e17d86 --- the same token map that substitutes the prose counts. The
+b99695547 --- the same token map that substitutes the prose counts. The
 figure-freshness suite binds the committed image digest and its recorded
 producer inputs and counts; semantic content and visual correctness
 require their own review. The two backend bars are deliberately
@@ -1816,8 +1819,8 @@ Read the chart as the scale of the surface the pipeline maintains, not
 as a quality measure.}\label{fig:repo_metrics}
 \end{figure}
 
-The test suite comprises 577 test files containing 6214 test functions,
-exercising a source base of 744 Python files across 43 packages (220680
+The test suite comprises 578 test files containing 6226 test functions,
+exercising a source base of 744 Python files across 43 packages (220775
 lines of source). The pipeline's step modules --- the thin orchestrators
 named in tbl.~\ref{tbl:pipeline_steps} --- number 25, one per numbered
 step. The Model Context Protocol surface --- which exposes GNN's
@@ -1887,7 +1890,10 @@ LLM steps:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\ExtensionTok{uv}\NormalTok{ run python src/gnn/main.py }\AttributeTok{{-}{-}target{-}dir}\NormalTok{ input/gnn\_files/discrete }\AttributeTok{{-}{-}output{-}dir}\NormalTok{ /tmp/gnn{-}smoke }\AttributeTok{{-}{-}skip{-}llm}
+\ExtensionTok{uv}\NormalTok{ run python src/gnn/main.py }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}target{-}dir}\NormalTok{ input/gnn\_files/discrete }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}output{-}dir}\NormalTok{ /tmp/gnn{-}smoke }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}skip{-}llm}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1914,7 +1920,10 @@ contract:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\ExtensionTok{uv}\NormalTok{ run python src/gnn/main.py }\AttributeTok{{-}{-}target{-}dir}\NormalTok{ input/gnn\_files/continuous }\AttributeTok{{-}{-}output{-}dir}\NormalTok{ /tmp/gnn{-}smoke{-}continuous }\AttributeTok{{-}{-}skip{-}llm}
+\ExtensionTok{uv}\NormalTok{ run python src/gnn/main.py }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}target{-}dir}\NormalTok{ input/gnn\_files/continuous }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}output{-}dir}\NormalTok{ /tmp/gnn{-}smoke{-}continuous }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}skip{-}llm}
 \end{Highlighting}
 \end{Shaded}
 
@@ -2017,9 +2026,9 @@ a missing copy degrades rather than failing the build.
 
 Because the variables file is regenerated before rendering, the counts
 in the rendered PDF track the repository state at the commit recorded in
-\breaktt{output/data/manuscript\_variables.json} (a57e17d86): a code
-change that alters, for example, the test inventory (577 test files,
-6214 test functions) propagates into the prose on the next regeneration
+\breaktt{output/data/manuscript\_variables.json} (b99695547): a code
+change that alters, for example, the test inventory (578 test files,
+6226 test functions) propagates into the prose on the next regeneration
 without any manual editing.
 
 \subsection{Reproducibility Contract}\label{reproducibility-contract}
@@ -2054,7 +2063,7 @@ without any manual editing.
 
 \subsection{Current Limitations}\label{current-limitations}
 
-GNN 4.0.0 is a working system with deliberately scoped boundaries, and
+GNN 4.0.1 is a working system with deliberately scoped boundaries, and
 it is worth stating those boundaries plainly rather than implying
 broader completeness than the artifacts support. The reliability gates
 that underpin our confidence in the system --- the semantic-fidelity
@@ -2153,7 +2162,7 @@ should hold in mind when interpreting any single end-to-end run.
 \subsection{Next Steps}\label{next-steps}
 
 The roadmap is concrete and staged. The current software version is GNN
-4.0.0. It builds on the three safe-by-design orchestration contracts
+4.0.1. It builds on the three safe-by-design orchestration contracts
 introduced in GNN 3.0.0, which generate and validate data only, with no
 live infrastructure mutation. The first is \emph{durable observation
 streams}: file- and array-backed stream manifests (content-checksummed)
@@ -2209,7 +2218,7 @@ separately so that the boundary between hand-written source and
 reproducible output stays explicit.
 
 The \texttt{src/} tree is the executable core of GNN. It is organized
-into 43 Python packages spanning 744 source files and roughly 220680
+into 43 Python packages spanning 744 source files and roughly 220775
 lines of code. Alongside these packages sit the 25 top-level step
 modules (0--24) that implement the numbered pipeline as thin
 orchestrators delegating into the packages, each module owning one stage

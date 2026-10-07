@@ -206,6 +206,59 @@ class TestGui1CallbackBindings:
         assert demo is not None
         assert len(functional_gradio.clicks) >= 10
 
+    @pytest.mark.unit
+    @pytest.mark.fast
+    def test_hostile_markdown_keeps_live_editor_values_and_save_statistics(
+        self, functional_gradio: FunctionalGradio, tmp_path: Path
+    ) -> None:
+        from gnn.gui.gui_1.markdown import parse_state_space_from_markdown
+        from gnn.gui.gui_1.ui import build_gui
+
+        path = tmp_path / "model.md"
+        build_gui("# M\n", path)
+        callbacks = {fn.__name__: fn for _, fn, _, _ in functional_gradio.events}
+        hostile = "A[" + "] " * 65_536 + "!"
+        document = f"## State Space\n{hostile}\nB[2,type=int] # retained\n"
+        updated, choices, error = callbacks["update_state_live"](
+            document, "B", "C", "3, 4", "float", "retained"
+        )
+        assert error == "" and choices.value == "C" and choices.choices == ["C"]
+        assert hostile in updated
+        assert parse_state_space_from_markdown(updated) == [
+            {"name": "C", "dims": [3, 4], "type": "float", "comment": "retained"}
+        ]
+        message, status, stats, error = callbacks["save_md"](updated)
+        assert error == "" and "Saved" in message and "saved" in status
+        assert stats["state_entries"] == 1 and stats["total_states"] == 2
+        assert path.read_text() == updated
+
+    @pytest.mark.unit
+    @pytest.mark.fast
+    def test_oversized_editor_callbacks_refuse_before_save(
+        self, functional_gradio: FunctionalGradio, tmp_path: Path
+    ) -> None:
+        from gnn.gui.gui_1.markdown import MAX_MARKDOWN_CHARS
+        from gnn.gui.gui_1.ui import build_gui
+
+        path = tmp_path / "model.md"
+        original = "# Preserved\n"
+        path.write_text(original)
+        build_gui(original, path)
+        callbacks = {fn.__name__: fn for _, fn, _, _ in functional_gradio.events}
+        oversized = "x" * (MAX_MARKDOWN_CHARS + 1)
+        assert "editor limit" in callbacks["save_md"](oversized)[3]
+        assert path.read_text() == original
+        assert list(tmp_path.iterdir()) == [path]
+        choices, error = callbacks["refresh_states"](oversized)
+        assert vars(choices) == {} and "editor limit" in error
+        unchanged, choices, error = callbacks["update_state_live"](
+            oversized, "A", "A", "2", "float", ""
+        )
+        assert unchanged == oversized and vars(choices) == {}
+        assert "editor limit" in error
+        unchanged, error = callbacks["add_component"](oversized, "C", "state", "x")
+        assert unchanged == oversized and "editor limit" in error
+
 
 class TestGui2CallbackBindings:
     """GUI 2: no unbound buttons (G11), validation routing through core

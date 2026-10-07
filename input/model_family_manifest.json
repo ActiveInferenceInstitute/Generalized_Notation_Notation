@@ -1,8 +1,18 @@
 {
   "schema": "gnn_model_family_manifest_v1",
   "acceptance_profile_defaults": {
-    "required_steps": [3, 5, 6, 15, 16, 23],
-    "evidence_steps": [11, 12],
+    "required_steps": [
+      3,
+      5,
+      6,
+      15,
+      16,
+      23
+    ],
+    "evidence_steps": [
+      11,
+      12
+    ],
     "allow_unsupported_steps": []
   },
   "families": [
@@ -11,14 +21,22 @@
       "description": "Minimal perception fixtures used for parser and validator smoke coverage.",
       "target_dir": "input/gnn_files/basics",
       "frameworks": "pymdp",
-      "representative_files": ["dynamic_perception.md"]
+      "representative_files": [
+        "dynamic_perception.md",
+        "static_perception.md"
+      ]
     },
     {
       "name": "discrete",
-      "description": "Discrete POMDP and HMM-style active inference fixtures.",
+      "description": "Discrete POMDP, passive HMM filtering and episodic contingent T-maze fixtures.",
       "target_dir": "input/gnn_files/discrete",
-      "frameworks": "pymdp",
-      "representative_files": ["actinf_pomdp_agent.md", "simple_mdp.md"]
+      "frameworks": "pymdp,jax",
+      "representative_files": [
+        "actinf_pomdp_agent.md",
+        "simple_mdp.md",
+        "hmm_baseline.md",
+        "tmaze_epistemic.md"
+      ]
     },
     {
       "name": "continuous",
@@ -26,49 +44,68 @@
       "capability_axis": "supports_continuous",
       "target_dir": "input/gnn_files/continuous",
       "frameworks": "jax,numpyro,stan,rxinfer,ngclearn",
-      "representative_files": ["continuous_navigation.md", "stochastic_dynamics.md", "ngclearn_lgssm.md"]
+      "representative_files": [
+        "continuous_navigation.md",
+        "stochastic_dynamics.md",
+        "ngclearn_lgssm.md"
+      ]
     },
     {
       "name": "hierarchical",
-      "description": "Hierarchical and temporal model fixtures (per-level matrices composed into a joint POMDP for categorical backends; RxInfer.jl renders two-level models natively).",
+      "description": "Declared block-reset hierarchy and approximate 10/100-clock soft-message controller fixtures.",
       "target_dir": "input/gnn_files/hierarchical",
-      "frameworks": "pymdp,rxinfer,jax",
-      "representative_files": ["hierarchical_pomdp.md", "temporal_hierarchy.md"]
+      "frameworks": "jax",
+      "representative_files": [
+        "hierarchical_pomdp.md",
+        "temporal_hierarchy.md"
+      ]
     },
     {
       "name": "multiagent",
       "description": "Multi-agent coordination and swarm fixtures.",
       "target_dir": "input/gnn_files/multiagent",
       "frameworks": "rxinfer",
-      "representative_files": ["multi_agent_coordination.md"]
+      "representative_files": [
+        "multi_agent_coordination.md"
+      ]
     },
     {
       "name": "precision",
       "description": "Precision weighting and curiosity-driven fixtures.",
       "target_dir": "input/gnn_files/precision",
       "frameworks": "pymdp",
-      "representative_files": ["curiosity_driven_agent.md", "precision_weighted.md"]
+      "representative_files": [
+        "curiosity_driven_agent.md",
+        "precision_weighted.md"
+      ]
     },
     {
       "name": "structured",
       "description": "Structured factor graph and posterior fixtures.",
       "target_dir": "input/gnn_files/structured",
       "frameworks": "pymdp",
-      "representative_files": ["factorized_posterior.md"]
+      "representative_files": [
+        "factorized_posterior.md"
+      ]
     },
     {
       "name": "gridworld",
       "description": "Gridworld POMDP fixture used for cross-framework acceptance checks.",
       "target_dir": "input/gnn_files/pomdp_gridworld",
       "frameworks": "pymdp,rxinfer,activeinference_jl",
-      "representative_files": ["pomdp_gridworld_3x3.md"]
+      "representative_files": [
+        "pomdp_gridworld_3x3.md"
+      ]
     },
     {
       "name": "scaling-study",
       "description": "PyMDP scaling-study fixtures, sampled conservatively for acceptance.",
       "target_dir": "input/gnn_files/pymdp_scaling_study",
       "frameworks": "pymdp",
-      "representative_files": ["pymdp_scaling_N4_T100.md", "pymdp_scaling_N8_T100.md"]
+      "representative_files": [
+        "pymdp_scaling_N4_T100.md",
+        "pymdp_scaling_N8_T100.md"
+      ]
     }
   ]
 }

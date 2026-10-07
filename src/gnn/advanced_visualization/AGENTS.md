@@ -545,7 +545,7 @@ python src/gnn/9_advanced_viz.py --target-dir input/ --verbose
 
 ## Version History
 
-### Current Version: 4.0.0
+### Current Version: 4.0.1
 Tracks the package version (`pyproject.toml`). Documented-surface changes since
 the 3.2.0 marker (2026-09-04): D2 compiles route through the shared subprocess
 envelope (b97d0ebb6, 2026-09-19) and seaborn/scipy.stats imports became lazy

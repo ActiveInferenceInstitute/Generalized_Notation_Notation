@@ -7,6 +7,9 @@ backend; these tests pin its failure-mode conversion semantics.
 
 from __future__ import annotations
 
+import hashlib
+import os
+import stat
 import sys
 import threading
 import time
@@ -155,6 +158,151 @@ def test_input_support_pipes_stdin_to_child() -> None:
     assert envelope["success"] is True
     assert envelope["return_code"] == 0
     assert "envelope-stdin-ok" in envelope["stdout"]
+
+
+def test_slow_reader_receives_complete_multimegabyte_utf8_input() -> None:
+    """Startup past several poll slices must preserve all bytes and EOF."""
+    payload = "Ω scientific matrix\x00\r\n" * 150000
+    encoded = payload.encode("utf-8")
+    child = (
+        "import sys,time,hashlib; time.sleep(0.75); "
+        "data=sys.stdin.buffer.read(); "
+        "print(len(data)); print(hashlib.sha256(data).hexdigest())"
+    )
+    result = run_subprocess_envelope([PYTHON, "-c", child], input=payload, timeout=6)
+    assert result["success"], result
+    assert result["stdout"].splitlines() == [
+        str(len(encoded)),
+        hashlib.sha256(encoded).hexdigest(),
+    ]
+    assert result["cleanup_verified"] and result["streams_drained"]
+
+
+@pytest.mark.parametrize("mode", ["success", "spawn_failure", "timeout", "cancel"])
+def test_input_descriptor_is_private_and_closed_on_every_outcome(
+    mode: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A child that never reads input must still time out/cancel and reap."""
+    import gnn.execute.subprocess_envelope as module
+
+    opened = []
+    original = module.tempfile.TemporaryFile
+
+    def observed_file(*args, **kwargs):
+        handle = original(*args, **kwargs)
+        opened.append(handle)
+        if os.name == "posix":
+            metadata = os.fstat(handle.fileno())
+            assert stat.S_IMODE(metadata.st_mode) == 0o600
+            assert metadata.st_nlink == 0
+        return handle
+
+    monkeypatch.setattr(module.tempfile, "TemporaryFile", observed_file)
+    token = CancelToken()
+    timer = threading.Timer(0.5, token.cancel, args=("large-input-abort",))
+    if mode == "cancel":
+        timer.start()
+    command = (
+        ["definitely-not-a-real-binary-xyz"]
+        if mode == "spawn_failure"
+        else [
+            PYTHON,
+            "-c",
+            "print('started',flush=True); "
+            + ("pass" if mode == "success" else "import time; time.sleep(30)"),
+        ]
+    )
+    try:
+        result = run_subprocess_envelope(
+            command, input="λ" * 2_000_000, timeout=1, cancel_token=token
+        )
+    finally:
+        timer.cancel()
+        if mode == "cancel":
+            timer.join(timeout=2)
+    assert opened and all(handle.closed for handle in opened)
+    if mode == "success":
+        assert result["success"]
+    else:
+        assert not result["success"]
+        assert (
+            result["error_type"]
+            == {
+                "spawn_failure": "FileNotFoundError",
+                "timeout": "TimeoutExpired",
+                "cancel": "Cancelled",
+            }[mode]
+        )
+    if mode != "spawn_failure":
+        assert result["cleanup_verified"] and result["streams_drained"]
+    assert result["duration_seconds"] < 4
+
+
+def test_stdin_staging_does_not_renew_an_exhausted_deadline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import gnn.execute.subprocess_envelope as module
+
+    original = module.tempfile.TemporaryFile
+    opened = []
+
+    def delayed_file(*args, **kwargs):
+        time.sleep(0.15)
+        handle = original(*args, **kwargs)
+        opened.append(handle)
+        return handle
+
+    def forbidden_spawn(*args, **kwargs):
+        raise AssertionError("Input staging exhausted the original launch budget")
+
+    monkeypatch.setattr(module.tempfile, "TemporaryFile", delayed_file)
+    monkeypatch.setattr(module.subprocess, "Popen", forbidden_spawn)
+    result = run_subprocess_envelope(
+        [PYTHON, "-c", "pass"], input="payload", timeout=0.05
+    )
+    assert not result["success"]
+    assert result["error_type"] == "TimeoutExpired"
+    assert opened and all(handle.closed for handle in opened)
+
+
+def test_stdin_close_failure_still_reaps_the_real_child(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import gnn.execute.subprocess_envelope as module
+
+    original = module.tempfile.TemporaryFile
+    opened = []
+
+    class FailingClose:
+        def __init__(self, handle):
+            self.handle = handle
+
+        def __getattr__(self, name):
+            return getattr(self.handle, name)
+
+        def close(self):
+            self.handle.close()
+            raise OSError("injected stdin close failure")
+
+    def failing_file(*args, **kwargs):
+        handle = original(*args, **kwargs)
+        opened.append(handle)
+        return FailingClose(handle)
+
+    monkeypatch.setattr(module.tempfile, "TemporaryFile", failing_file)
+    result = run_subprocess_envelope(
+        [PYTHON, "-c", "import os,time; print(os.getpid(),flush=True); time.sleep(30)"],
+        input="complete input",
+        timeout=1,
+    )
+    assert not result["success"] and result["cleanup_verified"] is False
+    assert result["streams_drained"] is True
+    assert "injected stdin close failure" in result["error"]
+    assert result["execution_error_type"] == "TimeoutExpired"
+    assert opened and all(handle.closed for handle in opened)
+    import psutil
+
+    assert not psutil.pid_exists(int(result["stdout"].strip()))
 
 
 def test_sandbox_false_runs_unsandboxed_with_receipt(

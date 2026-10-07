@@ -95,7 +95,7 @@ _FIGURES = [
         "Grid of model families (rows) against rendering backends (columns). A "
         "filled cell means the family declares that backend in "
         "input/model_family_manifest.json. The grid is sparse: most families "
-        "declare a single backend, and only the continuous, hierarchical and "
+        "declare a single backend, and only the continuous, discrete and "
         "gridworld families declare several. Cells record declared coverage, not "
         "profiled outcomes.",
     ),

@@ -653,7 +653,10 @@ this manuscript itself.</p>
 full pipeline over the discrete model family without invoking the
 optional LLM steps:</p>
 <div class="sourceCode" id="cb1"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/gnn/main.py <span class="at">--target-dir</span> input/gnn_files/discrete <span class="at">--output-dir</span> /tmp/gnn-smoke <span class="at">--skip-llm</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/gnn/main.py <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-dir</span> input/gnn_files/discrete <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> /tmp/gnn-smoke <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--skip-llm</span></span></code></pre></div>
 <p>This parses the discrete GNN files, runs visualization and rendering
 across the maintained backends, and writes all artifacts under the
 chosen output directory. The <code>--skip-llm</code> flag disables the
@@ -674,7 +677,10 @@ continuous linear-Gaussian kind smoke-runs the same way, and the
 contrast between the two runs is itself a check of the per-kind
 contract:</p>
 <div class="sourceCode" id="cb2"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/gnn/main.py <span class="at">--target-dir</span> input/gnn_files/continuous <span class="at">--output-dir</span> /tmp/gnn-smoke-continuous <span class="at">--skip-llm</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/gnn/main.py <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-dir</span> input/gnn_files/continuous <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> /tmp/gnn-smoke-continuous <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--skip-llm</span></span></code></pre></div>
 <p>This selects the continuous specifications for the same pipeline.
 Admitted, ready continuous-capable lanes can render and execute
 filtering (and, for the closed-loop exemplar, belief-steering) programs;
@@ -745,8 +751,8 @@ so a missing copy degrades rather than failing the build.</p>
 <p>Because the variables file is regenerated before rendering, the
 counts in the rendered PDF track the repository state at the commit
 recorded in <code>output/data/manuscript_variables.json</code>
-(a57e17d86): a code change that alters, for example, the test inventory
-(577 test files, 6214 test functions) propagates into the prose on the
+(b99695547): a code change that alters, for example, the test inventory
+(578 test files, 6226 test functions) propagates into the prose on the
 next regeneration without any manual editing.</p>
 <h2 id="reproducibility-contract">Reproducibility Contract</h2>
 <ul>

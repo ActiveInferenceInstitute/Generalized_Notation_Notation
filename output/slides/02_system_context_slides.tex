@@ -605,10 +605,11 @@ model in which one level's beliefs supply another level's context ---
 \breaktt{input/gnn\_files/hierarchical/hierarchical\_pomdp.md} couples a
 fast lower level to a slow higher level that switches its context, and
 \breaktt{temporal\_hierarchy.md} develops the same structure over time.
-For categorical backends the per-level matrices are composed into one
-joint POMDP; the RxInfer.jl renderer additionally carries native
-strategies for two-level models, so a hierarchy can render either
-composed or natively depending on the target.
+These fixtures explicitly declare \texttt{block\_reset\_v1} and
+\breaktt{timed\_soft\_controller\_v1}. JAX preserves their block resets
+and approximate 10/100-clock controller semantics; other backends report
+these contracts unsupported. Generic hierarchical strategies without
+these contracts retain their separate capability boundaries.
 
 \end{frame}
 
@@ -740,13 +741,13 @@ joint table.
 
 \begin{frame}[fragile,allowframebreaks]{Reading Exemplars by Kind}
 \texttt{A\_level1{[}4,4{]}} and \texttt{A\_level2{[}4,2{]}} with
-matching per-level transitions and priors --- a fast lower level whose
-beliefs a slow higher level contextualizes --- and it is these per-level
-keys that let the categorical backends compose the levels into one joint
-POMDP while the RxInfer.jl strategies render the two levels natively. In
-every case the classification is a mechanical reading of the declared
-names, which is the property that keeps the taxonomy honest: a file is
-its kind because of what it declares, not because of where it sits.
+matching per-level transitions and priors --- the
+\texttt{block\_reset\_v1} execution contract preserves those levels and
+resets through JAX rather than flattening this fixture or routing it
+through RxInfer.jl. In every case the classification is a mechanical
+reading of the declared names, which is the property that keeps the
+taxonomy honest: a file is its kind because of what it declares, not
+because of where it sits.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{What the Kind Classification
@@ -805,7 +806,7 @@ files, including optional enrichments.
 \begin{frame}[fragile,allowframebreaks]{The Processing Pipeline}
 \begin{figure}
 \centering
-\includegraphics[width=0.9\linewidth,height=0.40\textheight,keepaspectratio,alt={The 25-step GNN processing pipeline as a directed acyclic graph, arranged in rowwise topological order and colored by execution phase (legend above the nodes). Each node is the thin step orchestrator under src/gnn/ named in tbl.~; each arrow is a required orchestration prerequisite parsed from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, which mirrors the live step registry. Parsing (Step 3) precedes many later steps. Optional artifact enrichments are documented separately and are not shown as required edges. The figure is generated from src/gnn/STEP\_INDEX.md at commit a57e17d86; its footer restates the step count, the number of required prerequisites, and the layout rule.}]{../figures/gnn_pipeline_dag.png}
+\includegraphics[width=0.9\linewidth,height=0.40\textheight,keepaspectratio,alt={The 25-step GNN processing pipeline as a directed acyclic graph, arranged in rowwise topological order and colored by execution phase (legend above the nodes). Each node is the thin step orchestrator under src/gnn/ named in tbl.~; each arrow is a required orchestration prerequisite parsed from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, which mirrors the live step registry. Parsing (Step 3) precedes many later steps. Optional artifact enrichments are documented separately and are not shown as required edges. The figure is generated from src/gnn/STEP\_INDEX.md at commit b99695547; its footer restates the step count, the number of required prerequisites, and the layout rule.}]{../figures/gnn_pipeline_dag.png}
 \caption{The 25-step GNN processing pipeline as a directed acyclic
 graph, arranged in rowwise topological order and colored by execution
 phase (legend above the nodes). Each node is the thin step orchestrator
@@ -815,7 +816,7 @@ Dependency Graph block of \protect\breaktt{src/gnn/STEP\_INDEX.md}, which
 mirrors the live step registry. Parsing (Step 3) precedes many later
 steps. Optional artifact enrichments are documented separately and are
 not shown as required edges. The figure is generated from
-\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit a57e17d86; its footer
+\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit b99695547; its footer
 restates the step count, the number of required prerequisites, and the
 layout rule.}\label{fig:pipeline}
 \end{figure}
@@ -948,7 +949,7 @@ specification at their center.
 \begin{frame}[fragile,allowframebreaks]{The Triple Play}
 \begin{figure}
 \centering
-\includegraphics[width=0.7\linewidth,height=0.40\textheight,keepaspectratio,alt={The Triple Play: one GNN text specification (left) and its three coordinated projections (right) --- the human-readable text form, graphical model visualizations, and executable simulation code. All three arrows originate at the same source box to show their shared parsed input. Source binding, parameter validation, and semantic-fidelity checks provide evidence of agreement among the projections. The executable node summarizes 12 of 12 registered render targets with implemented Step 12 execution adapters and previews three by name; execution depends on runtime readiness, admitted model kind, and a successful source-bound run receipt. Counts are producer tokens at commit a57e17d86, and the panel is generated by scripts/manuscript\_fig\_triple\_play.py. Take-away: a model is authored once and then read, seen, and run from that single source.}]{../figures/gnn_triple_play.png}
+\includegraphics[width=0.7\linewidth,height=0.40\textheight,keepaspectratio,alt={The Triple Play: one GNN text specification (left) and its three coordinated projections (right) --- the human-readable text form, graphical model visualizations, and executable simulation code. All three arrows originate at the same source box to show their shared parsed input. Source binding, parameter validation, and semantic-fidelity checks provide evidence of agreement among the projections. The executable node summarizes 12 of 12 registered render targets with implemented Step 12 execution adapters and previews three by name; execution depends on runtime readiness, admitted model kind, and a successful source-bound run receipt. Counts are producer tokens at commit b99695547, and the panel is generated by scripts/manuscript\_fig\_triple\_play.py. Take-away: a model is authored once and then read, seen, and run from that single source.}]{../figures/gnn_triple_play.png}
 \caption{The Triple Play: one GNN text specification (left) and its
 three coordinated projections (right) --- the human-readable text form,
 graphical model visualizations, and executable simulation code. All
@@ -959,7 +960,7 @@ projections. The executable node summarizes 12 of 12 registered render
 targets with implemented Step 12 execution adapters and previews three
 by name; execution depends on runtime readiness, admitted model kind,
 and a successful source-bound run receipt. Counts are producer tokens at
-commit a57e17d86, and the panel is generated by
+commit b99695547, and the panel is generated by
 \protect\breaktt{scripts/manuscript\_fig\_triple\_play.py}. Take-away: a
 model is authored once and then read, seen, and run from that single
 source.}\label{fig:triple_play}

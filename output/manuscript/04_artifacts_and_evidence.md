@@ -1,6 +1,6 @@
 # Artifacts and Evidence {#sec:artifacts_evidence}
 
-This section reports what the project has actually produced and how each quantitative claim is grounded. Every number below is substituted at render time from the deterministic producer, which reads the repository state at commit a57e17d86, so each figure here is regenerated from the artifacts it describes rather than transcribed.
+This section reports what the project has actually produced and how each quantitative claim is grounded. Every number below is substituted at render time from the deterministic producer, which reads the repository state at commit b99695547, so each figure here is regenerated from the artifacts it describes rather than transcribed.
 
 ## Model-Family Coverage
 
@@ -13,9 +13,9 @@ Families that declare a capability axis (the continuous family declares the cont
 | Family | Frameworks | Description |
 |---|---|---|
 | `basics` | pymdp | Minimal perception fixtures used for parser and validator smoke coverage. |
-| `discrete` | pymdp | Discrete POMDP and HMM-style active inference fixtures. |
+| `discrete` | pymdp, jax | Discrete POMDP, passive HMM filtering and episodic contingent T-maze fixtures. |
 | `continuous` | jax, numpyro, stan, rxinfer, ngclearn | Continuous-state linear-Gaussian fixtures (F/H/Q/R + Gaussian prior; continuous_navigation closes the loop on beliefs; ngc-learn LGSSM exemplar for the ngclearn backend). Native on RxInfer.jl, JAX, PyTorch, NumPyro, Stan, cpomdp, ngc-learn; reported unsupported (not failed) on PyMDP, ActiveInference.jl, DisCoPy, bnlearn, THRML. |
-| `hierarchical` | pymdp, rxinfer, jax | Hierarchical and temporal model fixtures (per-level matrices composed into a joint POMDP for categorical backends; RxInfer.jl renders two-level models natively). |
+| `hierarchical` | jax | Declared block-reset hierarchy and approximate 10/100-clock soft-message controller fixtures. |
 | `multiagent` | rxinfer | Multi-agent coordination and swarm fixtures. |
 | `precision` | pymdp | Precision weighting and curiosity-driven fixtures. |
 | `structured` | pymdp | Structured factor graph and posterior fixtures. |
@@ -25,7 +25,7 @@ Families that declare a capability axis (the continuous family declares the cont
 
 The family-by-framework structure is shown in @fig:family_matrix, which renders the coverage matrix directly from the family registry rather than from a hand-maintained table.
 
-![Model-family coverage across the registered rendering backends: one row per family from `input/model_family_manifest.json`, one column per backend from `src/gnn/render/framework_registry.py`, and a green cell wherever the family declares that backend in its `frameworks` field. The right-hand count states how many backends each family declares; the grid is deliberately sparse — most families declare a single backend, and only continuous, hierarchical, and gridworld declare several. Read it as declared intent, not as profiled outcomes: the gates described below supply the outcomes. The matrix is generated from the two registries at commit a57e17d86.](../output/figures/gnn_family_framework_matrix.png){#fig:family_matrix width=85%}
+![Model-family coverage across the registered rendering backends: one row per family from `input/model_family_manifest.json`, one column per backend from `src/gnn/render/framework_registry.py`, and a green cell wherever the family declares that backend in its `frameworks` field. The right-hand count states how many backends each family declares; the grid is deliberately sparse — most families declare a single backend, and only continuous, discrete, and gridworld declare several. Read it as declared intent, not as profiled outcomes: the gates described below supply the outcomes. The matrix is generated from the two registries at commit b99695547.](../output/figures/gnn_family_framework_matrix.png){#fig:family_matrix width=85%}
 
 These families are not illustrative prose: they are the inputs over which the parser, the type checker, and the cross-framework code generators are exercised, and they are the substrate for the reliability gates described next.
 
@@ -43,11 +43,11 @@ A third interchange check extends the same discipline across repositories: `scri
 
 ## Repository Scale
 
-The repository's scale is itself evidence of the surface that the gates and pipeline cover, and it is reported in @fig:repo_metrics directly from the tracked files at commit a57e17d86.
+The repository's scale is itself evidence of the surface that the gates and pipeline cover, and it is reported in @fig:repo_metrics directly from the tracked files at commit b99695547.
 
-![Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered backends, render-target execution adapters, Model Context Protocol tools, source packages, test files, example models, and documentation files. Every bar is annotated with its exact value, and every value is a producer token read from `output/data/manuscript_variables.json` at commit a57e17d86 — the same token map that substitutes the prose counts. The figure-freshness suite binds the committed image digest and its recorded producer inputs and counts; semantic content and visual correctness require their own review. The two backend bars are deliberately distinct: *registered backends* (12) counts render targets, *render-target adapters* (12) counts the render-target subset with implemented Step 12 execution adapters. It excludes the separate execution-only Lean bridge and is not a count of observed native runs. Read the chart as the scale of the surface the pipeline maintains, not as a quality measure.](../output/figures/gnn_repo_metrics.png){#fig:repo_metrics width=80%}
+![Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered backends, render-target execution adapters, Model Context Protocol tools, source packages, test files, example models, and documentation files. Every bar is annotated with its exact value, and every value is a producer token read from `output/data/manuscript_variables.json` at commit b99695547 — the same token map that substitutes the prose counts. The figure-freshness suite binds the committed image digest and its recorded producer inputs and counts; semantic content and visual correctness require their own review. The two backend bars are deliberately distinct: *registered backends* (12) counts render targets, *render-target adapters* (12) counts the render-target subset with implemented Step 12 execution adapters. It excludes the separate execution-only Lean bridge and is not a count of observed native runs. Read the chart as the scale of the surface the pipeline maintains, not as a quality measure.](../output/figures/gnn_repo_metrics.png){#fig:repo_metrics width=80%}
 
-The test suite comprises 577 test files containing 6214 test functions, exercising a source base of 744 Python files across 43 packages (220680 lines of source). The pipeline's step modules — the thin orchestrators named in [@tbl:pipeline_steps] — number 25, one per numbered step. The Model Context Protocol surface — which exposes GNN's capabilities to external agents and tools — provides 164 tools across 36 modules. The pipeline itself runs as 25 steps (0–24), and 7 figure artifacts from the rendering of figures, models, and reports are committed under `output/`, of which 7 are the manuscript's own.
+The test suite comprises 578 test files containing 6226 test functions, exercising a source base of 744 Python files across 43 packages (220775 lines of source). The pipeline's step modules — the thin orchestrators named in [@tbl:pipeline_steps] — number 25, one per numbered step. The Model Context Protocol surface — which exposes GNN's capabilities to external agents and tools — provides 164 tools across 36 modules. The pipeline itself runs as 25 steps (0–24), and 7 figure artifacts from the rendering of figures, models, and reports are committed under `output/`, of which 7 are the manuscript's own.
 
 ## Claim Discipline
 

@@ -5,23 +5,46 @@ All notable changes to the GNN Pipeline are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
 
 
-## [4.0.0] - Unreleased candidate
+## [Unreleased]
 
-The manuscript authored epoch is 2026-10-02. The software publication date and
-final publication source/artifact/wheel/pair identities remain pending.
-The verified 2026-10-06 candidate snapshot in [the scope ledger](SCOPE-2026-10-01.md)
-records current hosted, local, numerical and namespace evidence; publication facts
-will be attached separately after all closeout gates. Historical evidence
-retains its original hashes and scope in the
-[verification ledger](docs/development/verification_2026_10_01.json); current
-acceptance boundaries and remaining work are tracked in [TO-DO.md](TO-DO.md).
+## [4.0.1] - Unreleased patch candidate
+
+Patch publication follows final source, manuscript, companion and hosted checks.
+
+### Fixed
+
+- GUI 1 state-line parsing uses a linear delimiter scan and an 8,388,608-character
+  input limit. Save/Export admit the document before writing; oversized edits
+  preserve the existing export and surface a validation message.
+- Patched locked fsspec, JupyterLab, multidict, Tornado and virtualenv versions
+  address the twelve dependency findings reported on 2026-10-07. uv constraints
+  keep these transitive security floors without adding optional packages to core.
+- Complete subprocess input is staged in an owned temporary descriptor,
+  preventing large requests from stalling during deadline polling. Descriptor
+  close failures preserve fail-closed child cleanup and diagnostics.
+- Human-readable LLM summaries report source/prompt coverage, unfinished work,
+  provider/model identity, resolved budgets and preflight error stages.
+- The canonical example index and family manifest now describe the six approved
+  scientific models and their actual backend admission contracts.
+
+## [4.0.0] - 2026-10-07
+
+Published at [v4.0.0](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.0)
+from `1bc3a76eccccb2cc5ce8601770714075b3ec48db`, with verified FEP and GEO
+companion revisions and directly downloaded release assets. The
+[publication receipt](docs/development/gnn_4_0_0_post_publication.json)
+records exact source, tag, checks and artifact hashes. The release notes include
+[a comprehensive overview image](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.0/GNN-4.0.0-release-overview.png).
+The manuscript authored epoch remains 2026-10-02. Historical candidate evidence
+and failures retain their original scope in the
+[verification ledger](docs/development/verification_2026_10_01.json).
+[TO-DO.md](TO-DO.md) distinguishes accepted release work from capability limits.
 
 **Current-run Reliability.** The 25-step pipeline now binds selection,
 configuration, source identity, output ownership and deadlines to one invocation.
 See [the migration guide](docs/development/run_ownership_migration.md) and
 [SCOPE-2026-10-01.md](SCOPE-2026-10-01.md) for evidence and remaining acceptance.
-This entry describes the implementation; publication requires the recorded gates
-and paired custody described in the scope ledger.
+Publication and paired custody are recorded in the linked post-publication receipt.
 
 ### Changed
 
@@ -2395,7 +2418,8 @@ Completes the remaining RED_TEAM_REVIEW.md items from the 2026-08-14 wave.
 - pytest test suite with comprehensive coverage
 - MCP tool registration framework
 
-[Unreleased]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.0.1...HEAD
+[4.0.1]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.6.0...v4.0.0
 [3.6.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.4.0...v3.5.0

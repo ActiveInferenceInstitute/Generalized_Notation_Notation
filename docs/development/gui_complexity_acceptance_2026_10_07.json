@@ -1,0 +1,113 @@
+{
+  "status": "passed",
+  "source_sha256": "241d95d36424a2dcc4d0cb618469546da4a6c9f62142cede82e98845c1b0e7e3",
+  "equivalence_documents": 5005,
+  "operations_per_document": 3,
+  "bounded_growth_child_timeout_seconds": 25,
+  "timings": [
+    {
+      "fragment": "' '",
+      "characters": 65580,
+      "repetitions": 65536,
+      "parse_update_remove_seconds": 0.0007301250007003546
+    },
+    {
+      "fragment": "' '",
+      "characters": 262188,
+      "repetitions": 262144,
+      "parse_update_remove_seconds": 0.0021719159849453717
+    },
+    {
+      "fragment": "' '",
+      "characters": 1048620,
+      "repetitions": 1048576,
+      "parse_update_remove_seconds": 0.006478708004578948
+    },
+    {
+      "fragment": "'] '",
+      "characters": 131116,
+      "repetitions": 65536,
+      "parse_update_remove_seconds": 0.05559012500452809
+    },
+    {
+      "fragment": "'] '",
+      "characters": 524332,
+      "repetitions": 262144,
+      "parse_update_remove_seconds": 0.22276462498120964
+    },
+    {
+      "fragment": "'] '",
+      "characters": 2097196,
+      "repetitions": 1048576,
+      "parse_update_remove_seconds": 0.8084434999909718
+    },
+    {
+      "fragment": "']x'",
+      "characters": 131116,
+      "repetitions": 65536,
+      "parse_update_remove_seconds": 0.03234829200664535
+    },
+    {
+      "fragment": "']x'",
+      "characters": 524332,
+      "repetitions": 262144,
+      "parse_update_remove_seconds": 0.13179337498149835
+    },
+    {
+      "fragment": "']x'",
+      "characters": 2097196,
+      "repetitions": 1048576,
+      "parse_update_remove_seconds": 0.5688724579813424
+    },
+    {
+      "fragment": "'['",
+      "characters": 65580,
+      "repetitions": 65536,
+      "parse_update_remove_seconds": 0.0007137079956009984
+    },
+    {
+      "fragment": "'['",
+      "characters": 262188,
+      "repetitions": 262144,
+      "parse_update_remove_seconds": 0.0025769580097403377
+    },
+    {
+      "fragment": "'['",
+      "characters": 1048620,
+      "repetitions": 1048576,
+      "parse_update_remove_seconds": 0.00570629199501127
+    },
+    {
+      "fragment": "'\\t\\t'",
+      "characters": 131116,
+      "repetitions": 65536,
+      "parse_update_remove_seconds": 0.000718832976417616
+    },
+    {
+      "fragment": "'\\t\\t'",
+      "characters": 524332,
+      "repetitions": 262144,
+      "parse_update_remove_seconds": 0.0028726249875035137
+    },
+    {
+      "fragment": "'\\t\\t'",
+      "characters": 2097196,
+      "repetitions": 1048576,
+      "parse_update_remove_seconds": 0.01232533302390948
+    }
+  ],
+  "reasoning": "Each failed closing-bracket candidate consumes a disjoint following-whitespace run; the find scan and whitespace scan each visit input at most a constant multiple. ASCII names and first admitting closing delimiter match the prior grammar on bounded witnesses.",
+  "qualification": "Input cap is checked; this review does not claim every edit output is prebounded or universal denial-of-service immunity.",
+  "functional_callback_acceptance": {
+    "passed": 13,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit_sha256": "4f732c8f264045d2657cabe732e78a74747d3a830f735b89b9167bca478ec92a",
+    "ui_source_sha256": "4d5bb040a88b610958121e0f9ad0adc739a36bcfc712d18280a2dfbc195ab5e7",
+    "test_source_sha256": "105bf1e2afa55ad6982b98b371d61e780521ff32033c7b1d9aa213026bf6194a",
+    "scope": "Actual bound callback execution with functional Gradio fixture: hostile parse/edit/save values, oversized save keeps original export and creates no temporary output; refresh/live-edit errors preserve previous state. No browser-wide acceptance claim."
+  },
+  "formatted_successor_source_sha256": "a4aead7b77047676a451723278d22cb8aab780ca97cb768545d91f99cb6bd889",
+  "formatted_successor_note": "Only Ruff formatting changed after the independent parser/growth witness; full current-source GUI selection rerun separately."
+}

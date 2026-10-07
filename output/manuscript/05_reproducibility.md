@@ -7,7 +7,10 @@ Reproducibility in GNN is a source- and run-binding contract across the 0–24 p
 The fastest way to confirm a working installation is to drive the full pipeline over the discrete model family without invoking the optional LLM steps:
 
 ```bash
-uv run python src/gnn/main.py --target-dir input/gnn_files/discrete --output-dir /tmp/gnn-smoke --skip-llm
+uv run python src/gnn/main.py \
+  --target-dir input/gnn_files/discrete \
+  --output-dir /tmp/gnn-smoke \
+  --skip-llm
 ```
 
 This parses the discrete GNN files, runs visualization and rendering across the maintained backends, and writes all artifacts under the chosen output directory. The `--skip-llm` flag disables the LLM processing step; it does not establish network isolation or guarantee that every other step executes. Default framework selection excludes the experimental targets, and dependency readiness, model-kind admission, configured steps, and budgets determine the actual work. Inspect the current-run statuses and terminal exit code (0 success, 1 error, 2 warning); missing or unfinished required work must remain a non-success outcome. To exercise every registered family rather than a single one, drive the manifest through the model-family acceptance gate given below: pointing `--target-dir` at `input/gnn_files` covers that tree's 12 corpus directories. All 9 registered family target directories lie inside that tree, so a single invocation reaches every registered family.
@@ -15,7 +18,10 @@ This parses the discrete GNN files, runs visualization and rendering across the 
 The discrete family exercises the categorical kind end to end. The continuous linear-Gaussian kind smoke-runs the same way, and the contrast between the two runs is itself a check of the per-kind contract:
 
 ```bash
-uv run python src/gnn/main.py --target-dir input/gnn_files/continuous --output-dir /tmp/gnn-smoke-continuous --skip-llm
+uv run python src/gnn/main.py \
+  --target-dir input/gnn_files/continuous \
+  --output-dir /tmp/gnn-smoke-continuous \
+  --skip-llm
 ```
 
 This selects the continuous specifications for the same pipeline. Admitted, ready continuous-capable lanes can render and execute filtering (and, for the closed-loop exemplar, belief-steering) programs; categorical-only targets record `unsupported`, while readiness and budget failures retain their own outcomes. A reader comparing the two receipts sees the kind taxonomy behaving as described in [@sec:system_context]: same pipeline, same steps, per-kind rendering and execution reach.
@@ -66,7 +72,7 @@ uv run --frozen python scripts/pipeline/stage_03_render.py \
 
 The render needs a LaTeX installation providing the packages listed in `manuscript/preamble.md` plus `seqsplit`; the template guards `seqsplit` with `\IfFileExists`, so a missing copy degrades rather than failing the build.
 
-Because the variables file is regenerated before rendering, the counts in the rendered PDF track the repository state at the commit recorded in `output/data/manuscript_variables.json` (a57e17d86): a code change that alters, for example, the test inventory (577 test files, 6214 test functions) propagates into the prose on the next regeneration without any manual editing.
+Because the variables file is regenerated before rendering, the counts in the rendered PDF track the repository state at the commit recorded in `output/data/manuscript_variables.json` (b99695547): a code change that alters, for example, the test inventory (578 test files, 6226 test functions) propagates into the prose on the next regeneration without any manual editing.
 
 ## Reproducibility Contract
 

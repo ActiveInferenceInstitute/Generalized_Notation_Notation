@@ -233,6 +233,9 @@ def build_gui(
         def save_md(md: str) -> Any:
             """Save md."""
             try:
+                # Admit and parse before writing, including the editor size limit.
+                items = parse_state_space_from_markdown(md)
+                components = parse_components_from_markdown(md)
                 with tempfile.NamedTemporaryFile(
                     mode="w", encoding="utf-8", dir=export_path.parent, delete=False
                 ) as tmp_f:
@@ -245,9 +248,8 @@ def build_gui(
                     f"File: `{export_path}`\nSize: {len(md)} characters"
                 )
                 # Calculate updated statistics
-                items = parse_state_space_from_markdown(md)
                 stats: dict[str, Any] = {
-                    "components": len(parse_components_from_markdown(md)),
+                    "components": len(components),
                     "state_entries": len(items),
                     "total_states": sum(_dimension_count(item) for item in items),
                     "file_size_chars": len(md),
@@ -323,7 +325,10 @@ def build_gui(
 
         def refresh_states(md: str) -> Any:
             """Provide refresh states behavior."""
-            return gr.update(choices=_compute_state_choices(md))
+            try:
+                return gr.update(choices=_compute_state_choices(md)), ""
+            except (ValueError, TypeError, KeyError, IndexError) as e:
+                return gr.update(), f"❌ {e}"
 
         def add_state(
             md: str, name: str, dims_csv: str, typ: str, comment: str
@@ -370,10 +375,14 @@ def build_gui(
                 return md, f"❌ {e}"
 
         st_refresh.click(
-            refresh_states, inputs=[markdown_editor], outputs=[state_entries]
+            refresh_states,
+            inputs=[markdown_editor],
+            outputs=[state_entries, validation_output],
         )
         markdown_editor.change(
-            refresh_states, inputs=[markdown_editor], outputs=[state_entries]
+            refresh_states,
+            inputs=[markdown_editor],
+            outputs=[state_entries, validation_output],
         )
         st_add.click(
             add_state,

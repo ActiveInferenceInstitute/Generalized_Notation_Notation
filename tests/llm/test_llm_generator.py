@@ -85,6 +85,73 @@ class TestGenerateDocumentation:
 
 
 class TestGenerateLLMSummary:
+    def test_partial_coverage_preserves_llm_and_structural_distinction(self) -> None:
+        summary = generate_llm_summary(
+            {
+                "processed_files": 38,
+                "selected_files": 38,
+                "total_files_discovered": 38,
+                "success": False,
+                "status": "timed_out",
+                "provider": "ollama",
+                "selected_model": "configured:exact",
+                "budget_seconds": 900,
+                "coverage": {
+                    "structural_completed": 38,
+                    "structural_required": 38,
+                    "summaries_completed": 33,
+                    "summaries_required": 38,
+                    "prompts_completed": 82,
+                    "prompts_required": 342,
+                },
+                "unfinished_work": [f"unfinished:{i}" for i in range(260)],
+            }
+        )
+        for fact in (
+            "**Status**: timed_out",
+            "**Structural Analyses**: 38/38",
+            "**LLM Summaries**: 33/38",
+            "**LLM Prompts**: 82/342",
+            "**Unfinished Prompts**: 260",
+            "**Provider**: ollama",
+            "**Model**: configured:exact",
+            "**Budget (seconds)**: 900",
+            "Structural analysis does not count as an LLM response.",
+        ):
+            assert fact in summary
+
+    def test_missing_model_is_attributed_to_preflight(self) -> None:
+        summary = generate_llm_summary(
+            {
+                "success": False,
+                "errors": [
+                    {
+                        "stage": "preflight",
+                        "error": "Configured Ollama model is not installed",
+                    }
+                ],
+                "coverage": {
+                    "structural_completed": 1,
+                    "structural_required": 1,
+                    "summaries_completed": 0,
+                    "summaries_required": 1,
+                    "prompts_completed": 0,
+                    "prompts_required": 9,
+                },
+                "unfinished_work": [f"case:{i}" for i in range(9)],
+            }
+        )
+        assert "**preflight**: Configured Ollama model is not installed" in summary
+        assert "**LLM Summaries**: 0/1" in summary
+        assert "**LLM Prompts**: 0/9" in summary
+        assert "**Unfinished Prompts**: 9" in summary
+
+    def test_legacy_results_do_not_invent_coverage_or_budget(self) -> None:
+        summary = generate_llm_summary({"processed_files": 1, "success": True})
+        assert "**Files Processed**: 1" in summary
+        assert "Selected-source Coverage" not in summary
+        assert "Budget (seconds)" not in summary
+
     def test_error_lines_rendered(self) -> None:
         summary = generate_llm_summary(
             {

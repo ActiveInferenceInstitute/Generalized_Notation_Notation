@@ -33,7 +33,7 @@
 \contentsline {section}{\numberline {6}Reproducibility}{22}{section.6}%
 \contentsline {subsection}{\numberline {6.1}Pipeline Smoke Run}{22}{subsection.6.1}%
 \contentsline {subsection}{\numberline {6.2}Validation Gates}{22}{subsection.6.2}%
-\contentsline {subsection}{\numberline {6.3}Manuscript Reproducibility}{22}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.3}Manuscript Reproducibility}{23}{subsection.6.3}%
 \contentsline {subsection}{\numberline {6.4}Reproducibility Contract}{23}{subsection.6.4}%
 \contentsline {section}{\numberline {7}Limitations and Next Steps}{24}{section.7}%
 \contentsline {subsection}{\numberline {7.1}Current Limitations}{24}{subsection.7.1}%

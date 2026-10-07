@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "generalized-notation-notation"
-version = "4.0.0"
+version = "4.0.1"
 description = "A text-based language for standardizing Active Inference generative models"
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
@@ -156,7 +156,7 @@ research = [
     # NOTE: jupyterlab/jupyter-server duplicate dev group entries intentionally —
     # research group targets non-developer end-users who don't install the dev group.
     "bleach>=6.4.0",
-    "jupyterlab>=4.5.9",
+    "jupyterlab>=4.6.4",
     "jupyter-server>=2.20.0",
     "sympy>=1.12.0",
     "numba>=0.57.0",
@@ -227,7 +227,7 @@ all = [
 
     # Research and scientific computing
     "bleach>=6.4.0",
-    "jupyterlab>=4.5.9",
+    "jupyterlab>=4.6.4",
     "jupyter-server>=2.20.0",
     "sympy>=1.12.0",
     "numba>=0.57.0",
@@ -287,7 +287,7 @@ dev = [
     # Interactive development
     "ipython>=8.0.0",
     "ipdb>=0.13.0",
-    "jupyterlab>=4.5.9",
+    "jupyterlab>=4.6.4",
     "jupyter-server>=2.20.0",
     "ipywidgets>=8.0.0",
 
@@ -323,17 +323,20 @@ default-groups = ["dev"]
 # Keep these as resolver constraints so the packages do not become core runtime
 # dependencies merely because Dependabot tracks them in uv.lock.
 constraint-dependencies = [
+    "fsspec>=2026.6.0",  # GHSA-27vj-qcqg-25rc
     "gitpython>=3.1.58",
     "idna>=3.15",
-    "jupyterlab>=4.6.2",
+    "jupyterlab>=4.6.4",
     "mistune>=3.3.0",
+    "multidict>=6.9.1",  # GHSA-54p9-h82j-f925
     "pillow>=12.3.0",
     "python-multipart>=0.0.27",
     "ray>=2.56.0",
     "setuptools>=83.0.0",
     "soupsieve>=2.8.4",
     "starlette>=1.0.1",
-    "tornado>=6.5.8",  # GHSA-mpf4-983q-p7j4, GHSA-8423-8fgw-73vq, GHSA-wwv5-g3v4-889x
+    "tornado>=6.5.9",  # GHSA-c2m8-h5v5-343r, GHSA-chx6-46f5-w4vp, GHSA-3hv7-mjh2-fv65
+    "virtualenv>=21.7.13",  # Latest of four activation/seeding fixes
     "urllib3>=2.8.0",  # GHSA-gh4c-6fx4-qh6g: chunked Deflate streaming loop
 ]
 

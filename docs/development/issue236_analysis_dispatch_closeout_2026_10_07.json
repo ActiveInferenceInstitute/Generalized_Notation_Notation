@@ -1,0 +1,999 @@
+{
+  "schema_version": "gnn_issue236_closeout_v1",
+  "recorded_at": "2026-10-07T15:40:54.008610+00:00",
+  "issue": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues/236",
+  "resolution": "The reported repeated per-folder/global analysis defect is fixed by frozen corpus dispatch once. The historic approximately10x wall-clock and entire-output-directory byte-equality expectations are explicitly not claimed as met.",
+  "original_source_commit": "4edd3d737067ece868cd8db6459bb8053388eb88",
+  "verified_released_source_commit": "1bc3a76eccccb2cc5ce8601770714075b3ec48db",
+  "source_paths": [
+    "src/gnn/main.py",
+    "src/gnn/pipeline/run_context.py",
+    "src/gnn/pipeline/summary_wiring.py",
+    "src/gnn/analysis/processor.py"
+  ],
+  "dispatch_controls": [
+    {
+      "corpus": "historical 4edd3d737 corpus",
+      "corpus_source_commit": "4edd3d737067ece868cd8db6459bb8053388eb88",
+      "model_count": 36,
+      "original_step16_launches": 11,
+      "released_step16_launches": 1,
+      "selected_source_byte_multiset_exact": true,
+      "empty_original_folder_launches": 1,
+      "model_folders": [
+        "basics",
+        "continuous",
+        "discrete",
+        "hierarchical",
+        "learning",
+        "multiagent",
+        "pomdp_gridworld",
+        "precision",
+        "pymdp_scaling_study",
+        "structured"
+      ],
+      "boundary": "Actual main/summary_wiring/config/argument/discovery code; only child launcher replaced by command capture. No processor or wall-clock speed claim."
+    },
+    {
+      "corpus": "released 1bc3a76 corpus",
+      "corpus_source_commit": "1bc3a76eccccb2cc5ce8601770714075b3ec48db",
+      "model_count": 38,
+      "original_step16_launches": 12,
+      "released_step16_launches": 1,
+      "selected_source_byte_multiset_exact": true,
+      "empty_original_folder_launches": 1,
+      "model_folders": [
+        "basics",
+        "continuous",
+        "discrete",
+        "hierarchical",
+        "learning",
+        "multiagent",
+        "pomdp_gridworld",
+        "precision",
+        "pymdp_scaling_study",
+        "structured",
+        "thrml"
+      ],
+      "boundary": "Actual main/summary_wiring/config/argument/discovery code; only child launcher replaced by command capture. No processor or wall-clock speed claim."
+    }
+  ],
+  "authentic_native_input": {
+    "upstream_artifact_id": 11373022398,
+    "archive_sha256": "6d17cdb9fdf6a8f9aee4b9268876f717ff2ef4908fef54c0c8463c448bfe1e54",
+    "original_source_commit": "8d202439eaa386d13a9b93888a7d560657579a4b",
+    "original_artifact_commit": "883e44c04e95ef4c69d7f998b9669a0a0a49ad29",
+    "models": [
+      {
+        "model": "multi_agent_coordination",
+        "source_relative_path": "input/gnn_files/multiagent/multi_agent_coordination.md",
+        "source_sha256": "38f914bb0a9c4337d2de6c425f76d879cf67af6646b3557d16508e91321c606c",
+        "native_result_sha256": "e9443d8b06ab551e5ccb8f24f79bad717e3baff2b7ec82ecb6a323400d078284",
+        "original_receipt_sha256": "a679ad4fe8600bf2b344bec51244d43d33e44642ac984abbef949ae0fa1e4de1"
+      },
+      {
+        "model": "pomdp_gridworld_3x3",
+        "source_relative_path": "input/gnn_files/pomdp_gridworld/pomdp_gridworld_3x3.md",
+        "source_sha256": "a87cdc89163bcd1b612f902d21ad16f95e3d25c7ff59e3718fa0179b1bc4d302",
+        "native_result_sha256": "952e4018ca54cb1f0c4b571070fe7425aa67c39ed23fe4456e10ca554d16f30e",
+        "original_receipt_sha256": "8acedc944d687d6f3a80287973ea0b9e066fca1bc2f3aa14063e998252dbf4a0"
+      },
+      {
+        "model": "stigmergic_swarm",
+        "source_relative_path": "input/gnn_files/multiagent/stigmergic_swarm.md",
+        "source_sha256": "04e3f73dc1725c5baae8fce6328485116baa9c8c98572e2d388fbbf06eddc52f",
+        "native_result_sha256": "fece1cad5d5bf0ae45b6961b44f47df7bfad40439ab512322ebdc88297dedab4",
+        "original_receipt_sha256": "6ed30d020241a1e6b1b5d3e2d1d4940a4c024557b0f1079c58728d71db1e1915"
+      },
+      {
+        "model": "two_state_bistable",
+        "source_relative_path": "input/gnn_files/discrete/two_state_bistable.md",
+        "source_sha256": "a184fed13b7a446e8193549c206ade9f485cd99034097c3e67277a03fc3cab3d",
+        "native_result_sha256": "13b76dc313755d3b723deb547da581a32bb82c9505a427e30e602965885aa983",
+        "original_receipt_sha256": "834961825e9f9e0933e7b28fb844ed515b291f0faecb22da3eabccac284a3796"
+      }
+    ],
+    "native_files_rehashed": 12,
+    "native_files_bytes": 363965,
+    "original_and_released_replay_native_bytes_exact": true,
+    "source_hashes_match_released_commit": true,
+    "new_native_execution_claim": false
+  },
+  "actual_step16_replay": {
+    "scope": "Four real RxInfer native models, three actual input folders. Unmodified historical and released processors, same source/native bytes and Python environment. Aggregate producer index absent in these complete Step16 replays; aggregate consumer separately checked below. Step16 generate_animations=False in both; framework-specific historical/current RxInfer animation behavior remains part of each actual implementation.",
+    "original_invocations": 3,
+    "released_invocations": 1,
+    "original_global_analysis_calls": 3,
+    "released_global_analysis_calls": 1,
+    "original_global_native_file_visits": 12,
+    "released_global_native_file_visits": 4,
+    "original_seconds": 87.9270854589995,
+    "released_seconds": 233.5571160419786,
+    "all_invocations_successful": true,
+    "all_source_analysis_errors": 0,
+    "wall_clock_improvement_claim": false,
+    "interpretation": "Single bounded replay per revision, not a statistically controlled benchmark. Released analysis adds native composed-model plots/animations and corrected scientific refusal/reporting, so elapsed time does not compare equivalent output work or prove original historical speed reduction."
+  },
+  "aggregate_consumer_replay": {
+    "original_passes": 3,
+    "released_passes": 1,
+    "original_execution_records_visited": 12,
+    "released_execution_records_visited": 4,
+    "records_from_actual_producer_summaries": true,
+    "new_execution_claim": false,
+    "original_absolute_result_pointers_preserved": true,
+    "native_lookup_outcome": "Historical Linux producer paths are unavailable in local replay and remain unavailable; no fabricated current metrics or benchmark admission. Framework census and historical execution time arrays are checked exactly.",
+    "initial_fixture_attempt": "Rejected locally because collector log simulation_data dictionaries were incorrectly used in a summary record shape. Corrected fixture indexes the exact actual producer summary execution_details; the failed attempt remains retained privately."
+  },
+  "independent_numerical_checks": {
+    "probability_rows_finite_in_range_and_unit_mass": 165,
+    "flat_model_primary_series": [
+      {
+        "model": "pomdp_gridworld_3x3",
+        "series_estimand": "selected-policy expected free energy; not variational free energy",
+        "scalar_samples": 15,
+        "old_and_new_primary_series_exact": true,
+        "old_and_new_statistics_and_convergence_fields_exact": true,
+        "independent_scalar_oracle_max_absolute_error": 4.440892098500626e-16,
+        "independent_shannon_entropy_oracle_max_absolute_error": 2.220446049250313e-16,
+        "historical_entropy_epsilon_removed_max_delta": 5.000002634147904e-10
+      },
+      {
+        "model": "two_state_bistable",
+        "series_estimand": "selected-policy expected free energy; not variational free energy",
+        "scalar_samples": 20,
+        "old_and_new_primary_series_exact": true,
+        "old_and_new_statistics_and_convergence_fields_exact": true,
+        "independent_scalar_oracle_max_absolute_error": 1.1102230246251565e-16,
+        "independent_shannon_entropy_oracle_max_absolute_error": 0.0,
+        "historical_entropy_epsilon_removed_max_delta": 2.0000012757037666e-10
+      }
+    ],
+    "composed_model_boundary": "Native source/payload byte identity and named model-specific figure roles verified; no newly claimed native Julia execution, independent algorithm proof or universal scientific acceptance."
+  },
+  "rendered_replay_outputs": {
+    "png_count": 86,
+    "gif_count": 4,
+    "decoded_first_image_count": 90,
+    "gif_all_frames_decoded_claim": false,
+    "artifacts": [
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_observations.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "d0fa6ccab2991ff63cbefbe75832e056a238a75bc8ef773841b97b406606f5fe"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_obs_vs_true.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "021576ad3006ff91d821a1feab0e6d8ef43dcd44c9c68fb241d569d7cc709af2"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_belief_entropy.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "3f17de13b8d8b6b1ba81ab0b3b4a9ab4fc039188b4c9fad1c7a9f3a6e205e400"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_belief_convergence.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "2d9a29cbd40bcb33dc9a01ddfb7ec483a81969af692e211f7fce4271fc1a9ecd"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_belief_trace.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "727aaab0b0975e6fe7cfe2e3d48b1a56c20487863e5923b2fee6b307f5b4c170"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_convergence_diagnostics.png",
+        "dimensions": [
+          4234,
+          1384
+        ],
+        "frames": 1,
+        "sha256": "f51777c913db32d681882b6046e6da6ff607b43a9139960343fa83b8d9251eb2"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_belief_heatmap.png",
+        "dimensions": [
+          3276,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "de69014fcbf605be46f2ba5ab8ca0373f822c08d71c5c50d7d75bac610ff2acb"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_belief_trace.png",
+        "dimensions": [
+          2964,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "3bf3974213eddffea4d70f955aaec8a462124c8c9f5d6b1514ac75a9fdf57024"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_belief_evolution.png",
+        "dimensions": [
+          3004,
+          1638
+        ],
+        "frames": 1,
+        "sha256": "3e5f17c5a1bed8c63742170be82545ef906f824c8536ea75c4b4c426468f1655"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_action_frequencies.png",
+        "dimensions": [
+          2525,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "827a5568fef80df6f5af18bb0188cc0f20d95d99fe5ac2dad6f13346f2c0b393"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_efe_per_action_heatmap.png",
+        "dimensions": [
+          3208,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "f8c1a248de28b58b196e14f02165a7acd9d6904f3159c9fd8af649bcafeab885"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_observations.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "fa07911713db7c7019f5dc7001c0b9f271068c2d033279fc8eaaf6a814bcf26d"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_efe_per_action_heatmap.png",
+        "dimensions": [
+          3181,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "46c6c0734abf4a2a0a5a65a6d38b3e2ba48ab7999bf00c8a601d984a31a726ce"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_convergence_diagnostics.png",
+        "dimensions": [
+          4234,
+          1384
+        ],
+        "frames": 1,
+        "sha256": "83c0b26f3b7bfe62e540a8629f8089fdaf183009353025835fbaf06b59e7460a"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_efe_per_action_heatmap.png",
+        "dimensions": [
+          3181,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "29fe1af49d14ead73bcd44245ae1b134ab498d9444488a5ac9ad151cbb9f092d"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_belief_convergence.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "b0e36c71c1ed92c857949d846d1b83890c7d2926ffaa4a67ba6547e210b544c2"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_accuracy.png",
+        "dimensions": [
+          3017,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "4469856ef3f01c048602ab9c4a6606775572f10bcff6314383bfd42afd597496"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_obs_vs_true.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "2c1e40ac9e7c510bb0bbe2151b36b39c4f9e1401bcd17d91a2a3ab86c68bc7b8"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_free_energy.png",
+        "dimensions": [
+          2990,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "5abc20206ae1de1e51d055e92416251001174857c8bcd2e759285ca26730025a"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_belief_evolution.png",
+        "dimensions": [
+          3004,
+          1638
+        ],
+        "frames": 1,
+        "sha256": "852e486027a5f58c3fc266e97a82ae62ac952f467d659708d301d4084f67baeb"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_efe_per_action_heatmap.png",
+        "dimensions": [
+          3181,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "1fec3d462bd74471e80d9567e41010adc44726abd5fbf742fd663985cc1c8285"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_vfe_vs_efe.png",
+        "dimensions": [
+          3634,
+          2134
+        ],
+        "frames": 1,
+        "sha256": "ab4accfc5c7c0d18b7cbd38fc58bd9f34e20b0aa0cf88007d9beff424f976d42"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_action_frequencies.png",
+        "dimensions": [
+          2525,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "a6c4b73e0676673c52c5523797ad6239f047e2a64627ac23c3914c7537115377"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_belief_evolution.png",
+        "dimensions": [
+          3004,
+          1638
+        ],
+        "frames": 1,
+        "sha256": "ef9eb1e03ca3a4855787411786e7fe82adda3d4c57ca0e59da0b6ee495424e0c"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_free_energy.png",
+        "dimensions": [
+          3030,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "5b18b2faa1dcd9cbf812004f0d42b8fcca560b66d231f8d07febbc922e37213b"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_observations.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "7b0220761ec9e0384bd2b8b749ab344ec9af59adb672bdd0594ea0062b788295"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_vfe_vs_efe.png",
+        "dimensions": [
+          3634,
+          2134
+        ],
+        "frames": 1,
+        "sha256": "f7bfad788b964f57233c3c59308a062d74c72053e578d59139abb38a3ab2bd96"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_efe_per_action_heatmap.png",
+        "dimensions": [
+          3181,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "a98cc249c1e582e3b9a901f1ad1a9410d62261b03af667820a1519a870d06d86"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_belief_trace.png",
+        "dimensions": [
+          2964,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "a2f89c0984896a51b3059e959adff25d050ef2b080fdae0170d226bf43025ed4"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_action_frequencies.png",
+        "dimensions": [
+          2499,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "3d761700208328b3ac99a80cf91a7256aa6c3e7dc374313ae3412011ec14d33e"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_obs_vs_true.png",
+        "dimensions": [
+          2964,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "6eff862c30f8f3412bf7bca4109a1f162a5e78141ee451d2583ac2e862152ddc"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_belief_evolution.png",
+        "dimensions": [
+          3004,
+          1638
+        ],
+        "frames": 1,
+        "sha256": "c002556971aa32c35ef3b8aac07ed9c5470abce06e984506a24104d3c30229f6"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_belief_evolution.png",
+        "dimensions": [
+          3004,
+          1638
+        ],
+        "frames": 1,
+        "sha256": "544d458ef0c38d1f7f2615b786e6b73531f39be7dbb6f60fdb232b4545d65ff3"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_convergence_diagnostics.png",
+        "dimensions": [
+          4234,
+          1384
+        ],
+        "frames": 1,
+        "sha256": "f038f91d07900a45246341ec73e66583b6fb222e59a8067cf1b142e0bc1c8b47"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_belief_convergence.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "90ce5da6e2b4dbb9eb96dbdbbc29de9be57847c2fda69df92c444554a0107b73"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_accuracy.png",
+        "dimensions": [
+          3017,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "654ed736e2c47dc5f6260b8c8e1b1c3e4112f0e900f5e414ca8eb3ab89ac0a23"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_belief_trace.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "14859680819c9a1dbc0cee61c09d9e6780368db0264675ea83d7900b40f78aff"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_accuracy.png",
+        "dimensions": [
+          3017,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "1ee5b72f6b713fa597aecafdaf930417142abde485d3fce298543522f5555475"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_belief_entropy.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "cb84a437bfd68ae3d773822f979d5e2a8d7b9713323447484741be9947a78a52"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_free_energy.png",
+        "dimensions": [
+          2990,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "f79fca051438bbe1201e103037df1c4a1bbf37b9cbf1e2609657d1baf97de251"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_observations.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "4867f2f420aaa521f8efe375a229f35543c305f976e24714a1c8bb1ec9b3e0a7"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_belief_entropy.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "a720e61561f1ea17478b3cd73b05577c30c0874c88660222c9ced12b7a2e94d8"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_belief_heatmap.png",
+        "dimensions": [
+          3276,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "88d87782663a1fea366e5ca315798d1437921b45cee7772fc1384735b22d4b85"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_free_energy.png",
+        "dimensions": [
+          3634,
+          3334
+        ],
+        "frames": 1,
+        "sha256": "7c521b790332d3fc2b6c4d6c4869fec6dc5da25a4155122ea6e0f3b7113d8102"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_observations.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "26a6d65ea15696bc25f30992d8fe1ba03cb23965e355de9afa880a2af8fb815d"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_belief_heatmap.png",
+        "dimensions": [
+          3276,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "0151cbf40e4032cd5a78c277489818fe730e401113670e8da3e4807983906509"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_belief_convergence.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "f04f35560e30fffe6ce3b0ec6316886619a5567c7a6fee5f360a0fe89b951cb6"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_convergence_diagnostics.png",
+        "dimensions": [
+          4234,
+          1384
+        ],
+        "frames": 1,
+        "sha256": "43c43e543ac9dcf2c6e48dd371e0ffefaf9f9239fae1a4b7447f6feef0ef0c5f"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_belief_trace.png",
+        "dimensions": [
+          2964,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "0cf0081aa0a5e9c100531ab63c321a53d0db66eb813be9480e2d345e7ff950fe"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_observations.png",
+        "dimensions": [
+          3570,
+          1485
+        ],
+        "frames": 1,
+        "sha256": "2d6c9e5f6b845fabf71562bfdb96361792404ba9b253c4da40ee24b1795abb5a"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_belief_entropy.png",
+        "dimensions": [
+          3030,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "bbb95818a2950c190b9d9f8aba3a5f7fcc7c39bda1aed4dfa8924d02f85855b1"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_convergence_diagnostics.png",
+        "dimensions": [
+          4234,
+          1384
+        ],
+        "frames": 1,
+        "sha256": "d65e99be216e478b603cc60260ba17dd7be7bb1f9697adebd304a3df140e0e5a"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_belief_entropy.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "33e02f58be5ee378c625e428b9e26cc0378083759d23a5686da02f8f2fb7289f"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_belief_entropy.png",
+        "dimensions": [
+          3030,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "c5977bced2dc695b2c43066497cf162b698c8b62ae9310d585a5f58630b609a0"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_belief_evolution.png",
+        "dimensions": [
+          3004,
+          1638
+        ],
+        "frames": 1,
+        "sha256": "4dc3fc0e3bbd47ac29858846f502fd773d940d3248c7bc2e726b5964de0d0c8e"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_belief_convergence.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "eeb363719708225e696d290ed628a778a8a4e920d412d6da3172e1ad56a89044"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_belief_heatmap.png",
+        "dimensions": [
+          3276,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "4784666baad41f75870ab680136c09856d8934f6d2a2b0d61228899ab7d36718"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_accuracy.png",
+        "dimensions": [
+          3017,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "4abb85bf5865e682d7f72214d7bc353446a987be64f18def0cd04811a2875c2e"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_belief_heatmap.png",
+        "dimensions": [
+          3276,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "6b259577e0a18e0b477603154b786cb9690fc920ab78e33ddc69a064b73571de"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_belief_trace.png",
+        "dimensions": [
+          2964,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "69ab4339bff45542e46f1a5fdc64d9b7e8a989e6bedf5905961fe3d0e374a00f"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_free_energy.png",
+        "dimensions": [
+          3030,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "8c864b0ec535c1fb9a4440a8cf958f21c7f6e0600b88a121fd0378aac83e304a"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_action_frequencies.png",
+        "dimensions": [
+          2525,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "98bf08855fdeaa9bc2cbb62e6316d540ddc5695ecd77786e414f329bfd2e7c9c"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_belief_heatmap.png",
+        "dimensions": [
+          3276,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "7c77b31fadc34e7e98bc0d6cf77118efd4f80d7f8c49faefcef0e059ab17a915"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_belief_evolution.png",
+        "dimensions": [
+          3004,
+          1638
+        ],
+        "frames": 1,
+        "sha256": "76a8e561155b5519eeea25fe1134190d84265ce2fd39f5a1fac3c2f7e9e6d632"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_obs_vs_true.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "a9f893144cf093f6d41805bccf5d0f1f983a08118f6c54a800dfa2e2c746a7d5"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_free_energy.png",
+        "dimensions": [
+          3634,
+          3334
+        ],
+        "frames": 1,
+        "sha256": "666d612132e50e3efbe61eae3f4b44e9445e2b9e933231b961b28e86f8c582b4"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_accuracy.png",
+        "dimensions": [
+          3017,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "ad28694c4a384ae6c1fff4db222341624e61c904463451e0fc3f3bf95918ecc2"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_accuracy.png",
+        "dimensions": [
+          3017,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "b7ffb07cadd721244c1553ea3e5881b5fb00505e47d7283bfdf7851419f6f5dc"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_action_frequencies.png",
+        "dimensions": [
+          2525,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "47ea396dea472511062432a48ddf06725f00a8417b39191760c8aedd20ba2a3c"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent1_cd5078be_rxinfer_free_energy.png",
+        "dimensions": [
+          2990,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "be00601b01308317cbde5016493577be7a34f4eb6eeffa6076f5fce90407ae91"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_belief_heatmap.png",
+        "dimensions": [
+          3276,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "f2230d0d14d3f02fb68848b057a6e1904047c0062a87d065ed759d95f7542228"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_action_frequencies.png",
+        "dimensions": [
+          2499,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "342b2939274705f4ae521a8273d14f874dc93e632535ffc7d3e8b8da678e4b54"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_belief_entropy.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "5e98128d53d8dfd0dedeb08a33706a4cbb77464906b95120c7cb525b5a1a999a"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_belief_convergence.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "679573e5c03ac0c5ed9b3917ef3359d4645070da672afb9580461a4241dda916"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent3_f4177e6b_rxinfer_obs_vs_true.png",
+        "dimensions": [
+          2964,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "2e034346a0b0d2de43d6016fcbe883913e8f2ee65549a0eaf572c07a04c88578"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_efe_per_action_heatmap.png",
+        "dimensions": [
+          3208,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "9d16a9c3e4cb2f0cf811c58541314c32ca0be13ad0c1bce7261cebeb0d209bb7"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_action_frequencies.png",
+        "dimensions": [
+          2525,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "0b6fa0b6ecf82faeb95ac3de121ecf76bb610794637215a1661993700fa90bc5"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_belief_trace.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "3a4e639e10bac2242801890a7aff5b44d3d55d38989eef2c882c35414e23b2ad"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_obs_vs_true.png",
+        "dimensions": [
+          2964,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "84121d84d2ad3f952f049d7d83f2e2240e85233e6ac733d63078fbda0d5a12b9"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_obs_vs_true.png",
+        "dimensions": [
+          2964,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "3b506a037e2571b024379e9c9d17a3baf01189672b469e2f89e36b2b5fa4550d"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_observations.png",
+        "dimensions": [
+          3570,
+          1485
+        ],
+        "frames": 1,
+        "sha256": "80759482b46b17b914deebcc5f8d2d04ffeee4f0baa05430ecea796adad0442d"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent1_cd5078be_rxinfer_accuracy.png",
+        "dimensions": [
+          3017,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "0a4d4f5103e2fae83a5bbf1d8d1cd77e9246fb5295a6a687d8dc767f64e6e780"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_agent2_27d0d023_rxinfer_efe_per_action_heatmap.png",
+        "dimensions": [
+          3181,
+          1407
+        ],
+        "frames": 1,
+        "sha256": "6d0a1cd58c904aba8a1b5ecbe1696665627da63552acf52c80f19def17403b38"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_agent2_27d0d023_rxinfer_convergence_diagnostics.png",
+        "dimensions": [
+          4234,
+          1384
+        ],
+        "frames": 1,
+        "sha256": "2692e88063ae3b01202a0b61a054f07c4d892a0192c86448aad50bf8d0d20393"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_belief_convergence.png",
+        "dimensions": [
+          3004,
+          1176
+        ],
+        "frames": 1,
+        "sha256": "f26752fcdc8a32ca87de25f45f8b94d0a4aca52930dfdef3a60ef3d897d78ced"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_convergence_diagnostics.png",
+        "dimensions": [
+          4234,
+          1384
+        ],
+        "frames": 1,
+        "sha256": "c53fdd7c433ccc8dabb20e2fbbb8479210682a49753f72005bbbd4e9b9cfc781"
+      },
+      {
+        "relative_path": "rxinfer/multi_agent_coordination_rxinfer_animation.gif",
+        "dimensions": [
+          1600,
+          1800
+        ],
+        "frames": 20,
+        "sha256": "98c8b2c0a8a12f14df3cb7fe5f51646de1e30664d2be4cccf98aa6b6ef742fe1"
+      },
+      {
+        "relative_path": "rxinfer/two_state_bistable_rxinfer_animation.gif",
+        "dimensions": [
+          1600,
+          900
+        ],
+        "frames": 20,
+        "sha256": "1ad23624e8bcc1d8aa1e942703020fdd72eb94c5f87e08028ef826a4e5375bd9"
+      },
+      {
+        "relative_path": "rxinfer/pomdp_gridworld_3x3_rxinfer_animation.gif",
+        "dimensions": [
+          1600,
+          900
+        ],
+        "frames": 15,
+        "sha256": "15f40861fe08d7022668327cce18afadd5324a173778bad1dfd62fc5f02a03da"
+      },
+      {
+        "relative_path": "rxinfer/stigmergic_swarm_rxinfer_animation.gif",
+        "dimensions": [
+          1600,
+          2700
+        ],
+        "frames": 30,
+        "sha256": "a689d4c9974c0f0a437a25ca9e3b75a5dbc2cca8d1d55911a07332b403d3f8d0"
+      }
+    ]
+  },
+  "why_historical_output_byte_equality_is_retired": [
+    "Per-folder overwrites retained only the last folder in analysis_results.json; the corpus pass correctly retains all four replay models.",
+    "The former unified dashboard selected first encountered framework data across models; released dashboards group data by model.",
+    "Released Shannon entropy validates input probabilities and computes -sum(p*log(p)) for positive probabilities. Old implicit renormalization and +1e-10 log bias are intentionally absent.",
+    "Scientific comparison admission now preserves differing estimands, unsupported compositions and benchmark limitations rather than equating unrelated evidence."
+  ],
+  "limitations": [
+    "The original Sept29 execution tree and its exact5243-second Step16 timing workload were not located and are not reproduced.",
+    "No approximately10x full-corpus wall-clock performance improvement is asserted.",
+    "Routing and aggregate-pass multiplicity controls do not substitute for a full end-to-end pipeline or new native execution.",
+    "Receipt binds released M source; subsequent edits by other workers require review of affected code before applying this evidence."
+  ],
+  "private_evidence_sha256": {
+    "dispatch-original-original-corpus.json": "5f8758e045d572f0209967f796ba7b673b4530566dccfe53446ae8f59809a4a8",
+    "dispatch-released-original-corpus.json": "f984143846c48287da6f4a15d06b814057486c9da6bf338ba764aa1c63ea5ef5",
+    "dispatch-original.json": "f8c68b533bfd673164b7869c141643c4417e7b8e51a44373e87444f4319c89d4",
+    "dispatch-released.json": "a613e880d70cec63df6a6f928e2a29351fc7bac1c104bd5c40e131881fc6e092",
+    "native-input-binding.json": "79bed0e19889fdd41c9a9f1d51cd9bfeebe0f1c19e43a3880dd5f1bdc5d5daba",
+    "native-original-1.json": "18a5e284f1a5e5254a32784231eb7d671d8190826d14e5a87a1e553fc136e7be",
+    "native-released-1.json": "1edf3fecadca7b50c0a0543c25f49b5d79f629eeaa08b5a0d94ad9ff24623b3d",
+    "global-index-original.json": "e3e80e826d5b3312a8f0521e8bf38ff67810a4ac5ef626282de616b853582ef3",
+    "global-index-released.json": "dcad69ac6e4a756d1cd0aaeac8d9fffba6c6ced0506c0957c4194817aba9571e",
+    "dispatch_control.py": "08fa206ef973132c394dc811a1479920d866347cbc94f0c2bbc6cfda68cde452",
+    "prepare_native_replay.py": "6b480ec165bbc3ce3d5ec06a22f25918ba071150546d586f5beba80a64b533a4",
+    "native_replay.py": "0db32f9300abe1a97731fe30832aa9c28c3798264b0e421bfe6a1e3449af7a37",
+    "global_index_replay.py": "f6b977a095efe30d1a7b2ee9b6493597c8b3da626d1158045d955cf4d79631d9"
+  }
+}
