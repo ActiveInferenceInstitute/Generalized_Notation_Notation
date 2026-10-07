@@ -21,7 +21,7 @@ except ImportError as _exc:  # pragma: no cover - broken environment only
     ) from _exc
 
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, Iterator, List, Optional
 
 from .common import (
     BaseGNNParser,
@@ -39,6 +39,17 @@ from .common import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _unique_xml_elements(root: Any, paths: tuple[str, ...]) -> Iterator[Any]:
+    """Yield each physical element once, preserving XPath discovery priority."""
+    seen: set[int] = set()
+    for path in paths:
+        for element in root.findall(path):
+            identity = id(element)
+            if identity not in seen:
+                seen.add(identity)
+                yield element
 
 
 class XMLGNNParser(BaseGNNParser):
@@ -191,20 +202,13 @@ class XMLGNNParser(BaseGNNParser):
                 model.annotation = annotation_elem.text
 
     def _parse_xml_variables(self, root: Any, model: GNNInternalRepresentation) -> Any:
-        """Parse variables from XML."""
-        # Look for variables in multiple possible locations
-        variables_containers: list[Any] = [
-            root.findall(".//variables/variable"),
-            root.findall(".//variable"),
-            root.findall(".//state"),
-            root.findall(".//node"),  # For more generic XML
-        ]
-
-        for variables in variables_containers:
-            for var_elem in variables:
-                variable = self._parse_xml_variable(var_elem)
-                if variable:
-                    model.variables.append(variable)
+        """Parse variables from each distinct physical element."""
+        for var_elem in _unique_xml_elements(
+            root, (".//variables/variable", ".//variable", ".//state", ".//node")
+        ):
+            variable = self._parse_xml_variable(var_elem)
+            if variable:
+                model.variables.append(variable)
 
     def _parse_xml_variable(self, var_elem: Any) -> Optional[Variable]:
         """Parse a single variable from XML element."""
@@ -341,19 +345,13 @@ class XMLGNNParser(BaseGNNParser):
             return None
 
     def _parse_xml_parameters(self, root: Any, model: GNNInternalRepresentation) -> Any:
-        """Parse parameters from XML."""
-        # Look for parameters in multiple locations
-        params_containers: list[Any] = [
-            root.findall(".//parameters/parameter"),
-            root.findall(".//parameter"),
-            root.findall(".//param"),
-        ]
-
-        for params in params_containers:
-            for param_elem in params:
-                parameter = self._parse_xml_parameter(param_elem)
-                if parameter:
-                    model.parameters.append(parameter)
+        """Parse parameters from each distinct physical element."""
+        for param_elem in _unique_xml_elements(
+            root, (".//parameters/parameter", ".//parameter", ".//param")
+        ):
+            parameter = self._parse_xml_parameter(param_elem)
+            if parameter:
+                model.parameters.append(parameter)
 
     def _parse_xml_parameter(self, param_elem: Any) -> Optional[Parameter]:
         """Parse a single parameter from XML element."""
@@ -390,17 +388,13 @@ class XMLGNNParser(BaseGNNParser):
         return VariableType.HIDDEN_STATE
 
     def _parse_xml_equations(self, root: Any, model: GNNInternalRepresentation) -> Any:
-        """Parse equations from XML."""
-        equations_containers: list[Any] = [
-            root.findall(".//equations/equation"),
-            root.findall(".//equation"),
-        ]
-
-        for equations in equations_containers:
-            for eq_elem in equations:
-                equation = self._parse_xml_equation(eq_elem)
-                if equation:
-                    model.equations.append(equation)
+        """Parse equations from each distinct physical element."""
+        for eq_elem in _unique_xml_elements(
+            root, (".//equations/equation", ".//equation")
+        ):
+            equation = self._parse_xml_equation(eq_elem)
+            if equation:
+                model.equations.append(equation)
 
     def _parse_xml_equation(self, eq_elem: Any) -> Optional[Equation]:
         """Parse a single equation from XML element."""
@@ -448,18 +442,13 @@ class XMLGNNParser(BaseGNNParser):
     def _parse_xml_ontology_mappings(
         self, root: Any, model: GNNInternalRepresentation
     ) -> Any:
-        """Parse ontology mappings from XML."""
-        ontology_containers: list[Any] = [
-            root.findall(".//ontology_mappings/mapping"),
-            root.findall(".//ontology/mapping"),
-            root.findall(".//mapping"),
-        ]
-
-        for mappings in ontology_containers:
-            for mapping_elem in mappings:
-                mapping = self._parse_xml_ontology_mapping(mapping_elem)
-                if mapping:
-                    model.ontology_mappings.append(mapping)
+        """Parse ontology mappings from each distinct physical element."""
+        for mapping_elem in _unique_xml_elements(
+            root, (".//ontology_mappings/mapping", ".//ontology/mapping", ".//mapping")
+        ):
+            mapping = self._parse_xml_ontology_mapping(mapping_elem)
+            if mapping:
+                model.ontology_mappings.append(mapping)
 
     def _parse_xml_ontology_mapping(
         self, mapping_elem: Any

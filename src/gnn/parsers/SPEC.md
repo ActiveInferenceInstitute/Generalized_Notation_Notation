@@ -28,6 +28,9 @@
 - Authored PKL class properties are parsed through complete line boundaries:
   the full declared type and optional default value remain distinct, including
   scalar and generic types. Type capture must not stop at its first character.
+- XML discovery may find one physical element through multiple container and
+  generic XPath paths. Each element contributes once, in discovery priority;
+  separate authored declarations remain separate even when their names match.
 
 ## Testing
 
