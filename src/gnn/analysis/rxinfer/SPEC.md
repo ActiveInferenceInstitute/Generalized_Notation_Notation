@@ -28,8 +28,11 @@ normalization, convergence, marginalization or plot semantics.
 Gaussian views label each reported control column by its zero-based identity,
 with a legend and distinct marker/line styles. Discrete timestep and inference
 iteration axes use integer ticks. An unreported VFE has no measured axis.
-Optional result metadata `units: {state: "...", control: "..."}` supplies the
-corresponding axis units; undeclared units are labeled `units unspecified`.
+Optional result metadata `units: {state: "...", control: "...", vfe: "..."}`
+supplies axis units, with `model_parameters.units` as a fallback; undeclared
+units are labeled `units unspecified`. Timestep/inference-iteration indices
+are explicitly zero-based. VFE uses a declared
+`variational_free_energy_convention`, or is labeled `convention unspecified`.
 Presentation changes do not alter means, controls or covariance values.
 
 ## Error Handling
