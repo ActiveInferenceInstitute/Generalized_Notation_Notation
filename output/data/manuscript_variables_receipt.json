@@ -1,14 +1,25 @@
 {
-  "counts_describe_commit": "a57e17d86",
-  "dirty_path_count": 7,
+  "counts_describe_commit": "4f9a165c7",
+  "dirty_path_count": 18,
   "dirty_paths": [
     "output/data/manuscript_variables.json",
     "output/data/manuscript_variables_receipt.json",
+    "output/figures/figure_registry.json",
+    "output/figures/gnn_backend_capability_matrix.png",
+    "output/figures/gnn_family_framework_matrix.png",
+    "output/figures/gnn_graphical_abstract.png",
+    "output/figures/gnn_orchestration.png",
+    "output/figures/gnn_pipeline_dag.png",
+    "output/figures/gnn_repo_metrics.png",
+    "output/figures/gnn_triple_play.png",
     "output/manuscript/00_abstract.md",
     "output/manuscript/02_system_context.md",
     "output/manuscript/03_methods.md",
     "output/manuscript/04_artifacts_and_evidence.md",
-    "output/manuscript/05_reproducibility.md"
+    "output/manuscript/05_reproducibility.md",
+    "output/manuscript/06_limitations_and_next_steps.md",
+    "output/manuscript/S01_source_surface.md",
+    "output/manuscript/config.yaml"
   ],
   "generator": "scripts/z_generate_manuscript_variables.py",
   "git_available": true,
