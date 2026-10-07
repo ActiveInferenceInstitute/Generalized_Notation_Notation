@@ -1,0 +1,33 @@
+{
+  "schema": "gnn_zenodo_exact_archive_v1",
+  "checked_at": "2026-10-07T23:22:22.842192+00:00",
+  "record": 23222085,
+  "version": "v4.0.1",
+  "version_doi": "10.5281/zenodo.23222085",
+  "concept_doi": "10.5281/zenodo.7803313",
+  "source_commit": "17c72cf0f98d7d3bbf0159d1b1cce8c77c4e4daf",
+  "source_tag": "v4.0.1",
+  "download": {
+    "record_id": 23222085,
+    "doi": "10.5281/zenodo.23222085",
+    "version": "v4.0.1",
+    "sha256": "c2e74f9a5dfe0edf3356922f71eb5517cad33232ecc5752cac7e38aea1b6c227",
+    "md5": "aa9637842095c2e5e7a9c8788baeb8cc",
+    "provider_md5_matches": true,
+    "entries": 3519
+  },
+  "git_blob_byte_parity": true,
+  "verified_blob_count": 3169,
+  "missing_tracked_blobs": [],
+  "mismatches": [],
+  "manuscript_sha256": "56934a5bf5cc8633ec9b18a51d7417520715343f3dd6c0185c2ceedbaca6d056",
+  "doi_resolution": {
+    "status": 200,
+    "resolved_url": "https://zenodo.org/records/23222085"
+  },
+  "archive_contents_limits": [
+    "GitHub integration source ZIP includes committed manuscript/CITATION/uv.lock but no separately attached release wheel, sdist or SHA256SUMS asset."
+  ],
+  "manuscript_release_asset_parity": true,
+  "release_manuscript_url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/GNN-4.0.1-manuscript.pdf"
+}
