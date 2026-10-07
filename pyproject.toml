@@ -20,9 +20,9 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    # 3.14 classifier: untested in CI (matrix below is 3.11-3.13). Follow-up:
-    # add 3.14 to the CI matrix once wheel availability for the scientific
-    # stack is confirmed. S2-25.
+    # Python 3.14 wheel/native acceptance has a separate installed-platforms
+    # lane; the full source-suite matrix remains 3.11-3.13. Platform support
+    # is conditional on that exact release lane passing.
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Information Analysis",
