@@ -6,6 +6,7 @@ Formatting never configures handlers or starts pipeline instrumentation.
 import json
 import logging
 import threading
+from copy import copy
 from datetime import datetime
 from typing import Any
 
@@ -32,8 +33,8 @@ class StructuredFormatter(CorrelationFormatter):
     """Formatter that handles structured logging data."""
 
     def format(self, record: Any) -> Any:
-        # Extract structured data if present
-        """Provide format behavior."""
+        """Render metadata without changing the record shared by handlers."""
+        record = copy(record)
         if hasattr(record, "structured_data"):
             structured_data = record.structured_data
 
@@ -49,8 +50,6 @@ class StructuredFormatter(CorrelationFormatter):
                 if structured_str:
                     record.msg = f"{record.msg} [{structured_str}]"
 
-        # Continue with correlation formatting
-        # Continue with correlation formatting
         return super().format(record)
 
 

@@ -11,6 +11,11 @@ correlation context. `visual.py` owns terminal presentation and progress state;
 it depends on formatters, never on handler configuration. Existing public names
 and signatures remain available through their prior import surfaces.
 
+Text formatters decorate a copy of the log record. Multiple text handlers
+therefore emit metadata once, while JSON handlers retain the original message
+and its separately structured fields regardless of handler order. Correlation
+context remains isolated by thread and shared by every formatter.
+
 ### 1. Thin Orchestrator Pattern
 Logging is initialized in the numbered step scripts (e.g., `3_gnn.py`) via `setup_step_logging()`. This ensures that logs from the step orchestrator and the underlying module implementations are unified.
 
