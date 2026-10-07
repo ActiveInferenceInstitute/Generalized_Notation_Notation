@@ -269,21 +269,31 @@ def create_trace_reconstruction(csv_path: Path, output_dir: Path) -> List[str]:
     steps, observations, actions, belief_s1 = [], [], [], []
     try:
         with open(csv_path, "r") as f:
-            for line in f:
+            for line_number, line in enumerate(f, start=1):
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
                 parts = line.split(",")
                 if len(parts) >= 4:
                     try:
-                        steps.append(int(parts[0]))
-                        observations.append(int(parts[1]))
-                        actions.append(int(parts[2]))
-                        belief_s1.append(float(parts[3]))
+                        step = int(parts[0])
+                        observation = int(parts[1])
+                        action = int(parts[2])
+                        belief = float(parts[3])
                     except (ValueError, IndexError) as e:
-                        logger.debug("Skipping malformed CSV row: %s", e)
+                        logger.warning(
+                            "Skipping malformed CSV row at %s:%s (%s): %s",
+                            csv_path,
+                            line_number,
+                            type(e).__name__,
+                            e,
+                        )
                         continue
-    except Exception as e:
+                    steps.append(step)
+                    observations.append(observation)
+                    actions.append(action)
+                    belief_s1.append(belief)
+    except (OSError, UnicodeError) as e:
         logger.warning(f"Failed to parse CSV {csv_path}: {e}")
         return []
 
