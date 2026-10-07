@@ -23,8 +23,6 @@ from typing import Any, Optional, Union, cast
 from gnn.schema_validator.round_trip_checks import RoundTripChecksMixin
 from gnn.schema_validator.semantic_checks import SemanticChecksMixin
 from gnn.schema_validator.structural_checks import StructuralChecksMixin
-# The optional parser capability has one owner; this required module import
-# must preserve its original failure rather than creating an unusable parser.
 from gnn.schema_validator.syntax import ROUND_TRIP_AVAILABLE, GNNParser
 from gnn.schema_validator.validation_levels import LevelResolverMixin
 from gnn.schemas.section_contract import REQUIRED_SECTIONS
@@ -37,6 +35,9 @@ from gnn.types import (
 # No need to import it again from testing module to avoid circular deps
 
 logger = logging.getLogger(__name__)
+
+# syntax.py owns optional parser availability. Its required module import above
+# preserves original failure instead of substituting an unusable GNNParser.
 
 
 class GNNValidator(
