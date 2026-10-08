@@ -48,7 +48,7 @@ graph TB
     subgraph "Post-Simulation Analysis"
         Traces[Simulation Traces]
         FreeEnergy[Free Energy Analysis]
-        Policy[Policy Convergence]
+        Policy[Descriptive Policy Diagnostics]
         StateDist[State Distributions]
     end
     

@@ -3,7 +3,7 @@
 **Describe an Active Inference generative model once. Validate its structure,
 render framework-specific code, execute admitted models and inspect the evidence.**
 
-[![Release: 4.0.1](https://img.shields.io/badge/release-4.0.1-00a6b8.svg)](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1)
+[![Version: 4.1.0](https://img.shields.io/badge/version-4.1.0-00a6b8.svg)](../CHANGELOG.md#410---2026-10-08)
 [![CI](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml)
 [![CI Python: 3.11–3.13](https://img.shields.io/badge/CI%20Python-3.11%E2%80%933.13-3776ab.svg)](workflows/ci.yml)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-lightgrey.svg)](../LICENSE.md)
@@ -11,7 +11,7 @@ render framework-specific code, execute admitted models and inspect the evidence
 ![GNN 4 architecture: categorical and Gaussian model specifications feed a generative model, the 25-step validation/render/execution/reporting workflow, and source-bound artifacts with frozen selections, bounded execution and FEP/GEO interchange.](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.0/GNN-4.0.0-release-overview.png)
 
 *The GNN 4.0.0 release artwork illustrates the current-run contracts carried
-forward in the latest maintenance release, **4.0.1**.*
+forward in the **4.1.0** release line.*
 
 [Quick start](#quick-start) · [Examples](#choose-a-model) ·
 [Backends](#render-and-execute-backends) · [Documentation](#documentation-map) ·
@@ -25,8 +25,8 @@ scientific workflow** spanning parsing, validation, visualization, simulation,
 analysis and publication. Researchers can inspect model assumptions in text;
 developers can use the installed `gnn` Python package, CLI and service interfaces.
 
-**Current release:** [GNN 4.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1).
-**Page updated:** 2026-10-07. Package metadata is canonical in
+**Version:** [GNN 4.1.0](../CHANGELOG.md#410---2026-10-08). Exact publication and native-platform acceptance are recorded in release receipts. The previous published [4.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1) retains its own checks and assets.
+**Page updated:** 2026-10-08. Package metadata is canonical in
 [pyproject.toml](../pyproject.toml); release history is in [CHANGELOG.md](../CHANGELOG.md).
 
 ## What GNN 4 delivers
@@ -53,12 +53,12 @@ developers can use the installed `gnn` Python package, CLI and service interface
   manifests, resumable acceptance sessions and auditable container plans support
   longer workflows.
 
-The **4.0.1 maintenance patch** improves GUI parsing complexity, locked dependency
-security, complete subprocess input delivery and LLM coverage diagnostics. Its
-[publication receipt](../docs/development/gnn_4_0_1_post_publication.json) records
-accepted source/tag identities, companion checks and verified release artifacts.
-Full-source long-context LLM completion and broader scientific semantics remain
-scoped in the [forward roadmap](../TO-DO.md).
+The **4.1.0 release line** aligns Python/CLI/REST/MCP admission and current-run
+receipts, strengthens descriptor-relative filesystem operations and owned
+cleanup, clarifies scientific labels and native uncertainty, and measures PNG
+encoding tradeoffs. Read the [changes and acceptance limits](../CHANGELOG.md#410---2026-10-08),
+[migration guide](../docs/development/run_ownership_migration.md) and
+[filesystem guarantees](../docs/security/filesystem_boundaries.md).
 
 ## Start here
 

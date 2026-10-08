@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "generalized-notation-notation"
-version = "4.0.1"
+version = "4.1.0"
 description = "A text-based language for standardizing Active Inference generative models"
 readme = "README.md"
 requires-python = ">=3.11,<3.15"

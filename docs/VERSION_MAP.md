@@ -1,17 +1,17 @@
 # GNN Version Map
 
-One-stop map of release changes and authoritative records. Current release:
-**4.0.1**, published 2026-10-07 from `17c72cf0f98d7d3bbf0159d1b1cce8c77c4e4daf`.
-See [the publication receipt](development/gnn_4_0_1_post_publication.json),
-[release notes](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1), [scope](../SCOPE-2026-10-01.md) and
-[remaining capability limits](../TO-DO.md). All issues and enabled GitHub
-Dependabot/CodeQL alerts are closed at the recorded epoch. The immutable release
-PDF retains its 2026-10-02 authored date; the main documentation renewal uses
-the verified software publication date. Historical receipts retain their source
-identity and acceptance limits.
+One-stop map of release changes and authoritative records. This checkout's
+package version is **4.1.0**. Its [changelog](../CHANGELOG.md#410---2026-10-08)
+describes the bounded minor/medium campaign and remaining acceptance. Exact
+publication requires final native/source gates and companion/manuscript custody.
+The previous published **4.0.1** release and its
+[publication receipt](development/gnn_4_0_1_post_publication.json) retain their
+original source identity and limits. The manuscript authored epoch remains
+2026-10-02. [TO-DO.md](../TO-DO.md) contains remaining work.
 
 | Version | Date | Theme | Primary record |
 | --- | --- | --- | --- |
+| 4.1.0 | 2026-10-08 | Public contracts, native boundaries, scientific presentation and measured encoder tradeoffs; exact acceptance required | [CHANGELOG §4.1.0](../CHANGELOG.md) |
 | 4.0.1 | 2026-10-07 | GUI and dependency security fixes, truthful LLM summaries and complete-input subprocess delivery; scientific/dispatch issue closeout | [CHANGELOG §4.0.1](../CHANGELOG.md) |
 | 4.0.0 | 2026-10-07 | Current-run model identity, strict scientific validation, shared deadlines and readiness, full-corpus LLM scheduling, manuscript custody, typed distributed execution, experimental cpomdp control and THRML categorical smoothing, explicit independent Gaussian agents | [CHANGELOG §4.0.0](../CHANGELOG.md) |
 | 3.6.0 | 2026-09-26 | Composability & Offline Truth: step-20 website per-model detail pages with breadcrumbs and client-side search, pure-dict `generate_website(..., filesystem=False)` with zero disk collection, dependency-free step-catalogue leaf module, fully offline assets (system font stack, JSON-LD + meta, atomic manifest), complexity-estimator subpackage + benchmark CLI subcommands, dashboard fold-and-delete into MCP artifact tools, six website dead-seams wired-or-removed (`website_html_filename` gone end-to-end), render band splits (`pomdp_processor` + `processor` packages), execute/processor band split, GEO-INFER consumer conformance suite | [CHANGELOG §3.6.0](../CHANGELOG.md) |

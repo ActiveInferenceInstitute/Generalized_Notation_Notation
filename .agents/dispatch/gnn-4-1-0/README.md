@@ -65,6 +65,27 @@ measured subprocess identities, same-interpreter source scope and restoration
 of its exclusive temporary observation hook. These are focused reports; they
 do not prove the complete supported matrix or the >80% target.
 
+The integrated scientific implementation now includes the measured production
+encoder tradeoff and final native presentation refinements. Root replay passed
+42 actual presentation/performance cases. All eleven full PNGs and GIF frames
+00/03/05 were inspected; the three refined figures were re-inspected by root and
+an independent critic, with no remaining material/medium finding. The
+[durable visual receipt](../../../docs/development/gnn_4_1_0_visual_review.json)
+binds actual source/data/artifact hashes and the finite review limits.
+
+The full exploratory child-coverage run at `20cb2ebdd` passed 7,063 cases but
+failed twelve short-budget native controls before payload output, then encountered
+an incomplete raw coverage database. The actual cost probe shows eager observer
+startup changes timing. These results are diagnostic only; preserve the raw
+files, deadlines and full source scope. A later unmodified core run at
+`74a4dafab` ended without a terminal receipt at 72%; no success is inferred.
+Repair observer overhead and rerun full final-source gates before publication.
+
+Version metadata is being prepared for 4.1.0. Only the editable project's lock
+version changes, with revision 3 retained and both uv 0.12 and 0.10.7 offline
+lock checks passing. Dependency pins and the manuscript authored epoch remain
+unchanged. This is source preparation, not publication acceptance.
+
 | Remaining dependency | Required next evidence |
 | --- | --- |
 | Public contracts and setup discovery | Final versioned integrated gates and ordinary installed native platform lanes |

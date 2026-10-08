@@ -7,6 +7,66 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-10-08
+
+**Public contracts and native boundaries.** This release line integrates the
+bounded minor/medium campaign. Exact release, installed-platform and custody
+acceptance is recorded by the release's source-bound receipts; local focused
+checks alone cannot establish publication or the full supported matrix.
+
+### Changed
+
+- Python, CLI, REST and MCP execution share strict typed admission, live backend
+  and dependency inventories, frozen run selections and current artifact/result
+  receipts. Invalid executing-step requests refuse before output creation;
+  explicit empty model selections remain valid no-work. Installed API storage
+  is caller-configured and independent from installed code. See the
+  [migration guide](docs/development/run_ownership_migration.md).
+- Logging, website templates and RxInfer ingestion/metrics have coherent owners
+  with preserved public signatures. Logging formatters retain independent
+  records; typed schema, GUI, interchange, destination and source failures
+  preserve the original diagnosis. Round-trip helpers persist distinct format
+  artifacts from the actual supplied source, including concurrent namesakes.
+- Descriptor-relative POSIX directory, lease and deletion operations enforce
+  the documented trusted-parent boundary. Bounded owned process supervision
+  verifies cleanup and stream drainage; failed cleanup retains artifacts and
+  records. Native Windows supports direct-worker cleanup and refuses stronger
+  descendant guarantees before launch. See the
+  [precise guarantees](docs/security/filesystem_boundaries.md).
+- Scientific figures preserve numerical arrays while identifying axis bases,
+  controls, reported policy-score conventions, full-tensor statistics, signed
+  generic tensors and categorical/Gaussian uncertainty. Rolling variance is
+  descriptive; it is not an inference convergence test. Finite actual figure
+  and sampled animation review retains source/data/artifact hashes.
+- Lossless production PNG encoding defaults to level 3 while preserving caller
+  overrides. Two paired rounds across all 552 production PNGs measured 5.48%
+  less median encoder CPU and 3.07% more bytes with identical decoded pixels,
+  dimensions and metadata. The [measurement report](src/gnn/analysis/PERFORMANCE.md)
+  qualifies source epochs, repeated/concurrent native runs, variance, sampled
+  RSS, admission limits and bounded localhost transfer. No whole-pipeline or
+  cross-platform acceleration is inferred.
+- Maintained documentation uses canonical paths, live metadata and current-run
+  owners. Ordinary wheel acceptance executes outside checkout, including API
+  workspace isolation, registry concurrency, real scientific imports and native
+  filesystem/process witnesses. Support follows accepted native lane receipts.
+
+### Added
+
+- Externally observable authored-parser, backend-result, scientific-artifact,
+  public-admission and saved-round-trip behavior checks. Original core coverage
+  scope and its 60% enforced floor are preserved. The >80% per-environment goal
+  requires accepted complete reports; focused coverage does not close it.
+- A bounded real Step 8 developer benchmark records source/configuration hashes,
+  per-phase wall/process CPU, sampled process-tree RSS and actual artifacts.
+
+### Remaining acceptance
+
+Released THRML 0.1.4 still fails structural-zero/inactive-padding witnesses on
+both supported JAX splits; strict refusal remains until a compatible release
+passes. The exact 4.0.1 Zenodo source/manuscript archive is verified, but separate
+distribution assets and the 4.1.0 version archive still require public provider
+custody. [TO-DO.md](TO-DO.md) retains unfinished acceptance and major extensions.
+
 ## [4.0.1] - 2026-10-07
 
 Published at [v4.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1) from `17c72cf0f98d7d3bbf0159d1b1cce8c77c4e4daf`.
@@ -2425,7 +2485,8 @@ Completes the remaining RED_TEAM_REVIEW.md items from the 2026-08-14 wave.
 - pytest test suite with comprehensive coverage
 - MCP tool registration framework
 
-[Unreleased]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.0.1...HEAD
+[Unreleased]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.0.1...v4.1.0
 [4.0.1]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.6.0...v4.0.0
 [3.6.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.5.0...v3.6.0

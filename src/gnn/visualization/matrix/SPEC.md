@@ -6,7 +6,8 @@
 
 - 2-D likelihood matrices (`A`)
 - 2-D passive/single-action transition matrices (`B`)
-- 3D POMDP tensors (per-action slices)
+- 3-D transition tensors with an explicit transition type or canonical B name
+- Generic 3-D tensors shown as axis-index slices without transition/action claims
 - Prior distributions (D vectors)
 
 ## Heatmap Configuration
@@ -17,7 +18,9 @@
 
 ## 3D Tensor Handling
 
-Per-action slice visualization with shared colorbar and cross-slice statistics.
+Transition tensors use per-action slices. Generic tensors use explicit zero-based
+axis identities, tensor-wide statistics and shared original-value limits.
+Unspecified units remain explicit; signed values are preserved.
 For POMDP transition tensors, `B` shape is `(next_state, previous_state,
 action)`. Stochastic validation sums over `next_state` for each
 `previous_state`/`action` column. Every action slice is exported to CSV.

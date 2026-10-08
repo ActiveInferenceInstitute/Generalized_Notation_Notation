@@ -24,5 +24,10 @@ remaining uncertainty. Status describes the decision, not release completion.
 | Represent unavailable descriptor operations as typed OS refusal | Sound; high confidence | The new helper's non-POSIX guard refuses before handle acquisition or creation. Independent security review approves ENOTSUP; native platform witnesses must verify refusal on Windows and real descriptor identity on POSIX without borrowing simulated platform results. |
 | Observe isolated child coverage through an exclusive temporary environment hook | Sound; high confidence for the finite pilot | Five genuine subprocess/isolation controls and all 524 MCP cases passed. Independent review verified native process/source identities, unchanged coverage configuration and hook restoration. Whole-selection coverage and the final supported matrix remain unproven. |
 
+| Lower the broad-handler ceiling to the actual final census | Sound; high confidence | The existing AST gate counts 1,151 exact `except Exception` handlers, below the previous 1,171 ceiling. Lower the ceiling without excluding owners or reclassifying handlers; do not describe the ceiling difference as the number of campaign repairs. |
+| Preserve the lock format during the release version bump | Sound; high confidence | Only the editable project version changes; dependency pins remain identical. Retain revision 3 and verify both uv 0.12 and the GEO workflow's uv 0.10.7 can check the lock offline. |
+
+| Recognize real developer flags and reject embedded anchor fragments | Sound; high confidence | Actual benchmark argparse registrations now join the existing first-party inventory; a token boundary prevents date anchors and embedded identifiers from becoming flags. Five guard cases pass, zero registered flags are undocumented, and the measured phantom ceiling falls from 131 to 130 without hiding foreign command options. |
+
 Update this ledger after each implementation/review pass. Evidence from an old
 head cannot certify a changed source or final release.

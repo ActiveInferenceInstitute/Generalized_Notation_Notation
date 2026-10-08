@@ -2,7 +2,7 @@
 
 > **📋 Document Metadata**  
 > **Type**: Security Policy | **Audience**: All Users | **Complexity**: Intermediate  
-> **Last Updated**: 2026-10-07 | **Status**: Maintained\
+> **Last Updated**: 2026-10-08 | **Status**: Maintained\
 > **Cross-References**: [Comprehensive Security Guide](docs/security/README.md) | [Deployment Security](docs/deployment/README.md) | [MCP Security](docs/mcp/README.md)
 
 ## 🔒 Comprehensive Security Framework
@@ -14,8 +14,9 @@ The GNN (GeneralizedNotationNotation) project maintains a comprehensive multi-la
 GNN 4.0.1 was published on 2026-10-07; exact CodeQL/check and source
 identities are in the [publication receipt](docs/development/gnn_4_0_1_post_publication.json).
 Alert #12 retains its narrow request-string false-positive disposition. The
-trusted filesystem policy below retains its non-atomic concurrent-mutation
-limitation.
+[4.1.0 filesystem policy](docs/security/filesystem_boundaries.md) documents
+descriptor-relative operations, trusted-parent limits and precise native
+process-cleanup guarantees; it does not establish a hostile-code sandbox.
 
 Post-release remediation replaces GUI 1's backtracking state-line regex with
 linear parsing, bounds input to 8,388,608 characters before splitting, and
@@ -37,7 +38,8 @@ We are committed to ensuring the security of the GeneralizedNotationNotation (GN
 
 | Version | Supported | Security Coverage |
 | ------- | ------------------ | ----------------- |
-| 4.0.1 | Current release | Verified dependency and GUI complexity repairs; provider alert closure and exact checks recorded |
+| 4.1.0 | Release line; exact native gates required | Descriptor-relative POSIX operations and verified owned cleanup; Windows direct-worker limits are explicit |
+| 4.0.1 | Previous published release | Verified dependency and GUI complexity repairs; provider alert closure and exact checks recorded |
 | 4.0.0 | Previous release | Current-run identity and bounded execution; upgrade to 4.0.1 for the recorded security repairs |
 | 3.6.0   | ✅ Full support | Complete security framework |
 | 3.5.0   | ✅ Full support | Complete security framework |
