@@ -51,7 +51,9 @@ def build_design_studio(
     initial_connections = design_data.get("connections_text") or "D>s\ns-A\nA-o"
     parameters = design_data.get("parameters", {})
 
-    demo: gr.Blocks = gr.Blocks(title="State Space Design Studio", theme=gr.themes.Base())
+    demo: gr.Blocks = gr.Blocks(
+        title="State Space Design Studio", theme=gr.themes.Base()
+    )
     with demo:
         gr.Markdown("# 🎨 State Space Design Studio")
         gr.Markdown(

@@ -327,7 +327,9 @@ def build_visual_gui(
     c_initial = initial_state["C"]
     d_initial = initial_state["D"]
 
-    demo: gr.Blocks = gr.Blocks(title="GNN Visual Matrix Editor", theme=gr.themes.Soft())
+    demo: gr.Blocks = gr.Blocks(
+        title="GNN Visual Matrix Editor", theme=gr.themes.Soft()
+    )
     with demo:
         gr.Markdown("# 🎯 GNN Visual Matrix Editor")
         gr.Markdown(
