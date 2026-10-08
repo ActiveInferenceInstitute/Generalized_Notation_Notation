@@ -84,8 +84,21 @@ def test_validator_saved_roundtrips_preserve_supplied_parameter_values(
         name: variable.description for name, variable in parsed.variables.items()
     }
     data_types = {
-        name: variable.data_type for name, variable in parsed.variables.items()
+        "A": "float",
+        "B": "float",
+        "C": "float",
+        "D": "float",
+        "s": "float",
+        "s_prime": "float",
+        "o": "integer",
+        "π": "float",
+        "u": "integer",
+        "G": "float",
+        "t": "integer",
     }
+    assert {
+        name: variable.data_type for name, variable in parsed.variables.items()
+    } == {name: "int" if name in {"o", "u", "t"} else "float" for name in data_types}
 
     result = validator.validate_file(source)
 

@@ -227,3 +227,31 @@ def test_add_refuses_oversize_input_without_replacing_prior_saved_model(
         add_state_space_entry(oversized, "sensor_added", [3], "float")
     assert saved.read_bytes() == before
     assert "sensor_added" not in GNNParser().parse_file(saved).variables
+
+
+@pytest.mark.parametrize(
+    "typ,expected", [("int", DataType.INTEGER), ("binary", DataType.BINARY)]
+)
+def test_registry_admits_saved_nondefault_editor_types(
+    tmp_path: Path, typ: str, expected: DataType
+) -> None:
+    """Registry preserves these types; syntax reader differences are separate."""
+    original = authored_model().replace(
+        "sensor_added=[-0.25, 0.0, 1.5]", "sensor_added=[0, 1, 0]"
+    )
+    edited = add_state_space_entry(original, "sensor_added", [3], typ)
+    saved = save_headless(tmp_path, edited)
+    registry = GNNParsingSystem().parse_file(saved)
+    assert registry.success, registry.errors
+    sensors = [v for v in registry.model.variables if v.name == "sensor_added"]
+    assert len(sensors) == 1
+    assert sensors[0].dimensions == [3]
+    assert sensors[0].data_type is expected
+    assert {p.name: p.value for p in registry.model.parameters}["sensor_added"] == [
+        0,
+        1,
+        0,
+    ]
+    assert {"name": "sensor_added", "dims": [3], "type": typ} in (
+        parse_state_space_from_markdown(edited)
+    )
