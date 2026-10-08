@@ -118,6 +118,26 @@ audit-hook prototype passed seven real 200 ms standard-library controls and
 four existing deadline tests; independent fork/source-line proof and complete
 final-source reports remain required.
 
+The lease repair is integrated at `faa4eac9ff69a08bd4c9972afb8d420c98a483b5`.
+It resolves only operator-trusted POSIX parents and retains the final leaf and
+requested-path identity checks. All seven original failures passed unchanged
+on the repair checkpoint, and root independently replayed all 27 native
+filesystem cases without skips. The full final selection still requires a
+terminal source-bound report. The [ownership/diagnostic receipt](../../../docs/development/gnn_4_1_0_ownership_review.json)
+records the actual global census, coherent boundaries and their limitations.
+
+The independently reviewed lazy observer is integrated from `fe93e8063` and
+`d5c4bb061`. Its final five-case pilot passed with exact admitted raw, lane and
+combined line sets. Actual import, isolated, module, direct, runpy, fork and
+spawn controls preserve first-source statements and exact child identities;
+seven real 200 ms standard-library children and four unchanged deadline
+controls pass. The preserved corrupt SQLite replay retains the successful test
+receipt while refusing completion and unknown coverage. Startup bypasses remain
+explicitly unobserved. This accepts the observer for full measurement, not the
+strict >80% target. The new hosted matrix keeps original core gates and scope;
+the [procedure](../../../docs/development/native_comprehensive_coverage.md)
+requires exclusive environment use and unchanged source bookends.
+
 | Remaining dependency | Required next evidence |
 | --- | --- |
 | Public contracts and setup discovery | Final versioned integrated gates and ordinary installed native platform lanes |

@@ -281,6 +281,7 @@ def registered_flags() -> set[str]:
     for relative in (
         "scripts/check_manuscript_tokens.py",
         "scripts/check_hydrated_prose.py",
+        "scripts/run_comprehensive_native_coverage.py",
         "src/gnn/render/thrml/runtime.py",
         "src/gnn/analysis/performance_benchmark.py",
     ):

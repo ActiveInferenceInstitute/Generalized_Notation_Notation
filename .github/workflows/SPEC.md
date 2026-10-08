@@ -21,6 +21,7 @@ The module defines strict automation routines via YAML configuration:
 7. **`mcp-audit.yml`**: A fast MCP tool-count regression gate (≥ 140 registered tools) on push/PR to `main`.
 8. **`full-extras.yml`**: A weekly scheduled matrix validating optional dependency groups (audio, GUI, research, scaling) and running the full pytest suite under `--all-extras`.
 9. **`pair-pin-freshness.yml`**: A nightly watchdog asserting each committed pair pin (fep_lean, GEO_INFER) stays ancestor-or-equal of its companion default-branch HEAD, exiting 2 with a "re-pin required" diagnosis naming the stale pair file, the pinned revision and the companion tip.
+10. **`comprehensive-native-coverage.yml`**: Three independent exact-source Python environments measure native core, MCP and pipeline execution with full unchanged coverage scope, process provenance, exact raw/lane/combined line unions and fail-closed unreadable-data handling. Existing core reports and floor remain intact; a rounded percentage cannot establish the strict >80% roadmap target.
 
 ## Technical Rules
 - **Syntax**: 100% strict adherence to GitHub Actions YAML schemas.

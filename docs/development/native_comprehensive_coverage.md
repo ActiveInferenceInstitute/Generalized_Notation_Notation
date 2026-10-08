@@ -5,6 +5,8 @@ produces a separate comprehensive report for each supported Python environment.
 The existing core CI selector, its report, all coverage source/omit/exclude rules,
 and the enforced 60% floor remain unchanged. The roadmap's **>80%** target requires
 fresh full reports from Python 3.11, 3.12 and 3.13 before raising a floor.
+The [hosted workflow](../../.github/workflows/comprehensive-native-coverage.yml)
+uses three independent jobs, checking out each exact candidate revision.
 
 ## Run a provisioned environment
 
@@ -27,6 +29,10 @@ Repeat independently with Python 3.11 and 3.13. `--workers` is an explicit core
 worker count; zero keeps core serial. MCP and pipeline run serially. An active
 owned environment elsewhere requires `--owned-environment` with its actual
 path. The script verifies that environment's purelib before instrumentation.
+Keep this environment exclusive to the observation run: another caller using
+the same interpreter during its temporary hook could add unrelated execution.
+Source, fixtures and configuration must remain unchanged until the terminal
+receipt and source bookend have been written.
 
 | Lane | Actual selection |
 |---|---|

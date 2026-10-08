@@ -356,6 +356,7 @@ workflow commands, with [workflow AGENTS](workflows/AGENTS.md) and
 
 | Workflow or configuration | Purpose |
 | --- | --- |
+| [comprehensive-native-coverage.yml](workflows/comprehensive-native-coverage.yml) | Separate exact-source Python 3.11/3.12/3.13 native coverage reports with original scope and floor, process provenance and exact line unions; [procedure and limits](../docs/development/native_comprehensive_coverage.md) |
 | [ci.yml](workflows/ci.yml) | Python 3.11/3.12/3.13 tests; 3.12 lint/types/docs/capability checks; pipeline contracts; optional-dependency and Bandit lanes |
 | [installed-platforms.yml](workflows/installed-platforms.yml) | Ordinary installed-wheel native acceptance outside the checkout: Linux 3.11/3.12/3.14, macOS 3.14 and Windows 3.14; [acceptance scope and limits](../docs/development/installed_platform_acceptance.md) |
 | [local-gates.yml](workflows/local-gates.yml) | Repository, manuscript-token and hydration gates |

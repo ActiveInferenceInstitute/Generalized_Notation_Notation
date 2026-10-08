@@ -60,6 +60,11 @@ checks alone cannot establish publication or the full supported matrix.
   requires accepted complete reports; focused coverage does not close it.
 - A bounded real Step 8 developer benchmark records source/configuration hashes,
   per-phase wall/process CPU, sampled process-tree RSS and actual artifacts.
+- Separate native comprehensive coverage reports preserve exact source and
+  environment identities, first-frame child tracing, raw/lane/combined line-set
+  parity and unreadable-data refusal. Short-deadline controls and explicit
+  unobserved startup limits remain intact; no foreign or inferred execution
+  contributes coverage.
 
 ### Remaining acceptance
 
