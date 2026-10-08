@@ -280,6 +280,11 @@ def test_generic_3d_likelihood_keeps_axes_without_claiming_actions(
         )
         np.testing.assert_array_equal(np.asarray(values).reshape(3, 2), tensor[0])
         assert "axis 0 slice 0" in ax.get_title() and "action" not in ax.get_title()
+        assert "Full tensor" in ax.texts[-1].get_text()
+        assert "Mean: 1.500" in ax.texts[-1].get_text()
+        assert ax.get_xlabel() == "Axis 2 Index (0-based)"
+        assert ax.get_ylabel() == "Axis 1 Index (0-based)"
+        assert plt.gcf().axes[1].get_ylabel() == "Value (units unspecified)"
         csv = next(tmp_path.glob("overview_matrix_*.csv")).read_text()
         assert "Axis 2 slice" in csv and "Action" not in csv
         failures: list[str] = []
@@ -394,3 +399,4 @@ def test_minimum_reported_policy_score_does_not_claim_agent_selection(
         + [distribution.get_title(), distribution.get_xlabel()]
     )
     assert "Selected" not in labels and "Minimum reported policy score" in labels
+    assert ax.get_legend().get_window_extent().y0 > ax.get_window_extent().y1

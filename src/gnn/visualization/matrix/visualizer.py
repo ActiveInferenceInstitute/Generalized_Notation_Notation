@@ -653,6 +653,8 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                     # Vector - plot as bar chart
                     ax.bar(range(len(matrix)), matrix)
                     ax.set_title(f"{name} (Vector)")
+                    ax.set_xlabel("Element Index (0-based)")
+                    ax.set_ylabel("Value (units unspecified)")
                 elif matrix.ndim == 2:
                     # Matrix - plot as heatmap
                     if SEABORN_AVAILABLE:
@@ -661,11 +663,14 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                             ax=ax,
                             cmap="viridis",
                             annot=True if matrix.size <= 100 else False,
+                            cbar_kws={"label": "Value (units unspecified)"},
                         )
                     else:
                         im = ax.imshow(matrix, cmap="viridis", aspect="auto")
-                        plt.colorbar(im, ax=ax)
+                        plt.colorbar(im, ax=ax, label="Value (units unspecified)")
                     ax.set_title(f"{name} (Matrix {matrix.shape})")
+                    ax.set_xlabel("Column Index (0-based)")
+                    ax.set_ylabel("Row Index (0-based)")
                 elif matrix.ndim == 3:
                     # Only the canonical named GNN transition tensor declares
                     # an action axis. Other tensors retain their axis-0 slice.
@@ -677,15 +682,29 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                             ax=ax,
                             cmap="viridis",
                             annot=True if first_plane.size <= 100 else False,
+                            cbar_kws={"label": "Value (units unspecified)"},
                         )
                     else:
                         im = ax.imshow(first_plane, cmap="viridis", aspect="auto")
-                        plt.colorbar(im, ax=ax)
+                        plt.colorbar(im, ax=ax, label="Value (units unspecified)")
                     plane_label = "action 0" if is_transition else "axis 0 slice 0"
                     ax.set_title(f"{name} (3D Tensor {matrix.shape}, {plane_label})")
+                    ax.set_xlabel(
+                        "Previous State (0-based)"
+                        if is_transition
+                        else "Axis 2 Index (0-based)"
+                    )
+                    ax.set_ylabel(
+                        "Next State (0-based)"
+                        if is_transition
+                        else "Axis 1 Index (0-based)"
+                    )
 
                 # Add statistics text
-                stats_text = f"Mean: {np.mean(matrix):.3f}\nStd: {np.std(matrix):.3f}"
+                scope = "Full tensor" if matrix.ndim == 3 else "Displayed array"
+                stats_text = (
+                    f"{scope}\nMean: {np.mean(matrix):.3f}\nStd: {np.std(matrix):.3f}"
+                )
                 ax.text(
                     0.02,
                     0.98,

@@ -858,7 +858,7 @@ def generate_free_energy_plots(
     ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax1.set_ylabel(f"Free Energy ({unit_label})")
     ax1.set_title("Free Energy Evolution")
-    ax1.legend()
+    ax1.legend(loc="lower center", bbox_to_anchor=(0.5, 1.14), ncol=2, fontsize=9)
     ax1.grid(True, alpha=0.3)
 
     # Distribution of free energy values (using summary EFE)
