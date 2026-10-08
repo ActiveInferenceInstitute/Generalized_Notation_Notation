@@ -8,7 +8,6 @@ import pytest
 
 from gnn.render import generate_pymdp_code
 
-
 TEXT_CASES = [
     ("O'Brien observations", "o_brien_observations"),
     ('Double "quoted" Ω', "double_quoted_ω"),
