@@ -398,7 +398,10 @@ def test_lease_parent_resolution_failure_preserves_typed_refusal(
 
 
 @pytest.mark.needs_posix
-def test_delete_run_never_removes_a_link_target(tmp_path: Path) -> None:
+def test_delete_run_never_removes_a_link_target(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GNN_API_ROOT", str(tmp_path.resolve()))
     outside = tmp_path / "outside"
     outside.mkdir()
     sentinel = outside / "artifact"
@@ -417,6 +420,7 @@ def test_delete_run_never_removes_a_link_target(tmp_path: Path) -> None:
 def test_delete_run_parent_replacement_cannot_remove_external_directory(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setenv("GNN_API_ROOT", str(tmp_path.resolve()))
     parent, outside = tmp_path / "parent", tmp_path / "outside"
     parent.mkdir()
     (parent / "run").mkdir()
