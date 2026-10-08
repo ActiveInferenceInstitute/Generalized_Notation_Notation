@@ -405,13 +405,13 @@ def _generate_pomdp_transition_analysis(
         B_matrix = matrices["B"]
 
         if B_matrix.ndim == 3:
-            num_actions = B_matrix.shape[0]
+            num_actions = B_matrix.shape[2]
             fig, axes = plt.subplots(1, num_actions, figsize=(5 * num_actions, 5))
             if num_actions == 1:
                 axes = [axes]
 
             for action_idx in range(num_actions):
-                transition_slice = B_matrix[action_idx, :, :]
+                transition_slice = B_matrix[:, :, action_idx]
 
                 sns = get_sns()
                 if SEABORN_AVAILABLE and sns:
@@ -442,8 +442,8 @@ def _generate_pomdp_transition_analysis(
                             )
 
                 axes[action_idx].set_title(f"Transition Matrix (Action {action_idx})")
-                axes[action_idx].set_xlabel("Next State")
-                axes[action_idx].set_ylabel("Previous State")
+                axes[action_idx].set_xlabel("Previous State")
+                axes[action_idx].set_ylabel("Next State")
         else:
             fig, ax = plt.subplots(figsize=(8, 6))
             sns = get_sns()
@@ -453,8 +453,8 @@ def _generate_pomdp_transition_analysis(
                 im = ax.imshow(B_matrix, cmap="Blues", aspect="auto")
                 plt.colorbar(im, ax=ax)
             ax.set_title("Transition Matrix (B)")
-            ax.set_xlabel("Next State")
-            ax.set_ylabel("Previous State")
+            ax.set_xlabel("Previous State")
+            ax.set_ylabel("Next State")
 
         plt.suptitle(
             f"POMDP Transition Analysis: {model_name}", fontsize=14, fontweight="bold"

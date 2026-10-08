@@ -96,7 +96,7 @@ success = process_advanced_viz(
 
 ### POMDP-Specific Visualizations
 
-- **Transition Matrix Analysis**: B matrix visualization with action-specific slices
+- **Transition Matrix Analysis**: Canonical `B[next_state, previous_state, action]` visualization with `B[:, :, action]` slices; previous state is horizontal and next state is vertical, including passive two-dimensional B
 - **Policy Visualization**: Policy distribution over actions (π and E matrices)
 - **3D Transition Visualization**: Multi-action transition matrix heatmaps
 - **State-Action Relationships**: Visual representation of POMDP dynamics
