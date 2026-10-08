@@ -28,6 +28,25 @@ src/gnn/pipeline/
 
 Beyond the API classes above, `gnn.pipeline.__all__` exports `STEP_METADATA`, `DEFAULT_TARGET_DIR`, `DEFAULT_OUTPUT_DIR`, `FEATURES`, `__version__`, `get_module_info`, `create_pipeline_config`, `get_pipeline_info`, `validate_pipeline_config`, and `EnhancedHealthChecker`.
 
+### Runtime validation workspace
+
+`python -m gnn.pipeline.pipeline_runtime_validator` runs the documented
+validation selection against the caller's `input/gnn_files`, `input/config.yaml`
+and `output`. The Python API `PipelineValidator.test_pipeline_execution(["3"])`
+can select only parsing. The package must already be installed or importable;
+the validator launches the same interpreter with safe-path module execution,
+so a workspace `gnn/` cannot replace the package through the default cwd entry.
+The subprocess retains its 300-second timeout. It does not redirect relative
+data paths into the package checkout or installation directory.
+
+Each validation execution supplies a fresh `GNN_RUN_ID` in the child environment
+without changing the parent's identity or context. Step results are admitted
+only from `output/00_pipeline_summary/pipeline_execution_summary.json` carrying
+that exact identity. A missing, malformed or other-run summary cannot validate
+success, including after failed admission; earlier-format summary locations
+are not current-run evidence. This diagnostic interface does not add the
+API's cancellation contract or an operating-system sandbox.
+
 ### v3.0.0 Long-Running Orchestration (safe-by-design)
 
 Three modules provide the foundation for long-running, resumable, deployable-by-plan runs **without

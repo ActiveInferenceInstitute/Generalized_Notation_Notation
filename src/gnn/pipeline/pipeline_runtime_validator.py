@@ -11,8 +11,10 @@ See also:
 
 import json
 import logging
+import os
 import subprocess  # nosec B404
 import sys
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
@@ -215,17 +217,23 @@ class PipelineValidator:
         try:
             start_time = datetime.now()
 
-            # Use main.py to execute pipeline steps. Absolute path: the
-            # orchestrator lives at src/gnn/main.py since the package
-            # restructure, and the validator must not depend on CWD.
-            main_py = Path(__file__).resolve().parents[1] / "main.py"
+            # Module execution retains the caller's data/configuration cwd.
+            # Safe-path mode also prevents a workspace gnn/ from shadowing
+            # the installed/importable pipeline package (API launch contract).
+            workspace = Path.cwd()
+            expected_run_id = uuid.uuid4().hex
+            child_environment = os.environ.copy()
+            child_environment["GNN_RUN_ID"] = expected_run_id
+            child_environment.pop("GNN_RUN_CONTEXT_FILE", None)
             cmd: list[Any] = [
                 sys.executable,
-                str(main_py),
+                "-P",
+                "-m",
+                "gnn.main",
                 "--target-dir",
-                "input/gnn_files",
+                str(workspace / "input/gnn_files"),
                 "--output-dir",
-                "output",
+                str(workspace / "output"),
                 "--only-steps",
                 ",".join(steps),
                 "--verbose",
@@ -238,7 +246,8 @@ class PipelineValidator:
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout
-                cwd=Path.cwd(),
+                cwd=workspace,
+                env=child_environment,
             )
 
             end_time = datetime.now()
@@ -246,8 +255,9 @@ class PipelineValidator:
 
             # Parse execution results
             if result.returncode == 0:
-                test_results["execution_successful"] = True
-                self.logger.info("✅ Pipeline execution completed successfully")
+                self.logger.info(
+                    "Pipeline subprocess exited with code 0; checking receipt"
+                )
             else:
                 self.logger.error(
                     f"❌ Pipeline execution failed with code {result.returncode}"
@@ -257,36 +267,43 @@ class PipelineValidator:
             combined_output = result.stdout + result.stderr
             test_results["warnings_count"] = combined_output.lower().count("warning")
             test_results["errors_count"] = combined_output.lower().count("error")
-
-            # Parse individual step results if summary file exists
-            # (main.py writes to 00_pipeline_summary/ subdir; check both locations)
-            summary_candidates: list[Any] = [
-                Path("output/00_pipeline_summary/pipeline_execution_summary.json"),
-                Path("output/pipeline_execution_summary.json"),
-            ]
-            summary_file = None
-            for candidate in summary_candidates:
-                if candidate.exists():
-                    summary_file = candidate
-                    break
-            if summary_file is not None:
-                try:
-                    with open(summary_file) as f:
-                        summary_data = json.load(f)
-
-                    for step_data in summary_data.get("steps", []):
-                        step_name = step_data.get("script_name", "unknown")
-                        test_results["step_results"][step_name] = {
-                            "status": step_data.get("status", "unknown"),
-                            "duration": step_data.get("duration_seconds", 0),
-                            "exit_code": step_data.get("exit_code", -1),
-                            "memory_usage": step_data.get("memory_usage_mb", 0),
-                        }
-                except Exception as e:
-                    self.logger.warning(f"Could not parse summary file: {e}")
-
             test_results["stdout"] = result.stdout
             test_results["stderr"] = result.stderr
+
+            # Canonical current-run identity admits evidence; directory
+            # presence or timestamps cannot make another invocation current.
+            summary_file = (
+                workspace / "output/00_pipeline_summary/pipeline_execution_summary.json"
+            )
+            if not summary_file.is_file():
+                raise ValueError("No current-invocation pipeline summary is available")
+            with summary_file.open(encoding="utf-8") as handle:
+                summary_data = json.load(handle)
+            if (
+                not isinstance(summary_data, dict)
+                or summary_data.get("run_id") != expected_run_id
+            ):
+                raise ValueError(
+                    "Pipeline summary does not belong to the current invocation"
+                )
+            summary_steps = summary_data.get("steps")
+            if not isinstance(summary_steps, list) or not all(
+                isinstance(step, dict) for step in summary_steps
+            ):
+                raise ValueError("Current pipeline summary has invalid step records")
+            current_steps = {}
+            for step_data in summary_steps:
+                step_name = step_data.get("script_name", "unknown")
+                current_steps[step_name] = {
+                    "status": step_data.get("status", "unknown"),
+                    "duration": step_data.get("duration_seconds", 0),
+                    "exit_code": step_data.get("exit_code", -1),
+                    "memory_usage": step_data.get("memory_usage_mb", 0),
+                }
+            test_results["step_results"] = current_steps
+            test_results["execution_successful"] = result.returncode == 0 and bool(
+                current_steps
+            )
 
         except subprocess.TimeoutExpired:
             self.logger.error("❌ Pipeline execution timed out")
