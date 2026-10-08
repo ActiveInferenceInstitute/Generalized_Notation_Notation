@@ -27,7 +27,8 @@
 - Optional extras (e.g. protobuf) may be required for some formats at runtime.
 - Installed PyYAML reads leading comments normally and reports malformed or
   unsupported-tag input as a failed parse. Loader failure cannot become apparent
-  success through simplified recovery; dependency-absent recovery is unchanged.
+  success through simplified recovery; the existing dependency-absent recovery
+  implementation remains in use.
   Canonical JSON/YAML `time_specification.step_size` remains the supplied value
   on saved-file reopen, without timestep inference or coercion.
 - Authored PKL class properties are parsed through complete line boundaries:
