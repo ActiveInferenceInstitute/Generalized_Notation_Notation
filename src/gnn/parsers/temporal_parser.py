@@ -217,7 +217,10 @@ class AgdaParser(BaseGNNParser):
             re.DOTALL | re.IGNORECASE,
         )
         self.function_pattern = re.compile(
-            r"(\w+)\s*:\s*([^=\n]+)(?:\n\1\s*(.+?))?(?=\n\w+\s*:|\Z)", re.DOTALL
+            r"^[ \t]*(\w+)[ \t]*:[ \t]*([^=\n]+)"
+            r"(?:\n[ \t]*\1\b[ \t]*(.+?))?"
+            r"(?=\n(?:[ \t]*\n)*[ \t]*(?:\w+[ \t]*:|data[ \t]|postulate\b)|\s*\Z)",
+            re.DOTALL | re.MULTILINE,
         )
         self.import_pattern = re.compile(r"import\s+([\w.]+)", re.IGNORECASE)
 
