@@ -55,6 +55,8 @@ checks alone cannot establish publication or the full supported matrix.
 - Generated PyMDP specification literals preserve authored strings containing
   JSON keywords. DisCoPy programs serialize model names safely, preserving
   quotes, backslashes, newlines and Unicode in actual exported metadata.
+  PyMDP requires finite numeric values in the JSON-clean specification,
+  including metadata, and refuses NaN/infinities before replacing source.
 - GUI 1 edits recognize the canonical state-space section, retain following
   sections and preserve the authored newline style. Ontology readers recognize
   labeled concepts, relations, properties and annotations before bare mappings.

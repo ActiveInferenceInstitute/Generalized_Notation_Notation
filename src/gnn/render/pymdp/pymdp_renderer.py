@@ -347,7 +347,10 @@ class PyMDPRenderer:
             "E_literal": _json.dumps(E_vector) if E_vector is not None else "None",
             "gnn_spec_literal": _json_to_python_literal(
                 _json.dumps(
-                    _gnn_spec_for_json_embedding(gnn_spec), indent=4, default=str
+                    _gnn_spec_for_json_embedding(gnn_spec),
+                    indent=4,
+                    default=str,
+                    allow_nan=False,
                 )
             ),
             "num_timesteps": int(

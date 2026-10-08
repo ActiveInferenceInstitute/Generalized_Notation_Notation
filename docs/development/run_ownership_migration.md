@@ -123,6 +123,13 @@ code generation do not prove native runtime readiness. The direct spec targets
 `jax_pomdp` and `discopy_combined` retain their distinct generators. MCP
 `render_gnn_to_format` renders exactly the selected framework and returns only
 its hash-verified current primary artifact.
+In 4.1, canonical PyMDP source generation requires finite numeric values in its
+JSON-clean specification, including metadata, for both runner modes. NaN and
+infinities return the renderer's existing failure tuple before creating or
+replacing a program; earlier pipeline source could contain unresolved names.
+Use a documented string or omit an unavailable measurement rather than placing
+nonfinite numbers in metadata. Finite values, strings, Boolean/null metadata,
+scientific admission and inference behavior retain their existing contracts.
 JAX run options are admitted only by generators that consume them: declared
 execution contracts accept seed, timesteps and fast transitions; discrete
 factorized models accept seed and action precision. Other model generators
