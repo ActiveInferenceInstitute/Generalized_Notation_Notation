@@ -21,6 +21,7 @@ from ..compat.viz_compat import MATPLOTLIB_AVAILABLE, get_sns, np, plt
 from ..plotting.utils import contrasting_text_color, safe_tight_layout
 from .extract import (
     convert_to_matrix,
+    is_transition_tensor_name,
 )
 from .extract import (
     extract_matrix_data_from_parameters as extract_matrices_from_parameter_list,
@@ -115,17 +116,25 @@ class MatrixVisualizer:
                     for i, row in enumerate(matrix):
                         writer.writerow([f"Row {i}"] + row.tolist())
                 elif matrix.ndim == 3:
-                    # POMDP B tensors use (next_state, previous_state, action).
-                    for action in range(matrix.shape[2]):
-                        writer.writerow([f"Action slice {action}"])
+                    transition = is_transition_tensor_name(matrix_name)
+                    for index in range(matrix.shape[2]):
+                        plane = (
+                            f"Action slice {index}"
+                            if transition
+                            else f"Axis 2 slice {index}"
+                        )
+                        writer.writerow([plane])
                         writer.writerow(
-                            ["Next \\ Previous"]
-                            + [f"Previous {j}" for j in range(matrix.shape[1])]
+                            ["Next \\ Previous" if transition else "Axis 0 \\ Axis 1"]
+                            + [
+                                f"{'Previous' if transition else 'Axis 1'} {j}"
+                                for j in range(matrix.shape[1])
+                            ]
                         )
                         for next_state in range(matrix.shape[0]):
                             writer.writerow(
-                                [f"Next {next_state}"]
-                                + matrix[next_state, :, action].tolist()
+                                [f"{'Next' if transition else 'Axis 0'} {next_state}"]
+                                + matrix[next_state, :, index].tolist()
                             )
                         writer.writerow([])
 
@@ -306,7 +315,7 @@ class MatrixVisualizer:
         tensor: np.ndarray,
         output_path: Path,
         title: Optional[str] = None,
-        tensor_type: str = "transition",
+        tensor_type: str | None = None,
     ) -> bool:
         """
         Generate specialized visualization for 3D tensors like POMDP transition matrices.
@@ -330,6 +339,12 @@ class MatrixVisualizer:
 
             # Get dimensions
             dim1, dim2, dim3 = tensor.shape
+            if tensor_type is None:
+                tensor_type = (
+                    "transition"
+                    if is_transition_tensor_name(tensor_name)
+                    else "generic"
+                )
 
             # Create figure with subplots for each slice (clamped to prevent overflow)
             fig = plt.figure(figsize=_safe_figsize(5 * dim3, 8))
@@ -340,13 +355,13 @@ class MatrixVisualizer:
             # Generate titles based on tensor type
             if tensor_type == "transition":
                 slice_titles = [f"Action {i}" for i in range(dim3)]
-                xlabel = "Previous State"
-                ylabel = "Next State"
+                xlabel = "Previous State (0-based)"
+                ylabel = "Next State (0-based)"
                 main_title = f"POMDP Transition Matrix {tensor_name} (P(s'|s,u))"
             else:
-                slice_titles = [f"Slice {i}" for i in range(dim3)]
-                xlabel = "Column"
-                ylabel = "Row"
+                slice_titles = [f"Axis 2 slice {i} (0-based)" for i in range(dim3)]
+                xlabel = "Axis 1 index (0-based)"
+                ylabel = "Axis 0 index (0-based)"
                 main_title = f"3D Tensor {tensor_name}"
 
             # Plot each slice as a heatmap
@@ -357,7 +372,12 @@ class MatrixVisualizer:
                 slice_data = tensor[:, :, i]
 
                 # Create heatmap
-                im = ax.imshow(slice_data, cmap="Blues", aspect="auto", vmin=0, vmax=1)
+                probability_range = (
+                    {"vmin": 0, "vmax": 1} if tensor_type == "transition" else {}
+                )
+                im = ax.imshow(
+                    slice_data, cmap="Blues", aspect="auto", **probability_range
+                )
 
                 # Add text annotations for small matrices
                 if (
@@ -389,7 +409,13 @@ class MatrixVisualizer:
                 # Add colorbar for first slice only
                 if i == 0:
                     cbar = plt.colorbar(im, ax=ax, shrink=0.8)
-                    cbar.set_label("Transition Probability", rotation=270, labelpad=15)
+                    cbar.set_label(
+                        "Transition Probability"
+                        if tensor_type == "transition"
+                        else "Value (units unspecified)",
+                        rotation=270,
+                        labelpad=15,
+                    )
 
             # Add summary statistics below
             ax_summary = fig.add_subplot(gs[1, :])
@@ -495,11 +521,10 @@ class MatrixVisualizer:
             )
 
             # Calculate entropy of transitions
-            # Add small epsilon to avoid log(0)
             if valid_transitions:
-                epsilon = 1e-10
-                log_probs = np.log(tensor + epsilon)
-                entropy = -np.sum(tensor * log_probs, axis=0)
+                # The exact limit 0*log(0)=0 preserves deterministic entropy.
+                log_probs = np.log(np.where(tensor > 0, tensor, 1.0))
+                entropy = -np.sum(tensor * log_probs, axis=0) + 0.0
                 entropy_label = f"{np.mean(entropy):.3f} nats"
             else:
                 entropy_label = "unavailable: not normalized nonnegative probabilities"
@@ -639,19 +664,22 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                         plt.colorbar(im, ax=ax)
                     ax.set_title(f"{name} (Matrix {matrix.shape})")
                 elif matrix.ndim == 3:
-                    # Canonical B[next_state, previous_state, action] action plane.
-                    first_action = matrix[:, :, 0]
+                    # Only the canonical named GNN transition tensor declares
+                    # an action axis. Other tensors retain their axis-0 slice.
+                    is_transition = is_transition_tensor_name(name)
+                    first_plane = matrix[:, :, 0] if is_transition else matrix[0]
                     if SEABORN_AVAILABLE:
                         sns.heatmap(
-                            first_action,
+                            first_plane,
                             ax=ax,
                             cmap="viridis",
-                            annot=True if first_action.size <= 100 else False,
+                            annot=True if first_plane.size <= 100 else False,
                         )
                     else:
-                        im = ax.imshow(first_action, cmap="viridis", aspect="auto")
+                        im = ax.imshow(first_plane, cmap="viridis", aspect="auto")
                         plt.colorbar(im, ax=ax)
-                    ax.set_title(f"{name} (3D Tensor {matrix.shape}, action 0)")
+                    plane_label = "action 0" if is_transition else "axis 0 slice 0"
+                    ax.set_title(f"{name} (3D Tensor {matrix.shape}, {plane_label})")
 
                 # Add statistics text
                 stats_text = f"Mean: {np.mean(matrix):.3f}\nStd: {np.std(matrix):.3f}"

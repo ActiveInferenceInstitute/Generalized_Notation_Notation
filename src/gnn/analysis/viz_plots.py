@@ -43,6 +43,7 @@ class _EnergyDeclaration(TypedDict):
     quantity: str
     convention: str | None
     units: str | None
+    display_summary: str | None
 
 
 def _declared_text(value: Any) -> str | None:
@@ -61,7 +62,7 @@ def _energy_note(name: str, convention: Any, units: Any) -> str:
 
 
 def _energy_annotations(
-    output_path: Path, quantities: list[tuple[str, Any, Any]]
+    output_path: Path, quantities: list[tuple[str, Any, Any, Any]]
 ) -> tuple[list[str], dict[str, Any] | None]:
     """Keep long source declarations accessible beside a readable plot caption."""
     declarations: list[_EnergyDeclaration] = [
@@ -69,30 +70,24 @@ def _energy_annotations(
             "quantity": name,
             "convention": _declared_text(convention),
             "units": _declared_text(units),
+            "display_summary": _declared_text(summary),
         }
-        for name, convention, units in quantities
+        for name, convention, units, summary in quantities
     ]
-    needs_detail = any(len(row["convention"] or "") > 200 for row in declarations)
+    needs_detail = any(
+        len(row["convention"] or "") > 200
+        or bool(row["convention"] and row["display_summary"])
+        for row in declarations
+    )
     notes = []
     for row in declarations:
         convention = row["convention"]
-        if convention and len(convention) > 200:
-            if (
-                convention.startswith("pymdp 1.0.0 neg_efe sign convention:")
-                and "neg_efe = -EFE" in convention
-                and "linear payoff" in convention
-                and "states info gain" in convention
-            ):
-                convention = (
-                    "PyMDP 1.0.0 reports neg_efe = -EFE; EFE uses linear expected "
-                    "utility + hidden-state information gain. Scores require "
-                    "sign/convention mapping for comparisons across backends"
-                )
-            else:
-                # An explicitly marked source excerpt makes no invented summary.
-                convention = (
-                    "source excerpt: " + convention[:160].rsplit(" ", 1)[0] + " …"
-                )
+        if convention and row["display_summary"]:
+            # The caller supplies a source-bound summary; never infer an energy
+            # sign or utility formula from substring matches in arbitrary prose.
+            convention = row["display_summary"]
+        elif convention and len(convention) > 200:
+            convention = "source excerpt: " + convention[:160].rsplit(" ", 1)[0] + " …"
         notes.append(_energy_note(row["quantity"], convention, row["units"]))
     if not needs_detail:
         return notes, None
@@ -442,6 +437,9 @@ def visualize_all_framework_outputs(
                         fe_file,
                         f"Free Energy - {model_name} ({framework})",
                         convention=sim_data.get("expected_free_energy_convention"),
+                        convention_summary=sim_data.get(
+                            "expected_free_energy_convention_summary"
+                        ),
                         units=units.get("expected_free_energy"),
                     )
                     generated_files.append(str(fe_file))
@@ -464,6 +462,12 @@ def visualize_all_framework_outputs(
                             "variational_free_energy_convention"
                         ),
                         efe_convention=sim_data.get("expected_free_energy_convention"),
+                        vfe_convention_summary=sim_data.get(
+                            "variational_free_energy_convention_summary"
+                        ),
+                        efe_convention_summary=sim_data.get(
+                            "expected_free_energy_convention_summary"
+                        ),
                         vfe_units=units.get("variational_free_energy"),
                         efe_units=units.get("expected_free_energy"),
                     )
@@ -740,6 +744,7 @@ def generate_free_energy_plots(
     title: str = "Free Energy Dynamics",
     *,
     convention: str | None = None,
+    convention_summary: str | None = None,
     units: str | None = None,
 ) -> str:
     """
@@ -748,7 +753,7 @@ def generate_free_energy_plots(
     Includes:
     - Free energy over time
     - Moving average trend
-    - Convergence analysis
+    - Descriptive rolling variation (not an inference convergence test)
 
     Args:
         free_energy: List of free energy values over time
@@ -912,7 +917,7 @@ def generate_free_energy_plots(
             bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
         )
 
-    # Convergence analysis
+    # Descriptive recent variation does not establish inference convergence.
     ax4 = axes[1, 1]
     if n_steps > 10:
         # Calculate rolling variance
@@ -923,26 +928,29 @@ def generate_free_energy_plots(
         ax4.plot(range(1, n_steps + 1), rolling_var, "purple", linewidth=2)
         ax4.set_xlabel("Window End Index (1-based)")
         ax4.xaxis.set_major_locator(MaxNLocator(integer=True))
-        ax4.set_ylabel("Rolling Variance")
-        ax4.set_title(f"Convergence Analysis ({window}-step variance)")
+        variance_units = (
+            f"{unit_label} squared" if _declared_text(units) else "units unspecified"
+        )
+        ax4.set_ylabel(f"Rolling Variance ({variance_units})")
+        ax4.set_title(f"Recent Variation ({window}-sample variance)")
         ax4.grid(True, alpha=0.3)
 
-        # Determine convergence status
+        # Retain the legacy numerical threshold as an explicitly labeled heuristic.
         if rolling_var:
             final_var = rolling_var[-1]
-            converged = final_var < 0.1
-            status = "\u2713 Converged" if converged else "\u26a0 Not Converged"
+            below_threshold = final_var < 0.1
+            status = "Below" if below_threshold else "At or above"
             convergence_stats_ax.text(
                 0.98,
                 0.80,
-                f"{status}\nFinal Variance: {final_var:.4f}",
+                f"{status} 0.1 variance heuristic\nFinal variance: {final_var:.4f}\nNot an inference convergence test",
                 transform=convergence_stats_ax.transAxes,
                 verticalalignment="top",
                 horizontalalignment="right",
                 fontsize=10,
                 bbox={
                     "boxstyle": "round",
-                    "facecolor": "lightgreen" if converged else "lightyellow",
+                    "facecolor": "lightgreen" if below_threshold else "lightyellow",
                     "alpha": 0.7,
                 },
             )
@@ -950,17 +958,17 @@ def generate_free_energy_plots(
         ax4.text(
             0.5,
             0.5,
-            "Need > 10 steps\nfor convergence analysis",
+            "Need > 10 samples\nfor recent-variation analysis",
             ha="center",
             va="center",
             transform=ax4.transAxes,
         )
-        ax4.set_title("Convergence Analysis")
+        ax4.set_title("Recent Variation")
         ax4.set_axis_off()
 
     plt.suptitle(title, fontsize=14, fontweight="bold")
     notes, declarations = _energy_annotations(
-        output_path, [("Free energy", convention, units)]
+        output_path, [("Free energy", convention, units, convention_summary)]
     )
     footer = _energy_footer(fig, notes, base_height=11)
     fig.set_layout_engine("constrained", rect=(0, footer, 1, 1 - footer))
@@ -978,6 +986,8 @@ def generate_vfe_vs_efe_plot(
     vfe_per_iteration: bool = False,
     vfe_convention: str | None = None,
     efe_convention: str | None = None,
+    vfe_convention_summary: str | None = None,
+    efe_convention_summary: str | None = None,
     vfe_units: str | None = None,
     efe_units: str | None = None,
 ) -> str:
@@ -1002,8 +1012,8 @@ def generate_vfe_vs_efe_plot(
     notes, declarations = _energy_annotations(
         output_path,
         [
-            ("VFE", vfe_convention, vfe_units),
-            ("EFE", efe_convention, efe_units),
+            ("VFE", vfe_convention, vfe_units, vfe_convention_summary),
+            ("EFE", efe_convention, efe_units, efe_convention_summary),
         ],
     )
     vfe_unit_label = _declared_text(vfe_units) or "units unspecified"

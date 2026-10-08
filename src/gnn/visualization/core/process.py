@@ -42,7 +42,7 @@ from ..graph import (
     generate_network_visualizations,
     generate_variable_parameter_bipartite,
 )
-from ..matrix.extract import collect_visualization_matrices
+from ..matrix.extract import collect_visualization_matrices, is_transition_tensor_name
 from ..matrix.visualizer import MatrixVisualizer
 
 logger = logging.getLogger(__name__)
@@ -245,10 +245,13 @@ def render_matrix_artifacts(
                 m_data.shape,
             )
         elif m_data.ndim == 3:
+            tensor_type = (
+                "transition" if is_transition_tensor_name(m_name) else "generic"
+            )
             tensor_path = model_dir / f"{model_name}_{m_name}_tensor.png"
             _record(
                 visualizer.generate_3d_tensor_visualization(
-                    m_name, m_data, tensor_path, tensor_type="transition"
+                    m_name, m_data, tensor_path, tensor_type=tensor_type
                 ),
                 tensor_path,
                 "3D tensor figure",
@@ -261,13 +264,16 @@ def render_matrix_artifacts(
                 "Three.js tensor explorer",
                 m_name,
             )
-            analysis_path = model_dir / f"{model_name}_{m_name}_analysis.png"
-            _record(
-                visualizer.generate_pomdp_transition_analysis(m_data, analysis_path),
-                analysis_path,
-                "POMDP transition analysis",
-                m_name,
-            )
+            if tensor_type == "transition":
+                analysis_path = model_dir / f"{model_name}_{m_name}_analysis.png"
+                _record(
+                    visualizer.generate_pomdp_transition_analysis(
+                        m_data, analysis_path
+                    ),
+                    analysis_path,
+                    "POMDP transition analysis",
+                    m_name,
+                )
         else:
             heatmap_path = model_dir / f"{model_name}_{m_name}_heatmap.png"
             _record(

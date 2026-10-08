@@ -228,3 +228,132 @@ def test_failed_save_does_not_bind_new_declarations_to_an_old_image(
         assert not path.with_suffix(".conventions.json").exists()
     finally:
         plt.close("all")
+
+
+@pytest.mark.parametrize("count", [0, False, -1, 1.5, "9"])
+def test_cross_framework_explicit_invalid_count_refused_before_figure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, count: object
+) -> None:
+    def forbidden(*args, **kwargs):
+        raise AssertionError(
+            "invalid declaration must be refused before figure allocation"
+        )
+
+    monkeypatch.setattr(plt, "subplots", forbidden)
+    with pytest.raises(ValueError, match="state_count"):
+        animate_cross_framework_gridworld_trajectories(
+            [{"states": [0], "state_count": count}, {"states": [0], "state_count": 9}],
+            tmp_path / "invalid.gif",
+        )
+    assert not (tmp_path / "invalid.gif").exists()
+
+
+def test_deterministic_transition_entropy_uses_exact_zero_limit() -> None:
+    tensor = np.eye(2)[:, :, None]
+    with np.errstate(divide="raise", invalid="raise"):
+        text = MatrixVisualizer()._generate_tensor_statistics(tensor, "B", "transition")
+    assert "Mean Transition Entropy: 0.000 nats" in text
+    assert "-0.000" not in text
+
+
+def test_generic_3d_likelihood_keeps_axes_without_claiming_actions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from gnn.visualization.core.process import render_matrix_artifacts
+
+    real_close = plt.close
+    monkeypatch.setattr(plt, "close", lambda *args: None)
+    tensor = np.arange(12, dtype=float).reshape(2, 3, 2) - 4
+    original = tensor.copy()
+    mv = MatrixVisualizer()
+    try:
+        overview = tmp_path / "overview.png"
+        assert mv.generate_matrix_analysis(
+            [{"name": "A", "value": tensor.tolist()}], overview
+        )
+        ax = plt.gcf().axes[0]
+        values = (
+            ax.collections[0].get_array()
+            if ax.collections
+            else ax.images[0].get_array()
+        )
+        np.testing.assert_array_equal(np.asarray(values).reshape(3, 2), tensor[0])
+        assert "axis 0 slice 0" in ax.get_title() and "action" not in ax.get_title()
+        csv = next(tmp_path.glob("overview_matrix_*.csv")).read_text()
+        assert "Axis 2 slice" in csv and "Action" not in csv
+        failures: list[str] = []
+        paths = render_matrix_artifacts(
+            {"A": tensor}, tmp_path, "generic", mv, failures=failures
+        )
+        assert not failures
+        assert (tmp_path / "generic_A_tensor.png").is_file()
+        assert not any("analysis.png" in path for path in paths)
+        fig = plt.gcf()
+        assert all("Action" not in axis.get_title() for axis in fig.axes)
+        np.testing.assert_array_equal(tensor, original)
+        payload = json.loads((tmp_path / "generic_A_threejs.json").read_text())
+        np.testing.assert_array_equal(payload["values"], original)
+    finally:
+        real_close("all")
+
+
+def test_recent_variation_is_descriptive_not_inference_convergence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from gnn.analysis import viz_plots
+
+    figures = []
+    real_save = viz_plots.safe_savefig
+
+    def capture(path, **kwargs):
+        figures.append(plt.gcf())
+        return real_save(path, **kwargs)
+
+    monkeypatch.setattr(viz_plots, "safe_savefig", capture)
+    values = [2.0] * 15
+    viz_plots.generate_free_energy_plots(values, tmp_path / "variation.png")
+    fig = figures[0]
+    text = " ".join(t.get_text() for ax in fig.axes for t in ax.texts)
+    assert "Not an inference convergence test" in text and "Converged" not in text
+    assert "Recent Variation" in fig.axes[3].get_title()
+    np.testing.assert_array_equal(fig.axes[0].lines[0].get_ydata(), values)
+    np.testing.assert_array_equal(fig.axes[3].lines[0].get_ydata(), np.zeros(15))
+
+
+def test_compact_energy_caption_requires_explicit_source_bound_summary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from gnn.analysis import viz_plots
+    from gnn.execute.pymdp.simulation import (
+        EFE_CONVENTION_PYMDP,
+        EFE_CONVENTION_PYMDP_SUMMARY,
+    )
+
+    figures = []
+    real_save = viz_plots.safe_savefig
+
+    def capture(path, **kwargs):
+        figures.append(plt.gcf())
+        return real_save(path, **kwargs)
+
+    monkeypatch.setattr(viz_plots, "safe_savefig", capture)
+    path = tmp_path / "declared.png"
+    generate_vfe_vs_efe_plot(
+        [2.0, 1.0],
+        [[0.2], [0.1]],
+        path,
+        efe_convention=EFE_CONVENTION_PYMDP,
+        efe_convention_summary=EFE_CONVENTION_PYMDP_SUMMARY,
+    )
+    assert "neg_efe = -EFE = expected utility" in " ".join(
+        t.get_text() for t in figures[0].texts
+    )
+    receipt = json.loads(path.with_suffix(".conventions.json").read_text())
+    assert receipt["declarations"][1]["display_summary"] == EFE_CONVENTION_PYMDP_SUMMARY
+    assert receipt["declarations"][1]["convention"] == EFE_CONVENTION_PYMDP
+    arbitrary = "pymdp neg_efe linear payoff " + "source retains its own meaning " * 15
+    generate_vfe_vs_efe_plot(
+        [2.0], [0.2], tmp_path / "unclassified.png", efe_convention=arbitrary
+    )
+    caption = " ".join(t.get_text() for t in figures[1].texts)
+    assert "source excerpt" in caption and "expected utility +" not in caption

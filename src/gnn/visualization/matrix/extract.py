@@ -9,6 +9,11 @@ from ..compat.viz_compat import np
 NUMPY_AVAILABLE = np is not None
 
 
+def is_transition_tensor_name(name: str) -> bool:
+    """Canonical GNN B and explicitly indexed B factors carry transition axes."""
+    return name == "B" or (name.startswith("B_f") and name[3:].isdigit())
+
+
 def convert_to_matrix(value: Any, name: str = "") -> Optional[Any]:
     """Convert nested lists / tuples to a numpy array, or None."""
     if not NUMPY_AVAILABLE or np is None:

@@ -36,16 +36,20 @@ from gnn.utils.runtime_safety.resource_manager import get_current_memory_usage
 logger = logging.getLogger(__name__)
 
 EFE_CONVENTION_PYMDP = (
-    "pymdp 1.0.0 neg_efe sign convention: policy posterior q(pi) ∝"
-    " E(pi) exp(-gamma * EFE); the emitted expected_free_energy is"
-    " neg_efe = -EFE, where EFE (pymdp/control.py"
-    " compute_neg_efe_policy) = expected utility"
-    " (linear payoff sum sum_o q(o) C[o] over predicted observations"
-    " — NOT a KL against C) + states info gain (expected information"
-    " gain about hidden states). A pymdp 'expected_free_energy' value"
-    " is therefore not comparable to the risk+ambiguity EFE of the jax"
-    " renderer or the Lean expectedFreeEnergy_eq_risk_add_ambiguity"
-    " without sign and convention mapping (bridge finding O1)."
+    "pymdp 1.0.0 compute_neg_efe_policy sign convention: the historical"
+    " emitted expected_free_energy field stores neg_efe unchanged, with"
+    " neg_efe = -EFE = expected utility + hidden-state information gain"
+    " under the producer's enabled terms (utility and state information"
+    " gain enabled, parameter information gain disabled). Expected utility"
+    " is the linear payoff sum sum_o q(o) C[o] over predicted observations"
+    " — not a KL against C. The policy posterior is proportional to"
+    " E(pi) exp(gamma * neg_efe). These reported neg_efe values are not"
+    " directly comparable to risk+ambiguity EFE without sign and convention"
+    " mapping. No energy unit is declared by this receipt."
+)
+EFE_CONVENTION_PYMDP_SUMMARY = (
+    "Reported neg_efe = -EFE = expected utility + hidden-state information"
+    " gain (producer-enabled terms)."
 )
 
 
@@ -977,6 +981,7 @@ def run_pymdp_simulation(
         "beliefs_by_factor": {"joint_state": beliefs},
         "expected_free_energy": efe_history,
         "expected_free_energy_convention": EFE_CONVENTION_PYMDP,
+        "expected_free_energy_convention_summary": EFE_CONVENTION_PYMDP_SUMMARY,
         "variational_free_energy": vfe_history,
         "policy_posterior": policy_posterior_history,
         "simulation_trace": {

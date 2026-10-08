@@ -61,7 +61,10 @@ with warnings.catch_warnings():
 
 # The convention constant lives in .simulation (single source; this module
 # imports from .simulation below, so the dependency direction is acyclic).
-from .simulation import EFE_CONVENTION_PYMDP  # noqa: E402
+from .simulation import (  # noqa: E402
+    EFE_CONVENTION_PYMDP,
+    EFE_CONVENTION_PYMDP_SUMMARY,
+)
 
 
 class PyMDPSimulation:
@@ -617,6 +620,7 @@ class PyMDPSimulation:
             "hidden_states_by_factor": {"joint_state": true_states},
             "expected_free_energy": efe_history,
             "expected_free_energy_convention": EFE_CONVENTION_PYMDP,
+            "expected_free_energy_convention_summary": EFE_CONVENTION_PYMDP_SUMMARY,
             "variational_free_energy": vfe_history,
             "policy_posterior": policy_posterior,
             "simulation_trace": {

@@ -296,6 +296,14 @@ def animate_cross_framework_gridworld_trajectories(
 
     frame_count = max(len(item["states"]) for item in usable_items)
 
+    validated_items = []
+    for item in usable_items:
+        state_count = item.get("state_count")
+        if state_count is None:
+            state_count = 9
+        states = _validated_gridworld_states(item["states"], state_count)
+        validated_items.append((item, state_count, states))
+
     fig, axes = plt.subplots(
         1,
         len(usable_items),
@@ -304,9 +312,7 @@ def animate_cross_framework_gridworld_trajectories(
     )
     flat_axes = list(axes[0])
     artists: list[dict[str, Any]] = []
-    for ax, item in zip(flat_axes, usable_items):
-        state_count = item.get("state_count") or 9
-        states = _validated_gridworld_states(item["states"], state_count)
+    for ax, (item, state_count, states) in zip(flat_axes, validated_items):
         side = _grid_side_for_states(state_count)
         grid = np.zeros((side, side), dtype=float)
         image = ax.imshow(grid, cmap="Blues", vmin=0.0, vmax=1.0)
@@ -330,6 +336,7 @@ def animate_cross_framework_gridworld_trajectories(
         artists.append(
             {
                 "item": item,
+                "state_count": state_count,
                 "grid": grid,
                 "image": image,
                 "path": path_line,
@@ -380,7 +387,7 @@ def animate_cross_framework_gridworld_trajectories(
             {
                 "framework": entry["item"].get("framework"),
                 "model_name": entry["item"].get("model_name"),
-                "state_count": entry["item"].get("state_count"),
+                "state_count": entry["state_count"],
                 "states": entry["states"],
             }
             for entry in artists
@@ -409,7 +416,9 @@ def generate_gridworld_animation_suite(
     for item in items:
         framework = str(item["framework"])
         model_name = str(item["model_name"])
-        state_count = int(item["state_count"] or 9)
+        state_count = item.get("state_count")
+        if state_count is None:
+            state_count = 9
         beliefs = item.get("beliefs", [])
         states = item.get("states", [])
 
