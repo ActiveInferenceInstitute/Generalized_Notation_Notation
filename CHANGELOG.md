@@ -41,6 +41,9 @@ checks alone cannot establish publication or the full supported matrix.
   programs configure their native output streams before diagnostics, retaining
   scientific Unicode on Windows code pages and leaving imported caller streams
   unchanged. Shared process supervision and numerical algorithms are preserved.
+  Partial inputs retain defaults only for omitted tables; supplied malformed
+  tables or parameter collections refuse through both public renderers before
+  writing. Valid tuples and read-only arrays preserve their scientific values.
 - Public CLI invocations emit native stdout/stderr in UTF-8 for Unicode paths,
   validation markers and diagnostics, then restore caller-owned encoding and
   error settings. Imported modules and nonnative capture streams are unchanged;
@@ -92,6 +95,8 @@ checks alone cannot establish publication or the full supported matrix.
   records. Native Windows supports direct-worker cleanup and refuses stronger
   descendant guarantees before launch. See the
   [precise guarantees](docs/security/filesystem_boundaries.md).
+  Output validation detects real symlink cycles on Python 3.13 and retains
+  causal resolution failures while preserving contained dangling links.
 - THRML joint composition reads admission limits from the canonical adapter at
   the existing guards. Temporary earlier imports cannot retain stale limits;
   thresholds, numerical values, axes and sampling behavior are unchanged.
@@ -110,6 +115,10 @@ checks alone cannot establish publication or the full supported matrix.
   They no longer insert unsupported fixed exponents or attribute timing to JIT
   compilation or inference without evidence. The fitted numeric results remain
   unchanged.
+  Runtime plots retain individual fitted exponents and use a descriptive global
+  title without averaging N-axis and T-axis fits. Watermarks use the canonical
+  package version with the actual generation time. Saved source-size tables
+  retain their counts without inferring cubic growth from line counts alone.
 - Lossless production PNG encoding defaults to level 3 while preserving caller
   overrides. Two paired rounds across all 552 production PNGs measured 5.48%
   less median encoder CPU and 3.07% more bytes with identical decoded pixels,

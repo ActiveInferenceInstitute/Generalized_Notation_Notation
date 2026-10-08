@@ -25,10 +25,10 @@ The `meta_analysis` module provides automated statistical analysis and visualiza
 - **Responsibility**: Generates charts using `matplotlib`.
 - **Theme**: "Scientific White" (High-contrast, publication-grade).
 - **Styling (`_STYLE`)**:
-    - Background: White (`#FFFFFF`) / Light Gray Axis (`#F8F9FA`).
-    - Typography: Title 18pt, Labels 14pt, Ticks 12pt.
-    - Line Width: 2.5pt.
-    - Marker Size: 8pt.
+    - Background and axes: White (`#FFFFFF`).
+    - Typography: Title 22pt, Labels 18pt, Ticks 14pt.
+    - Line Width: 3pt.
+    - Marker Size: 10pt.
 - **Charts Generated**:
     - **Heatmaps**: Runtime, Accuracy, Entropy (with statistics in subtitle).
     - **Scaling Curves**: Descriptive log-log fits ($y = a \cdot x^b$) over the recorded finite parameter ranges; optional **linear** ±σ error bars per point when ``execution_time_std`` is populated from Step 12 repeats. The global title does not average N-axis and T-axis exponents.
@@ -79,7 +79,7 @@ $r = \frac{\sum (x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum (x_i - \bar{x})^2 \su
 
 ## Directory Structure
 ```
-output/[run_id]/17_integration_output/integration_results/meta_analysis/
+<output-root>/17_integration_output/integration_results/meta_analysis/
 ├── meta_analysis_report.md
 ├── sweep_validation.json
 ├── meta_statistics.json
