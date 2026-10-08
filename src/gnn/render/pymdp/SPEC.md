@@ -35,3 +35,8 @@ pymdp/
 - Pipeline source embeds the JSON-clean specification as a Python literal.
   Authored string contents, including `true`, `false`, `null`, escapes and Unicode,
   retain their values; JSON booleans and null become Python booleans and `None`.
+- Both runner modes serialize authored model names and annotations in the module
+  docstring and executable text slots. Quotes, backslashes, newlines, Unicode and
+  braces remain data. Default `output/pymdp_simulations/<model_name>` path values
+  and the pipeline `PYMDP_OUTPUT_DIR` override retain their existing behavior;
+  this serialization does not change filesystem name selection or model execution.
