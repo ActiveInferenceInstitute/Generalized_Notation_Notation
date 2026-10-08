@@ -41,6 +41,10 @@ checks alone cannot establish publication or the full supported matrix.
   variable descriptions. ASN.1 and Z line-comment interchange payloads stop at
   their actual line boundary; malformed payloads refuse conversion while
   preserving the caller's previous destination.
+  Both Markdown readers retain authored bracket datatypes, including whitespace
+  and the existing int/bool aliases. Nested JSON boolean arrays preserve shape
+  and quoted text through the existing length/depth guards; malformed and
+  overlimit values retain their documented legacy recovery.
 - Processing reports accept their native structural and typed validation
   results. A processing run reports failure for missing, empty or failed
   required reports and preserves completed partial artifacts and diagnoses.

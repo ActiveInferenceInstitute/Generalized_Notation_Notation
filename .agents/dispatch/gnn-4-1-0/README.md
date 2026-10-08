@@ -14,11 +14,16 @@ historical fixtures explicitly qualify their producer/source identity and do
 not establish current backend execution. Focused acceptance does not replace
 the complete final-source coverage, installed-platform or publication gates.
 
-Two newly exposed saved-input boundaries remain under repair before source
-freeze: authored nested JSON booleans across both Markdown readers and safe
-PyMDP model-name embedding. Preserve their original failing receipts and the
-existing parser bounds. The final ownership census, full native selectors,
-manuscript rendering and exact companion/publication checks remain pending.
+The later datatype/array repair passes all 608 owner regressions and ten
+subtests, with zero failures, errors or skips and identical native bookends.
+Independent review found no blocking issue in the bounded diffs. Root replay
+passes 98 datatype/GUI/CLI/visualization/report cases; unrelated changelog and
+flag-cap metadata changed during that focused replay, so it does not certify a
+whole frozen checkout. Canonical and legacy PyMDP name checks pass 69 cases
+with unchanged runtime sources. Retain original failing receipts and existing
+parser guards. Legacy DisCoPy display slots are the last active repair before
+freeze. The final ownership census, full native selectors, manuscript rendering
+and exact companion/publication checks remain pending.
 
 Frozen starting revision: `e5461954f45314cfea77b2cf06818e060f68bd0a`.
 The integration branch is `codex/gnn-4.1.0`. Implementation workers use separate
