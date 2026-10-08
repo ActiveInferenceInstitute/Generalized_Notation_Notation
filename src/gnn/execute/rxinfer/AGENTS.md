@@ -15,7 +15,8 @@
 ### Primary Responsibilities
 1. Discover rendered RxInfer.jl scripts under `output/11_render_output/<model>/rxinfer/`
 2. Run each script as a Julia subprocess under the committed project environment
-3. Parse and summarise the `simulation_results.json` each script writes
+3. Preserve canonical `simulation_results.json` artifacts for the Step 12 result
+   extractor and Step 16 canonical analysis reader
 
 ### Key Capabilities
 - Genuine ``@model`` + ``infer()`` variational message-passing inference execution (RxInfer.jl v5.5)
@@ -25,15 +26,17 @@
 - Reproducible Julia environment: `julia --startup-file=no --project=src/gnn/execute/rxinfer <script>`
   against the committed `Project.toml` + `Manifest.toml`; `setup_environment.jl`
   only runs `Pkg.instantiate()` (no runtime `Pkg.add`)
-- Result parsing helpers (`rxinfer_results.py`) for free energy, posteriors and convergence
+- Direct-file legacy result helpers (`rxinfer_results.py`) for saved
+  `free_energy`/`posteriors` payloads; canonical results use the analysis reader
 - Cross-platform compatibility (Linux/macOS/Windows)
 
 ---
 
 ## API Reference
 
-All public names are re-exported from `execute.rxinfer` (`__all__` in `__init__.py`)
-and defined in `rxinfer_runner.py`.
+The runner names below are re-exported from `execute.rxinfer` (`__all__` in
+`__init__.py`) and defined in `rxinfer_runner.py`. Legacy result helpers are
+separate direct-module APIs and are not wired into the numbered pipeline.
 
 ### Public Functions
 
@@ -90,12 +93,24 @@ if is_julia_available():
         execute_rxinfer_script(script, verbose=True, timeout=600)
 ```
 
-### Result Helpers (`rxinfer_results.py`)
-- `parse_rxinfer_output(output_path: Path) -> Optional[Dict]` — load one `simulation_results.json`
-- `extract_convergence_metrics(parsed) -> Dict` — free-energy trajectory and convergence flags
-- `summarize_posteriors(parsed) -> Dict` — per-variable posterior summaries
-- `collect_rxinfer_results(output_dir: Path, model_name=None) -> List[Dict]` — gather every result file under a directory
-- `format_rxinfer_report(results) -> str` — Markdown report over collected results
+### Legacy Result Helpers (`rxinfer_results.py`)
+- `parse_rxinfer_output(output_path: Path) -> Optional[Dict]` — read one legacy `free_energy`/named `posteriors` JSON object; unreadable or canonical formats return `None` with contextual diagnosis
+- `extract_convergence_metrics(parsed) -> Dict` — existing legacy free-energy trajectory and convergence flags
+- `summarize_posteriors(parsed) -> Dict` — per-variable legacy posterior summaries, including numeric zero and scalar values
+- `collect_rxinfer_results(output_dir: Path, model_name=None) -> List[Dict]` — collect legacy RxInfer-named JSON and `*simulation_results.json`, each matching path once; canonical artifacts are diagnosed and omitted
+- `format_rxinfer_report(results) -> str` — Markdown report over collected legacy results
+
+Canonical `rxinfer_simulation_v1` results belong to
+[`gnn.analysis.rxinfer.result_ingestion.read_result_object`](../../analysis/rxinfer/result_ingestion.py)
+and the [canonical analysis consumers](../../analysis/rxinfer/README.md).
+`num_timesteps` is an observation count, not an inference-iteration count;
+`model_parameters.inference_iterations` retains the latter identity.
+Per-iteration `variational_free_energy`/`vfe_per_iteration` must remain separate
+from per-step `expected_free_energy`. Gaussian `beliefs` are posterior means
+paired with full per-timestep `posterior_cov` matrices. The legacy helper refuses
+canonical schema or VFE/covariance fields rather than discarding these identities
+and returning an apparently empty success. It does not add a new inference
+contract or promote legacy helpers into the pipeline.
 
 ---
 

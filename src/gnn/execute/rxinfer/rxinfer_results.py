@@ -2,8 +2,9 @@
 """
 RxInfer.jl Results Parser for GNN Execute Pipeline.
 
-Parses JSON output from executed RxInfer.jl scripts, extracts posterior distributions,
-convergence metrics, and formats results for downstream pipeline steps.
+Reads the legacy free_energy/posteriors JSON format through direct file APIs.
+Canonical rxinfer_simulation_v1 artifacts belong to the current analysis reader;
+their VFE, timestep and Gaussian covariance identities are not mapped here.
 """
 
 import json
@@ -15,11 +16,20 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 
+def _first_value(values: Dict[str, Any], *keys: str, default: Any = None) -> Any:
+    """Retain numeric zero while preserving legacy empty-alias fallthrough."""
+    for key in keys:
+        value = values.get(key)
+        if value is not None and value != "" and value != [] and value != {}:
+            return value
+    return default
+
+
 def parse_rxinfer_output(output_path: Path) -> Optional[Dict[str, Any]]:
     """
-    Parse JSON output produced by a RxInfer.jl script.
+    Parse a saved legacy RxInfer free_energy/posteriors JSON object.
 
-    RxInfer.jl scripts are expected to write a JSON file with this structure:
+    The supported legacy structure is:
     {
         "model_name": "...",
         "iterations": N,
@@ -35,49 +45,98 @@ def parse_rxinfer_output(output_path: Path) -> Optional[Dict[str, Any]]:
         output_path: Path to the JSON output file from RxInfer.jl
 
     Returns:
-        Parsed results dict, or None if parsing fails
+        Parsed legacy results, or None for unreadable/unsupported artifacts.
+        Canonical simulation results are refused with reader guidance rather
+        than losing their VFE, timestep or covariance metadata.
     """
     if not output_path.exists():
         logger.warning(f"RxInfer output file not found: {output_path}")
         return None
 
     try:
-        with open(output_path, "r") as f:
+        with output_path.open("r", encoding="utf-8") as f:
             raw = json.load(f)
+
+        if not isinstance(raw, dict):
+            raise ValueError(f"expected a JSON object, got {type(raw).__name__}")
+        if output_path.name.endswith("_execution_log.json") or output_path.name in {
+            "execution_log.json",
+            "execution_summary.json",
+            "simulation_log.json",
+        }:
+            logger.warning(
+                "Unsupported execution metadata at %s; expected a legacy RxInfer simulation result",
+                output_path,
+            )
+            return None
+        if raw.get("schema_version") == "rxinfer_simulation_v1" or any(
+            key in raw
+            for key in ("variational_free_energy", "vfe_per_iteration", "posterior_cov")
+        ):
+            logger.warning(
+                "Unsupported canonical RxInfer result at %s: this reader accepts "
+                "legacy free_energy/posteriors; use "
+                "gnn.analysis.rxinfer.result_ingestion.read_result_object to "
+                "preserve VFE, timesteps and covariance metadata",
+                output_path,
+            )
+            return None
+        if not any(
+            key in raw
+            for key in (
+                "free_energy",
+                "freeEnergy",
+                "F",
+                "posteriors",
+                "q",
+                "iterations",
+                "n_iterations",
+                "converged",
+            )
+        ):
+            logger.warning(
+                "Unsupported legacy RxInfer result at %s: expected free_energy, posteriors or inference status fields",
+                output_path,
+            )
+            return None
 
         # Normalize: handle both snake_case and camelCase keys from Julia output
         normalized: dict[str, Any] = {
             "model_name": raw.get("model_name") or raw.get("modelName", "unknown"),
-            "iterations": raw.get("iterations") or raw.get("n_iterations", 0),
+            "iterations": _first_value(raw, "iterations", "n_iterations", default=0),
             "converged": raw.get("converged", False),
             "free_energy": _extract_free_energy(raw),
             "posteriors": _extract_posteriors(raw),
-            "elapsed_seconds": raw.get("elapsed_seconds") or raw.get("elapsed", 0.0),
+            "elapsed_seconds": _first_value(
+                raw, "elapsed_seconds", "elapsed", default=0.0
+            ),
             "framework": "RxInfer.jl",
             "parse_timestamp": datetime.now().isoformat(),
         }
 
         return normalized
 
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse JSON from {output_path}: {e}")
-        return None
-    except Exception as e:
-        logger.error(f"Unexpected error parsing {output_path}: {e}")
+    except (OSError, UnicodeError, TypeError, ValueError, OverflowError) as e:
+        logger.error(
+            "Failed to parse legacy RxInfer result %s (%s): %s",
+            output_path,
+            type(e).__name__,
+            e,
+        )
         return None
 
 
 def _extract_free_energy(raw: Dict[str, Any]) -> List[float]:
     """Extract free energy trajectory from raw RxInfer output."""
     # RxInfer may output free_energy as list, or as nested dict with "values"
-    fe = raw.get("free_energy") or raw.get("freeEnergy") or raw.get("F")
+    fe = _first_value(raw, "free_energy", "freeEnergy", "F")
 
     if fe is None:
         return []
     if isinstance(fe, list):
         return [float(v) for v in fe if v is not None]
     if isinstance(fe, dict):
-        values = fe.get("values") or fe.get("data") or []
+        values = _first_value(fe, "values", "data", default=[])
         return [float(v) for v in values if v is not None]
     try:
         return [float(fe)]
@@ -92,7 +151,9 @@ def _extract_posteriors(raw: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     Handles NormalMeanVariance, Dirichlet, and Categorical distributions
     as output by RxInfer.jl's standard inference routines.
     """
-    raw_posteriors = raw.get("posteriors") or raw.get("q") or {}
+    raw_posteriors = _first_value(raw, "posteriors", "q", default={})
+    if not isinstance(raw_posteriors, dict):
+        raise ValueError("legacy posteriors/q must be a JSON object")
     result: dict[Any, Any] = {}
 
     for var_name, dist_data in raw_posteriors.items():
@@ -110,23 +171,14 @@ def _extract_posteriors(raw: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
 
         # NormalMeanVariance (Gaussian)
         if any(k in dist_data for k in ["mean", "μ", "mu"]):
-            mean = dist_data.get("mean") or dist_data.get("μ") or dist_data.get("mu")
-            var = (
-                dist_data.get("variance")
-                or dist_data.get("σ²")
-                or dist_data.get("sigma2")
-                or dist_data.get("cov")
-            )
+            mean = _first_value(dist_data, "mean", "μ", "mu")
+            var = _first_value(dist_data, "variance", "σ²", "sigma2", "cov")
             parsed["mean"] = _to_float_list(mean)
             parsed["variance"] = _to_float_list(var) if var is not None else None
 
         # Dirichlet
         if any(k in dist_data for k in ["alpha", "α", "concentration"]):
-            conc = (
-                dist_data.get("alpha")
-                or dist_data.get("α")
-                or dist_data.get("concentration")
-            )
+            conc = _first_value(dist_data, "alpha", "α", "concentration")
             parsed["concentration"] = _to_float_list(conc)
             # Compute mean of Dirichlet
             conc_list = parsed.get("concentration", [])
@@ -136,11 +188,7 @@ def _extract_posteriors(raw: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
 
         # Categorical
         if any(k in dist_data for k in ["p", "probs", "probabilities"]):
-            probs = (
-                dist_data.get("p")
-                or dist_data.get("probs")
-                or dist_data.get("probabilities")
-            )
+            probs = _first_value(dist_data, "p", "probs", "probabilities")
             parsed["probabilities"] = _to_float_list(probs)
             parsed["mean"] = parsed["probabilities"]
 
@@ -239,6 +287,8 @@ def summarize_posteriors(parsed: Dict[str, Any]) -> Dict[str, Any]:
 
     for var_name, dist in posteriors.items():
         var_summary: dict[str, Any] = {"type": dist.get("type", "unknown")}
+        if "value" in dist:
+            var_summary["value"] = dist["value"]
 
         mean = dist.get("mean")
         if mean:
@@ -271,7 +321,10 @@ def collect_rxinfer_results(
     output_dir: Path, model_name: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
-    Collect and parse all RxInfer result JSON files from an output directory.
+    Collect saved legacy RxInfer JSON files, processing each matching path once.
+
+    Canonical simulation results are discovered but refused by the legacy
+    parser with guidance to the current canonical reader.
 
     Args:
         output_dir: Directory containing RxInfer output JSON files
@@ -287,10 +340,11 @@ def collect_rxinfer_results(
         return results
 
     # Find all JSON output files
-    json_files = (
-        list(output_dir.glob("**/*_rxinfer*.json"))
-        + list(output_dir.glob("**/*rxinfer*.json"))
-        + list(output_dir.glob("**/rxinfer_output*.json"))
+    json_files = sorted(
+        set(output_dir.glob("**/*_rxinfer*.json"))
+        | set(output_dir.glob("**/*rxinfer*.json"))
+        | set(output_dir.glob("**/rxinfer_output*.json"))
+        | set(output_dir.glob("**/*simulation_results.json"))
     )
 
     for json_file in json_files:
@@ -358,7 +412,7 @@ def format_rxinfer_report(results: List[Dict[str, Any]]) -> str:
             lines.append("| Variable | Type | Mean/Value |")
             lines.append("|----------|------|------------|")
             for var, stats in list(post_summary.items())[:10]:  # Top 10
-                mean = stats.get("mean", "N/A")
+                mean = stats.get("mean", stats.get("value", "N/A"))
                 if isinstance(mean, list):
                     mean_str = f"[{', '.join(f'{v:.3f}' for v in mean[:4])}{'...' if len(mean) > 4 else ''}]"
                 else:
