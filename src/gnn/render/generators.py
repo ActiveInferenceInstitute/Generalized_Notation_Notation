@@ -269,13 +269,14 @@ def generate_discopy_code(
     try:
         model_name = model_data.get("model_name", "GNN Model")
         gnn_file = model_data.get("source_file", "unknown.md")
-
-        code = f'''#!/usr/bin/env python3
-"""
+        module_docstring = f"""
 Enhanced DisCoPy categorical analysis for {model_name}
 Generated from GNN specification: {gnn_file}
 Features comprehensive categorical diagram analysis and visualizations
 """
+
+        code = f'''#!/usr/bin/env python3
+{module_docstring!r}
 
 from discopy.rigid import Ty, Box, Id
 import numpy as np
@@ -294,8 +295,8 @@ class Enhanced{_to_pascal_case(model_name)}CategoricalAnalyzer:
     """Enhanced categorical analyzer with comprehensive visualization"""
     
     def __init__(self):
-        self.model_name = "{model_name}"
-        self.gnn_source = "{gnn_file}"
+        self.model_name = {_python_string_literal(model_name)}
+        self.gnn_source = {_python_string_literal(gnn_file)}
         self.analysis_history = []
         self.performance_metrics = {{}}
         
