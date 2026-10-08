@@ -34,6 +34,15 @@ Main entry point, called by `23_report.py` (Step 23). Determines the pipeline ou
 
 Collects data from all step directories via `analyzer.collect_pipeline_data()`, computes the pipeline health score, and writes the report files.
 
+The input must be an existing directory; missing paths and regular files return
+`False` before report output is created. `report_formats=None` writes all three
+standard formats. An explicit list is copied and honored without changing the
+caller's list. An empty list writes the generation summary with no report files
+and returns `False`. Unsupported formats are logged and skipped; a mixed list
+succeeds when at least one supported writer succeeds. A writer failure retains
+other completed files. `report_generation_summary.json` lists the files actually
+written, so `True` means at least one report was produced.
+
 ### `processor.generate_comprehensive_report(target_dir, output_dir, format="json", **kwargs) -> Dict[str, Any]`
 
 File-level analysis of GNN `.md` files (`analyze_gnn_file()` per file); returns report data with `success`, `total_files`, `files_analyzed`, `summary`.

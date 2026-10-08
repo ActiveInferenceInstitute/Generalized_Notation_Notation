@@ -17,6 +17,7 @@ Consolidation of pipeline outputs into comprehensive HTML/Markdown/JSON analysis
 
 ## Features
 - Multi-format report generation (HTML, Markdown, JSON)
+- Pipeline report inputs must be existing directories. `report_formats=None` uses all three defaults; explicit lists are copied and honored. Empty or entirely unsupported selections return `False` with a generation summary and no report files. Mixed unsupported formats and partial writer failures retain the existing best-effort behavior: completion means at least one writer succeeded, and the saved generation summary names its completed files.
 - Pipeline health score (0-100)
 - Run-to-run diff reports and acceptance-ledger renderers
 
