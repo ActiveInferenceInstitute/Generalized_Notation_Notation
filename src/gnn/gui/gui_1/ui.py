@@ -90,9 +90,10 @@ def build_gui(
         initial_selected
     )
 
-    with gr.Blocks(
+    demo: gr.Blocks = gr.Blocks(
         title="🔧 GNN Form-based Constructor", theme=gr.themes.Base()
-    ) as demo:
+    )
+    with demo:
         gr.Markdown("""# 🔧 GNN Form-based Constructor
         
         **Interactive two-pane editor for systematic GNN model construction**
