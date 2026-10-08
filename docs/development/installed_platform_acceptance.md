@@ -58,6 +58,16 @@ containment or descendant resource accounting. Stronger requests must fail
 before a worker starts unless a separately accepted containment implementation
 exists. The workflow never borrows POSIX evidence for Windows.
 
+The Windows direct-worker cancellation fixture uses the current Python's native
+base interpreter for its standard-library-only child, independently checks the
+same Python minor, and binds the actual supervised PID and creation identity to
+the child-authored PID. Its original cancellation and cleanup deadlines remain.
+A Windows venv `python.exe` can be a redirector that starts a separate payload
+process: stopping that supervised redirector does not certify the payload's
+termination under `direct_worker_only`. Interpreter launchers, wrappers and their
+children remain outside a descendant guarantee. The native unsupported-descendant
+prelaunch controls remain required.
+
 ## Receipts and limits
 
 Each lane uploads source/wheel/lock/export identities, native JUnit reports,
