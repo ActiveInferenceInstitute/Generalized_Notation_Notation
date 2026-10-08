@@ -19,6 +19,13 @@ preference, prior, and PyMDP/POMDP tensor matrices.
 - POMDP transition analysis panels for entropy, stochasticity, and dominant
   next-state structure. Natural-log entropy is in nats with the exact `0*log(0)=0` limit; invalid probabilities receive an unavailable reason.
 - Color-normalized black/white annotations preserve signed values. Heatmap axis bases and caller-declared units are explicit; undeclared units remain unspecified.
+- Small correlation heatmaps retain their actual column-correlation values,
+  annotations, and index labels with a symmetric signed colorbar around zero.
+  Explicit color limits avoid upstream deprecated colormap mutation. When the
+  existing constant-column handling yields only zeros, the `[-1, 1]` color
+  domain is a display fallback; it adds no inferred correlations or numeric
+  data. The existing one-row/one-column data passthrough and large-matrix image
+  branch remain unchanged.
 
 ## See Also
 

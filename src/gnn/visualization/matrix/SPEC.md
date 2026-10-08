@@ -15,6 +15,12 @@
 - Colormap: `viridis` (default), configurable
 - Annotations: cell values shown when matrix ≤ 10×10
 - Statistical sidebar: mean, std, min, max per row/column
+- Correlation heatmaps of at most 100 cells use explicit symmetric limits
+  `[-max(abs(values)), max(abs(values))]` so zero retains the palette center
+  without deprecated upstream colormap mutation. All-zero values use a unit
+  color domain solely for plotting. Correlation computation, constant-column
+  zero substitution, annotations, labels, and the larger image branch retain
+  their existing behavior.
 
 ## 3D Tensor Handling
 
