@@ -372,16 +372,17 @@ class SweepReporter:
             )
 
         lines.append("")
-        lines.append("### Theoretical vs. Empirical Complexity")
+        lines.append("### Interpretation of saved runtime fits")
         lines.append("")
         lines.append(
-            "The theoretical complexity for a dense PyMDP Active Inference agent is **O(T × N³)**."
+            "These log-log fits are descriptive summaries of the saved runtime "
+            "observations for the listed parameter ranges. They do not establish "
+            "asymptotic algorithmic complexity or performance outside those ranges."
         )
         lines.append(
-            "- **N-scaling**: The empirical exponents (α ≈ 0.1–0.3) are significantly lower than the theoretical α=3.0. This indicates that at these scales (N ≤ 128), wall-clock time is dominated by constant **JIT compilation overhead** and JAX framework initialization rather than matrix operation complexity."
-        )
-        lines.append(
-            "- **T-scaling**: The empirical exponents (β ≈ 0.5–0.7) are also lower than the theoretical β=1.0. This suggests that the iterative inference loop benefits from JAX's optimized kernel execution, reducing the per-step cost as T increases."
+            "Interpretation depends on the recorded models, execution configuration "
+            "and environment. Runtime values alone do not support causal attribution "
+            "to compilation, initialization or inference work."
         )
 
         return "\n".join(lines) if len(lines) > 2 else ""
