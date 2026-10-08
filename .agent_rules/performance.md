@@ -25,4 +25,4 @@ For CI, compare exact-run job/step timestamps and retained native test and
 coverage reports. Include runner queuing and runtime variance. Preserve status
 names, markers, artifacts and failure coupling. See
 [workflow scheduling](../.github/workflows/README.md#scheduling-and-evidence)
-and [performance scope](../TO-DO.md#medium-work).
+and the [performance measurement report](../src/gnn/analysis/PERFORMANCE.md).

@@ -28,5 +28,5 @@ An import alone cannot establish model-family or numerical acceptance.
 Do not repair locks with floating side installations, guessed disable flags
 or duplicate declarations. For justified changes, resolve normally and verify
 each affected split, installed/native evidence and tracked-file bookends.
-New platform support follows ordinary installation and genuine acceptance as
-scoped in [TO-DO](../TO-DO.md#medium-work).
+New platform support follows ordinary installation and genuine acceptance in
+the [installed-platform guide](../docs/development/installed_platform_acceptance.md).

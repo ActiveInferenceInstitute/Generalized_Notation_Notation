@@ -26,6 +26,7 @@ acceptance. Missing optional distributions and broken installed imports are
 different outcomes; required failures must fail.
 
 Retain per-environment reports, source identity, failures and skips. Overlapping
-selections are not a unique total. The [coverage roadmap](../TO-DO.md#medium-work)
-targets more than 80% statements on its declared matrix. Measure and qualify
-optional surfaces before changing the enforced floor; preserve existing scope.
+selections are not a unique total. The [coverage guide](../docs/development/native_comprehensive_coverage.md)
+records the strict above-80% target separately on each declared environment.
+Preserve the original core 60% floor, full source scope and qualified optional
+surfaces; comprehensive acceptance enforces its own floor and integer comparison.

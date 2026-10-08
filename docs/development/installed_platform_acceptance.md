@@ -23,8 +23,8 @@ Full source coverage remains a separate three-Python acceptance record.
 | Windows / Python 3.14 | Python 3.14.7: 8 THRML and 15 boundary cases passed, zero failures/errors/skips; [ordinary installed-wheel job](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37761366047/job/113258292329) at `6be1506cac5957973dff8edeaf77e84e2e7ceb46` |
 
 Core/API/scientific Python 3.14 acceptance does not admit GUI callbacks. Released
-Gradio 6.29.1 source assessment finds the same deprecated asyncio wrapper before
-its later changed Blocks predicate. This preserves the strict callback blocker;
+Gradio 6.29.1 still calls `asyncio.iscoroutinefunction` in `function_wrapper`
+before the later `inspect.iscoroutinefunction` Blocks check. This preserves the strict callback blocker;
 it is not an upgrade, warning suppression or new native 6.29.1 acceptance.
 The frozen dependency lock remains authoritative. Native Windows acceptance
 requires actual payload identity and original cancellation predicates; macOS
