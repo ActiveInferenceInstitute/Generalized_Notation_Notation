@@ -509,7 +509,9 @@ def test_native_descendant_requirements_are_supported_or_refused_before_launch(
         assert marker.read_text() == "started"
 
 
-def test_native_cancellation_stops_direct_worker_within_budget(tmp_path: Path) -> None:
+def test_native_cancellation_stops_direct_worker_within_budget(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
     import time
 
     import psutil
@@ -519,13 +521,93 @@ def test_native_cancellation_stops_direct_worker_within_budget(tmp_path: Path) -
     marker = tmp_path / "pid"
     token = CancelToken()
     errors: list[BaseException] = []
+    native_handle: int | None = None
+    diagnostic: dict[str, object] = {
+        "platform": sys.platform,
+        "executable": sys.executable,
+        "before_cancel": None,
+        "after_return": None,
+    }
+
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel32.OpenProcess.restype = wintypes.HANDLE
+        kernel32.GetProcessId.argtypes = [wintypes.HANDLE]
+        kernel32.GetProcessId.restype = wintypes.DWORD
+        kernel32.GetProcessTimes.argtypes = [
+            wintypes.HANDLE,
+            *[ctypes.POINTER(wintypes.FILETIME)] * 4,
+        ]
+        kernel32.GetProcessTimes.restype = wintypes.BOOL
+        kernel32.GetExitCodeProcess.argtypes = [
+            wintypes.HANDLE,
+            ctypes.POINTER(wintypes.DWORD),
+        ]
+        kernel32.GetExitCodeProcess.restype = wintypes.BOOL
+        kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        kernel32.WaitForSingleObject.restype = wintypes.DWORD
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel32.CloseHandle.restype = wintypes.BOOL
+
+        def native_snapshot(handle: int) -> dict[str, int]:
+            pid = kernel32.GetProcessId(handle)
+            if not pid:
+                raise ctypes.WinError(ctypes.get_last_error())
+            creation, exit_time, kernel_time, user_time = (
+                wintypes.FILETIME() for _ in range(4)
+            )
+            if not kernel32.GetProcessTimes(
+                handle,
+                ctypes.byref(creation),
+                ctypes.byref(exit_time),
+                ctypes.byref(kernel_time),
+                ctypes.byref(user_time),
+            ):
+                raise ctypes.WinError(ctypes.get_last_error())
+            wait_state = kernel32.WaitForSingleObject(handle, 0)
+            if wait_state == 0xFFFFFFFF:
+                raise ctypes.WinError(ctypes.get_last_error())
+            exit_code = wintypes.DWORD()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                raise ctypes.WinError(ctypes.get_last_error())
+            return {
+                "pid": pid,
+                "creation_filetime": creation.dwLowDateTime
+                | (creation.dwHighDateTime << 32),
+                "wait_state": wait_state,
+                "exit_code": exit_code.value,
+            }
 
     def cancel() -> None:
+        nonlocal native_handle
         try:
             deadline = time.monotonic() + 3
             while not marker.exists() and time.monotonic() < deadline:
                 time.sleep(.01)
             assert marker.exists()
+            if os.name == "nt":
+                # The writer opens before publishing bytes; stay inside the same
+                # original readiness budget until its authored PID is available.
+                payload = marker.read_text()
+                while not payload and time.monotonic() < deadline:
+                    time.sleep(.01)
+                    payload = marker.read_text()
+                payload_pid = int(payload)
+                diagnostic["payload_pid"] = payload_pid
+                # Query and synchronize only this authored PID. Retaining its
+                # handle binds creation identity and prevents PID recycling.
+                # SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION; no kill rights.
+                native_handle = kernel32.OpenProcess(0x00101000, False, payload_pid)
+                if not native_handle:
+                    raise ctypes.WinError(ctypes.get_last_error())
+                before = native_snapshot(native_handle)
+                diagnostic["before_cancel"] = before
+                assert before["pid"] == payload_pid
+                assert before["wait_state"] == 258 and before["exit_code"] == 259
             token.cancel("native acceptance")
         except BaseException as error:
             errors.append(error)
@@ -534,17 +616,41 @@ def test_native_cancellation_stops_direct_worker_within_budget(tmp_path: Path) -
     worker.start()
     started = time.monotonic()
     try:
-        result = run_subprocess_envelope(
-            [sys.executable, "-c", f"import os,time; from pathlib import Path; Path({str(marker)!r}).write_text(str(os.getpid())); time.sleep(30)"],
-            timeout=4, sandbox=False, cancel_token=token,
-        )
+        try:
+            result = run_subprocess_envelope(
+                [sys.executable, "-c", f"import os,time; from pathlib import Path; Path({str(marker)!r}).write_text(str(os.getpid())); time.sleep(30)"],
+                timeout=4, sandbox=False, cancel_token=token,
+            )
+        finally:
+            worker.join(4)
+        diagnostic["result"] = result
+        diagnostic["elapsed_seconds"] = time.monotonic() - started
+        diagnostic["cancellation_errors"] = [repr(error) for error in errors]
+        try:
+            if os.name == "nt" and native_handle:
+                # A zero-time native wait observes exit without extending cleanup.
+                diagnostic["after_return"] = native_snapshot(native_handle)
+                # Release this probe before the original PID membership assertion:
+                # an observation handle must not prolong the process object there.
+                handle_to_close, native_handle = native_handle, None
+                if not kernel32.CloseHandle(handle_to_close):
+                    raise ctypes.WinError(ctypes.get_last_error())
+                diagnostic["probe_handle_closed_before_pid_assertion"] = True
+        except OSError as error:
+            diagnostic["native_observation_error"] = repr(error)
+            raise
+        finally:
+            detail = json.dumps(diagnostic, sort_keys=True)
+            request.node.user_properties.append(("native_cancellation_diagnostic", detail))
+        assert not worker.is_alive() and not errors, detail
+        assert time.monotonic() - started < 5, detail
+        assert result["cancelled"] and not result["success"] and result["error_type"] == "Cancelled", detail
+        assert result["cleanup_verified"] and result["streams_drained"], detail
+        assert not psutil.pid_exists(int(marker.read_text())), detail
     finally:
-        worker.join(4)
-    assert not worker.is_alive() and not errors
-    assert time.monotonic() - started < 5
-    assert result["cancelled"] and not result["success"] and result["error_type"] == "Cancelled"
-    assert result["cleanup_verified"] and result["streams_drained"]
-    assert not psutil.pid_exists(int(marker.read_text()))
+        if os.name == "nt" and native_handle:
+            if not kernel32.CloseHandle(native_handle):
+                raise ctypes.WinError(ctypes.get_last_error())
 
 
 @pytest.mark.needs_posix
