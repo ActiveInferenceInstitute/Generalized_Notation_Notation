@@ -265,6 +265,11 @@ for tool in tools:
 - `mcp_processing_summary.json` - MCP processing summary
 - `registered_tools.json` - All registered tools information (written when tools are available)
 
+Directory round-trip tools write `round_trip_results.json`. A file-read error
+remains a failed file in its saved `passed`/`failed` counts and in the public
+tool result. An empty input directory remains successful no-work with zero
+files passed or failed; parser mode and per-file error details are retained.
+
 ### Output Directory Structure
 ```
 output/21_mcp_output/

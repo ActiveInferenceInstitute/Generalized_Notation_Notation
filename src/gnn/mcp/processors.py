@@ -334,7 +334,8 @@ def run_gnn_round_trip_tests(
     passed = sum(
         1
         for r in results
-        if all(v.get("pass", False) for v in r.get("format_results", {}).values())
+        if "error" not in r
+        and all(v.get("pass", False) for v in r.get("format_results", {}).values())
     )
 
     round_trip_summary: dict[str, Any] = {
