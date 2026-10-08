@@ -55,6 +55,12 @@ unrecognized types retain the categorical recovery. Original annotation text,
 including default hints, remains in `raw_sections`; parsing does not initialize
 new values from a hint.
 
+Nested JSON list values containing lowercase booleans retain their exact shape
+and scalar values. This array recovery reuses the literal parser's existing
+10,000-character and depth-10 guards before decoding the untouched JSON source.
+It does not add JSON mapping admission or change tuple, malformed-value or
+overlimit legacy recovery.
+
 ## Adding a format
 
 1. Extend **`GNNFormat`** in `common.py` if needed.

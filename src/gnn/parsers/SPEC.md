@@ -43,6 +43,10 @@
   `binary`, default float and unknown-type categorical recovery remain supported.
   Adjacent annotation fields remain in source `raw_sections`, without inferring
   initialized values or adding scientific datatype semantics.
+- Nested JSON lists with lowercase booleans reuse the public bounded literal
+  parser's length/depth guards before JSON decoding. Scalar values, quoted text
+  and shape are preserved; JSON mappings are not newly admitted. Rejected,
+  malformed and overlimit arrays retain existing legacy handling.
 
 ## Testing
 
