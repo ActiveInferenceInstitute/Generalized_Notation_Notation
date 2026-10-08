@@ -303,13 +303,14 @@ def _finite_float(value: Any) -> float:
 
 
 def _format_parameter(name: str, matrix: Dict[str, Any]) -> str:
+    """Write accepted finite floats without discarding their precision."""
     matrix_type = matrix.get("type")
     if matrix_type == "vector":
         values = [_finite_float(value) for value in matrix.get("values", [])]
-        return f"{name}={{(" + ", ".join(f"{value:.6g}" for value in values) + ")}"
+        return f"{name}={{(" + ", ".join(repr(value) for value in values) + ")}"
     if matrix_type == "matrix":
         rows = [
-            "(" + ", ".join(f"{_finite_float(value):.6g}" for value in row) + ")"
+            "(" + ", ".join(repr(_finite_float(value)) for value in row) + ")"
             for row in matrix.get("values", [])
         ]
         return f"{name}={{\n  " + ",\n  ".join(rows) + "\n}"
@@ -331,7 +332,7 @@ def _format_parameter(name: str, matrix: Dict[str, Any]) -> str:
         slices: List[str] = []
         for slice_data in tensor_values:
             rows = [
-                "(" + ", ".join(f"{_finite_float(value):.6g}" for value in row) + ")"
+                "(" + ", ".join(repr(_finite_float(value)) for value in row) + ")"
                 for row in slice_data
             ]
             slices.append("( " + ", ".join(rows) + " )")
