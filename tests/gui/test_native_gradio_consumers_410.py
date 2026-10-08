@@ -480,3 +480,64 @@ def test_gui3_native_rejected_design_preserves_previous_export(tmp_path, invalid
             assert not list(tmp_path.glob("tmp*"))
 
     asyncio.run(scenario())
+
+
+def test_gui2_native_untouched_high_precision_values_survive_saved_model(tmp_path):
+    async def scenario():
+        from gnn.extract.pomdp_extractor import extract_pomdp_from_file
+
+        source = (
+            MODEL.replace(
+                "A={(1.0,0.0),(0.0,1.0)}",
+                "A={(0.123456789123,0.0),(0.876543210877,1.0)}",
+            )
+            .replace(
+                "B={((1.0,0.25),(0.0,0.5)),((0.0,0.75),(1.0,0.5))}",
+                "B={((0.123456789123,0.25),(0.0,0.5)),((0.876543210877,0.75),(1.0,0.5))}",
+            )
+            .replace("C={(-1.5,2.0)}", "C={(-0.123456789123,2.345678912345)}")
+            .replace("D={(1.0,0.0)}", "D={(0.123456789123,0.876543210877)}")
+        )
+        authored = tmp_path / "authored.md"
+        authored.write_text(source, encoding="utf-8")
+        before = authored.read_bytes()
+        original = extract_pomdp_from_file(authored, on_error="raise")
+        export = tmp_path / "saved.md"
+        async with native_editor("gui2", export, source) as editor:
+            values = {
+                c["props"].get("label"): c["props"].get("value")
+                for c in editor.config["components"]
+            }
+            assert (
+                values["B Matrix Values - Current Action Slice"]["data"][0][0]
+                == 0.123456789123
+            )
+            edited = await editor.call(
+                "manual_update",
+                [
+                    None,
+                    *[
+                        values[label]
+                        for label in [
+                            "A Matrix Values - Edit cells directly",
+                            "B Matrix Values - Current Action Slice",
+                            "C Values",
+                            "D Values",
+                        ]
+                    ],
+                    0,
+                ],
+            )
+            assert edited[7] == ""
+            await editor.call("save_gnn", [edited[6]])
+            reopened = extract_pomdp_from_file(export, on_error="raise")
+            # Exact numerical preservation, with no approximation/tolerance.
+            assert json.loads(json.dumps(reopened.B_matrix)) == json.loads(
+                json.dumps(original.B_matrix)
+            )
+            assert reopened.A_matrix == original.A_matrix
+            assert reopened.C_vector == original.C_vector
+            assert reopened.D_vector == original.D_vector
+            assert authored.read_bytes() == before
+
+    asyncio.run(scenario())
