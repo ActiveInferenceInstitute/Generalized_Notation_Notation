@@ -36,7 +36,9 @@ This module provides specialized agent capabilities for visual construction:
 #### Form Interface Agent
 - **Core Function**: Maps structured dict strings into visual schemas.
 - **Input Processing**: Processes `target_dir` GNN files.
-- **Output Generation**: Emits rewritten Markdown content and runs internal parser checks.
+- **Output Generation**: Saves supplied Markdown as a headless artifact, or provides
+  interactive editing and validation when Gradio is available. Headless export does
+  not execute interactive callbacks or certify scientific validity.
 
 ---
 
@@ -102,5 +104,11 @@ open_browser = True
 2. Register the Gradio inputs in `ui.py`.
 3. Add to the `__all__` exported registry in `__init__.py`.
 
-**Last Updated**: 2026-09-22
+State insertion belongs inside an existing canonical `StateSpaceBlock`, before
+the next section. Keep manual text and line endings outside the insertion intact;
+retain physical duplicates, legacy editor heading aliases, the linear delimiter
+parser and the 8,388,608-character input limit. Native readers still apply their
+own section grammar.
+
+**Last Updated**: 2026-10-08
 **Architecture Compliance**: 100% Thin Orchestrator Pattern
