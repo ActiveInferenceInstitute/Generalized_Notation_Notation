@@ -1,0 +1,416 @@
+{
+  "schema_version": "pymdp_simulation_v1",
+  "success": true,
+  "framework": "PyMDP",
+  "pymdp_version": "1.0.0",
+  "vfe_unavailable_timesteps": [],
+  "backend": "jax",
+  "model_name": "Static Perception Model",
+  "num_timesteps": 5,
+  "observations_by_modality": {
+    "joint_observation": [
+      1,
+      0,
+      1,
+      0,
+      1
+    ]
+  },
+  "hidden_states_by_factor": {
+    "joint_state": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "actions_by_control_factor": {
+    "joint_action": [
+      1,
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "beliefs_by_factor": {
+    "joint_state": [
+      [
+        0.1111111119389534,
+        0.8888888955116272
+      ],
+      [
+        0.9622641801834106,
+        0.03773584961891174
+      ],
+      [
+        0.5769459009170532,
+        0.4230540096759796
+      ],
+      [
+        0.8560514450073242,
+        0.1439485400915146
+      ],
+      [
+        0.3635318875312805,
+        0.6364681124687195
+      ]
+    ]
+  },
+  "expected_free_energy": [
+    [
+      0.140936940908432,
+      0.15587535500526428
+    ],
+    [
+      0.09782740473747253,
+      0.08608800172805786
+    ],
+    [
+      0.27302321791648865,
+      0.2682587802410126
+    ],
+    [
+      0.17745068669319153,
+      0.16215938329696655
+    ],
+    [
+      0.25628089904785156,
+      0.2644892930984497
+    ]
+  ],
+  "expected_free_energy_convention": "pymdp 1.0.0 compute_neg_efe_policy sign convention: the historical emitted expected_free_energy field stores neg_efe unchanged, with neg_efe = -EFE = expected utility + hidden-state information gain under the producer's enabled terms (utility and state information gain enabled, parameter information gain disabled). Expected utility is the linear payoff sum sum_o q(o) C[o] over predicted observations \u2014 not a KL against C. The policy posterior is proportional to E(pi) exp(gamma * neg_efe). These reported neg_efe values are not directly comparable to risk+ambiguity EFE without sign and convention mapping. No energy unit is declared by this receipt.",
+  "expected_free_energy_convention_summary": "Reported neg_efe = -EFE = expected utility + hidden-state information gain (producer-enabled terms).",
+  "variational_free_energy": [
+    0.7985076904296875,
+    0.2294131964445114,
+    1.840275764465332,
+    0.513369083404541,
+    1.4886035919189453
+  ],
+  "policy_posterior": [
+    [
+      0.4405291974544525,
+      0.5594708323478699
+    ],
+    [
+      0.5468200445175171,
+      0.4531799554824829
+    ],
+    [
+      0.5190485119819641,
+      0.4809514582157135
+    ],
+    [
+      0.5608619451522827,
+      0.4391380846500397
+    ],
+    [
+      0.46721357107162476,
+      0.53278648853302
+    ]
+  ],
+  "simulation_trace": {
+    "observations": [
+      1,
+      0,
+      1,
+      0,
+      1
+    ],
+    "true_states": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "beliefs": [
+      [
+        0.1111111119389534,
+        0.8888888955116272
+      ],
+      [
+        0.9622641801834106,
+        0.03773584961891174
+      ],
+      [
+        0.5769459009170532,
+        0.4230540096759796
+      ],
+      [
+        0.8560514450073242,
+        0.1439485400915146
+      ],
+      [
+        0.3635318875312805,
+        0.6364681124687195
+      ]
+    ],
+    "actions": [
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    "efe_history": [
+      [
+        0.140936940908432,
+        0.15587535500526428
+      ],
+      [
+        0.09782740473747253,
+        0.08608800172805786
+      ],
+      [
+        0.27302321791648865,
+        0.2682587802410126
+      ],
+      [
+        0.17745068669319153,
+        0.16215938329696655
+      ],
+      [
+        0.25628089904785156,
+        0.2644892930984497
+      ]
+    ],
+    "vfe_history": [
+      0.7985076904296875,
+      0.2294131964445114,
+      1.840275764465332,
+      0.513369083404541,
+      1.4886035919189453
+    ],
+    "policy_posterior": [
+      [
+        0.4405291974544525,
+        0.5594708323478699
+      ],
+      [
+        0.5468200445175171,
+        0.4531799554824829
+      ],
+      [
+        0.5190485119819641,
+        0.4809514582157135
+      ],
+      [
+        0.5608619451522827,
+        0.4391380846500397
+      ],
+      [
+        0.46721357107162476,
+        0.53278648853302
+      ]
+    ],
+    "belief_confidence": [
+      0.8888888955116272,
+      0.9622641801834106,
+      0.5769459009170532,
+      0.8560514450073242,
+      0.6364681124687195
+    ]
+  },
+  "observations": [
+    1,
+    0,
+    1,
+    0,
+    1
+  ],
+  "true_states": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1
+  ],
+  "beliefs": [
+    [
+      0.1111111119389534,
+      0.8888888955116272
+    ],
+    [
+      0.9622641801834106,
+      0.03773584961891174
+    ],
+    [
+      0.5769459009170532,
+      0.4230540096759796
+    ],
+    [
+      0.8560514450073242,
+      0.1439485400915146
+    ],
+    [
+      0.3635318875312805,
+      0.6364681124687195
+    ]
+  ],
+  "actions": [
+    1,
+    0,
+    0,
+    0,
+    1
+  ],
+  "model_parameters": {
+    "A_shape": [
+      2,
+      2
+    ],
+    "B_shape": [
+      2,
+      2,
+      2
+    ],
+    "C_shape": [
+      2
+    ],
+    "D_shape": [
+      2
+    ],
+    "num_states": 2,
+    "num_observations": 2,
+    "num_actions": 2,
+    "batch_size": 1,
+    "policy_len": 1,
+    "gamma": 16.0,
+    "alpha": 16.0
+  },
+  "matrix_provenance": {
+    "A": {
+      "source": "InitialParameterization",
+      "shape": [
+        2,
+        2
+      ],
+      "derived": false
+    },
+    "B": {
+      "source": "InitialParameterization",
+      "shape": [
+        2,
+        2,
+        2
+      ],
+      "derived": false,
+      "declared_order": [
+        "next_state",
+        "previous_state",
+        "action"
+      ],
+      "declared_order_explicit": true,
+      "claimed_slice_convention": "rows_next_columns_previous",
+      "detected_order": null,
+      "canonical_order": "next_state_previous_state_action",
+      "contradiction": false,
+      "reason": null,
+      "source_order": "next_state_previous_state_action",
+      "orientation_transformed": false,
+      "normalized": false
+    },
+    "C": {
+      "source": "InitialParameterization",
+      "shape": [
+        2
+      ],
+      "derived": false
+    },
+    "D": {
+      "source": "InitialParameterization",
+      "shape": [
+        2
+      ],
+      "derived": false
+    }
+  },
+  "memory_usage_mb": 252.953125,
+  "peak_memory_mb": 252.953125,
+  "memory_delta_mb": 25.046875,
+  "runtime_metadata": {
+    "output_dir": "output/pymdp_simulations/Static Perception Model",
+    "random_seed": 0,
+    "schema_version": "pymdp_simulation_v1"
+  },
+  "metrics": {
+    "expected_free_energy": [
+      [
+        0.140936940908432,
+        0.15587535500526428
+      ],
+      [
+        0.09782740473747253,
+        0.08608800172805786
+      ],
+      [
+        0.27302321791648865,
+        0.2682587802410126
+      ],
+      [
+        0.17745068669319153,
+        0.16215938329696655
+      ],
+      [
+        0.25628089904785156,
+        0.2644892930984497
+      ]
+    ],
+    "variational_free_energy": [
+      0.7985076904296875,
+      0.2294131964445114,
+      1.840275764465332,
+      0.513369083404541,
+      1.4886035919189453
+    ],
+    "policy_posterior": [
+      [
+        0.4405291974544525,
+        0.5594708323478699
+      ],
+      [
+        0.5468200445175171,
+        0.4531799554824829
+      ],
+      [
+        0.5190485119819641,
+        0.4809514582157135
+      ],
+      [
+        0.5608619451522827,
+        0.4391380846500397
+      ],
+      [
+        0.46721357107162476,
+        0.53278648853302
+      ]
+    ],
+    "belief_confidence": [
+      0.8888888955116272,
+      0.9622641801834106,
+      0.5769459009170532,
+      0.8560514450073242,
+      0.6364681124687195
+    ],
+    "cumulative_preference": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "validation": {
+    "all_beliefs_valid": true,
+    "beliefs_sum_to_one": true,
+    "actions_in_range": true,
+    "pymdp_version_ge_1_0_0": true,
+    "all_valid": true
+  }
+}
