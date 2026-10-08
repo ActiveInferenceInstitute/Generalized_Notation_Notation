@@ -1,6 +1,7 @@
 """Public matrix plotting consumers preserve signed values and scientific axes."""
 
 import csv
+import pickle
 from pathlib import Path
 
 import numpy as np
@@ -204,3 +205,53 @@ def test_public_empty_composed_view_refuses_without_artifact(tmp_path):
     path = tmp_path / "empty.png"
     assert MatrixVisualizer().generate_matrix_composed_view({}, path) is False
     assert not path.exists()
+
+
+def test_public_parsed_overview_keeps_named_values_first_tensor_plane_and_contrast(
+    tmp_path, figures
+):
+    transition = np.array(
+        [
+            [[0.9, 0.4, 0.2, 0.75], [0.2, 0.7, 0.1, 0.55]],
+            [[0.1, 0.6, 0.8, 0.25], [0.8, 0.3, 0.9, 0.45]],
+        ]
+    )
+    signal = np.arange(2 * 3 * 4).reshape(2, 3, 4)
+    parsed = {
+        "parameters": [{"name": "A", "value": [[-2.0, 0.25], [1.5, 3.0]]}],
+        "InitialParameterization": {"B": transition.tolist()},
+        "matrices": [
+            {"name": "Calibration", "data": [[10, 20], [30, 40]]},
+            {"name": "TensorSignal", "data": signal.tolist()},
+        ],
+    }
+    before = pickle.dumps(parsed, protocol=5)
+    visualizer = MatrixVisualizer()
+    matrices = visualizer.extract_from_parsed_gnn(parsed)
+    assert set(matrices) == {"A", "B", "Calibration", "TensorSignal"}
+    path = tmp_path / "overview.png"
+    assert visualizer.generate_combined_matrix_overview(matrices, path)
+    native_png(path)
+    panels = {
+        axis.get_title(): axis for axis in figures[path].axes if axis.get_visible()
+    }
+    expected = {
+        "Matrix A": [[-2.0, 0.25], [1.5, 3.0]],
+        "Matrix Calibration": [[10, 20], [30, 40]],
+        "Tensor B (Slice 0)": [[0.9, 0.2], [0.1, 0.8]],
+        "Tensor TensorSignal (Slice 0)": [[0, 4, 8], [12, 16, 20]],
+    }
+    assert set(panels) == set(expected)
+    for title, values in expected.items():
+        np.testing.assert_array_equal(plot_values(panels[title]), values)
+    text_colors = {
+        text.get_text(): text.get_color() for text in panels["Matrix A"].texts
+    }
+    assert text_colors["-2.00"] == "white" and text_colors["3.00"] == "black"
+    text_colors = {
+        text.get_text(): text.get_color() for text in panels["Tensor B (Slice 0)"].texts
+    }
+    assert text_colors["0.10"] == "black" and text_colors["0.90"] == "white"
+    assert pickle.dumps(parsed, protocol=5) == before
+    np.testing.assert_array_equal(matrices["B"], transition)
+    np.testing.assert_array_equal(matrices["TensorSignal"], signal)
