@@ -95,6 +95,11 @@ def accept(
     script = root / "native_jax.py"
     success, reason, _ = render_gnn_to_jax(source, script, {"num_timesteps": 3})
     _require(success, reason)
+    saved_script = script.read_bytes()
+    _require(
+        "\u221d" in saved_script.decode("utf-8"),
+        "saved JAX scientific source did not preserve its Unicode in UTF-8",
+    )
     native = run_subprocess_envelope(
         [sys.executable, "-I", str(script)],
         cwd=root,
@@ -358,6 +363,8 @@ def accept(
                 json.dumps(source, sort_keys=True).encode()
             ).hexdigest(),
             "script_sha256": _digest(script),
+            "saved_source_encoding": "utf-8",
+            "unicode_source_preserved": True,
             "result_sha256": _digest(result_path),
             "belief_shape": list(beliefs.shape),
             "cleanup_verified": native["cleanup_verified"],

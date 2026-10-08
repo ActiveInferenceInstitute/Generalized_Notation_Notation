@@ -36,7 +36,7 @@ def _render_to_path(
     try:
         code = generator_fn(gnn_spec, options)
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(code)
         logger.info(f"{label} code written to {output_path}")
         return True, f"{label} generated successfully.", [str(output_path)]
