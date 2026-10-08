@@ -3,6 +3,14 @@
 Each checkpoint records its consequential decisions, consumer evidence and
 remaining uncertainty. Status describes the decision, not release completion.
 
+The legacy RxInfer repair is accepted at `500694a943499d7c3fcc6fef2f3cf54ce7b24fc0`:
+34 independently replayed saved-file controls pass. Canonical VFE, timestep and
+covariance objects refuse the legacy reader with current-reader guidance.
+The detached-worker failure remains unexplained after bounded native tracing;
+retain the original failed attempt. A failure-only assertion diagnostic now
+records the supervisor return and owned witness files. Its 39-case replay passes
+with unchanged production behavior, success condition and three-second deadline.
+
 | Decision | Audit | Reason and evidence |
 | --- | --- | --- |
 | Use existing TO-DO as the release scope | Sound; high confidence | User explicitly requested all minor/medium work. A separate plan would duplicate its acceptance criteria; major semantics remain excluded. |

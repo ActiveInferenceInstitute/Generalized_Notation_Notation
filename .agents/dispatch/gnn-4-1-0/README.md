@@ -151,7 +151,7 @@ The full lazy observation run at `96868cbe289d1c318370ed7e143c39193d55a481`
 passed all 7,096 core and 524 MCP cases. The pipeline selection passed 348 of
 349 cases without skips; its complete 38-source Step 8 render passed in 482.82
 seconds. The failed unchanged detached-descendant cleanup case returned
-`FAILED` where `SUCCESS` was required. Native causal diagnosis is pending;
+`FAILED` where `SUCCESS` was required. Native causal diagnosis found no reproduced cause;
 neither a passing repeat nor relaxed cleanup/deadline semantics closes it.
 All three observation hooks were restored and independently confirmed absent.
 Per-lane raw/line-set/source/metadata integrity passed, but the overall receipt
@@ -167,6 +167,21 @@ preserving supported list/legacy and model-kind contracts. Focused documented
 RxInfer legacy file-reader repairs also address duplicate discovery and lost
 zero/scalar values. Canonical VFE/timestep/Gaussian traces must retain their
 distinct current-reader contract; do not relabel them as legacy iterations.
+
+Checkpoint `500694a943499d7c3fcc6fef2f3cf54ce7b24fc0` integrates the bounded
+legacy RxInfer saved-file repair. Independent replay passed all 34 original and
+new saved-file controls without skips, preserving five public signatures and
+imports. Canonical payloads receive explicit current-reader guidance rather
+than losing VFE, timestep or covariance semantics.
+
+The detached-worker investigation retained the original failed receipt. Ten
+unchanged native repeats, all 39 related cases and two exact observer pilots
+passed with the original three-second deadline. Traces showed one leader reap
+and no competing wait owner or query error; these observations do not explain
+the earlier failure. The assertion now preserves the complete supervisor result
+and owned fixture states on failure. Independent replay passed all 39 cases;
+production cleanup and success conditions remain unchanged. Require the next
+complete integrated selection to pass before release.
 
 The installed-platform workflow now explicitly selects and verifies the exact
 candidate revision before building. The maintained workflow indexes include

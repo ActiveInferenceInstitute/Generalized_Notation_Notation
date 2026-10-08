@@ -29,6 +29,10 @@ checks alone cannot establish publication or the full supported matrix.
   records; typed schema, GUI, interchange, destination and source failures
   preserve the original diagnosis. Round-trip helpers persist distinct format
   artifacts from the actual supplied source, including concurrent namesakes.
+- Legacy RxInfer saved-file APIs preserve numeric zero and scalar posterior
+  values and collect each matching file once. Canonical VFE, timestep and
+  Gaussian covariance payloads retain the current reader's contract and receive
+  explicit guidance when supplied to a legacy reader.
 - Descriptor-relative POSIX directory, lease and deletion operations enforce
   the documented trusted-parent boundary. Bounded owned process supervision
   verifies cleanup and stream drainage; failed cleanup retains artifacts and
