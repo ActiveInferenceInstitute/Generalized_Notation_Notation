@@ -5,6 +5,21 @@ The user authorized completing every minor and medium workstream in the
 acceptance; this handoff records integration ownership and outstanding evidence.
 Major scientific extensions remain outside this release campaign.
 
+The latest independently replayed checkpoint `682e62f16` passed 96 actual
+public generation, generic visualization, saved meta-analysis/report and
+configuration/CLI cases in 25.39 seconds, with zero failures, errors or skips.
+These include native DisCoPy diagrams and exports, compiled PyMDP source,
+actual Steps 3/8/23 artifacts and historical saved-result consumers. The
+historical fixtures explicitly qualify their producer/source identity and do
+not establish current backend execution. Focused acceptance does not replace
+the complete final-source coverage, installed-platform or publication gates.
+
+Two newly exposed saved-input boundaries remain under repair before source
+freeze: authored nested JSON booleans across both Markdown readers and safe
+PyMDP model-name embedding. Preserve their original failing receipts and the
+existing parser bounds. The final ownership census, full native selectors,
+manuscript rendering and exact companion/publication checks remain pending.
+
 Frozen starting revision: `e5461954f45314cfea77b2cf06818e060f68bd0a`.
 The integration branch is `codex/gnn-4.1.0`. Implementation workers use separate
 worktrees and return local commits; the integrator owns publication and custody.

@@ -44,6 +44,16 @@ checks alone cannot establish publication or the full supported matrix.
 - Processing reports accept their native structural and typed validation
   results. A processing run reports failure for missing, empty or failed
   required reports and preserves completed partial artifacts and diagnoses.
+- Pipeline report aggregation honors the caller's requested formats and refuses
+  regular-file inputs before creating reports. Saved-run replay retains its
+  historical identity; unsupported formats and partial writer failures preserve
+  the documented best-effort outcome and actual completed-file summary.
+- Generated PyMDP specification literals preserve authored strings containing
+  JSON keywords. DisCoPy programs serialize model names safely, preserving
+  quotes, backslashes, newlines and Unicode in actual exported metadata.
+- GUI 1 edits recognize the canonical state-space section, retain following
+  sections and preserve the authored newline style. Ontology readers recognize
+  labeled concepts, relations, properties and annotations before bare mappings.
 - Runtime validation uses the caller's absolute input/output paths and requires
   a canonical summary bearing its fresh invocation identity. Inherited summaries
   and workspace package shadows cannot establish current execution success.
@@ -63,6 +73,9 @@ checks alone cannot establish publication or the full supported matrix.
   and sampled animation review retains source/data/artifact hashes.
   Advanced POMDP plots use all canonical action planes, with previous state on
   the horizontal axis and next state on the vertical axis.
+  Small correlation views use an explicit symmetric domain from the actual
+  finite values; an all-zero matrix uses a visible unit display domain without
+  modifying its numbers. Large views retain their existing presentation.
 - Lossless production PNG encoding defaults to level 3 while preserving caller
   overrides. Two paired rounds across all 552 production PNGs measured 5.48%
   less median encoder CPU and 3.07% more bytes with identical decoded pixels,

@@ -55,3 +55,9 @@ with unchanged production behavior, success condition and three-second deadline.
 
 Update this ledger after each implementation/review pass. Evidence from an old
 head cannot certify a changed source or final release.
+
+| Decision | Audit | Reason and evidence |
+| --- | --- | --- |
+| Preserve authored display strings in generated programs | Sound; focused native repair accepted | Public PyMDP literals no longer rewrite JSON words inside strings; actual DisCoPy programs compile and export quoted/Unicode names unchanged. Root's integrated 96-case replay passes. A separate PyMDP template-name defect remains under repair; generation alone does not establish inference success. |
+| Honor requested report formats without inventing a new writer policy | Sound; native repair accepted | Actual Steps 3/8/23 receipts and saved-run replay verify directory admission, caller-list preservation, requested formats, mixed unsupported selections and retained partial files. Historical fixtures retain their original identities and explicit capture limits. |
+| Keep finite CLI and artifact consumers separate from final coverage | Sound; native acceptance qualified | Root verifies native saved configurations, static complexity/parse receipts, generic plots and rich artifact exports. Partial same-source line intersections are diagnostic only; no worker sums or cross-environment union close the strict >80% goal. |
