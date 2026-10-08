@@ -7,6 +7,31 @@ A supported release must have successful native receipts for its exact source;
 a resolvable wheel plan or classifier alone does not establish support.
 The full source test suite remains a separate Python 3.11–3.13 matrix.
 
+## Version 4.1.0 installed evidence
+
+The exact ordinary wheel/source/lock/environment and native results belong to
+this version's [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0). Each lane runs outside the
+checkout with complete nonzero selected cases and zero failures/errors/skips.
+Full source coverage remains a separate three-Python acceptance record.
+
+| Native lane | Source-bound ordinary-wheel acceptance record |
+| --- | --- |
+| Linux / Python 3.11 | Python 3.11.16: 8 THRML and 27 boundary cases passed, zero failures/errors/skips; [ordinary installed-wheel job](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37761366047/job/113258292335) at `6be1506cac5957973dff8edeaf77e84e2e7ceb46` |
+| Linux / Python 3.12 | Python 3.12.14: 8 THRML and 27 boundary cases passed, zero failures/errors/skips; [ordinary installed-wheel job](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37761366047/job/113258292056) at `6be1506cac5957973dff8edeaf77e84e2e7ceb46` |
+| Linux / Python 3.14 | Python 3.14.8: 8 THRML and 27 boundary cases passed, zero failures/errors/skips; [ordinary installed-wheel job](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37761366047/job/113258292476) at `6be1506cac5957973dff8edeaf77e84e2e7ceb46` |
+| macOS / Python 3.14 | Python 3.14.7: 8 THRML and 27 boundary cases passed, zero failures/errors/skips; [ordinary installed-wheel job](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37761366047/job/113258292540) at `6be1506cac5957973dff8edeaf77e84e2e7ceb46` |
+| Windows / Python 3.14 | Python 3.14.7: 8 THRML and 15 boundary cases passed, zero failures/errors/skips; [ordinary installed-wheel job](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37761366047/job/113258292329) at `6be1506cac5957973dff8edeaf77e84e2e7ceb46` |
+
+Core/API/scientific Python 3.14 acceptance does not admit GUI callbacks. Released
+Gradio 6.29.1 source assessment finds the same deprecated asyncio wrapper before
+its later changed Blocks predicate. This preserves the strict callback blocker;
+it is not an upgrade, warning suppression or new native 6.29.1 acceptance.
+The frozen dependency lock remains authoritative. Native Windows acceptance
+requires actual payload identity and original cancellation predicates; macOS
+diagnostics or a terminal launcher alone do not establish it. The security
+owner's [filesystem contract](../security/filesystem_boundaries.md) defines
+the precise native guarantee and launcher boundary.
+
 ## Installation boundary
 
 Each runner builds one wheel from its tested revision and exports runtime

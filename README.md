@@ -1,6 +1,6 @@
 # GeneralizedNotationNotation (GNN)
 
-**Last Updated**: 2026-10-07
+**Last Updated**: 2026-10-08
 
 <div align="center">
 
@@ -63,13 +63,14 @@
 **New in v3.5.0 ("Surface Truth & Integration")**: website step-20 statuses come from the recorded pipeline execution summary instead of directory heuristics, MCP speaks the standard 2024-11-05 protocol in both transports with three new tools (`extract_pomdp`, `generate_dependency_graph`, `template.pull`) plus a `gnn_delete_run` parity tool (registry 142→146), `DELETE /api/v1/runs/{run_hash}` gains full run control (cancellation with process-group teardown, artifact removal, honest timeout status), GUI launches are HTTP-verified with one shared status schema and a new `gnn gui` CLI subcommand, one canonical framework tuple drives every framework list, and LSP diagnostics track in-editor edits.
 **New in v4.0.0 ("Current-run Reliability")**: frozen model selection and stable path identities bind artifacts to one invocation; strict probability and Gaussian validation rejects malformed scientific inputs; execution and LLM calls share bounded process supervision; full-corpus LLM scheduling reports incomplete work accurately; manuscript gates bind rendered Markdown/TeX to the token commit; and released [cpomdp](docs/gnn/implementations/cpomdp.md) and [THRML](docs/gnn/implementations/thrml.md) require explicit experimental selection. THRML estimates finite categorical posterior trajectories under fixed actions; its CPU/JAX simulation does not establish hardware execution. Source-bound comparison admission also keeps unrelated models and inference modes separate and derives Gaussian uncertainty from covariance. Read the [v4 migration](docs/development/run_ownership_migration.md) before consuming new run artifacts.
 
-**Version 4.1.0 — Public contracts and native boundaries.** Shared public admission,
+**Current software version 4.1.0 — Public contracts and native boundaries.** Shared public admission,
 current-run receipts, descriptor-based filesystem operations and bounded owned
 cleanup accompany clearer scientific figures, typed diagnostics and ordinary
 installed-wheel acceptance. The [4.1.0 changelog](CHANGELOG.md#410---2026-10-08)
 and [migration guide](docs/development/run_ownership_migration.md) describe the
-changes and precise limits. Release publication requires exact-source native,
-coverage, manuscript and companion gates. The previous published
+changes and precise limits. Exact-source native, coverage, manuscript and companion records bind the
+[4.1.0 GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0). Its tag/source/check/artifact identities,
+not version metadata alone, establish acceptance. The previous published
 [4.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1)
 and its [publication receipt](docs/development/gnn_4_0_1_post_publication.json)
 retain their original identities. [TO-DO.md](TO-DO.md) contains remaining work.

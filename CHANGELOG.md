@@ -16,6 +16,19 @@ bounded minor/medium campaign. Exact release, installed-platform and custody
 acceptance is recorded by the release's source-bound receipts; local focused
 checks alone cannot establish publication or the full supported matrix.
 
+### Source and native acceptance records
+
+Current software version is **4.1.0**. Its [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0) records exact tag, source, checks and artifacts; version metadata alone does not establish acceptance.
+The [ownership review](docs/development/gnn_4_1_0_ownership_review.json) preserves
+historical epochs and the aa45 census: 759 source files, 1,148 exact Exception
+and 1,159 broad handlers, with nine extraction hashes unchanged. Scoped proxy 118
+does not establish lower algorithmic complexity. Separate
+[coverage](docs/development/native_comprehensive_coverage.md) and
+[installed](docs/development/installed_platform_acceptance.md) records carry
+actual source/environment/native results. The 201/33/27 focused selections and
+18 source gates retain original epochs, not percentages or Windows acceptance.
+Historical failed/incomplete attempts are preserved without success relabeling.
+
 ### Changed
 
 - Python, CLI, REST and MCP execution share strict typed admission, live backend
@@ -119,6 +132,11 @@ checks alone cannot establish publication or the full supported matrix.
   title without averaging N-axis and T-axis fits. Watermarks use the canonical
   package version with the actual generation time. Saved source-size tables
   retain their counts without inferring cubic growth from line counts alone.
+- Partial saved ActiveInference.jl analysis resolves each model's actual CSV
+  path before recovery, preserving signed EFE, observation/action/belief
+  identity and decoded plot data. Malformed numeric CSV rows are refused
+  atomically; missing files do not invent observations. Saved NumPyro-labelled
+  consumer fixtures establish report behavior without claiming backend execution.
 - Lossless production PNG encoding defaults to level 3 while preserving caller
   overrides. Two paired rounds across all 552 production PNGs measured 5.48%
   less median encoder CPU and 3.07% more bytes with identical decoded pixels,
@@ -136,7 +154,9 @@ checks alone cannot establish publication or the full supported matrix.
 - Externally observable authored-parser, backend-result, scientific-artifact,
   public-admission and saved-round-trip behavior checks. Original core coverage
   scope and its 60% enforced floor are preserved. The >80% per-environment goal
-  requires accepted complete reports; focused coverage does not close it.
+  is accepted independently on all three full native environments. Comprehensive
+  CI now enforces an 80% floor and the strict integer >80% comparison; focused
+  coverage does not substitute for those reports.
 - A bounded real Step 8 developer benchmark records source/configuration hashes,
   per-phase wall/process CPU, sampled process-tree RSS and actual artifacts.
 - Separate native comprehensive coverage reports preserve exact source and

@@ -1,9 +1,11 @@
 # GNN Version Map
 
-One-stop map of release changes and authoritative records. This checkout's
-package version is **4.1.0**. Its [changelog](../CHANGELOG.md#410---2026-10-08)
-describes the bounded minor/medium campaign and remaining acceptance. Exact
-publication requires final native/source gates and companion/manuscript custody.
+One-stop map of release changes and authoritative records. Current
+software version is **4.1.0**. Its [changelog](../CHANGELOG.md#410---2026-10-08)
+describes the bounded minor/medium campaign. Its [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0)
+records exact tag/source/check/artifact identities; version metadata alone does
+not establish acceptance. Native coverage, ordinary installation and manuscript/
+companion custody remain distinct source-bound records.
 The previous published **4.0.1** release and its
 [publication receipt](development/gnn_4_0_1_post_publication.json) retain their
 original source identity and limits. The manuscript authored epoch remains
@@ -11,7 +13,7 @@ original source identity and limits. The manuscript authored epoch remains
 
 | Version | Date | Theme | Primary record |
 | --- | --- | --- | --- |
-| 4.1.0 | 2026-10-08 | Public contracts, native boundaries, scientific presentation and measured encoder tradeoffs; exact acceptance required | [CHANGELOG §4.1.0](../CHANGELOG.md) |
+| 4.1.0 | 2026-10-08 | Public contracts, native boundaries, scientific presentation and measured encoder tradeoffs | [CHANGELOG §4.1.0](../CHANGELOG.md), [exact version record](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0) |
 | 4.0.1 | 2026-10-07 | GUI and dependency security fixes, truthful LLM summaries and complete-input subprocess delivery; scientific/dispatch issue closeout | [CHANGELOG §4.0.1](../CHANGELOG.md) |
 | 4.0.0 | 2026-10-07 | Current-run model identity, strict scientific validation, shared deadlines and readiness, full-corpus LLM scheduling, manuscript custody, typed distributed execution, experimental cpomdp control and THRML categorical smoothing, explicit independent Gaussian agents | [CHANGELOG §4.0.0](../CHANGELOG.md) |
 | 3.6.0 | 2026-09-26 | Composability & Offline Truth: step-20 website per-model detail pages with breadcrumbs and client-side search, pure-dict `generate_website(..., filesystem=False)` with zero disk collection, dependency-free step-catalogue leaf module, fully offline assets (system font stack, JSON-LD + meta, atomic manifest), complexity-estimator subpackage + benchmark CLI subcommands, dashboard fold-and-delete into MCP artifact tools, six website dead-seams wired-or-removed (`website_html_filename` gone end-to-end), render band splits (`pomdp_processor` + `processor` packages), execute/processor band split, GEO-INFER consumer conformance suite | [CHANGELOG §3.6.0](../CHANGELOG.md) |
@@ -36,7 +38,7 @@ original source identity and limits. The manuscript authored epoch remains
 - `pyproject.toml` `version`
 - `CHANGELOG.md` release heading + compare links
 - `CITATION.cff`
-- `TO-DO.md` "Current Version" line
+- `TO-DO.md` current software version and remaining-scope counts
 - Release test-evidence claims in `docs/releases/`
 - `src/gnn/__init__.py` `__version__` (documented in [gnn/modules/init.md](gnn/modules/init.md); kept in lock-step with `pyproject.toml` at every release since 3.2.0)
 - Package-version lines in [gnn/README.md](gnn/README.md), [gnn/AGENTS.md](gnn/AGENTS.md) and [gnn/reference/SPEC.md](gnn/reference/SPEC.md)

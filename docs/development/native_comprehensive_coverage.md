@@ -3,10 +3,28 @@
 The [native coverage observer](../../scripts/run_comprehensive_native_coverage.py)
 produces a separate comprehensive report for each supported Python environment.
 The existing core CI selector, its report, all coverage source/omit/exclude rules,
-and the enforced 60% floor remain unchanged. The roadmap's **>80%** target requires
-fresh full reports from Python 3.11, 3.12 and 3.13 before raising a floor.
+and the enforced core 60% floor remain unchanged. Comprehensive acceptance enforces an 80% floor plus the strict
+**>80%** integer comparison independently on Python 3.11, 3.12 and 3.13.
 The [hosted workflow](../../.github/workflows/comprehensive-native-coverage.yml)
 uses three independent jobs, checking out each exact candidate revision.
+
+## Version 4.1.0 native evidence
+
+The exact source/environment/lane outcomes and raw line-set custody belong to
+this version's [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0). The strictly greater than
+80% target is checked with integers, separately for every environment. Focused
+counts and earlier failed/incomplete observation epochs remain historical.
+
+| Python | Covered/statements, strict integer result and source-bound receipt |
+| --- | --- |
+| 3.11 | 65,310/81,628 statements (80.009311%); `5 × 65310 > 4 × 81628` passes; [complete five-lane run](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37761366053) at `6be1506cac5957973dff8edeaf77e84e2e7ceb46` |
+| 3.12 | 65,313/81,628 statements (80.012986%); `5 × 65313 > 4 × 81628` passes; [complete five-lane run](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37761366053) at `6be1506cac5957973dff8edeaf77e84e2e7ceb46` |
+| 3.13 | 65,317/81,628 statements (80.017886%); `5 × 65317 > 4 × 81628` passes; [complete five-lane run](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/37761366053) at `6be1506cac5957973dff8edeaf77e84e2e7ceb46` |
+
+Each declared dev/api/gui/thrml/cpomdp environment requires all five complete
+lanes, nonzero selected cases and zero failures/errors/skips. Preserve the
+original denominator/exclusions, worker count, core floor and deadlines.
+Foreign/inferred execution or cross-source/environment unions do not qualify.
 
 ## Run a provisioned environment
 
@@ -144,13 +162,19 @@ matching completed lane receipts and
 must select real tests and finish without failures, errors or skips. The
 original full-source denominator, exclusions and per-lane deadline also apply
 to these optional lanes. The existing core 60% gate remains unchanged; the
-comprehensive union's 60% floor is checked separately, rather than on each
-small optional lane.
+comprehensive union's 80% floor and strict integer comparison are checked
+separately, rather than imposing that floor on each small optional lane.
 The observer's zero exit status certifies the selected run and its receipts;
 it does not enforce a percentage threshold. Keep the original core floor check.
 
 For the roadmap target, compare integers: `5 * covered_lines > 4 * num_statements`
 for **each** supported environment. The display-rounded percentage is not an
-acceptance test. A future enforced floor needs accepted final-source evidence.
+acceptance test. The hosted workflow enforces this strict target after writing the integer totals;
+its separate coverage report retains the percentage floor diagnostic.
 The outer deadline bounds the pytest command/process group; it does not certify
 cleanup of detached descendant sessions.
+
+The accepted source epoch above has its own immutable raw custody seal
+`faff9ad64547fb61b7d71cb4b194c11c98f97ae5784b32b333d6ef7260246579`.
+The release/main/tag runs independently re-execute the declared gates; these
+source-bound results are never relabelled as execution at a later commit.

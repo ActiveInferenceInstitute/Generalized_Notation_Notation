@@ -5,7 +5,51 @@ The user authorized completing every minor and medium workstream in the
 acceptance; this handoff records integration ownership and outstanding evidence.
 Major scientific extensions remain outside this release campaign.
 
-The latest independently replayed checkpoint `682e62f16` passed 96 actual
+## Current source and retained acceptance epochs
+
+Current software version is **4.1.0**. Its [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0) records exact tag, source, checks and artifacts; version metadata alone does not establish acceptance.
+Independent source review at `6be1506cac5957973dff8edeaf77e84e2e7ceb46` reproduces 759
+source Python files, 1,148 exact Exception handlers and 1,159 broad handlers.
+All nine original extraction hashes retain their accepted bytes. The maximum
+scoped decision proxy is 118, not an algorithmic complexity improvement.
+
+The 201-case integration retains source `63be7d35bcc88a6133f86a09879909c50c14eef1`;
+18 source gates retain `d13e2a885f83b4089487ab097ef36b078f3b8b24`;
+33 LOC regressions retain `50e8b8a3133e9510c191c45773dfa9f8d9d4d9d2`;
+27 filesystem diagnostics retain aa45/macOS. These counts are not pooled,
+metadata is not every installed byte, and macOS is not Windows acceptance.
+Original failures, observer collisions, incomplete databases and below-target
+coverage remain intact. Separate [coverage](../../../docs/development/native_comprehensive_coverage.md)
+and [installed](../../../docs/development/installed_platform_acceptance.md)
+records must meet their own three strict integer and five native environment gates.
+
+The original Windows diagnostic distinguishes an exited launcher from a live
+venv payload. An unsignaled wait result 258 with exit code 0 is not process-death
+evidence. The original
+failed assertion, budgets and payload identity are preserved; no production
+cleanup fix or descendant guarantee follows. The security owner's actual native
+identity proof and final matrix remain required.
+Released Gradio 6.29.1 source assessment retains the strict Python 3.14 callback
+blocker without upgrade or new native acceptance. Strict positive THRML remains;
+released structural-zero and full distribution archival scope remain external.
+DisCoPy Matrix evaluation and GEO optional derived-provenance interchange remain
+unsupported. Full SC-22, final companion/pair/main and public artifact custody
+remain distinct from source review; major S1/E1-E4 scope is unchanged.
+
+At `6be1506cac5957973dff8edeaf77e84e2e7ceb46`, all three complete five-lane coverage reports pass the strict
+integer >80% target independently. All five ordinary-installed platform lanes
+pass with 163 environment-specific THRML/boundary case executions and zero
+failures, errors or skips. Windows binds the actual direct worker PID/birth
+identity and confirms termination after handle closure; this does not admit
+descendant containment. The 86-case affected-consumer/API selection and 18
+source audits also pass at this epoch. Native packets stay bound to that
+revision; manuscript, companions, main/tag and downloaded artifacts have
+their own subsequent records. S3/E5 external and major scope remains open.
+
+Checkpoint narratives below are historical and retain their recorded status,
+including superseded pending statements and failed attempts.
+
+The historical independently replayed checkpoint `682e62f16` passed 96 actual
 public generation, generic visualization, saved meta-analysis/report and
 configuration/CLI cases in 25.39 seconds, with zero failures, errors or skips.
 These include native DisCoPy diagrams and exports, compiled PyMDP source,

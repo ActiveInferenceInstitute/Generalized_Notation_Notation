@@ -333,17 +333,26 @@ deliberately broader than this artifact graph.
 The [patch publication receipt](docs/development/gnn_4_0_1_post_publication.json)
 records source/tag identities, exact GNN/FEP/GEO gates, issue acceptance and
 provider alert closure. Preserve historical receipts and their source epochs.
-This checkout prepares package 4.1.0. Published 4.0.1 retains its original
-source, checks and artifacts; candidate version metadata alone does not prove
-4.1.0 publication. Remaining capability limits are in [TO-DO.md](TO-DO.md).
+Current software version is **4.1.0**. Its [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0) records exact tag, source, checks and artifacts; version metadata alone does not establish acceptance.
+Historical 4.0.1 retains its original source, checks and artifacts. Remaining
+capability limits are in [TO-DO.md](TO-DO.md).
 
-The 4.1.0 campaign follows the existing minor/medium scope in TO-DO. Its
+The bounded 4.1.0 implementation retains its source reviews and separate native
+acceptance records. Its
 [integration handoff](.agents/dispatch/gnn-4-1-0/README.md) records owners,
 dependencies and acceptance order. The
 [installed-platform guide](docs/development/installed_platform_acceptance.md)
 separates native wheel evidence from source-test coverage, and the
 [exact-version archival procedure](docs/releases/exact_version_archival.md)
 separates concept DOI, source archive and distribution artifact acceptance.
+
+The [ownership review](docs/development/gnn_4_1_0_ownership_review.json)
+records the aa45 source epoch: 759 Python files, 1,148 exact Exception handlers
+and 1,159 broad handlers, with nine original extraction hashes unchanged.
+The maximum scoped decision proxy is 118; this is not algorithmic complexity
+reduction. Python 3.14 GUI callbacks and experimental DisCoPy Matrix evaluation
+remain unsupported. Per-environment coverage, installation and custody records
+remain separate from focused consumer counts.
 
 ### v4.0.0 "Current-run Reliability" (2026-10-01 implementation)
 

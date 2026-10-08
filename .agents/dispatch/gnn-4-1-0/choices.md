@@ -68,3 +68,18 @@ head cannot certify a changed source or final release.
 | Keep saved-format failures causal and retain already-authored metadata | Sound; native repair accepted, independent review pending | Installed PyYAML accepts comments and refuses syntax/tag errors; JSON/YAML reopening retains step sizes and the schema facade exposes canonical enum values. The original six failures remain archived; 20 unchanged witnesses and 584 existing regressions plus ten subtests pass. The dependency-absent parser remains unchanged, and the migration is explicit. |
 | Require nonempty successful JUnit in every native coverage lane | Sound; independently reviewed declaration repair | Pytest can return zero with skips. The observer now refuses missing/empty or failed/errored/skipped status-zero results, and the hosted validator independently checks each exact requested lane. Original failed runs still retain raw diagnostics. |
 | Provision optional native lanes explicitly | Sound; declaration reviewed, native and whole-matrix acceptance pending | Existing locked GUI/THRML/CPOMDP extras permit real public consumers. Ordinary callers retain core/MCP/pipeline defaults; explicit optional lanes retain provenance, raw uploads, denominator and deadlines. Never pool the earlier environment's report or infer >80% from focused tests. |
+
+## Final-source review boundaries
+
+Earlier rows retain their original epochs and uncertainty. Current software
+4.1.0 binds acceptance to exact native records and its version release.
+
+| Decision | Audit | Reason and evidence |
+| --- | --- | --- |
+| Preserve original ownership epochs | Independently reconciled source scope | aa45 has 759 Python files, 1,148 exact Exception and 1,159 broad handlers; nine original hashes match. Scoped proxy 118 is not algorithmic complexity improvement. |
+| Preserve existing public/scientific admission owners | Reviewed bounded scope | UTF-8 CLI settings restore, canonical THRML caps stay live, and cycle refusal retains trusted-parent limits. The 201/33/27 and 18-gate records retain their tested epochs. |
+| Keep saved runtime and LOC prose descriptive | Reviewed native saved-file scope | Fits/table values are unchanged; fixed exponents, mixed-axis global averages, stale watermark and cubic LOC inference are corrected. Authored diagnostic times are not measurements. |
+| Diagnose the Windows launcher separately from its payload | Actual native acceptance required | A dead launcher does not prove the distinct venv payload dead; wait result 258 with exit code 0 is unsignaled. Preserve failed assertions, budgets and payload identity; macOS is not Windows or descendant evidence. |
+| Preserve strict Python 3.14 GUI refusal | Released-source assessment, no upgrade | Gradio 6.29.1 still enters the deprecated wrapper before its later Blocks predicate. No new native run, warning suppression or lock change is inferred. |
+| Keep GEO optional producer provenance distinct from current schemas | Current support boundary | The three explicit-metadata schemas remain; current GEO rejects metadata_derivation. An accepting paired consumer contract is required. |
+| Close native work from complete exact-source results only | Separate environment gates | S6 needs three strict integer reports; M8 needs five ordinary-installed native lanes. No focused sums, skipped cases, old source or incomplete receipt substitutes. External and major work stays open. |

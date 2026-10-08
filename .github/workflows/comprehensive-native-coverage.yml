@@ -86,11 +86,15 @@ jobs:
               summary.write(f"\nComprehensive native Python {os.environ['UV_PYTHON']}: "
                             f"{totals['covered_lines']}/{totals['num_statements']} statements. "
                             f"Roadmap >80% target observed: {target_observed}.\n")
+          assert target_observed, (
+              f"Strict >80% comprehensive target not met: "
+              f"{totals['covered_lines']}/{totals['num_statements']} statements"
+          )
           PY
-      - name: Preserve original percentage floor
+      - name: Enforce comprehensive percentage floor
         run: |
           uv run --frozen --no-sync python -m coverage report \
-            --rcfile="$NATIVE_COVERAGE_OUTPUT/coverage-comprehensive.toml" --fail-under=60
+            --rcfile="$NATIVE_COVERAGE_OUTPUT/coverage-comprehensive.toml" --fail-under=80
       - name: Upload native receipts and reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

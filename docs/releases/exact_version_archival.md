@@ -31,7 +31,10 @@ records the public checksum, DOI resolution and source parity.
 The GitHub integration source ZIP does **not** include the separately attached
 GitHub release wheel, sdist or `SHA256SUMS`. Source archival is verified;
 complete distribution-asset archival has additional acceptance requirements.
-No v4.1.0 DOI has yet been observed or assigned here.
+A 4.1.0 version DOI is established only by its actual provider record, exact
+metadata and downloaded source/distribution/manuscript parity. Keep the
+archive-verification receipt among the version's release assets; do not assign
+a DOI from expectation or reuse a historical DOI as the current software DOI.
 
 ## GNN 4.1.0 archival acceptance
 

@@ -25,7 +25,7 @@ scientific workflow** spanning parsing, validation, visualization, simulation,
 analysis and publication. Researchers can inspect model assumptions in text;
 developers can use the installed `gnn` Python package, CLI and service interfaces.
 
-**Version:** [GNN 4.1.0](../CHANGELOG.md#410---2026-10-08). Exact publication and native-platform acceptance are recorded in release receipts. The previous published [4.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1) retains its own checks and assets.
+**Current software version:** [GNN 4.1.0](../CHANGELOG.md#410---2026-10-08). Its [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0) records exact tag/source/check/artifact identities; version metadata alone does not establish acceptance. The previous published [4.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1) retains its own checks and assets.
 **Page updated:** 2026-10-08. Package metadata is canonical in
 [pyproject.toml](../pyproject.toml); release history is in [CHANGELOG.md](../CHANGELOG.md).
 
@@ -80,7 +80,7 @@ platform/runtime acceptance is tracked in [TO-DO.md](../TO-DO.md).
 ### Install the released source
 
 ```bash
-git clone --branch v4.0.1 --depth 1 https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git
+git clone --branch v4.1.0 --depth 1 https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git
 cd Generalized_Notation_Notation
 uv sync --frozen --python 3.12
 ```
@@ -279,7 +279,13 @@ workflow. The [module documentation index](../docs/gnn/modules/README.md) and
 
 ## Release artifacts and citation
 
-The [4.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1)
+Current software **4.1.0** uses its [version release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0)
+for ordinary wheel/sdist, manuscript, source-bound verification records and
+[checksums](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.1.0/SHA256SUMS).
+Actual tag/source/check identities and directly downloaded asset hashes establish
+acceptance.
+
+Historical release evidence follows. The [4.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1)
 contains the wheel, source distribution, manuscript, source-binding and
 verification receipts, plus [SHA256SUMS](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/SHA256SUMS).
 Read the [published manuscript PDF](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/GNN-4.0.1-manuscript.pdf)
@@ -310,8 +316,7 @@ are separate decisions.
 
 | Effort | Upcoming scope |
 | --- | --- |
-| [Minor](../TO-DO.md#minor-work) | Documentation, diagnostics/dependency ratchets, released THRML fix verification, scientific presentation and archival publication |
-| [Medium](../TO-DO.md#medium-work) | Module ownership, execution/interface contracts, filesystem/platform boundaries, meaningful coverage, measured performance and installed-package acceptance |
+| [Minor](../TO-DO.md#minor-work) | Released THRML structural-zero verification and exact-version archival |
 | [Major](../TO-DO.md#major-work) | Full-source long-context LLM processing, coupled continuous agents, THRML/cpomdp extensions and formal-to-numerical semantics |
 
 ## Contributing and support
