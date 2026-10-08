@@ -245,7 +245,6 @@ class SweepRuntimePlotMixin:
             ax = axes[ax_idx]
             ax.set_facecolor(_STYLE["axis_bg"])
 
-            all_exponents: list[Any] = []
             for fw in frameworks:
                 fw_records = [
                     r
@@ -312,7 +311,6 @@ class SweepRuntimePlotMixin:
                                 np.polyfit(log_x, log_y, 1, full=True)
                             )
                             exponent = coeffs[0]
-                            all_exponents.append(exponent)
 
                             # R^2 calculation
                             y_mean = np.mean(log_y)
@@ -403,9 +401,8 @@ class SweepRuntimePlotMixin:
                 )
 
         # Global Title
-        avg_exp = np.mean(all_exponents) if all_exponents else 0
         fig.suptitle(
-            f"Empirical Scaling Analysis (Avg Exponent α={avg_exp:.2f})",
+            "Descriptive fits to saved runtime observations",
             color=_STYLE["text_color"],
             fontsize=_STYLE["title_size"] + 2,
             fontweight="bold",
