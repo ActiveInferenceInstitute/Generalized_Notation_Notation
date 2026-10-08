@@ -62,6 +62,14 @@ Consumed `**kwargs`: `strict_validation` (default `False`), `recursive` (default
 #### `parse_gnn_ontology_section(content: str) -> Dict[str, Any]`
 Extracts the ontology annotation section from GNN Markdown content.
 
+Within `## Ontology` or `## ActInfOntologyAnnotation`, the case-insensitive
+`Concept`, `Relation`, `Property` and `Annotation` colon labels (including their
+plural forms) keep their complete value. For example, `Annotation: s=HiddenState`
+produces the mapping `s=HiddenState`, and `Annotation: HiddenState` produces a
+bare-term annotation. Unlabeled mappings such as `s=HiddenState` remain supported.
+Other sections are excluded; unrecognized colon labels retain the existing bare
+mapping behavior when their line contains `=`.
+
 #### `load_defined_ontology_terms(ontology_terms_file: Path | None = None, *, search_paths: Sequence[Path] | None = None) -> Dict[str, Any]`
 Loads the ontology term dictionary (default: bundled `act_inf_ontology_terms.json`). An explicit file is authoritative and fails closed; the optional `search_paths` keyword is a dependency-injection hook for tests and alternate installs (warn-and-continue on misses, then built-in defaults).
 
