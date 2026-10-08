@@ -128,10 +128,13 @@ def accept(
             cwd=root,
             capture_output=True,
             text=True,
+            encoding="utf-8",
             timeout=45,
             check=False,
         )
-        (root / f"cli-{command[0]}.log").write_text(child.stdout + child.stderr)
+        (root / f"cli-{command[0]}.log").write_text(
+            child.stdout + child.stderr, encoding="utf-8"
+        )
         _require(child.returncode == 0, f"CLI {command[0]} failed: {child.stderr}")
         cli[command[0]] = child.returncode
     missing = subprocess.run(
@@ -139,6 +142,7 @@ def accept(
         cwd=root,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=30,
         check=False,
     )
@@ -168,6 +172,7 @@ def accept(
             cwd=root,
             capture_output=True,
             text=True,
+            encoding="utf-8",
             timeout=30,
             check=False,
         )

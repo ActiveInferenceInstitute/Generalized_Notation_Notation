@@ -76,6 +76,7 @@ from gnn.cli.helpers import (
     _print_extract_error,
     _render_yaml,
     _setup_logging,
+    _utf8_output_streams,
 )
 from gnn.cli.parser import build_parser
 
@@ -127,40 +128,41 @@ SUBCOMMANDS: Final[tuple[str, ...]] = tuple(sorted(COMMAND_HANDLERS))
 
 def main(argv: Optional[List[str]] = None) -> int:
     """CLI entrypoint."""
-    parser = build_parser()
-    args = parser.parse_args(argv)
+    with _utf8_output_streams():
+        parser = build_parser()
+        args = parser.parse_args(argv)
 
-    # Setup logging
-    _setup_logging(verbose=bool(getattr(args, "verbose", False)))
+        # Setup logging
+        _setup_logging(verbose=bool(getattr(args, "verbose", False)))
 
-    # Ensure src/ is on sys.path for all subcommands
-    _ensure_src_on_path()
+        # Ensure src/ is on sys.path for all subcommands
+        _ensure_src_on_path()
 
-    if not args.command:
-        parser.print_help()
-        return EXIT_WARNING
+        if not args.command:
+            parser.print_help()
+            return EXIT_WARNING
 
-    # Dispatch — resolve the handler attribute at call time so the table
-    # stays introspectable while module-level monkeypatching still applies.
-    handler_name = COMMAND_HANDLERS.get(args.command)
-    handler = globals().get(handler_name) if handler_name else None
-    if handler is None:
-        parser.print_help()
-        return EXIT_ERROR
+        # Dispatch — resolve the handler attribute at call time so the table
+        # stays introspectable while module-level monkeypatching still applies.
+        handler_name = COMMAND_HANDLERS.get(args.command)
+        handler = globals().get(handler_name) if handler_name else None
+        if handler is None:
+            parser.print_help()
+            return EXIT_ERROR
 
-    try:
-        return cast("int", handler(args))
-    except KeyboardInterrupt:
-        logger.error("%s command interrupted", args.command)
-        return EXIT_ERROR
-    except Exception as exc:
-        logger.error(
-            "%s command failed: %s",
-            args.command,
-            exc,
-            exc_info=bool(getattr(args, "verbose", False)),
-        )
-        return EXIT_ERROR
+        try:
+            return cast("int", handler(args))
+        except KeyboardInterrupt:
+            logger.error("%s command interrupted", args.command)
+            return EXIT_ERROR
+        except Exception as exc:
+            logger.error(
+                "%s command failed: %s",
+                args.command,
+                exc,
+                exc_info=bool(getattr(args, "verbose", False)),
+            )
+            return EXIT_ERROR
 
 
 if __name__ == "__main__":
