@@ -25,3 +25,7 @@ Keep optional/native imports at their owning boundaries. Test real public
 consumers, failures and import pressure; document the ownership invariant and
 working usage. Scratch probes stay outside the source tree. See
 [quality](quality.md) and [testing](testing.md).
+
+## Related contracts
+
+[Task ownership, integration and closeout](workflow.md) owns the cross-cutting guidance.

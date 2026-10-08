@@ -25,3 +25,11 @@ Functional MCP/capability tests and transport/auth tests have a separate
 required [CI lane](../.github/workflows/ci.yml). Registration or a passing tool
 count establishes discovery, not native numerical readiness. Optional network
 and provider calls require explicitly provisioned acceptance.
+
+## Related contracts
+
+[Public adapter parity and LLM bindings](interfaces.md) owns the cross-cutting guidance.
+
+HTTP follows token/auth, loopback opt-in, pre-auth rate limiting and resource
+allowlists in [server_http.py](../src/gnn/mcp/server_http.py). Protocol stdout
+contains protocol data; logging and bounded diagnostics use their separate path.

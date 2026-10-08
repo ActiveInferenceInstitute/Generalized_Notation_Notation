@@ -30,3 +30,7 @@ step numbers is not a resumable run; use the
 plugins or raise undocumented timeout flags to hide failures.
 
 See [operations troubleshooting](../docs/gnn/operations/gnn_troubleshooting.md).
+
+## Related contracts
+
+[Preserved failures and access-blocked handoff](workflow.md) owns the cross-cutting guidance.

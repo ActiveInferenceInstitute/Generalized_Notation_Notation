@@ -5,7 +5,8 @@ owner with typed public interfaces and docstrings for inputs, outputs, errors,
 units and constraints. Split responsibilities when justified, not solely for
 line-count relief.
 
-[pyproject.toml](../pyproject.toml) owns formatter/lint/mypy configuration.
+Use repository tool configuration and actual CI command scopes;
+[pyproject.toml](../pyproject.toml) declares tools and mypy configuration.
 After a frozen development install, use actual gates:
 
 ```bash
@@ -34,3 +35,7 @@ Review consumer/negative tests, changed paths, import pressure and public
 interfaces before committing. Scratch stays outside source. Preserve
 [root custody](../AGENTS.md) and
 [companion pairing](../docs/development/fep_lean_paired_revision.md).
+
+## Related contracts
+
+[Documentation ownership and complete audits](documentation.md) owns the cross-cutting guidance.

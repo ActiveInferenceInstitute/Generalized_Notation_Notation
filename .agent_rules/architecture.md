@@ -29,3 +29,7 @@ cleanup. A scheduling policy may continue after failure while retaining the
 failure; it must not force a successful exit. See [error handling](error_handling.md).
 
 Root [manuscript and companion custody](../AGENTS.md) applies to changed owners.
+
+## Related contracts
+
+[Run selection, current artifacts and deadlines](run_ownership.md) owns the cross-cutting guidance.

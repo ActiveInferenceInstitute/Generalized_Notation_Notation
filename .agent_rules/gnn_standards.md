@@ -39,3 +39,7 @@ not a substitute. Unsupported compositions refuse explicitly. See
 
 Derive formats from live parsers/exporters. Round trips compare actual model
 semantics and source identity, not only file existence or matching shapes.
+
+## Related contracts
+
+[Scientific admission, comparison and proof boundaries](scientific_claims.md) owns the cross-cutting guidance.

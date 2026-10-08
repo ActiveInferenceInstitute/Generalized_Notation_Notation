@@ -13,3 +13,18 @@ external infrastructure changes.
 [Testing](testing.md), [quality](quality.md), [error handling](error_handling.md)
 and [architecture](architecture.md) preserve behavior, explicit outcomes,
 source/run identity and custody.
+
+## Structure and acceptance
+
+README routes tasks; AGENTS governs maintenance. Topic modules own one concern
+and link shared workflow, run identity, scientific claims, interfaces, CI,
+documentation, security and release custody. Every module appears in routing.
+
+Local links/fragments resolve. Imports/commands match the installed public surface.
+Required failures remain failures; optional omissions retain reasons. Evidence
+claims name their source, environment, selection and denominator. Producers remain
+reachable and publication state comes from actual receipts, not guide dates.
+
+Run [documentation audits](documentation.md), real examples and applicable hosted
+gates. Rules-only work cannot waive a red gate or silently change the software
+version. Future tasks stay in the canonical backlog.

@@ -30,3 +30,11 @@ selections are not a unique total. The [coverage guide](../docs/development/nati
 records the strict above-80% target separately on each declared environment.
 Preserve the original core 60% floor, full source scope and qualified optional
 surfaces; comprehensive acceptance enforces its own floor and integer comparison.
+
+## Related contracts
+
+[Exact-source gate rosters and artifact integrity](ci.md) owns the cross-cutting guidance.
+
+Let pytest discover shared fixtures from conftest rather than star imports.
+Skip only a named, genuinely absent optional prerequisite that the acceptance
+selection permits; do not catch an entire test body as an import-error skip.

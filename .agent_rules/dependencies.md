@@ -30,3 +30,11 @@ or duplicate declarations. For justified changes, resolve normally and verify
 each affected split, installed/native evidence and tracked-file bookends.
 New platform support follows ordinary installation and genuine acceptance in
 the [installed-platform guide](../docs/development/installed_platform_acceptance.md).
+
+## Related contracts
+
+[Advisory and dependency remediation](security.md) owns the cross-cutting guidance.
+
+Install task-owned frozen environments once. Changing extra selection can prune
+packages; do not resync a live worker's environment. Required imports and broken
+installed dependencies remain failures rather than optional absence.

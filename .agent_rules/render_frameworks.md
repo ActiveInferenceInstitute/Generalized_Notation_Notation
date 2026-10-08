@@ -92,4 +92,8 @@ Keep local, hosted, numerical and native-proof receipts separate.
 - [v4 migration](../docs/development/run_ownership_migration.md)
 - [Verification ledger](../SCOPE-2026-10-01.md)
 
-**Last updated**: 2026-10-02
+Reviewed for the current v4 contract on 2026-10-08.
+
+## Related contracts
+
+[Numerical, runtime, custody and proof evidence](scientific_claims.md) owns the cross-cutting guidance.

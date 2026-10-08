@@ -27,3 +27,7 @@ Tests reproduce the real failure through its consumer and check the outcome,
 sibling evidence and bounded cleanup. See
 [run ownership](../docs/development/run_ownership_migration.md) and
 [runtime safety](../src/gnn/utils/runtime_safety/AGENTS.md).
+
+## Related contracts
+
+[Deadline, containment and durable acceptance](run_ownership.md) owns the cross-cutting guidance.

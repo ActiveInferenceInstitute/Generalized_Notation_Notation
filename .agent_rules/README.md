@@ -1,43 +1,75 @@
 # GNN development rules
 
-These guides describe current contracts. Start with the root [AGENTS](../AGENTS.md)
-and [SPEC](../SPEC.md), then read the owning module. Version and dependency
-constraints are canonical in [pyproject.toml](../pyproject.toml).
+Start with [root AGENTS](../AGENTS.md), [SPEC](../SPEC.md) and the closest guide
+beside affected code. Then load relevant topics below. Source, tests and CI
+define executable behavior; these rules supplement owners and user instructions.
+
+## Start here
+
+1. Inspect checkout, full revision, dirty paths and active work.
+2. Read [workflow.md](workflow.md) and the affected topic.
+3. Resolve dependencies, capabilities and gates from this checkout.
+4. Verify the public path and report exact evidence and limits.
+
+Version belongs to [pyproject.toml](../pyproject.toml), published history to
+[CHANGELOG](../CHANGELOG.md) and [VERSION_MAP](../docs/VERSION_MAP.md), future
+work to [TO-DO](../TO-DO.md). Candidates and guide dates do not establish publication.
+
+## Navigation by task
 
 | Task | Guide |
 | --- | --- |
-| Thin scripts and run ownership | [Architecture](architecture.md) |
-| Module interfaces | [Module patterns](module_patterns.md) |
-| Consumer tests and evidence | [Testing](testing.md) |
-| Lint, types and documentation | [Quality](quality.md) |
-| Failure, skip and cleanup | [Error handling](error_handling.md) |
-| Installation and readiness | [Dependencies](dependencies.md) |
-| Backend scientific admission | [Render frameworks](render_frameworks.md) |
-| Model sources and extraction | [GNN standards](gnn_standards.md) |
-| MCP discovery and calls | [MCP](mcp.md) |
-| Measurement and optimization | [Performance](performance.md) |
-| Diagnosis and recovery | [Troubleshooting](troubleshooting.md) |
+| Take over or integrate work | [Workflow](workflow.md) |
+| Pipeline routing and thin scripts | [Architecture](architecture.md) |
+| Add or split packages | [Module patterns](module_patterns.md) |
+| Selection, deadlines, resume and artifacts | [Run ownership](run_ownership.md) |
+| Parse, validate and export models | [GNN standards](gnn_standards.md) |
+| Render and execute backends | [Render frameworks](render_frameworks.md) |
+| Compare results and scientific claims | [Scientific evidence](scientific_claims.md) |
+| Tests, collection and coverage | [Testing](testing.md) |
+| Code quality and static checks | [Quality](quality.md) |
+| Failures, skips and retries | [Error handling](error_handling.md) |
+| Dependencies and readiness | [Dependencies](dependencies.md) |
+| MCP tools and transports | [MCP](mcp.md) |
+| CLI, API, GUI and LLM adapters | [Interfaces](interfaces.md) |
+| Runtime measurements and optimization | [Performance](performance.md) |
+| Faster verified pushes and exact-source gates | [CI](ci.md) |
+| Prose, examples and rule maintenance | [Documentation](documentation.md) |
+| Issues, alerts and security boundaries | [Security](security.md) |
+| Diagnose failures and recover | [Troubleshooting](troubleshooting.md) |
+| Manuscript, companion and publication custody | [Release](release.md) |
 
-Install one locked development environment before running checks:
+## Essential contracts
+
+- Public imports use `gnn.*`; numbered scripts delegate to their module.
+- Frozen selection/current indexes determine work. Empty selection means no work;
+  historical directories and display names cannot establish fresh evidence.
+- Required failures, unfinished work and failed cleanup prevent success.
+  Optional absence and unsupported science retain separate reasons.
+- Deadlines include observation/cleanup. Cancellation requests and cooperative
+  return do not prove a stopped worker.
+- Source binding, numerical witnesses, native execution and proof stay separate.
+- Keep reachable producers and normal artifact commits. Apply full manuscript/
+  companion rituals whenever their inputs change.
+
+## Locked setup and verification
 
 ```bash
 uv sync --frozen --extra dev --python 3.12
 uv run --frozen --no-sync gnn --help
+uv run --frozen --no-sync python docs/development/docs_audit.py --strict --check-anchors --no-write
 ```
 
-Use canonical `gnn.*` imports. Numbered scripts delegate to module owners;
-step names and prerequisites come from the live registry. Freeze selected
-source identities and configuration once per run. An empty model selection
-produces no work; directory contents cannot widen it or admit inherited
-artifacts as current evidence.
-
-Required failures, exhausted work and failed cleanup prevent success.
-Optional unavailability has a distinct diagnosis. Continuing to later steps
-does not turn failed visualization or execution into successful work. See
-[run ownership](../docs/development/run_ownership_migration.md).
-
-Count-changing source/test and manuscript changes require the complete SC-22
-ritual in [AGENTS](../AGENTS.md). Bound source changes require the
-[paired-revision procedure](../docs/development/fep_lean_paired_revision.md).
-Use [TO-DO verification](../TO-DO.md#verification-and-execution-rules) and the
+Choose declared extras for the task. Use [testing](testing.md), [CI](ci.md),
+[TO-DO verification](../TO-DO.md#verification-and-execution-rules) and
 [workflows](../.github/workflows/README.md) for current gates.
+
+## Ollama LLM integration standards
+
+[Interfaces](interfaces.md#llm-and-ollama) owns complete-context/checkpoint guidance;
+[LLM AGENTS](../src/gnn/llm/AGENTS.md) owns runtime settings and defaults.
+
+## Directory contract
+
+[AGENTS](AGENTS.md) explains maintenance and [SPEC](SPEC.md) defines structure/
+acceptance. Existing filenames stay stable. Reviewed on 2026-10-08.

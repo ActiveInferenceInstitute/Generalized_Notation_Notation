@@ -26,3 +26,10 @@ coverage reports. Include runner queuing and runtime variance. Preserve status
 names, markers, artifacts and failure coupling. See
 [workflow scheduling](../.github/workflows/README.md#scheduling-and-evidence)
 and the [performance measurement report](../src/gnn/analysis/PERFORMANCE.md).
+
+## Related contracts
+
+[Scheduling acceleration with preserved gates](ci.md) owns the cross-cutting guidance.
+
+Reuse immutable metadata rather than recomputing a full source book inside each
+per-file comparison. Preserve the complete work and evidence denominator.
