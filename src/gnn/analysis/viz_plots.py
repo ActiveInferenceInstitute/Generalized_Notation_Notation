@@ -935,7 +935,7 @@ def generate_free_energy_plots(
         ax4.set_title(f"Recent Variation ({window}-sample variance)")
         ax4.grid(True, alpha=0.3)
 
-        # Retain the legacy numerical threshold as an explicitly labeled heuristic.
+        # Retain the existing numerical threshold as an explicitly labeled heuristic.
         if rolling_var:
             final_var = rolling_var[-1]
             below_threshold = final_var < 0.1
