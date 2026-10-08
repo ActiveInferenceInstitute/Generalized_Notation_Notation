@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -11,7 +12,11 @@ import pytest
 from matplotlib.figure import Figure
 from PIL import Image
 
-from gnn.analysis import analyze_execution_results, visualize_all_framework_outputs
+from gnn.analysis import (
+    analyze_execution_results,
+    visualize_all_framework_outputs,
+    viz_plots,
+)
 
 
 @pytest.fixture
@@ -192,4 +197,169 @@ def test_public_saved_visualization_does_not_claim_refused_energy_artifact(tmp_p
     assert {Path(item).name for item in files} == {"finite_numpyro_observations.png"}
     assert all(Path(item).is_file() for item in files)
     assert not (output.parent / "numpyro" / "finite_numpyro_free_energy.png").exists()
+    assert _custody(sources) == original
+
+
+@pytest.fixture
+def native_operational_inputs(monkeypatch):
+    """Observe input delivery while retaining the real native consumer/output."""
+    observed = {}
+    original = viz_plots.generate_cross_framework_comparison
+
+    def forward(data, path):
+        observed["data"] = deepcopy(data)
+        result = original(data, path)
+        observed["result"] = result
+        return result
+
+    monkeypatch.setattr(viz_plots, "generate_cross_framework_comparison", forward)
+    return observed
+
+
+def _saved_active_partial(tmp_path, csv_rows):
+    execution = tmp_path / "12_execute_output"
+    implementation = execution / "finite" / "activeinference_jl"
+    structured = _write(
+        implementation / "execution_logs" / "finite_results.json",
+        {
+            "framework": "activeinference_jl",
+            "model_name": "finite",
+            "implementation_directory": str(implementation),
+        },
+    )
+    simulation = _write(
+        implementation / "simulation_data" / "simulation_results.json",
+        {
+            "schema_version": "activeinference_jl_simulation_v1",
+            "framework": "activeinference_jl",
+            "model_name": "finite",
+            "beliefs": [],
+            "actions": [],
+            "observations": [],
+            "expected_free_energy": [-3.0, 0.0, 3.0],
+            "expected_free_energy_convention": "Authored partial saved EFE diagnostic",
+        },
+    )
+    sources = [structured, simulation]
+    if csv_rows is not None:
+        csv = implementation / "simulation_data" / "simulation_results.csv"
+        csv.write_text(
+            "# Authored saved CSV; no Julia/model execution\n"
+            "step,observation,action,belief0,belief1\n" + csv_rows
+        )
+        sources.append(csv)
+    # A second saved record invokes the actual operational consumer. No model
+    # binding or scientific cross-framework agreement is asserted.
+    sources.append(
+        _write(
+            execution / "finite" / "numpyro" / "finite_results.json",
+            {
+                "framework": "numpyro",
+                "model_name": "finite",
+                "simulation_data": {"observations": [1, 0], "actions": [0, 1]},
+            },
+        )
+    )
+    sources.append(
+        _write(
+            execution / "other" / "activeinference_jl" / "other_results.json",
+            {
+                "framework": "activeinference_jl",
+                "model_name": "other",
+                "schema_version": "activeinference_jl_simulation_v1",
+                "observations": [99],
+            },
+        )
+    )
+    return execution, sources
+
+
+def _run_active_partial(execution, tmp_path):
+    output = tmp_path / "16_analysis_output" / "cross_framework"
+    files = visualize_all_framework_outputs(
+        execution,
+        output,
+        allowed_frameworks={"activeinference_jl", "numpyro"},
+        allowed_model_names={"finite"},
+        generate_animations=False,
+    )
+    assert all(Path(item).is_file() for item in files)
+    for item in files:
+        with Image.open(item) as image:
+            image.load()
+            assert image.format == "PNG"
+            assert image.width > 100 and image.height > 100
+    assert not list(output.parent.rglob("other*.png"))
+    return output, {Path(item).name for item in files}
+
+
+def test_public_active_partial_schema_recovers_exact_saved_csv_rows_and_native_artifacts(
+    tmp_path, native_figures, native_operational_inputs
+):
+    execution, sources = _saved_active_partial(
+        tmp_path, "0,0,1,1.0,0.0\n1,1,0,0.5,0.5\n2,0,1,0.0,1.0\n"
+    )
+    original = _custody(sources)
+    output, names = _run_active_partial(execution, tmp_path)
+    assert "finite_activeinference_jl_observations.png" in names
+    assert "finite_activeinference_jl_free_energy.png" in names
+    delivered = native_operational_inputs["data"]["activeinference_jl_finite"][
+        "simulation_data"
+    ]
+    assert delivered["observations"] == [0, 1, 0]
+    assert delivered["actions"] == [1, 0, 1]
+    assert delivered["beliefs"] == [[1.0, 0.0], [0.5, 0.5], [0.0, 1.0]]
+    observations = native_figures["finite_activeinference_jl_observations.png"].axes[0]
+    assert [bar.get_height() for bar in observations.patches] == [2, 1]
+    energy = native_figures["finite_activeinference_jl_free_energy.png"].axes[0]
+    np.testing.assert_array_equal(energy.lines[0].get_ydata(), [-3.0, 0.0, 3.0])
+    operational = json.loads(
+        (output / "cross_framework_comparison.operational.json").read_text()
+    )["frameworks"]["activeinference_jl"]
+    assert operational["steps_completed"] == [3]
+    assert operational["missing_timing_count"] == 1
+    assert operational["execution_times"] == []
+    assert _custody(sources) == original
+
+
+def test_public_active_partial_csv_rejects_entire_malformed_numeric_row(
+    tmp_path, native_figures, native_operational_inputs
+):
+    execution, sources = _saved_active_partial(
+        tmp_path, "0,0,1,1.0,0.0\n1,1,0,not-numeric,0.5\n2,1,0,0.0,1.0\n"
+    )
+    original = _custody(sources)
+    output, names = _run_active_partial(execution, tmp_path)
+    assert "finite_activeinference_jl_observations.png" in names
+    delivered = native_operational_inputs["data"]["activeinference_jl_finite"][
+        "simulation_data"
+    ]
+    assert delivered["observations"] == [0, 1]
+    assert delivered["actions"] == [1, 0]
+    assert delivered["beliefs"] == [[1.0, 0.0], [0.0, 1.0]]
+    observations = native_figures["finite_activeinference_jl_observations.png"].axes[0]
+    assert [bar.get_height() for bar in observations.patches] == [1, 1]
+    operational = json.loads(
+        (output / "cross_framework_comparison.operational.json").read_text()
+    )["frameworks"]["activeinference_jl"]
+    assert operational["steps_completed"] == [2]
+    assert _custody(sources) == original
+
+
+def test_public_active_partial_missing_csv_keeps_available_efe_without_invented_rows(
+    tmp_path, native_figures, native_operational_inputs
+):
+    execution, sources = _saved_active_partial(tmp_path, None)
+    original = _custody(sources)
+    _, names = _run_active_partial(execution, tmp_path)
+    assert "finite_activeinference_jl_free_energy.png" in names
+    assert "finite_activeinference_jl_observations.png" not in names
+    delivered = native_operational_inputs["data"]["activeinference_jl_finite"][
+        "simulation_data"
+    ]
+    assert delivered["observations"] == []
+    assert delivered["actions"] == []
+    assert delivered["beliefs"] == []
+    energy = native_figures["finite_activeinference_jl_free_energy.png"].axes[0]
+    np.testing.assert_array_equal(energy.lines[0].get_ydata(), [-3.0, 0.0, 3.0])
     assert _custody(sources) == original

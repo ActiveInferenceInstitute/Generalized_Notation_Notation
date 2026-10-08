@@ -303,16 +303,16 @@ def visualize_all_framework_outputs(
         try:
             # Extract simulation data
             sim_data = data.get("simulation_data", {})
+            result = data["results"][0] if data.get("results") else {}
+            impl_dir = result.get("implementation_directory")
             if not sim_data and data.get("results"):
                 # Try to extract from first result
-                result = data["results"][0]
                 if framework in {"pymdp", "rxinfer", "activeinference_jl"}:
                     sim_data = _current_schema_visualization_data(result)
                 else:
                     sim_data = result.get("simulation_data", {})
 
                 # Also check implementation directory for files
-                impl_dir = result.get("implementation_directory")
                 if impl_dir:
                     impl_path = Path(impl_dir)
                     sim_data_dir = impl_path / "simulation_data"
@@ -375,14 +375,17 @@ def visualize_all_framework_outputs(
                                         for row in reader:
                                             if len(row) >= 3:
                                                 try:
-                                                    observations.append(
-                                                        int(float(row[1]))
+                                                    observation = int(float(row[1]))
+                                                    action = int(float(row[2]))
+                                                    belief = (
+                                                        [float(x) for x in row[3:]]
+                                                        if len(row) > 3
+                                                        else None
                                                     )
-                                                    actions.append(int(float(row[2])))
-                                                    if len(row) > 3:
-                                                        beliefs.append(
-                                                            [float(x) for x in row[3:]]
-                                                        )
+                                                    observations.append(observation)
+                                                    actions.append(action)
+                                                    if belief is not None:
+                                                        beliefs.append(belief)
                                                 except ValueError as e:
                                                     log.debug(
                                                         "Skipping non-numeric CSV row: %s",
