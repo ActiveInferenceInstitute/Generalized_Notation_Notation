@@ -393,8 +393,10 @@ class SweepReporter:
         if not loc_recs:
             return ""
 
-        lines: list[Any] = ["## Resource Efficiency & Complexity", ""]
-        lines.append("Analysis of generated runner complexity and compute throughput.")
+        lines: list[Any] = ["## Recorded Source Sizes & Throughput", ""]
+        lines.append(
+            "Descriptive source-size and timestep-throughput summaries from saved records."
+        )
 
         # Throughput Table
         lines.append("### Inference Throughput")
@@ -409,7 +411,7 @@ class SweepReporter:
                 lines.append(f"| {r.sweep_label} | {r.framework} | {throughput:.2f} |")
         lines.append("")
 
-        lines.append("### Code Complexity Scaling")
+        lines.append("### Recorded Source Sizes by State-Space Size")
         lines.append("")
 
         # Table of LOC vs N. LOC records come from the render summary, which
@@ -438,7 +440,8 @@ class SweepReporter:
 
         lines.append("\n> [!NOTE]")
         lines.append(
-            "> Runner code size scales with state space complexity. PyMDP runners exhibit $O(N^3)$ scaling in generated constant matrices."
+            "> Recorded source size describes these files and configurations only. "
+            "LOC counts do not establish asymptotic source-size growth or computational complexity."
         )
 
         return "\n".join(lines)
