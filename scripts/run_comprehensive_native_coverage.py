@@ -39,7 +39,13 @@ LANES = {
         ["tests"],
         "pipeline and not ollama and not env_heavy and (not toolchain or needs_posix)",
     ),
+    "thrml-native": (["tests/render/test_thrml_native.py"], None),
+    "gui-native": (["tests/gui/test_native_gradio_consumers_410.py"], None),
 }
+
+# Ordinary callers retain the original selection. Optional native lanes require
+# explicit --lane requests and an independently provisioned locked environment.
+ORIGINAL_LANES = ("core", "mcp", "pipeline")
 
 PILOT = (
     [
@@ -516,6 +522,9 @@ def main() -> int:
         parser.error("--lane-timeout must be positive")
     if args.pilot and args.lane:
         parser.error("--pilot and --lane are mutually exclusive")
+    selected = ["observer-pilot"] if args.pilot else args.lane or list(ORIGINAL_LANES)
+    if len(selected) != len(set(selected)):
+        parser.error("Each native lane must be selected exactly once")
     actual = f"{sys.version_info.major}.{sys.version_info.minor}"
     if actual != args.python_version:
         raise SystemExit(
@@ -544,7 +553,6 @@ def main() -> int:
     support.mkdir()
     (support / "startup.py").write_text(STARTUP)
     (support / "gnn_native_coverage_observer.py").write_text(OBSERVER)
-    selected = ["observer-pilot"] if args.pilot else args.lane or list(LANES)
     receipt = {
         "schema_version": 2,
         "python": sys.version,
@@ -572,6 +580,7 @@ def main() -> int:
         "lane_timeout_seconds": args.lane_timeout,
         "deadline_cleanup_scope": "POSIX pytest process group or Windows pytest process; detached descendant cleanup is not certified by the observer",
         "observer_pilot": args.pilot,
+        "requested_lanes": selected,
         "integrity_errors": [],
     }
     receipt["installed_distributions_sha256"] = hashlib.sha256(
@@ -665,6 +674,12 @@ def main() -> int:
         }
         receipt["lanes"].append(lane_receipt)
         (output / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+        if status == 0:
+            outcomes = lane_receipt["junit"]
+            if outcomes is None or outcomes["testcases"] == 0:
+                reject("Successful native lane has no executed JUnit cases: " + name)
+            if any(outcomes[kind] for kind in ("failures", "errors", "skips")):
+                reject("Native lane contains failed, errored or skipped cases: " + name)
         if status == 124:
             receipt["integrity_errors"].append("Native lane deadline exceeded: " + name)
             (output / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -874,8 +889,11 @@ def main() -> int:
     }
     receipt["unique_selected_nodes"] = len(set().union(*selections.values()))
     receipt["complete"] = True
-    receipt["complete_declared_core_mcp_pipeline_selection"] = set(selected) == set(
-        LANES
+    receipt["complete_declared_core_mcp_pipeline_selection"] = set(
+        ORIGINAL_LANES
+    ).issubset(selected)
+    receipt["complete_requested_optional_native_selection"] = all(
+        name in selections for name in selected if name not in ORIGINAL_LANES
     )
     (output / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(

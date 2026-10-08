@@ -11,7 +11,8 @@ uses three independent jobs, checking out each exact candidate revision.
 ## Run a provisioned environment
 
 Use a clean immutable checkout and an owned virtualenv provisioned from the
-frozen lock with `dev` and `api`. Each output directory must be new and outside
+frozen lock with `dev` and `api`. The hosted comprehensive jobs additionally
+provision the existing `gui`, `thrml` and `cpomdp` extras. Each output directory must be new and outside
 the checkout. The script copies the original coverage configuration, adding
 parallel data files and their output destination. Child tracing starts before
 actual original-source execution; it does not eagerly instrument stdlib-only
@@ -39,6 +40,26 @@ receipt and source bookend have been written.
 | Core | `tests -m "not pipeline and not mcp and not ollama and not env_heavy and not toolchain"` |
 | MCP | All `tests/mcp` |
 | Pipeline | `tests -m "pipeline and not ollama and not env_heavy and (not toolchain or needs_posix)"` |
+| Explicit THRML native | All `tests/render/test_thrml_native.py` |
+| Explicit Gradio native | All `tests/gui/test_native_gradio_consumers_410.py` |
+
+Ordinary invocations retain the original three selections. The two optional
+lanes require explicit requests and the locked native extras; their tests use
+actual installed THRML and Gradio objects. The GUI checks build interfaces and
+dispatch registered callbacks in process, then reopen saved models. They do
+not launch a persistent server or call a provider. CPOMDP's existing native
+tests enter the unchanged core selection when that extra is provisioned.
+Provisioning extras changes the declared environment, so reports from an
+environment without those extras cannot be pooled with this report.
+
+```bash
+UV_PYTHON=3.12 uv sync --frozen --extra dev --extra api --extra gui --extra thrml --extra cpomdp
+GRADIO_ANALYTICS_ENABLED=False HF_HUB_OFFLINE=1 UV_PYTHON=3.12 \
+  uv run --frozen --no-sync python scripts/run_comprehensive_native_coverage.py \
+  --checkout "$PWD" --output /tmp/gnn-native-provisioned-3.12 \
+  --python-version 3.12 --workers 4 --lane-timeout 1800 \
+  --lane core --lane mcp --lane pipeline --lane thrml-native --lane gui-native
+```
 
 The declared lanes require local behavior checks, not external provider/model
 or training runs. Optional toolchains or live surfaces require their own explicit
@@ -117,6 +138,14 @@ Never union across Python versions, operating systems, dependency environments
 or changed source; never sum overlapping test counts. Require terminal success,
 no integrity errors, a clean source identity and
 `complete_declared_core_mcp_pipeline_selection: true` for a full declared report.
+An explicit optional run additionally requires the exact `requested_lanes`,
+matching completed lane receipts and
+`complete_requested_optional_native_selection: true`. All requested lanes
+must select real tests and finish without failures, errors or skips. The
+original full-source denominator, exclusions and per-lane deadline also apply
+to these optional lanes. The existing core 60% gate remains unchanged; the
+comprehensive union's 60% floor is checked separately, rather than on each
+small optional lane.
 The observer's zero exit status certifies the selected run and its receipts;
 it does not enforce a percentage threshold. Keep the original core floor check.
 

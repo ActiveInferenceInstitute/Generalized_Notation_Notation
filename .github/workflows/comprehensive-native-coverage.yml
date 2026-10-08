@@ -36,6 +36,8 @@ jobs:
       NATIVE_COVERAGE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
       PYTHONHASHSEED: "0"
       MPLBACKEND: Agg
+      GRADIO_ANALYTICS_ENABLED: "False"
+      HF_HUB_OFFLINE: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -51,14 +53,15 @@ jobs:
           version: "0.12"
           enable-cache: true
       - name: Provision declared native environment
-        run: uv sync --frozen --extra dev --extra api
+        run: uv sync --frozen --extra dev --extra api --extra gui --extra thrml --extra cpomdp
       - name: Choose fresh evidence destination
         run: echo "NATIVE_COVERAGE_OUTPUT=$RUNNER_TEMP/gnn-native-coverage-$UV_PYTHON" >> "$GITHUB_ENV"
-      - name: Record native core, MCP and pipeline coverage
+      - name: Record original selections and explicit optional native lanes
         run: |
           uv run --frozen --no-sync python scripts/run_comprehensive_native_coverage.py \
             --checkout "$GITHUB_WORKSPACE" --output "$NATIVE_COVERAGE_OUTPUT" \
-            --python-version "$UV_PYTHON" --workers 4 --lane-timeout 1800
+            --python-version "$UV_PYTHON" --workers 4 --lane-timeout 1800 \
+            --lane core --lane mcp --lane pipeline --lane thrml-native --lane gui-native
       - name: Validate complete exact-source receipt
         run: |
           uv run --frozen --no-sync python - <<'PY'
@@ -68,6 +71,13 @@ jobs:
           receipt = json.loads((root / "receipt.json").read_text())
           source = json.loads((root / "source-identity.json").read_text())
           assert receipt["complete"] and receipt["complete_declared_core_mcp_pipeline_selection"]
+          assert receipt["complete_requested_optional_native_selection"]
+          assert receipt["requested_lanes"] == ["core", "mcp", "pipeline", "thrml-native", "gui-native"]
+          assert [lane["name"] for lane in receipt["lanes"]] == receipt["requested_lanes"]
+          for lane in receipt["lanes"]:
+              assert lane["returncode"] == 0 and lane["collected_nodes"] > 0
+              assert lane["junit"] and lane["junit"]["testcases"] > 0
+              assert not any(lane["junit"][kind] for kind in ["failures", "errors", "skips"])
           assert not receipt["integrity_errors"] and not source["working_tree_changes"]
           assert source["commit"] == receipt["commit"] == os.environ["NATIVE_COVERAGE_REVISION"]
           totals = json.loads((root / "coverage-comprehensive.json").read_text())["totals"]
@@ -116,3 +126,17 @@ jobs:
             ${{ env.NATIVE_COVERAGE_OUTPUT }}/pipeline/admitted/
             ${{ env.NATIVE_COVERAGE_OUTPUT }}/pipeline/startups/
             ${{ env.NATIVE_COVERAGE_OUTPUT }}/pipeline/collection*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/coverage.*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/junit.xml
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/run.log
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/.coverage*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/admitted/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/startups/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/collection*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/coverage.*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/junit.xml
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/run.log
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/.coverage*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/admitted/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/startups/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/collection*
