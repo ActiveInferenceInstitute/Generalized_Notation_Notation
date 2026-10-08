@@ -384,7 +384,7 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
         if initial_params:
             initial_params = _require_braced_assignments(initial_params)
             # Parse A matrix
-            a_match = re.search(r"A\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
+            a_match = re.search(r"\bA\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
             if a_match:
                 try:
                     a_str = a_match.group(1).strip()
@@ -408,7 +408,7 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
                     raise ValueError(f"Invalid authored A parameter: {e}") from e
 
             # Parse B matrix
-            b_match = re.search(r"B\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
+            b_match = re.search(r"\bB\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
             if b_match:
                 try:
                     b_str = b_match.group(1).strip()
@@ -432,7 +432,7 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
                     raise ValueError(f"Invalid authored B parameter: {e}") from e
 
             # Parse C vector
-            c_match = re.search(r"C\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
+            c_match = re.search(r"\bC\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
             if c_match:
                 try:
                     c_str = c_match.group(1).strip()
@@ -456,7 +456,7 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
                     raise ValueError(f"Invalid authored C parameter: {e}") from e
 
             # Parse D vector
-            d_match = re.search(r"D\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
+            d_match = re.search(r"\bD\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
             if d_match:
                 try:
                     d_str = d_match.group(1).strip()
@@ -567,7 +567,7 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
             initial_params = _require_braced_assignments(initial_params)
 
             # Parse A matrix
-            a_match = re.search(r"A\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
+            a_match = re.search(r"\bA\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
             if a_match:
                 try:
                     a_str = a_match.group(1).strip()
@@ -589,7 +589,7 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
                     raise ValueError(f"Invalid authored A parameter: {e}") from e
 
             # Parse B matrix
-            b_match = re.search(r"B\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
+            b_match = re.search(r"\bB\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
             if b_match:
                 try:
                     b_str = b_match.group(1).strip()
@@ -610,7 +610,7 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
                     raise ValueError(f"Invalid authored B parameter: {e}") from e
 
             # Parse C vector
-            c_match = re.search(r"C\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
+            c_match = re.search(r"\bC\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
             if c_match:
                 try:
                     c_str = c_match.group(1).strip()
@@ -631,7 +631,7 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
                     raise ValueError(f"Invalid authored C parameter: {e}") from e
 
             # Parse D vector
-            d_match = re.search(r"D\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
+            d_match = re.search(r"\bD\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
             if d_match:
                 try:
                     d_str = d_match.group(1).strip()

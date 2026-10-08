@@ -559,3 +559,30 @@ def test_passive_transition_source_axes_survive_canonical_single_action(
     expected["B"] = expected["B"][:, :, :1]
     for name, value in expected.items():
         np.testing.assert_allclose(actual[name], value, rtol=0, atol=1e-7)
+
+
+@pytest.mark.parametrize("renderer", ["general", "pomdp"])
+@pytest.mark.parametrize("representation", ["json_sections", "older_sections"])
+@pytest.mark.parametrize("table", ["A", "B", "C", "D"])
+@pytest.mark.parametrize("malformed_actual", [False, True])
+def test_prefixed_assignments_cannot_replace_exact_authored_tables(
+    tmp_path, renderer, representation, table, malformed_actual
+):
+    values = scientific_tables()
+    literals = {name: braced_literal(value) for name, value in values.items()}
+    misleading = values[table][::-1].copy()
+    prefix = {"A": "BA", "B": "tensorB", "C": "rewardC", "D": "priorD"}[table]
+    prefixed_assignment = f"{prefix} = {braced_literal(misleading)}\n"
+    if malformed_actual:
+        literals[table] = "{not-a-number}"
+    spec = legacy_text_spec(literals, representation)
+    sections = spec["raw_sections"] if representation == "json_sections" else spec
+    sections["InitialParameterization"] = (
+        prefixed_assignment + sections["InitialParameterization"]
+    )
+    if malformed_actual:
+        assert_refused_without_artifact(tmp_path, spec, renderer)
+    else:
+        actual = generated_parameters(tmp_path, spec, renderer)
+        for name, expected in values.items():
+            np.testing.assert_allclose(actual[name], expected, rtol=0, atol=1e-7)
