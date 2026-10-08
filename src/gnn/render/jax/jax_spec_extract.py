@@ -230,7 +230,7 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
             if isinstance(B_matrix, (list, np.ndarray)) and len(B_matrix) > 0:
                 try:
                     B_array = np.asarray(B_matrix)
-                except Exception as e:
+                except (TypeError, ValueError) as e:
                     raise ValueError(f"Invalid authored B parameter: {e}") from e
                 n_actions_from_b = B_array.shape[2] if B_array.ndim >= 3 else 1
                 n_actions = n_actions_from_b
