@@ -24,7 +24,7 @@ If a function is not exported there, it should not be documented as public API.
     - `_generate_code(...)` — dispatches to pipeline or standalone template
   - Constructor takes `options={"mode": "pipeline" | "standalone"}`:
     * **pipeline** (default) emits a thin runner that delegates to
-      `src.execute.pymdp.run_pymdp_simulation`.
+      `gnn.execute.pymdp.execute_pymdp_simulation`.
     * **standalone** emits a fully self-contained pymdp 1.0.0 script.
 - `pymdp_templates.py`
   - `generate_pipeline_runner_script(ctx)` — pipeline runner

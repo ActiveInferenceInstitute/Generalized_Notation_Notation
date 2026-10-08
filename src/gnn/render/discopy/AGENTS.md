@@ -84,7 +84,7 @@ assert ok, message
 The CLI for the parent render module also exposes this path:
 
 ```bash
-python -m render.render --target discopy --gnn-file input/gnn_files/actinf_pomdp_agent.md
+uv run --frozen --no-sync python -m gnn.cli render input/gnn_files/discrete/actinf_pomdp_agent.md --framework discopy --output /tmp/gnn-discopy-example.py
 ```
 
 ---
@@ -132,7 +132,7 @@ Any exception raised during code generation is caught and returned as `(False, "
 ### Consumed by
 - `execute/discopy/` — runs the emitted script in Step 12.
 - `tests/render/test_render_cli_targets.py` — exercises the CLI dispatch.
-- `tests/test_render_discopy*.py` — focused unit tests.
+- `tests/render/test_native_discopy_generated_consumers_410.py` — saved-source compilation and actual categorical diagrams/metadata.
 
 ### Data flow
 ```
@@ -143,7 +143,7 @@ GNN spec → render_gnn_to_discopy → <output>.py → execute.discopy runs scri
 
 ## Testing
 
-- `uv run --extra dev python -m pytest tests/test_render_discopy*.py -v`
+- `uv run --frozen --no-sync python -m pytest tests/render/test_native_discopy_generated_consumers_410.py -v`
 - `uv run --extra dev python -m pytest tests/render/test_render_cli_targets.py -v` — verifies the `discopy` target dispatches correctly.
 
 ---
