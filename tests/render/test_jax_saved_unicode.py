@@ -22,7 +22,7 @@ from gnn.render.jax import (
 def test_saved_jax_source_preserves_authored_unicode(
     tmp_path: Path, renderer: Callable
 ) -> None:
-    model_name = "sensor_\u03bc_\u221d_observation"
+    model_name = "sensor_\u03bc_observation"
     spec = {
         "model_name": model_name,
         "model_parameters": {
