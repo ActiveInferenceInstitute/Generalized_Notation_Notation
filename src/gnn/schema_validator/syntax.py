@@ -213,10 +213,11 @@ class GNNParser(FormatDetectionMixin, SectionParsersMixin):
         # Convert variables
         variables: dict[Any, Any] = {}
         for var in model.variables:
+            data_type = getattr(var, "data_type", "categorical")
             variables[var.name] = GNNVariable(
                 name=var.name,
                 dimensions=getattr(var, "dimensions", []),
-                data_type=str(getattr(var, "data_type", "categorical")),
+                data_type=str(getattr(data_type, "value", data_type)),
                 description=getattr(var, "description", ""),
                 ontology_mapping=getattr(var, "ontology_mapping", None),
             )

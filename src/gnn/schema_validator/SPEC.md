@@ -21,6 +21,9 @@ Syntax-level GNN validation: the regex-based parser that turns GNN source text i
   parser failures retain the chained source exception in `parse_degraded`;
   the basic markdown fallback and public result shape remain available.
 - Validation levels compare through rank mapping; accepted string forms resolve to `ValidationLevel` members (`basic`/`standard`/`strict`/`research`/`round_trip`).
+- Enhanced registry results expose variable datatype enum values in the syntax
+  facade, retaining existing plain-string inputs. This binding does not change
+  datatype admission or the authored Markdown spelling.
 - The Markdown syntax reader retains authored bracket `type=` strings, including
   documented comma-field whitespace, and defaults to float when absent. An
   explicit existing datatype suffix outside the bracket retains precedence.

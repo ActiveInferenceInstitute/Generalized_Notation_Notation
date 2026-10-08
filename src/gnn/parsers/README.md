@@ -31,6 +31,14 @@ artifacts or bound memory and CPU use.
 
 ## Saved schema interchange
 
+Saved YAML configurations accept ordinary leading comments. With PyYAML
+available, malformed YAML or unsupported tags produce a failed parse with the
+loader's cause; the simplified recovery parser is used only when PyYAML is
+unavailable. A failed public `convert_file` parse leaves an existing destination
+untouched. JSON and YAML readers retain the supplied `time_specification.step_size`
+emitted by their canonical serializers, alongside the existing horizon and
+discretization fields; they do not infer a timestep value.
+
 ASN.1 `-- MODEL_DATA:` and Z `% MODEL_DATA:` comments carry a JSON object on
 one native comment line. Reading that payload stops at the line boundary, so
 later native braces cannot replace the saved model identity. When the line
