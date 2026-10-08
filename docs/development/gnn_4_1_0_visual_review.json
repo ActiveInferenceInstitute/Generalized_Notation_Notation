@@ -258,5 +258,71 @@
   "limits": [
     "Numerical parity and sign definitions have separate native evidence",
     "Selected pixel review is not universal scientific-plot accessibility or GIF timing acceptance"
+  ],
+  "additional_reviews": [
+    {
+      "reviewed_utc": "2026-10-08T03:54:40Z",
+      "producer_source_commit": "8ec772331ca509975723de9f70ca90580dbc34c8",
+      "producer_source_sha256": "143b6dc0cab0c3a11dbad69548cdded383c8742d829b69de4c90052cf250cbc7",
+      "scope": "finite five actual correlation PNGs; existing tiny-input passthrough retained",
+      "root_independent_review": true,
+      "native_regression_junit": "correlation-overview-9627b58aa.xml",
+      "native_replay": {
+        "tests": 18,
+        "passed": 18,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "tradeoff": "small correlation plots retain data and use an explicit symmetric signed plotting domain; all-zero unit domain does not alter values; large branch unchanged",
+      "baseline_qualification": "Finite saved-image comparisons, not inference-semantic or universal pixel-equivalence certification. Ordinary baseline captures are not strict warning-gate successes. Actual unchanged large branch and already symmetric small input can be compared independently from intentional asymmetric/degenerate scale corrections.",
+      "artifacts": [
+        {
+          "artifact": "evidence410-science-consumers/correlation-after-native/constant-columns.png",
+          "sha256": "7e611d44522309df5e16a76b6ec4daf8f1fe13497c0f805c1a10e4eb839999d9",
+          "dimensions": [
+            2681,
+            2369
+          ],
+          "root_visual_review": "read actual complete image; no clipping or material finding"
+        },
+        {
+          "artifact": "evidence410-science-consumers/correlation-after-native/large-signed-hand.png",
+          "sha256": "710a8f8d1008bf234cf0849bc23c8b17de1cc27e8338d20df58e302da900bd3b",
+          "dimensions": [
+            2964,
+            2369
+          ],
+          "root_visual_review": "read actual complete image; no clipping or material finding"
+        },
+        {
+          "artifact": "evidence410-science-consumers/correlation-after-native/positive-and-zero-hand.png",
+          "sha256": "1c6efdd658d36fe1843000fff9aaa7c26b2c9171f3ac1f4b4fb98dea9860716b",
+          "dimensions": [
+            2681,
+            2369
+          ],
+          "root_visual_review": "read actual complete image; no clipping or material finding"
+        },
+        {
+          "artifact": "evidence410-science-consumers/correlation-after-native/signed-hand.png",
+          "sha256": "d7348cabe56c44f00e9ae1bf06aabb4a48c1daaef779fd75c622f0800d939eae",
+          "dimensions": [
+            2681,
+            2369
+          ],
+          "root_visual_review": "read actual complete image; no clipping or material finding"
+        },
+        {
+          "artifact": "evidence410-science-consumers/correlation-after-native/tiny-passthrough.png",
+          "sha256": "d5e99b1e24ad9ee20b08d27d66fa124a42c9585cd2985e36a50cf8c2db33e568",
+          "dimensions": [
+            2654,
+            2369
+          ],
+          "root_visual_review": "read actual complete image; no clipping or material finding"
+        }
+      ]
+    }
   ]
 }
