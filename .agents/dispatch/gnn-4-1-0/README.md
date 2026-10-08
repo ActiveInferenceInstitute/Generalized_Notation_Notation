@@ -86,11 +86,43 @@ version changes, with revision 3 retained and both uv 0.12 and 0.10.7 offline
 lock checks passing. Dependency pins and the manuscript authored epoch remain
 unchanged. This is source preparation, not publication acceptance.
 
+The clean versioned checkpoint `65dd332fa84596d858249a61d40b030b85828061`
+passed the original complete core selection: 7,096 cases plus ten subtests,
+zero failures/errors/skips, in 396.18 seconds. Its unchanged full-source report
+covers 59,300 of 81,399 statements (72.8510%); the strict >80% target needs at
+least 5,820 additional unique covered statements. All remaining capability,
+v3 orchestration, skills, thin-orchestrator, dependency, validate-surface and
+document-path gates passed. The skills gate checked 31 skills and 580 surfaces
+with zero findings.
+
+An ordinary 4.1.0 wheel from that checkpoint passed local macOS arm64/Python
+3.14 acceptance, including all eight THRML and 21 native filesystem cases,
+actual HTTP pipeline workers, installed-code isolation and source-file bookends.
+The five final hosted native lanes still require exact-source terminal results.
+
+Fresh full MCP acceptance exposed one inventory omission: the deliberate
+internal `rxinfer_interchange` package was treated as a public MCP module.
+Independent review accepted an explicit internal-owner allowlist rationale,
+preserving the supported `gnn.rxinfer_bridge` facade and refusing any invented
+registry. The missing-file diagnostic now identifies its actual entrypoint.
+The corrected complete selection passed all 524 cases without skips.
+
+The original pipeline selection at `65dd332fa845` completed with 342 passes
+and seven failures. All seven share the same macOS CLI output-lease refusal
+at the standard `/var` temporary-directory alias. Preserve this failed receipt;
+repair canonical admission without weakening descriptor/race guarantees, then
+repeat the actual controls and complete selection. Its full-corpus Step 8
+case passed with the original 890-second budget. The coverage observer is also
+being repaired: eager startup changed short-deadline behavior. A lazy public
+audit-hook prototype passed seven real 200 ms standard-library controls and
+four existing deadline tests; independent fork/source-line proof and complete
+final-source reports remain required.
+
 | Remaining dependency | Required next evidence |
 | --- | --- |
 | Public contracts and setup discovery | Final versioned integrated gates and ordinary installed native platform lanes |
 | Diagnostics and round-trip persistence | Accepted focused evidence; preserve it in final full-source checks |
-| Scientific presentation and performance | Refreshed actual images with independent critique; paired raster CPU/size/pixel evidence |
+| Scientific presentation and performance | Accepted finite actual-image critique and paired raster CPU/size/pixel evidence; retain hashes during final-source checks |
 | Comprehensive coverage | Same-interpreter subprocess tracing and full unchanged source scope, alongside existing core reports |
 | Installed acceptance | Final ordinary wheel with complete local API checks, then all five hosted native lanes |
 | Publication custody | Frozen versioned source, fresh manuscript/template render and companion pins, followed by exact-source hosted and release gates |
@@ -113,8 +145,9 @@ witnesses after capacity recovery and keep final storage usage bounded.
   selected 4.1.0 artifact archive directly before closing this workstream.
 - M8: local Python 3.14/macOS evidence does not replace fresh native Linux and
   Windows lane results. Unsupported descendant guarantees must refuse.
-- S6: baseline coverage is approximately 70.8% across 80,400 statements.
-  Preserve scope and report each environment; the >80% goal needs direct proof.
+- S6: the clean versioned original core report is 59,300/81,399 statements
+  (72.8510%). Preserve scope and report each environment; the >80% goal still
+  needs direct complete evidence.
 
 ## Integration and publication order
 

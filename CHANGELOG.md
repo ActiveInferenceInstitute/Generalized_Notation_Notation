@@ -9,7 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [4.1.0] - 2026-10-08
 
-**Public contracts and native boundaries.** This release line integrates the
+> **Public contracts and native boundaries.**
+
+This release line integrates the
 bounded minor/medium campaign. Exact release, installed-platform and custody
 acceptance is recorded by the release's source-bound receipts; local focused
 checks alone cannot establish publication or the full supported matrix.
