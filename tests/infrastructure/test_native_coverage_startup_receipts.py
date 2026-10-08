@@ -45,7 +45,10 @@ def _native_startup(tmp_path: Path, body: str) -> dict:
         encoding="utf-8",
     )
     result = subprocess.run(
-        [sys.executable, "-I", str(bootstrap)],
+        # A comprehensive run already installs its own .pth observer. This
+        # authored harness executes the actual startup explicitly and must not
+        # borrow that outer observer's state, directory or inferred credit.
+        [sys.executable, "-I", "-S", str(bootstrap)],
         cwd=tmp_path,
         capture_output=True,
         text=True,
@@ -117,8 +120,47 @@ def test_concurrent_native_launches_publish_complete_owned_receipts(
     assert result["outputs"] == {"first": "first", "second": "second"}
     assert len(result["paths"]) == len(set(result["paths"])) == 2
     assert len(result["receipt"]["subprocess_launches"]) == 2
+    assert all(launch["no_site"] for launch in result["receipt"]["subprocess_launches"])
     assert result["receipt"]["audit_hook_verified"] is True
     assert result["receipt"]["activation"] is None
+    assert result["temporary"] == []
+
+
+def test_native_spawn_receipt_is_bound_to_its_own_pid(tmp_path: Path) -> None:
+    result = _native_startup(
+        tmp_path,
+        """
+        bindings = {key: namespace[key] for key in (
+            'GNN_BOUND_STARTUP_DIR', 'GNN_BOUND_CONFIG', 'GNN_BOUND_SOURCE')}
+        child_code = (
+            'import os, runpy; '
+            f"runpy.run_path({namespace['__file__']!r}, init_globals={bindings!r}); "
+            'print(os.getpid())'
+        )
+        child = int(subprocess.check_output(
+            [sys.executable, '-I', '-S', '-c', child_code], text=True, timeout=3,
+        ))
+        parent = os.getpid()
+        print(json.dumps({
+            'parent_pid': parent, 'child_pid': child,
+            'parent': json.loads((receipt_root / f'{parent}.json').read_text()),
+            'child': json.loads((receipt_root / f'{child}.json').read_text()),
+            'receipt_files': sorted(p.name for p in receipt_root.glob('*.json')),
+            'temporary': [p.name for p in receipt_root.glob('*.tmp')],
+        }))
+        """,
+    )
+    assert result["child_pid"] != result["parent_pid"]
+    assert result["child"]["pid"] == result["child_pid"]
+    assert result["parent"]["pid"] == result["parent_pid"]
+    assert result["child"]["subprocess_launches"] == []
+    assert "forked_from_pid" not in result["child"]
+    assert len(result["parent"]["subprocess_launches"]) == 1
+    assert result["parent"]["subprocess_launches"][0]["no_site"] is True
+    assert result["parent"]["subprocess_launches"][0]["isolated"] is True
+    assert result["receipt_files"] == sorted(
+        [f"{result['parent_pid']}.json", f"{result['child_pid']}.json"]
+    )
     assert result["temporary"] == []
 
 
