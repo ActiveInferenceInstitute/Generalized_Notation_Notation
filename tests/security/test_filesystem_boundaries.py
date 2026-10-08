@@ -529,10 +529,23 @@ def test_native_cancellation_stops_direct_worker_within_budget(
         "before_cancel": None,
         "after_return": None,
     }
+    worker_executable = sys.executable
 
     if os.name == "nt":
         import ctypes
         from ctypes import wintypes
+
+        # A Windows venv python.exe redirects to a separate payload process.
+        # This fixture measures the promised direct worker, using only stdlib.
+        worker_executable = sys._base_executable
+        assert worker_executable and Path(worker_executable).is_file()
+        minor = json.loads(subprocess.check_output(
+            [worker_executable, "-I", "-c",
+             "import json,sys; print(json.dumps(list(sys.version_info[:2])))"],
+            text=True, timeout=4,
+        ))
+        assert minor == list(sys.version_info[:2])
+        diagnostic["worker_python_minor"] = minor
 
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
         kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
@@ -584,6 +597,7 @@ def test_native_cancellation_stops_direct_worker_within_budget(
             }
 
     actual_popen = subprocess.Popen
+    diagnostic["worker_executable"] = worker_executable
 
     def observe_popen(*args: object, **kwargs: object) -> subprocess.Popen[bytes]:
         nonlocal supervised_handle
@@ -639,7 +653,7 @@ def test_native_cancellation_stops_direct_worker_within_budget(
     try:
         try:
             result = run_subprocess_envelope(
-                [sys.executable, "-c", f"import os,time; from pathlib import Path; Path({str(marker)!r}).write_text(str(os.getpid())); time.sleep(30)"],
+                [worker_executable, "-c", f"import os,time; from pathlib import Path; Path({str(marker)!r}).write_text(str(os.getpid())); time.sleep(30)"],
                 timeout=4, sandbox=False, cancel_token=token,
             )
         finally:
@@ -673,6 +687,11 @@ def test_native_cancellation_stops_direct_worker_within_budget(
         assert time.monotonic() - started < 5, detail
         assert result["cancelled"] and not result["success"] and result["error_type"] == "Cancelled", detail
         assert result["cleanup_verified"] and result["streams_drained"], detail
+        assert diagnostic["supervised_pid"] == int(marker.read_text()), detail
+        if os.name == "nt":
+            assert diagnostic["supervised_before_return"]["creation_filetime"] == diagnostic["before_cancel"]["creation_filetime"], detail
+            assert diagnostic["supervised_after_return"]["wait_state"] == 0, detail
+            assert diagnostic["after_return"]["wait_state"] == 0, detail
         assert not psutil.pid_exists(int(marker.read_text())), detail
     finally:
         if os.name == "nt":

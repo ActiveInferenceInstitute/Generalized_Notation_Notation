@@ -100,6 +100,17 @@ applies only to the receipt's declared `containment` boundary; it never certifie
 unobserved children. A detached child retaining inherited output handles causes
 bounded stream-drain failure rather than a successful cleanup receipt.
 
+The Windows direct worker is the actual process created by `subprocess.Popen`.
+A venv interpreter redirector or another executable wrapper can create a separate
+payload process. Verified termination of the wrapper does not establish that its
+payload terminated, even when inherited streams drained. Callers needing that
+payload guarantee must request descendant containment, which Windows currently
+refuses before launch. The native direct-worker acceptance fixture therefore uses
+the current Python's base interpreter for an authored standard-library-only child,
+witnesses the same Python minor, and requires supervised PID and native creation
+identity to equal the child-authored identity before asserting its bounded exit.
+This fixture choice does not add containment for general venv or wrapper commands.
+
 `run_subprocess_envelope` accepts `require_descendant_containment=True` and
 `require_descendant_resource_accounting=True`. Unsupported native platforms
 return `error_type="UnsupportedContainment"`, `containment="not_started"`
