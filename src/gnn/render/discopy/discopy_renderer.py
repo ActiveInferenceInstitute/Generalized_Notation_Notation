@@ -168,16 +168,17 @@ class DisCoPyRenderer:
             gnn_spec, self.options.get("matrix_permutations")
         )
         symmetry_metadata_json = json.dumps(symmetry_metadata, indent=2)
-
-        # Generate the Python code
-        code = f'''#!/usr/bin/env python3
-"""
+        module_docstring = f"""
 DisCoPy Categorical Diagram Generation
 Generated from GNN Model: {model_display_name}
 
 This script creates categorical diagrams representing the Active Inference model
 structure using DisCoPy's compositional framework.
 """
+
+        # Generate the Python code
+        code = f'''#!/usr/bin/env python3
+{module_docstring!r}
 
 import sys
 
@@ -367,7 +368,7 @@ def export_circuit_data(circuit_dict, analysis_results, output_dir="discopy_diag
     
     # Export circuit information
     circuit_info = {{
-        'model_name': '{model_display_name}',
+        'model_name': {model_display_name!r},
         'timestamp': datetime.now().isoformat(),
         'parameters': {{
             'num_states': NUM_STATES,
@@ -392,7 +393,7 @@ def main():
     
     print("="*60)
     print("DisCoPy Categorical Diagrams - GNN Generated")
-    print(f"Model: {model_display_name}")
+    print("Model:", {model_display_name!r})
     print("="*60)
     
     try:

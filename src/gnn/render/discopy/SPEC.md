@@ -16,6 +16,9 @@ Generates Python code using DisCoPy for categorical diagram construction.
 
 - Python script files using `discopy` API
 - Diagram serialization (JSON)
+- Model display names are serialized as Python literals in generated module
+  documentation and executable slots. Quotes, newlines, backslashes, Unicode and
+  braces remain data and retain their values in the exported JSON.
 
 ## Architecture
 
