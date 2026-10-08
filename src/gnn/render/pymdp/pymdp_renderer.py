@@ -114,20 +114,8 @@ def _gnn_spec_for_json_embedding(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _json_to_python_literal(json_str: str) -> str:
-    """Convert a JSON string into a valid Python dict literal.
-
-    Replaces JSON keywords (``null``, ``true``, ``false``) with their Python
-    equivalents (``None``, ``True``, ``False``) so the resulting string can
-    be embedded directly into generated Python source code.
-    """
-    import re
-
-    # Only replace bare JSON keywords that appear as values (after : or in arrays)
-    # Use word-boundary matching to avoid replacing substrings in keys
-    s = re.sub(r"\bnull\b", "None", json_str)
-    s = re.sub(r"\btrue\b", "True", s)
-    s = re.sub(r"\bfalse\b", "False", s)
-    return s
+    """Embed JSON-clean values without rewriting words inside authored strings."""
+    return repr(_json.loads(json_str))
 
 
 def _extract_dimensions(
