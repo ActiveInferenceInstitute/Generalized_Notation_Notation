@@ -152,6 +152,13 @@ on the live execution path.
 - **Purpose**: Standard input/output communication
 - **Use Case**: Local tool execution and testing
 - **Implementation**: `mcp.server_stdio`
+- **Framing**: UTF-8 JSON-RPC lines have a 1 MiB per-line cap. Each server
+  retains coalesced-read suffix bytes; fragmented lines remain one request.
+- **EOF**: Already admitted requests and their responses drain before exit,
+  including a final line without a newline. Oversized lines fail closed.
+- **Cancellation**: The maintained stdio dispatcher does not implement
+  request cancellation; an explicit `notifications/cancelled` request reports
+  method-not-found. POSIX operator SIGINT stops the server's transport loop.
 
 #### HTTP Transport
 - **Purpose**: Web-based MCP server
