@@ -2,6 +2,7 @@
 
 import csv
 import json
+import math
 from pathlib import Path
 
 import h5py
@@ -113,3 +114,101 @@ def test_simulation_exports_preserve_arrays_and_csv_axis_values(tmp_path: Path) 
         )
         np.testing.assert_array_equal(artifact["traces/action"][()], [1, 0])
         assert artifact["calibration"][()] == complex(2, -3)
+
+
+def test_parsed_model_matrix_artifacts_keep_action_axes_and_every_csv(
+    tmp_path: Path, saved_plot_data: dict
+) -> None:
+    from gnn.visualization import generate_matrix_visualizations
+
+    likelihood = [[0.8, 0.2, 0.5], [0.2, 0.8, 0.5]]
+    action_zero = [[0.7, 0.1, 0.2], [0.2, 0.6, 0.3], [0.1, 0.3, 0.5]]
+    action_one = [[0.2, 0.4, 0.6], [0.3, 0.4, 0.1], [0.5, 0.2, 0.3]]
+    transition = np.stack([action_zero, action_one], axis=2)
+    matrices = {
+        "A": likelihood,
+        "B": transition.tolist(),
+        "C": [1, -2],
+        "D": [0.1, 0.3, 0.6],
+    }
+
+    paths = generate_matrix_visualizations(
+        {
+            "parameters": [
+                {"name": name, "value": value} for name, value in matrices.items()
+            ]
+        },
+        tmp_path,
+        "asymmetric_sensor",
+    )
+
+    assert {Path(path).name for path in paths} == {
+        "matrix_analysis.png",
+        "matrix_statistics.png",
+        "pomdp_transition_analysis.png",
+    }
+    assert_native_pngs(paths)
+    overview = saved_plot_data["matrix_analysis.png"]
+    a_panel = next(axis for axis in overview if axis["title"].startswith("A ("))
+    b_panel = next(axis for axis in overview if axis["title"].startswith("B ("))
+    np.testing.assert_array_equal(a_panel["meshes"][0].reshape(2, 3), likelihood)
+    np.testing.assert_array_equal(b_panel["meshes"][0].reshape(3, 3), action_zero)
+    assert next(axis for axis in overview if axis["title"] == "C (Vector)")["bars"] == [
+        1,
+        -2,
+    ]
+    np.testing.assert_array_equal(
+        next(axis for axis in overview if axis["title"] == "D (Vector)")["bars"],
+        [0.1, 0.3, 0.6],
+    )
+    statistics = {
+        axis["title"]: axis for axis in saved_plot_data["matrix_statistics.png"]
+    }
+    assert statistics["Matrix Sizes"]["bars"] == [6, 18, 2, 3]
+    np.testing.assert_allclose(
+        statistics["Matrix Means"]["bars"], [0.5, 1 / 3, -0.5, 1 / 3]
+    )
+    transitions = {
+        axis["title"]: axis for axis in saved_plot_data["pomdp_transition_analysis.png"]
+    }
+    np.testing.assert_array_equal(
+        transitions["Action 0 Transition Matrix"]["images"][0], action_zero
+    )
+    np.testing.assert_array_equal(
+        transitions["Action 1 Transition Matrix"]["images"][0], action_one
+    )
+    entropy = []
+    for plane in (action_zero, action_one):
+        columns = zip(*plane)
+        entropy.append(
+            sum(-sum(p * math.log(p) for p in column) for column in columns) / 3
+        )
+    entropy_plot = transitions["Transition Entropy by Action"]
+    np.testing.assert_allclose(entropy_plot["bars"], entropy)
+    assert entropy_plot["ylabel"] == "Mean Entropy (nats)"
+
+    exported = {}
+    for path in (tmp_path / "asymmetric_sensor").glob("*.csv"):
+        with path.open(newline="") as stream:
+            rows = list(csv.reader(stream))
+        name = rows[0][0].removeprefix("Matrix: ")
+        assert name not in exported, (
+            "Every matrix needs an independent source-identified export"
+        )
+        exported[name] = rows
+    assert set(exported) == set(matrices)
+    a_rows = [row for row in exported["A"] if row and row[0].startswith("Row ")]
+    np.testing.assert_array_equal(
+        [[float(value) for value in row[1:]] for row in a_rows], likelihood
+    )
+    for name in ("C", "D"):
+        np.testing.assert_array_equal(
+            [float(value) for value in exported[name][-1]], matrices[name]
+        )
+    b_rows = exported["B"]
+    for action, plane in enumerate((action_zero, action_one)):
+        start = b_rows.index([f"Action slice {action}"]) + 2
+        np.testing.assert_array_equal(
+            [[float(value) for value in row[1:]] for row in b_rows[start : start + 3]],
+            plane,
+        )

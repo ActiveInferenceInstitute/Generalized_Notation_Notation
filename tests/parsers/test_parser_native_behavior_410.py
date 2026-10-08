@@ -53,6 +53,63 @@ def infer():
     assert result.source_file == str(source)
 
 
+def test_authored_protobuf_preserves_scalar_types_and_scientific_annotations(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "sensor.proto"
+    source.write_text(
+        """syntax = "proto3";
+package sensor.agent;
+message Sensor {
+  int32 state = 1;
+  double gain = 2;
+  bool policy = 3;
+  string observation = 4;
+}
+// Connection: state --directed--> observation
+// Parameter: steps = 3
+// Parameter: temperature = -0.125
+// Parameter: enabled = true
+""",
+        encoding="utf-8",
+    )
+
+    result = GNNParsingSystem().parse_file(source)
+
+    assert result.success, result.errors
+    assert result.source_file == str(source)
+    assert result.model.model_name == "sensor_agent"
+    variables = {variable.name: variable for variable in result.model.variables}
+    assert set(variables) == {"state", "gain", "policy", "observation"}
+    assert variables["state"].data_type is DataType.INTEGER
+    assert variables["gain"].data_type is DataType.FLOAT
+    assert variables["policy"].data_type is DataType.BINARY
+    assert variables["observation"].data_type is DataType.CATEGORICAL
+    assert len(result.model.connections) == 1
+    assert result.model.connections[0].source_variables == ["state"]
+    assert result.model.connections[0].target_variables == ["observation"]
+    assert result.model.connections[0].connection_type.value == "directed"
+    assert {
+        parameter.name: parameter.value for parameter in result.model.parameters
+    } == {"steps": 3, "temperature": -0.125, "enabled": True}
+
+
+def test_protobuf_metadata_without_model_fields_cannot_report_success(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "empty.proto"
+    source.write_text(
+        'syntax = "proto3";\npackage empty.sensor;\nmessage Empty {}\n',
+        encoding="utf-8",
+    )
+
+    result = GNNParsingSystem().parse_file(source)
+
+    assert not result.success
+    assert result.model.variables == []
+    assert any("No variables" in error for error in result.errors)
+
+
 def test_yaml_authored_mapping_preserves_scientific_values(tmp_path: Path) -> None:
     source = tmp_path / "agent.yaml"
     source.write_text(
@@ -360,3 +417,89 @@ def test_authored_xml_retains_distinct_physical_same_name_declarations(
     assert [
         (variable.name, variable.dimensions) for variable in result.model.variables
     ] == [("state", [2]), ("state", [3])]
+
+
+def test_symbolic_maxima_source_preserves_model_axes_constants_and_dependencies(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "sensor.mac"
+    source.write_text(
+        """/* Model: SymbolicSensor */
+likelihood: matrix([0.8,0.2],[0.3,0.7],[0.1,0.9]);
+state: matrix([0.25],[0.75]);
+gain: -0.125;
+steps: 3;
+phase: %pi / 2;
+decay: %e ^ -gain;
+predict(state, gain) := gain * state;
+solve(gain * state = 1, state);
+""",
+        encoding="utf-8",
+    )
+
+    result = GNNParsingSystem().parse_file(source, GNNFormat.MAXIMA)
+
+    assert result.success, result.errors
+    assert result.model.model_name == "SymbolicSensor"
+    variables = {variable.name: variable for variable in result.model.variables}
+    assert variables["likelihood"].dimensions == [3, 2]
+    assert variables["likelihood"].var_type is VariableType.LIKELIHOOD_MATRIX
+    assert variables["state"].dimensions == [2, 1]
+    parameters = {
+        parameter.name: parameter.value for parameter in result.model.parameters
+    }
+    assert parameters["gain"] == -0.125
+    assert parameters["steps"] == 3
+    assert "%pi / 2" in parameters["phase"]
+    assert "%e ^ -gain" in parameters["decay"]
+    equations = {equation.label: equation for equation in result.model.equations}
+    assert equations["predict"].content == "predict(state, gain) := gain * state"
+    assert equations["solve_1"].content == "solve(gain * state = 1, state)"
+    assert {
+        (connection.source_variables[0], connection.target_variables[0])
+        for connection in result.model.connections
+    } == {("state", "predict"), ("gain", "predict")}
+
+
+def test_coq_authored_declarations_retain_types_and_unverified_theorem_text(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "sensor.v"
+    source.write_text(
+        """Require Import Reals.
+Require Import Lists.
+Module SensorEvidence.
+Parameter hidden_state : nat.
+Parameter observation : R.
+Variable control_action : bool.
+Definition preference : R := 2.
+Theorem natural_identity : forall n : nat, n = n.
+Proof. intros. reflexivity. Qed.
+End SensorEvidence.
+""",
+        encoding="utf-8",
+    )
+
+    result = GNNParsingSystem().parse_file(source, GNNFormat.COQ)
+
+    assert result.success, result.errors
+    assert result.model.model_name == "SensorEvidence"
+    variables = {variable.name: variable for variable in result.model.variables}
+    assert variables["hidden_state"].var_type is VariableType.HIDDEN_STATE
+    assert variables["hidden_state"].data_type is DataType.INTEGER
+    assert variables["observation"].var_type is VariableType.OBSERVATION
+    assert variables["observation"].data_type is DataType.CONTINUOUS
+    assert variables["control_action"].var_type is VariableType.ACTION
+    assert variables["control_action"].data_type is DataType.BINARY
+    assert variables["preference"].data_type is DataType.CONTINUOUS
+    assert result.model.extensions["coq_requires"] == ["Reals", "Lists"]
+    assert result.model.extensions["uses_reals"]
+    assert result.model.extensions["uses_lists"]
+    # This consumer extracts declarations, not a compiler/proof acceptance receipt.
+    theorem = next(
+        parameter
+        for parameter in result.model.parameters
+        if parameter.name == "theorem_natural_identity"
+    )
+    assert theorem.value == "forall n : nat, n = n"
+    assert theorem.type_hint == "theorem"

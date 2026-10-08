@@ -29,6 +29,11 @@ def record_plot_data(monkeypatch: pytest.MonkeyPatch) -> dict:
                 "images": [
                     np.asarray(image.get_array()).copy() for image in axis.images
                 ],
+                "meshes": [
+                    np.asarray(collection.get_array()).copy()
+                    for collection in axis.collections
+                    if collection.get_array() is not None
+                ],
                 "lines": [
                     (
                         np.asarray(line.get_xdata()).copy(),
