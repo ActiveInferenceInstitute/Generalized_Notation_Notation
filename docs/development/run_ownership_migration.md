@@ -230,6 +230,17 @@ source/dependency and policy score receipts. Search requests over the declared
 caps fail instead of silently shrinking the horizon or action set.
 
 
+## CLI output encoding
+
+The `gnn` console command, `python -m gnn.cli` and explicit Python `main()`
+invocations emit native stdout/stderr in UTF-8. Pipe consumers should decode
+those streams as UTF-8 to preserve authored Unicode paths and diagnostics.
+The CLI restores the caller's original native encoding and error policy when
+the invocation ends, including argument failures. Importing CLI modules does
+not configure streams; nonnative capture streams such as `StringIO` retain
+their existing behavior. Command exit codes and supervision deadlines are
+unchanged.
+
 ## Experimental THRML artifacts and configuration
 
 Install `uv sync --extra thrml` and select `--frameworks thrml` explicitly.

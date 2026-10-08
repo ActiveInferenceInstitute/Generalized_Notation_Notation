@@ -41,6 +41,11 @@ checks alone cannot establish publication or the full supported matrix.
   programs configure their native output streams before diagnostics, retaining
   scientific Unicode on Windows code pages and leaving imported caller streams
   unchanged. Shared process supervision and numerical algorithms are preserved.
+- Public CLI invocations emit native stdout/stderr in UTF-8 for Unicode paths,
+  validation markers and diagnostics, then restore caller-owned encoding and
+  error settings. Imported modules and nonnative capture streams are unchanged;
+  installed acceptance decodes and stores these CLI transcripts explicitly in
+  UTF-8 while preserving the original command outcomes and deadlines.
 - Saved validator round trips retain supplied parameters, nested values and
   variable descriptions. ASN.1 and Z line-comment interchange payloads stop at
   their actual line boundary; malformed payloads refuse conversion while
