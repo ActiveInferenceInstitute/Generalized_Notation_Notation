@@ -64,7 +64,9 @@ def braced_literal(value):
     return "{" + authored_tuple[1:-1] + "}"
 
 
-def generated_parameters(tmp_path: Path, spec: dict, renderer: str) -> dict:
+def generated_parameters(
+    tmp_path: Path, spec: dict, renderer: str, *, actions: int = 4
+) -> dict:
     path = tmp_path / "nested" / f"{renderer}.py"
     before = pickle.dumps(spec, protocol=5)
     render = render_gnn_to_jax if renderer == "general" else render_gnn_to_jax_pomdp
@@ -83,7 +85,11 @@ def generated_parameters(tmp_path: Path, spec: dict, renderer: str) -> dict:
             for name in "ABCD"
         }
     solver = module.create_pomdp_solver()
-    assert (solver.num_observations, solver.num_states, solver.num_actions) == (3, 2, 4)
+    assert (solver.num_observations, solver.num_states, solver.num_actions) == (
+        3,
+        2,
+        actions,
+    )
     # Independent hand calculation for action 0 and prior [0.3, 0.7]:
     # next-state mass [0.41, 0.59], then each authored likelihood row.
     np.testing.assert_allclose(
@@ -121,11 +127,12 @@ def test_canonical_numeric_representations_keep_authored_values(
 
 
 @pytest.mark.parametrize("renderer", ["general", "pomdp"])
+@pytest.mark.parametrize("declarations", ["none", "variables", "statespaceblock"])
 @pytest.mark.parametrize(
     "order", ["action_next_state_previous_state", "action_previous_state_next_state"]
 )
 def test_declared_transition_axes_reach_native_parameter_consumers(
-    tmp_path, renderer, order
+    tmp_path, renderer, order, declarations
 ):
     spec = canonical_spec()
     tensor = scientific_tables()["B"]
@@ -134,6 +141,10 @@ def test_declared_transition_axes_reach_native_parameter_consumers(
     )
     spec["initialparameterization"]["B"] = tensor.transpose(permutation).tolist()
     spec["model_parameters"]["b_tensor_order"] = order
+    if declarations != "none":
+        source_declarations = declared_variables()
+        source_declarations[1]["dimensions"] = "4,2,2,type=float"
+        spec[declarations] = source_declarations
     actual = generated_parameters(tmp_path, spec, renderer)
     for name, expected in scientific_tables().items():
         np.testing.assert_allclose(actual[name], expected, rtol=0, atol=1e-7)
@@ -430,3 +441,121 @@ def test_complex_legacy_payoffs_cannot_be_coerced_to_different_real_values(tmp_p
         ],
     }
     assert_refused_without_artifact(tmp_path, spec, "general")
+
+
+def legacy_text_spec(literals, representation):
+    text = "\n".join(f"{name} = {value}" for name, value in literals.items())
+    spec = {"ModelName": "Authored Scientific Text"}
+    if representation == "json_sections":
+        spec.update(
+            statespaceblock=declared_variables(),
+            raw_sections={"InitialParameterization": text},
+        )
+    elif representation == "older_sections":
+        spec.update(variables=declared_variables(), InitialParameterization=text)
+    else:
+        spec.update(
+            variables=declared_variables(),
+            parameters=[
+                {"name": name, "value": value} for name, value in literals.items()
+            ],
+        )
+    return spec
+
+
+@pytest.mark.parametrize("renderer", ["general", "pomdp"])
+@pytest.mark.parametrize(
+    "representation", ["json_sections", "older_sections", "typed_text"]
+)
+@pytest.mark.parametrize("table", ["A", "B", "C", "D", "leading_A"])
+def test_empty_authored_numeric_fields_are_not_deleted(
+    tmp_path, renderer, representation, table
+):
+    literals = {
+        name: braced_literal(value) for name, value in scientific_tables().items()
+    }
+    malformed = {
+        "A": "{(0.7,,0.1),(0.2,0.3),(0.1,0.6)}",
+        "B": "{((0.9,,0.4,0.2,0.75),(0.2,0.7,0.1,0.55)),((0.1,0.6,0.8,0.25),(0.8,0.3,0.9,0.45))}",
+        "C": "{-2.0,,0.75,1.25}",
+        "D": "{0.8,,0.2}",
+        "leading_A": "{,(0.7,0.1),(0.2,0.3),(0.1,0.6)}",
+    }
+    literals["A" if table == "leading_A" else table] = malformed[table]
+    assert_refused_without_artifact(
+        tmp_path, legacy_text_spec(literals, representation), renderer
+    )
+
+
+@pytest.mark.parametrize("renderer", ["general", "pomdp"])
+@pytest.mark.parametrize(
+    "representation", ["json_sections", "older_sections", "typed_text"]
+)
+def test_single_trailing_commas_preserve_authored_values(
+    tmp_path, renderer, representation
+):
+    literals = {
+        name: braced_literal(value) for name, value in scientific_tables().items()
+    }
+    literals["A"] = "{(0.7,0.1,),(0.2,0.3,),(0.1,0.6,),}"
+    literals["C"] = "{-2.0,0.75,1.25,}"
+    literals["D"] = "{0.8,0.2,}"
+    actual = generated_parameters(
+        tmp_path, legacy_text_spec(literals, representation), renderer
+    )
+    for name, expected in scientific_tables().items():
+        np.testing.assert_allclose(actual[name], expected, rtol=0, atol=1e-7)
+
+
+@pytest.mark.parametrize("renderer", ["general", "pomdp"])
+@pytest.mark.parametrize("representation", ["json_sections", "older_sections"])
+def test_commented_matrix_cannot_override_authored_values(
+    tmp_path, renderer, representation
+):
+    literals = {
+        name: braced_literal(value) for name, value in scientific_tables().items()
+    }
+    spec = legacy_text_spec(literals, representation)
+    misleading_comment = "# A={(0.1,0.8),(0.3,0.1),(0.6,0.1)}\n"
+    if representation == "json_sections":
+        spec["raw_sections"]["InitialParameterization"] = (
+            misleading_comment + spec["raw_sections"]["InitialParameterization"]
+        )
+    else:
+        spec["InitialParameterization"] = (
+            misleading_comment + spec["InitialParameterization"]
+        )
+    actual = generated_parameters(tmp_path, spec, renderer)
+    for name, expected in scientific_tables().items():
+        np.testing.assert_allclose(actual[name], expected, rtol=0, atol=1e-7)
+
+
+@pytest.mark.parametrize("declarations", ["variables", "statespaceblock"])
+def test_contradictory_action_major_source_declaration_is_refused(
+    tmp_path, declarations
+):
+    spec = canonical_spec()
+    spec["model_parameters"]["b_tensor_order"] = "action_next_state_previous_state"
+    spec["initialparameterization"]["B"] = (
+        scientific_tables()["B"].transpose(2, 0, 1).tolist()
+    )
+    source_declarations = declared_variables()
+    source_declarations[1]["dimensions"] = "3,2,2,type=float"
+    spec[declarations] = source_declarations
+    assert_refused_without_artifact(tmp_path, spec, "general")
+
+
+@pytest.mark.parametrize("renderer", ["general", "pomdp"])
+def test_passive_transition_source_axes_survive_canonical_single_action(
+    tmp_path, renderer
+):
+    spec = canonical_spec()
+    spec["model_parameters"].update(num_actions=1, passive_model=True)
+    spec["initialparameterization"]["B"] = scientific_tables()["B"][:, :, 0].tolist()
+    spec["variables"] = declared_variables()
+    spec["variables"][1]["dimensions"] = "2,2,type=float"
+    actual = generated_parameters(tmp_path, spec, renderer, actions=1)
+    expected = scientific_tables()
+    expected["B"] = expected["B"][:, :, :1]
+    for name, value in expected.items():
+        np.testing.assert_allclose(actual[name], value, rtol=0, atol=1e-7)
