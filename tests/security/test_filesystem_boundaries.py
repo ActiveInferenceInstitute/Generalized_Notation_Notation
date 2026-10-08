@@ -8,11 +8,15 @@ Native Windows tests do not borrow POSIX assertions or fake platform values.
 from __future__ import annotations
 
 import errno
+import hashlib
+import json
 import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
+import uuid
 from pathlib import Path
 from typing import Callable
 
@@ -241,6 +245,156 @@ def test_output_directory_replacement_cannot_create_external_lock(
     assert not worker.is_alive() and not errors
     assert sentinel.read_text() == "outside-owner"
     assert (tmp_path / "parked" / ".gnn_run.lock").read_text() == ""
+
+
+@pytest.mark.needs_posix
+def test_native_cli_output_parent_alias_preserves_run_identity(tmp_path: Path) -> None:
+    project = Path(__file__).resolve().parents[2]
+    model = project / "input/gnn_files/discrete/two_state_bistable.md"
+    with tempfile.TemporaryDirectory() as temporary:
+        native_parent = Path(temporary)
+        canonical_parent = native_parent.resolve()
+        # Use the actual OS temp alias where supplied (macOS /var); otherwise
+        # exercise the same public contract through an operator-owned alias.
+        alias = native_parent
+        if native_parent == canonical_parent:
+            alias = tmp_path / "trusted-temp-alias"
+            alias.symlink_to(canonical_parent, target_is_directory=True)
+        assert alias != canonical_parent and alias.resolve() == canonical_parent
+        source = canonical_parent / "models"
+        source.mkdir()
+        shutil.copyfile(model, source / model.name)
+        output = alias / "output"
+        canonical_output = canonical_parent / "output"
+        receipts = []
+        contexts = []
+        lock_identities = []
+        for selected_output in (output, canonical_output):
+            environment = dict(os.environ)
+            invocation = uuid.uuid4().hex
+            environment["GNN_RUN_ID"] = invocation
+            environment.pop("GNN_RUN_CONTEXT_FILE", None)
+            result = subprocess.run(
+                [sys.executable, "-m", "gnn.main", "--only-steps", "3",
+                 "--target-dir", str(source), "--output-dir", str(selected_output)],
+                cwd=project, env=environment, capture_output=True, text=True,
+                timeout=60,
+            )
+            assert result.returncode == 0, result.stderr
+            receipt = json.loads((canonical_output / "00_pipeline_summary" /
+                                  "pipeline_execution_summary.json").read_text())
+            context = json.loads((canonical_output / "00_pipeline_summary" /
+                                  "run_context.json").read_text())
+            assert receipt["run_id"] == invocation == context["run_id"]
+            assert context["output_root"] == str(canonical_output)
+            assert receipt["steps"] and all(
+                step["status"].startswith("SUCCESS") for step in receipt["steps"]
+            )
+            selected = receipt["model_selection"]
+            assert len(selected) == 1
+            assert selected[0]["source_path"] == str(source / model.name)
+            assert selected[0]["sha256"] == hashlib.sha256(model.read_bytes()).hexdigest()
+            assert receipt["steps"][0]["artifacts"]
+            for artifact in receipt["steps"][0]["artifacts"]:
+                assert (canonical_output / artifact["path"]).is_file()
+            lock = (canonical_output / ".gnn_run.lock").stat()
+            lock_identities.append((lock.st_dev, lock.st_ino))
+            receipts.append(receipt)
+            contexts.append(context)
+        assert lock_identities[0] == lock_identities[1]
+        assert receipts[0]["run_id"] != receipts[1]["run_id"]
+        assert receipts[0]["run_hash"] == receipts[1]["run_hash"]
+        assert receipts[0]["file_hashes"] == receipts[1]["file_hashes"]
+        assert receipts[0]["model_selection"] == receipts[1]["model_selection"]
+        assert contexts[0]["models"] == contexts[1]["models"]
+
+
+@pytest.mark.needs_posix
+@pytest.mark.parametrize("redirect", ["output", "lock"])
+def test_native_cli_trusted_parent_alias_still_refuses_redirected_leaf(
+    tmp_path: Path, redirect: str
+) -> None:
+    project = Path(__file__).resolve().parents[2]
+    parent, outside = tmp_path / "parent", tmp_path / "outside"
+    parent.mkdir()
+    outside.mkdir()
+    sentinel = outside / ".gnn_run.lock"
+    sentinel.write_text("external owner")
+    alias = tmp_path / "alias"
+    alias.symlink_to(parent, target_is_directory=True)
+    output = alias / "output"
+    if redirect == "output":
+        output.symlink_to(outside, target_is_directory=True)
+    else:
+        output.mkdir()
+        (output / ".gnn_run.lock").symlink_to(sentinel)
+    result = subprocess.run(
+        [sys.executable, "-m", "gnn.main", "--only-steps", "3",
+         "--target-dir", str(project / "input/gnn_files/discrete"),
+         "--output-dir", str(output)],
+        cwd=project, capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode == 1 and "Pipeline ownership failure" in result.stderr
+    assert sentinel.read_text() == "external owner"
+    assert not (outside / "00_pipeline_summary").exists()
+    assert not (parent / "output/00_pipeline_summary").exists()
+
+
+@pytest.mark.needs_posix
+def test_trusted_parent_alias_replacement_cannot_redirect_lease(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent, outside = tmp_path / "parent", tmp_path / "outside"
+    parent.mkdir()
+    outside.mkdir()
+    (parent / "output").mkdir()
+    (outside / "output").mkdir()
+    sentinel = outside / "output/.gnn_run.lock"
+    sentinel.write_text("external owner")
+    alias = tmp_path / "alias"
+    alias.symlink_to(parent, target_is_directory=True)
+
+    def replace() -> None:
+        alias.unlink()
+        alias.symlink_to(outside, target_is_directory=True)
+
+    ready, replaced, worker, errors = _replacement_thread(replace)
+    open_file = os.open
+
+    def pause_open(path: object, flags: int, *args: object, **kwargs: object) -> int:
+        if path == ".gnn_run.lock" and kwargs.get("dir_fd") is not None:
+            ready.set()
+            assert replaced.wait(3)
+        return open_file(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(filesystem.os, "open", pause_open)
+    try:
+        with pytest.raises(OutputLeaseError, match="directory changed"):
+            with OutputLease(alias / "output", "replaced-alias"):
+                pytest.fail("Replaced parent alias was admitted")
+    finally:
+        ready.set()
+        worker.join(3)
+    assert not worker.is_alive() and not errors
+    assert sentinel.read_text() == "external owner"
+    assert (parent / "output/.gnn_run.lock").read_text() == ""
+
+
+@pytest.mark.needs_posix
+@pytest.mark.parametrize("parent_kind", ["traversal", "cycle"])
+def test_lease_parent_resolution_failure_preserves_typed_refusal(
+    tmp_path: Path, parent_kind: str
+) -> None:
+    if parent_kind == "traversal":
+        output = tmp_path / "absent/../output"
+    else:
+        alias = tmp_path / "cycle"
+        alias.symlink_to(alias, target_is_directory=True)
+        output = alias / "output"
+    with pytest.raises(OutputLeaseError):
+        with OutputLease(output, "invalid-parent"):
+            pytest.fail("Unsafe parent was admitted")
+    assert not (tmp_path / "output").exists() and not (tmp_path / "absent").exists()
 
 
 @pytest.mark.needs_posix

@@ -50,6 +50,19 @@ failures remain `OutputLeaseError`. Rejected acquisitions do not overwrite a
 replacement link target. Closing the lease releases native `flock` or Windows
 `msvcrt` byte-range locking; the lock file remains for the next invocation.
 
+For direct POSIX CLI and Python invocation, the operator-trusted output parent
+is canonicalized before descriptor traversal. This admits existing ancestor
+aliases such as macOS `/var` to `/private/var`, including ordinary temporary
+directories. The final output name is appended without resolving it: an output
+root symlink and a symlink lock still fail. Parent traversal text (`..`) fails
+before normalization. Acquisition checks the original requested directory's
+identity before and after tree inspection, so replacing an admitted alias in
+that interval cannot silently redirect ownership. Parent canonicalization is
+not safe admission of an attacker-controlled symlink tree; the operator must
+trust the parent entries during resolution and all subsequent producer writes.
+API workspace and request admission retain their stricter no-symlink rules.
+Windows creation and lease behavior remain the trusted-tree contract above.
+
 The lease is advisory: cooperating GNN runs exclude each other. An uncooperative
 writer can unlink or rename an active lock and create another inode. The lock
 cannot prevent that writer from modifying outputs after acquisition. It is not

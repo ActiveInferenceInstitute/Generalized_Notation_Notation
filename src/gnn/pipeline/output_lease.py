@@ -82,7 +82,18 @@ class OutputLease:
         try:
             root_descriptor = None
             if os.name == "posix":
-                self._directory_context = directory_handle(self.output_dir, create=True)
+                requested = self.output_dir.absolute()
+                if ".." in requested.parts:
+                    raise ValueError("Output path must not contain parent traversal")
+                # CLI parents are operator-trusted and may use native aliases
+                # such as macOS /var -> /private/var. Resolve only that parent:
+                # the output leaf must still pass the descriptor no-follow open.
+                # Retain the requested path for the identity checks below.
+                try:
+                    lease_directory = requested.parent.resolve() / requested.name
+                except RuntimeError as error:
+                    raise ValueError("Cannot resolve pipeline output parent") from error
+                self._directory_context = directory_handle(lease_directory, create=True)
                 root_descriptor = self._directory_context.__enter__()
                 root_identity = os.fstat(root_descriptor)
             else:
