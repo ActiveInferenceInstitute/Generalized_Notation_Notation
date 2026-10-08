@@ -61,6 +61,8 @@ import importlib.util
 import json
 import os
 import sys
+import tempfile
+import threading
 import time
 
 if not hasattr(sys, "_gnn_native_coverage_observer"):
@@ -89,35 +91,48 @@ if not hasattr(sys, "_gnn_native_coverage_observer"):
         if isinstance(getattr(module, "__dict__", {}).get("__file__"), str)
         and os.path.realpath(module.__dict__["__file__"]).startswith(source_prefix)
     )
+    receipt_lock = threading.RLock()
 
     def persist():
-        path = os.path.join(root, str(os.getpid()) + ".json")
-        temporary = path + ".tmp"
-        with open(temporary, "w", encoding="utf-8") as stream:
-            json.dump(state, stream)
-            stream.write("\\n")
-        os.replace(temporary, path)
+        with receipt_lock:
+            path = os.path.join(root, str(os.getpid()) + ".json")
+            descriptor, temporary = tempfile.mkstemp(
+                prefix=os.path.basename(path) + ".", suffix=".tmp", dir=root)
+            try:
+                with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+                    json.dump(state, stream)
+                    stream.write("\\n")
+                os.replace(temporary, path)
+            finally:
+                try:
+                    os.unlink(temporary)
+                except FileNotFoundError:
+                    pass
 
     def activate(filename, kind="before_original_source_exec"):
-        if state["activation"] is not None:
-            return
-        state["activation"] = {"kind": kind, "first_source": filename,
-                               "sys_path": list(sys.path), "cwd": os.getcwd()}
+        with receipt_lock:
+            if state["activation"] is not None:
+                return
+            activation = {"kind": kind, "first_source": filename,
+                          "sys_path": list(sys.path), "cwd": os.getcwd()}
+            state["activation"] = dict(activation)
+        # Coverage initialization stays outside receipt publication. Build its
+        # metadata locally, then publish the complete update under the lock.
         try:
             from coverage import Coverage
             current = Coverage.current()
             if current is None:
                 current = Coverage(config_file=config_file, auto_data=True, data_suffix=True)
-                state["activation"]["original_source_options"] = current.get_option("run:source")
+                activation["original_source_options"] = current.get_option("run:source")
                 current.set_option("run:source", [source_root])
-                state["activation"]["resolved_source_options"] = [source_root]
+                activation["resolved_source_options"] = [source_root]
                 current.start()
                 # A public initial save establishes a valid conservative database.
                 current.save()
-                state["activation"]["coverage_owner"] = "native_observer"
+                activation["coverage_owner"] = "native_observer"
             else:
-                state["activation"]["coverage_owner"] = "existing_coverage"
-            state["activation"]["data_file"] = current.get_data().data_filename()
+                activation["coverage_owner"] = "existing_coverage"
+            activation["data_file"] = current.get_data().data_filename()
             allowed = globals().get("GNN_BOUND_ADMITTED_PATHS", [])
             roots = [os.path.realpath(path) for path in allowed]
             roots.extend([os.path.realpath(sys.prefix), os.path.realpath(sys.base_prefix),
@@ -126,7 +141,7 @@ if not hasattr(sys, "_gnn_native_coverage_observer"):
                             if not any(os.path.realpath(path or os.getcwd()) == root
                                        or os.path.realpath(path or os.getcwd()).startswith(root + os.sep)
                                        for root in roots)})
-            state["activation"]["extra_sys_path_entries"] = extra
+            activation["extra_sys_path_entries"] = extra
             from importlib.metadata import distributions
             import hashlib
             overlays = []
@@ -138,29 +153,35 @@ if not hasattr(sys, "_gnn_native_coverage_observer"):
                         (distribution.read_text("METADATA") or "").encode()
                     ).hexdigest(),
                 })
-            state["activation"]["extra_metadata_overlays"] = sorted(
+            activation["extra_metadata_overlays"] = sorted(
                 overlays, key=lambda item: (item["name"].lower(), item["version"], item["location"]))
         except Exception as error:
-            state["activation"]["error_class"] = type(error).__name__
-            state["activation"]["error"] = str(error)
-            persist()
+            activation["error_class"] = type(error).__name__
+            activation["error"] = str(error)
+            with receipt_lock:
+                state["activation"].update(activation)
+                persist()
             raise
-        persist()
+        with receipt_lock:
+            state["activation"].update(activation)
+            persist()
 
     def audit(event, args):
         if event == "gnn.native.coverage.probe":
-            state["audit_hook_verified"] = True
+            with receipt_lock:
+                state["audit_hook_verified"] = True
             return
         if event == "subprocess.Popen":
             arguments = args[1] if isinstance(args[1], (list, tuple)) else []
-            state["subprocess_launches"].append({
-                "executable": str(args[0]),
-                "no_site": "-S" in arguments,
-                "isolated": "-I" in arguments,
-                "qualification": "-S bypasses .pth startup and receives no inferred child-source credit"
-                if "-S" in arguments else None,
-            })
-            persist()
+            with receipt_lock:
+                state["subprocess_launches"].append({
+                    "executable": str(args[0]),
+                    "no_site": "-S" in arguments,
+                    "isolated": "-I" in arguments,
+                    "qualification": "-S bypasses .pth startup and receives no inferred child-source credit"
+                    if "-S" in arguments else None,
+                })
+                persist()
             return
         if event != "exec" or state["activation"] is not None:
             return
@@ -172,14 +193,19 @@ if not hasattr(sys, "_gnn_native_coverage_observer"):
             activate(filename)
 
     def fork_child():
-        previous = state["activation"]
-        parent_pid = state["pid"]
-        state["pid"] = os.getpid()
-        state["forked_from_pid"] = parent_pid
-        state["fork_inherited_argv_witness"] = True
-        state["startup_sys_path"] = list(sys.path)
-        state["subprocess_launches"] = []
-        state["activation"] = None
+        global receipt_lock
+        # Another parent thread may own the inherited lock at fork. Only the
+        # surviving child thread owns this fresh process-local publication lock.
+        receipt_lock = threading.RLock()
+        with receipt_lock:
+            previous = state["activation"]
+            parent_pid = state["pid"]
+            state["pid"] = os.getpid()
+            state["forked_from_pid"] = parent_pid
+            state["fork_inherited_argv_witness"] = True
+            state["startup_sys_path"] = list(sys.path)
+            state["subprocess_launches"] = []
+            state["activation"] = None
         if previous is not None:
             from coverage import Coverage
             current = Coverage.current()
