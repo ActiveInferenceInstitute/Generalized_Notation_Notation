@@ -35,10 +35,14 @@ jobs:
           - {os: windows-latest, python: "3.14"}
     env:
       UV_PYTHON: ${{ matrix.python }}
+      INSTALLED_SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
       PYTHONHASHSEED: "0"
       MPLBACKEND: Agg
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
@@ -51,6 +55,8 @@ jobs:
           python - <<'PY'
           import os, pathlib, subprocess
           checkout = pathlib.Path.cwd()
+          source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert source == os.environ['INSTALLED_SOURCE_REVISION'], 'installed build source differs from candidate'
           scratch = pathlib.Path(os.environ['RUNNER_TEMP']) / 'gnn-installed-platform'
           scratch.mkdir()
           before = subprocess.check_output(['git', '-c', 'core.fsmonitor=false', 'status', '--porcelain', '--untracked-files=no'], text=True)

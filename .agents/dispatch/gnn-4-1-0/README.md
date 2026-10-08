@@ -147,6 +147,34 @@ requires exclusive environment use and unchanged source bookends.
 | Installed acceptance | Final ordinary wheel with complete local API checks, then all five hosted native lanes |
 | Publication custody | Frozen versioned source, fresh manuscript/template render and companion pins, followed by exact-source hosted and release gates |
 
+The full lazy observation run at `96868cbe289d1c318370ed7e143c39193d55a481`
+passed all 7,096 core and 524 MCP cases. The pipeline selection passed 348 of
+349 cases without skips; its complete 38-source Step 8 render passed in 482.82
+seconds. The failed unchanged detached-descendant cleanup case returned
+`FAILED` where `SUCCESS` was required. Native causal diagnosis is pending;
+neither a passing repeat nor relaxed cleanup/deadline semantics closes it.
+All three observation hooks were restored and independently confirmed absent.
+Per-lane raw/line-set/source/metadata integrity passed, but the overall receipt
+is incomplete and cannot certify S6 or release acceptance. Its diagnostic-only
+same-environment statement union is 61,393/81,406, with 740 original exclusions;
+the strict target still needs 3,732 additional unique covered statements.
+
+New public JAX consumer tests reproduce silent replacement of explicitly
+authored ndarray parameters and fallback success after negative-probability
+validation fails. These are release blockers, not accepted behavior. Require
+faithful nonmutating source admission or precise refusal before artifact writes,
+preserving supported list/legacy and model-kind contracts. Focused documented
+RxInfer legacy file-reader repairs also address duplicate discovery and lost
+zero/scalar values. Canonical VFE/timestep/Gaussian traces must retain their
+distinct current-reader contract; do not relabel them as legacy iterations.
+
+The installed-platform workflow now explicitly selects and verifies the exact
+candidate revision before building. The maintained workflow indexes include
+all sixteen YAML workflows, with their actual triggers and evidence limits.
+Workflow lint, strict links/anchors and flag audits pass; 114 registered flags
+remain documented with the 129 phantom-token ceiling intact. Final native,
+manuscript/custody and publication acceptance remain pending.
+
 Temporary-directory and full-corpus image writes failed during a local disk
 capacity incident. Failed runs remain diagnostic evidence and cannot satisfy
 acceptance. Only completed campaign-owned disposable environments were removed;
