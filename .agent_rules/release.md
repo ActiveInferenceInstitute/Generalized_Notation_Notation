@@ -41,11 +41,13 @@ Resolve repository/version/tag/metadata/assets from accepted main and its releas
 procedure. Check existing version/tag/release; report conflicts instead of overwriting.
 Require applicable source, native, installed-platform, security, manuscript,
 companion, PR/main and tag gates at their exact sources. Pending/missing required
-checks keep publication pending. Build ordinary wheel/sdist and source-bound
-manuscript/visual/evidence assets.
+checks keep publication pending. Build ordinary wheel/sdist from a clean,
+task-owned accepted-source checkout, and retain source-bound manuscript/visual/
+evidence assets. Generated developer caches cannot enter release archives.
 
 Verify archives, installed imports/resources outside checkout, metadata, hashes
-and receipt bindings. Notes/images describe actual behavior, measured checks and
+and receipt bindings. Reconcile every archive member with Git or its declared
+generated packaging metadata. Notes/images describe actual behavior, measured checks and
 remaining limits. After publishing, monitor tag CI and download every asset to
 verify name/size/hash. Record URL/source/tag/checks/assets. DOI/archive claims need
 completed archival evidence; a reservation or credential is insufficient.
