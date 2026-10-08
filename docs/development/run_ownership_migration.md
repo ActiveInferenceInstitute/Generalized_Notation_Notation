@@ -130,6 +130,14 @@ replacing a program; earlier pipeline source could contain unresolved names.
 Use a documented string or omit an unavailable measurement rather than placing
 nonfinite numbers in metadata. Finite values, strings, Boolean/null metadata,
 scientific admission and inference behavior retain their existing contracts.
+Saved JSON and YAML readers retain the already-declared `step_size` on reopening.
+The schema facade exposes canonical datatype strings such as `integer`, rather
+than Python enum display names such as `DataType.INTEGER`. With installed
+PyYAML, leading comments are valid and malformed syntax or unsupported tags
+produce failed parse results. Callers that previously relied on simplified
+recovery after a PyYAML error must correct the saved input; failed conversion
+preserves the prior destination. Dependency-absent recovery remains separately
+qualified in the parser contract.
 JAX run options are admitted only by generators that consume them: declared
 execution contracts accept seed, timesteps and fast transitions; discrete
 factorized models accept seed and action precision. Other model generators

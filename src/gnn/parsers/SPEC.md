@@ -51,7 +51,7 @@
 - Nested JSON lists with lowercase booleans reuse the public bounded literal
   parser's length/depth guards before JSON decoding. Scalar values, quoted text
   and shape are preserved; JSON mappings are not newly admitted. Rejected,
-  malformed and overlimit arrays retain existing existing handling.
+  malformed and overlimit arrays retain their existing recovery behavior.
 - Native Agda function and constructor headers start at a complete source-line
   token. A following function body must repeat the whole declared name;
   adjacent `data` declarations cannot be consumed as a suffix-name body.

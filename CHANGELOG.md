@@ -45,6 +45,12 @@ checks alone cannot establish publication or the full supported matrix.
   and the existing int/bool aliases. Nested JSON boolean arrays preserve shape
   and quoted text through the existing length/depth guards; malformed and
   overlimit values retain their documented legacy recovery.
+  JSON/YAML reopening retains declared time step sizes, and the schema facade
+  exposes canonical datatype values. Valid YAML comments remain accepted;
+  malformed YAML and unsupported tags retain causal parse failures rather than
+  appearing as successful empty models. Agda extraction matches complete
+  declaration tokens without consuming an adjacent declaration as a body.
+  Formal-format extraction does not establish compiler or theorem validity.
 - Processing reports accept their native structural and typed validation
   results. A processing run reports failure for missing, empty or failed
   required reports and preserves completed partial artifacts and diagnoses.
