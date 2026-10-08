@@ -92,6 +92,9 @@ checks alone cannot establish publication or the full supported matrix.
   records. Native Windows supports direct-worker cleanup and refuses stronger
   descendant guarantees before launch. See the
   [precise guarantees](docs/security/filesystem_boundaries.md).
+- THRML joint composition reads admission limits from the canonical adapter at
+  the existing guards. Temporary earlier imports cannot retain stale limits;
+  thresholds, numerical values, axes and sampling behavior are unchanged.
 - Scientific figures preserve numerical arrays while identifying axis bases,
   controls, reported policy-score conventions, full-tensor statistics, signed
   generic tensors and categorical/Gaussian uncertainty. Rolling variance is
@@ -102,6 +105,11 @@ checks alone cannot establish publication or the full supported matrix.
   Small correlation views use an explicit symmetric domain from the actual
   finite values; an all-zero matrix uses a visible unit display domain without
   modifying its numbers. Large views retain their existing presentation.
+- Saved-runtime reports describe fitted observations within the recorded
+  parameter ranges and qualify model, configuration and environment dependence.
+  They no longer insert unsupported fixed exponents or attribute timing to JIT
+  compilation or inference without evidence. The fitted numeric results remain
+  unchanged.
 - Lossless production PNG encoding defaults to level 3 while preserving caller
   overrides. Two paired rounds across all 552 production PNGs measured 5.48%
   less median encoder CPU and 3.07% more bytes with identical decoded pixels,
@@ -127,6 +135,10 @@ checks alone cannot establish publication or the full supported matrix.
   parity and unreadable-data refusal. Short-deadline controls and explicit
   unobserved startup limits remain intact; no foreign or inferred execution
   contributes coverage.
+  Observer receipt publication uses owned exclusive temporaries and a
+  process-local lock with fresh child-fork state. Concurrent native launches
+  cannot replace each other's temporary files; genuine I/O errors still refuse
+  admission, and original execution deadlines remain unchanged.
 
 ### Remaining acceptance
 
