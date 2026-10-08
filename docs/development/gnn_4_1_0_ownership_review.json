@@ -1,7 +1,7 @@
 {
   "schema": "gnn-ownership-diagnostics-review/v1",
   "baseline_commit": "e5461954f45314cfea77b2cf06818e060f68bd0a",
-  "reviewed_runtime_commit": "faa4eac9ff69a08bd4c9972afb8d420c98a483b5",
+  "reviewed_runtime_commit": "0d107340e2d0ac99c88ab9ba423cd62028361d99",
   "method": "AST decisions (if/loop/handler/conditional expression/boolean branches)+1; nested functions included; not a McCabe complexity claim. Exact Exception ratchet excludes tuple, bare and BaseException; broad census includes them.",
   "global_counts": {
     "before": {
@@ -11,8 +11,8 @@
     },
     "after": {
       "python_files": 759,
-      "exact_exception_count": 1151,
-      "broad_handlers": 1162
+      "exact_exception_count": 1148,
+      "broad_handlers": 1159
     }
   },
   "groups": {
@@ -243,11 +243,11 @@
         ]
       },
       "scoped_native_repairs": {
-        "files": 5,
-        "lines": 4044,
-        "functions": 116,
-        "max_complexity": 58,
-        "broad_handlers": 48,
+        "files": 92,
+        "lines": 35314,
+        "functions": 719,
+        "max_complexity": 115,
+        "broad_handlers": 278,
         "largest": [
           {
             "path": "src/gnn/parsers/schema_parser.py",
@@ -260,9 +260,9 @@
             "max_complexity": 58
           },
           {
-            "path": "src/gnn/parsers/xml_parser.py",
-            "lines": 673,
-            "max_complexity": 15
+            "path": "src/gnn/ontology/processor.py",
+            "lines": 1011,
+            "max_complexity": 28
           }
         ]
       }
@@ -366,7 +366,7 @@
       },
       "gui": {
         "files": 24,
-        "lines": 7965,
+        "lines": 7984,
         "functions": 191,
         "max_complexity": 95,
         "broad_handlers": 25,
@@ -390,7 +390,7 @@
       },
       "schema_validator": {
         "files": 11,
-        "lines": 2723,
+        "lines": 2725,
         "functions": 73,
         "max_complexity": 20,
         "broad_handlers": 26,
@@ -402,7 +402,7 @@
           },
           {
             "path": "src/gnn/schema_validator/section_parsers.py",
-            "lines": 475,
+            "lines": 477,
             "max_complexity": 14
           },
           {
@@ -438,10 +438,10 @@
       },
       "execution": {
         "files": 68,
-        "lines": 21132,
-        "functions": 438,
+        "lines": 21186,
+        "functions": 439,
         "max_complexity": 75,
-        "broad_handlers": 98,
+        "broad_handlers": 97,
         "largest": [
           {
             "path": "src/gnn/execute/executor.py",
@@ -462,14 +462,14 @@
       },
       "visualization": {
         "files": 41,
-        "lines": 6705,
+        "lines": 6710,
         "functions": 125,
         "max_complexity": 52,
         "broad_handlers": 73,
         "largest": [
           {
             "path": "src/gnn/visualization/matrix/visualizer.py",
-            "lines": 1476,
+            "lines": 1481,
             "max_complexity": 44
           },
           {
@@ -509,32 +509,32 @@
         ]
       },
       "scoped_native_repairs": {
-        "files": 5,
-        "lines": 4055,
-        "functions": 117,
-        "max_complexity": 58,
-        "broad_handlers": 47,
+        "files": 92,
+        "lines": 35585,
+        "functions": 723,
+        "max_complexity": 117,
+        "broad_handlers": 275,
         "largest": [
           {
             "path": "src/gnn/parsers/schema_parser.py",
-            "lines": 1535,
+            "lines": 1566,
             "max_complexity": 15
           },
           {
             "path": "src/gnn/testing/round_trip_tester.py",
-            "lines": 1133,
+            "lines": 1144,
             "max_complexity": 58
           },
           {
-            "path": "src/gnn/parsers/xml_parser.py",
-            "lines": 662,
-            "max_complexity": 15
+            "path": "src/gnn/render/jax/jax_spec_extract.py",
+            "lines": 1071,
+            "max_complexity": 117
           }
         ]
       }
     }
   },
-  "full_inventory_sha256": "2017548548908d641fb33291c8a0cd82d9b61b00fc8cc05b591c1988de32304e",
+  "full_inventory_sha256": "2737d5294102504dec3248e85d012b4e66d92575ae77abb31a6e944e032515bb",
   "dependency_overlap_count": 27,
   "dependency_interpretation": "Cross-extra overlap is expected for dev/all aggregations and independently installable feature groups. Different constraints are review candidates, not proof of conflict; locked installation and dependency hygiene remain authoritative. No manifests or lockfiles edited in ownership lane.",
   "accepted_boundaries": {
@@ -559,7 +559,7 @@
   "limits": [
     "Decision proxy includes nested functions and is not a McCabe claim.",
     "Coherent extraction preserves algorithms; it does not imply reduced algorithmic complexity.",
-    "Exact except Exception count changes from 1165 to 1151; the ceiling change from 1171 to 1151 is not a count of removed campaign handlers.",
+    "Exact except Exception count changes from 1165 to 1148; the ceiling change from 1171 to 1148 is not a count of removed campaign handlers.",
     "Existing shared GUI/schema/render/execution owners remain; no dormant documented module was deleted for coverage.",
     "Focused source parity and behavior checks certify their declared checkpoints; final native, coverage and custody gates remain separate."
   ],
@@ -573,5 +573,592 @@
     "src/gnn/rxinfer_interchange/subset.py": "a4d8099e9fdce3ac9abfc3a8fc1a685ae9c07809c0604fc3bea24d305fb6191a",
     "src/gnn/rxinfer_interchange/julia_emitter.py": "e3f74547748408dd2685b1a1286c5a4dbfcfa2c2e9b1ff9fd9c0ffa442b99dc0",
     "src/gnn/rxinfer_interchange/marginals.py": "5097a5904f813fca8cb9de6175cc1220c58ef1cb343817752e2f9931d59038ed"
+  },
+  "prior_reviews": [
+    {
+      "schema": "gnn-ownership-diagnostics-review/v1",
+      "baseline_commit": "e5461954f45314cfea77b2cf06818e060f68bd0a",
+      "reviewed_runtime_commit": "faa4eac9ff69a08bd4c9972afb8d420c98a483b5",
+      "method": "AST decisions (if/loop/handler/conditional expression/boolean branches)+1; nested functions included; not a McCabe complexity claim. Exact Exception ratchet excludes tuple, bare and BaseException; broad census includes them.",
+      "global_counts": {
+        "before": {
+          "python_files": 744,
+          "exact_exception_count": 1165,
+          "broad_handlers": 1174
+        },
+        "after": {
+          "python_files": 759,
+          "exact_exception_count": 1151,
+          "broad_handlers": 1162
+        }
+      },
+      "groups": {
+        "before": {
+          "rxinfer_bridge": {
+            "files": 1,
+            "lines": 1801,
+            "functions": 22,
+            "max_complexity": 55,
+            "broad_handlers": 0,
+            "largest": [
+              {
+                "path": "src/gnn/rxinfer_bridge.py",
+                "lines": 1801,
+                "max_complexity": 55
+              }
+            ]
+          },
+          "rxinfer_strategy": {
+            "files": 12,
+            "lines": 6436,
+            "functions": 88,
+            "max_complexity": 26,
+            "broad_handlers": 4,
+            "largest": [
+              {
+                "path": "src/gnn/render/rxinfer/_strategies_flat.py",
+                "lines": 1161,
+                "max_complexity": 6
+              },
+              {
+                "path": "src/gnn/render/rxinfer/model_contracts.py",
+                "lines": 919,
+                "max_complexity": 23
+              },
+              {
+                "path": "src/gnn/render/rxinfer/_strategies_factored.py",
+                "lines": 735,
+                "max_complexity": 10
+              }
+            ]
+          },
+          "rxinfer_analysis": {
+            "files": 7,
+            "lines": 4122,
+            "functions": 69,
+            "max_complexity": 61,
+            "broad_handlers": 18,
+            "largest": [
+              {
+                "path": "src/gnn/analysis/rxinfer/analyzer.py",
+                "lines": 1114,
+                "max_complexity": 61
+              },
+              {
+                "path": "src/gnn/analysis/rxinfer/cross_framework.py",
+                "lines": 944,
+                "max_complexity": 9
+              },
+              {
+                "path": "src/gnn/analysis/rxinfer/gif_animator.py",
+                "lines": 791,
+                "max_complexity": 47
+              }
+            ]
+          },
+          "website": {
+            "files": 13,
+            "lines": 3939,
+            "functions": 107,
+            "max_complexity": 24,
+            "broad_handlers": 23,
+            "largest": [
+              {
+                "path": "src/gnn/website/generator.py",
+                "lines": 1665,
+                "max_complexity": 24
+              },
+              {
+                "path": "src/gnn/website/collection.py",
+                "lines": 476,
+                "max_complexity": 13
+              },
+              {
+                "path": "src/gnn/website/renderer.py",
+                "lines": 438,
+                "max_complexity": 10
+              }
+            ]
+          },
+          "gui": {
+            "files": 24,
+            "lines": 7961,
+            "functions": 191,
+            "max_complexity": 95,
+            "broad_handlers": 25,
+            "largest": [
+              {
+                "path": "src/gnn/gui/gui_2/ui.py",
+                "lines": 1545,
+                "max_complexity": 95
+              },
+              {
+                "path": "src/gnn/gui/gui_3/ui_designer.py",
+                "lines": 683,
+                "max_complexity": 23
+              },
+              {
+                "path": "src/gnn/gui/processor.py",
+                "lines": 614,
+                "max_complexity": 15
+              }
+            ]
+          },
+          "schema_validator": {
+            "files": 11,
+            "lines": 2718,
+            "functions": 73,
+            "max_complexity": 20,
+            "broad_handlers": 27,
+            "largest": [
+              {
+                "path": "src/gnn/schema_validator/cross_format.py",
+                "lines": 723,
+                "max_complexity": 12
+              },
+              {
+                "path": "src/gnn/schema_validator/section_parsers.py",
+                "lines": 475,
+                "max_complexity": 14
+              },
+              {
+                "path": "src/gnn/schema_validator/structural_checks.py",
+                "lines": 288,
+                "max_complexity": 14
+              }
+            ]
+          },
+          "logging": {
+            "files": 2,
+            "lines": 1360,
+            "functions": 42,
+            "max_complexity": 25,
+            "broad_handlers": 5,
+            "largest": [
+              {
+                "path": "src/gnn/utils/logging/logging_utils.py",
+                "lines": 1335,
+                "max_complexity": 25
+              },
+              {
+                "path": "src/gnn/utils/logging/__init__.py",
+                "lines": 25,
+                "max_complexity": 0
+              }
+            ]
+          },
+          "execution": {
+            "files": 68,
+            "lines": 21084,
+            "functions": 438,
+            "max_complexity": 75,
+            "broad_handlers": 100,
+            "largest": [
+              {
+                "path": "src/gnn/execute/executor.py",
+                "lines": 1305,
+                "max_complexity": 46
+              },
+              {
+                "path": "src/gnn/execute/pymdp/simulation.py",
+                "lines": 1064,
+                "max_complexity": 29
+              },
+              {
+                "path": "src/gnn/execute/data_extractors.py",
+                "lines": 897,
+                "max_complexity": 45
+              }
+            ]
+          },
+          "visualization": {
+            "files": 41,
+            "lines": 6564,
+            "functions": 122,
+            "max_complexity": 52,
+            "broad_handlers": 73,
+            "largest": [
+              {
+                "path": "src/gnn/visualization/matrix/visualizer.py",
+                "lines": 1388,
+                "max_complexity": 34
+              },
+              {
+                "path": "src/gnn/visualization/visualizer.py",
+                "lines": 736,
+                "max_complexity": 18
+              },
+              {
+                "path": "src/gnn/visualization/analysis/combined_analysis.py",
+                "lines": 626,
+                "max_complexity": 28
+              }
+            ]
+          },
+          "security": {
+            "files": 3,
+            "lines": 1553,
+            "functions": 26,
+            "max_complexity": 30,
+            "broad_handlers": 7,
+            "largest": [
+              {
+                "path": "src/gnn/security/processor.py",
+                "lines": 1235,
+                "max_complexity": 30
+              },
+              {
+                "path": "src/gnn/security/mcp.py",
+                "lines": 250,
+                "max_complexity": 7
+              },
+              {
+                "path": "src/gnn/security/__init__.py",
+                "lines": 68,
+                "max_complexity": 1
+              }
+            ]
+          },
+          "scoped_native_repairs": {
+            "files": 5,
+            "lines": 4044,
+            "functions": 116,
+            "max_complexity": 58,
+            "broad_handlers": 48,
+            "largest": [
+              {
+                "path": "src/gnn/parsers/schema_parser.py",
+                "lines": 1534,
+                "max_complexity": 15
+              },
+              {
+                "path": "src/gnn/testing/round_trip_tester.py",
+                "lines": 1147,
+                "max_complexity": 58
+              },
+              {
+                "path": "src/gnn/parsers/xml_parser.py",
+                "lines": 673,
+                "max_complexity": 15
+              }
+            ]
+          }
+        },
+        "after": {
+          "rxinfer_bridge": {
+            "files": 6,
+            "lines": 1880,
+            "functions": 22,
+            "max_complexity": 55,
+            "broad_handlers": 0,
+            "largest": [
+              {
+                "path": "src/gnn/rxinfer_interchange/julia_emitter.py",
+                "lines": 604,
+                "max_complexity": 26
+              },
+              {
+                "path": "src/gnn/rxinfer_interchange/graphspec.py",
+                "lines": 552,
+                "max_complexity": 47
+              },
+              {
+                "path": "src/gnn/rxinfer_interchange/subset.py",
+                "lines": 413,
+                "max_complexity": 55
+              }
+            ]
+          },
+          "rxinfer_strategy": {
+            "files": 12,
+            "lines": 6436,
+            "functions": 88,
+            "max_complexity": 26,
+            "broad_handlers": 4,
+            "largest": [
+              {
+                "path": "src/gnn/render/rxinfer/_strategies_flat.py",
+                "lines": 1161,
+                "max_complexity": 6
+              },
+              {
+                "path": "src/gnn/render/rxinfer/model_contracts.py",
+                "lines": 919,
+                "max_complexity": 23
+              },
+              {
+                "path": "src/gnn/render/rxinfer/_strategies_factored.py",
+                "lines": 735,
+                "max_complexity": 10
+              }
+            ]
+          },
+          "rxinfer_analysis": {
+            "files": 9,
+            "lines": 4258,
+            "functions": 72,
+            "max_complexity": 61,
+            "broad_handlers": 17,
+            "largest": [
+              {
+                "path": "src/gnn/analysis/rxinfer/cross_framework.py",
+                "lines": 944,
+                "max_complexity": 9
+              },
+              {
+                "path": "src/gnn/analysis/rxinfer/gif_animator.py",
+                "lines": 791,
+                "max_complexity": 47
+              },
+              {
+                "path": "src/gnn/analysis/rxinfer/analyzer.py",
+                "lines": 736,
+                "max_complexity": 61
+              }
+            ]
+          },
+          "website": {
+            "files": 14,
+            "lines": 3976,
+            "functions": 107,
+            "max_complexity": 24,
+            "broad_handlers": 21,
+            "largest": [
+              {
+                "path": "src/gnn/website/generator.py",
+                "lines": 1027,
+                "max_complexity": 24
+              },
+              {
+                "path": "src/gnn/website/templates.py",
+                "lines": 675,
+                "max_complexity": 7
+              },
+              {
+                "path": "src/gnn/website/collection.py",
+                "lines": 476,
+                "max_complexity": 13
+              }
+            ]
+          },
+          "gui": {
+            "files": 24,
+            "lines": 7965,
+            "functions": 191,
+            "max_complexity": 95,
+            "broad_handlers": 25,
+            "largest": [
+              {
+                "path": "src/gnn/gui/gui_2/ui.py",
+                "lines": 1545,
+                "max_complexity": 95
+              },
+              {
+                "path": "src/gnn/gui/gui_3/ui_designer.py",
+                "lines": 683,
+                "max_complexity": 23
+              },
+              {
+                "path": "src/gnn/gui/processor.py",
+                "lines": 614,
+                "max_complexity": 15
+              }
+            ]
+          },
+          "schema_validator": {
+            "files": 11,
+            "lines": 2723,
+            "functions": 73,
+            "max_complexity": 20,
+            "broad_handlers": 26,
+            "largest": [
+              {
+                "path": "src/gnn/schema_validator/cross_format.py",
+                "lines": 723,
+                "max_complexity": 12
+              },
+              {
+                "path": "src/gnn/schema_validator/section_parsers.py",
+                "lines": 475,
+                "max_complexity": 14
+              },
+              {
+                "path": "src/gnn/schema_validator/structural_checks.py",
+                "lines": 288,
+                "max_complexity": 14
+              }
+            ]
+          },
+          "logging": {
+            "files": 4,
+            "lines": 1401,
+            "functions": 42,
+            "max_complexity": 25,
+            "broad_handlers": 2,
+            "largest": [
+              {
+                "path": "src/gnn/utils/logging/logging_utils.py",
+                "lines": 987,
+                "max_complexity": 25
+              },
+              {
+                "path": "src/gnn/utils/logging/visual.py",
+                "lines": 294,
+                "max_complexity": 11
+              },
+              {
+                "path": "src/gnn/utils/logging/formatters.py",
+                "lines": 95,
+                "max_complexity": 5
+              }
+            ]
+          },
+          "execution": {
+            "files": 68,
+            "lines": 21132,
+            "functions": 438,
+            "max_complexity": 75,
+            "broad_handlers": 98,
+            "largest": [
+              {
+                "path": "src/gnn/execute/executor.py",
+                "lines": 1305,
+                "max_complexity": 46
+              },
+              {
+                "path": "src/gnn/execute/pymdp/simulation.py",
+                "lines": 1069,
+                "max_complexity": 29
+              },
+              {
+                "path": "src/gnn/execute/data_extractors.py",
+                "lines": 897,
+                "max_complexity": 45
+              }
+            ]
+          },
+          "visualization": {
+            "files": 41,
+            "lines": 6705,
+            "functions": 125,
+            "max_complexity": 52,
+            "broad_handlers": 73,
+            "largest": [
+              {
+                "path": "src/gnn/visualization/matrix/visualizer.py",
+                "lines": 1476,
+                "max_complexity": 44
+              },
+              {
+                "path": "src/gnn/visualization/visualizer.py",
+                "lines": 736,
+                "max_complexity": 18
+              },
+              {
+                "path": "src/gnn/visualization/analysis/combined_analysis.py",
+                "lines": 626,
+                "max_complexity": 28
+              }
+            ]
+          },
+          "security": {
+            "files": 3,
+            "lines": 1553,
+            "functions": 26,
+            "max_complexity": 30,
+            "broad_handlers": 7,
+            "largest": [
+              {
+                "path": "src/gnn/security/processor.py",
+                "lines": 1235,
+                "max_complexity": 30
+              },
+              {
+                "path": "src/gnn/security/mcp.py",
+                "lines": 250,
+                "max_complexity": 7
+              },
+              {
+                "path": "src/gnn/security/__init__.py",
+                "lines": 68,
+                "max_complexity": 1
+              }
+            ]
+          },
+          "scoped_native_repairs": {
+            "files": 5,
+            "lines": 4055,
+            "functions": 117,
+            "max_complexity": 58,
+            "broad_handlers": 47,
+            "largest": [
+              {
+                "path": "src/gnn/parsers/schema_parser.py",
+                "lines": 1535,
+                "max_complexity": 15
+              },
+              {
+                "path": "src/gnn/testing/round_trip_tester.py",
+                "lines": 1133,
+                "max_complexity": 58
+              },
+              {
+                "path": "src/gnn/parsers/xml_parser.py",
+                "lines": 662,
+                "max_complexity": 15
+              }
+            ]
+          }
+        }
+      },
+      "full_inventory_sha256": "2017548548908d641fb33291c8a0cd82d9b61b00fc8cc05b591c1988de32304e",
+      "dependency_overlap_count": 27,
+      "dependency_interpretation": "Cross-extra overlap is expected for dev/all aggregations and independently installable feature groups. Different constraints are review candidates, not proof of conflict; locked installation and dependency hygiene remain authoritative. No manifests or lockfiles edited in ownership lane.",
+      "accepted_boundaries": {
+        "logging": [
+          "src/gnn/utils/logging/formatters.py",
+          "src/gnn/utils/logging/visual.py"
+        ],
+        "website": [
+          "src/gnn/website/templates.py"
+        ],
+        "rxinfer_analysis": [
+          "src/gnn/analysis/rxinfer/metrics.py",
+          "src/gnn/analysis/rxinfer/result_ingestion.py"
+        ],
+        "rxinfer_interchange": [
+          "src/gnn/rxinfer_interchange/graphspec.py",
+          "src/gnn/rxinfer_interchange/subset.py",
+          "src/gnn/rxinfer_interchange/julia_emitter.py",
+          "src/gnn/rxinfer_interchange/marginals.py"
+        ]
+      },
+      "limits": [
+        "Decision proxy includes nested functions and is not a McCabe claim.",
+        "Coherent extraction preserves algorithms; it does not imply reduced algorithmic complexity.",
+        "Exact except Exception count changes from 1165 to 1151; the ceiling change from 1171 to 1151 is not a count of removed campaign handlers.",
+        "Existing shared GUI/schema/render/execution owners remain; no dormant documented module was deleted for coverage.",
+        "Focused source parity and behavior checks certify their declared checkpoints; final native, coverage and custody gates remain separate."
+      ],
+      "boundary_source_sha256": {
+        "src/gnn/utils/logging/formatters.py": "d04ff221630dd56a1998d98fb6e957407f629298194082abf85ae6c459122f8b",
+        "src/gnn/utils/logging/visual.py": "71ec65eb5d715517b2f454e8c55f8ef176977ee4b03a8bd62de064cd2ead3245",
+        "src/gnn/website/templates.py": "ed5c97deeafc999e2f400101cb3dd3fbfe5677f0d69a5da28c7b16653319b906",
+        "src/gnn/analysis/rxinfer/metrics.py": "9f6b6f0932e24d297d92b815f4e7bd288c8d6478d29049c0974b63893b2e235c",
+        "src/gnn/analysis/rxinfer/result_ingestion.py": "4af0112954927e2ffa82a6da00f2411af6ed06ef2e2c5054439ab741f91c9fe0",
+        "src/gnn/rxinfer_interchange/graphspec.py": "adb09d409dd3c3e3a2358156b7ddd83273bddb21c7f9c798114f92a0b152df22",
+        "src/gnn/rxinfer_interchange/subset.py": "a4d8099e9fdce3ac9abfc3a8fc1a685ae9c07809c0604fc3bea24d305fb6191a",
+        "src/gnn/rxinfer_interchange/julia_emitter.py": "e3f74547748408dd2685b1a1286c5a4dbfcfa2c2e9b1ff9fd9c0ffa442b99dc0",
+        "src/gnn/rxinfer_interchange/marginals.py": "5097a5904f813fca8cb9de6175cc1220c58ef1cb343817752e2f9931d59038ed"
+      }
+    }
+  ],
+  "scoped_consumer_acceptance": {
+    "root_generation_commit": "0d107340e2d0ac99c88ab9ba423cd62028361d99",
+    "root_generation_tests": 92,
+    "root_generation_returncode": 0,
+    "runtime_bookend_equal": true,
+    "scope": "Compiled canonical/legacy generated source and actual native imports/metadata; no legacy analysis or inference invocation. The original failing receipts and nonfinite-metadata qualification are retained.",
+    "pending": "Final comprehensive coverage, installed matrix, manuscript and publication custody."
   }
 }
