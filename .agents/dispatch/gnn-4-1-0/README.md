@@ -21,9 +21,15 @@ passes 98 datatype/GUI/CLI/visualization/report cases; unrelated changelog and
 flag-cap metadata changed during that focused replay, so it does not certify a
 whole frozen checkout. Canonical and legacy PyMDP name checks pass 69 cases
 with unchanged runtime sources. Retain original failing receipts and existing
-parser guards. Legacy DisCoPy display slots are the last active repair before
-freeze. The final ownership census, full native selectors, manuscript rendering
-and exact companion/publication checks remain pending.
+parser guards. All canonical/legacy display-slot repairs are integrated; root's
+combined generation regression passes 92 cases with unchanged runtime sources.
+The preserved nonfinite metadata witness then exposes six source-generation
+failures. A bounded finite-JSON guard passes 98 generation/regression cases plus
+seven final text/refusal checks and documents the migration for both modes.
+The refreshed committed-runtime census records 759 Python files, 1,148 exact
+Exception handlers and 1,159 broad handlers; 27 cross-extra dependency overlaps
+retain their existing interpretation. Full native selectors, manuscript
+rendering and exact companion/publication checks remain pending.
 
 Frozen starting revision: `e5461954f45314cfea77b2cf06818e060f68bd0a`.
 The integration branch is `codex/gnn-4.1.0`. Implementation workers use separate

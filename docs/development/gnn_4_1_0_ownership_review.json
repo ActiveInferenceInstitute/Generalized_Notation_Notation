@@ -1,7 +1,7 @@
 {
   "schema": "gnn-ownership-diagnostics-review/v1",
   "baseline_commit": "e5461954f45314cfea77b2cf06818e060f68bd0a",
-  "reviewed_runtime_commit": "0d107340e2d0ac99c88ab9ba423cd62028361d99",
+  "reviewed_runtime_commit": "e420006f4919179fcfe3d1a56bf1bc12c6ecca1f",
   "method": "AST decisions (if/loop/handler/conditional expression/boolean branches)+1; nested functions included; not a McCabe complexity claim. Exact Exception ratchet excludes tuple, bare and BaseException; broad census includes them.",
   "global_counts": {
     "before": {
@@ -510,7 +510,7 @@
       },
       "scoped_native_repairs": {
         "files": 92,
-        "lines": 35585,
+        "lines": 35588,
         "functions": 723,
         "max_complexity": 117,
         "broad_handlers": 275,
@@ -534,7 +534,7 @@
       }
     }
   },
-  "full_inventory_sha256": "2737d5294102504dec3248e85d012b4e66d92575ae77abb31a6e944e032515bb",
+  "full_inventory_sha256": "3c2592ba88bd2b8ab05570a2a92ccf0bd9db942d700ade0de33797b6e5951e8b",
   "dependency_overlap_count": 27,
   "dependency_interpretation": "Cross-extra overlap is expected for dev/all aggregations and independently installable feature groups. Different constraints are review candidates, not proof of conflict; locked installation and dependency hygiene remain authoritative. No manifests or lockfiles edited in ownership lane.",
   "accepted_boundaries": {
@@ -1159,6 +1159,21 @@
     "root_generation_returncode": 0,
     "runtime_bookend_equal": true,
     "scope": "Compiled canonical/legacy generated source and actual native imports/metadata; no legacy analysis or inference invocation. The original failing receipts and nonfinite-metadata qualification are retained.",
-    "pending": "Final comprehensive coverage, installed matrix, manuscript and publication custody."
-  }
+    "pending": "Final comprehensive coverage, installed matrix, manuscript and publication custody.",
+    "nonfinite_json_guard": {
+      "source_commit": "dfedead64",
+      "test_commit": "f8d38c2d65ec38befdf2461bb3cddcfc87270c7e",
+      "original_failures": 6,
+      "generation_regression_passed": 98,
+      "final_finite_text_and_refusal_passed": 7,
+      "scope": "Both canonical runner modes refuse NaN/infinite embedded numeric values before source writes; finite data and authored text are preserved. Migration is documented."
+    }
+  },
+  "additional_runtime_reviews": [
+    {
+      "reviewed_runtime_commit": "0d107340e2d0ac99c88ab9ba423cd62028361d99",
+      "full_inventory_sha256": "2737d5294102504dec3248e85d012b4e66d92575ae77abb31a6e944e032515bb",
+      "scope": "Before final finite-JSON source guard; preserved checkpoint."
+    }
+  ]
 }
