@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from ..compat.viz_compat import np, plt
+from ..plotting.utils import contrasting_text_color
 
 
 def generate_pomdp_transition_analysis(
@@ -82,14 +83,14 @@ def generate_pomdp_transition_analysis(
                         f"{value:.2f}",
                         ha="center",
                         va="center",
-                        color="white" if value < 0.5 else "black",
+                        color=contrasting_text_color(im.cmap(im.norm(value))),
                         fontsize=10,
                         fontweight="bold",
                     )
 
             ax.set_title(f"Action {i} Transition Matrix", fontweight="bold")
-            ax.set_xlabel("Previous State")
-            ax.set_ylabel("Next State")
+            ax.set_xlabel("Previous State (0-based)")
+            ax.set_ylabel("Next State (0-based)")
             ax.set_xticks(range(dim2))
             ax.set_yticks(range(dim1))
 
@@ -133,8 +134,9 @@ def generate_pomdp_transition_analysis(
 
         ax_entropy.set_title("Transition Entropy by Action", fontweight="bold")
         ax_entropy.set_xlabel("Action")
-        ax_entropy.set_ylabel("Mean Entropy (bits)")
+        ax_entropy.set_ylabel("Mean Entropy (nats)")
         ax_entropy.set_xticks(actions)
+        ax_entropy.margins(y=0.18)
         ax_entropy.grid(True, alpha=0.3)
 
         # 3. Determinism analysis (bottom left)
@@ -171,6 +173,7 @@ def generate_pomdp_transition_analysis(
         ax_determinism.set_xlabel("Action")
         ax_determinism.set_ylabel("Mean Max Probability")
         ax_determinism.set_xticks(actions)
+        ax_determinism.margins(y=0.18)
         ax_determinism.grid(True, alpha=0.3)
 
         # 4. State reachability (bottom middle)
@@ -207,6 +210,7 @@ def generate_pomdp_transition_analysis(
         ax_reachability.set_xlabel("Action")
         ax_reachability.set_ylabel("Mean Reachable States")
         ax_reachability.set_xticks(actions)
+        ax_reachability.margins(y=0.18)
         ax_reachability.grid(True, alpha=0.3)
 
         # 5. Matrix validation (bottom right)
@@ -223,7 +227,7 @@ def generate_pomdp_transition_analysis(
 ✓ Valid Transition Matrices: {"Yes" if valid_transitions else "No"}
 ✓ Max Column Sum Deviation: {max_deviation:.6f}
 ✓ Probability Range: [{np.min(tensor):.3f}, {np.max(tensor):.3f}]
-✓ Mean Entropy: {np.mean(entropy):.3f} bits
+✓ Mean Entropy: {np.mean(entropy):.3f} nats
 ✓ Mean Determinism: {np.mean(max_probs):.3f}"""
 
         ax_validation.text(
@@ -245,12 +249,12 @@ def generate_pomdp_transition_analysis(
             "POMDP Transition Matrix Analysis",
             fontsize=16,
             fontweight="bold",
-            y=0.95,
+            y=0.98,
         )
 
         # Adjust layout manually instead of using tight_layout
         fig.subplots_adjust(
-            top=0.92, bottom=0.08, left=0.08, right=0.95, hspace=0.4, wspace=0.3
+            top=0.87, bottom=0.08, left=0.08, right=0.95, hspace=0.55, wspace=0.3
         )
 
         save_attempts: list[tuple[tuple[int, int] | None, dict[str, Any]]] = [

@@ -398,7 +398,7 @@ class TestPostSimulationVisualization:
                 vfe_ax, efe_ax = fig.axes
                 assert not vfe_ax.get_shared_x_axes().joined(vfe_ax, efe_ax)
                 assert vfe_ax.get_xlabel() == "Inference Iteration (1-based)"
-                assert efe_ax.get_xlabel() == "Time Step"
+                assert efe_ax.get_xlabel() == "Time Step (0-based)"
                 assert list(vfe_ax.lines[0].get_xdata()) == list(range(1, 21))
                 assert list(efe_ax.lines[0].get_xdata()) == list(range(15))
                 assert list(vfe_ax.lines[0].get_ydata()) == vfe
@@ -410,7 +410,7 @@ class TestPostSimulationVisualization:
             viz_plots.generate_vfe_vs_efe_plot(vfe, efe, dual_output)
             fig = viz_plots.plt.gcf()
             try:
-                assert fig.axes[0].get_xlabel() == "Time Step"
+                assert fig.axes[0].get_xlabel() == "Time Step (0-based)"
                 assert list(fig.axes[0].lines[0].get_ydata()) == vfe
                 assert list(fig.axes[1].lines[0].get_ydata()) == [row[0] for row in efe]
             finally:

@@ -23,6 +23,24 @@ except (ImportError, RecursionError):
 logger = logging.getLogger(__name__)
 
 
+def contrasting_text_color(rgba: Any) -> str:
+    """Choose black or white from the rendered cell's relative luminance.
+
+    Matrix values alone do not locate a color in a normalized colormap. Using
+    the actual color also works for signed and rescaled matrix ranges.
+    """
+    channels = [
+        channel / 12.92 if channel <= 0.04045 else ((channel + 0.055) / 1.055) ** 2.4
+        for channel in rgba[:3]
+    ]
+    luminance = sum(
+        weight * value for weight, value in zip((0.2126, 0.7152, 0.0722), channels)
+    )
+    black_contrast = (luminance + 0.05) / 0.05
+    white_contrast = 1.05 / (luminance + 0.05)
+    return "black" if black_contrast >= white_contrast else "white"
+
+
 def save_plot_safely(plot_path: Path, dpi: int = 300, **savefig_kwargs: Any) -> bool:
     """Save current figure with DPI fallbacks."""
     if plt is None:

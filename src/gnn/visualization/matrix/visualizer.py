@@ -10,6 +10,7 @@ Specialized support for 3D tensors like POMDP transition matrices.
 from __future__ import annotations
 
 import csv
+import hashlib
 import importlib.util
 import json
 import logging
@@ -17,7 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from ..compat.viz_compat import MATPLOTLIB_AVAILABLE, get_sns, np, plt
-from ..plotting.utils import safe_tight_layout
+from ..plotting.utils import contrasting_text_color, safe_tight_layout
 from .extract import (
     convert_to_matrix,
 )
@@ -199,6 +200,10 @@ class MatrixVisualizer:
         output_path: Path,
         title: Optional[str] = None,
         cmap: str = "viridis",
+        *,
+        units: str | None = None,
+        row_label: str | None = None,
+        column_label: str | None = None,
     ) -> bool:
         """
         Generate a heatmap visualization for a matrix.
@@ -227,7 +232,12 @@ class MatrixVisualizer:
 
             # Add colorbar
             cbar = plt.colorbar(im)
-            cbar.set_label("Value", rotation=270, labelpad=15)
+            unit_label = (
+                units.strip()
+                if isinstance(units, str) and units.strip()
+                else "units unspecified"
+            )
+            cbar.set_label(f"Value ({unit_label})", rotation=270, labelpad=15)
 
             # Add title
             if title is None:
@@ -235,8 +245,8 @@ class MatrixVisualizer:
             plt.title(title, fontsize=16, fontweight="bold")
 
             # Add axis labels
-            plt.xlabel("Column Index")
-            plt.ylabel("Row Index")
+            plt.xlabel(column_label or "Column Index (0-based)")
+            plt.ylabel(row_label or "Row Index (0-based)")
 
             # Add text annotations for matrix values (skip for large matrices)
             total_cells = matrix.shape[0] * matrix.shape[1]
@@ -250,7 +260,7 @@ class MatrixVisualizer:
                             f"{value:.3f}",
                             ha="center",
                             va="center",
-                            color="white" if value < 0.5 else "black",
+                            color=contrasting_text_color(im.cmap(im.norm(value))),
                             fontsize=8,
                             fontweight="bold",
                         )
@@ -362,7 +372,7 @@ class MatrixVisualizer:
                                 f"{value:.2f}",
                                 ha="center",
                                 va="center",
-                                color="white" if value < 0.5 else "black",
+                                color=contrasting_text_color(im.cmap(im.norm(value))),
                                 fontsize=10,
                                 fontweight="bold",
                             )
@@ -477,21 +487,29 @@ class MatrixVisualizer:
             # POMDP transition tensors use (next_state, previous_state, action).
             # Each previous-state/action column must sum over next_state.
             column_sums = np.sum(tensor, axis=0)
-            valid_transitions = np.allclose(column_sums, 1.0, atol=1e-6)
+            valid_transitions = (
+                np.isfinite(tensor).all()
+                and np.all(tensor >= 0)
+                and np.all(tensor <= 1)
+                and np.allclose(column_sums, 1.0, atol=1e-6)
+            )
 
             # Calculate entropy of transitions
             # Add small epsilon to avoid log(0)
-            epsilon = 1e-10
-            log_probs = np.log(tensor + epsilon)
-            entropy = -np.sum(tensor * log_probs, axis=0)
-            mean_entropy = np.mean(entropy)
+            if valid_transitions:
+                epsilon = 1e-10
+                log_probs = np.log(tensor + epsilon)
+                entropy = -np.sum(tensor * log_probs, axis=0)
+                entropy_label = f"{np.mean(entropy):.3f} nats"
+            else:
+                entropy_label = "unavailable: not normalized nonnegative probabilities"
 
             stats = f"""Tensor {tensor_name} Statistics:
 Shape: {dim1}×{dim2}×{dim3} (Next×Previous×Actions)
 Mean: {mean_val:.3f}, Std: {std_val:.3f}
 Range: [{min_val:.3f}, {max_val:.3f}]
 Valid Transition Matrices: {"✓" if valid_transitions else "✗"}
-Mean Transition Entropy: {mean_entropy:.3f} bits"""
+Mean Transition Entropy: {entropy_label}"""
         else:
             stats = f"""Tensor {tensor_name} Statistics:
 Shape: {dim1}×{dim2}×{dim3}
@@ -621,18 +639,19 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                         plt.colorbar(im, ax=ax)
                     ax.set_title(f"{name} (Matrix {matrix.shape})")
                 elif matrix.ndim == 3:
-                    # 3D tensor - show first slice
+                    # Canonical B[next_state, previous_state, action] action plane.
+                    first_action = matrix[:, :, 0]
                     if SEABORN_AVAILABLE:
                         sns.heatmap(
-                            matrix[0],
+                            first_action,
                             ax=ax,
                             cmap="viridis",
-                            annot=True if matrix[0].size <= 100 else False,
+                            annot=True if first_action.size <= 100 else False,
                         )
                     else:
-                        im = ax.imshow(matrix[0], cmap="viridis", aspect="auto")
+                        im = ax.imshow(first_action, cmap="viridis", aspect="auto")
                         plt.colorbar(im, ax=ax)
-                    ax.set_title(f"{name} (3D Tensor {matrix.shape}, slice 0)")
+                    ax.set_title(f"{name} (3D Tensor {matrix.shape}, action 0)")
 
                 # Add statistics text
                 stats_text = f"Mean: {np.mean(matrix):.3f}\nStd: {np.std(matrix):.3f}"
@@ -659,10 +678,25 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
 
             # Export CSV data for each matrix
             csv_exports: list[Any] = []
-            for name, matrix in matrices.items():
-                csv_success = self.export_matrix_to_csv(matrix, name, output_path)
+            for index, (name, matrix) in enumerate(matrices.items()):
+                # Index disambiguates labels which sanitize to the same filename.
+                label = "".join(
+                    c if c.isascii() and (c.isalnum() or c in "_-") else "_"
+                    for c in name
+                )[:80]
+                stem = output_path.stem
+                if len(stem.encode("utf-8")) > 100:
+                    stem = (
+                        stem.encode("utf-8")[:100].decode("utf-8", errors="ignore")
+                        + "_"
+                        + hashlib.sha256(output_path.stem.encode()).hexdigest()[:8]
+                    )
+                csv_path = output_path.with_name(
+                    f"{stem}_matrix_{index}_{label or 'unnamed'}.csv"
+                )
+                csv_success = self.export_matrix_to_csv(matrix, name, csv_path)
                 if csv_success:
-                    csv_exports.append(output_path.with_suffix(".csv"))
+                    csv_exports.append(csv_path)
 
             return True
 
@@ -732,7 +766,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                 ax = axes_flat[plot_idx]
 
                 # Create heatmap
-                ax.imshow(matrix, cmap="viridis", aspect="auto")
+                image = ax.imshow(matrix, cmap="viridis", aspect="auto")
 
                 # Add title
                 ax.set_title(f"Matrix {matrix_name}", fontweight="bold")
@@ -750,7 +784,9 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                                 f"{value:.2f}",
                                 ha="center",
                                 va="center",
-                                color="white" if value < 0.5 else "black",
+                                color=contrasting_text_color(
+                                    image.cmap(image.norm(value))
+                                ),
                                 fontsize=8,
                             )
 
@@ -769,7 +805,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
 
                 # Show first slice of 3D tensor
                 slice_data = matrix[:, :, 0]
-                ax.imshow(slice_data, cmap="Blues", aspect="auto")
+                image = ax.imshow(slice_data, cmap="Blues", aspect="auto")
 
                 # Add title
                 ax.set_title(f"Tensor {matrix_name} (Slice 0)", fontweight="bold")
@@ -785,7 +821,9 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                                 f"{value:.2f}",
                                 ha="center",
                                 va="center",
-                                color="white" if value < 0.5 else "black",
+                                color=contrasting_text_color(
+                                    image.cmap(image.norm(value))
+                                ),
                                 fontsize=8,
                             )
 
