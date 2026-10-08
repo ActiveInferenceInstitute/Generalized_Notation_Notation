@@ -43,17 +43,32 @@ suite passed 112 cases and 10 subtests. The original core selectors and report
 scope remain intact. Maintained-document link, anchor, terminology, pattern and
 flag audits pass, with zero undocumented registered flags.
 
-Independent public-contract review found partial execution of a mixed valid/
-unknown singular-step request and checkout working-directory substitution of
-an explicitly configured API workspace. The contracts owner is repairing both,
-plus pre-lease direct-main admission and supported model-aware JAX options.
-Do not accept the earlier broad regression as final until these repairs and
-their genuine public witnesses pass.
+Checkpoint `a261467aff5d899f207931c0ce0a663af50d0f18` integrates the final
+public-contract candidate and the additional saved-artifact consumer tests.
+Independent review found no remaining blocking admission/receipt finding;
+the concrete singular-step, workspace-configuration and fresh-other-run defects
+are repaired. The owner regression passed 1,640 cases with 21 existing optional
+skips. Root replay passed 124 integrated public/native/artifact cases. Full
+integrated static checks passed except formatting and terminology/flag drift,
+which the integrator is correcting with preserved AST parity for formatting.
+
+An ordinary wheel built from that checkpoint passed complete local macOS arm64
+Python 3.14 acceptance outside checkout: full API behavior, eight native THRML
+cases and nineteen native filesystem cases, with zero skips. Both real HTTP
+pipeline workers completed with verified cleanup and refused workspace package
+shadowing. Every archived source hash remained unchanged. This is evidence for
+that still-4.0.1-version wheel; final 4.1.0 and hosted platforms remain pending.
+
+The coverage observer passed five real isolation/child-execution controls and
+the full native MCP selection (524 cases). Independent review verified all
+measured subprocess identities, same-interpreter source scope and restoration
+of its exclusive temporary observation hook. These are focused reports; they
+do not prove the complete supported matrix or the >80% target.
 
 | Remaining dependency | Required next evidence |
 | --- | --- |
-| Public contracts and setup discovery | Final consumer regression, coordinated source commits and integrated replay |
-| Diagnostics and round-trip persistence | Typed failure receipts, unique saved artifacts and real per-file identity |
+| Public contracts and setup discovery | Final versioned integrated gates and ordinary installed native platform lanes |
+| Diagnostics and round-trip persistence | Accepted focused evidence; preserve it in final full-source checks |
 | Scientific presentation and performance | Refreshed actual images with independent critique; paired raster CPU/size/pixel evidence |
 | Comprehensive coverage | Same-interpreter subprocess tracing and full unchanged source scope, alongside existing core reports |
 | Installed acceptance | Final ordinary wheel with complete local API checks, then all five hosted native lanes |

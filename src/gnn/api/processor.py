@@ -209,7 +209,9 @@ def _remove_run_artifacts(entry: dict[str, Any]) -> tuple[Optional[bool], str]:
             if not shutil.rmtree.avoids_symlink_attacks:
                 return False, "safe artifact removal is unavailable on this platform"
             with directory_handle(output_dir.parent) as parent:
-                directory_entry = os.stat(output_dir.name, dir_fd=parent, follow_symlinks=False)
+                directory_entry = os.stat(
+                    output_dir.name, dir_fd=parent, follow_symlinks=False
+                )
                 if is_redirect(directory_entry):
                     return False, "artifact directory symlink or reparse point retained"
                 shutil.rmtree(output_dir.name, dir_fd=parent)
@@ -367,7 +369,8 @@ async def execute_job_async(job_id: str) -> None:
         job["process"] = proc
 
         stdout, stderr, cleanup = await supervise_api_process(
-            proc, cancelled=lambda: job["status"] == "cancelled",
+            proc,
+            cancelled=lambda: job["status"] == "cancelled",
         )
         job["process_cleanup"] = cleanup
 

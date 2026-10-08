@@ -8,6 +8,7 @@ tree whose directory entries cannot be changed by an untrusted writer.
 
 from __future__ import annotations
 
+import errno
 import os
 import stat
 from contextlib import contextmanager
@@ -33,7 +34,7 @@ def directory_handle(path: Path, *, create: bool = False) -> Iterator[int]:
     The caller owns the policy on what directory objects may be accessed.
     """
     if os.name != "posix":
-        raise NotImplementedError("Descriptor-relative directories require POSIX")
+        raise OSError(errno.ENOTSUP, "Descriptor-relative directories require POSIX")
     absolute = path.absolute()
     if ".." in absolute.parts:
         raise ValueError("Directory path must not contain parent traversal")
@@ -66,7 +67,8 @@ def create_directory(path: Path) -> None:
             opened = os.fstat(descriptor)
             current = path.lstat()
             if is_redirect(current) or (opened.st_dev, opened.st_ino) != (
-                current.st_dev, current.st_ino
+                current.st_dev,
+                current.st_ino,
             ):
                 raise ValueError("Directory changed during creation")
             return

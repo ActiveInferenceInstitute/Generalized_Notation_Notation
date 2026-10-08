@@ -7,6 +7,7 @@ Native Windows tests do not borrow POSIX assertions or fake platform values.
 
 from __future__ import annotations
 
+import errno
 import os
 import shutil
 import subprocess
@@ -21,6 +22,30 @@ from gnn.api.path_utils import PathValidationError, get_repo_root, resolve_repo_
 from gnn.api.processor import delete_run
 from gnn.pipeline.output_lease import OutputLease, OutputLeaseError
 from gnn.utils.runtime_safety import filesystem
+
+
+@pytest.mark.parametrize("create", [False, True])
+def test_native_directory_handle_support_is_explicit(
+    tmp_path: Path, create: bool
+) -> None:
+    sentinel = tmp_path / "retained.txt"
+    sentinel.write_bytes(b"unrelated native source")
+    directory = tmp_path / "owned-directory"
+    if os.name != "posix":
+        with pytest.raises(OSError) as error:
+            with filesystem.directory_handle(directory, create=create):
+                pytest.fail("Unsupported descriptor operation yielded a handle")
+        assert error.value.errno == errno.ENOTSUP
+        assert not directory.exists()
+    else:
+        if not create:
+            directory.mkdir()
+        with filesystem.directory_handle(directory, create=create) as descriptor:
+            opened = os.fstat(descriptor)
+            actual = directory.lstat()
+            assert (opened.st_dev, opened.st_ino) == (actual.st_dev, actual.st_ino)
+        assert directory.is_dir()
+    assert sentinel.read_bytes() == b"unrelated native source"
 
 
 def test_explicit_api_workspace_is_operator_owned(

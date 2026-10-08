@@ -50,7 +50,9 @@ def get_repo_root() -> Path:
                 if is_redirect(node.lstat()) or not node.is_dir():
                     raise ValueError("API root must not traverse reparse points")
     except (OSError, ValueError) as exc:
-        raise PathValidationError(f"GNN_API_ROOT is not a safe directory: {exc}") from exc
+        raise PathValidationError(
+            f"GNN_API_ROOT is not a safe directory: {exc}"
+        ) from exc
     return root
 
 

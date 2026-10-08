@@ -35,7 +35,7 @@ The `src/gnn/website/` module generates static HTML websites from pipeline artif
 
 ## Standards
 
-- Unreadable source files retain their existing listing/model-page placeholders;
+- Unreadable source files retain their existing listing/model-page error messages;
   their file path and filesystem exception type are logged rather than silently
   discarded. Other usable pages remain generated.
 - Generated sites are self-contained (inline CSS/JS; no external CDN)

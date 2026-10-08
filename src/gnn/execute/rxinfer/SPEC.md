@@ -12,7 +12,7 @@
 ## Input
 
 - `.jl` scripts from `output/11_render_output/<model>/rxinfer/` (genuine `@model pomdp_model` scripts)
-- Legacy `*_config.toml` inputs remain accepted by the committed
+- Existing `*_config.toml` inputs remain accepted by the committed
   `rxinfer_runner.jl` adapter; the pre-execution gate scans that Julia program.
 
 ## Output

@@ -680,7 +680,9 @@ def run_subprocess_envelope(
             if (
                 require_descendant_containment or require_descendant_resource_accounting
             ) and (tracker is None or tracker.boundary != "observed_descendants"):
-                _mark_cleanup_failed(envelope, "Required descendant observation was unavailable")
+                _mark_cleanup_failed(
+                    envelope, "Required descendant observation was unavailable"
+                )
             if envelope["cleanup_verified"] is not False:
                 envelope["cleanup_verified"] = True
             envelope["containment"] = (

@@ -24,6 +24,7 @@ action)`. Stochastic validation sums over `next_state` for each
 
 ## Output Formats
 
-- PNG (default, 150 DPI)
-- SVG (when `--svg` flag set)
+- PNG (native matrix artifacts, 300 DPI)
+- Matplotlib formats selected by the Python caller's output filename; the
+  pipeline does not expose a separate SVG command-line option
 - CSV (always, alongside visual output)

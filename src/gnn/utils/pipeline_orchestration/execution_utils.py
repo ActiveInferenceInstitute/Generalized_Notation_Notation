@@ -110,7 +110,11 @@ def execute_command_streaming(
             bufsize=1,
             universal_newlines=True,
             start_new_session=os.name == "posix",
-            creationflags=(0 if os.name == "posix" else getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)),
+            creationflags=(
+                0
+                if os.name == "posix"
+                else getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+            ),
         )
         tracker = DescendantTracker(process.pid)
         tracker.start()

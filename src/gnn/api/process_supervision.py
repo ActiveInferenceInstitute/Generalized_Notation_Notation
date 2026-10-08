@@ -38,7 +38,11 @@ def request_process_stop(process: Any, *, force: bool = False) -> None:
         except (ProcessLookupError, AttributeError):
             pass
     if getattr(process, "returncode", None) is None:
-        stop = (getattr(process, "kill", None) or process.terminate) if force else process.terminate
+        stop = (
+            (getattr(process, "kill", None) or process.terminate)
+            if force
+            else process.terminate
+        )
         stop()
 
 
@@ -63,13 +67,13 @@ async def supervise_api_process(
     try:
         tracker.start()
         while not task.done() and not cancelled() and process.returncode is None:
-            await asyncio.wait({task}, timeout=.05)
+            await asyncio.wait({task}, timeout=0.05)
     except BaseException as error:
         original_error = error
 
-    deadline = time.monotonic() + max(0., cleanup_timeout)
+    deadline = time.monotonic() + max(0.0, cleanup_timeout)
     try:
-        tracked = tracker.stop(timeout=min(.1, max(0., deadline - time.monotonic())))
+        tracked = tracker.stop(timeout=min(0.1, max(0.0, deadline - time.monotonic())))
     except RuntimeError as error:
         errors.append(str(error))
         tracked = tracker.observed_processes
@@ -80,7 +84,9 @@ async def supervise_api_process(
     # Preserve ordinary graceful SIGTERM cancellation, then escalate inside the
     # same ceiling. A SIGTERM-ignoring worker cannot keep the API awaiting pipes.
     if not task.done():
-        await asyncio.wait({task}, timeout=min(.15, max(0., deadline - time.monotonic())))
+        await asyncio.wait(
+            {task}, timeout=min(0.15, max(0.0, deadline - time.monotonic()))
+        )
     try:
         request_process_stop(process, force=True)
     except (OSError, AttributeError) as error:
@@ -101,7 +107,7 @@ async def supervise_api_process(
     streams_drained = False
     try:
         stdout, stderr = await asyncio.wait_for(
-            asyncio.shield(task), timeout=max(.001, deadline - time.monotonic())
+            asyncio.shield(task), timeout=max(0.001, deadline - time.monotonic())
         )
         streams_drained = True
     except BaseException as error:
@@ -124,7 +130,7 @@ async def supervise_api_process(
             break
         tracked = alive
         if tracked:
-            await asyncio.sleep(min(.01, max(0., deadline - time.monotonic())))
+            await asyncio.sleep(min(0.01, max(0.0, deadline - time.monotonic())))
     errors.extend(tracker.errors)
     if process.returncode is None:
         errors.append("Worker exit could not be verified")

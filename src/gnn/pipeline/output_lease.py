@@ -98,7 +98,9 @@ class OutputLease:
             except FileNotFoundError:
                 lock_entry = None
             if lock_entry is not None and is_redirect(lock_entry):
-                raise OutputLeaseError("Pipeline output lock cannot be a symlink or reparse point")
+                raise OutputLeaseError(
+                    "Pipeline output lock cannot be a symlink or reparse point"
+                )
             descriptor = os.open(
                 entry_name,
                 os.O_RDWR
@@ -126,19 +128,30 @@ class OutputLease:
                 self.handle.seek(0)
                 windows_lock = cast(Any, msvcrt)
                 windows_lock.locking(self.handle.fileno(), windows_lock.LK_NBLCK, 1)
+
             def check_identity() -> None:
                 current = os.stat(
-                    entry_name, dir_fd=root_descriptor, follow_symlinks=False,
+                    entry_name,
+                    dir_fd=root_descriptor,
+                    follow_symlinks=False,
                 )
-                if is_redirect(current) or current.st_nlink != 1 or (
-                    current.st_dev, current.st_ino
-                ) != (opened.st_dev, opened.st_ino):
-                    raise OutputLeaseError("Pipeline output lock changed during acquisition")
+                if (
+                    is_redirect(current)
+                    or current.st_nlink != 1
+                    or (current.st_dev, current.st_ino)
+                    != (opened.st_dev, opened.st_ino)
+                ):
+                    raise OutputLeaseError(
+                        "Pipeline output lock changed during acquisition"
+                    )
                 current_root = self.output_dir.lstat()
                 if is_redirect(current_root) or (
-                    current_root.st_dev, current_root.st_ino
+                    current_root.st_dev,
+                    current_root.st_ino,
                 ) != (root_identity.st_dev, root_identity.st_ino):
-                    raise OutputLeaseError("Pipeline output directory changed during acquisition")
+                    raise OutputLeaseError(
+                        "Pipeline output directory changed during acquisition"
+                    )
 
             check_identity()
             validate_output_tree(self.output_dir)

@@ -155,7 +155,7 @@ class RoundTripTestStrategy:
             # Extract results for this file
             file_results: list[Any] = []
             for result in report.round_trip_results:
-                # Native rows belong to their report's source. Legacy injected
+                # Native rows belong to their report's source. Injected
                 # reports can continue supplying a per-row source_file.
                 result_source = getattr(result, "source_file", report_source)
                 if result_source is not None and str(result_source) == str(file_path):

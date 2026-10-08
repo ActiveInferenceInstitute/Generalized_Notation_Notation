@@ -521,7 +521,9 @@ if FASTAPI_AVAILABLE:
 
         except ProcessCleanupError as e:
             entry["process_cleanup"] = e.receipt
-            tracker.mark_failed(RuntimeError("Process cleanup could not be verified"), start)
+            tracker.mark_failed(
+                RuntimeError("Process cleanup could not be verified"), start
+            )
             logger.error("Pipeline run %s cleanup failed: %s", run_hash, e)
         except Exception as e:
             if cancel_token is not None and cancel_token.cancelled:

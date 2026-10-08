@@ -97,7 +97,9 @@ class DescendantTracker:
         self._tracked: dict[tuple[int, float], Any] = {}
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
-        self.boundary = "process_group_only" if os.name == "posix" else "direct_worker_only"
+        self.boundary = (
+            "process_group_only" if os.name == "posix" else "direct_worker_only"
+        )
         self.errors: list[str] = []
 
     def start(self) -> None:

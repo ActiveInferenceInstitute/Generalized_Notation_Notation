@@ -18,15 +18,15 @@ for its current routes and request schemas; [models.py](models.py) and
 Run these commands from the repository root:
 
 ```bash
-uv sync --frozen --extra api --python 3.12
-uv run --frozen --no-sync --python 3.12 gnn serve --surface runs --host 127.0.0.1 --port 8000
+UV_PYTHON=3.12 uv sync --frozen --extra api
+UV_PYTHON=3.12 uv run --frozen --no-sync gnn serve --surface runs --host 127.0.0.1 --port 8000
 ```
 
 To use the job surface, replace `runs` with `jobs`. Its equivalent module entry
 point is:
 
 ```bash
-uv run --frozen --no-sync --python 3.12 python -m gnn.api.server --host 127.0.0.1 --port 8000
+UV_PYTHON=3.12 uv run --frozen --no-sync python -m gnn.api.server --host 127.0.0.1 --port 8000
 ```
 
 In another terminal, check readiness and validate a maintained example without
