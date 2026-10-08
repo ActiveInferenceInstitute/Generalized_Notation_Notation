@@ -17,8 +17,11 @@ test cases live under ``tests/testing/``.
 import logging
 import os
 import tempfile
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, List, Optional, cast
+
+from gnn.parsers.common import Parameter
 
 from .round_trip_availability import (
     CROSS_FORMAT_AVAILABLE,
@@ -852,7 +855,10 @@ class GNNRoundTripTester(RoundTripComparisonMixin, RoundTripReportMixin):
             annotation=parsed_gnn.model_annotation,
             variables=variables,
             connections=connections,
-            parameters=[],
+            parameters=[
+                Parameter(name=name, value=deepcopy(value))
+                for name, value in parsed_gnn.parameters.items()
+            ],
         )
 
         result = ParseResult(model=model, success=True)

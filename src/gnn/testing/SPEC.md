@@ -10,6 +10,11 @@
 ## Requirements
 
 - **Python** >= 3.11 (see repo `pyproject.toml`).
+- The schema validator's round-trip adapter preserves supplied `ParsedGNN`
+  parameter names and values, including zero, false and nested containers.
+  Each conversion owns independent value copies; it does not normalize,
+  flatten or reinterpret the supplied parameters. Existing variable dimensions,
+  types, descriptions and model annotations follow the same adapter contract.
 - Saved round-trip artifacts use the canonical parser output extensions,
   retaining the valid existing Z `.zed` suffix. Native PKL `.pkl` and binary
   Pickle `.pickle` remain distinct, and each supported target has its own
