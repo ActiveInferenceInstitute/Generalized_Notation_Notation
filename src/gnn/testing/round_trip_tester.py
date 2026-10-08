@@ -1124,24 +1124,10 @@ class GNNRoundTripTester(RoundTripComparisonMixin, RoundTripReportMixin):
 
     def _get_file_extension(self, format: GNNFormat) -> str:
         """Get file extension for a format."""
-        extensions: dict[Any, Any] = {
-            GNNFormat.MARKDOWN: "md",
-            GNNFormat.JSON: "json",
-            GNNFormat.XML: "xml",
-            GNNFormat.YAML: "yaml",
-            GNNFormat.SCALA: "scala",
-            GNNFormat.PYTHON: "py",
-            GNNFormat.PROTOBUF: "proto",
-            GNNFormat.PKL: "pkl",
-            GNNFormat.ASN1: "asn1",
-            GNNFormat.LEAN: "lean",
-            GNNFormat.COQ: "v",
-            GNNFormat.ALLOY: "als",
-            GNNFormat.XSD: "xsd",
-            GNNFormat.ISABELLE: "thy",
-            GNNFormat.HASKELL: "hs",
-            GNNFormat.BNF: "bnf",
-            GNNFormat.PICKLE: "pkl",
-            GNNFormat.Z_NOTATION: "zed",
-        }
-        return cast("str", extensions.get(format, "txt"))
+        from gnn.parsers.common import FORMAT_OUTPUT_EXTENSION_MAP
+
+        # Keep the existing valid Z artifact suffix; other formats use the
+        # canonical parser/serializer owner, including distinct PKL/Pickle.
+        if format == GNNFormat.Z_NOTATION:
+            return "zed"
+        return FORMAT_OUTPUT_EXTENSION_MAP.get(format, ".txt").removeprefix(".")

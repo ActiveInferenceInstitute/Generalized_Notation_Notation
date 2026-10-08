@@ -10,6 +10,10 @@
 ## Requirements
 
 - **Python** >= 3.11 (see repo `pyproject.toml`).
+- Saved round-trip artifacts use the canonical parser output extensions,
+  retaining the valid legacy Z `.zed` suffix. Native PKL `.pkl` and binary
+  Pickle `.pickle` remain distinct, and each supported target has its own
+  artifact rather than overwriting another format's evidence.
 
 ## Running
 
