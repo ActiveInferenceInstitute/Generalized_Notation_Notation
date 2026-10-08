@@ -21,7 +21,7 @@ preference, prior, and PyMDP/POMDP tensor matrices.
 - Color-normalized black/white annotations preserve signed values. Heatmap axis bases and caller-declared units are explicit; undeclared units remain unspecified.
 - Small correlation heatmaps retain their actual column-correlation values,
   annotations, and index labels with a symmetric signed colorbar around zero.
-  Explicit color limits avoid upstream deprecated colormap mutation. When the
+  Explicit color limits avoid upstream older colormap mutation. When the
   existing constant-column handling yields only zeros, the `[-1, 1]` color
   domain is a display fallback; it adds no inferred correlations or numeric
   data. The existing one-row/one-column data passthrough and large-matrix image

@@ -151,13 +151,13 @@ class ParameterParsingMixin:
                         item = pending.pop()
                         if isinstance(item, dict):
                             raise ValueError(
-                                "JSON array mappings retain legacy handling"
+                                "JSON array mappings retain existing handling"
                             )
                         if isinstance(item, list):
                             pending.extend(item)
                     return json.loads(value_str)
                 except (ValueError, SyntaxError) as exc:
-                    logger.debug("JSON array retains legacy value handling: %s", exc)
+                    logger.debug("JSON array retains existing value handling: %s", exc)
 
             # Matrix format: {(1,2,3);(4,5,6)}
             if (

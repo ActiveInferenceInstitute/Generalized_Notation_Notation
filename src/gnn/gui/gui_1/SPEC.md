@@ -27,7 +27,7 @@ Form-based GNN model constructor GUI served as a Gradio web application.
 
 The public `add_state_space_entry` helper inserts into an existing canonical
 `## StateSpaceBlock` before its next level-two section. Existing editor heading
-aliases, including the legacy spaced `## State Space`, remain supported by the
+aliases, including the existing spaced `## State Space`, remain supported by the
 editor; these aliases do not extend the native GNN readers' section grammar.
 Insertion retains all existing text and line endings outside the new declaration.
 It preserves physical duplicate declarations and the existing linear delimiter

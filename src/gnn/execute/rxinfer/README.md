@@ -34,15 +34,15 @@ src/gnn/execute/rxinfer/
 - `execute_rxinfer_script(script_path, verbose=False, output_dir=None, timeout=300) -> bool` - Run one script under the committed project
 - `is_julia_available() -> bool` - Julia on `PATH` check
 
-### Legacy Result Helpers (`rxinfer_results.py`)
+### saved Result Helpers (`rxinfer_results.py`)
 
-These direct-module APIs read saved legacy JSON with `free_energy`, `iterations`,
+These direct-module APIs read saved JSON with `free_energy`, `iterations`,
 `converged` and named `posteriors`; they are not package re-exports or pipeline
 result readers.
 
-- `parse_rxinfer_output()`, `collect_rxinfer_results()` - Read legacy files, including legacy `*simulation_results.json` and RxInfer-named JSON; each matching path is collected once
-- `extract_convergence_metrics()`, `summarize_posteriors()` - Legacy free-energy and posterior summaries, preserving zero-valued Gaussian parameters and scalar values
-- `format_rxinfer_report()` - Markdown report over collected legacy results
+- `parse_rxinfer_output()`, `collect_rxinfer_results()` - Read saved files, including saved `*simulation_results.json` and RxInfer-named JSON; each matching path is collected once
+- `extract_convergence_metrics()`, `summarize_posteriors()` - saved free-energy and posterior summaries, preserving zero-valued Gaussian parameters and scalar values
+- `format_rxinfer_report()` - Markdown report over collected saved results
 
 Canonical `rxinfer_simulation_v1` files are explicitly refused by these helpers.
 Read them with
@@ -54,8 +54,8 @@ Canonical `num_timesteps` counts observations, while
 `variational_free_energy`/`vfe_per_iteration` retain their per-iteration VFE
 identity; they are separate from per-step `expected_free_energy`. For Gaussian
 results, `beliefs` contains posterior means and `posterior_cov` retains complete
-per-timestep covariance matrices. The legacy helpers cannot faithfully represent
-these identities and never convert them into legacy iterations or categorical
+per-timestep covariance matrices. The saved helpers cannot faithfully represent
+these identities and never convert them into saved iterations or categorical
 posterior summaries. Files with canonical VFE/covariance fields also receive an
 unsupported-format diagnosis when their schema marker is absent.
 
@@ -126,7 +126,7 @@ Tests verify:
 - Error handling
 - Environment consistency
 
-`tests/execute/test_rxinfer_saved_results_410.py` exercises the legacy direct-file
+`tests/execute/test_rxinfer_saved_results_410.py` exercises the saved direct-file
 parse→collection→summary→report path with authored saved fixtures, independent
 numeric expectations, duplicate discovery, malformed files and explicit canonical
 refusal. These consumer tests do not execute Julia or establish native inference.

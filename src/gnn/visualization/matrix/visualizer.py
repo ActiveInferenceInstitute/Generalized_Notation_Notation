@@ -1204,7 +1204,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
             sns = get_sns()
             if SEABORN_AVAILABLE and corr_matrix.size <= 100:
                 # Explicit limits center the signed palette without seaborn's
-                # deprecated colormap mutation. All-zero data retain their
+                # older colormap mutation. All-zero data retain their
                 # values; the unit fallback supplies only a plotting domain.
                 color_limit = float(np.max(np.abs(corr_matrix))) or 1.0
                 sns.heatmap(

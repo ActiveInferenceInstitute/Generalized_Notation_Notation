@@ -28,13 +28,13 @@ from gnn.render import process_render, JAXRenderer
 
 The authoritative export surface is `src/gnn/render/__init__.py`.
 
-The separately exported legacy `generate_pymdp_code` generator retains its
+The separately exported `generate_pymdp_code` generator retains its
 existing algorithms and sanitized artifact prefixes. Its model/source display
 text is serialized as Python literals in documentation, metadata and report
 slots. This is source-generation compatibility, not execution readiness or
 scientific equivalence with the canonical PyMDP 1.0 runner.
 
-The exported legacy `generate_discopy_code` likewise serializes model/source
+The separately exported `generate_discopy_code` likewise serializes model/source
 display text in its generated docstring and analyzer metadata while retaining
 the sanitized class identifier and existing analysis algorithms. It remains
 distinct from `render_gnn_to_discopy`'s categorical diagram generation route.

@@ -137,7 +137,7 @@ class SectionParsersMixin:
                 if dims_str:
                     for dim in dims_str.split(","):
                         dim = dim.strip()
-                        # Bind the bracket field; an explicit legacy suffix wins.
+                        # Bind the bracket field; an explicit existing suffix wins.
                         if dim.startswith("type="):
                             if data_type is None:
                                 data_type = dim.split("=", 1)[1].strip()

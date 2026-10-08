@@ -24,15 +24,15 @@
 
 ## Saved-result compatibility
 
-The directly imported `rxinfer_results.py` helpers retain the legacy
+The directly imported `rxinfer_results.py` helpers retain the saved
 `free_energy`/`iterations`/named `posteriors` format and supported signatures.
-Collectors process each matching path once, including legacy
+Collectors process each matching path once, including saved
 `*simulation_results.json`; numeric zero and scalar posterior values survive
 parse, summary and report. Canonical `rxinfer_simulation_v1` and canonical
-VFE/covariance fields are explicitly unsupported by this legacy format.
+VFE/covariance fields are explicitly unsupported by this saved format.
 Use `gnn.analysis.rxinfer.result_ingestion.read_result_object` for canonical
 artifacts, retaining observation timesteps, inference-iteration VFE and complete
-Gaussian covariance matrices without relabelling them as legacy fields.
+Gaussian covariance matrices without relabelling them as saved fields.
 
 ## Error Handling
 

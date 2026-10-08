@@ -1158,7 +1158,7 @@
     "root_generation_tests": 92,
     "root_generation_returncode": 0,
     "runtime_bookend_equal": true,
-    "scope": "Compiled canonical/legacy generated source and actual native imports/metadata; no legacy analysis or inference invocation. The original failing receipts and nonfinite-metadata qualification are retained.",
+    "scope": "Compiled source from canonical renderers and separately exported generators, with actual native imports and metadata; no analysis or inference invocation. The original failing receipts and nonfinite-metadata qualification are retained.",
     "pending": "Final comprehensive coverage, installed matrix, manuscript and publication custody.",
     "nonfinite_json_guard": {
       "source_commit": "dfedead64",

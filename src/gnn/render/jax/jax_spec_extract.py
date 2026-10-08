@@ -813,7 +813,7 @@ def _validated_jax_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, np.ndarray]:
     if any(not np.all(np.isfinite(value)) for value in matrices.values()):
         raise ValueError("JAX matrices must contain only finite values")
 
-    # Legacy variables/JSON exports carry explicit dimensions independently
+    # existing variables/JSON exports carry explicit dimensions independently
     # of their values. A successful render must honor both declarations.
     declarations = gnn_spec.get("statespaceblock", gnn_spec.get("variables", []))
     for declaration in declarations:

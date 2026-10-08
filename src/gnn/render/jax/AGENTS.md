@@ -105,7 +105,7 @@ In all cases, `_extract_gnn_matrices` will:
   complete-model scientific value-preservation evidence.
 
 `C` contains signed real preferences rather than probabilities. It is never
-normalized as a probability vector. Legacy braced `B` tensors use the declared
+normalized as a probability vector. existing braced `B` tensors use the declared
 `[next_state, previous_state, action]` axes; complete canonical inputs also honor
 explicit supported action-major axis declarations.
 

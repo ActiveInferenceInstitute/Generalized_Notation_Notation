@@ -56,9 +56,9 @@ tuples, and numeric NumPy arrays without mutating the caller. Explicit
 canonicalization failures propagate to a failed render before any output is
 written; authored matrices are never replaced after failed admission.
 
-Supplied legacy braced literals are parsed strictly, including nested transition
+Supplied existing braced literals are parsed strictly, including nested transition
 tensors. Malformed or ragged literals fail rather than receiving padded rows or
-recovery values. Supplied legacy tables must match their declared dimensions;
+recovery values. Supplied existing tables must match their declared dimensions;
 `A` columns, each action's `B` columns, and `D` must contain finite nonnegative
 probabilities with unit mass under the existing canonical rounding tolerance.
 `C` is a finite real payoff vector and may contain negative preferences. Optional

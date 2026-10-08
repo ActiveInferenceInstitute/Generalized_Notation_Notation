@@ -31,7 +31,7 @@ uv run python src/gnn/22_gui.py --gui-types gui_1 --headless
 `add_state_space_entry` places a new declaration inside an existing canonical
 `## StateSpaceBlock`, before the following section, so native GNN file readers
 can discover it after export. Existing text and line endings outside the added
-declaration remain intact. The editor also accepts legacy spaced state headings;
+declaration remain intact. The editor also accepts existing spaced state headings;
 these editor aliases do not change the native readers' supported section names.
 Physical duplicates are retained rather than silently combined.
 

@@ -2,7 +2,7 @@
 """
 RxInfer.jl Results Parser for GNN Execute Pipeline.
 
-Reads the legacy free_energy/posteriors JSON format through direct file APIs.
+Reads the saved free_energy/posteriors JSON format through direct file APIs.
 Canonical rxinfer_simulation_v1 artifacts belong to the current analysis reader;
 their VFE, timestep and Gaussian covariance identities are not mapped here.
 """
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def _first_value(values: Dict[str, Any], *keys: str, default: Any = None) -> Any:
-    """Retain numeric zero while preserving legacy empty-alias fallthrough."""
+    """Retain numeric zero while preserving saved empty-alias fallthrough."""
     for key in keys:
         value = values.get(key)
         if value is not None and value != "" and value != [] and value != {}:
@@ -27,9 +27,9 @@ def _first_value(values: Dict[str, Any], *keys: str, default: Any = None) -> Any
 
 def parse_rxinfer_output(output_path: Path) -> Optional[Dict[str, Any]]:
     """
-    Parse a saved legacy RxInfer free_energy/posteriors JSON object.
+    Parse a saved RxInfer free_energy/posteriors JSON object.
 
-    The supported legacy structure is:
+    The supported saved structure is:
     {
         "model_name": "...",
         "iterations": N,
@@ -45,7 +45,7 @@ def parse_rxinfer_output(output_path: Path) -> Optional[Dict[str, Any]]:
         output_path: Path to the JSON output file from RxInfer.jl
 
     Returns:
-        Parsed legacy results, or None for unreadable/unsupported artifacts.
+        Parsed saved results, or None for unreadable/unsupported artifacts.
         Canonical simulation results are refused with reader guidance rather
         than losing their VFE, timestep or covariance metadata.
     """
@@ -65,7 +65,7 @@ def parse_rxinfer_output(output_path: Path) -> Optional[Dict[str, Any]]:
             "simulation_log.json",
         }:
             logger.warning(
-                "Unsupported execution metadata at %s; expected a legacy RxInfer simulation result",
+                "Unsupported execution metadata at %s; expected a saved RxInfer simulation result",
                 output_path,
             )
             return None
@@ -75,7 +75,7 @@ def parse_rxinfer_output(output_path: Path) -> Optional[Dict[str, Any]]:
         ):
             logger.warning(
                 "Unsupported canonical RxInfer result at %s: this reader accepts "
-                "legacy free_energy/posteriors; use "
+                "saved free_energy/posteriors; use "
                 "gnn.analysis.rxinfer.result_ingestion.read_result_object to "
                 "preserve VFE, timesteps and covariance metadata",
                 output_path,
@@ -95,7 +95,7 @@ def parse_rxinfer_output(output_path: Path) -> Optional[Dict[str, Any]]:
             )
         ):
             logger.warning(
-                "Unsupported legacy RxInfer result at %s: expected free_energy, posteriors or inference status fields",
+                "Unsupported saved RxInfer result at %s: expected free_energy, posteriors or inference status fields",
                 output_path,
             )
             return None
@@ -118,7 +118,7 @@ def parse_rxinfer_output(output_path: Path) -> Optional[Dict[str, Any]]:
 
     except (OSError, UnicodeError, TypeError, ValueError, OverflowError) as e:
         logger.error(
-            "Failed to parse legacy RxInfer result %s (%s): %s",
+            "Failed to parse saved RxInfer result %s (%s): %s",
             output_path,
             type(e).__name__,
             e,
@@ -153,7 +153,7 @@ def _extract_posteriors(raw: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     """
     raw_posteriors = _first_value(raw, "posteriors", "q", default={})
     if not isinstance(raw_posteriors, dict):
-        raise ValueError("legacy posteriors/q must be a JSON object")
+        raise ValueError("saved posteriors/q must be a JSON object")
     result: dict[Any, Any] = {}
 
     for var_name, dist_data in raw_posteriors.items():
@@ -321,9 +321,9 @@ def collect_rxinfer_results(
     output_dir: Path, model_name: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
-    Collect saved legacy RxInfer JSON files, processing each matching path once.
+    Collect saved RxInfer JSON files, processing each matching path once.
 
-    Canonical simulation results are discovered but refused by the legacy
+    Canonical simulation results are discovered but refused by the saved
     parser with guidance to the current canonical reader.
 
     Args:

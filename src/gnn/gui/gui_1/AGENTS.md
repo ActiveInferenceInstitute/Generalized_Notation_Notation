@@ -106,7 +106,7 @@ open_browser = True
 
 State insertion belongs inside an existing canonical `StateSpaceBlock`, before
 the next section. Keep manual text and line endings outside the insertion intact;
-retain physical duplicates, legacy editor heading aliases, the linear delimiter
+retain physical duplicates, existing editor heading aliases, the linear delimiter
 parser and the 8,388,608-character input limit. Native readers still apply their
 own section grammar.
 

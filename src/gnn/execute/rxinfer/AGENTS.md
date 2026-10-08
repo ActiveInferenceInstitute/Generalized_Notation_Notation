@@ -26,7 +26,7 @@
 - Reproducible Julia environment: `julia --startup-file=no --project=src/gnn/execute/rxinfer <script>`
   against the committed `Project.toml` + `Manifest.toml`; `setup_environment.jl`
   only runs `Pkg.instantiate()` (no runtime `Pkg.add`)
-- Direct-file legacy result helpers (`rxinfer_results.py`) for saved
+- Direct-file saved result helpers (`rxinfer_results.py`) for saved
   `free_energy`/`posteriors` payloads; canonical results use the analysis reader
 - Cross-platform compatibility (Linux/macOS/Windows)
 
@@ -35,7 +35,7 @@
 ## API Reference
 
 The runner names below are re-exported from `execute.rxinfer` (`__all__` in
-`__init__.py`) and defined in `rxinfer_runner.py`. Legacy result helpers are
+`__init__.py`) and defined in `rxinfer_runner.py`. saved result helpers are
 separate direct-module APIs and are not wired into the numbered pipeline.
 
 ### Public Functions
@@ -93,12 +93,12 @@ if is_julia_available():
         execute_rxinfer_script(script, verbose=True, timeout=600)
 ```
 
-### Legacy Result Helpers (`rxinfer_results.py`)
-- `parse_rxinfer_output(output_path: Path) -> Optional[Dict]` — read one legacy `free_energy`/named `posteriors` JSON object; unreadable or canonical formats return `None` with contextual diagnosis
-- `extract_convergence_metrics(parsed) -> Dict` — existing legacy free-energy trajectory and convergence flags
-- `summarize_posteriors(parsed) -> Dict` — per-variable legacy posterior summaries, including numeric zero and scalar values
-- `collect_rxinfer_results(output_dir: Path, model_name=None) -> List[Dict]` — collect legacy RxInfer-named JSON and `*simulation_results.json`, each matching path once; canonical artifacts are diagnosed and omitted
-- `format_rxinfer_report(results) -> str` — Markdown report over collected legacy results
+### saved Result Helpers (`rxinfer_results.py`)
+- `parse_rxinfer_output(output_path: Path) -> Optional[Dict]` — read one saved `free_energy`/named `posteriors` JSON object; unreadable or canonical formats return `None` with contextual diagnosis
+- `extract_convergence_metrics(parsed) -> Dict` — existing saved free-energy trajectory and convergence flags
+- `summarize_posteriors(parsed) -> Dict` — per-variable saved posterior summaries, including numeric zero and scalar values
+- `collect_rxinfer_results(output_dir: Path, model_name=None) -> List[Dict]` — collect saved RxInfer-named JSON and `*simulation_results.json`, each matching path once; canonical artifacts are diagnosed and omitted
+- `format_rxinfer_report(results) -> str` — Markdown report over collected saved results
 
 Canonical `rxinfer_simulation_v1` results belong to
 [`gnn.analysis.rxinfer.result_ingestion.read_result_object`](../../analysis/rxinfer/result_ingestion.py)
@@ -107,10 +107,10 @@ and the [canonical analysis consumers](../../analysis/rxinfer/README.md).
 `model_parameters.inference_iterations` retains the latter identity.
 Per-iteration `variational_free_energy`/`vfe_per_iteration` must remain separate
 from per-step `expected_free_energy`. Gaussian `beliefs` are posterior means
-paired with full per-timestep `posterior_cov` matrices. The legacy helper refuses
+paired with full per-timestep `posterior_cov` matrices. The saved helper refuses
 canonical schema or VFE/covariance fields rather than discarding these identities
 and returning an apparently empty success. It does not add a new inference
-contract or promote legacy helpers into the pipeline.
+contract or promote saved helpers into the pipeline.
 
 ---
 
