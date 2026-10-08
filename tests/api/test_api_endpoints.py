@@ -7,6 +7,10 @@ import pytest
 
 from gnn.api.app import FASTAPI_AVAILABLE, create_app
 
+# Match the absent-PID convention used by the API cancellation adapter tests;
+# a simulated worker must never identify a real host process or process group.
+_NO_SUCH_PID = 999_999_999
+
 
 def _assert_envelope(payload: Any, status: str = "success") -> dict[str, Any]:
     """Assert and return the canonical API response envelope."""
@@ -248,7 +252,10 @@ async def test_job_processor_uses_requested_output_dir(monkeypatch: Any) -> None
 async def test_run_api_executes_real_main_subprocess_and_preserves_warning_exit(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """The run API must invoke src/gnn/main.py instead of simulating successful steps."""
+    """Check module argv and warning-receipt adaptation with an explicit fake worker.
+
+    This is a unit contract; native API cleanup is exercised separately.
+    """
     import json
 
     import gnn.api.app as api_app
@@ -275,7 +282,7 @@ async def test_run_api_executes_real_main_subprocess_and_preserves_warning_exit(
     invocation_id = ""
 
     class FakeProcess:
-        pid = 1234
+        pid = _NO_SUCH_PID
         returncode = 2
 
         async def communicate(self) -> tuple[bytes, bytes]:
@@ -320,7 +327,7 @@ async def test_run_api_executes_real_main_subprocess_and_preserves_warning_exit(
         assert captured_command[captured_command.index("--skip-steps") + 1] == "4,13"
         assert entry["status"] == "completed"
         assert entry["exit_code"] == 2
-        assert entry["process_id"] == 1234
+        assert entry["process_id"] == _NO_SUCH_PID
         assert entry["steps_completed"] == 1
         assert entry["total_steps"] == 1
         assert any(event["type"] == "pipeline_warning" for event in entry["events"])
