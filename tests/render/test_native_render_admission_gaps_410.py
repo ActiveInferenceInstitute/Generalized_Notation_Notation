@@ -332,3 +332,110 @@ def test_public_file_translation_refusal_retains_authored_input_and_no_artifacts
     assert set(tmp_path.iterdir()) == listing
     if before is not None:
         assert source.read_bytes() == before
+
+
+@pytest.mark.parametrize("renderer", RENDERERS, ids=["general", "pomdp"])
+@pytest.mark.parametrize(
+    "key,value",
+    [
+        ("A", [[0.7, 0.1], [0.2, 0.3], [0.1]]),
+        ("A", [0.7, 0.2, 0.1]),
+        ("A", "[[0.7,0.1],[0.2,0.3],[0.1,0.6]]"),
+        ("B", [0.9, 0.1]),
+        ("B", {"state": [0.9, 0.1]}),
+        ("C", [[-2.0, 0.75, 1.25]]),
+        ("C", None),
+        ("D", [[0.8, 0.2]]),
+        ("D", {"state": 0.8}),
+    ],
+    ids=[
+        "ragged-A",
+        "rank-A",
+        "text-A",
+        "rank-B",
+        "mapping-B",
+        "rank-C",
+        "null-C",
+        "rank-D",
+        "mapping-D",
+    ],
+)
+def test_present_malformed_partial_table_cannot_publish_dimension_defaults(
+    tmp_path, renderer, key, value
+):
+    model = partial_model("C" if key == "D" else "D")
+    model["initialparameterization"][key] = value
+    assert_refusal_preserves_output(
+        tmp_path, renderer, model, f"Invalid authored {key} parameter"
+    )
+
+
+@pytest.mark.parametrize("renderer", RENDERERS, ids=["general", "pomdp"])
+@pytest.mark.parametrize("representation", ["tuple", "ndarray"])
+@pytest.mark.parametrize("omitted", ["C", "D"])
+def test_ordered_partial_numeric_containers_preserve_values_without_caller_mutation(
+    tmp_path, renderer, representation, omitted
+):
+    model = partial_model(omitted)
+    expected = authored_values()
+    expected[omitted] = compatibility_defaults()[omitted]
+
+    def ordered_tuple(value):
+        return (
+            tuple(ordered_tuple(item) for item in value)
+            if isinstance(value, list)
+            else value
+        )
+
+    for key in model["initialparameterization"]:
+        values = expected[key]
+        if representation == "tuple":
+            model["initialparameterization"][key] = ordered_tuple(values.tolist())
+        else:
+            array = values.copy()
+            array.flags.writeable = False
+            model["initialparameterization"][key] = array
+    consume_saved_parameters(tmp_path, renderer, model, expected)
+    if representation == "ndarray":
+        assert all(
+            not value.flags.writeable
+            for value in model["initialparameterization"].values()
+        )
+
+
+@pytest.mark.parametrize("renderer", RENDERERS, ids=["general", "pomdp"])
+@pytest.mark.parametrize("collection", [None, ["A", "B"], "malformed"])
+def test_present_nonmapping_partial_collection_cannot_become_all_defaults(
+    tmp_path, renderer, collection
+):
+    model = partial_model("ABCD")
+    model["initialparameterization"] = collection
+    assert_refusal_preserves_output(
+        tmp_path, renderer, model, "initialparameterization must be a dictionary"
+    )
+
+
+@pytest.mark.parametrize("renderer", RENDERERS, ids=["general", "pomdp"])
+@pytest.mark.parametrize("key", ["A", "B", "C", "D"])
+@pytest.mark.parametrize("invalid", ["nonfinite", "complex"])
+def test_partial_array_admission_preserves_real_and_finite_refusals(
+    tmp_path, renderer, key, invalid
+):
+    model = partial_model("C" if key == "D" else "D")
+    value = authored_values()[key].astype(complex if invalid == "complex" else float)
+    value.flat[0] = 1j if invalid == "complex" else np.inf
+    value.flags.writeable = False
+    model["initialparameterization"][key] = value
+    assert_refusal_preserves_output(
+        tmp_path, renderer, model, "real" if invalid == "complex" else "finite"
+    )
+    assert not value.flags.writeable
+
+
+@pytest.mark.parametrize("renderer", RENDERERS, ids=["general", "pomdp"])
+def test_partial_object_container_cannot_hide_complex_payoffs(tmp_path, renderer):
+    model = partial_model("D")
+    model["initialparameterization"]["C"] = np.array(
+        [-2.0 + 1j, 0.75, 1.25], dtype=object
+    )
+    assert_refusal_preserves_output(tmp_path, renderer, model, "complex")
