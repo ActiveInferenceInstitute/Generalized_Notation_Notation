@@ -178,6 +178,7 @@ def test_energy_axes_retain_domains_units_and_complete_declared_convention(
     assert "0-based" in efe_ax.get_xlabel()
     assert "units unspecified" in vfe_ax.get_ylabel()
     assert "reported score" in efe_ax.get_ylabel()
+    assert "Minimum reported policy score" in efe_ax.get_ylabel()
     assert all(float(tick).is_integer() for tick in vfe_ax.get_xticks())
     assert all(float(tick).is_integer() for tick in efe_ax.get_xticks())
     note = " ".join(" ".join(t.get_text().split()) for t in fig.texts)
@@ -353,6 +354,10 @@ def test_compact_energy_caption_requires_explicit_source_bound_summary(
     assert "neg_efe = -EFE = expected utility" in " ".join(
         t.get_text() for t in figures[0].texts
     )
+    right_axis = figures[0].axes[1]
+    assert "Minimum reported policy score" in right_axis.get_ylabel()
+    assert right_axis.lines[0].get_label() == "Minimum reported policy score"
+    np.testing.assert_array_equal(right_axis.lines[0].get_ydata(), [0.2, 0.1])
     receipt = json.loads(path.with_suffix(".conventions.json").read_text())
     assert receipt["declarations"][1]["display_summary"] == EFE_CONVENTION_PYMDP_SUMMARY
     assert receipt["declarations"][1]["convention"] == EFE_CONVENTION_PYMDP

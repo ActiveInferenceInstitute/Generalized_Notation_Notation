@@ -1001,7 +1001,10 @@ def generate_vfe_vs_efe_plot(
     efe_units: str | None = None,
 ) -> str:
     """
-    Generate VFE and EFE plots using their declared independent sample domains.
+    Generate VFE and reported-policy-score plots in independent sample domains.
+
+    The historical EFE input retains its numerical minimum reduction. Source
+    declarations own its sign/convention; display labels do not infer them.
 
     Args:
         vfe: List of variational free energy values (scalars)
@@ -1065,8 +1068,8 @@ def generate_vfe_vs_efe_plot(
         )
         efe_ax.set_xlabel("Time Step (0-based)")
         efe_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        efe_ax.set_ylabel(f"Min EFE ({efe_unit_label})")
-        efe_ax.set_title("Expected free energy: policy scores")
+        efe_ax.set_ylabel(f"Minimum reported policy score\n({efe_unit_label})")
+        efe_ax.set_title("Reported policy scores")
         efe_ax.grid(True, alpha=0.3)
         fig.suptitle(title, fontsize=14, fontweight="bold")
         footer = _energy_footer(fig, notes, base_height=7)
@@ -1087,13 +1090,13 @@ def generate_vfe_vs_efe_plot(
 
     ax2 = ax1.twinx()
     color2 = "tab:orange"
-    ax2.set_ylabel(f"EFE ({efe_unit_label})", color=color2)
+    ax2.set_ylabel(f"Minimum reported policy score\n({efe_unit_label})", color=color2)
     ax2.plot(
         efe_summary,
         "s--",
         color=color2,
         linewidth=2,
-        label="Min EFE",
+        label="Minimum reported policy score",
     )
     ax2.tick_params(axis="y", labelcolor=color2)
 
