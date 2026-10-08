@@ -10,6 +10,7 @@ Consolidation of pipeline outputs into comprehensive HTML/Markdown/JSON analysis
 - `analyzer.py` - `collect_pipeline_data()` aggregation over step output directories
 - `formatters.py` - HTML/Markdown section rendering (performance, errors, steps, visualizations)
 - `pipeline_report.py` - Per-step status/timing/artifact/statistics sections
+- `processing_report.py` - `ReportGenerator` processing-context reports: structural `valid/errors/warnings` mappings and typed `is_valid/errors/warnings` results retain actual Boolean counts and errors. Missing required fields or malformed validity refuse compilation; returned write failures retain completed format paths and `report_files["error"]`.
 - `diff_report.py` - `compare_runs()` / `archive_run()` run-to-run diffing
 - `model_family.py`, `semantic_fidelity.py`, `cross_framework_reliability.py` - ledger markdown renderers
 - `mcp.py` - MCP tool registrations (5 tools)

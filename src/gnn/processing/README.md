@@ -35,6 +35,13 @@ Re-exported from `gnn.processing` (see `__init__.py`):
 
 ## Core-Processor Wrappers (distinct from the canonical surface)
 
+`GNNProcessor.process(context)` returns `True` only after its required JSON,
+Markdown, and HTML processing reports have been written as nonempty files.
+Reporting exceptions, a returned write error, or a missing required format
+return `False` and record `context.processing_results["report_error"]` with
+reporting-phase context. Any returned partial report metadata and completed
+files remain available in `context.processing_results["report"]`.
+
 `core_processor.py` defines module-level `process_gnn_directory` and
 `process_gnn_directory_lightweight` that intentionally differ from the
 canonical `processor.py` functions of the same names (the ones the root
