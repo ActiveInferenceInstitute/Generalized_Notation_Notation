@@ -1,0 +1,516 @@
+{
+  "schema_version": "gnn.science410_measurement_index/v1",
+  "baseline_commit": "e5461954f45314cfea77b2cf06818e060f68bd0a",
+  "custody": "Full raw native receipts and artifacts retained in task-owned evidence410-science; this durable index binds their bytes and measured source epochs. Timing epochs precede final scientific followups and do not certify the integrated release commit.",
+  "receipt_sha256": {
+    "baseline-profile-summary.json": "4caa2ae7838dd30c002b3641eae0b29ac60c4bdd4efd0199d96a4f7e2eeb994b",
+    "encoder-probe.json": "c4bf24277d2d8a73568805e117f2fbaa3e616245a093b7e68d6208f743593da6",
+    "encoder-full-probe.json": "7f62ec0953727993522072356adb231b08c8109ab2ac0e6472a04dc686a28d42",
+    "paired-final-acceptance.json": "0e2b5245b5c5d59ff979e54bc1d3881bdbbf86df0fedc5485fc4000313439be9",
+    "after-capacity/benchmark.json": "37a835b603a6067bfa3dff9677a767b7300662e28ff017df9d114a4b65f1a112",
+    "capacity-admission.json": "5145d2dcec0f9c7fc10dc62c11612be6078d3b51f2b6ad35271d133f4d44bba1",
+    "native-dask-acceptance.json": "d71484841a25a25865d86cd532aa3c846ba754bac0ad27f63bdead0b45edc49b",
+    "scaling-environment.json": "c4cd5b7c52a1d850e9549b56832ef4eaa5d837ec8f855e8a4c616576a1309d5f",
+    "native-signed-proof.json": "44149acf910829d181cd9e2ab6eef03c5b04e47846ea31f990dc07759a713fe7"
+  },
+  "production_profile": {
+    "base_commit": "e5461954f45314cfea77b2cf06818e060f68bd0a",
+    "profile_total_seconds": 684.3404861169996,
+    "selected_source_count": 38,
+    "visualization_count": 668,
+    "figure_errors": [],
+    "png_encoder_self_seconds": 175.71151722700003,
+    "limits": "One cProfile-instrumented full-corpus run; wall influenced by concurrent host workloads; sampled RSS observations are not an exact peak."
+  },
+  "encoder": {
+    "selected_count": 552,
+    "repetitions": 2,
+    "summary": {
+      "6": {
+        "round_wall_seconds": [
+          88.32662816322409,
+          85.54934480448719
+        ],
+        "round_cpu_seconds": [
+          76.5059380000005,
+          76.67657599999953
+        ],
+        "cpu_median": 76.59125700000001,
+        "cpu_stdev": 0.12065928692742449,
+        "wall_median": 86.93798648385564,
+        "wall_stdev": 1.9638358962394094,
+        "encoded_bytes": 107485534
+      },
+      "3": {
+        "round_wall_seconds": [
+          82.39769028930459,
+          81.70704437757377
+        ],
+        "round_cpu_seconds": [
+          72.18917199999908,
+          72.59882299999984
+        ],
+        "cpu_median": 72.39399749999946,
+        "cpu_stdev": 0.28966700002039064,
+        "wall_median": 82.05236733343918,
+        "wall_stdev": 0.48836040758363275,
+        "encoded_bytes": 110785382
+      }
+    },
+    "original_metadata_comparison": {
+      "selected_count": 552,
+      "mismatches": [],
+      "scope": "AlloriginalPNGmetadata fields compared through JSONequivalent tuple/list serialization; both6and3 preserved all552 original headers."
+    },
+    "limits": "Pillow PNG encoding of actual baseline production rasters in bounded BytesIO; source decoding and validation outside timed stage. Paired alternating compression order, no physical cache reset. Certifies identical selected pixels/resolution/metadata, not whole pipeline speed, exact peakRSS, JIT, or all production artists.",
+    "cpu_reduction_percent": 5.480076531451306,
+    "byte_increase_percent": 3.070039173829664
+  },
+  "matched_step8": {
+    "success": true,
+    "order": "before/after thenafter/before thenbefore/after; identical publicharness and environment",
+    "summary": {
+      "before": {
+        "completed": 3,
+        "wall_seconds": [
+          12.436693832976744,
+          37.42899470805423,
+          52.271744708006736
+        ],
+        "wall_median": 37.42899470805423,
+        "wall_stdev": 20.13187194809811,
+        "cpu_seconds": [
+          11.958742,
+          26.571782,
+          26.325511
+        ],
+        "cpu_median": 26.325511,
+        "cpu_stdev": 8.366656430402788,
+        "sampled_rss_mb": [
+          1041.75,
+          764.41,
+          733.94
+        ],
+        "artifact_counts": [
+          76,
+          76,
+          76
+        ],
+        "artifact_bytes": [
+          23955979,
+          23955979,
+          23955979
+        ]
+      },
+      "after": {
+        "completed": 3,
+        "wall_seconds": [
+          23.19451266602846,
+          27.27402095904108,
+          44.46274608303793
+        ],
+        "wall_median": 27.27402095904108,
+        "wall_stdev": 11.287400143386115,
+        "cpu_seconds": [
+          18.583505000000002,
+          22.768163,
+          26.994014
+        ],
+        "cpu_median": 22.768163,
+        "cpu_stdev": 4.205271312893021,
+        "sampled_rss_mb": [
+          722.61,
+          651.58,
+          651.08
+        ],
+        "artifact_counts": [
+          76,
+          76,
+          76
+        ],
+        "artifact_bytes": [
+          24615970,
+          24615970,
+          24615970
+        ]
+      }
+    },
+    "phases": [
+      {
+        "receipt": "final-before-nested-0/benchmark.json",
+        "receipt_sha256": "7cd32a467ce384f9a184a7c1310ba394a3a317fb6e21db36485a3a88109373c6",
+        "variant": "before",
+        "repetition": 0,
+        "success": true,
+        "code_identity_unchanged": true,
+        "corpus_sha256": "b60d2000b48fd40391548849b4973f1efef710d45d78b94873159f68c595e1d1",
+        "configuration_sha256": "a2ffeb1976a7d62c5e24e682c1df186beae1a163568756a12b296790e464bb18",
+        "environment": {
+          "python": "3.12.13",
+          "platform": "macOS-27.0.1-arm64-arm-64bit",
+          "machine": "arm64",
+          "versions": {
+            "matplotlib": "3.11.2",
+            "numpy": "2.5.3",
+            "pillow": "12.3.0",
+            "psutil": "7.2.2"
+          },
+          "uv_lock_sha256": "6d8779a6796021a24d38d1ff2d4ab0ca19d9ffa3464db7dc98044d65811f55ff"
+        },
+        "measured_code_files": {
+          "analysis/performance_benchmark.py": "49004324c2d6e0831ade39cf80e95b1ff80b7aa57977210b884e798662cb6e94",
+          "analysis/viz_animations.py": "fc6988e9ae981e138406cc5197cb70b51db67d246a572aceb184c567057e9c69",
+          "analysis/viz_plots.py": "987c5bd803e3d84e32f9c4c2fa4eb245b671adba43e71b43a512386cd6d02922",
+          "visualization/core/process.py": "a0efb77a8fdc11b303a6ede8671d198d23a4a9e5b903082989e3825c425073a3",
+          "visualization/matrix/visualizer.py": "4388588194c3042e8a6f298e55860ef5ba8b77a617fbdab9ea940dfc2d70e805",
+          "visualization/plotting/utils.py": "4872fa8966365c193e84f66126d327f091d008a8476f200833b545c02d8e854d"
+        },
+        "artifact_count": 76,
+        "png_count": 44
+      },
+      {
+        "receipt": "final-after-nested-0/benchmark.json",
+        "receipt_sha256": "a79021abcd55f5c82d5301bb2951e77c42bd9d8b73830360b16dabaee795d82b",
+        "variant": "after",
+        "repetition": 0,
+        "success": true,
+        "code_identity_unchanged": true,
+        "corpus_sha256": "b60d2000b48fd40391548849b4973f1efef710d45d78b94873159f68c595e1d1",
+        "configuration_sha256": "a2ffeb1976a7d62c5e24e682c1df186beae1a163568756a12b296790e464bb18",
+        "environment": {
+          "python": "3.12.13",
+          "platform": "macOS-27.0.1-arm64-arm-64bit",
+          "machine": "arm64",
+          "versions": {
+            "matplotlib": "3.11.2",
+            "numpy": "2.5.3",
+            "pillow": "12.3.0",
+            "psutil": "7.2.2"
+          },
+          "uv_lock_sha256": "6d8779a6796021a24d38d1ff2d4ab0ca19d9ffa3464db7dc98044d65811f55ff"
+        },
+        "measured_code_files": {
+          "analysis/performance_benchmark.py": "49004324c2d6e0831ade39cf80e95b1ff80b7aa57977210b884e798662cb6e94",
+          "analysis/viz_animations.py": "8ea64962793057d46cea144d6d6a70096eaf147ac7c9b7c342fadd586143b9ff",
+          "analysis/viz_plots.py": "58cb3bac5b2fb3b929f1e1675d1670ec1353cefb56ff1f4b910406198969ab43",
+          "visualization/core/process.py": "a0efb77a8fdc11b303a6ede8671d198d23a4a9e5b903082989e3825c425073a3",
+          "visualization/matrix/visualizer.py": "d70561a79ef10b436a0710885609b079bb989574a3621a5b0ba01df4176e4b7e",
+          "visualization/plotting/utils.py": "2c29adcbb46d8ba00ac056eabf104ff3edf73f92802c104c35578d2ac0ddd665"
+        },
+        "artifact_count": 76,
+        "png_count": 44
+      },
+      {
+        "receipt": "final-after-nested-1/benchmark.json",
+        "receipt_sha256": "12ed213c01a34a32818a5063b84ad0d109fdc8e5b6fb98e91aa3da3c92b4d9b5",
+        "variant": "after",
+        "repetition": 1,
+        "success": true,
+        "code_identity_unchanged": true,
+        "corpus_sha256": "b60d2000b48fd40391548849b4973f1efef710d45d78b94873159f68c595e1d1",
+        "configuration_sha256": "a2ffeb1976a7d62c5e24e682c1df186beae1a163568756a12b296790e464bb18",
+        "environment": {
+          "python": "3.12.13",
+          "platform": "macOS-27.0.1-arm64-arm-64bit",
+          "machine": "arm64",
+          "versions": {
+            "matplotlib": "3.11.2",
+            "numpy": "2.5.3",
+            "pillow": "12.3.0",
+            "psutil": "7.2.2"
+          },
+          "uv_lock_sha256": "6d8779a6796021a24d38d1ff2d4ab0ca19d9ffa3464db7dc98044d65811f55ff"
+        },
+        "measured_code_files": {
+          "analysis/performance_benchmark.py": "49004324c2d6e0831ade39cf80e95b1ff80b7aa57977210b884e798662cb6e94",
+          "analysis/viz_animations.py": "8ea64962793057d46cea144d6d6a70096eaf147ac7c9b7c342fadd586143b9ff",
+          "analysis/viz_plots.py": "58cb3bac5b2fb3b929f1e1675d1670ec1353cefb56ff1f4b910406198969ab43",
+          "visualization/core/process.py": "a0efb77a8fdc11b303a6ede8671d198d23a4a9e5b903082989e3825c425073a3",
+          "visualization/matrix/visualizer.py": "d70561a79ef10b436a0710885609b079bb989574a3621a5b0ba01df4176e4b7e",
+          "visualization/plotting/utils.py": "2c29adcbb46d8ba00ac056eabf104ff3edf73f92802c104c35578d2ac0ddd665"
+        },
+        "artifact_count": 76,
+        "png_count": 44
+      },
+      {
+        "receipt": "final-before-nested-1/benchmark.json",
+        "receipt_sha256": "4a907a96c104f9a2b52b7afd9a0fe6f03a32ca978e5d7c647e9e021080a95e80",
+        "variant": "before",
+        "repetition": 1,
+        "success": true,
+        "code_identity_unchanged": true,
+        "corpus_sha256": "b60d2000b48fd40391548849b4973f1efef710d45d78b94873159f68c595e1d1",
+        "configuration_sha256": "a2ffeb1976a7d62c5e24e682c1df186beae1a163568756a12b296790e464bb18",
+        "environment": {
+          "python": "3.12.13",
+          "platform": "macOS-27.0.1-arm64-arm-64bit",
+          "machine": "arm64",
+          "versions": {
+            "matplotlib": "3.11.2",
+            "numpy": "2.5.3",
+            "pillow": "12.3.0",
+            "psutil": "7.2.2"
+          },
+          "uv_lock_sha256": "6d8779a6796021a24d38d1ff2d4ab0ca19d9ffa3464db7dc98044d65811f55ff"
+        },
+        "measured_code_files": {
+          "analysis/performance_benchmark.py": "49004324c2d6e0831ade39cf80e95b1ff80b7aa57977210b884e798662cb6e94",
+          "analysis/viz_animations.py": "fc6988e9ae981e138406cc5197cb70b51db67d246a572aceb184c567057e9c69",
+          "analysis/viz_plots.py": "987c5bd803e3d84e32f9c4c2fa4eb245b671adba43e71b43a512386cd6d02922",
+          "visualization/core/process.py": "a0efb77a8fdc11b303a6ede8671d198d23a4a9e5b903082989e3825c425073a3",
+          "visualization/matrix/visualizer.py": "4388588194c3042e8a6f298e55860ef5ba8b77a617fbdab9ea940dfc2d70e805",
+          "visualization/plotting/utils.py": "4872fa8966365c193e84f66126d327f091d008a8476f200833b545c02d8e854d"
+        },
+        "artifact_count": 76,
+        "png_count": 44
+      },
+      {
+        "receipt": "final-before-nested-2/benchmark.json",
+        "receipt_sha256": "75465245bdf60842f6d4783b487dcdf1d0a383d3b0b38e9367d9009b229449aa",
+        "variant": "before",
+        "repetition": 2,
+        "success": true,
+        "code_identity_unchanged": true,
+        "corpus_sha256": "b60d2000b48fd40391548849b4973f1efef710d45d78b94873159f68c595e1d1",
+        "configuration_sha256": "a2ffeb1976a7d62c5e24e682c1df186beae1a163568756a12b296790e464bb18",
+        "environment": {
+          "python": "3.12.13",
+          "platform": "macOS-27.0.1-arm64-arm-64bit",
+          "machine": "arm64",
+          "versions": {
+            "matplotlib": "3.11.2",
+            "numpy": "2.5.3",
+            "pillow": "12.3.0",
+            "psutil": "7.2.2"
+          },
+          "uv_lock_sha256": "6d8779a6796021a24d38d1ff2d4ab0ca19d9ffa3464db7dc98044d65811f55ff"
+        },
+        "measured_code_files": {
+          "analysis/performance_benchmark.py": "49004324c2d6e0831ade39cf80e95b1ff80b7aa57977210b884e798662cb6e94",
+          "analysis/viz_animations.py": "fc6988e9ae981e138406cc5197cb70b51db67d246a572aceb184c567057e9c69",
+          "analysis/viz_plots.py": "987c5bd803e3d84e32f9c4c2fa4eb245b671adba43e71b43a512386cd6d02922",
+          "visualization/core/process.py": "a0efb77a8fdc11b303a6ede8671d198d23a4a9e5b903082989e3825c425073a3",
+          "visualization/matrix/visualizer.py": "4388588194c3042e8a6f298e55860ef5ba8b77a617fbdab9ea940dfc2d70e805",
+          "visualization/plotting/utils.py": "4872fa8966365c193e84f66126d327f091d008a8476f200833b545c02d8e854d"
+        },
+        "artifact_count": 76,
+        "png_count": 44
+      },
+      {
+        "receipt": "final-after-nested-2/benchmark.json",
+        "receipt_sha256": "8048c7810899965b8e1118d4b573f01bf93036667601c7613469b3a271f87e19",
+        "variant": "after",
+        "repetition": 2,
+        "success": true,
+        "code_identity_unchanged": true,
+        "corpus_sha256": "b60d2000b48fd40391548849b4973f1efef710d45d78b94873159f68c595e1d1",
+        "configuration_sha256": "a2ffeb1976a7d62c5e24e682c1df186beae1a163568756a12b296790e464bb18",
+        "environment": {
+          "python": "3.12.13",
+          "platform": "macOS-27.0.1-arm64-arm-64bit",
+          "machine": "arm64",
+          "versions": {
+            "matplotlib": "3.11.2",
+            "numpy": "2.5.3",
+            "pillow": "12.3.0",
+            "psutil": "7.2.2"
+          },
+          "uv_lock_sha256": "6d8779a6796021a24d38d1ff2d4ab0ca19d9ffa3464db7dc98044d65811f55ff"
+        },
+        "measured_code_files": {
+          "analysis/performance_benchmark.py": "49004324c2d6e0831ade39cf80e95b1ff80b7aa57977210b884e798662cb6e94",
+          "analysis/viz_animations.py": "8ea64962793057d46cea144d6d6a70096eaf147ac7c9b7c342fadd586143b9ff",
+          "analysis/viz_plots.py": "58cb3bac5b2fb3b929f1e1675d1670ec1353cefb56ff1f4b910406198969ab43",
+          "visualization/core/process.py": "a0efb77a8fdc11b303a6ede8671d198d23a4a9e5b903082989e3825c425073a3",
+          "visualization/matrix/visualizer.py": "d70561a79ef10b436a0710885609b079bb989574a3621a5b0ba01df4176e4b7e",
+          "visualization/plotting/utils.py": "2c29adcbb46d8ba00ac056eabf104ff3edf73f92802c104c35578d2ac0ddd665"
+        },
+        "artifact_count": 76,
+        "png_count": 44
+      }
+    ],
+    "corpus": [
+      {
+        "path": "basics/static_perception.md",
+        "bytes": 2989,
+        "sha256": "1ddd0fbde8155e2083d586a368503278373f26f6aae11dd4a2b4adfdf5ea7b8c"
+      },
+      {
+        "path": "continuous/linear_gaussian.md",
+        "bytes": 5204,
+        "sha256": "5b85c395560099d3f3eb4a6da7bb42d1b45ae1367fb9ae4e30c663ae3a69518e"
+      },
+      {
+        "path": "discrete/actinf_pomdp_agent.md",
+        "bytes": 4448,
+        "sha256": "ea58f38a031aab36ebf44078ebcdcc2a2ca5594a32c9a8ed92e0f09d61f579bf"
+      }
+    ],
+    "limits": "Three source-frozen actual CLI inputs; new presentation and independent CSV repairs intentionally change some displayed artists/artifact counts. This comparison measures the combined bounded route, not isolated attribution to compression. RSS sampled at0.25s, no exact peak/JIT certification, OS caches retained, no LinuxCI or other-backend speed claim."
+  },
+  "capacity": {
+    "success": true,
+    "corpus": [
+      {
+        "path": "capacity.md",
+        "bytes": 2101485,
+        "sha256": "aae40f8621b6b99f4b23d4cc12103b1d0cc9b08e37125620ab4d4939fae68a4c"
+      },
+      {
+        "path": "deep/nested/static_perception.md",
+        "bytes": 2989,
+        "sha256": "1ddd0fbde8155e2083d586a368503278373f26f6aae11dd4a2b4adfdf5ea7b8c"
+      }
+    ],
+    "configuration": {
+      "steps": [
+        8
+      ],
+      "recursive": true,
+      "backend": "matplotlib/Agg",
+      "python_hash_seed": 0,
+      "llm_mode": "disabled",
+      "repetitions": 3,
+      "concurrency": 2,
+      "timeout_seconds": 300.0,
+      "profile": false,
+      "max_source_files": 2,
+      "max_input_bytes": 3145728
+    },
+    "summary": {
+      "completed_repetitions": 3,
+      "wall_median_seconds": 29.28947837499436,
+      "wall_min_seconds": 20.614587208954617,
+      "wall_max_seconds": 29.814392999978736,
+      "wall_stdev_seconds": 5.166651054256805,
+      "batch_wall_seconds_including_census": 60.64770995796425
+    },
+    "rows": [
+      {
+        "success": true,
+        "phase": {
+          "phase": "step_8_cli",
+          "returncode": 0,
+          "wall_seconds": 29.28947837499436,
+          "process_cpu_seconds": 15.579438
+        },
+        "artifact_count": 43,
+        "artifact_bytes": 16815956,
+        "sampled_rss_mb": 566.22
+      },
+      {
+        "success": true,
+        "phase": {
+          "phase": "step_8_cli",
+          "returncode": 0,
+          "wall_seconds": 29.814392999978736,
+          "process_cpu_seconds": 15.789942000000002
+        },
+        "artifact_count": 43,
+        "artifact_bytes": 16815956,
+        "sampled_rss_mb": 606.69
+      },
+      {
+        "success": true,
+        "phase": {
+          "phase": "step_8_cli",
+          "returncode": 0,
+          "wall_seconds": 20.614587208954617,
+          "process_cpu_seconds": 15.134285
+        },
+        "artifact_count": 43,
+        "artifact_bytes": 16815956,
+        "sampled_rss_mb": 714.73
+      }
+    ],
+    "admission": {
+      "source_identities": {
+        "capacity.md": {
+          "bytes": 2101485,
+          "sha256": "aae40f8621b6b99f4b23d4cc12103b1d0cc9b08e37125620ab4d4939fae68a4c"
+        },
+        "deep/nested/static_perception.md": {
+          "bytes": 2989,
+          "sha256": "1ddd0fbde8155e2083d586a368503278373f26f6aae11dd4a2b4adfdf5ea7b8c"
+        }
+      },
+      "refused_before_output_or_launch": [
+        {
+          "guard": "source-count",
+          "reason": "selected source count exceeds max_source_files",
+          "output_created": false,
+          "wall_seconds": 0.0015995840076357126,
+          "cpu_seconds": 0.001490999999999909
+        },
+        {
+          "guard": "source-bytes",
+          "reason": "selected source bytes exceed max_input_bytes",
+          "output_created": false,
+          "wall_seconds": 0.003324707970023155,
+          "cpu_seconds": 0.0014539999999999553
+        }
+      ],
+      "limits": "Input count/byte workload guards only; accepted native phase sampled process-tree RSS recorded separately, not exact peak/JIT certification."
+    },
+    "limits": [
+      "RSS is a sampled summed resident footprint from the subprocess envelope, not exact peak RSS or JIT/allocation certification.",
+      "Child process CPU covers its threads; separate descendant CPU is not included.",
+      "Fresh processes retain operating-system caches; these runs do not establish physical cold-disk behavior.",
+      "Artifact hashing/PNG decoding is outside the timed phase but included in batch wall time.",
+      "Only the complete selected Step 8 corpus and declared backend/LLM mode are measured; other backends and distributed transfer require separate witnesses."
+    ]
+  },
+  "distributed": {
+    "native_backend": "dask",
+    "worker_processes": 2,
+    "payload_results": [
+      {
+        "task_id": "payload-7",
+        "success": true,
+        "bytes": 1048576,
+        "sha256": "51b12eb838732b786b4d45c660a974ddf3860ae09084fd293fa6e5df46581a6c"
+      },
+      {
+        "task_id": "payload-11",
+        "success": true,
+        "bytes": 1048576,
+        "sha256": "9ce290753f410d6001975a9e4d65f06dfb641a6676e38f3883b48f1560b0e52b"
+      }
+    ],
+    "transfer_wall_seconds": 0.0381281670415774,
+    "selected_error_results": [
+      {
+        "success": true,
+        "task_id": "payload-3"
+      },
+      {
+        "success": false,
+        "error_type": "DistributedTaskError",
+        "error": "native selected failure witness",
+        "exception_type": "ValueError"
+      }
+    ],
+    "selected_timeout_results": [
+      {
+        "success": false,
+        "error": "Execution did not finish within the distributed wait timeout (0.200s effective budget); review GNN_DISTRIBUTED_WAIT_TIMEOUT and the invocation deadline if a longer window is needed",
+        "error_type": "DistributedWaitTimeout",
+        "collection_timeout_seconds": 0.19998883304651827
+      }
+    ],
+    "timeout_budget_seconds": 0.2,
+    "timeout_observed_wall_seconds": 0.20766174996970221,
+    "dispatcher_source_sha256": "4657b078307d68b26735ed62cbb42887332938a4b46cfad8d9f9e121fd2ed08e",
+    "task_source_sha256": "be207162cd4eb009371f72da58913406804dfff328761eb31cd5a56450c71d53",
+    "limits": "Two ready localhost Dask workers, fixed 2 MiB successful payload total, real error/timeout controls. No WAN/Ray scalability claim; timeout is a cancellation request, not proof of immediate remote task death.",
+    "workers_reaped_after_owned_cluster_close": true,
+    "total_wall_seconds": 1.970053375000134
+  },
+  "decisions": [
+    "Choose PNG level3: all552 actual production rasters retain pixels/dimensions/metadata; explicit caller options remain authoritative.",
+    "Reject level1:16-image sample added about131percent bytes for about5percent CPU gain.",
+    "Retain failed ENOSPC exploratory full after-corpus run and old profile-enabled nested trials as negative evidence; exclude them from acceptance.",
+    "Do not infer full-pipeline/CI speed or RSS/JIT certification from encoder measurements or broad-variance whole-route trials.",
+    "No output numerical semantics, model/inference algorithms or runtime admission policies changed by the optimization."
+  ]
+}

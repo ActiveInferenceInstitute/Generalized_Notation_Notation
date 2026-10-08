@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from ..compat.viz_compat import np, plt
-from ..plotting.utils import contrasting_text_color
+from ..plotting.utils import contrasting_text_color, save_figure
 
 
 def generate_pomdp_transition_analysis(
@@ -267,7 +267,7 @@ def generate_pomdp_transition_analysis(
             try:
                 if size:
                     fig.set_size_inches(*size)
-                plt.savefig(output_path, **kwargs)
+                save_figure(output_path, **kwargs)
                 break
             # TypeError: an oversized Agg canvas raises it from the
             # RendererAgg constructor, so it must reach the smaller fallbacks.

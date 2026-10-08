@@ -440,7 +440,7 @@ def test_pomdp_analysis_type_error_on_save_reaches_fallback(
     assert ok is True
     assert output_path.is_file()
     assert len(calls) == 2
-    assert calls[1] == {"dpi": 72}, (
+    assert calls[1] == {"dpi": 72, "pil_kwargs": {"compress_level": 3}}, (
         "second attempt must be the (8, 6) @ 72 dpi fallback"
     )
 

@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from ..compat.viz_compat import MATPLOTLIB_AVAILABLE, get_sns, np, plt
-from ..plotting.utils import contrasting_text_color, safe_tight_layout
+from ..plotting.utils import contrasting_text_color, safe_tight_layout, save_figure
 from .extract import (
     convert_to_matrix,
     is_transition_tensor_name,
@@ -284,7 +284,7 @@ class MatrixVisualizer:
                 output_path.parent.mkdir(parents=True, exist_ok=True)
             except OSError as e:
                 logger.debug("mkdir for %s: %s", output_path.parent, e)
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             # Export matrix data to CSV for accessibility
@@ -446,7 +446,7 @@ class MatrixVisualizer:
             fig.suptitle(main_title, fontsize=16, fontweight="bold", y=0.95)
 
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
             return True
 
@@ -704,7 +704,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                 output_path.parent.mkdir(parents=True, exist_ok=True)
             except OSError as e:
                 logger.debug("mkdir for %s: %s", output_path.parent, e)
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             # Export CSV data for each matrix
@@ -869,7 +869,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                 axes_flat[i].set_visible(False)
 
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
             return True
 
@@ -908,7 +908,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                     fontweight="bold",
                 )
                 plt.title("Matrix Statistics", fontsize=16, fontweight="bold")
-                plt.savefig(output_path, dpi=300, bbox_inches="tight")
+                save_figure(output_path, dpi=300, bbox_inches="tight")
                 plt.close()
                 return True
 
@@ -984,7 +984,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                 ax4.text(i, 0.5, shape, ha="center", va="center", fontweight="bold")
 
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
             return True
 
@@ -1141,7 +1141,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
             plt.xlabel("Columns", fontsize=12)
             plt.ylabel("Rows", fontsize=12)
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             return True
@@ -1203,7 +1203,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
             plt.xlabel("Variables", fontsize=12)
             plt.ylabel("Variables", fontsize=12)
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             return True
@@ -1242,7 +1242,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
             plt.ylabel("Density", fontsize=12)
             plt.grid(True, alpha=0.3)
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             return True
@@ -1314,7 +1314,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
 
             plt.suptitle("Matrix Overview", fontsize=16, fontweight="bold")
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             return True

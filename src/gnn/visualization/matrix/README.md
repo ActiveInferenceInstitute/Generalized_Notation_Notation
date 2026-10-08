@@ -6,17 +6,19 @@ preference, prior, and PyMDP/POMDP tensor matrices.
 ## Files
 
 - `visualizer.py` — Matrix heatmap engine with 3-D tensor support. POMDP `B`
-  tensors use `(next_state, previous_state, action)` and validate stochasticity
+  and explicitly indexed `B_fN` tensors use `(next_state, previous_state, action)` and validate stochasticity
   by summing over the next-state axis for each previous-state/action column.
-- `extract.py` (60 lines) — Matrix extraction from parsed models
-- `compat.py` (40 lines) — Shared helper exports
+- `extract.py` — Matrix extraction from parsed models
+- `compat.py` — Shared helper exports
 
 ## Outputs
 
-- PNG/SVG visualizations for matrices and per-action tensor slices.
-- CSV exports for 2-D matrices and every 3-D tensor slice.
+- Pipeline PNG visualizations; direct Python filename/Matplotlib options control other formats.
+- Canonical `B`/`B_fN` action planes; other 3-D tensors retain explicit generic axis slices unless the direct caller declares `tensor_type="transition"`. Generic tensors do not receive POMDP transition diagnostics.
+- Independent, source-labeled CSV exports for every matrix and every 3-D axis-2 plane, using bounded disambiguated filenames so one matrix cannot overwrite another.
 - POMDP transition analysis panels for entropy, stochasticity, and dominant
-  next-state structure.
+  next-state structure. Natural-log entropy is in nats with the exact `0*log(0)=0` limit; invalid probabilities receive an unavailable reason.
+- Color-normalized black/white annotations preserve signed values. Heatmap axis bases and caller-declared units are explicit; undeclared units remain unspecified.
 
 ## See Also
 
