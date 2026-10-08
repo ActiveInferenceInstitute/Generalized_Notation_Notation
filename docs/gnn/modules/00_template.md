@@ -309,7 +309,7 @@ Template Input → Processing → Pattern Demonstration → Validation → Docum
 - `tests/pipeline/test_pipeline_scripts.py` - Orchestrator-level checks that include `0_template.py`
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/template/ --cov=template --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/template/ --cov=gnn.template --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Template processing and generation

@@ -335,6 +335,14 @@ records source/tag identities, exact GNN/FEP/GEO gates, issue acceptance and
 provider alert closure. Preserve historical receipts and their source epochs.
 The package is 4.0.1; future capability limits remain in [TO-DO.md](TO-DO.md).
 
+The 4.1.0 campaign follows the existing minor/medium scope in TO-DO. Its
+[integration handoff](.agents/dispatch/gnn-4-1-0/README.md) records owners,
+dependencies and acceptance order. The
+[installed-platform guide](docs/development/installed_platform_acceptance.md)
+separates native wheel evidence from source-test coverage, and the
+[exact-version archival procedure](docs/releases/exact_version_archival.md)
+separates concept DOI, source archive and distribution artifact acceptance.
+
 ### v4.0.0 "Current-run Reliability" (2026-10-01 implementation)
 
 - Frozen selection, path-derived identities, source hashes, resolved configuration,

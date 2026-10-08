@@ -290,7 +290,7 @@ Model Content → Structure Validation → Semantic Validation → Performance P
 - `tests/validation/test_b_orientation.py` - B-tensor orientation diagnostic and `--transpose-b` transposition contract tests
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/validation/ --cov=validation --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/validation/ --cov=gnn.validation --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Model structure validation

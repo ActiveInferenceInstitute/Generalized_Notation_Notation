@@ -24,6 +24,32 @@ exports, scientific/source contracts, required checks and coverage denominators
 remain acceptance constraints. Record decisions in [choices.md](choices.md).
 The integrator performs independent review before accepting worker commits.
 
+## Accepted checkpoint and active work
+
+The integration checkpoint `a8e116dbf2a9392d0b2faa0b5c945b85b04855d0`
+contains the logging, website and RxInfer ownership extractions; authored
+PKL/XML and CSV repairs; descriptor-based filesystem operations and bounded
+cleanup; the installed-platform driver; released THRML/archive evidence; and
+31 additional native authored-model/scientific-artifact consumer cases.
+Independent integrated suites passed 235 owner cases and 63 native boundary,
+parser, analysis and backend cases. These focused results certify their tested
+checkpoint, not the final release or all native platforms.
+
+| Remaining dependency | Required next evidence |
+| --- | --- |
+| Public contracts and setup discovery | Final consumer regression, coordinated source commits and integrated replay |
+| Diagnostics and round-trip persistence | Typed failure receipts, unique saved artifacts and real per-file identity |
+| Scientific presentation and performance | Refreshed actual images with independent critique; paired raster CPU/size/pixel evidence |
+| Comprehensive coverage | Same-interpreter subprocess tracing and full unchanged source scope, alongside existing core reports |
+| Installed acceptance | Final ordinary wheel with complete local API checks, then all five hosted native lanes |
+| Publication custody | Frozen versioned source, fresh manuscript/template render and companion pins, followed by exact-source hosted and release gates |
+
+Temporary-directory and full-corpus image writes failed during a local disk
+capacity incident. Failed runs remain diagnostic evidence and cannot satisfy
+acceptance. Only completed campaign-owned disposable environments were removed;
+source, scientific artifacts and receipts were preserved. Re-run affected
+witnesses after capacity recovery and keep final storage usage bounded.
+
 ## Dependencies requiring external evidence
 
 - S3: stock released THRML 0.1.4 still fails inactive-padding witnesses on both
@@ -60,7 +86,10 @@ Resume the owned `codex/gnn-4.1.0` integration worktree. Read this handoff,
 choices.md, existing TO-DO, current Git state and active worker messages before
 edits. Preserve uncommitted work and accepted local commits. Collect outstanding
 worker deliverables, review their consumer evidence and integrate clean commits
-in dependency order. Complete all independent minor/medium scope before any
+in dependency order. The checkpoint above and the choices ledger distinguish
+accepted focused checks from pending release evidence. Do not re-use a failed
+disk-capacity run or an omitted-API receipt as acceptance. Complete all
+independent minor/medium scope before any
 external blocker decision. Refresh the final source, manuscript, companion,
 native-platform, coverage and release evidence after the last content change.
 Do not release or claim completion until the exact revision and public artifacts

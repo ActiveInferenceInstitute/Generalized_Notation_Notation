@@ -7,7 +7,7 @@ siblings. Historical timings or test totals cannot establish health.
 ```bash
 uv sync --frozen --extra dev --python 3.12
 uv run --frozen --no-sync gnn --help
-uv run --frozen --no-sync gnn doctor
+uv run --frozen --no-sync gnn health
 uv run --frozen --no-sync gnn validate input/gnn_files/discrete/two_state_bistable.md
 uv run --frozen --no-sync gnn mcp list
 ```

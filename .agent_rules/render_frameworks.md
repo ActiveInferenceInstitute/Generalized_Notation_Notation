@@ -29,7 +29,7 @@ multi-agent, factored, hybrid, learning, or nonstationary composition.
 
 The automatic/default and `lite` selections exclude cpomdp and THRML. Installing
 an extra does not select its experimental backend. Use the backend guide for
-admitted compositions and call `gnn doctor` for structured readiness diagnoses.
+admitted compositions and use `gnn health` and the Python `gnn.execute.collect_doctor_report` API for readiness diagnoses.
 Missing packages, missing toolchains, unsupported Python/version, probe timeout,
 probe failure, and missing executors remain distinct. Installation is explicit.
 

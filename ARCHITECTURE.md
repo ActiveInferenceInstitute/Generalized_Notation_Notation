@@ -2,8 +2,8 @@
 
 This guide details the architecture of the Generalized Notation Notation (GNN) system. It complements `DOCS.md` and `docs/pipeline/README.md` with an implementation-oriented perspective for developers.
 
-**Last Updated**: 2026-10-02
-**Version**: [pyproject.toml](pyproject.toml) (canonical · 4.0.0)
+**Last Updated**: 2026-10-07
+**Version**: [pyproject.toml](pyproject.toml) (canonical)
 **Status**: Maintained
 **Pipeline Steps**: 25 (0-24)
 
@@ -42,7 +42,7 @@ graph TB
   A["User/Researcher"] --> B["src/gnn/main.py<br/>Pipeline Orchestrator"]
   B --> C["25 Numbered Scripts<br/>(0_template.py → 24_intelligent_analysis.py)"]
   C --> D["Module set<br/>(see src/gnn/AGENTS.md)"]
-  D --> E["Structured Outputs<br/>(output/step_N_output/)"]
+  D --> E["Current-run Artifacts<br/>(registered output folders)"]
 
   B --> F["Infrastructure Layer<br/>(utils/, pipeline/)"]
   F --> B
@@ -272,7 +272,7 @@ flowchart LR
 
 - Each step writes to `output/<step_subdir>/`
 - `get_output_dir_for_script()` ensures consistent paths
-- Site and reports summarize artifacts across steps
+- Site and reports consume current-run indexes; inherited directory contents cannot establish completion
 
 ## Error Handling
 
@@ -410,8 +410,8 @@ Each agent implements comprehensive performance monitoring:
 
 ---
 
-**Architecture Version**: [pyproject.toml](pyproject.toml) (canonical · 4.0.0)
-**Last Updated**: 2026-10-02
+**Architecture Version**: [pyproject.toml](pyproject.toml) (canonical)
+**Last Updated**: 2026-10-07
 **Status**: Maintained
 **Compliance**: Thin orchestrator pattern
 **Latest Validation**: See current test and pipeline runs

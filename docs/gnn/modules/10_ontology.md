@@ -297,7 +297,7 @@ input/gnn_files (re-parsed by 10_ontology.py)
 - `tests/ontology/test_ontology_overall.py`
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/ontology/ --cov=ontology --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/ontology/ --cov=gnn.ontology --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Ontology term extraction

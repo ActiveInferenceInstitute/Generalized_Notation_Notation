@@ -402,7 +402,7 @@ Pipeline Results → Report Aggregation → Data Analysis → Format Generation 
 
 ### Test Coverage
 
-- Measure: `uv run --extra dev python -m pytest tests/report/ --cov=report --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/report/ --cov=gnn.report --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 

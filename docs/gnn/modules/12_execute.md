@@ -60,7 +60,7 @@ Continuous (linear-Gaussian) models reach Step 12 only for the backends that ren
 
 ### Key Capabilities
 - Multi-framework execution support
-- **Skip vs fail**: JAX, NumPyro and DisCoPy are **core** dependencies; PyTorch comes from the `torch` extra (GHSA-rrmf-rvhw-rf47 resolved in torch 2.13.0) and bnlearn is a manual install; Stan needs `uv sync --extra stan` plus a CmdStan toolchain; ngc-learn comes from the py3.12 marker-gated `ngclearn` extra (`uv sync --extra ngclearn`). If the environment is incomplete, scripts are **skipped** (not run) and reported as "skipped" — they do not count as execution failures. Repair with `uv sync` (plus the extra/manual installs above). Julia backends still require a local Julia install.
+- **Skip vs fail**: JAX, NumPyro and DisCoPy are **core** dependencies; PyTorch comes from the `torch` extra (GHSA-rrmf-rvhw-rf47 resolved in torch 2.13.0) and bnlearn comes from the locked `bnlearn` extra; Stan needs `uv sync --extra stan` plus a CmdStan toolchain; ngc-learn comes from the py3.12 marker-gated `ngclearn` extra (`uv sync --extra ngclearn`). If the environment is incomplete, scripts are **skipped** (not run) and reported as "skipped" — they do not count as execution failures. Repair with `uv sync` (plus the extras above). Julia backends still require a local Julia install.
 - **Committed Julia environments** with `JULIA_PROJECT` defaulting (see below)
 - Graceful degradation when frameworks unavailable
 - Automatic PyMDP package detection (distinguishes correct vs wrong package variants)
@@ -99,7 +99,7 @@ fixing the ReverseDiff-extension precompile break against Distributions >=
 
 ### Skip semantics
 
-A backend whose dependency is absent produces a **skipped** result (`skipped: true`) carrying an explicit dependency reason, not a failure. Skips are counted separately from failures in the step summary and are excluded from the failure threshold that determines step success — so the completion line reads, per model, in the shape `N succeeded, M skipped (dependency not installed)`. On a fully-provisioned run the remaining skips are the intentionally-unlocked optional backends (bnlearn; PyTorch on a plain `uv sync`, since the package ships in the `torch` extra). Without the py3.12-gated `ngclearn` extra the ngc-learn backend records status `SKIPPED` (`skipped: true`) carrying the dependency reason and install hint (`uv sync --extra ngclearn`), with zero failures attributed.
+A backend whose dependency is absent produces a **skipped** result (`skipped: true`) carrying an explicit dependency reason, not a failure. Skips are counted separately from failures in the step summary and are excluded from the failure threshold that determines step success — so the completion line reads, per model, in the shape `N succeeded, M skipped (dependency not installed)`. On a fully-provisioned run the remaining skips are the unprovisioned locked optional extras (bnlearn and PyTorch on a plain `uv sync`). Without the py3.12-gated `ngclearn` extra the ngc-learn backend records status `SKIPPED` (`skipped: true`) carrying the dependency reason and install hint (`uv sync --extra ngclearn`), with zero failures attributed.
 
 ### Exit-code contract
 
@@ -410,7 +410,7 @@ Per-run duration, memory, and per-script outcomes are recorded in `execution_sum
 - `tests/execute/test_execute_pymdp_package.py`
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/execute/ --cov=execute --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/execute/ --cov=gnn.execute --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Multi-framework execution

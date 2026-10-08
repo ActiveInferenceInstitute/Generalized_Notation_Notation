@@ -514,7 +514,7 @@ input/gnn_files/ (mixed extensions per multi_format_processor) → GNNParsingSys
 
 ### Test Coverage
 
-Measure locally: `uv run --extra dev python -m pytest tests/test_gnn*.py --cov=src/gnn --cov-report=term-missing`. Targets are project-defined (see CI / maintainer notes); do not treat fixed percentages in docs as measured unless cited from a report.
+Measure locally: `uv run --extra dev python -m pytest tests/gnn/ --cov=gnn --cov-report=term-missing`. Targets are project-defined (see CI / maintainer notes); do not treat fixed percentages in docs as measured unless cited from a report.
 
 ### Key Test Scenarios
 
@@ -528,10 +528,10 @@ Measure locally: `uv run --extra dev python -m pytest tests/test_gnn*.py --cov=s
 
 ```bash
 # Run GNN-specific tests
-uv run --extra dev python -m pytest tests/test_gnn*.py -v
+uv run --extra dev python -m pytest tests/gnn/ -v
 
 # Run with coverage
-uv run --extra dev python -m pytest tests/test_gnn*.py --cov=src/gnn --cov-report=term-missing
+uv run --extra dev python -m pytest tests/gnn/ --cov=gnn --cov-report=term-missing
 
 # Run only parser tests
 uv run --extra dev python -m pytest tests/gnn/test_gnn_parsing.py -v

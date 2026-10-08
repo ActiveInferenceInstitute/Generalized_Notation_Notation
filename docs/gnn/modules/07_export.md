@@ -309,7 +309,7 @@ output/3_gnn_output/ (Step 3 manifest + parsed models)
 
 ### Test Coverage
 
-- Measure: `uv run --extra dev python -m pytest tests/export/ --cov=export --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/export/ --cov=gnn.export --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 

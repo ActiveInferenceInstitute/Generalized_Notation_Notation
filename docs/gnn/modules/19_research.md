@@ -266,7 +266,7 @@ Research Data → Analysis → Visualization → Report Generation → Publicati
 - `tests/research/test_research_functional.py` - Functional tests
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/research/ --cov=research --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/research/ --cov=gnn.research --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Research analysis with various data types

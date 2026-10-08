@@ -298,7 +298,7 @@ Module Tools → MCP Registration → Tool Discovery → Execution Requests → 
 - `tests/mcp/test_mcp_audit.py` - Audit tests
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/mcp/ --cov=mcp --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/mcp/ --cov=gnn.mcp --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Tool registration and discovery across modules

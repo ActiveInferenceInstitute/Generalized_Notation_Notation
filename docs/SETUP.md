@@ -9,7 +9,7 @@ interpreter markers and platform constraints are declared in `pyproject.toml` an
 ## Fast path
 
 ```bash
-uv sync --frozen --extra dev --python 3.12
+UV_PYTHON=3.12 uv sync --frozen --extra dev
 uv run --frozen --no-sync gnn health
 ```
 

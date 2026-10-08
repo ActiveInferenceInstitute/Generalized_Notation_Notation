@@ -8,7 +8,7 @@ This comprehensive reference documents programmatic integration with the General
 
 > **Verification status** \
 > **Authoritative `gnn` exports:** [`src/gnn/__init__.py`](../../src/gnn/__init__.py). **Format counts / registries:** [`src/gnn/SPEC.md`](../../src/gnn/SPEC.md). \
-> Every import path, class, and signature in this document is **probe-verified against `src/`** (2026-09-23): each `from gnn...` import below executes against the installed package, and every documented class exists at the stated path.
+> The September 2026 import probes are historical evidence. Current public exports, module specifications and exact-source consumer checks define accepted interfaces. Install each declared optional group before using its surface; importing a class does not establish native backend readiness. The [API guide](README.md) includes exercised discovery/parsing and CLI examples.
 
 ## API map
 
@@ -37,12 +37,12 @@ info = parse_gnn_file(paths[0])
 system = GNNParsingSystem()
 result = system.parse_file(paths[0], format_hint=GNNFormat.MARKDOWN)
 
-process_gnn_directory("input/gnn_files", "output")
+process_gnn_directory("input/gnn_files/basics", "/tmp/gnn-directory-example")
 
 logger = logging.getLogger(__name__)
-process_gnn_multi_format(Path("input/gnn_files"), Path("output"), logger)
+process_gnn_multi_format(Path("input/gnn_files/basics"), Path("/tmp/gnn-format-example"), logger)
 
-ok, errors = validate_gnn_syntax(Path("input/gnn_files/model.md").read_text(encoding="utf-8"))
+ok, errors = validate_gnn_syntax(Path("input/gnn_files/discrete/two_state_bistable.md").read_text(encoding="utf-8"))
 ```
 
 | Symbol | Role |
@@ -69,7 +69,7 @@ system = GNNParsingSystem()
 print(system.get_supported_formats())
 
 # Parse a file (format_hint optional — auto-detection otherwise)
-result = system.parse_file("input/gnn_files/model.md", format_hint=GNNFormat.MARKDOWN)
+result = system.parse_file("input/gnn_files/discrete/two_state_bistable.md", format_hint=GNNFormat.MARKDOWN)
 if result.success:
     model = result.model
     print(result.source_file, result.parse_time)
@@ -87,8 +87,8 @@ from gnn import validate_gnn_syntax, validate_gnn_source
 from gnn.types import ValidationLevel
 
 # Accepts a file path or raw content
-ok, errors = validate_gnn_syntax(Path("input/gnn_files/model.md").read_text(encoding="utf-8"))
-ok, errors = validate_gnn_syntax("input/gnn_files/model.md", validation_level=ValidationLevel.STANDARD)
+ok, errors = validate_gnn_syntax(Path("input/gnn_files/discrete/two_state_bistable.md").read_text(encoding="utf-8"))
+ok, errors = validate_gnn_syntax("input/gnn_files/discrete/two_state_bistable.md", validation_level=ValidationLevel.STANDARD)
 ```
 
 - `validate_gnn_syntax(file_path_or_content, validation_level=ValidationLevel.STANDARD) -> (bool, List[str])`
@@ -252,7 +252,7 @@ from gnn.visualization import (
 
 viz = GNNVisualizer(output_dir="output/8_visualization_output")
 diagram = viz.create_network_diagram(graph_data)   # graph structure -> figure data
-html = viz.visualize_file("input/gnn_files/model.md")  # full per-model visualization set
+html = viz.visualize_file("input/gnn_files/discrete/two_state_bistable.md")  # full per-model visualization set
 
 artifacts = generate_matrix_visualizations(parsed_data, Path("output/8_visualization_output"), "model")
 artifacts = generate_network_visualizations(parsed_data, Path("output/8_visualization_output"), "model")

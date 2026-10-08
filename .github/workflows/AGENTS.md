@@ -9,6 +9,7 @@ Defines behavior and guardrails for workflows in this directory. Human index of 
 | File | Role |
 |------|------|
 | `ci.yml` | Python 3.11/3.12/3.13 tests with JUnit, coverage, artifacts and summaries. Independent 3.12 quality checks run in parallel; the existing `test (3.12)` status requires both the native test lane and the quality lane to succeed. Quality includes Ruff/mypy/docs, functional MCP/capability evidence, focused PyMDP/POMDP tests and v3 orchestration acceptance. MCP tool count ≥ `MCP_TOOL_FLOOR` (140, defined in `tests/mcp/test_mcp_audit.py`). Bandit retains SARIF upload and failure on findings. No path filter — runs on doc-only changes too. |
+| `installed-platforms.yml` | Frozen ordinary installed-wheel acceptance outside the checkout in five native lanes: Linux/Python 3.11, 3.12, 3.14; macOS/3.14; Windows/3.14. CLI/API/resources, JAX/THRML numerical witnesses and native filesystem/worker boundaries retain source/lock/wheel identities. Selected skips fail acceptance; platform support is limited to accepted native guarantees. |
 | `mcp-audit.yml` | MCP tool count ≥ `MCP_TOOL_FLOOR` audit on push/PR to `main`. |
 | `full-extras.yml` | Weekly all-extras suite: `uv sync --frozen --all-extras`, optional-import validation, full pytest (Python 3.12). |
 | `docs-audit.yml` | Strict Markdown audit when docs or `docs_audit.py` change. |

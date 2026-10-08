@@ -208,7 +208,7 @@ GNN support is available for various IDEs:
 
 GNN tools integrate with several Active Inference frameworks:
 
-Step 11 renders registered backends and Step 12 executes those with installed runtimes (bnlearn via `src/gnn/execute/bnlearn/`, ngc-learn via `src/gnn/execute/ngclearn/`, skipping until their runtimes are installed). `uv run gnn doctor` reports structured readiness diagnoses; cpomdp remains experimental and explicitly selected.
+Step 11 renders registered backends and Step 12 executes those with installed runtimes (bnlearn via `src/gnn/execute/bnlearn/`, ngc-learn via `src/gnn/execute/ngclearn/`, skipping until their runtimes are installed). `uv run --frozen --no-sync gnn health` reports environment diagnoses; the Python `gnn.execute.collect_doctor_report` API provides structured backend readiness; cpomdp remains experimental and explicitly selected.
 
 ```mermaid
 graph LR
