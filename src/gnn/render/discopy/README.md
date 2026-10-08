@@ -1,107 +1,67 @@
-# DisCoPy Rendering Module
+# DisCoPy rendering
 
-This submodule handles code generation specifically for DisCoPy (Categorical Composition in Python) diagrams.
+The supported package entrypoint, `render_gnn_to_discopy`, generates a Python
+program that constructs a categorical string diagram and exports model metadata.
+Step 12 executes the generated program. Generation alone does not establish
+numerical equivalence to a generative model.
 
-## Overview
+## Generate a program
 
-DisCoPy is a Python library for computing with categorical structures including string diagrams and monoidal functors. This module generates DisCoPy code for visualizing and reasoning about compositional models from GNN specifications.
-
-## Module Structure
-
-```
-src/gnn/render/discopy/
-├── __init__.py                 # Module initialization
-├── README.md                   # This documentation
-├── AGENTS.md                   # Detailed agent scaffolding
-├── discopy_renderer.py         # Main DisCoPy renderer
-├── translator.py               # GNN to DisCoPy translator
-└── # visualize_jax_output.py is in execute/discopy_translator_module/     # Visualization utilities
+```bash
+uv run --frozen --no-sync python -m gnn.cli render input/gnn_files/discrete/actinf_pomdp_agent.md --framework discopy --output /tmp/gnn-discopy-example.py
 ```
 
-## Core Components
+Python callers pass a parsed specification to
+`gnn.render.discopy.render_gnn_to_discopy(spec, output_path, options=None)`.
+The result is `(success, message, warnings)`. Missing optional sections produce
+warnings; generation failures return `False` with the original diagnosis.
+See [AGENTS.md](AGENTS.md#api-reference) for the signature and example.
 
-### DisCoPy Renderer (`discopy_renderer.py`)
+Generated programs preserve model names as Python literals and export their
+original values in JSON. Matrix permutation options are validated metadata;
+they do not reorder the generated diagram's wires or boxes.
 
-**Purpose**: Generate DisCoPy string diagrams from GNN models
+## Translation owners
 
-**Key Functions**:
-- `generate_discopy_code()` - Main code generation
-- `render_diagram()` - Render categorical diagrams
-- `compose_structures()` - Compose categorical structures
-- `optimize_diagram()` - Optimize diagram representation
+| Owner | Responsibility |
+| --- | --- |
+| `discopy_renderer.py` | Supported package generator and saved program metadata |
+| `translator.py` | Compatibility imports and standalone diagnostic harness |
+| `gnn_parsing.py` | Legacy section, dimension and tensor notation parsing |
+| `diagram_builders.py` | Abstract tensor diagram structure |
+| `file_translation.py` | File admission and diagram construction orchestration |
+| `matrix_builders.py` | Experimental JAX-backed matrix construction |
+| `bootstrap.py` | Optional dependency availability and setup diagnostics |
+| `code_templates.py` | Legacy source templates |
+| `symmetry.py` | Permutation metadata validation |
 
-### GNN to DisCoPy Translator (`translator.py`)
+The file-level `translator.gnn_file_to_discopy_diagram` route constructs abstract
+`discopy.tensor.Diagram` objects. Native topology checks exercise the actual
+domains, codomains and boxes; they do not evaluate a probability model.
 
-**Purpose**: Translate GNN specifications to DisCoPy structures
+## Experimental matrix route
 
-**Features**:
-- Automatic type inference
-- Categorical relationship mapping
-- Composition rule generation
+`translator.gnn_file_to_discopy_matrix_diagram` remains importable for
+compatibility but is unsupported for numerical evaluation. Native controls
+found two independent problems: real two-element rows can be interpreted as
+complex pairs, and the builder passes tensor dimensions to a matrix constructor
+whose API takes an array first. This prevents ordinary authored tables from
+establishing a valid evaluated matrix diagram.
 
-## DisCoPy Rendering Pipeline
+Dependency availability flags do not establish semantic readiness. A repair
+requires an explicit tensor-versus-matrix contract, domain/codomain axes and
+unambiguous real/complex notation under [E4](../../../../TO-DO.md#major-work).
+The abstract diagram and supported package generator remain separate routes.
 
-```mermaid
-graph TD
-    GNN[GNN Model] --> Parse[Parse GNN]
-    Parse --> Extract[Extract Structure]
-    
-    Extract --> Types[Type System]
-    Extract --> Morphisms[Morphisms]
-    Extract --> Composition[Composition Rules]
-    
-    Types --> Convert[Convert to DisCoPy]
-    Morphisms --> Convert
-    Composition --> Convert
-    
-    Convert --> Diagram[String Diagram]
-    Diagram --> Optimize[Optimize Diagram]
-    Optimize --> Visualize[Visualize]
-    
-    Visualize --> Output[DisCoPy Code]
+## Verification
+
+```bash
+uv run --frozen --no-sync python -m pytest tests/render/test_native_discopy_generated_consumers_410.py tests/render/test_render_cli_targets.py -q
 ```
 
-## Features
+Generation uses the Python standard library. Executing generated programs
+requires DisCoPy and NumPy; drawing requires the relevant optional visualization
+dependencies. Use explicit provisioned native lanes for runtime acceptance.
 
-- String diagram generation
-- Categorical type system
-- Compositional reasoning
-- Automated diagram optimization
-- Visual diagram rendering
-
-## Usage
-
-```python
-from gnn.render.discopy import generate_discopy_code
-
-code = generate_discopy_code(model_data=parsed_gnn_model, output_path="output.py")
-```
-
-## Output
-
-Generated DisCoPy code includes:
-- Type definitions
-- Categorical structures
-- String diagrams
-- Composition operations
-- Visualization code
-
-## Dependencies
-
-- `discopy` - DisCoPy package (optional, recovery: skip DisCoPy generation)
-- `graphviz` - Graph visualization (optional)
-
-## Testing
-
-Tests ensure:
-- Correct categorical structure
-- Diagram composition validity
-- Type consistency
-- Visual rendering
-
----
-
-**Last Updated**: 2026-09-24  
-**Status**: ✅ Production Ready
-
-
+See [SPEC.md](SPEC.md), [AGENTS.md](AGENTS.md) and the
+[parent renderer](../README.md).

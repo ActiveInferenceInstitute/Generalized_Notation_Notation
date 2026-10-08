@@ -22,8 +22,14 @@ Generates Python code using DisCoPy for categorical diagram construction.
 
 ## Architecture
 
-- `translator.py` (1648 lines) — Core GNN-to-DisCoPy translation
-- Template-based code generation with parametric diagram construction
+- `discopy_renderer.py` owns the supported `render_gnn_to_discopy` generator.
+- `translator.py` preserves compatibility imports for separate parsing,
+  abstract diagram, file translation, bootstrap and template owners.
+- `matrix_builders.py` and the file-level JAX-backed MatrixDiagram utility
+  remain experimental and unsupported for numerical evaluation. Real-table
+  pair decoding and tensor/matrix constructor semantics require an explicit
+  compatibility decision; see [the support boundary](README.md#experimental-matrix-route).
+- Permutation options validate metadata without reordering diagram structure.
 
 ## Dependencies
 

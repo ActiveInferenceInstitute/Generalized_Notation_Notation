@@ -104,9 +104,13 @@ def gnn_file_to_discopy_matrix_diagram(
     gnn_file_path: Path, verbose: bool = False, jax_seed: int = 0
 ) -> Optional[Diagram]:
     """
-    Orchestrates the conversion of a GNN file to a DisCoPy Diagram with JAX-backed matrices.
-    Reads the file, parses content (including TensorDefinitions), converts state space to Dims,
-    and constructs the MatrixDiagram.
+    Experimental compatibility utility for JAX-backed matrix construction.
+
+    Numerical evaluation is unsupported: ordinary real rows can be interpreted
+    as complex pairs, and tensor/matrix constructor semantics are unresolved.
+    Dependency availability does not establish model validity. See the sibling
+    README support boundary; prefer the supported package generator or abstract
+    tensor diagram translator for their respective documented contracts.
     """
     if not JAX_AVAILABLE:  # Check the overall JAX_AVAILABLE flag
         create_discopy_error_report(gnn_file_path, "jax_unavailable")
