@@ -29,6 +29,21 @@ after the first record. Parsing, schema validation and export validation use
 this shared boundary. It limits object reconstruction; it does not authenticate
 artifacts or bound memory and CPU use.
 
+## Saved schema interchange
+
+ASN.1 `-- MODEL_DATA:` and Z `% MODEL_DATA:` comments carry a JSON object on
+one native comment line. Reading that payload stops at the line boundary, so
+later native braces cannot replace the saved model identity. When the line
+comment supplies the interchange payload, malformed or non-object data produces
+a failed parse with a causal diagnostic; absent metadata continues through the
+native declaration reader. ASN.1's existing block comment interchange and its
+extraction priority remain supported.
+
+Saved schema payloads retain supplied parameter values. Alloy and Z restore
+parameter descriptions when the payload includes them; older payloads may omit
+that field. These interchange guarantees do not establish formal equivalence
+between arbitrary native schemas and the source GNN model.
+
 ## Adding a format
 
 1. Extend **`GNNFormat`** in `common.py` if needed.

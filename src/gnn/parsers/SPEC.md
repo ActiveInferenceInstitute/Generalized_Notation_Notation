@@ -31,6 +31,13 @@
 - XML discovery may find one physical element through multiple container and
   generic XPath paths. Each element contributes once, in discovery priority;
   separate authored declarations remain separate even when their names match.
+- ASN.1 and Z native `MODEL_DATA` line comments admit a JSON object from that
+  line only. Later declarations cannot extend its payload or replace its model
+  identity; present malformed/non-object data fails with a causal diagnostic.
+  Absent metadata retains native declaration parsing, and existing ASN.1 block
+  comment payloads remain supported.
+- Alloy and Z saved-payload reconstruction preserves a supplied parameter
+  description without adding an interpretation or changing its value.
 
 ## Testing
 
