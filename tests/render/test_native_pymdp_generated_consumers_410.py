@@ -116,6 +116,7 @@ def test_pipeline_saved_spec_preserves_literal_words_and_typed_metadata(tmp_path
     spec = authored_model()
     spec["consumer_metadata"] = {
         "note": 'true false null are authored words; "quoted" \\ path\nΩ',
+        "nonfinite_words": "nan, inf, -inf and Infinity are authored text",
         "enabled": True,
         "disabled": False,
         "missing": None,
@@ -128,6 +129,7 @@ def test_pipeline_saved_spec_preserves_literal_words_and_typed_metadata(tmp_path
     py_compile.compile(str(path), cfile=str(tmp_path / "metadata.pyc"), doraise=True)
     assert emitted_main_literals(path)["gnn_spec"]["consumer_metadata"] == {
         "note": 'true false null are authored words; "quoted" \\ path\nΩ',
+        "nonfinite_words": "nan, inf, -inf and Infinity are authored text",
         "enabled": True,
         "disabled": False,
         "missing": None,
@@ -368,4 +370,25 @@ def test_saved_pymdp_native_import_retains_safe_metadata_without_invoking_main(
     assert f"Model:        {spec['model_name']}\n" in metadata["doc"]
     assert f"Description:  {spec['annotation']}\n" in metadata["doc"]
     assert not (tmp_path / "output").exists()
+    assert pickle.dumps(spec, protocol=5) == before
+
+
+@pytest.mark.parametrize("mode", ["pipeline", "standalone"])
+@pytest.mark.parametrize("nonfinite", [float("nan"), float("inf"), -float("inf")])
+def test_nonfinite_embedded_metadata_refuses_before_replacing_saved_program(
+    tmp_path, mode, nonfinite
+):
+    spec = authored_model()
+    spec["consumer_metadata"] = {"nested": [{"measurement": nonfinite}]}
+    before = pickle.dumps(spec, protocol=5)
+    previous = tmp_path / "previous.py"
+    previous.write_bytes(b"caller-owned previous source\n")
+    absent = tmp_path / "absent" / "new.py"
+    for destination in (previous, absent):
+        ok, message, warnings = render_gnn_to_pymdp(spec, destination, {"mode": mode})
+        assert not ok, message
+        assert "Out of range float values are not JSON compliant" in message
+        assert warnings == []
+    assert previous.read_bytes() == b"caller-owned previous source\n"
+    assert not absent.parent.exists()
     assert pickle.dumps(spec, protocol=5) == before
