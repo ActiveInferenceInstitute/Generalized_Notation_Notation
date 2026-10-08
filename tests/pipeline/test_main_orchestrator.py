@@ -692,7 +692,32 @@ class TestEndToEndIntegration:
             verbose=False,
         )
         exit_code = main(args)
-        assert exit_code == 0
+        failure_details: dict[str, Any] | None = None
+        if exit_code != 0:
+            records: dict[str, Any] = {}
+            for name, filename in (
+                ("canonical_summary", "pipeline_execution_summary.json"),
+                ("run_context", "run_context.json"),
+            ):
+                path = out_dir / "00_pipeline_summary" / filename
+                try:
+                    with path.open("rb") as stream:
+                        content = stream.read(65536 + 1)
+                    records[name] = {
+                        "path": str(path),
+                        "content_utf8": content[:65536].decode(
+                            "utf-8", errors="replace"
+                        ),
+                        "truncated": len(content) > 65536,
+                    }
+                except OSError as error:
+                    records[name] = {
+                        "path": str(path),
+                        "missing_or_unreadable": str(error),
+                        "error_type": type(error).__name__,
+                    }
+            failure_details = {"main_status": exit_code, "owned_records": records}
+        assert exit_code == 0, failure_details
         assert (out_dir / "3_gnn_output").exists()
         assert (out_dir / "7_export_output").exists()
         assert (out_dir / "8_visualization_output").exists()
