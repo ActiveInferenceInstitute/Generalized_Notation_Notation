@@ -514,6 +514,7 @@ class XMLGNNParser(BaseGNNParser):
                 var_type=VariableType(var_data.get("var_type", "hidden_state")),
                 data_type=DataType(var_data.get("data_type", "categorical")),
                 dimensions=var_data.get("dimensions", []),
+                description=var_data.get("description"),
             )
             model.variables.append(var)
 

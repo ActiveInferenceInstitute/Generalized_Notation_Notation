@@ -138,6 +138,7 @@ class XMLSerializer(BaseGNNSerializer):
                     if hasattr(var, "data_type")
                     else "categorical",
                     "dimensions": var.dimensions if hasattr(var, "dimensions") else [],
+                    "description": var.description,
                 }
                 for var in model.variables
             ],
