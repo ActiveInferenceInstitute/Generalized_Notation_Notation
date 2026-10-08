@@ -282,6 +282,53 @@ def test_native_missing_reference_is_a_structured_failed_tool_result(
     assert native_stdio.call("ping")["result"] == {}
 
 
+def test_native_roundtrip_mixed_read_results_match_saved_counts(native_stdio, tmp_path):
+    target = tmp_path / "mixed"
+    target.mkdir()
+    shutil.copyfile(
+        ROOT / "input/gnn_files/discrete/actinf_pomdp_agent.md", target / "healthy.md"
+    )
+    # A directory with a matching suffix is a genuine unreadable glob entry
+    # on every platform; no patched filesystem or parser result is involved.
+    (target / "cannot-read.md").mkdir()
+    output = tmp_path / "roundtrip"
+    result = native_stdio.tool(
+        "run_round_trip_tests",
+        {
+            "target_dir": str(target),
+            "output_dir": str(output),
+            "reference_file": "",
+            "test_subset": ["markdown"],
+        },
+    )
+    assert result["success"] is False
+    summary = json.loads((output / "round_trip_results.json").read_text())
+    assert (summary["files_tested"], summary["passed"], summary["failed"]) == (2, 1, 1)
+    records = {Path(record["file"]).name: record for record in summary["results"]}
+    assert records["healthy.md"]["format_results"]["markdown"]["pass"] is True
+    assert records["cannot-read.md"]["error"]
+    assert summary["parser_mode"] == "full" and summary["degraded"] is False
+
+
+def test_native_roundtrip_empty_directory_remains_valid_no_work(native_stdio, tmp_path):
+    target = tmp_path / "empty"
+    target.mkdir()
+    output = tmp_path / "roundtrip"
+    result = native_stdio.tool(
+        "run_round_trip_tests",
+        {
+            "target_dir": str(target),
+            "output_dir": str(output),
+            "reference_file": "",
+            "test_subset": ["markdown"],
+        },
+    )
+    assert result["success"] is True
+    summary = json.loads((output / "round_trip_results.json").read_text())
+    assert summary["status"] == "no_files"
+    assert (summary["files_tested"], summary["passed"], summary["failed"]) == (0, 0, 0)
+
+
 @pytest.mark.parametrize(
     "message,code",
     [
