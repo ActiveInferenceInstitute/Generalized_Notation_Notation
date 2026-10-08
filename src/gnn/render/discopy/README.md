@@ -27,12 +27,12 @@ they do not reorder the generated diagram's wires or boxes.
 | --- | --- |
 | `discopy_renderer.py` | Supported package generator and saved program metadata |
 | `translator.py` | Compatibility imports and standalone diagnostic harness |
-| `gnn_parsing.py` | Legacy section, dimension and tensor notation parsing |
+| `gnn_parsing.py` | Section, dimension and tensor notation parsing |
 | `diagram_builders.py` | Abstract tensor diagram structure |
 | `file_translation.py` | File admission and diagram construction orchestration |
 | `matrix_builders.py` | Experimental JAX-backed matrix construction |
 | `bootstrap.py` | Optional dependency availability and setup diagnostics |
-| `code_templates.py` | Legacy source templates |
+| `code_templates.py` | Compatibility source templates |
 | `symmetry.py` | Permutation metadata validation |
 
 The file-level `translator.gnn_file_to_discopy_diagram` route constructs abstract
