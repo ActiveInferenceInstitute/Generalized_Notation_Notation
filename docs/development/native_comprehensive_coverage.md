@@ -10,8 +10,10 @@ fresh full reports from Python 3.11, 3.12 and 3.13 before raising a floor.
 
 Use a clean immutable checkout and an owned virtualenv provisioned from the
 frozen lock with `dev` and `api`. Each output directory must be new and outside
-the checkout. The script copies the original coverage configuration and adds
-only subprocess tracing, parallel data files and their output destination.
+the checkout. The script copies the original coverage configuration, adding
+parallel data files and their output destination. Child tracing starts before
+actual original-source execution; it does not eagerly instrument stdlib-only
+children or change their execution deadlines.
 
 ```bash
 UV_PYTHON=3.12 uv sync --frozen --extra dev --extra api
@@ -60,21 +62,49 @@ a partial lane establishes whole-matrix coverage, regardless of its test count.
 interpreter and virtualenv, installed distribution versions, lane commands,
 selected node identities, overlaps, JUnit failures/skips, raw process data and
 coverage totals. Every admitted process must match the native Python minor,
-executable, environment, installed distribution digest and GNN source origin.
+executable, virtualenv, base interpreter and GNN source origin. Installed
+distribution names, versions, locations and metadata hashes are inventoried in
+the parent before and after each lane. Children record their actual startup and
+activation import paths; metadata overlays outside the admitted paths are
+explicit and cannot receive original-source credit as the native environment.
 Each lane retains its own JUnit, logs, configuration and full-source JSON report.
 
 The observer creates an exclusive temporary `.pth` in the declared virtualenv,
 ordered after existing editable entries. It records process startup without
-importing GNN, including children that strip `PYTHONPATH` or use `-I`. Creation,
+importing GNN, including children that strip `PYTHONPATH` or use `-I`. A public
+Python audit hook observes code execution and starts coverage before the first
+frame from the original source. This includes imports, `-m`, direct scripts,
+`runpy` and spawned Python children. Forked children reset their PID and trace
+state; unioning line sets preserves overlap. Stdlib-only children retain an
+explicit receipt with no source activation or inferred coverage. Creation,
 content hash and restoration are recorded; removal requires the exact owned
 bytes. The original package/dependency configuration is unchanged.
 
 An unreceipted data file with **zero executed original-source lines** may be
 retained and explicitly qualified outside the union. Any executed original
-source without matching native provenance fails integrity. The observer only
+source without matching native provenance fails integrity. Unreadable raw data
+is retained with its path, hash and error, with its source contribution marked
+unknown; the report fails closed. Lane commands, terminal status and JUnit
+outcomes are saved before raw data is read, so collection or SQLite failures do
+not erase the actual test failures. The observer only
 combines admitted data and verifies identical per-file statement/exclusion
 denominators. Python `-S` can prevent startup tracing; behavior evidence from
-such children does not gain unobserved source coverage.
+such children does not gain unobserved source coverage; observed launch receipts
+identify `-S` bypasses. Child source paths resolve to the same absolute original
+source scope while the child's working directory remains unchanged. An initial
+public coverage save establishes conservative data before source execution;
+forced termination can still lose later unsaved lines and never creates inferred
+coverage. The observer rejects known source modules loaded before its hook.
+Launch classification currently recognizes literal `-S`/`-I` argument tokens;
+combined flags, shell wrappers and embedded interpreters are outside that
+classification. A startup bypass is unobserved execution, never evidence that
+the child executed zero original-source lines.
+
+Each lane and the comprehensive data must equal the exact admitted raw line-set
+union. Their reports must preserve the same per-file statement/exclusion census,
+and the comprehensive executed statement sets must equal the lane report union.
+The observer updates data through the public API without deduplicating by raw
+filename hash hints, which can become stale after an early conservative save.
 
 `coverage-comprehensive.json` unions actual line sets within one environment.
 Never union across Python versions, operating systems, dependency environments
