@@ -227,6 +227,31 @@ public manuscript/checksum artifacts and terminal exact-tag hosted checks.
 Remove only accepted completed work from TO-DO; retain externally blocked work
 with precise evidence. Never treat a pending check or partial archive as done.
 
+## Latest integrated native consumer acceptance
+
+The clean checkpoint `b6b4eaac3` independently passed all 269 selected native
+consumer cases without failures, errors or skips. This includes 182 JAX cases,
+21 real MCP stdio cases, native processing reports and benchmarks, current-run
+runtime validation, filesystem/process refusal, saved execution outputs, network
+artifacts and matrix views. Ruff, formatting, all 758 source modules under mypy,
+and strict documentation/anchor audits passed. Cold MCP discovery retained its
+original 30-second optional-module timeout warnings; protocol correctness does
+not imply readiness for every optional module.
+
+Checkpoint `4090d8dbe` independently passed 48 additional saved-schema,
+validator-round-trip and actual POMDP artifact cases without skips. The bounded
+repairs preserve nested parameters, variable descriptions, causal malformed
+line-comment refusals and canonical action/state axes. The separate matrix
+overview witness is integrated afterward and awaits the final full selection.
+The original full failed observation receipt remains diagnostic; none of these
+focused results closes S6, the native platform matrix or publication custody.
+
+The AST broad-exception ratchet is tightened to the actual 1,148 exact handlers.
+A native small-correlation plotting failure is under bounded repair. Additional
+public audio/export/ontology consumers are being checked in isolated owned
+environments. Freeze and remeasure the complete unchanged source scope after
+these deliverables; do not add their candidate line counts or percentages.
+
 ## NextAgentPrompt
 
 Resume the owned `codex/gnn-4.1.0` integration worktree. Read this handoff,

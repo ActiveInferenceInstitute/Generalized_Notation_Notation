@@ -33,6 +33,23 @@ checks alone cannot establish publication or the full supported matrix.
   values and collect each matching file once. Canonical VFE, timestep and
   Gaussian covariance payloads retain the current reader's contract and receive
   explicit guidance when supplied to a legacy reader.
+- JAX generation preserves explicitly authored ndarray/list parameters through
+  canonical validation and refuses invalid probabilities or malformed tables
+  before writing. Legacy table readers match exact parameter names and retain
+  signed preference values without replacing authored failures with defaults.
+- Saved validator round trips retain supplied parameters, nested values and
+  variable descriptions. ASN.1 and Z line-comment interchange payloads stop at
+  their actual line boundary; malformed payloads refuse conversion while
+  preserving the caller's previous destination.
+- Processing reports accept their native structural and typed validation
+  results. A processing run reports failure for missing, empty or failed
+  required reports and preserves completed partial artifacts and diagnoses.
+- Runtime validation uses the caller's absolute input/output paths and requires
+  a canonical summary bearing its fresh invocation identity. Inherited summaries
+  and workspace package shadows cannot establish current execution success.
+- MCP stdio retains coalesced and fragmented frames, applies its 1 MiB cap to
+  each line, and drains admitted work before EOF exit. Saved round-trip counts
+  include actual file-read failures; empty directories retain valid no-work.
 - Descriptor-relative POSIX directory, lease and deletion operations enforce
   the documented trusted-parent boundary. Bounded owned process supervision
   verifies cleanup and stream drainage; failed cleanup retains artifacts and
@@ -44,6 +61,8 @@ checks alone cannot establish publication or the full supported matrix.
   generic tensors and categorical/Gaussian uncertainty. Rolling variance is
   descriptive; it is not an inference convergence test. Finite actual figure
   and sampled animation review retains source/data/artifact hashes.
+  Advanced POMDP plots use all canonical action planes, with previous state on
+  the horizontal axis and next state on the vertical axis.
 - Lossless production PNG encoding defaults to level 3 while preserving caller
   overrides. Two paired rounds across all 552 production PNGs measured 5.48%
   less median encoder CPU and 3.07% more bytes with identical decoded pixels,
