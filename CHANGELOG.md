@@ -37,6 +37,10 @@ checks alone cannot establish publication or the full supported matrix.
   canonical validation and refuses invalid probabilities or malformed tables
   before writing. Legacy table readers match exact parameter names and retain
   signed preference values without replacing authored failures with defaults.
+  Saved programs and execution logs use explicit UTF-8. General categorical
+  programs configure their native output streams before diagnostics, retaining
+  scientific Unicode on Windows code pages and leaving imported caller streams
+  unchanged. Shared process supervision and numerical algorithms are preserved.
 - Saved validator round trips retain supplied parameters, nested values and
   variable descriptions. ASN.1 and Z line-comment interchange payloads stop at
   their actual line boundary; malformed payloads refuse conversion while

@@ -278,6 +278,37 @@ public audio/export/ontology consumers are being checked in isolated owned
 environments. Freeze and remeasure the complete unchanged source scope after
 these deliverables; do not add their candidate line counts or percentages.
 
+## Saved-consumer integration and remaining full gates
+
+The `11b04ac0f` frozen observation ended with 7,699 core passes and three
+failures: two FEP generated-source string oracles and a zero-skip audit. The
+rendered programs themselves parsed successfully. The repaired tests inspect
+their actual AST values; the Plotly and POSIX controls now use the declared
+dependency/platform selections. Preserve that failed receipt. MCP and pipeline
+did not run in that attempt, so its 62,290/81,587 statements are only a failed
+core diagnostic, not comprehensive acceptance.
+
+At `2a990b7ab`, all four installed Linux/macOS lanes passed. Windows reached
+native JAX execution but failed on CP1252 console output. Its separate local
+repair must preserve authored Unicode and the original supervision boundaries;
+the exact hosted Windows lane remains required.
+
+The public saved-result selection passes 28 new and 13 existing cases in
+separate native runs. Formal-format consumers pass 18 new and 121 existing
+cases after a bounded Agda token repair. Saved JSON/YAML consumers retain time
+step sizes and canonical datatypes and report malformed YAML causally; the
+original 20 witnesses and 584 existing cases plus ten subtests pass. These
+selections overlap and must not be added. Root's integrated replay passes
+89 cases with real THRML/CPOMDP and 50 parser/audit cases in separate runs.
+
+Explicit optional THRML/Gradio lanes are under independent declaration review
+and actual native validation. The ordinary three selectors, full denominator,
+exclusions, deadlines and core 60% floor remain intact. Every successful lane
+must now have nonempty JUnit and zero failures, errors or skips. Freeze the
+final source and locked environment before the full five-lane observation;
+the strict >80% target is still pending independently on all three Pythons.
+SC-22, final companion pairing and publication remain pending.
+
 ## NextAgentPrompt
 
 Resume the owned `codex/gnn-4.1.0` integration worktree. Read this handoff,

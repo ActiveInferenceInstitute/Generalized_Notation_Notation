@@ -134,7 +134,9 @@ Saved JSON and YAML readers retain the already-declared `step_size` on reopening
 The schema facade exposes canonical datatype strings such as `integer`, rather
 than Python enum display names such as `DataType.INTEGER`. With installed
 PyYAML, leading comments are valid and malformed syntax or unsupported tags
-produce failed parse results. Callers that previously relied on simplified
+produce failed registry parse results and refuse conversion. The schema facade
+retains its separately documented, visibly degraded Markdown recovery. Callers
+that previously relied on simplified
 recovery after a PyYAML error must correct the saved input; failed conversion
 preserves the prior destination. Dependency-absent recovery remains separately
 qualified in the parser contract.
