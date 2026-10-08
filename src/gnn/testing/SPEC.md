@@ -14,6 +14,12 @@
   retaining the valid legacy Z `.zed` suffix. Native PKL `.pkl` and binary
   Pickle `.pickle` remain distinct, and each supported target has its own
   artifact rather than overwriting another format's evidence.
+- `RoundTripTestStrategy` binds each supplied source to an independent native
+  tester and child artifact directory. It preserves the configured format
+  selection and shared template, attributes native rows to report provenance,
+  and keeps legacy injected per-row source reports compatible. Missing inputs
+  retain their actual source path and typed failure rather than testing the
+  default reference or inventing successful format evidence.
 
 ## Running
 

@@ -7,6 +7,7 @@ semantic preservation across format conversions.
 """
 
 import logging
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -127,15 +128,37 @@ class RoundTripTestStrategy:
         logger.debug(f"Testing round-trip for {file_path}")
 
         try:
+            from .round_trip_tester import GNNRoundTripTester
+
+            tester = self.round_trip_tester
+            if type(tester) is GNNRoundTripTester:
+                if not file_path.exists():
+                    raise FileNotFoundError(
+                        f"Round-trip source file not found: {file_path}"
+                    )
+                # A native tester owns mutable source, timeout and artifact
+                # state. Each call gets its own instance and artifact directory
+                # so neither sequential nor concurrent sources can cross over.
+                tester.temp_dir.mkdir(parents=True, exist_ok=True)
+                directory = Path(
+                    tempfile.mkdtemp(prefix="source-", dir=tester.temp_dir)
+                )
+                local_tester = GNNRoundTripTester(temp_dir=directory)
+                local_tester.reference_file = file_path
+                local_tester.supported_formats = list(tester.supported_formats)
+                tester = local_tester
+
             # Run comprehensive round-trip tests
-            report = self.round_trip_tester.run_comprehensive_tests()
+            report = tester.run_comprehensive_tests()
+            report_source = getattr(report, "reference_file", None)
 
             # Extract results for this file
             file_results: list[Any] = []
             for result in report.round_trip_results:
-                if hasattr(result, "source_file") and result.source_file == str(
-                    file_path
-                ):
+                # Native rows belong to their report's source. Legacy injected
+                # reports can continue supplying a per-row source_file.
+                result_source = getattr(result, "source_file", report_source)
+                if result_source is not None and str(result_source) == str(file_path):
                     file_results.append(
                         {
                             "target_format": result.target_format.value
@@ -162,9 +185,11 @@ class RoundTripTestStrategy:
             }
 
         except Exception as e:
+            reason = f"{type(e).__name__}: {e}"
+            logger.error("Round-trip source %s failed (%s)", file_path, reason)
             return {
                 "success": False,
-                "error": str(e),
+                "error": reason,
                 "success_rate": 0.0,
                 "format_results": [],
                 "total_formats_tested": 0,
