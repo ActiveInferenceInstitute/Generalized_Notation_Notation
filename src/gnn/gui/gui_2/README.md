@@ -20,3 +20,22 @@ GUI 2 is executed via the standard orchestrator flow:
 uv run python src/gnn/22_gui.py --gui-types gui_2 --interactive
 ```
 When launched interactively, the server listens on port 7861 (http://localhost:7861); without the `gui` extra installed (or with `--headless`), GUI 2 writes static artifacts (`visual_model_gui2.md`, `visual_matrices.json`, `gui_2_status.json`) instead.
+
+## Saved models and migration
+
+GNN declares the transition tensor as `B[next_state, previous_state, action]`.
+The editor displays one action plane at a time and restores that declared
+order on export, including when the number of actions differs from the number
+of states. Other model parameters remain in their authored order.
+
+From 4.1.0, saved A/B/C/D values retain the precision of the finite Python
+floats accepted by the editor, using the shortest decimal representation that
+reads back to the same float. Declared `type=float` values, signed preferences
+and structural zeros retain their numerical meaning. This does not preserve
+arbitrary-precision decimal text or original numeric formatting.
+
+Earlier exports rounded numbers to six significant digits and could write
+malformed vector braces or action-first transition bytes. Reload the
+authoritative canonical source and regenerate those exports before using them
+for inference. Values already rounded cannot be recovered from the rounded
+file; previously saved axis order is not automatically inferred or repaired.
