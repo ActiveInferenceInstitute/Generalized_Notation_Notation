@@ -70,7 +70,10 @@ The POMDP and combined variants differ only in which generator they call.
 **Location**: `src/gnn/render/jax/jax_renderer.py` (`render_gnn_to_jax_pomdp`).
 
 **Notes**:
-- Matrices \(A, B, C, D\) are extracted from the GNN spec via `_extract_gnn_matrices`, with sensible defaults and normalization if values are missing or partially specified.
+- Complete matrices \(A, B, C, D\) are admitted through the canonical probability
+  and axis contract. NumPy array inputs are adapted on a copy, and explicit
+  admission failures prevent artifact writes. Historical defaults for partial
+  inputs remain a separate compatibility path.
 
 ### `render_gnn_to_jax_combined(gnn_spec, output_path, options=None) -> (bool, str, List[str])`
 
@@ -95,7 +98,16 @@ In all cases, `_extract_gnn_matrices` will:
 
 - infer dimensionality for \(A, B, C, D\);
 - normalize probability matrices where appropriate;
-- apply recovery defaults when values are missing or malformed.
+- preserve complete numeric lists, tuples, and NumPy arrays without caller mutation;
+- reject supplied malformed/ragged text, nonfinite values, invalid probabilities,
+  and disagreement with declared dimensions before writing an artifact;
+- retain historical dimension-based defaults for partial inputs, outside the
+  complete-model scientific value-preservation evidence.
+
+`C` contains signed real preferences rather than probabilities. It is never
+normalized as a probability vector. Legacy braced `B` tensors use the declared
+`[next_state, previous_state, action]` axes; complete canonical inputs also honor
+explicit supported action-major axis declarations.
 
 Callers should treat `gnn_spec` as an opaque dict that has already passed type checking and validation at earlier pipeline steps.
 

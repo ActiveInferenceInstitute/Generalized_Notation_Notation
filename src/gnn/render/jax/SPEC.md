@@ -51,7 +51,22 @@ It supports multiple internal shapes for extracting \(A, B, C, D\) via `jax_rend
 - JSON export style dicts with `statespaceblock` and `raw_sections["InitialParameterization"]`
 - older parsed dicts with `variables` and `InitialParameterization`
 
-If extraction fails or is partial, the implementation applies defaults and recovery normalization.
+Complete `model_parameters` + `initialparameterization` inputs admit lists,
+tuples, and numeric NumPy arrays without mutating the caller. Explicit
+canonicalization failures propagate to a failed render before any output is
+written; authored matrices are never replaced after failed admission.
+
+Supplied legacy braced literals are parsed strictly, including nested transition
+tensors. Malformed or ragged literals fail rather than receiving padded rows or
+recovery values. Supplied legacy tables must match their declared dimensions;
+`A` columns, each action's `B` columns, and `D` must contain finite nonnegative
+probabilities with unit mass under the existing canonical rounding tolerance.
+`C` is a finite real payoff vector and may contain negative preferences. Optional
+`E` in complete canonical inputs retains the shared action-prior validation.
+
+Historical dimension-based defaults for partial inputs remain compatible. The
+complete-model value-preservation checks do not certify those defaults as
+authored scientific parameters.
 
 ### `output_path`
 
