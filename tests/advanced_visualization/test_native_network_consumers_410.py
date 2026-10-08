@@ -151,7 +151,8 @@ def test_public_3d_network_edges_connect_the_actual_authored_nodes(
 def test_public_interactive_dashboard_preserves_direction_counts_and_node_identity(
     tmp_path, monkeypatch, legacy
 ):
-    go = pytest.importorskip("plotly.graph_objects")
+    import plotly.graph_objects as go
+
     figures = {}
     original = go.Figure.to_html
 

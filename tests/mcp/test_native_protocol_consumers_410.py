@@ -454,7 +454,7 @@ def test_native_coalesced_requests_are_drained_before_eof_exit(isolated_stdio):
     assert isolated_stdio.process.wait(timeout=5) == 0
 
 
-@pytest.mark.skipif(os.name != "posix", reason="SIGINT lifecycle is a POSIX contract")
+@pytest.mark.needs_posix
 def test_native_operator_interrupt_stops_the_owned_server(isolated_stdio):
     native_stdio = isolated_stdio
     native_stdio.process.send_signal(signal.SIGINT)
