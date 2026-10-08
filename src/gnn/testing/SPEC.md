@@ -25,7 +25,7 @@
 
 ```bash
 uv run --extra dev python -m pytest tests/testing/ -q
-uv run --extra dev python -m pytest tests/test_gnn*.py -q
+uv run --extra dev python -m pytest tests/gnn/ -q
 ```
 
 See **[README.md](README.md)** and **[README_round_trip.md](README_round_trip.md)**.

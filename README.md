@@ -67,7 +67,7 @@
 
 **New in v3.6.0 ("Composability & Offline Truth")**: the step-20 website gains per-model detail pages (`model/<slug>.html`, full GNN source per model), breadcrumbs in every page shell, and client-side search (`search-index.json` + inline vanilla-JS filter, offline-true); `generate_website(..., filesystem=False)` renders a complete site with zero disk collection and the step catalogue moves to a dependency-free leaf module (`website/steps.py`); generated pages are fully offline (system font stack, JSON-LD + meta description per page, atomic manifest write); the complexity estimator ships as a subpackage with `benchmark`/`estimate` CLI subcommands; the dashboard folds into MCP artifact tools; all six website dead-seams are wired-or-removed (the `website_html_filename` knob is gone end-to-end); the render and execute processors are band-split into packages (`render/pomdp_processor/`, `render/processor/`, `execute/processor/`); and GEO-INFER consumer conformance is pinned by a dedicated test suite.
 📖 **Project DOI:** [10.5281/zenodo.7803313](https://doi.org/10.5281/zenodo.7803313)\
-📁 **Historical archive:** [zenodo.org/records/7803328](https://zenodo.org/records/7803328). A version-specific 4.0.1 archival DOI is not yet recorded.
+📁 **Exact 4.0.1 source archive:** [10.5281/zenodo.23222085](https://doi.org/10.5281/zenodo.23222085). Its downloaded source and manuscript match the released tag; separately attached distributions still need archival acceptance. See the [verification receipt](docs/development/zenodo_4_0_1_exact_source_archive.json) and [archive procedure](docs/releases/exact_version_archival.md). The [2023 journal archive](https://zenodo.org/records/7803328) remains historical.
 
 ### 🎯 Core Design Principles
 

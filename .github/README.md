@@ -291,9 +291,12 @@ For academic use, follow [CITATION.cff](../CITATION.cff). The initial publicatio
 is **Smékal, J., & Friedman, D. A. (2023), _Generalized Notation Notation for
 Active Inference Models_, Active Inference Journal**. The
 [project concept DOI](https://doi.org/10.5281/zenodo.7803313) and
-[historical archive](https://zenodo.org/records/7803328) are distinct from a
-version-specific archive. Exact-version archival work is tracked under E5 in
-[TO-DO.md](../TO-DO.md#minor-work).
+[historical archive](https://zenodo.org/records/7803328) are distinct from the
+[exact 4.0.1 source archive](https://doi.org/10.5281/zenodo.23222085).
+Its [downloaded source and manuscript](../docs/development/zenodo_4_0_1_exact_source_archive.json)
+match the released tag. Archiving the separately attached distribution assets
+remains under E5 in [TO-DO.md](../TO-DO.md#minor-work); see the
+[exact-version procedure](../docs/releases/exact_version_archival.md).
 
 The repository is maintained by the
 [Active Inference Institute](https://activeinference.org/) community and licensed

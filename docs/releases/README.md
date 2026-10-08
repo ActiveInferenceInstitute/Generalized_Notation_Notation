@@ -19,7 +19,11 @@ This directory contains documentation for release management, version control, a
 normal companion integration, the annotated tag, exact hosted checks, zero open
 issues and enabled Dependabot/CodeQL alerts, and ten directly verified assets.
 The immutable release PDF retains its authored date; current main publication
-metadata is renewed separately. No PyPI upload or new archival DOI is claimed.
+metadata is renewed separately. No PyPI upload was performed. The subsequent
+[exact 4.0.1 source archive](https://doi.org/10.5281/zenodo.23222085) has
+[verified source/manuscript parity](../development/zenodo_4_0_1_exact_source_archive.json);
+separately attached distribution-asset archival remains pending under the
+[exact-version procedure](exact_version_archival.md).
 
 ## GNN 4.0.0 publication (historical)
 
