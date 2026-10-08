@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import os
 import stat
 from contextlib import AbstractContextManager
@@ -24,8 +25,9 @@ def validate_output_tree(output_dir: Path) -> None:
 
     This runs while the invocation holds its lease, before log setup, context
     staging or any producer writes. Directory symlinks are inspected without
-    traversal. Contained symlinks are allowed; external links, hardlinked files
-    and nonregular entries fail without modifying their targets. The advisory
+    traversal. Contained ordinary and dangling symlinks are allowed; cycles,
+    other resolution failures, external links, hardlinked files and nonregular
+    entries fail without modifying their targets. The advisory
     lease does not prevent a noncooperating process from changing the tree later.
     """
     root = output_dir.resolve()
@@ -46,11 +48,27 @@ def validate_output_tree(output_dir: Path) -> None:
                 if name in directories:
                     directories.remove(name)
                 try:
-                    contained = path.resolve().is_relative_to(root)
-                except RuntimeError as error:
-                    raise OutputLeaseError(
-                        f"Pipeline output entry has a cyclic symlink: {relative}"
-                    ) from error
+                    try:
+                        resolved = path.resolve(strict=True)
+                    except FileNotFoundError:
+                        # Preserve contained dangling links. Non-strict
+                        # normalization can expose another existing link after
+                        # a missing/.. prefix, so check that candidate strictly
+                        # before treating only an actual missing target as safe.
+                        resolved = path.resolve()
+                        try:
+                            resolved = resolved.resolve(strict=True)
+                        except FileNotFoundError:
+                            pass
+                    contained = resolved.is_relative_to(root)
+                except (RuntimeError, OSError) as error:
+                    if isinstance(error, RuntimeError) or error.errno == errno.ELOOP:
+                        detail = (
+                            f"Pipeline output entry has a cyclic symlink: {relative}"
+                        )
+                    else:
+                        detail = f"Cannot resolve pipeline output entry: {relative}"
+                    raise OutputLeaseError(detail) from error
                 if not contained:
                     raise OutputLeaseError(
                         f"Pipeline output entry escapes its output root: {relative}"
