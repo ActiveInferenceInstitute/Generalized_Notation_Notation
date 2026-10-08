@@ -510,7 +510,7 @@ def test_native_descendant_requirements_are_supported_or_refused_before_launch(
 
 
 def test_native_cancellation_stops_direct_worker_within_budget(
-    tmp_path: Path, request: pytest.FixtureRequest
+    tmp_path: Path, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import time
 
@@ -522,6 +522,7 @@ def test_native_cancellation_stops_direct_worker_within_budget(
     token = CancelToken()
     errors: list[BaseException] = []
     native_handle: int | None = None
+    supervised_handle: int | None = None
     diagnostic: dict[str, object] = {
         "platform": sys.platform,
         "executable": sys.executable,
@@ -582,6 +583,26 @@ def test_native_cancellation_stops_direct_worker_within_budget(
                 "exit_code": exit_code.value,
             }
 
+    actual_popen = subprocess.Popen
+
+    def observe_popen(*args: object, **kwargs: object) -> subprocess.Popen[bytes]:
+        nonlocal supervised_handle
+        process = actual_popen(*args, **kwargs)
+        diagnostic["supervised_pid"] = process.pid
+        if os.name == "nt":
+            try:
+                supervised_handle = kernel32.OpenProcess(0x00101000, False, process.pid)
+                if not supervised_handle:
+                    raise ctypes.WinError(ctypes.get_last_error())
+                diagnostic["supervised_before_return"] = native_snapshot(supervised_handle)
+            except OSError as error:
+                # Return the actual object even if observation fails, so the
+                # envelope still owns cleanup of its newly launched worker.
+                errors.append(error)
+        return process
+
+    monkeypatch.setattr(subprocess, "Popen", observe_popen)
+
     def cancel() -> None:
         nonlocal native_handle
         try:
@@ -627,6 +648,12 @@ def test_native_cancellation_stops_direct_worker_within_budget(
         diagnostic["elapsed_seconds"] = time.monotonic() - started
         diagnostic["cancellation_errors"] = [repr(error) for error in errors]
         try:
+            if os.name == "nt" and supervised_handle:
+                diagnostic["supervised_after_return"] = native_snapshot(supervised_handle)
+                handle_to_close, supervised_handle = supervised_handle, None
+                if not kernel32.CloseHandle(handle_to_close):
+                    raise ctypes.WinError(ctypes.get_last_error())
+                diagnostic["supervised_handle_closed_before_pid_assertion"] = True
             if os.name == "nt" and native_handle:
                 # A zero-time native wait observes exit without extending cleanup.
                 diagnostic["after_return"] = native_snapshot(native_handle)
@@ -648,9 +675,10 @@ def test_native_cancellation_stops_direct_worker_within_budget(
         assert result["cleanup_verified"] and result["streams_drained"], detail
         assert not psutil.pid_exists(int(marker.read_text())), detail
     finally:
-        if os.name == "nt" and native_handle:
-            if not kernel32.CloseHandle(native_handle):
-                raise ctypes.WinError(ctypes.get_last_error())
+        if os.name == "nt":
+            for handle in (supervised_handle, native_handle):
+                if handle and not kernel32.CloseHandle(handle):
+                    raise ctypes.WinError(ctypes.get_last_error())
 
 
 @pytest.mark.needs_posix
