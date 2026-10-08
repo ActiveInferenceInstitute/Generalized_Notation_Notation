@@ -244,9 +244,13 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
 
             # Extract type specification
             type_spec = None
-            if ",type=" in dimensions_str:
-                dimensions_str, type_spec = dimensions_str.split(",type=", 1)
-                type_spec = type_spec.strip()
+            dimension_parts = dimensions_str.split(",")
+            for index, part in enumerate(dimension_parts):
+                token = part.strip()
+                if token.startswith("type="):
+                    type_spec = token.split("=", 1)[1].strip()
+                    dimensions_str = ",".join(dimension_parts[:index])
+                    break
 
             # Parse dimensions
             dimensions = parse_dimensions("[" + dimensions_str + "]")
@@ -285,6 +289,7 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
             "categorical": DataType.CATEGORICAL,
             "continuous": DataType.CONTINUOUS,
             "binary": DataType.BINARY,
+            "bool": DataType.BINARY,
             "integer": DataType.INTEGER,
             "int": DataType.INTEGER,
             "float": DataType.FLOAT,

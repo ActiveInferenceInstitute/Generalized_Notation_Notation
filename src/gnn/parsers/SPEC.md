@@ -38,6 +38,11 @@
   comment payloads remain supported.
 - Alloy and Z saved-payload reconstruction preserves a supplied parameter
   description without adding an interpretation or changing its value.
+- Markdown binds a trailing bracket `type=` field after trimming comma-field
+  whitespace. `int` and `bool` reuse the existing INTEGER and BINARY types;
+  `binary`, default float and unknown-type categorical recovery remain supported.
+  Adjacent annotation fields remain in source `raw_sections`, without inferring
+  initialized values or adding scientific datatype semantics.
 
 ## Testing
 

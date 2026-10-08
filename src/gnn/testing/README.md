@@ -13,6 +13,11 @@ copies, retaining zero, false and nested containers alongside the existing
 variable dimensions and model metadata. A passing conversion is checked
 against those supplied values rather than an empty parameter list.
 
+The saved-format adapter maps authored Markdown `int` and `bool` aliases to the
+existing INTEGER and BINARY datatypes. It retains values, dimensions and
+descriptions; `binary` and other existing enum spellings keep their meanings.
+Unknown-type recovery remains categorical.
+
 ## Round-trip suite status
 
 For the reference model (`input/gnn_files/discrete/actinf_pomdp_agent.md`, with `src/gnn/gnn_examples/` as fallback) and the default `test_formats` list, the suite is configured to report **100%** pass rate.

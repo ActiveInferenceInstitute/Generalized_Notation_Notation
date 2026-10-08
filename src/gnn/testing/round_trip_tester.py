@@ -819,9 +819,14 @@ class GNNRoundTripTester(RoundTripComparisonMixin, RoundTripReportMixin):
                     dim if isinstance(dim, int) else 1 for dim in variable.dimensions
                 ],
                 data_type=(
-                    DataType(variable.data_type)
-                    if variable.data_type in {item.value for item in DataType}
-                    else DataType.CATEGORICAL
+                    {"int": DataType.INTEGER, "bool": DataType.BINARY}.get(
+                        variable.data_type
+                    )
+                    or (
+                        DataType(variable.data_type)
+                        if variable.data_type in {item.value for item in DataType}
+                        else DataType.CATEGORICAL
+                    )
                 ),
                 description=variable.description,
             )

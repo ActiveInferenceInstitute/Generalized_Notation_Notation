@@ -28,6 +28,11 @@
 
 ## Running
 
+Saved-format conversion maps authored Markdown `int`/`bool` aliases to the
+existing INTEGER/BINARY enums. The parser facade retains its authored strings;
+serialized values, dimensions and comments retain their existing contracts.
+This does not add inference datatypes or change unknown-type recovery.
+
 ```bash
 uv run --extra dev python -m pytest tests/testing/ -q
 uv run --extra dev python -m pytest tests/gnn/ -q

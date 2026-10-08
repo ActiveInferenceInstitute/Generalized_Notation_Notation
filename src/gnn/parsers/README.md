@@ -44,6 +44,17 @@ parameter descriptions when the payload includes them; older payloads may omit
 that field. These interchange guarantees do not establish formal equivalence
 between arbitrary native schemas and the source GNN model.
 
+## Markdown datatype fields
+
+Bracket declarations accept comma-separated fields with surrounding whitespace,
+including `reported[2, 1, type=int]`. The Markdown registry binds the trailing
+`type=` field independently of adjacent annotation fields. `int` becomes the
+existing `integer` datatype and documented `bool` becomes `binary`; the existing
+`binary` spelling remains supported. Absent types retain the float default and
+unrecognized types retain the categorical recovery. Original annotation text,
+including default hints, remains in `raw_sections`; parsing does not initialize
+new values from a hint.
+
 ## Adding a format
 
 1. Extend **`GNNFormat`** in `common.py` if needed.

@@ -129,7 +129,7 @@ class SectionParsersMixin:
             if match:
                 name = match.group(1)
                 dims_str = match.group(3)
-                data_type = match.group(4) or "float"
+                data_type = match.group(4)
                 description = match.group(5)
 
                 # Parse dimensions
@@ -137,8 +137,10 @@ class SectionParsersMixin:
                 if dims_str:
                     for dim in dims_str.split(","):
                         dim = dim.strip()
-                        # Ignore type=... fragments and non-numeric 'type' annotations
+                        # Bind the bracket field; an explicit legacy suffix wins.
                         if dim.startswith("type="):
+                            if data_type is None:
+                                data_type = dim.split("=", 1)[1].strip()
                             continue
                         # Only count numeric dimensions for tests that expect numeric length
                         if dim.isdigit():
@@ -150,7 +152,7 @@ class SectionParsersMixin:
                 variable = GNNVariable(
                     name=name,
                     dimensions=dimensions,
-                    data_type=data_type,
+                    data_type=data_type or "float",
                     description=description,
                     line_number=self.line_number - len(content) + i,
                 )
