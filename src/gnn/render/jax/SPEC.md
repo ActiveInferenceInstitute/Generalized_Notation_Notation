@@ -68,6 +68,15 @@ Historical dimension-based defaults for partial inputs remain compatible. The
 complete-model value-preservation checks do not certify those defaults as
 authored scientific parameters.
 
+In partial inputs, an absent `A`, `B`, `C` or `D` retains its dimension-based
+default. A present table must be an ordered list, tuple or numeric NumPy array
+with rank 2 for `A`, rank 2 or 3 for `B`, and rank 1 for `C`/`D`. A passive
+rank-2 `B` receives one action axis. Valid tables are copied without changing
+the caller's values or array flags, then undergo the existing real, finite,
+probability and coherent-axis checks. Malformed tables and non-dictionary
+parameter collections fail before creating directories or writing artifacts;
+an invalid present table cannot be replaced by a dimension-based default.
+
 ### `output_path`
 
 - Must be a file path (typically ending in `.py`).

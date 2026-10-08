@@ -221,12 +221,17 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
 
         # Extract actual parameter values from initialparameterization
         init_params = gnn_spec.get("initialparameterization", {})
+        if not isinstance(init_params, dict):
+            raise ValueError("initialparameterization must be a dictionary")
 
         # Override dimensions from B matrix if available (consistent with other renderers)
         if "B" in init_params:
             B_matrix = init_params["B"]
             if isinstance(B_matrix, (list, np.ndarray)) and len(B_matrix) > 0:
-                B_array = np.asarray(B_matrix, dtype=float)
+                try:
+                    B_array = np.asarray(B_matrix)
+                except Exception as e:
+                    raise ValueError(f"Invalid authored B parameter: {e}") from e
                 n_actions_from_b = B_array.shape[2] if B_array.ndim >= 3 else 1
                 n_actions = n_actions_from_b
                 logger.info(f"Corrected n_actions from B matrix: {n_actions}")
@@ -257,28 +262,29 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
             if "A" in init_params:
                 try:
                     A_data = init_params["A"]
-                    # Handle both list and tuple (POMDP extractor returns tuples)
-                    if isinstance(A_data, (list, tuple)):
-                        A_matrix = np.array(A_data)
-                        if A_matrix.ndim == 2:
-                            matrices["A"] = A_matrix
-                            logger.info(
-                                f"Successfully extracted A matrix: shape {A_matrix.shape}"
-                            )
+                    if not isinstance(A_data, (list, tuple, np.ndarray)):
+                        raise ValueError(
+                            "expected an ordered numeric list, tuple or array"
+                        )
+                    A_matrix = np.array(A_data, copy=True)
+                    if A_matrix.ndim != 2:
+                        raise ValueError(f"A must be 2-D, got {A_matrix.shape}")
+                    matrices["A"] = A_matrix
+                    logger.info(
+                        f"Successfully extracted A matrix: shape {A_matrix.shape}"
+                    )
                 except Exception as e:
-                    logger.warning(f"Failed to extract A matrix: {e}")
+                    raise ValueError(f"Invalid authored A parameter: {e}") from e
 
             # Extract B matrix
             if "B" in init_params:
                 try:
                     B_data = init_params["B"]
-                    # Handle both list and tuple (POMDP extractor returns tuples)
-                    if isinstance(B_data, (list, tuple)):
-                        B_matrix = np.array(B_data)
-                    elif isinstance(B_data, np.ndarray):
-                        B_matrix = B_data
-                    else:
-                        B_matrix = np.array([])
+                    if not isinstance(B_data, (list, tuple, np.ndarray)):
+                        raise ValueError(
+                            "expected an ordered numeric list, tuple or array"
+                        )
+                    B_matrix = np.array(B_data, copy=True)
                     if B_matrix.ndim == 2:
                         matrices["B"] = B_matrix[:, :, np.newaxis]
                         logger.info(
@@ -289,36 +295,46 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
                         logger.info(
                             f"Successfully extracted B matrix: shape {B_matrix.shape}"
                         )
+                    else:
+                        raise ValueError(f"B must be 2-D or 3-D, got {B_matrix.shape}")
                 except Exception as e:
-                    logger.warning(f"Failed to extract B matrix: {e}")
+                    raise ValueError(f"Invalid authored B parameter: {e}") from e
 
             # Extract C vector
             if "C" in init_params:
                 try:
                     C_data = init_params["C"]
-                    if isinstance(C_data, list):
-                        C_vector = np.array(C_data)
-                        if C_vector.ndim == 1:
-                            matrices["C"] = C_vector
-                            logger.info(
-                                f"Successfully extracted C vector: shape {C_vector.shape}"
-                            )
+                    if not isinstance(C_data, (list, tuple, np.ndarray)):
+                        raise ValueError(
+                            "expected an ordered numeric list, tuple or array"
+                        )
+                    C_vector = np.array(C_data, copy=True)
+                    if C_vector.ndim != 1:
+                        raise ValueError(f"C must be 1-D, got {C_vector.shape}")
+                    matrices["C"] = C_vector
+                    logger.info(
+                        f"Successfully extracted C vector: shape {C_vector.shape}"
+                    )
                 except Exception as e:
-                    logger.warning(f"Failed to extract C vector: {e}")
+                    raise ValueError(f"Invalid authored C parameter: {e}") from e
 
             # Extract D vector
             if "D" in init_params:
                 try:
                     D_data = init_params["D"]
-                    if isinstance(D_data, list):
-                        D_vector = np.array(D_data)
-                        if D_vector.ndim == 1:
-                            matrices["D"] = D_vector
-                            logger.info(
-                                f"Successfully extracted D vector: shape {D_vector.shape}"
-                            )
+                    if not isinstance(D_data, (list, tuple, np.ndarray)):
+                        raise ValueError(
+                            "expected an ordered numeric list, tuple or array"
+                        )
+                    D_vector = np.array(D_data, copy=True)
+                    if D_vector.ndim != 1:
+                        raise ValueError(f"D must be 1-D, got {D_vector.shape}")
+                    matrices["D"] = D_vector
+                    logger.info(
+                        f"Successfully extracted D vector: shape {D_vector.shape}"
+                    )
                 except Exception as e:
-                    logger.warning(f"Failed to extract D vector: {e}")
+                    raise ValueError(f"Invalid authored D parameter: {e}") from e
 
     # --- Recovery: Handle the JSON export format from GNN processing pipeline ---
     elif "statespaceblock" in gnn_spec:

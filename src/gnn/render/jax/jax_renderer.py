@@ -79,6 +79,17 @@ def render_gnn_to_jax(
             options,
         )
 
+    # Refuse an explicitly malformed parameter collection before classifiers
+    # inspect its keys. Omitted collections still retain existing defaults.
+    if "initialparameterization" in gnn_spec and not isinstance(
+        gnn_spec["initialparameterization"], dict
+    ):
+        return (
+            False,
+            "JAX model rendering failed: initialparameterization must be a dictionary",
+            [],
+        )
+
     if is_continuous_spec(gnn_spec):
         # Continuous-state (linear-Gaussian) branch: no A/B/C/D exist, so the
         # discrete extractors below must never run on this path.
