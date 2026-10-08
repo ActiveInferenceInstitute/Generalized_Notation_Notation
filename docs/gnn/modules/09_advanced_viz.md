@@ -419,7 +419,7 @@ output/9_advanced_viz_output/
 
 ### Test Coverage
 
-- Measure: `uv run --extra dev python -m pytest tests/advanced_visualization/ --cov=advanced_visualization --cov-report=term-missing` (do not treat fixed percentages or per-run test tallies in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/advanced_visualization/ --cov=gnn.advanced_visualization --cov-report=term-missing` (do not treat fixed percentages or per-run test tallies in this doc as canonical).
 
 ---
 

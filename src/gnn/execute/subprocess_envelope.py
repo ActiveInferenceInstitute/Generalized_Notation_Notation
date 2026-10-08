@@ -32,6 +32,7 @@ import logging
 import math
 import os
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -328,6 +329,8 @@ def run_subprocess_envelope(
     sandbox: bool = True,
     cancel_token: Optional[CancelToken] = None,
     deadline_monotonic: float | None = None,
+    require_descendant_containment: bool = False,
+    require_descendant_resource_accounting: bool = False,
 ) -> Dict[str, Any]:
     """Run ``command`` in a fresh process group and return a structured envelope.
 
@@ -358,6 +361,15 @@ def run_subprocess_envelope(
                         Intersected with an active invocation deadline. Up to
                         one second (25% of remaining time for short budgets)
                         is reserved for observation, termination, and draining.
+        require_descendant_containment: Refuse launch when the native platform
+                        cannot observe or contain descendants. Windows currently
+                        supports only direct-worker cleanup and refuses this
+                        request before creating a process. This is not a hostile
+                        daemonization guarantee on supported POSIX systems.
+        require_descendant_resource_accounting: Refuse unsupported native
+                        descendant observation instead of reporting direct-only
+                        RSS as a process-tree measurement. Even supported RSS
+                        observation remains sampled and advisory.
 
     Returns:
         Dict with keys:
@@ -390,11 +402,12 @@ def run_subprocess_envelope(
               (``"off"`` when ``sandbox=False``).
             - ``sandboxed`` (bool): True iff the command was actually
               wrapped with a sandbox backend prefix.
-            - ``containment`` (str): ``not_started``, ``process_group_only``,
+            - ``containment`` (str): ``not_started``, ``direct_worker_only``, ``process_group_only``,
               or ``observed_descendants``; an observation boundary, not an
               operating-system isolation claim.
-            - ``cleanup_verified`` (bool, optional): Whether group and
-              observed descendant cleanup was verified; None before launch.
+            - ``cleanup_verified`` (bool, optional): Whether cleanup for the
+              declared ``containment`` boundary was verified; None before launch.
+              ``direct_worker_only`` never certifies descendant termination.
             - ``observed_descendant_count`` (int): Retained process identities;
               zero does not establish that the child created no descendants.
             - ``streams_drained`` (bool, optional): Whether output pipes
@@ -410,8 +423,9 @@ def run_subprocess_envelope(
 
     The child runs as the leader of a fresh process group
     (``start_new_session`` on POSIX, ``CREATE_NEW_PROCESS_GROUP`` on
-    Windows). Every exit path terminates the group and observed descendants,
-    then drains streams within a shared cleanup bound. An absolute caller or
+    Windows). POSIX exit paths terminate the group and observed descendants;
+    Windows only verifies termination of the direct worker and pipe draining.
+    Streams drain within a shared cleanup bound. An absolute caller or
     run-context deadline reserves cleanup inside that total budget. Standalone
     calls without an absolute deadline retain a separate one-second allowance.
     ``KeyboardInterrupt`` runs this cleanup and re-raises. A child that
@@ -443,6 +457,14 @@ def run_subprocess_envelope(
     }
 
     subject = command[0] if command else "<empty-command>"
+    if (
+        require_descendant_containment or require_descendant_resource_accounting
+    ) and not (sys.platform == "darwin" or sys.platform.startswith("linux")):
+        envelope.update(
+            error="Descendant containment/resource observation is unsupported on this native platform",
+            error_type="UnsupportedContainment",
+        )
+        return envelope
     if not sandbox:
         logger.warning(
             "sandbox_disabled_receipt: %s executed WITHOUT a sandbox "
@@ -655,6 +677,12 @@ def run_subprocess_envelope(
                 _mark_cleanup_failed(envelope, cleanup_exc)
             if tracker and tracker.errors:
                 _mark_cleanup_failed(envelope, "Descendant observation was incomplete")
+            if (
+                require_descendant_containment or require_descendant_resource_accounting
+            ) and (tracker is None or tracker.boundary != "observed_descendants"):
+                _mark_cleanup_failed(
+                    envelope, "Required descendant observation was unavailable"
+                )
             if envelope["cleanup_verified"] is not False:
                 envelope["cleanup_verified"] = True
             envelope["containment"] = (

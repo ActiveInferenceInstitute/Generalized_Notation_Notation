@@ -1,139 +1,45 @@
-# GNN Standards
+# Model source standards
 
-> GNN (Generalized Notation Notation) files are Markdown documents encoding Active Inference generative models.
+GNN Markdown declares an Active Inference generative model. Use current
+[syntax](../docs/gnn/reference/gnn_syntax.md),
+[schema](../docs/gnn/reference/gnn_schema.md),
+[types](../docs/gnn/reference/gnn_type_system.md) and
+[exemplars](../input/gnn_files/INDEX.md). Runnable examples have compatible
+source dimensions, values and declared scientific semantics.
 
-## File Format
-
-GNN files use Markdown with specific section headers:
-
-```markdown
-## GNNVersionAndFlags
-GNN_v1.5; UTF-8; OPTIONAL_FIELD
-
-## ModelName
-MyActiveInferenceModel
-
-## ModelAnnotation
-Description of what this model does.
-
-## StateSpaceBlock
-# Variable definitions
-s_f0[2,1,type=hidden,distribution=categorical] # Hidden state factor 0
-o_m0[3,1,type=observed,distribution=categorical] # Observation modality 0
-u_c0[2,1,type=control,distribution=categorical] # Control factor 0
-
-## Connections
-s_f0 > o_m0  # Observation mapping (A matrix)
-s_f0 > s_f0  # Transition dynamics (B matrix)
-
-## InitialParameterization
-A = [[0.9, 0.1], [0.1, 0.9], [0.5, 0.5]] # Likelihood matrix
-B = [[[0.9, 0.1], [0.1, 0.9]], [[0.5, 0.5], [0.5, 0.5]]] # Transition
-C = [0.0, 1.0, 0.0] # Preferences
-D = [0.5, 0.5] # Initial state prior
-
-## Footer
-Created: 2026-01-01
+```bash
+uv run --frozen --no-sync gnn validate input/gnn_files/discrete/two_state_bistable.md
+uv run --frozen --no-sync gnn extract input/gnn_files/discrete/two_state_bistable.md
 ```
 
----
-
-## Variable Naming Conventions
-
-| Prefix | Type | Example |
-|--------|------|---------|
-| `s_fN` | Hidden state factor N | `s_f0`, `s_f1` |
-| `o_mN` | Observation modality N | `o_m0`, `o_m1` |
-| `u_cN` | Control/action factor N | `u_c0` |
-| `pi` | Policy | `pi[5,1]` |
-| `G` | Expected free energy | `G[5,1]` |
-| `F` | Variational free energy | `F[1,1]` |
-
----
-
-## Dimension Notation
-
-```
-variable[dims, type, distribution]
-
-dims: comma-separated integers, e.g. [3,1] = 3 states × 1
-type: hidden, observed, control, policy, free_energy
-distribution: categorical, dirichlet, gaussian, beta
-```
-
----
-
-## Supported Formats (21+)
-
-| Format | Extension | Use Case |
-|--------|-----------|----------|
-| Markdown | `.md` | Primary, human-readable |
-| JSON | `.json` | Structured data exchange |
-| YAML | `.yaml` | Config-friendly |
-| XML | `.xml` | XML-based integrations |
-| Pickle | `.pkl` | Python serialization |
-| Protobuf | `.pb` | High-performance binary |
-| GraphML | `.graphml` | Graph analysis tools |
-| GEXF | `.gexf` | Gephi visualization |
-| Maxima | `.mac` | Symbolic math |
-| Julia | `.jl` | Julia ecosystem |
-| ... | ... | Additional formats |
-
----
-
-## Validation Levels
-
-| Level | Description |
-|-------|-------------|
-| `BASIC` | File exists, header present, parseable |
-| `STANDARD` | All required sections, valid variable names |
-| `STRICT` | Dimension consistency, type constraints, POMDP conformance |
-| `RESEARCH` | Mathematical constraints, Active Inference spec compliance |
-| `ROUND_TRIP` | Serialize → deserialize → compare, semantic preservation |
-
----
-
-## Matrix Conventions (POMDP)
-
-| Matrix | Symbol | Shape | Meaning |
-|--------|--------|-------|---------|
-| Likelihood | A | `[n_obs × n_states]` | P(o\|s) |
-| Transition | B | `[n_states × n_states × n_actions]` | P(s'\|s,a) |
-| Preference | C | `[n_obs]` | log P(o) (desired observations) |
-| Prior | D | `[n_states]` | Initial state distribution |
-| Policy prior | E | `[n_policies]` | Prior over policies |
-
----
-
-## Discovery and Parsing
+Lightweight discovery/parsing is narrower than Step 3 multi-format processing.
+Its fields are `sections`, `variables` and `structure_info`; it is not complete
+POMDP extraction or an independent semantic witness.
 
 ```python
+from pathlib import Path
 from gnn import discover_gnn_files, parse_gnn_file
 
-# Discover files
-files = discover_gnn_files(Path("input/gnn_files"), recursive=True)
-
-# Parse a file
-model = parse_gnn_file(files[0])
-
-# Key fields in parsed model:
-model["name"]  # Model name
-model["state_space"]  # Variable definitions
-model["connections"]  # Graph edges
-model["initialparameterization"]  # A/B/C/D matrices
-model["annotations"]  # Human-readable notes
+sources = discover_gnn_files(Path("input/gnn_files/discrete"), recursive=True)
+parsed = parse_gnn_file(Path("input/gnn_files/discrete/two_state_bistable.md"))
+assert parsed["success"]
+assert parsed["structure_info"]["has_variables"]
 ```
 
----
+Finite categorical A/B/C/D[/E] parameters must be finite, dimensionally valid
+and have declared probability mass. Canonical B axes are
+`[next_state, previous_state, action]`; equal-sized axes still need semantic
+orientation. Preserve component axes, source values and factor/agent custody.
+Tiny literals must round-trip unchanged.
 
-## Cross-Format Validation
+Linear-Gaussian models retain F/H/Q/R, prior mean/covariance and declared
+controls. Covariance determines Gaussian uncertainty; categorical entropy is
+not a substitute. Unsupported compositions refuse explicitly. See
+[backend scientific admission](render_frameworks.md).
 
-After round-trip conversion, semantic equivalence is verified:
-1. Parse original `.md`
-2. Export to JSON
-3. Re-parse from JSON
-4. Compare state space, connections, matrices
+Derive formats from live parsers/exporters. Round trips compare actual model
+semantics and source identity, not only file existence or matching shapes.
 
----
+## Related contracts
 
-**Last Updated**: 2026-05-20 | **Status**: Maintained Standard
+[Scientific admission, comparison and proof boundaries](scientific_claims.md) owns the cross-cutting guidance.

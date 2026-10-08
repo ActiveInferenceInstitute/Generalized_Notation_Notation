@@ -53,6 +53,10 @@ Notes:
   cleanly. `GNNValidator` degrades accordingly.
 - `ValidationLevel`, `ValidationResult`, and `ParsedGNN` live in
   `src/gnn/types/` and are re-exported here for convenience.
+- Enhanced saved-format parsing exposes a registry variable's canonical datatype
+  value (for example, `integer` or `binary`) in `GNNVariable.data_type`. A plain
+  string remains a string; enum display names such as `DataType.INTEGER` do not
+  replace the saved datatype. Markdown continues to retain its authored spelling.
 
 ## See Also
 

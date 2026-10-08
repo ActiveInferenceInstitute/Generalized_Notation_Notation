@@ -5,6 +5,12 @@ Modular, structured logging system for Active Inference model processing.
 Import from `gnn.utils.logging_utils` — the single public entry point. The
 implementation module `gnn.utils.logging.logging_utils` is internal.
 
+Handler lifecycle and event emission remain in that implementation module.
+Record formatting and shared correlation context live in
+[`formatters.py`](formatters.py), while terminal presentation and progress
+tracking live in [`visual.py`](visual.py). Neither presentation owner initializes
+logging handlers; the existing facade still exports the same public classes.
+
 ## Quick Start
 
 ### For Pipeline Modules

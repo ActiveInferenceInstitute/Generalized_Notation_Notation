@@ -256,7 +256,7 @@ def select_pipeline_steps(
     added: list[int] = []
     unknown: list[int] = []
 
-    if only_steps:
+    if only_steps is not None:
         requested = parse_step_list_strict(only_steps)
         valid = [n for n in requested if 0 <= n < len(steps)]
         unknown = [n for n in requested if n not in set(valid)]
@@ -434,12 +434,24 @@ def resolve_steps_to_execute(
 ) -> list[PipelineStep]:
     """Apply only/skip step filters and automatic dependency resolution.
 
-    Invalid step tokens raise ``ValueError`` (fail fast instead of silently
-    running nothing); unknown out-of-range step numbers are logged and
-    dropped; a request that resolves to zero executable steps raises
-    ``ValueError`` so startup fails loudly.
+    Invalid, unknown, duplicate and explicit empty execution selections raise
+    ``ValueError`` before dispatch. Omitted selection selects all registered
+    steps, then applies the declared skip set.
     """
-    only_steps_val = args.only_steps or config_pipeline_settings.get("only_steps")
+    from gnn.pipeline.admission import validate_steps
+
+    only_steps_val = (
+        args.only_steps
+        if args.only_steps is not None
+        else config_pipeline_settings.get("only_steps")
+    )
+    validate_steps(only_steps_val, field_name="steps", aliases=True, allow_empty=False)
+    validate_steps(args.skip_steps, field_name="skip_steps", aliases=True)
+    validate_steps(
+        config_pipeline_settings.get("skip_steps"),
+        field_name="skip_steps",
+        aliases=True,
+    )
     selection = select_pipeline_steps(
         list(PIPELINE_STEPS),
         only_steps=only_steps_val,
@@ -453,11 +465,6 @@ def resolve_steps_to_execute(
         )
     if selection.requested_only:
         logger.info(f"Executing steps: {[step[0] for step in selection.selected]}")
-    if selection.unknown_requested:
-        logger.warning(
-            f"Ignoring unknown step number(s) in only_steps selection: "
-            f"{list(selection.unknown_requested)}"
-        )
     if selection.skipped:
         logger.info(
             f"Skipping steps: {[PIPELINE_STEPS[i][0] for i in selection.skipped if 0 <= i < len(PIPELINE_STEPS)]}"
@@ -712,6 +719,10 @@ def _execute_selected_step(
     context = current_run_context()
     step = step_for_name(script_name)
     if context is not None:
+        selected_ids = [
+            model.model_id
+            for model in context.selected_models(int(script_name.split("_")[0]))
+        ]
         remaining = context.remaining_seconds()
         if remaining is not None and remaining <= 0:
             return {
@@ -721,6 +732,8 @@ def _execute_selected_step(
                 "stdout": "",
                 "stderr": "Pipeline total deadline expired",
                 "artifacts": [],
+                "run_id": context.run_id,
+                "selected_model_ids": selected_ids,
             }
         context.verify_sources()
         if step is not None and step.execution_scope != "run":
@@ -733,6 +746,8 @@ def _execute_selected_step(
                     "stdout": "No selected model sources; no work dispatched",
                     "stderr": "",
                     "artifacts": [],
+                    "run_id": context.run_id,
+                    "selected_model_ids": [],
                 }
             args = copy(args)
             args.target_dir = context.input_view(number)
@@ -777,10 +792,7 @@ def _execute_selected_step(
         )
     if context is not None:
         result["run_id"] = context.run_id
-        result["selected_model_ids"] = [
-            model.model_id
-            for model in context.selected_models(int(script_name.split("_")[0]))
-        ]
+        result["selected_model_ids"] = selected_ids
     return result
 
 
@@ -882,9 +894,25 @@ def main(
         incoming_context = os.environ.get("GNN_RUN_CONTEXT_FILE")
         os.environ["GNN_RUN_ID"] = incoming_run_id or uuid.uuid4().hex
         try:
+            from gnn.pipeline.admission import validate_boolean, validate_steps
             from gnn.pipeline.output_lease import OutputLease, OutputLeaseError
 
             probe_args, _ = _build_main_args(override_args)
+            try:
+                validate_steps(
+                    probe_args.only_steps,
+                    field_name="steps",
+                    aliases=True,
+                    allow_empty=False,
+                )
+                validate_steps(
+                    probe_args.skip_steps, field_name="skip_steps", aliases=True
+                )
+                for flag in ("verbose", "strict", "parallel", "consolidated_steps"):
+                    validate_boolean(getattr(probe_args, flag), field_name=flag)
+            except ValueError as error:
+                print(f"Pipeline admission failure: {error}", file=sys.stderr)
+                return 1
             try:
                 with OutputLease(Path(probe_args.output_dir), os.environ["GNN_RUN_ID"]):
                     return _run_pipeline(override_args, override_config)

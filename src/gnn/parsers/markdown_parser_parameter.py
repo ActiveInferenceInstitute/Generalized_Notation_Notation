@@ -7,6 +7,7 @@ that other formats can use as a model.
 """
 
 import ast
+import json
 import logging
 from typing import Any, Optional
 
@@ -136,6 +137,27 @@ class ParameterParsingMixin:
 
         except (ValueError, SyntaxError):
             # Handle other formats
+
+            if value_str.startswith("[") and value_str.endswith("]"):
+                try:
+                    # The guard-only spelling changes no lengths or brackets.
+                    # Reuse the existing length/depth limits before JSON parsing;
+                    # decode the untouched source to retain quoted text exactly.
+                    guarded = safe_literal_eval(
+                        value_str.replace("true", "True").replace("false", "False")
+                    )
+                    pending = [guarded]
+                    while pending:
+                        item = pending.pop()
+                        if isinstance(item, dict):
+                            raise ValueError(
+                                "JSON array mappings retain existing handling"
+                            )
+                        if isinstance(item, list):
+                            pending.extend(item)
+                    return json.loads(value_str)
+                except (ValueError, SyntaxError) as exc:
+                    logger.debug("JSON array retains existing value handling: %s", exc)
 
             # Matrix format: {(1,2,3);(4,5,6)}
             if (

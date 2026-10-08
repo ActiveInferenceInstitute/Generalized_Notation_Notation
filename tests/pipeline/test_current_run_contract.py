@@ -502,7 +502,25 @@ def test_normal_worker_exit_cleans_detached_descendant(
         print_stdout=False,
         print_stderr=False,
     )
-    assert result["status"] == "SUCCESS"
+    witnesses = {}
+    if result["status"] != "SUCCESS":
+        for label, path in (("daemon_pid", pid_file), ("observation_flag", observed)):
+            try:
+                witnesses[label] = {
+                    "path": str(path),
+                    "present": True,
+                    "text": path.read_text(encoding="utf-8", errors="replace"),
+                }
+            except OSError as error:
+                witnesses[label] = {
+                    "path": str(path),
+                    "present": False if isinstance(error, FileNotFoundError) else None,
+                    "read_error_type": type(error).__name__,
+                    "read_error": str(error),
+                }
+    assert result["status"] == "SUCCESS", json.dumps(
+        {"supervisor": result, "owned_witnesses": witnesses}, indent=2, default=str
+    )
     assert result["observed_descendants"] >= 1
     pid = int(pid_file.read_text())
     assert (

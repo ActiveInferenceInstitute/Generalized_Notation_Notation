@@ -79,6 +79,11 @@ class StdioServer:
         )
         self.request_timeout = request_timeout
         self._start_time = time.time()
+        self._stdin_pending = bytearray()
+        self._processor_finished = threading.Event()
+        # Standalone writer use has no processor to wait for. start() clears
+        # this event while the real server owns the processing thread.
+        self._processor_finished.set()
 
         # Connection monitoring
         self._connection_errors = 0
@@ -92,6 +97,8 @@ class StdioServer:
 
     def start(self) -> None:
         """Start the server with reader, processor, and writer threads."""
+        self._stdin_pending.clear()
+        self._processor_finished.clear()
         self.running = True
 
         # Initialize MCP
@@ -147,26 +154,31 @@ class StdioServer:
         """Read one newline-terminated line from stdin with a hard size cap.
 
         Reads ``os.read(0, _STDIO_READ_CHUNK_BYTES)`` chunks until a newline
-        or EOF. Returns the line without its trailing newline, ``b""`` at
-        EOF, or ``None`` when the line exceeded ``MAX_LINE_BYTES`` (the
-        remainder is NOT drained; the caller terminates the server).
+        or EOF, retaining bytes after the newline for the next frame in this
+        server instance. The cap applies to one frame, including a final
+        unterminated frame, rather than the size of a coalesced read.
+        Returns the line without its trailing newline, ``b""`` at EOF, or
+        ``None`` on overflow (the caller terminates the server).
         """
-        chunks: list[bytes] = []
-        total = 0
+        pending = self._stdin_pending
         while True:
+            newline = pending.find(b"\n")
+            if newline != -1:
+                if newline > MAX_LINE_BYTES:
+                    pending.clear()
+                    return None
+                line = bytes(pending[:newline])
+                del pending[: newline + 1]
+                return line
+            if len(pending) > MAX_LINE_BYTES:
+                pending.clear()
+                return None
             chunk = os.read(0, _STDIO_READ_CHUNK_BYTES)
             if not chunk:
-                return b"".join(chunks)
-            newline = chunk.find(b"\n")
-            if newline != -1:
-                chunks.append(chunk[:newline])
-                break
-            chunks.append(chunk)
-            total += len(chunk)
-            if total > MAX_LINE_BYTES:
-                return None
-        line = b"".join(chunks)
-        return None if len(line) > MAX_LINE_BYTES else line
+                line = bytes(pending)
+                pending.clear()
+                return line
+            pending.extend(chunk)
 
     def _reader_thread(self) -> Any:
         """Enhanced thread that reads JSON-RPC messages from stdin with connection monitoring."""
@@ -265,7 +277,7 @@ class StdioServer:
     def _processor_thread(self) -> Any:
         """Enhanced thread that processes messages from the request queue with better error handling."""
         try:
-            while self.running:
+            while self.running or not self.request_queue.empty():
                 try:
                     message = self.request_queue.get(timeout=0.1)
                     self._process_message(message)
@@ -285,11 +297,17 @@ class StdioServer:
         except Exception as e:
             logger.error(f"Fatal error in processor thread: {str(e)}")
             self.running = False
+        finally:
+            self._processor_finished.set()
 
     def _writer_thread(self) -> Any:
         """Enhanced thread that writes JSON-RPC responses to stdout with error recovery."""
         try:
-            while self.running:
+            while (
+                self.running
+                or not self._processor_finished.is_set()
+                or not self.response_queue.empty()
+            ):
                 try:
                     message = self.response_queue.get(timeout=0.1)
                     self._responses_sent += 1

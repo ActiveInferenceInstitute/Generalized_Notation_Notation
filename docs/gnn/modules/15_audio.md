@@ -256,7 +256,7 @@ input/gnn_files (re-parsed by 15_audio.py)
 
 ### Test Coverage
 
-- Measure: `uv run --extra dev python -m pytest tests/audio/ --cov=audio --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/audio/ --cov=gnn.audio --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Audio generation from GNN models

@@ -43,7 +43,7 @@ graph LR
 ### Publication-Grade Visualizations
 
 - **Scientific Theme**: High-contrast white background, bold typography, and thicker lines.
-- **Statistical Annotation**: Power-law exponents ($\alpha$), correlation coefficients ($r$), and median lines.
+- **Statistical Annotation**: Descriptive finite-range log-log fit exponents ($\alpha$), correlation coefficients ($r$), and median lines.
 - **Accessibility**: Standardized colors and clear legends for printed reports.
 
 ### Analytical Report
@@ -55,7 +55,8 @@ graph LR
 - **Step 3 serialization footprint**: When `../3_gnn_output/format_statistics.json` exists beside `12_execute_output`.
 - **Performance Tables**: Runtime stats with automatic unit scaling (s/m).
 - **Quality Metrics**: Simulation-derived accuracy and certainty (entropy) data.
-- **Scaling Laws**: Empirical derivation of O(N^α) and O(T^β) laws.
+- **Runtime Fits**: Descriptive log-log fits over the recorded N and T ranges. These do not establish asymptotic complexity or attribute runtime to compilation or inference work.
+- **Recorded Source Sizes**: LOC summaries describe the saved files and configurations; counts alone do not establish asymptotic source-size growth or computational complexity.
 - **Regression Data**: $R^2$ and $r$ values for performance-quality correlation.
 
 ### Machine-readable exports
@@ -68,6 +69,10 @@ Written next to `meta_analysis_report.md`:
 | `meta_statistics.json` | Per-framework runtime aggregates, best framework per (N,T), log-log slopes (schema_version) |
 
 `run_meta_analysis` returns paths (`validation_json`, `statistics_json`) in addition to `records`, `plots`, and `report`.
+
+Plot watermarks use the canonical `gnn.__version__` and the actual generation minute.
+The live timestamp makes PNG bytes nondeterministic across runs; numerical exports
+and declared plot data provide the comparison basis.
 
 ## Data Model
 
@@ -112,10 +117,10 @@ results = run_meta_analysis(
 ## Dependencies
 
 - `matplotlib` (required for visualization)
-- `numpy` (required for `SweepVisualizer` and `compute_meta_statistics`)
-- Standard library only for collector, reporter, and validator
+- `numpy` (used by visualizations, statistics, and the reporter's correlation and runtime fits)
+- Standard-library file and JSON I/O
 
 ---
 
-**Last Updated**: 2026-09-24
+**Last Updated**: 2026-10-08
 **Version**: [pyproject.toml](../../../../pyproject.toml) (canonical)

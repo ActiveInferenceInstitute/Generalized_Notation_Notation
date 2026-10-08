@@ -29,7 +29,7 @@ multi-agent, factored, hybrid, learning, or nonstationary composition.
 
 The automatic/default and `lite` selections exclude cpomdp and THRML. Installing
 an extra does not select its experimental backend. Use the backend guide for
-admitted compositions and call `gnn doctor` for structured readiness diagnoses.
+admitted compositions and use `gnn health` and the Python `gnn.execute.collect_doctor_report` API for readiness diagnoses.
 Missing packages, missing toolchains, unsupported Python/version, probe timeout,
 probe failure, and missing executors remain distinct. Installation is explicit.
 
@@ -92,4 +92,8 @@ Keep local, hosted, numerical and native-proof receipts separate.
 - [v4 migration](../docs/development/run_ownership_migration.md)
 - [Verification ledger](../SCOPE-2026-10-01.md)
 
-**Last updated**: 2026-10-02
+Reviewed for the current v4 contract on 2026-10-08.
+
+## Related contracts
+
+[Numerical, runtime, custody and proof evidence](scientific_claims.md) owns the cross-cutting guidance.

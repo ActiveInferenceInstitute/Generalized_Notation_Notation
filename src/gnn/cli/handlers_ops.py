@@ -114,6 +114,7 @@ def _cmd_preflight(args: argparse.Namespace) -> int:
     has_errors, has_warnings = preflight_severities(report)
     if is_json:
         data = {
+            "optional_groups": getattr(report, "optional_groups", {}),
             "checks_passed": report.checks_passed,
             "checks_failed": report.checks_failed,
             "is_ok": report.is_ok,
@@ -138,6 +139,9 @@ def _cmd_preflight(args: argparse.Namespace) -> int:
         )
     else:
         print(report.to_markdown())
+        groups = getattr(report, "optional_groups", {})
+        if groups:
+            print("\nOptional dependency groups: " + ", ".join(groups))
     if has_errors:
         return EXIT_ERROR
     if has_warnings:

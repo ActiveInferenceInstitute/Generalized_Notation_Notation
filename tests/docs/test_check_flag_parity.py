@@ -90,6 +90,7 @@ def test_documented_short_aliases_count_without_foreign_or_prefix_matches(
     doc = tmp_path / "options.md"
     doc.write_text(
         "Use `-f`, `-o`, `--target-dir`. Foreign `-I`, `-foo` and `-off` are not aliases.\n"
+        "[Release](CHANGELOG.md#410---2026-10-08) and `prefix--embedded` are not flags.\n"
     )
     monkeypatch.setattr(gate, "ROOT", tmp_path)
     monkeypatch.setattr(gate, "iter_doc_files", lambda: [doc])

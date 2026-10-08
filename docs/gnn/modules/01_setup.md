@@ -185,7 +185,7 @@ graph TD
 
 ### Required Dependencies
 - `uv` - Python package manager (required, native commands used)
-- `python` - Python interpreter (>=3.11, <3.14 per `pyproject.toml`)
+- `python` - Python interpreter (>=3.11, <3.15 per `pyproject.toml`; native acceptance depends on the selected environment)
 - `pyproject.toml` - Project dependencies configuration
 
 ### Optional Dependencies
@@ -369,7 +369,7 @@ System Check → UV Environment Creation → UV Sync (pyproject.toml → uv.lock
 - `tests/test_environment_overall.py` - Environment-related integration checks
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/setup/ --cov=setup --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/setup/ --cov=gnn.setup --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Environment creation and setup

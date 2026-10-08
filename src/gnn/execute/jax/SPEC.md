@@ -29,6 +29,12 @@
 - Execution logs (stdout/stderr)
 - Device utilization metrics
 
+The script runner reads rendered source and writes stdout/stderr and its JSON
+execution log explicitly as UTF-8. Locale code pages therefore cannot corrupt
+saved scientific Unicode or prevent reading a valid rendered script. Captured
+subprocess bytes continue through the shared executor's existing UTF-8 decoder;
+timeout, cancellation and cleanup contracts are unchanged.
+
 ## Kronecker executor contract
 
 `execute.jax.kronecker_executor.execute_kronecker_factorized(config, output_dir)`

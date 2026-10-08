@@ -11,7 +11,7 @@ subcommands plus the project's `pyproject.toml` / `uv.lock`.
 | File | LOC | Role |
 |------|----:|------|
 | `__init__.py` | 170 | Public API surface and `__all__` re-exports |
-| `constants.py` | 51 | Paths (`PROJECT_ROOT`, `VENV_PATH`, `LOCK_PATH`), `MIN_PYTHON_VERSION`, `OPTIONAL_GROUPS`, `SETUP_DEFAULT_PIPELINE_EXTRAS` |
+| `constants.py` | 97 | Paths (`PROJECT_ROOT`, `VENV_PATH`, `LOCK_PATH`), `MIN_PYTHON_VERSION`, live packaged `OPTIONAL_GROUPS`, `SETUP_DEFAULT_PIPELINE_EXTRAS` |
 | `setup.py` | 168 | `perform_full_setup` three-phase orchestrator (system → env → deps) |
 | `uv_management.py` | 834 | `setup_uv_environment`, `install_uv_dependencies`, `check_*`, probes, reporting |
 | `uv_package_ops.py` | 192 | `add_uv_dependency`, `remove_uv_dependency`, `update_uv_dependencies`, `lock_uv_dependencies` |

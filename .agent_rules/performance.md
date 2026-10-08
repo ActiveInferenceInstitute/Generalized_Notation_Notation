@@ -1,181 +1,35 @@
-# Performance Optimization
+# Performance measurement
 
-> Treat performance numbers as run evidence, not permanent documentation. Measure locally before publishing timing or memory claims.
+Accept a baseline before optimizing. Match model sources/hashes, selection,
+backend, configuration and LLM mode. Record phase CPU/wall time, sampled peak
+RSS, artifact counts, environment and resource admission. Include bounded
+nested/large inputs, repeated/concurrent runs and distributed transfers where
+relevant. Report variance and measurement limits with the tradeoff.
 
-## Step Targets And Measurement
+The [complexity benchmark](../scripts/run_complexity_benchmark.py) and
+[PyMDP scaling experiment](../scripts/experiments/run_pymdp_gnn_scaling_analysis.py)
+have different contracts. Tensor-allocation/disk estimates do not measure
+whole-process RSS, compilation or native runtime. Endpoint RSS difference is
+not peak memory; summed parallel case durations are not wall time.
 
-| Step | Description | Target |
-|------|-------------|--------|
-| 0 | Template | <1s |
-| 1 | Setup | <5s |
-| 2 | Tests | <20min for command-of-record full suite |
-| 3 | GNN Processing | <1s for sample models |
-| 4–7 | Registry/Type/Val/Export | <30s each |
-| 8 | Visualization | <60s |
-| 9 | Advanced Viz | <180s |
-| 12 | Execute | <300s |
-| 13 | LLM | <600s |
-| 14 | ML Integration | <300s |
-| 21 | MCP | <60s |
-| 22 | GUI | <60s |
-| Full pipeline | Local complete run | Record exact command, model set, environment, duration, and skips |
+Optimize the measured dominant owner and preserve selected results/artifact
+semantics. Cache keys bind actual source bytes, configuration and relevant
+environment. Reading a path again after hashing permits drift. Inherited
+artifacts cannot become new evidence; do not drop work or substitute backends.
 
----
+Use shared supervision/deadline/resource/cleanup owners. Avoid competing ad hoc
+signal timeouts, unchecked pools or cleanup that only deletes a local variable.
+Measure transfer volume/admission for bounded distributed paths.
 
-## Memory Tracking
+For CI, compare exact-run job/step timestamps and retained native test and
+coverage reports. Include runner queuing and runtime variance. Preserve status
+names, markers, artifacts and failure coupling. See
+[workflow scheduling](../.github/workflows/README.md#scheduling-and-evidence)
+and the [performance measurement report](../src/gnn/analysis/PERFORMANCE.md).
 
-```python
-import psutil
-from contextlib import contextmanager
+## Related contracts
 
+[Scheduling acceleration with preserved gates](ci.md) owns the cross-cutting guidance.
 
-@contextmanager
-def memory_tracked(operation: str, logger):
-    """Track memory usage of an operation."""
-    proc = psutil.Process()
-    start_mb = proc.memory_info().rss / 1024 / 1024
-    try:
-        yield
-    finally:
-        end_mb = proc.memory_info().rss / 1024 / 1024
-        delta = end_mb - start_mb
-        logger.debug(
-            f"Memory [{operation}]: {start_mb:.1f}→{end_mb:.1f}MB (Δ{delta:+.1f}MB)"
-        )
-        if delta > 100:
-            logger.warning(f"High memory usage in {operation}: +{delta:.1f}MB")
-
-
-# Usage
-with memory_tracked("parse_models", logger):
-    models = [parse_gnn_file(f) for f in files]
-```
-
----
-
-## Caching
-
-```python
-from functools import lru_cache
-import hashlib
-
-
-@lru_cache(maxsize=128)
-def parse_gnn_cached(content_hash: str, file_path: str) -> Dict[str, Any]:
-    """Parse GNN with LRU cache keyed on content hash."""
-    return _do_parse(Path(file_path))
-
-
-def get_cached_parse(path: Path) -> Dict[str, Any]:
-    content = path.read_text()
-    h = hashlib.md5(content.encode()).hexdigest()
-    return parse_gnn_cached(h, str(path))
-```
-
----
-
-## Parallel Processing
-
-```python
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-
-
-def parallel_process(items, processor, max_workers=4, use_threads=True):
-    """Process items in parallel."""
-    Executor = ThreadPoolExecutor if use_threads else ProcessPoolExecutor
-    with Executor(max_workers=max_workers) as ex:
-        return list(ex.map(processor, items))
-
-
-# I/O bound (file reading) → threads
-results = parallel_process(files, parse_file, max_workers=8, use_threads=True)
-
-# CPU bound (matrix computation) → processes
-results = parallel_process(models, compute_matrices, max_workers=4, use_threads=False)
-```
-
----
-
-## Timeout Protection
-
-```python
-import signal
-from functools import wraps
-
-
-def timeout(seconds: int):
-    """Decorator enforcing execution timeout (Unix only)."""
-
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            def handler(signum, frame):
-                raise TimeoutError(f"{func.__name__} timed out after {seconds}s")
-
-            old = signal.signal(signal.SIGALRM, handler)
-            signal.alarm(seconds)
-            try:
-                return func(*args, **kwargs)
-            finally:
-                signal.alarm(0)
-                signal.signal(signal.SIGALRM, old)
-
-        return wrapper
-
-    return decorator
-
-
-@timeout(60)
-def execute_simulation(script_path: Path) -> bool: ...
-```
-
----
-
-## Performance Optimization Checklist
-
-- [ ] Measure baseline before optimizing
-- [ ] Profile bottlenecks (`python -m cProfile -o profile.prof src/gnn/11_render.py`)
-- [ ] Cache repeated expensive calls (`@lru_cache`)
-- [ ] Stream large files instead of loading fully into memory
-- [ ] Use threads for I/O, processes for CPU-bound work
-- [ ] Add timeout protection for external calls
-- [ ] Clean up large objects explicitly (`del obj; gc.collect()`)
-- [ ] Add timing assertions in performance tests
-
----
-
-## Memory Cleanup
-
-```python
-import gc
-
-
-def cleanup_large_objects(*objects) -> None:
-    """Explicit cleanup after memory-intensive operations."""
-    for obj in objects:
-        del obj
-    gc.collect()
-    proc = psutil.Process()
-    logger.debug(f"Post-cleanup: {proc.memory_info().rss / 1024 / 1024:.1f}MB")
-```
-
----
-
-## Profiling Commands
-
-```bash
-# CPU profiling
-python -m cProfile -o profile.prof src/gnn/11_render.py --target-dir input/gnn_files
-python -c "import pstats; p = pstats.Stats('profile.prof'); p.sort_stats('cumulative').print_stats(20)"
-
-# Memory profiling
-uv pip install memory_profiler
-python -m memory_profiler src/gnn/11_render.py --target-dir input/gnn_files
-
-# Snakeviz visualization
-uv pip install snakeviz && snakeviz profile.prof
-```
-
----
-
-**Last Updated**: 2026-05-20 | **Status**: Maintained Standard
+Reuse immutable metadata rather than recomputing a full source book inside each
+per-file comparison. Preserve the complete work and evidence denominator.

@@ -41,6 +41,9 @@ def gnn_submit_job_mcp(
     skip_steps: List[int] | None = None,
     verbose: bool = False,
     strict: bool = False,
+    parallel: bool = False,
+    consolidated_steps: bool = False,
+    output_dir: str | None = None,
 ) -> Dict[str, Any]:
     """Create a pending GNN pipeline job record via MCP.
 
@@ -60,6 +63,9 @@ def gnn_submit_job_mcp(
             skip_steps=skip_steps,
             verbose=verbose,
             strict=strict,
+            parallel=parallel,
+            consolidated_steps=consolidated_steps,
+            output_dir=output_dir,
         )
         return {
             "status": "success",
@@ -161,9 +167,15 @@ _MCP_TOOL_DEFINITIONS: tuple[Dict[str, Any], ...] = (
                     "type": "string",
                     "description": "Target directory containing GNN files",
                 },
+                "output_dir": {
+                    "type": "string",
+                    "description": "Workspace-local output directory (defaults to output)",
+                },
                 "steps": {
                     "type": "array",
                     "items": {"type": "integer"},
+                    "minItems": 1,
+                    "uniqueItems": True,
                     "description": "Specific steps to run (optional)",
                 },
                 "skip_steps": {
@@ -173,8 +185,11 @@ _MCP_TOOL_DEFINITIONS: tuple[Dict[str, Any], ...] = (
                 },
                 "verbose": {"type": "boolean", "default": False},
                 "strict": {"type": "boolean", "default": False},
+                "parallel": {"type": "boolean", "default": False},
+                "consolidated_steps": {"type": "boolean", "default": False},
             },
             "required": ["target_dir"],
+            "additionalProperties": False,
         },
         "description": (
             "Create a GNN pipeline job record (pending; not executed). "

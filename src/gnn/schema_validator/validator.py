@@ -23,6 +23,7 @@ from typing import Any, Optional, Union, cast
 from gnn.schema_validator.round_trip_checks import RoundTripChecksMixin
 from gnn.schema_validator.semantic_checks import SemanticChecksMixin
 from gnn.schema_validator.structural_checks import StructuralChecksMixin
+from gnn.schema_validator.syntax import ROUND_TRIP_AVAILABLE, GNNParser
 from gnn.schema_validator.validation_levels import LevelResolverMixin
 from gnn.schemas.section_contract import REQUIRED_SECTIONS
 from gnn.types import (
@@ -30,19 +31,13 @@ from gnn.types import (
     ValidationResult,
 )
 
-# Lark parser removed - too complex and not needed
-
-# Try to import round-trip testing capabilities (owned by syntax.py)
-try:
-    from gnn.schema_validator.syntax import ROUND_TRIP_AVAILABLE, GNNParser
-except ImportError:  # pragma: no cover
-    ROUND_TRIP_AVAILABLE = False
-    GNNParser = cast(Any, None)  # type: ignore[misc]
-
 # RoundTripResult is already imported from gnn.types above
 # No need to import it again from testing module to avoid circular deps
 
 logger = logging.getLogger(__name__)
+
+# syntax.py owns optional parser availability. Its required module import above
+# preserves original failure instead of substituting an unusable GNNParser.
 
 
 class GNNValidator(

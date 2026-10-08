@@ -17,14 +17,18 @@ from gnn.frameworks import RENDER_FRAMEWORKS
 
 def _pipeline_step(value: str) -> int:
     """Parse one pipeline step number for argparse."""
+    from gnn.pipeline.admission import validate_steps
+
     try:
         step = int(value)
     except ValueError as exc:
         raise argparse.ArgumentTypeError(
             "step must be an integer from 0 to 24"
         ) from exc
-    if not 0 <= step <= 24:
-        raise argparse.ArgumentTypeError("step must be between 0 and 24")
+    try:
+        validate_steps([step], field_name="steps")
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
     return step
 
 
@@ -76,6 +80,17 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["human", "json"],
         default="human",
         help="Output format for pipeline logs",
+    )
+    run_p.add_argument("--strict", action="store_true", help="Treat warnings as errors")
+    run_p.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Execute independent pipeline tiers concurrently",
+    )
+    run_p.add_argument(
+        "--consolidated-steps",
+        action="store_true",
+        help="Run eligible steps in process under the same run contract",
     )
 
     # ── gnn validate ─────────────────────────────────────────────────────────

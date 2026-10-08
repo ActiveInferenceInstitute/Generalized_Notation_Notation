@@ -4,8 +4,7 @@ PyMDP Implementation Template with Comprehensive Visualizations
 Creates PyMDP simulations with extensive real data exports and visualizations
 """
 
-PYMDP_TEMPLATE = '''#!/usr/bin/env python3
-"""
+PYMDP_DOCSTRING = """
 PyMDP Active Inference POMDP Agent with Comprehensive Analysis
 Generated from GNN specification: {gnn_file}
 Model: {model_name}
@@ -17,6 +16,9 @@ Features:
 - Statistical analysis and performance metrics
 - Full reproducibility with metadata tracking
 """
+
+PYMDP_TEMPLATE = '''#!/usr/bin/env python3
+{module_docstring_literal}
 
 import numpy as np
 import json
@@ -270,9 +272,9 @@ class POMDPAgent:
         # Compile comprehensive results
         results = {{
             "metadata": {{
-                "model_name": "{model_name}",
+                "model_name": {model_name_literal},
                 "framework": "pymdp_template",
-                "gnn_source": "{gnn_file}",
+                "gnn_source": {gnn_file_literal},
                 "timestamp": datetime.now().isoformat(),
                 "num_steps": num_steps,
                 "agent_configuration": {{
@@ -454,8 +456,8 @@ def main():
     try:
         print("🚀 ENHANCED PyMDP Active Inference POMDP Simulation")
         print("=" * 70)
-        print(f"📁 Model: {model_name}")
-        print(f"📄 Source: {gnn_file}")
+        print({model_message_literal})
+        print({source_message_literal})
         print(f"🔧 Framework: PyMDP Enhanced")
         print("=" * 70)
         
@@ -481,7 +483,7 @@ def main():
         summary_file = output_dir / "ENHANCED_PYMDP_SUMMARY.md"
         with open(summary_file, 'w') as f:
             f.write(f"# Enhanced PyMDP Simulation Report\\n\\n")
-            f.write(f"**Model:** {model_name}\\n")
+            f.write({model_summary_literal})
             f.write(f"**Generated:** {{datetime.now().isoformat()}}\\n")
             f.write(f"**Framework:** PyMDP Enhanced\\n\\n")
             f.write(f"## Performance Summary\\n\\n")

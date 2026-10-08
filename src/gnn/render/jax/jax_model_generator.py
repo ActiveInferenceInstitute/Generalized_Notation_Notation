@@ -529,14 +529,24 @@ def save_simulation_results(trajectory: Dict[str, Any], params: Dict[str, jnp.nd
 
     # Save to JSON
     output_file = os.path.join(output_dir, "simulation_results.json")
-    with open(output_file, 'w') as f:
+    with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2)
 
     return output_file
 
 
 if __name__ == "__main__":
+    import io
     import os
+    import sys
+
+    # The executor captures UTF-8 bytes; Windows redirected streams otherwise
+    # use a locale code page that cannot represent scientific model labels.
+    # Configure only this executing program's native text streams. Imported
+    # models and caller-owned text captures retain their existing behavior.
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(encoding='utf-8', errors=stream.errors)
 
     print("=" * 60)
     print("JAX Model: {model_name} ({estimand})")
@@ -565,7 +575,7 @@ if __name__ == "__main__":
     print(f"\\n💾 Saved simulation results to: {{results_file}}")
 
     import json
-    with open(results_file) as receipt_file:
+    with open(results_file, encoding='utf-8') as receipt_file:
         if not json.load(receipt_file)["success"]:
             raise ValueError("Generated simulation failed posterior/action validation")
     print("\\n✅ JAX model test successful!")

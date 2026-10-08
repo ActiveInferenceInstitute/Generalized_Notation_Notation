@@ -1,6 +1,6 @@
 # GeneralizedNotationNotation (GNN)
 
-**Last Updated**: 2026-10-07
+**Last Updated**: 2026-10-08
 
 <div align="center">
 
@@ -59,15 +59,25 @@
 **New in v3.0.0 ("Long-Running Orchestration")**: three safe-by-design `src/gnn/pipeline/` contracts — durable observation streams, resumable run sessions, and auditable container plans — plus additive live wiring, a strict acceptance gate (`scripts/run_v3_orchestration_acceptance.py`), and 3 new MCP tools. No live infrastructure mutation; every module generates, validates, replays, or plans data only. See [docs/pipeline/v3_orchestration.md](./docs/pipeline/v3_orchestration.md); run identity, reproduction, and manifest-verification rules: [docs/development/durable-runs.md](./docs/development/durable-runs.md).
 **New in v3.2.0 ("Exemplar Gold Standard")**: the `input/gnn_files/continuous/` exemplars are pure linear-Gaussian state-space models (`F/H/Q/R`, `prior_mean/prior_cov`, optional `goal_mean/control_gain`) with native JAX, NumPyro, PyTorch, Stan and RxInfer.jl backends; `unsupported` is a first-class render status for categorical backends (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) on continuous models and is never handed to Step 12; the Stan renderer emits runnable HMM (forward algorithm) and LGSSM (Kalman marginal likelihood) programs plus a `<stem>_stan.py` cmdstanpy driver executed by `src/gnn/execute/stan/`; v3.2 merged `execution_summary.json` across input folders (v4 replaces this with current-run aggregation); the Julia pre-exec gate degrades to an advisory sweep instead of blocking scripts on a toolchain-less launcher. See [CHANGELOG.md](./CHANGELOG.md) §3.2.0 and [Model Kinds and Framework Support](#-model-kinds-and-framework-support).
 **New in v3.3.0 ("One Corpus")**: every model file under `input/` now lives inside `input/gnn_files` (the two former top-level fixture directories are folded in), `gnn.*` is the single canonical import surface from an installed wheel, and the POMDP extractor is headless-consumable via `gnn extract FILE` / `python -m gnn.extract` with structured extraction errors (`GNN-E002` shape mismatch, `GNN-E006` parameter parse), canonical `(next_state, previous_state, action)` B-orientation enforcement plus `canonicalize_pomdp()`, factor counts and dimension provenance in `to_dict()`, a `torch>=2.13.0` optional extra for the Step 11 render + Step 12 execute PyTorch backend, and durable `gnn-run-v2` run identity with verified `gnn reproduce`. See [CHANGELOG.md](./CHANGELOG.md) §3.3.0.
-**New in v3.4.0 ("Model-Kind Truth")**: the ~110-file documentation corpus and the rendered manuscript now treat discrete, continuous, and multi-agent models as first-class kinds (exemplar-kind split, framework+kind capability tables), the manuscript's version/module/tool/test counts are auto-injected from a snapshot-based committed-byte census (`src/gnn/manuscript/variables.py`) instead of hard-coded literals, `gnn doctor` composes a per-framework capability + execution-readiness report (MCP `get_doctor_report`, 142 registered tools), bnlearn gains a render+execute Step 12 lane (Python `bnlearn` / R `bnlearn`), and Step 6 ships B-orientation diagnostics with an opt-in `--transpose-b` canonical transposition.
+**New in v3.4.0 ("Model-Kind Truth")**: the ~110-file documentation corpus and the rendered manuscript now treat discrete, continuous, and multi-agent models as first-class kinds (exemplar-kind split, framework+kind capability tables), the manuscript's version/module/tool/test counts are auto-injected from a snapshot-based committed-byte census (`src/gnn/manuscript/variables.py`) instead of hard-coded literals, the Python `collect_doctor_report` API composes per-framework capability and execution-readiness diagnoses (MCP `get_doctor_report`, 142 registered tools), bnlearn gains a render+execute Step 12 lane (Python `bnlearn` / R `bnlearn`), and Step 6 ships B-orientation diagnostics with an opt-in `--transpose-b` canonical transposition.
 **New in v3.5.0 ("Surface Truth & Integration")**: website step-20 statuses come from the recorded pipeline execution summary instead of directory heuristics, MCP speaks the standard 2024-11-05 protocol in both transports with three new tools (`extract_pomdp`, `generate_dependency_graph`, `template.pull`) plus a `gnn_delete_run` parity tool (registry 142→146), `DELETE /api/v1/runs/{run_hash}` gains full run control (cancellation with process-group teardown, artifact removal, honest timeout status), GUI launches are HTTP-verified with one shared status schema and a new `gnn gui` CLI subcommand, one canonical framework tuple drives every framework list, and LSP diagnostics track in-editor edits.
 **New in v4.0.0 ("Current-run Reliability")**: frozen model selection and stable path identities bind artifacts to one invocation; strict probability and Gaussian validation rejects malformed scientific inputs; execution and LLM calls share bounded process supervision; full-corpus LLM scheduling reports incomplete work accurately; manuscript gates bind rendered Markdown/TeX to the token commit; and released [cpomdp](docs/gnn/implementations/cpomdp.md) and [THRML](docs/gnn/implementations/thrml.md) require explicit experimental selection. THRML estimates finite categorical posterior trajectories under fixed actions; its CPU/JAX simulation does not establish hardware execution. Source-bound comparison admission also keeps unrelated models and inference modes separate and derives Gaussian uncertainty from covariance. Read the [v4 migration](docs/development/run_ownership_migration.md) before consuming new run artifacts.
 
-**Current release: [GNN 4.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1) (2026-10-07).** The maintenance patch repairs GUI parsing complexity, locked dependency findings and complete subprocess input delivery, and improves LLM coverage diagnostics. The three remaining issue reports are closed with individual acceptance receipts. [Publication evidence](docs/development/gnn_4_0_1_post_publication.json) records exact checks, companion revisions, zero open issues and enabled Dependabot/CodeQL alerts, and verified assets. [TO-DO.md](TO-DO.md) retains qualified future capabilities.
+**Current software version 4.1.0 — Public contracts and native boundaries.** Shared public admission,
+current-run receipts, descriptor-based filesystem operations and bounded owned
+cleanup accompany clearer scientific figures, typed diagnostics and ordinary
+installed-wheel acceptance. The [4.1.0 changelog](CHANGELOG.md#410---2026-10-08)
+and [migration guide](docs/development/run_ownership_migration.md) describe the
+changes and precise limits. Exact-source native, coverage, manuscript and companion records bind the
+[4.1.0 GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0). Its tag/source/check/artifact identities,
+not version metadata alone, establish acceptance. The previous published
+[4.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1)
+and its [publication receipt](docs/development/gnn_4_0_1_post_publication.json)
+retain their original identities. [TO-DO.md](TO-DO.md) contains remaining work.
 
 **New in v3.6.0 ("Composability & Offline Truth")**: the step-20 website gains per-model detail pages (`model/<slug>.html`, full GNN source per model), breadcrumbs in every page shell, and client-side search (`search-index.json` + inline vanilla-JS filter, offline-true); `generate_website(..., filesystem=False)` renders a complete site with zero disk collection and the step catalogue moves to a dependency-free leaf module (`website/steps.py`); generated pages are fully offline (system font stack, JSON-LD + meta description per page, atomic manifest write); the complexity estimator ships as a subpackage with `benchmark`/`estimate` CLI subcommands; the dashboard folds into MCP artifact tools; all six website dead-seams are wired-or-removed (the `website_html_filename` knob is gone end-to-end); the render and execute processors are band-split into packages (`render/pomdp_processor/`, `render/processor/`, `execute/processor/`); and GEO-INFER consumer conformance is pinned by a dedicated test suite.
 📖 **Project DOI:** [10.5281/zenodo.7803313](https://doi.org/10.5281/zenodo.7803313)\
-📁 **Historical archive:** [zenodo.org/records/7803328](https://zenodo.org/records/7803328). A version-specific 4.0.1 archival DOI is not yet recorded.
+📁 **Exact 4.0.1 source archive:** [10.5281/zenodo.23222085](https://doi.org/10.5281/zenodo.23222085). Its downloaded source and manuscript match the released tag; separately attached distributions still need archival acceptance. See the [verification receipt](docs/development/zenodo_4_0_1_exact_source_archive.json) and [archive procedure](docs/releases/exact_version_archival.md). The [2023 journal archive](https://zenodo.org/records/7803328) remains historical.
 
 ### 🎯 Core Design Principles
 
@@ -1073,7 +1083,11 @@ If you use [uv](https://github.com/astral-sh/uv) (`uv sync` / `uv run`), prefer 
 
 **1️⃣ Prerequisites**
 
-GNN requires **Python >= 3.11, < 3.15** (`requires-python = ">=3.11,<3.15"`); Python 3.14 is supported:
+GNN declares **Python >= 3.11, < 3.15** (`requires-python = ">=3.11,<3.15"`).
+The [installed-platform acceptance guide](docs/development/installed_platform_acceptance.md)
+records native interpreter/OS scope separately from source tests and optional
+toolchain provisioning. Install a declared interpreter, then verify the
+requested backend in that environment:
 
 ```bash
 python --version  # Must be >= 3.11 and < 3.15
@@ -1158,7 +1172,7 @@ xdg-open output/20_website_output/index.html  # Linux
 ```bash
 # Check Python version
 python --version
-# Supported: Python >= 3.11, < 3.15 (3.14 included) — install from python.org if out of range
+# Package range: Python >= 3.11, < 3.15; native readiness depends on the tested environment
 ```
 
 **📦 Dependency Issues**
@@ -1172,9 +1186,9 @@ uv run python src/gnn/main.py --only-steps 1 --recreate-uv-env --dev
 
 ```bash
 # Run with verbose logging
-python src/gnn/main.py --verbose
+uv run --frozen --no-sync python src/gnn/main.py --verbose
 # Check specific step
-python src/gnn/main.py --only-steps 5 --verbose
+uv run --frozen --no-sync python src/gnn/main.py --only-steps 5 --verbose
 ```
 
 **💾 Disk Space Issues**
@@ -1182,11 +1196,15 @@ python src/gnn/main.py --only-steps 5 --verbose
 ```bash
 # Check available space
 df -h
-# Clean output directory
-rm -rf output/*
+# Inspect a run's size before archiving or removing its owned output
+du -sh /tmp/gnn-setup-example
 ```
 
 </details>
+
+Use a dedicated output directory for each invocation. The tracked `output/`
+tree includes publication evidence; preserve it and its custody records.
+Directories from earlier runs cannot serve as current-run completion evidence.
 
 **🔗 Get Support:**
 

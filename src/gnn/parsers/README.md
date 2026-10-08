@@ -29,6 +29,46 @@ after the first record. Parsing, schema validation and export validation use
 this shared boundary. It limits object reconstruction; it does not authenticate
 artifacts or bound memory and CPU use.
 
+## Saved schema interchange
+
+Saved YAML configurations accept ordinary leading comments. With PyYAML
+available, malformed YAML or unsupported tags produce a failed parse with the
+loader's cause; the simplified recovery parser is used only when PyYAML is
+unavailable. A failed public `convert_file` parse leaves an existing destination
+untouched. JSON and YAML readers retain the supplied `time_specification.step_size`
+emitted by their canonical serializers, alongside the existing horizon and
+discretization fields; they do not infer a timestep value.
+
+ASN.1 `-- MODEL_DATA:` and Z `% MODEL_DATA:` comments carry a JSON object on
+one native comment line. Reading that payload stops at the line boundary, so
+later native braces cannot replace the saved model identity. When the line
+comment supplies the interchange payload, malformed or non-object data produces
+a failed parse with a causal diagnostic; absent metadata continues through the
+native declaration reader. ASN.1's existing block comment interchange and its
+extraction priority remain supported.
+
+Saved schema payloads retain supplied parameter values. Alloy and Z restore
+parameter descriptions when the payload includes them; older payloads may omit
+that field. These interchange guarantees do not establish formal equivalence
+between arbitrary native schemas and the source GNN model.
+
+## Markdown datatype fields
+
+Bracket declarations accept comma-separated fields with surrounding whitespace,
+including `reported[2, 1, type=int]`. The Markdown registry binds the trailing
+`type=` field independently of adjacent annotation fields. `int` becomes the
+existing `integer` datatype and documented `bool` becomes `binary`; the existing
+`binary` spelling remains supported. Absent types retain the float default and
+unrecognized types retain the categorical recovery. Original annotation text,
+including default hints, remains in `raw_sections`; parsing does not initialize
+new values from a hint.
+
+Nested JSON list values containing lowercase booleans retain their exact shape
+and scalar values. This array recovery reuses the literal parser's existing
+10,000-character and depth-10 guards before decoding the untouched JSON source.
+It does not add JSON mapping admission or change tuple, malformed-value or
+overlimit existing recovery.
+
 ## Adding a format
 
 1. Extend **`GNNFormat`** in `common.py` if needed.

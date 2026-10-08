@@ -21,6 +21,13 @@ The module defines strict automation routines via YAML configuration:
 7. **`mcp-audit.yml`**: A fast MCP tool-count regression gate (≥ 140 registered tools) on push/PR to `main`.
 8. **`full-extras.yml`**: A weekly scheduled matrix validating optional dependency groups (audio, GUI, research, scaling) and running the full pytest suite under `--all-extras`.
 9. **`pair-pin-freshness.yml`**: A nightly watchdog asserting each committed pair pin (fep_lean, GEO_INFER) stays ancestor-or-equal of its companion default-branch HEAD, exiting 2 with a "re-pin required" diagnosis naming the stale pair file, the pinned revision and the companion tip.
+10. **`comprehensive-native-coverage.yml`**: Three independent exact-source Python environments measure native core, MCP and pipeline execution with full unchanged coverage scope, process provenance, exact raw/lane/combined line unions and fail-closed unreadable-data handling. Existing core reports and floor remain intact; a rounded percentage cannot establish the strict >80% roadmap target.
+11. **`installed-platforms.yml`**: Five native installed-wheel environments build the exact candidate revision, install frozen hashed runtimes outside the checkout, and retain numerical/API/process/filesystem acceptance with zero selected skips and tracked-file bookends.
+12. **`local-gates.yml`**: Source-bound manuscript/token/hydration/figure custody plus MCP/skills, import, orchestrator, flag, dependency, validation and documentation gates.
+13. **`fep-lean-paired-revision.yml`**: Exact pinned companion bridge status and finite/continuous emission checks with both revisions retained. Custody agreement remains distinct from formal proof.
+14. **`geo-infer-interchange.yml`**: Exact pinned companion interchange, deterministic replay and digests for supported categorical, Gaussian and factored contracts.
+15. **`custody-re-render.yml`**: Daily/manual fresh template render and custody audit with retained artifacts and no repository writeback.
+16. **`gridworld.yml`**: Weekly/manual report-only fresh GridWorld execution and publication-contract check with explicitly provisioned Julia environments.
 
 ## Technical Rules
 - **Syntax**: 100% strict adherence to GitHub Actions YAML schemas.

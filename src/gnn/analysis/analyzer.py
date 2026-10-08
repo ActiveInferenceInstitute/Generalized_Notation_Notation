@@ -8,6 +8,8 @@ modules; every previously public and private name is re-exported here
 so consumer import paths are unchanged.
 """
 
+import hashlib
+import io
 import logging
 import sys
 import time
@@ -137,19 +139,24 @@ def perform_statistical_analysis(
 def run_performance_benchmarks(
     file_path: Path, verbose: bool = False
 ) -> Dict[str, Any]:
-    """Run performance benchmarks on a GNN file using actual implementation metrics."""
+    """Measure native parser wall/CPU time and qualify retained size/runtime estimates."""
     try:
-        with open(file_path, "r") as f:
-            content = f.read()
+        source_bytes = file_path.read_bytes()
+        # Match open(..., "r") locale encoding and universal-newline behavior,
+        # while hashing exactly the bytes consumed by this measurement.
+        with io.TextIOWrapper(io.BytesIO(source_bytes)) as stream:
+            content = stream.read()
 
         start_time = time.perf_counter()
+        start_cpu = time.process_time()
         variables = extract_variables(content)
         connections = extract_connections(content)
         end_time = time.perf_counter()
 
         real_parse_time = end_time - start_time
+        parse_cpu_time = time.process_time() - start_cpu
 
-        # Calculate real memory usage footprint
+        # Retain the existing shallow Python object-size estimate; this is not RSS.
         memory_usage = (
             sys.getsizeof(content)
             + sys.getsizeof(variables)
@@ -162,14 +169,19 @@ def run_performance_benchmarks(
 
         complexity = len(variables) + len(connections)
 
-        # Actual performance metrics replacing simulated data
+        # Measured parse time and explicitly qualified compatibility estimates
         benchmarks: dict[str, Any] = {
             "file_path": str(file_path),
             "file_name": file_path.name,
             "parse_time": real_parse_time,
+            "parse_cpu_time": parse_cpu_time,
             "memory_usage": memory_usage,
+            "memory_measurement": "shallow Python object-size estimate; not measured RSS or JIT allocation",
             "complexity_score": complexity,
             "estimated_runtime": complexity * 0.01,
+            "runtime_estimate_method": "existing heuristic: complexity_score * 0.01 seconds; not a native execution measurement",
+            "source_sha256": hashlib.sha256(source_bytes).hexdigest(),
+            "measured_phase": "extract_variables and extract_connections after source read",
             "benchmark_timestamp": datetime.now().isoformat(),
         }
 

@@ -88,8 +88,10 @@ def _add_watermark(ax: plt.Axes) -> Any:
     """Add a small watermark to the plot for traceability."""
     import datetime
 
+    from gnn import __version__
+
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    watermark = f"GNN Scaling Analysis | {timestamp} | v1.7.0"
+    watermark = f"GNN Scaling Analysis | {timestamp} | v{__version__}"
 
     # Use figure-level text to avoid 2D/3D coordinate issues
     figure = ax.get_figure()

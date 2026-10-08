@@ -14,6 +14,7 @@ src/gnn/analysis/
 ├── README.md                      # This documentation
 ├── processor.py                   # Main analysis processor (Step 16 entry)
 ├── analyzer.py                    # Statistical analysis functions
+├── performance_benchmark.py       # Bounded real Step 8 developer measurements
 ├── post_simulation.py             # Post-simulation analysis
 ├── trace_analysis.py              # Execution trace analysis helpers
 ├── framework_extractors.py        # Per-framework result extraction
@@ -47,7 +48,7 @@ graph TB
     subgraph "Post-Simulation Analysis"
         Traces[Simulation Traces]
         FreeEnergy[Free Energy Analysis]
-        Policy[Policy Convergence]
+        Policy[Descriptive Policy Diagnostics]
         StateDist[State Distributions]
     end
     
@@ -212,14 +213,9 @@ Calculates structural complexity metrics.
 ### Performance Analysis Functions
 
 #### `run_performance_benchmarks(file_path: Path, verbose: bool = False) -> Dict[str, Any]`
-Runs comprehensive performance benchmarks.
+Measures `extract_variables` and `extract_connections` after reading the source. `parse_time` is wall time and `parse_cpu_time` is process CPU time. `source_sha256` binds the consumed bytes. The compatibility fields `memory_usage` and `estimated_runtime` remain a shallow Python object-size estimate and `complexity_score * 0.01` heuristic; they do not measure RSS, JIT allocation, native inference or scaling.
 
-**Benchmarks:**
-- Processing time analysis
-- Memory usage profiling
-- CPU utilization
-- I/O performance
-- Scalability testing
+For actual complete Step 8 runs, use `gnn.analysis.performance_benchmark.run_visualization_benchmark` or `scripts/benchmark_visualization.py`. This separate developer command freezes nested source bytes, refuses preexisting output, enforces source count/byte/repetition/concurrency/deadline limits, records terminal per-run wall/CPU time, sampled process-tree RSS and artifact identities, and refuses overall acceptance if package source changes during the batch. See [measured performance and limits](PERFORMANCE.md).
 
 #### `calculate_complexity_metrics(file_path: Path, verbose: bool = False) -> Dict[str, Any]`
 Calculates comprehensive complexity metrics.
@@ -357,7 +353,8 @@ benchmarks = run_performance_benchmarks(
 )
 
 print(f"Parse time: {benchmarks['parse_time']:.3f}s")
-print(f"Memory footprint: {benchmarks['memory_usage']} bytes")
+print(f"Parse CPU time: {benchmarks['parse_cpu_time']:.3f}s")
+print(f"Shallow object-size estimate: {benchmarks['memory_usage']} bytes")
 print(f"Complexity score: {benchmarks['complexity_score']}")
 ```
 ```python
@@ -489,11 +486,9 @@ output/16_analysis_output/
 - **Technical Debt**: Quality and maintainability debt
 
 ### Performance Metrics
-- **Processing Time**: Model processing duration
-- **Memory Usage**: Memory consumption during processing
-- **CPU Utilization**: CPU usage patterns
-- **I/O Performance**: Input/output performance
-- **Scalability**: Performance scaling characteristics
+- **Parser wall/CPU time**: Measured variable/connection extraction after source read
+- **Compatibility estimates**: Explicitly qualified shallow object sizes and runtime heuristic
+- **Native developer receipts**: Complete selected Step 8 wall/CPU time, sampled RSS, artifact counts/hashes and matched workload identities; see [PERFORMANCE.md](PERFORMANCE.md)
 
 ### Quality Metrics
 - **Code Quality**: Overall code quality assessment
@@ -581,3 +576,9 @@ This module is part of the GeneralizedNotationNotation project. See the main rep
 - **[AGENTS](AGENTS.md)**: Agentic Workflows
 - **[SPEC](SPEC.md)**: Architectural Specification
 - **[SKILL](SKILL.md)**: Capability API
+
+## Scientific plot declarations
+
+Categorical probability animations validate rows and retain zero-based trace/state identities with redundant line/marker encodings. Gaussian means, covariance uncertainty and control traces use the native family-specific renderer; probability normalization is not applied to them. GridWorld indices and explicit state counts are validated before allocation; counts default to nine only when absent or `None`.
+
+VFE inference iterations and EFE timesteps retain their separate domains. Integer axes identify the index basis, and energy/unit labels use actual producer declarations or explicitly state that they are unspecified. Long declarations and explicit producer summaries have an adjacent `.conventions.json` receipt binding the complete text and the PNG hash. PyMDP's historical `expected_free_energy` field stores `neg_efe = -EFE`; its producer summary states the enabled utility/state-information terms without changing values. Rolling variance is descriptive; the retained 0.1 heuristic is not an inference convergence test.

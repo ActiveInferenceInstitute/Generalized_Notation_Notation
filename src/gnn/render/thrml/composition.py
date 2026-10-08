@@ -12,12 +12,10 @@ from typing import Any
 import numpy as np
 
 from gnn.render.pomdp_contract import _declared_b_order, nested_shape
+from gnn.render.thrml import adapter as _adapter
 from gnn.render.thrml.adapter import (
     _GROUP,
     _MODALITY,
-    MAX_CATEGORIES,
-    MAX_ESTIMATED_BYTES,
-    MAX_FACTOR_ENTRIES,
     UnsupportedTHRMLModel,
     _admission,
     _integer,
@@ -244,11 +242,11 @@ def _compose_factors(
             "dependent factor composition requires every state/modal descriptor"
         )
     states = math.prod(
-        _integer(item.get("size"), "factor size", maximum=MAX_CATEGORIES)
+        _integer(item.get("size"), "factor size", maximum=_adapter.MAX_CATEGORIES)
         for item in factors
     )
     observations = math.prod(
-        _integer(item.get("size"), "modality size", maximum=MAX_CATEGORIES)
+        _integer(item.get("size"), "modality size", maximum=_adapter.MAX_CATEGORIES)
         for item in modalities
     )
     _admission(states, observations, schedule, synthetic=True, parameters=matrices)
@@ -294,7 +292,10 @@ def _compose_factors(
     materialized = (
         observations * states + states * states * actions + states + observations
     )
-    if materialized > MAX_FACTOR_ENTRIES or 64 * materialized > MAX_ESTIMATED_BYTES:
+    if (
+        materialized > _adapter.MAX_FACTOR_ENTRIES
+        or 64 * materialized > _adapter.MAX_ESTIMATED_BYTES
+    ):
         raise ValueError(
             "THRML joint composition admission rejected before Cartesian materialization"
         )

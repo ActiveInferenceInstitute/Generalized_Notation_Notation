@@ -97,7 +97,9 @@ class DescendantTracker:
         self._tracked: dict[tuple[int, float], Any] = {}
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
-        self.boundary = "process_group_only"
+        self.boundary = (
+            "process_group_only" if os.name == "posix" else "direct_worker_only"
+        )
         self.errors: list[str] = []
 
     def start(self) -> None:
@@ -194,7 +196,9 @@ def terminate_process_tree(
 
     ``tracked`` must be collected while the leader is alive. A successful return
     verifies the direct worker and observed descendants have stopped; unavailable
-    psutil leaves only the process-group boundary. Surviving processes or denied
+    psutil leaves only the POSIX process-group boundary. Windows verifies the
+    direct worker only: CREATE_NEW_PROCESS_GROUP does not enable tree killing.
+    Surviving processes or denied
     termination raise so callers cannot report successful cleanup.
     """
     deadline = time.monotonic() + max(0.0, cleanup_timeout)
@@ -207,7 +211,10 @@ def terminate_process_tree(
     try:
         # Kill the ordinary group before any per-identity work. The group
         # identity survives a leader exit; do not resolve a recycled leader PID.
-        os.killpg(process.pid, signal.SIGKILL)
+        if os.name == "posix":
+            os.killpg(process.pid, signal.SIGKILL)
+        elif process.poll() is None:
+            process.kill()
     except PermissionError:
         errors.append("Process-group termination was denied")
         if process.poll() is None:

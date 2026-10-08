@@ -1,0 +1,136 @@
+{
+  "scope": "Historical saved-result fixtures for public local consumers; not current execution receipts or native backend readiness proof.",
+  "fixtures": {
+    "pymdp_signed_simulation_results.json": {
+      "sha256": "819b7e2c5f4f9bad5a1df381358ced84f942530848f6feb6bb51932939b1f498",
+      "bytes": 10849,
+      "historical_model_name": "Active Inference POMDP Agent"
+    },
+    "static_perception_simulation_results.json": {
+      "sha256": "e2246c6a65c2512b35743b1ae96afeb64f62772bb12c3008fae0597ace7eb1f0",
+      "bytes": 7969,
+      "historical_model_name": "Static Perception Model"
+    }
+  },
+  "signed_producer": {
+    "source_commit": "57da24e67b29ec898bb9e4d42c9efac785f65649",
+    "source_files_sha256": {
+      "input/gnn_files/discrete/actinf_pomdp_agent.md": "ea58f38a031aab36ebf44078ebcdcc2a2ca5594a32c9a8ed92e0f09d61f579bf",
+      "src/gnn/execute/pymdp/simulation.py": "5a9ce849731778ce87c4a411d4985a8231fed3e399253523b0e10c496307ab3b",
+      "src/gnn/execute/pymdp/pymdp_simulation.py": "1107d9192cea5101a4bd22d5c3c8529abbd1205544687c3ab33391be45b9d001"
+    },
+    "original_receipt_sha256": "44149acf910829d181cd9e2ab6eef03c5b04e47846ea31f990dc07759a713fe7",
+    "original_receipt_name": "evidence410-science/native-signed-proof.json",
+    "config": {
+      "timesteps": 6,
+      "numpy_seed_before_dispatch": 42,
+      "producer_random_seed": 0,
+      "pymdp_version": "1.0.0"
+    },
+    "source_commit_binding": "Producer files and model bytes match this immutable commit by the original native capture hashes. The native capture recorded file hashes, not its checkout HEAD."
+  },
+  "static_producer": {
+    "source_commit": "b6b4eaac3aaf2d26fb51d0bac4329d44e1b893ec",
+    "original_model_source": "input/gnn_files/basics/static_perception.md",
+    "corpus_alias": "discrete/tmaze_epistemic.md",
+    "model_source_sha256": "1ddd0fbde8155e2083d586a368503278373f26f6aae11dd4a2b4adfdf5ea7b8c",
+    "original_summary_sha256": "6a92dff010401ad6e01a86cdb446146c9beea8bd335af610043f87df0f1cc704",
+    "original_render_summary_sha256": "5d0795f101c6f5565b0b1f8af7e38ede2ae586d20fd38ca3d17dc7c00f77732f",
+    "original_run_id": "7e6ca38c0baa4f2586feecf769d5e45c",
+    "configuration": {
+      "frameworks": [
+        "pymdp"
+      ],
+      "options": {
+        "execution_benchmark_repeats": 2,
+        "execution_summary_detail": true,
+        "render_output_dir": "/Users/hum/Documents/Codex/2026-10-06/task-4/evidence410-integration/integrated-public-consumers-b6b4eaac3-tmp/test_native_complexity_receipt0/empirical/benchmark/11_render_output",
+        "require_render_summary": true
+      },
+      "strict_requested_frameworks": true
+    },
+    "execution_summary": {
+      "execution_details": [
+        {
+          "model_name": "tmaze_epistemic",
+          "framework": "pymdp",
+          "success": true,
+          "skipped": false,
+          "execution_time": 11.6269275,
+          "execution_time_mean": 11.6269275,
+          "execution_time_std": 0.5570355000000005,
+          "execution_time_samples": [
+            12.183963,
+            11.069892
+          ],
+          "execution_benchmark_repeats": 2,
+          "source_sha256": "1ddd0fbde8155e2083d586a368503278373f26f6aae11dd4a2b4adfdf5ea7b8c",
+          "attempts_started": 2,
+          "cleanup_verified": true
+        }
+      ]
+    },
+    "render_summary": {
+      "timestamp": "2026-10-07T20:44:04.696367",
+      "processing_type": "POMDP-aware rendering",
+      "receipt_identity": {
+        "run_id": "7e6ca38c0baa4f2586feecf769d5e45c",
+        "config_sha256": "378771b04c4f1f132561268ae497c4868cfdb74fef5713a20433173bf3371b8c"
+      },
+      "target_directory": "/Users/hum/Documents/Codex/2026-10-06/task-4/evidence410-integration/integrated-public-consumers-b6b4eaac3-tmp/test_native_complexity_receipt0/empirical/benchmark_corpus",
+      "configuration": {
+        "frameworks": [
+          "pymdp"
+        ],
+        "strict_validation": true,
+        "strict_framework_success": true,
+        "verbose": false,
+        "pomdp_processing_available": true,
+        "options": {}
+      },
+      "file_results": {
+        "/Users/hum/Documents/Codex/2026-10-06/task-4/evidence410-integration/integrated-public-consumers-b6b4eaac3-tmp/test_native_complexity_receipt0/empirical/benchmark_corpus/discrete/tmaze_epistemic.md": {
+          "overall_success": true,
+          "framework_results": {
+            "pymdp": {
+              "success": true,
+              "message": "Generated pymdp 1.0.0 runner: /Users/hum/Documents/Codex/2026-10-06/task-4/evidence410-integration/integrated-public-consumers-b6b4eaac3-tmp/test_native_complexity_receipt0/empirical/benchmark/11_render_output/tmaze_epistemic/pymdp/Static_Perception_Model_pymdp.py",
+              "output_files": [
+                "/Users/hum/Documents/Codex/2026-10-06/task-4/evidence410-integration/integrated-public-consumers-b6b4eaac3-tmp/test_native_complexity_receipt0/empirical/benchmark/11_render_output/tmaze_epistemic/pymdp/Static_Perception_Model_pymdp.py"
+              ],
+              "output_directory": "/Users/hum/Documents/Codex/2026-10-06/task-4/evidence410-integration/integrated-public-consumers-b6b4eaac3-tmp/test_native_complexity_receipt0/empirical/benchmark/11_render_output/tmaze_epistemic/pymdp",
+              "warnings": [],
+              "code_metrics": {
+                "lines_of_code": 460,
+                "total_lines": 493,
+                "functions": 1,
+                "classes": 0
+              },
+              "artifact_identities": [
+                {
+                  "path": "/Users/hum/Documents/Codex/2026-10-06/task-4/evidence410-integration/integrated-public-consumers-b6b4eaac3-tmp/test_native_complexity_receipt0/empirical/benchmark/11_render_output/tmaze_epistemic/pymdp/Static_Perception_Model_pymdp.py",
+                  "sha256": "3640a3819b5b49a6397609c64d707c5ed08aeb2e70c259cb4004a56352c22dd0"
+                }
+              ]
+            }
+          },
+          "summary_file": "/Users/hum/Documents/Codex/2026-10-06/task-4/evidence410-integration/integrated-public-consumers-b6b4eaac3-tmp/test_native_complexity_receipt0/empirical/benchmark/11_render_output/tmaze_epistemic/processing_summary.json",
+          "output_directory": "/Users/hum/Documents/Codex/2026-10-06/task-4/evidence410-integration/integrated-public-consumers-b6b4eaac3-tmp/test_native_complexity_receipt0/empirical/benchmark/11_render_output/tmaze_epistemic",
+          "base_output_dir": "/Users/hum/Documents/Codex/2026-10-06/task-4/evidence410-integration/integrated-public-consumers-b6b4eaac3-tmp/test_native_complexity_receipt0/empirical/benchmark/11_render_output/tmaze_epistemic",
+          "source_identity": {
+            "path": "/Users/hum/Documents/Codex/2026-10-06/task-4/evidence410-integration/integrated-public-consumers-b6b4eaac3-tmp/test_native_complexity_receipt0/empirical/benchmark_corpus/discrete/tmaze_epistemic.md",
+            "sha256": "1ddd0fbde8155e2083d586a368503278373f26f6aae11dd4a2b4adfdf5ea7b8c"
+          }
+        }
+      },
+      "total_files": 1,
+      "successful_files": 1,
+      "failed_files": 0,
+      "total_framework_attempts": 1,
+      "successful_framework_renderings": 1,
+      "framework_success_rate": 100.0,
+      "failed_framework_renderings": [],
+      "unsupported_framework_renderings": []
+    }
+  }
+}

@@ -1,50 +1,34 @@
 # TO-DO — GNN next steps
 
-Updated 2026-10-07. Baseline: [GNN 4.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1).
-Every checkbox below is remaining work. Each workstream must become focused PRs
-with an explicit owner, source baseline, acceptance evidence and dependencies.
-Remove landed work from this file; retain its evidence in the release receipts,
-[CHANGELOG.md](CHANGELOG.md) and Git history.
+Updated 2026-10-08.
+Current software version is **4.1.0**. Its [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0) records exact tag, source, checks and artifacts; version metadata alone does not establish acceptance.
+Every checkbox below is remaining work. Remove accepted bounded work while
+retaining its evidence in [CHANGELOG.md](CHANGELOG.md), release receipts and Git
+history. Historical failures retain their original source epochs.
 
 ## Scope and delivery order
 
-There are **17 workstreams: five minor, seven medium and five major**. The sizes
-describe implementation scope, not promised release versions or deadlines.
-Existing S/M/E identifiers remain stable for links and related scope documents.
-P1 denotes foundational correctness, security or capability gaps; P2 denotes
-subsequent maintainability and expansion work. Size and priority are separate.
+There are **seven remaining workstreams: two externally blocked minor items and five major extensions**.
+The bounded minor/medium campaign is complete at its independently accepted scope.
+Coverage and installed-platform evidence are recorded in their maintained guides.
+Accepted bounded M1/M2/M3/M4/M5/M6/M7/M8/S5/S6 implementation is recorded in the
+[ownership review](docs/development/gnn_4_1_0_ownership_review.json),
+[migration guide](docs/development/run_ownership_migration.md),
+[visual review](docs/development/gnn_4_1_0_visual_review.json) and
+[measurement report](src/gnn/analysis/PERFORMANCE.md).
+Retain any precise unimplemented residual under its stable identifier; focused
+passing counts alone do not complete a broader contract. These accepted scopes
+do not certify every backend, lower algorithmic complexity, hostile-tree
+confinement, universal accessibility or whole-pipeline acceleration.
 
-| Size | Scope | Release decision |
-| --- | --- | --- |
-| Minor | Bounded documentation, diagnostics, dependency verification or publication work | Fixes and documentation can land in a patch; an artifact-only archive need not change the software version. |
-| Medium | Changes spanning shared modules, entrypoints, resource behavior or supported environments | Preserve supported public contracts; choose a patch or additive minor release from the actual behavior change. |
-| Major | New scientific semantics, source-preserving LLM capability or deeper formal guarantees | Review the contract first. Additive capabilities may fit a minor release; breaking public contracts require a major version and migration guidance. |
-
-Start with bounded M5/M4 work and S3 released-fix verification. Prioritize S5/S6
-security and coverage improvements alongside the M1/M2/M3 ownership and contract
-work. Establish M7 measurements before performance claims and M8 installation
-evidence before adding supported environments. Define S1/E4 contracts early;
-implement E1/E2/E3 only after their shared contracts and numerical acceptance
-methods are ready. E5 archival work can proceed independently.
+Size describes implementation scope, not a promised version or deadline.
+P1 denotes foundational correctness/security/capability gaps; P2 denotes
+subsequent maintainability and expansion. Existing S/M/E identifiers stay stable.
+Accept the native coverage and installed matrices independently. Released THRML
+verification and exact-version archival depend on external availability; design
+S1/E4 contracts before implementing their related major extensions.
 
 ## Minor work
-
-- [ ] **M5 — make maintained documentation consistent and runnable (P2).**
-  Scope: README, SPEC, ARCHITECTURE, AGENTS, module guides, examples and API docs;
-  clarify discovery versus selected views, current-run aggregation and supported
-  versus experimental capabilities. Derive inventories from the live registries.
-  Accept: commands exercised in their declared environments, correct paths and
-  anchors, consistent terminology and passing documentation-contract audits.
-  Deliver bounded documentation PRs; source or public-contract repairs belong in
-  the relevant medium or major workstream.
-
-- [ ] **M4 — reduce diagnostics and dependency ratchets (P2).**
-  Scope: inventory broad exceptions, hidden failure reasons, flag-documentation
-  gaps and duplicated optional-dependency declarations; repair one cause per PR
-  with typed outcomes and useful context. Accept: observable error and import
-  behavior preserved, meaningful failure cases and passing existing flag,
-  import-boundary, thin-orchestrator and dependency gates. Shared configuration
-  redesign belongs to M3.
 
 - [ ] **S3 — verify a released THRML structural-zero fix (P1).**
   Scope: identify a released upstream version addressing
@@ -55,14 +39,6 @@ methods are ready. E5 archival work can proceed independently.
   Keep strict rejection until those checks pass. Depends on a suitable released
   fix; substantial adapter or inference changes require separate scope under E2.
 
-- [ ] **M6 — improve scientific visualization and manuscript clarity (P2).**
-  Scope: labels, units, axes, accessible legends, animation trace identity,
-  categorical versus Gaussian uncertainty and VFE iterations versus EFE
-  timesteps. Accept: validated plotted data, source and artifact hashes, finite
-  manual/browser review with explicit coverage, and fresh template/custody
-  acceptance when manuscript inputs or counts change. Small presentation fixes
-  must preserve the scientific contract; semantic changes depend on E4.
-
 - [ ] **E5 — archive the exact released version and verify its DOI (P2).**
   Scope: archive the released tag, distribution artifacts, manuscript, checksums
   and citation metadata; identify the version-specific archive separately from
@@ -71,73 +47,6 @@ methods are ready. E5 archival work can proceed independently.
   is a separate publication task with an identified package owner/destination,
   accepted wheel/sdist, installation verification and credential ownership.
   Depends on archive-provider availability and the selected release artifacts.
-
-## Medium work
-
-- [ ] **M1 — extract coherent module ownership boundaries (P2).**
-  Scope: refresh the size/complexity inventory from actual source, reconcile
-  existing extractions, then prioritize RxInfer bridge/strategy/analysis,
-  website generation, GUI, schema parsing, visualization, logging, execution
-  and security owners. Accept: one justified boundary per focused PR, preserved
-  public exports/signatures, behavioral parity and failure cases, clear
-  ownership and measured complexity changes. Split responsibilities rather
-  than files solely to satisfy a line-count target.
-
-- [ ] **M2 — unify execution and result contracts (P1).**
-  Scope: shared run context, frozen selection, scope metadata, prerequisites,
-  backend options, readiness diagnoses, model-kind adapters, outcomes and
-  artifact indexes across serial, parallel and matrix execution. Accept: thin
-  numbered orchestrators, equivalent plans/results and negative controls for
-  explicit empty selection, inherited artifacts, duplicate aggregation and
-  incompatible uncertainty. Establish the shared boundaries alongside M1;
-  public schema changes require a compatibility decision.
-
-- [ ] **M3 — align Python, CLI, REST and MCP admission/discovery (P1).**
-  Scope: derive backend inventory, help, setup groups and schemas from shared
-  live metadata; unify option precedence, types, unknown-key handling, limits
-  and supported/unsupported diagnoses. Accept: equivalent admission and
-  outcomes through the actual public entrypoints, installed-package facade
-  isolation and documented migration for any changed public contract.
-  Depends on M2 for execution/result behavior; metadata registration alone
-  does not establish native backend readiness.
-
-- [ ] **S5 — strengthen filesystem and platform boundaries (P1).**
-  Scope: define the filesystem adversary model, use descriptor-based operations
-  where concurrent path replacement matters, and scope native Windows lease,
-  process and cleanup behavior. Accept: real symlink/rename/race controls,
-  native platform tests, preserved API errors and bounded cancellation/cleanup,
-  plus independent security review. State the precise confinement guarantees
-  and remaining limits. Depends on appropriate native platform runners and
-  M2 where lease/process behavior crosses shared execution contracts.
-
-- [ ] **S6 — raise coverage through meaningful behavior checks (P1).**
-  Scope: produce a reproducible coverage-gap inventory, then target untested
-  failure paths and shared contracts, including optional and live surfaces in
-  explicitly provisioned lanes. Target the documented **>80% statement coverage**
-  goal on the declared supported matrix. Accept: per-environment reports,
-  externally observable behavior checks and qualified exclusions; raise the
-  enforced floor only after the evidence supports it. Keep overlapping
-  selections separate and avoid tests that merely mirror implementation.
-
-- [ ] **M7 — measure and improve scalability and performance (P2).**
-  Scope: matched source/configuration/backend/LLM-mode corpora, phase timings,
-  CPU/wall time, RSS, artifact counts and resource admission. Include nested
-  and large inputs, repeated/concurrent runs and bounded distributed transfer.
-  Optimize demonstrably dominant bottlenecks after accepting the baseline.
-  Accept: comparable before/after receipts, explicit variance, complete selected
-  coverage and measured tradeoffs. Preserve output
-  semantics; estimated allocation and disk guards are separate from measured
-  RSS/JIT behavior. Depends on M2's identity/result contracts.
-
-- [ ] **M8 — broaden installed-package and platform acceptance (P2).**
-  Scope: assess Python 3.14 scientific-wheel readiness and any additional
-  supported OS/runtime split using ordinary installation outside the checkout.
-  Retain both current JAX/Matplotlib splits, API scratch isolation, registry
-  concurrency and tracked-file cleanliness. Accept: genuine imports/native
-  execution, supported-platform cancellation and memory controls under load,
-  and meaningful negative cases. GUI, network, audio and external toolchains
-  remain explicitly provisioned lanes. Depends on released dependency
-  compatibility and native runners; do not advertise support before acceptance.
 
 ## Major work
 

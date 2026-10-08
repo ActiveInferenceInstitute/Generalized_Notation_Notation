@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 """Shared path validation for local-only API execution."""
 
+import os
 from pathlib import Path
 from typing import Union
+
+from gnn.utils.runtime_safety.filesystem import (
+    create_directory,
+    directory_handle,
+    is_redirect,
+)
 
 
 class PathValidationError(ValueError):
@@ -10,8 +17,43 @@ class PathValidationError(ValueError):
 
 
 def get_repo_root() -> Path:
-    """Return the repository root for API path boundary checks."""
-    return Path(__file__).parent.parent.parent.parent.resolve()
+    """Return the operator-configured API workspace, or the checkout default.
+
+    ``GNN_API_ROOT`` is process configuration, never a request parameter. An
+    ordinary installed package must supply its data workspace explicitly rather
+    than permitting API callers to write into the installed package directory.
+    """
+    configured = os.environ.get("GNN_API_ROOT")
+    if configured is None:
+        owner = Path(__file__).resolve()
+        checkout = owner.parent.parent.parent.parent
+        if (checkout / "pyproject.toml").is_file() and (
+            checkout / "src" / "gnn" / "api" / "path_utils.py"
+        ).resolve() == owner:
+            return checkout
+        raise PathValidationError(
+            "Installed API services must configure an absolute existing GNN_API_ROOT"
+        )
+    root = Path(configured)
+    if not configured.strip() or not root.is_absolute():
+        raise PathValidationError("GNN_API_ROOT must be an absolute existing directory")
+    try:
+        if os.name == "posix":
+            with directory_handle(root):
+                pass
+        else:
+            node = Path(root.anchor)
+            for part in root.parts[1:]:
+                if part == "..":
+                    raise ValueError("API root must not contain parent traversal")
+                node /= part
+                if is_redirect(node.lstat()) or not node.is_dir():
+                    raise ValueError("API root must not traverse reparse points")
+    except (OSError, ValueError) as exc:
+        raise PathValidationError(
+            f"GNN_API_ROOT is not a safe directory: {exc}"
+        ) from exc
+    return root
 
 
 def resolve_repo_path(
@@ -30,10 +72,9 @@ def resolve_repo_path(
     repo_root = get_repo_root()
     candidate = raw if raw.is_absolute() else repo_root / raw
 
-    # Reject symlink components BEFORE resolving. ``Path.resolve()`` follows
-    # symlinks, so a symlink planted inside the repo can otherwise redirect a
-    # read/write outside the boundary while the resolved path still compares
-    # cleanly. Walking the raw components closes that hole (RED_TEAM V-05).
+    # This admits a pathname, not a handle that remains safe for later readers.
+    # Creation below is descriptor-relative on POSIX; execution still requires
+    # trusted directory entries throughout the run (see filesystem boundaries).
     try:
         candidate_relative = candidate.relative_to(repo_root)
     except ValueError as exc:
@@ -43,8 +84,20 @@ def resolve_repo_path(
 
     node = repo_root
     for part in candidate_relative.parts:
+        if part == "..":
+            raise PathValidationError(
+                f"{purpose} must not contain parent traversal: {path_value}"
+            )
         node = node / part
-        if node.is_symlink():
+        try:
+            redirected = is_redirect(node.lstat())
+        except FileNotFoundError:
+            redirected = False
+        except OSError as exc:
+            raise PathValidationError(
+                f"{purpose} could not be inspected: {path_value}: {exc}"
+            ) from exc
+        if redirected:
             raise PathValidationError(
                 f"{purpose} must not traverse symlinks: {path_value}"
             )
@@ -66,8 +119,8 @@ def resolve_repo_path(
 
     if create:
         try:
-            resolved.mkdir(parents=True, exist_ok=True)
-        except OSError as exc:
+            create_directory(candidate)
+        except (OSError, ValueError) as exc:
             raise PathValidationError(
                 f"{purpose} could not be created: {path_value}: {exc}"
             ) from exc
@@ -91,6 +144,10 @@ def resolve_request_paths(target_dir: str, output_dir: str) -> tuple[Path, Path]
     output_path = resolve_repo_path(
         output_dir,
         purpose="Output directory",
-        create=True,
     )
+    if target_path == output_path or target_path.is_relative_to(output_path):
+        raise PathValidationError(
+            "Output directory must not equal or contain the target directory"
+        )
+    output_path = resolve_repo_path(output_dir, purpose="Output directory", create=True)
     return target_path, output_path

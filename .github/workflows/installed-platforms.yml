@@ -1,0 +1,141 @@
+name: Installed Platforms
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: installed-platforms-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  installed:
+    name: installed (${{ matrix.os }}, ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, python: "3.11"}
+          - {os: ubuntu-latest, python: "3.12"}
+          - {os: ubuntu-latest, python: "3.14"}
+          - {os: macos-latest, python: "3.14"}
+          - {os: windows-latest, python: "3.14"}
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+      INSTALLED_SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONHASHSEED: "0"
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12"
+          enable-cache: true
+      - name: Build and export the frozen installed runtime
+        run: |
+          python - <<'PY'
+          import os, pathlib, subprocess
+          checkout = pathlib.Path.cwd()
+          source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert source == os.environ['INSTALLED_SOURCE_REVISION'], 'installed build source differs from candidate'
+          scratch = pathlib.Path(os.environ['RUNNER_TEMP']) / 'gnn-installed-platform'
+          scratch.mkdir()
+          before = subprocess.check_output(['git', '-c', 'core.fsmonitor=false', 'status', '--porcelain', '--untracked-files=no'], text=True)
+          (scratch / 'tracked-before.txt').write_text(before)
+          subprocess.run(['uv', 'build', '--wheel', '--out-dir', str(scratch / 'dist')], check=True)
+          subprocess.run(['uv', 'export', '--frozen', '--no-default-groups', '--extra', 'api', '--extra', 'thrml', '--no-emit-project', '--output-file', str(scratch / 'runtime.txt')], check=True, stdout=subprocess.DEVNULL)
+          subprocess.run(['uv', 'export', '--frozen', '--only-group', 'dev', '--no-emit-project', '--output-file', str(scratch / 'testtools.txt')], check=True, stdout=subprocess.DEVNULL)
+          subprocess.run(['uv', 'venv', '--python', os.environ['UV_PYTHON'], str(scratch / 'venv')], check=True)
+          python = scratch / 'venv' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
+          subprocess.run(['uv', '--no-config', 'pip', 'install', '--python', str(python), '--only-binary', ':all:', '--require-hashes', '-r', str(scratch / 'runtime.txt')], cwd=scratch, check=True)
+          subprocess.run(['uv', '--no-config', 'pip', 'install', '--python', str(python), '--require-hashes', '-r', str(scratch / 'testtools.txt')], cwd=scratch, check=True)
+          wheel, = (scratch / 'dist').glob('*.whl')
+          subprocess.run(['uv', '--no-config', 'pip', 'install', '--python', str(python), '--no-deps', str(wheel)], cwd=scratch, check=True)
+          (scratch / 'python-path.txt').write_text(str(python))
+          PY
+      - name: Accept the installed scientific stack and public boundaries
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, shutil, subprocess
+          checkout = pathlib.Path.cwd()
+          scratch = pathlib.Path(os.environ['RUNNER_TEMP']) / 'gnn-installed-platform'
+          data = scratch / 'data'
+          data.mkdir()
+          model = data / 'static_perception.md'
+          shutil.copyfile(checkout / 'input/gnn_files/basics/static_perception.md', model)
+          python = (scratch / 'python-path.txt').read_text()
+          subprocess.run([python, '-I', str(checkout / 'scripts/run_installed_platform_acceptance.py'), '--checkout', str(checkout), '--root', str(data), '--model', str(model), '--receipt', str(scratch / 'acceptance.json')], cwd=data, check=True)
+          wheel, = (scratch / 'dist').glob('*.whl')
+          source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          (scratch / 'identity.json').write_text(json.dumps({'checkout_commit': source, 'wheel_sha256': hashlib.sha256(wheel.read_bytes()).hexdigest(), 'lock_sha256': hashlib.sha256((checkout / 'uv.lock').read_bytes()).hexdigest(), 'runtime_export_sha256': hashlib.sha256((scratch / 'runtime.txt').read_bytes()).hexdigest()}, indent=2))
+          PY
+      - name: Installed native numerical and platform boundary witnesses
+        run: |
+          python - <<'PY'
+          import os, pathlib, shutil, subprocess, xml.etree.ElementTree as ET
+          checkout = pathlib.Path.cwd()
+          scratch = pathlib.Path(os.environ['RUNNER_TEMP']) / 'gnn-installed-platform'
+          witness = scratch / 'witness'
+          witness.mkdir()
+          shutil.copytree(checkout / 'tests', witness / 'tests')
+          shutil.copytree(checkout / 'input', witness / 'input')
+          shutil.copyfile(checkout / 'pyproject.toml', witness / 'pyproject.toml')
+          shutil.copyfile(checkout / 'pytest.ini', witness / 'pytest.ini')
+          # Preserve test behavior while independently checking every imported
+          # GNN module remains an installed package, including teardown imports.
+          binding = witness / 'tests/conftest.py'
+          with binding.open('a') as stream:
+              stream.write('\n\ndef pytest_sessionfinish(session, exitstatus):\n    import pathlib, sys\n    checkout = pathlib.Path(' + repr(str(checkout)) + ')\n    for name, module in list(sys.modules.items()):\n        if (name == "gnn" or name.startswith("gnn.")) and getattr(module, "__file__", None):\n            assert not pathlib.Path(module.__file__).resolve().is_relative_to(checkout), name\n')
+          python = (scratch / 'python-path.txt').read_text()
+          junit = scratch / 'native-thrml.xml'
+          subprocess.run([python, '-I', '-m', 'pytest', 'tests/render/test_thrml_native.py', '-q', '--tb=short', '--junitxml=' + str(junit)], cwd=witness, check=True)
+          native_markers = 'not needs_posix' if os.name == 'nt' else ''
+          security_junit = scratch / 'native-boundaries.xml'
+          subprocess.run([python, '-I', '-m', 'pytest', 'tests/security/test_filesystem_boundaries.py', '-m', native_markers, '--override-ini', 'addopts=', '-q', '--tb=short', '--junitxml=' + str(security_junit)], cwd=witness, check=True)
+          security_cases = list(ET.parse(security_junit).iter('testcase'))
+          assert security_cases and not any(case.find(kind) is not None for case in security_cases for kind in ('skipped', 'failure', 'error')), 'native boundary witness skipped or failed'
+          tree = ET.parse(junit)
+          cases = list(tree.iter('testcase'))
+          assert cases and not any(case.find(kind) is not None for case in cases for kind in ('skipped', 'failure', 'error')), 'native witness skipped or failed'
+          PY
+      - name: Tracked-file bookend
+        if: always()
+        run: |
+          python - <<'PY'
+          import os, pathlib, subprocess
+          scratch = pathlib.Path(os.environ['RUNNER_TEMP']) / 'gnn-installed-platform'
+          actual = subprocess.check_output(['git', '-c', 'core.fsmonitor=false', 'status', '--porcelain', '--untracked-files=no'], text=True)
+          (scratch / 'tracked-after.txt').write_text(actual)
+          assert actual == (scratch / 'tracked-before.txt').read_text(), actual
+          PY
+      - name: Installed acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: installed-${{ matrix.os }}-${{ matrix.python }}
+          path: |
+            ${{ runner.temp }}/gnn-installed-platform/*.json
+            ${{ runner.temp }}/gnn-installed-platform/*.xml
+            ${{ runner.temp }}/gnn-installed-platform/tracked-*.txt
+            ${{ runner.temp }}/gnn-installed-platform/data/*.log
+          if-no-files-found: error
+          retention-days: 14

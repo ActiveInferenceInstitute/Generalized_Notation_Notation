@@ -9,6 +9,7 @@ Date: 2025-01-11
 License: MIT
 """
 
+import json
 import logging
 import re
 import shutil
@@ -41,6 +42,32 @@ from .common import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_line_model_data(
+    content: str, comment_prefix: str
+) -> Optional[Dict[str, Any]]:
+    """Read one native line comment without consuming later declarations.
+
+    A present MODEL_DATA comment is an explicit interchange payload. Invalid
+    JSON or a non-object payload must fail rather than silently admit a native
+    declaration with a different identity.
+    """
+    prefix_pattern = r"%+" if comment_prefix == "%" else re.escape(comment_prefix)
+    match = re.search(
+        rf"{prefix_pattern}[ \t]*MODEL_DATA:[ \t]*([^\r\n]*)",
+        content,
+        re.MULTILINE,
+    )
+    if match is None:
+        return None
+    try:
+        data = json.loads(match.group(1))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Malformed MODEL_DATA line comment: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError("MODEL_DATA line comment requires a JSON object")
+    return data
 
 
 def _time_specification_from_mapping(data: Dict[str, Any]) -> TimeSpecification:
@@ -274,16 +301,18 @@ class ASN1Parser(BaseGNNParser):
 
     def _extract_embedded_json_data(self, content: str) -> Optional[Dict[str, Any]]:
         """Extract embedded JSON model data from schema comments."""
-        return extract_embedded_json_data(
+        block_data = extract_embedded_json_data(
             content,
             [
                 r"/\*\s*MODEL_DATA:\s*(\{.*?\})\s*\*/",  # /* MODEL_DATA: {...} */
                 r"<!--\s*MODEL_DATA:\s*(\{.*?\})\s*-->",  # <!-- MODEL_DATA: {...} -->
                 r"#\s*MODEL_DATA:\s*(\{.*?\})",  # # MODEL_DATA: {...}
                 r"//\s*MODEL_DATA:\s*(\{.*?\})",  # // MODEL_DATA: {...}
-                r"--\s*MODEL_DATA:\s*(\{.+\})",  # -- MODEL_DATA: {...} (ASN.1 style) - greedy match for long data
             ],
         )
+        if block_data is not None:
+            return block_data
+        return _extract_line_model_data(content, "--")
 
     def _parse_from_embedded_data(
         self, data: Dict[str, Any], result: ParseResult
@@ -475,7 +504,8 @@ class PKLParser(BaseGNNParser):
         super().__init__()
         self.class_pattern = re.compile(r"class\s+(\w+)\s*\{([^}]+)\}", re.DOTALL)
         self.property_pattern = re.compile(
-            r"(\w+)\s*:\s*([^=\n]+?)(?:=\s*([^\n]+))?", re.MULTILINE
+            r"^[ \t]*(\w+)[ \t]*:[ \t]*([^=\n]+?)(?:=[ \t]*([^\n]+))?[ \t]*$",
+            re.MULTILINE,
         )
         self.mapping_pattern = re.compile(
             r"(\w+)\s*:\s*Mapping<[^>]+>\s*=\s*new\s+Mapping\s*\{([^}]+)\}", re.DOTALL
@@ -1270,7 +1300,11 @@ class AlloyParser(BaseGNNParser):
 
             # Restore parameters
             for param_data in embedded_data.get("parameters", []):
-                param = Parameter(name=param_data["name"], value=param_data["value"])
+                param = Parameter(
+                    name=param_data["name"],
+                    value=param_data["value"],
+                    description=param_data.get("description"),
+                )
                 result.model.parameters.append(param)
 
             # Restore time specification
@@ -1378,12 +1412,7 @@ class ZNotationParser(BaseGNNParser):
 
     def _extract_embedded_json_data(self, content: str) -> Optional[Dict[str, Any]]:
         """Extract embedded JSON model data from Z notation comments."""
-        return extract_embedded_json_data(
-            content,
-            [
-                r"%\s*MODEL_DATA:\s*(\{.*\})",  # % MODEL_DATA: {...} (Z notation)
-            ],
-        )
+        return _extract_line_model_data(content, "%")
 
     def _parse_from_embedded_data(
         self, embedded_data: Dict[str, Any], result: ParseResult
@@ -1426,7 +1455,11 @@ class ZNotationParser(BaseGNNParser):
 
             # Restore parameters
             for param_data in embedded_data.get("parameters", []):
-                param = Parameter(name=param_data["name"], value=param_data["value"])
+                param = Parameter(
+                    name=param_data["name"],
+                    value=param_data["value"],
+                    description=param_data.get("description"),
+                )
                 result.model.parameters.append(param)
 
             # Restore time specification
@@ -1473,15 +1506,14 @@ class ZNotationParser(BaseGNNParser):
         """Parse string."""
         result = ParseResult(model=self.create_empty_model())
 
-        # First, try to extract embedded JSON data for perfect round-trip
-        embedded_data = self._extract_embedded_json_data(content)
-        if embedded_data:
-            return self._parse_from_embedded_data(embedded_data, result)
-
-        # Recovery to standard parsing
-        result.model.model_name = "ZNotationModel"
-
         try:
+            # A present invalid payload is a failed interchange, not a native
+            # declaration with a different identity.
+            embedded_data = self._extract_embedded_json_data(content)
+            if embedded_data:
+                return self._parse_from_embedded_data(embedded_data, result)
+
+            result.model.model_name = "ZNotationModel"
             # Parse schema definitions
             for schema_match in self.schema_pattern.finditer(content):
                 schema_name = schema_match.group(1)

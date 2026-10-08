@@ -1,0 +1,328 @@
+{
+  "schema_version": "gnn4.1.finite_visual_review/v1",
+  "capture_review_sha256": "eb50e4ec489e61a75664a99a46d27fe9dd330ffc0bc3d96b275eb3d7106a98b4",
+  "source_files": {
+    "src/gnn/analysis/viz_plots.py": "1f42e74298732dfdedd0da718ae02a71c6839306e297b11266a2431381c96ece",
+    "src/gnn/analysis/viz_animations.py": "8c3991798a854abf4635230f41ccef083e4a71ab8d0a0df1a586725defbd7757",
+    "src/gnn/visualization/matrix/visualizer.py": "61aca3a4c2021e9a359ebd783b4aca3cf9329e078771e2fad0288ffcb0df4581",
+    "src/gnn/visualization/matrix/transition_analysis.py": "67673876ac030379b68cfacc75f7daf0aacf8b3be12a904b39ab185ab6d82eec",
+    "src/gnn/visualization/plotting/utils.py": "2c29adcbb46d8ba00ac056eabf104ff3edf73f92802c104c35578d2ac0ddd665",
+    "src/gnn/visualization/matrix/extract.py": "89f65a8395ef940843bb6f3b5ddf4a2e35f05af8763c83b3cf3c091382edee15",
+    "src/gnn/visualization/core/process.py": "1eb4c6478307b44cfa2d012571b34f1d7a387bb115118373dc7d185a8fd0cb99",
+    "src/gnn/execute/pymdp/simulation.py": "5a9ce849731778ce87c4a411d4985a8231fed3e399253523b0e10c496307ab3b",
+    "src/gnn/execute/pymdp/pymdp_simulation.py": "1107d9192cea5101a4bd22d5c3c8529abbd1205544687c3ab33391be45b9d001"
+  },
+  "capture_coverage": "Actual6-step PyMDP categorical posterior+reported energies; actual15-step JAX Gaussian means/covariances/controls; explicit signed, stochastic transition and unequal VFE-iteration/EFE-timestep presentation fixtures. Three sampled animation frames; actual20-step class-producer policy-score descriptive variation; signed generic3D A fixture without action/transition claims. Finite review, not universal plot accessibility/backend certification.",
+  "artifacts": [
+    {
+      "name": "categorical-frame00.png",
+      "sha256": "3845d3cf177e5707eb537ab564aba119d4111f4161820314c0083b8cb9f6d0ff",
+      "bytes": 28304,
+      "dimensions": [
+        1000,
+        600
+      ],
+      "frames": 1,
+      "rgba_sha256": "9b47c33fbf51ed1595299df8b3c26f7d31bddfbf683ff2c2207b96bd2b193acf"
+    },
+    {
+      "name": "categorical-frame03.png",
+      "sha256": "6d258ef7c1eb5712ca4e8b4dc9773960fa7a35b0025dfccb01d478bca2e6273e",
+      "bytes": 53279,
+      "dimensions": [
+        1000,
+        600
+      ],
+      "frames": 1,
+      "rgba_sha256": "d59ba02e812f9ee1a4a799f79a20a0f7882b5850489cddfaacb954554e341257"
+    },
+    {
+      "name": "categorical-frame05.png",
+      "sha256": "6361d2e20a13c92e753aec4cf94876bf425a12cb44e47f1ad9e488920d5fe517",
+      "bytes": 62356,
+      "dimensions": [
+        1000,
+        600
+      ],
+      "frames": 1,
+      "rgba_sha256": "54c32ad6a374d05c3ef0c57832f33b7962c250991828c565f83231e7c34e76fe"
+    },
+    {
+      "name": "categorical.gif",
+      "sha256": "d35a43ce71195682648feedecf555d1cb64475da1f678a6b090f293350e6e7f4",
+      "bytes": 89253,
+      "dimensions": [
+        1000,
+        600
+      ],
+      "frames": 6,
+      "rgba_sha256": "9b47c33fbf51ed1595299df8b3c26f7d31bddfbf683ff2c2207b96bd2b193acf"
+    },
+    {
+      "name": "categorical.manifest.json",
+      "sha256": "bd5c1b729f888f90cf0009c1219913b84238964be80205d4a0b1ddf6aacb8ba1",
+      "bytes": 446
+    },
+    {
+      "name": "categorical.png",
+      "sha256": "c25853c26fa00ff277ae7d5f36f0bec58a751ceca7014ebdb4197f613ddca048",
+      "bytes": 232233,
+      "dimensions": [
+        3035,
+        1834
+      ],
+      "frames": 1,
+      "rgba_sha256": "2ae9d922f6852bc78b8831710b5341d9c76ffb76a048c4fd775d2d150517b732"
+    },
+    {
+      "name": "free_energy.png",
+      "sha256": "7a562f2263d209819060881256570733883521551d72c4428a9d3e4cc503ba07",
+      "bytes": 278397,
+      "dimensions": [
+        3634,
+        2284
+      ],
+      "frames": 1,
+      "rgba_sha256": "8f3c15671557d3202fe070585743677915b09d6c5020149f9d529c5670ee638c"
+    },
+    {
+      "name": "gaussian.identity.json",
+      "sha256": "51e0cfec6f481b43e7da16590aebf2313261e97546b92500f1009c2047b12b46",
+      "bytes": 722
+    },
+    {
+      "name": "gaussian.png",
+      "sha256": "576774bfe8420d4f7df5bf014a18782770d0f5367511b42f9e2e2b9f7a30898f",
+      "bytes": 91042,
+      "dimensions": [
+        1400,
+        400
+      ],
+      "frames": 1,
+      "rgba_sha256": "33d2069f7194501841f571538fcab8da0ca15e8bef72c2ac8a6b4e615b81c39c"
+    },
+    {
+      "name": "generic_likelihood_overview.png",
+      "sha256": "4b8314ce08b9d502227c78c5a505131cd95e1f9eecb3097d4e7446cdadc269f9",
+      "bytes": 110843,
+      "dimensions": [
+        4038,
+        1468
+      ],
+      "frames": 1,
+      "rgba_sha256": "a521dbedaebf8317459f0ffec778c494266453f378657ff3df9b237281e2fa42"
+    },
+    {
+      "name": "generic_likelihood_overview_matrix_0_A.csv",
+      "sha256": "44a76e6c02719610d334dfac7b91325dd42263e1adda8d28a5c105f340c1cdae",
+      "bytes": 269
+    },
+    {
+      "name": "generic_likelihood_tensor.png",
+      "sha256": "6cef3d0bdc823a1009216248732ae23b47cfc8434c7f1e242912c398c6390836",
+      "bytes": 176613,
+      "dimensions": [
+        2499,
+        2076
+      ],
+      "frames": 1,
+      "rgba_sha256": "261418a4dae818ce80ffe9069339b106e6d981597db6ee8b117703d9061fbe18"
+    },
+    {
+      "name": "likelihood.csv",
+      "sha256": "8914d47a0663f4a8d78e1b6616eac401bd08d3bbead957ee1bff11db9fa67923",
+      "bytes": 132
+    },
+    {
+      "name": "likelihood.png",
+      "sha256": "a1039547fdec9f20fcabde5b8025febbb17397d737c5ff07783d1f1457794326",
+      "bytes": 140644,
+      "dimensions": [
+        2813,
+        2369
+      ],
+      "frames": 1,
+      "rgba_sha256": "5663a3bcbfcca630556763f9b114db92379cec5553e15c9892da0e54cce8fe30"
+    },
+    {
+      "name": "native_free_energy.conventions.json",
+      "sha256": "1c96f8c9bd54e7a3b08d6f75cfa33ef6322665a34d0e3f7a1e9a65752eefc928",
+      "bytes": 1247
+    },
+    {
+      "name": "native_free_energy.png",
+      "sha256": "faaba800962fe33bf2f31f506474f1a01c287fcafcbd927b2093c8951d253e19",
+      "bytes": 265697,
+      "dimensions": [
+        2969,
+        2067
+      ],
+      "frames": 1,
+      "rgba_sha256": "5b1a4eec19cbe3a38e76a7d70eb791fc2d9d01abc59ac486263755d94c9b127e"
+    },
+    {
+      "name": "native_policy_scores.conventions.json",
+      "sha256": "f675c607cd7220bfbd7149a37f0968b91b027a885de29fee42033c7e55c1d718",
+      "bytes": 1140
+    },
+    {
+      "name": "native_policy_scores.png",
+      "sha256": "dbac643d37aa3c9765c538b4cfdbc123988ad8194380f000663a4c7f6958f6bc",
+      "bytes": 448070,
+      "dimensions": [
+        3634,
+        3513
+      ],
+      "frames": 1,
+      "rgba_sha256": "c8077d9cd2ec2d787a6346cf76067846e1ede19332d478a1b78e4ab2dfbd6f6c"
+    },
+    {
+      "name": "signed.csv",
+      "sha256": "1635f5e5343b5d1a7300eabf4c1b9e4ac8207caa4b6fb13eb7068b7270f468d1",
+      "bytes": 112
+    },
+    {
+      "name": "signed.png",
+      "sha256": "87214fbba62459e78168444c481b2ba7b6fdb00311e0afa695fced2d5617680a",
+      "bytes": 106517,
+      "dimensions": [
+        2862,
+        2369
+      ],
+      "frames": 1,
+      "rgba_sha256": "2c377a22488efb05e80c02f5ac187bce1d79d97b567879c23ce3f07719fa78b8"
+    },
+    {
+      "name": "transition.png",
+      "sha256": "508511ff404bf69aefd3ff93e77ec2de3dba179d311f7b575721ad8d34dd5439",
+      "bytes": 191271,
+      "dimensions": [
+        2499,
+        2076
+      ],
+      "frames": 1,
+      "rgba_sha256": "a6a938a41e3abf18ca6cabc094ab430e32cb3fcc021fc47bc6c1674595e3e638"
+    },
+    {
+      "name": "transition_diagnostics.png",
+      "sha256": "8b9255bb456e5bc7a20386bc1fc7b5a87a008696abcd3b2e000f57d7bd654908",
+      "bytes": 91645,
+      "dimensions": [
+        1070,
+        838
+      ],
+      "frames": 1,
+      "rgba_sha256": "da7d3f5ca5f8e17a436597550f83f713c04e554f91fcc9ef97835f39c867ee29"
+    }
+  ],
+  "root_review": {
+    "reviewer": "root integration",
+    "source": "science410 fd035ef91",
+    "scope": {
+      "full_pngs": 11,
+      "gif_frames": [
+        0,
+        3,
+        5
+      ],
+      "latest_changed_pngs_reinspected": [
+        "native_free_energy.png",
+        "native_policy_scores.png",
+        "generic_likelihood_overview.png"
+      ]
+    },
+    "review_sha256": "eb50e4ec489e61a75664a99a46d27fe9dd330ffc0bc3d96b275eb3d7106a98b4",
+    "findings": [],
+    "accepted_presentation": "Policy-score quantity is explicit; overview identifies full-tensor aggregates and shown axis bases; policy legend is outside data; Gaussian/categorical uncertainty, signed generic tensors, controls and trace identities readable in the finite set.",
+    "limits": [
+      "Finite actual pixel review only",
+      "No proof of numerical fidelity or all GIF frame timing"
+    ],
+    "latest_images": {
+      "native_free_energy.png": "faaba800962fe33bf2f31f506474f1a01c287fcafcbd927b2093c8951d253e19",
+      "native_policy_scores.png": "dbac643d37aa3c9765c538b4cfdbc123988ad8194380f000663a4c7f6958f6bc",
+      "generic_likelihood_overview.png": "4b8314ce08b9d502227c78c5a505131cd95e1f9eecb3097d4e7446cdadc269f9"
+    },
+    "independent_critic": {
+      "reviewer": "platform410",
+      "source": "fd035ef9147e3adb2d7d3d39954a928d855524ba",
+      "scope": "All11fullPNGs andframes00/03/05; finalthreechangedPNGs reinspected",
+      "findings_remaining": [],
+      "limitations": [
+        "Image-only finite presentation acceptance",
+        "No numerical-fidelity or GIF-timing certificate"
+      ]
+    }
+  },
+  "acceptance": "All11fullPNG images and selected GIF frames00/03/05 inspected; finalthree presentation refinements independently reinspected; no remaining material or medium finding.",
+  "limits": [
+    "Numerical parity and sign definitions have separate native evidence",
+    "Selected pixel review is not universal scientific-plot accessibility or GIF timing acceptance"
+  ],
+  "additional_reviews": [
+    {
+      "reviewed_utc": "2026-10-08T03:54:40Z",
+      "producer_source_commit": "8ec772331ca509975723de9f70ca90580dbc34c8",
+      "producer_source_sha256": "143b6dc0cab0c3a11dbad69548cdded383c8742d829b69de4c90052cf250cbc7",
+      "scope": "finite five actual correlation PNGs; existing tiny-input passthrough retained",
+      "root_independent_review": true,
+      "native_regression_junit": "correlation-overview-9627b58aa.xml",
+      "native_replay": {
+        "tests": 18,
+        "passed": 18,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "tradeoff": "small correlation plots retain data and use an explicit symmetric signed plotting domain; all-zero unit domain does not alter values; large branch unchanged",
+      "baseline_qualification": "Finite saved-image comparisons, not inference-semantic or universal pixel-equivalence certification. Ordinary baseline captures are not strict warning-gate successes. Actual unchanged large branch and already symmetric small input can be compared independently from intentional asymmetric/degenerate scale corrections.",
+      "artifacts": [
+        {
+          "artifact": "evidence410-science-consumers/correlation-after-native/constant-columns.png",
+          "sha256": "7e611d44522309df5e16a76b6ec4daf8f1fe13497c0f805c1a10e4eb839999d9",
+          "dimensions": [
+            2681,
+            2369
+          ],
+          "root_visual_review": "read actual complete image; no clipping or material finding"
+        },
+        {
+          "artifact": "evidence410-science-consumers/correlation-after-native/large-signed-hand.png",
+          "sha256": "710a8f8d1008bf234cf0849bc23c8b17de1cc27e8338d20df58e302da900bd3b",
+          "dimensions": [
+            2964,
+            2369
+          ],
+          "root_visual_review": "read actual complete image; no clipping or material finding"
+        },
+        {
+          "artifact": "evidence410-science-consumers/correlation-after-native/positive-and-zero-hand.png",
+          "sha256": "1c6efdd658d36fe1843000fff9aaa7c26b2c9171f3ac1f4b4fb98dea9860716b",
+          "dimensions": [
+            2681,
+            2369
+          ],
+          "root_visual_review": "read actual complete image; no clipping or material finding"
+        },
+        {
+          "artifact": "evidence410-science-consumers/correlation-after-native/signed-hand.png",
+          "sha256": "d7348cabe56c44f00e9ae1bf06aabb4a48c1daaef779fd75c622f0800d939eae",
+          "dimensions": [
+            2681,
+            2369
+          ],
+          "root_visual_review": "read actual complete image; no clipping or material finding"
+        },
+        {
+          "artifact": "evidence410-science-consumers/correlation-after-native/tiny-passthrough.png",
+          "sha256": "d5e99b1e24ad9ee20b08d27d66fa124a42c9585cd2985e36a50cf8c2db33e568",
+          "dimensions": [
+            2654,
+            2369
+          ],
+          "root_visual_review": "read actual complete image; no clipping or material finding"
+        }
+      ]
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from gnn.render.admission import merge_backend_options
 from gnn.render.processor.parsing import (
     _render_succeeded,
     normalize_matrices,
@@ -72,7 +73,11 @@ def process_render(
         explicit_options = kwargs.get("backend_options", {})
         if not isinstance(explicit_options, dict):
             raise ValueError("backend_options must be a mapping")
-        kwargs["backend_options"] = {**configured_options, **explicit_options}
+        kwargs["backend_options"] = merge_backend_options(
+            configured_options, explicit_options
+        )
+    elif "backend_options" in kwargs:
+        kwargs["backend_options"] = merge_backend_options({}, kwargs["backend_options"])
     try:
         logger.info(f"Processing GNN files in: {target_dir}")
         logger.info(f"Output directory: {output_dir}")

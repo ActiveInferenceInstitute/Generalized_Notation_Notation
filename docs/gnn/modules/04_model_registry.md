@@ -299,7 +299,7 @@ input/gnn_files (re-globbed and re-read by 4_model_registry.py)
 
 ### Test Coverage
 
-- Measure: `uv run --extra dev python -m pytest tests/model_registry/ --cov=model_registry --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/model_registry/ --cov=gnn.model_registry --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ---
 

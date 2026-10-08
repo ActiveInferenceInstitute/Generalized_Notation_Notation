@@ -51,7 +51,31 @@ It supports multiple internal shapes for extracting \(A, B, C, D\) via `jax_rend
 - JSON export style dicts with `statespaceblock` and `raw_sections["InitialParameterization"]`
 - older parsed dicts with `variables` and `InitialParameterization`
 
-If extraction fails or is partial, the implementation applies defaults and recovery normalization.
+Complete `model_parameters` + `initialparameterization` inputs admit lists,
+tuples, and numeric NumPy arrays without mutating the caller. Explicit
+canonicalization failures propagate to a failed render before any output is
+written; authored matrices are never replaced after failed admission.
+
+Supplied existing braced literals are parsed strictly, including nested transition
+tensors. Malformed or ragged literals fail rather than receiving padded rows or
+recovery values. Supplied existing tables must match their declared dimensions;
+`A` columns, each action's `B` columns, and `D` must contain finite nonnegative
+probabilities with unit mass under the existing canonical rounding tolerance.
+`C` is a finite real payoff vector and may contain negative preferences. Optional
+`E` in complete canonical inputs retains the shared action-prior validation.
+
+Historical dimension-based defaults for partial inputs remain compatible. The
+complete-model value-preservation checks do not certify those defaults as
+authored scientific parameters.
+
+In partial inputs, an absent `A`, `B`, `C` or `D` retains its dimension-based
+default. A present table must be an ordered list, tuple or numeric NumPy array
+with rank 2 for `A`, rank 2 or 3 for `B`, and rank 1 for `C`/`D`. A passive
+rank-2 `B` receives one action axis. Valid tables are copied without changing
+the caller's values or array flags, then undergo the existing real, finite,
+probability and coherent-axis checks. Malformed tables and non-dictionary
+parameter collections fail before creating directories or writing artifacts;
+an invalid present table cannot be replaced by a dimension-based default.
 
 ### `output_path`
 
@@ -70,6 +94,14 @@ Each API call writes a single Python script to `output_path`:
 - **General model**: pure JAX + NumPy
 - **POMDP solver**: JAX; optional Optax import with explicit "continue without Optax" behavior in generated code
 - **Combined model**: JAX + Flax + Optax
+
+Saved scripts use UTF-8. When the general categorical model runs as a program,
+it configures its native `TextIOWrapper` stdout/stderr streams to UTF-8 before
+printing diagnostics, including authored Unicode model names and paths. Model
+imports leave the caller's streams unchanged, and text captures such as
+`StringIO` retain their existing behavior. Its saved result JSON also uses UTF-8.
+This boundary matches the executor's existing UTF-8 byte decoding; it does not
+change the execution environment, numerical algorithms or deadline handling.
 
 Step 11 may place these scripts under:
 

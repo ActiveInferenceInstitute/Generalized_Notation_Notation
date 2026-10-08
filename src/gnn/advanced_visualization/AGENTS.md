@@ -96,7 +96,7 @@ success = process_advanced_viz(
 
 ### POMDP-Specific Visualizations
 
-- **Transition Matrix Analysis**: B matrix visualization with action-specific slices
+- **Transition Matrix Analysis**: Canonical `B[next_state, previous_state, action]` visualization with `B[:, :, action]` slices; previous state is horizontal and next state is vertical, including passive two-dimensional B
 - **Policy Visualization**: Policy distribution over actions (π and E matrices)
 - **3D Transition Visualization**: Multi-action transition matrix heatmaps
 - **State-Action Relationships**: Visual representation of POMDP dynamics
@@ -545,7 +545,7 @@ python src/gnn/9_advanced_viz.py --target-dir input/ --verbose
 
 ## Version History
 
-### Current Version: 4.0.1
+### Current Version: 4.1.0
 Tracks the package version (`pyproject.toml`). Documented-surface changes since
 the 3.2.0 marker (2026-09-04): D2 compiles route through the shared subprocess
 envelope (b97d0ebb6, 2026-09-19) and seaborn/scipy.stats imports became lazy

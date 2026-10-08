@@ -11,10 +11,12 @@ Step 7 exports retain their existing behavior.
 
 Every object below has exactly the listed keys. Unknown keys or versions fail
 on the consumer. Top-level `schema_version` is `gnn-geo-infer/1`, `model_type`
-is `categorical`, and `model_name` is a nonempty string. The single sanctioned
-extension is the optional `provenance.metadata_derivation` record attached by
-the notation-derivation layer (see *Notation-derived metadata* below); no
-other key may be added.
+is `categorical`, and `model_name` is a nonempty string. The current paired consumer accepts the explicit-metadata schemas
+`gnn-geo-infer/1`, `gnn-geo-infer/2` and `gnn-geo-infer/factored/1`.
+Producer-side notation derivation can attach `provenance.metadata_derivation`
+after base validation, but the current consumer rejects that added key. See
+*Notation-derived metadata* for this separate opt-in boundary. Unknown keys
+are never silently stripped to make an artifact pass.
 
 | Object | Required keys and interpretation |
 | --- | --- |
@@ -22,7 +24,7 @@ other key may be added.
 | matrices | `A`, `B`, `C`, `D`, `E`: finite numeric arrays |
 | space | `kind`: `categorical` or `h3`; `state_ids`: unique strings in matrix state order |
 | time | `step_seconds`: positive seconds per B transition, explicitly supplied by the caller or read from an explicit notation declaration with recorded provenance |
-| provenance | `producer`: nonempty label; `source_sha256`: lowercase SHA-256 of original UTF-8 source; optional `metadata_derivation`: structured record attached only by the notation-derivation layer |
+| provenance | `producer`: nonempty label; `source_sha256`: lowercase SHA-256 of original UTF-8 source; producer-only optional `metadata_derivation`: rejected by the current paired consumer |
 
 A axes are `[observation,state]`; B axes are `[next_state,current_state,action]`.
 C contains log preferences, D is the initial state prior, and E is the prior over
@@ -92,18 +94,20 @@ verifies exact matrix/order preservation and deterministic real inference.
 
 Continuous GNN, factorized models, irregular time and longer policies are
 covered by the separate contracts below ("Linear Gaussian v2" and the factored
-contract); v1 itself does not accept them. GNN-02/GNN-03 in `TO-DO.md` are
-closed by those contracts, GNN-05 records the Step 7 CLI wiring, and GNN-04
-(cross-repository revision pairing) remains open.
+contract); v1 itself does not accept them. Historical GNN-02/GNN-03/GNN-05
+identifiers tracked these contracts and Step 7 wiring. Current remaining scope
+is in [TO-DO](../../../TO-DO.md); exact pairing follows the
+[paired-revision procedure](../../../docs/development/fep_lean_paired_revision.md).
 
-## Verified companion implementation
+## Historical companion implementation checkpoint
 
 The paired GEO implementation is
 [`e028aa90`](https://github.com/ActiveInferenceInstitute/GEO_INFER/commit/e028aa9060e05f765762224499f5e2c714cf25a3).
 Its receipt records identical categorical/H3 artifacts and complete traces across
-GEO Python 3.11 and 3.12, with GNN running separately on Python 3.11. Main-branch
-integration and CI revision pairing remain the explicitly scoped GNN-04/GNN-06
-work; this reference identifies the tested topic implementation.
+GEO Python 3.11 and 3.12, with GNN running separately on Python 3.11. This identifies the tested topic epoch, not a current pin or 4.1.0 acceptance.
+Historical published pairing is recorded by the
+[4.0.1 receipt](../../../docs/development/gnn_4_0_1_post_publication.json);
+current pairing belongs to the version's exact source/check/release records.
 
 ## Linear Gaussian v2
 
@@ -213,8 +217,8 @@ requested output directory.
 
 ## Notation-derived metadata (opt-in)
 
-GNN-05 revises the original "explicit only" rule: metadata may also be read
-from explicit declarations inside the GNN source itself, but only when the
+The producer can read metadata from explicit declarations inside the GNN
+source itself, but only when the
 caller opts in, only for fields the explicit options leave unset, and always
 with the derivation recorded in the artifact. The concern behind the original
 rule was silent guessing; the revision keeps every value either
@@ -254,8 +258,9 @@ declaration, and rejects nonpositive, unparseable or unsupported-unit values.
 No default `step_seconds` is ever substituted. Gaussian exports additionally
 keep their own `Discrete`-without-`Continuous` requirement.
 
-`provenance.metadata_derivation` is attached after artifact validation and is
-the only structural extension of either contract version:
+`provenance.metadata_derivation` is a producer-side extension attached after
+base artifact validation. It does not change the current consumer's exact-key
+contract or establish paired-consumer acceptance:
 
 ```json
 "provenance": {
@@ -281,9 +286,11 @@ the only structural extension of either contract version:
 }
 ```
 
-Cross-repository consumers older than this revision reject unknown provenance
-sub-keys; paired-revision CI (GNN-04) must pin a GEO revision that accepts the
-extension before derivation is used against that consumer.
+The current paired GEO consumer rejects unknown provenance sub-keys, including
+this record. Use explicit metadata with the three current schemas. Exchanging
+derived provenance requires a separately reviewed consumer contract and a
+paired revision that actually accepts it; the producer flag alone does not
+establish readiness. Never drop provenance silently to bypass refusal.
 
 ## Numbered Step 7 command
 

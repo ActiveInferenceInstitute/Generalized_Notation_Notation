@@ -269,9 +269,19 @@ def _ensure_state_space_section(md_text: str) -> tuple[str, int]:
     """Handle ensure state space section for internal callers."""
     lines = _markdown_lines(md_text)
     for i, line in enumerate(lines):
+        norm = line.strip().lower()
+        tag = norm[3:].replace(" ", "") if norm.startswith("## ") else ""
         if (
-            line.strip().lower().startswith("## state space")
-            or line.strip().lower() == "state space"
+            tag
+            in {
+                "statespace",
+                "statespaceblock",
+                "statespaces",
+                "state_space",
+                "state_space_block",
+            }
+            or norm in {"state space", "statespace", "statespaceblock"}
+            or norm.startswith("## state space")
         ):
             return md_text, i + 1
     to_add: list[Any] = []
@@ -294,14 +304,25 @@ def add_state_space_entry(
     typ: str | None = None,
     comment: str | None = None,
 ) -> str:
-    """Provide add state space entry behavior."""
-    md_text, _ = _ensure_state_space_section(md_text)
+    """Insert a state declaration before the next section, preserving other text."""
+    md_text, first_row = _ensure_state_space_section(md_text)
     suffix = f"  # {comment}" if comment else ""
     line = (
         f"{name}[{', '.join(str(d) for d in dims)}{', type=' + typ if typ else ''}]"
         + suffix
     )
-    return md_text + ("\n" if not md_text.endswith("\n") else "") + line + "\n"
+    lines = md_text.splitlines(keepends=True)
+    end_row = first_row
+    while end_row < len(lines) and not lines[end_row].strip().startswith("## "):
+        end_row += 1
+    offset = sum(len(part) for part in lines[:end_row])
+    heading = lines[first_row - 1]
+    newline = (
+        "\r\n" if heading.endswith("\r\n") else "\r" if heading.endswith("\r") else "\n"
+    )
+    before, after = md_text[:offset], md_text[offset:]
+    separator = "" if before.endswith(("\n", "\r")) else newline
+    return before + separator + line + newline + after
 
 
 def update_state_space_entry(
@@ -329,9 +350,7 @@ def update_state_space_entry(
         else:
             out.append(line)
     if not replaced:
-        return add_state_space_entry(
-            "\n".join(out) + "\n", new_name, dims, typ, comment
-        )
+        return add_state_space_entry(md_text, new_name, dims, typ, comment)
     return "\n".join(out) + ("\n" if not out or out[-1] != "" else "")
 
 

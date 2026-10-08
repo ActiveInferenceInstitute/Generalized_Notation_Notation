@@ -18,6 +18,7 @@ The processing concern for GNN files: corpus discovery, a lightweight parse/vali
 - `__init__.py` - Curated public surface (`__all__`, sixteen names)
 
 ## Invariants
+- `GNNProcessor.process` preserves its Boolean public contract: report exceptions, returned write errors, or absent/empty required JSON, Markdown, or HTML reports return `False`. Failure context is recorded in `processing_results["report_error"]` and the reporting phase; completed partial report artifacts and returned metadata remain available.
 - Numbered step scripts stay thin: `src/gnn/3_gnn.py` wraps `process_gnn_multi_format` with `create_standardized_pipeline_script`; the step body lives here.
 - The root package lazily re-exports the lightweight surface and `process_gnn_multi_format` through `_EXPORT_MAP` in `src/gnn/__init__.py`; the orchestration engine (`GNNProcessor`) and discovery predicates must be imported from `gnn.processing` directly.
 - `gnn.manuscript.variables` mirrors the non-model markdown rules rather than importing them; `test_producer_model_census_matches_pipeline_discovery` pins the two definitions equal.

@@ -14,6 +14,7 @@ venv/
 env/
 ENV/
 .pytest_cache/
+.import_linter_cache/
 src/.pytest_cache/
 */.pytest_cache/
 *.pytest_cache/

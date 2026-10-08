@@ -189,12 +189,12 @@ def test_resolver_fail_fast_on_invalid_skip_token() -> None:
 
 
 def test_resolver_fail_fast_on_fully_unknown_selection() -> None:
-    with pytest.raises(ValueError, match="no executable steps"):
+    with pytest.raises(ValueError, match="Invalid step number"):
         _resolve(only_steps="99")
 
 
 def test_resolver_fail_fast_on_config_only_steps() -> None:
-    with pytest.raises(ValueError, match="no executable steps"):
+    with pytest.raises(ValueError, match="Invalid step number"):
         _resolve(config={"only_steps": "42,99"})
 
 
@@ -210,17 +210,10 @@ def test_resolver_logs_selection_lines(caplog: pytest.LogCaptureFixture) -> None
     )
 
 
-def test_resolver_warns_on_unknown_step_numbers(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    logger = logging.getLogger("test_resolver_unknown")
-    with caplog.at_level(logging.WARNING, logger="test_resolver_unknown"):
-        _resolve(only_steps="3,99", logger=logger)
-
-    assert any(
-        "Ignoring unknown step number(s)" in record.getMessage()
-        for record in caplog.records
-    )
+def test_resolver_rejects_partly_unknown_step_numbers() -> None:
+    """Execution cannot silently reduce a request to its known subset."""
+    with pytest.raises(ValueError, match="Invalid step number"):
+        _resolve(only_steps="3,99")
 
 
 def test_resolver_falls_back_to_config_only_steps_when_cli_absent() -> None:

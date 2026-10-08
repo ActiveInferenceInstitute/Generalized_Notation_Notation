@@ -7,6 +7,176 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-10-08
+
+> **Public contracts and native boundaries.**
+
+This release line integrates the
+bounded minor/medium campaign. Exact release, installed-platform and custody
+acceptance is recorded by the release's source-bound receipts; local focused
+checks alone cannot establish publication or the full supported matrix.
+
+### Source and native acceptance records
+
+Current software version is **4.1.0**. Its [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0) records exact tag, source, checks and artifacts; version metadata alone does not establish acceptance.
+The [ownership review](docs/development/gnn_4_1_0_ownership_review.json) preserves
+historical epochs and the aa45 census: 759 source files, 1,148 exact Exception
+and 1,159 broad handlers, with nine extraction hashes unchanged. Scoped proxy 118
+does not establish lower algorithmic complexity. Separate
+[coverage](docs/development/native_comprehensive_coverage.md) and
+[installed](docs/development/installed_platform_acceptance.md) records carry
+actual source/environment/native results. The 201/33/27 focused selections and
+18 source gates retain original epochs, not percentages or Windows acceptance.
+Historical failed/incomplete attempts are preserved without success relabeling.
+
+### Changed
+
+- Python, CLI, REST and MCP execution share strict typed admission, live backend
+  and dependency inventories, frozen run selections and current artifact/result
+  receipts. Invalid executing-step requests refuse before output creation;
+  explicit empty model selections remain valid no-work. Installed API storage
+  is caller-configured and independent from installed code. See the
+  [migration guide](docs/development/run_ownership_migration.md).
+- Logging, website templates and RxInfer ingestion/metrics have coherent owners
+  with preserved public signatures. Logging formatters retain independent
+  records; typed schema, GUI, interchange, destination and source failures
+  preserve the original diagnosis. Round-trip helpers persist distinct format
+  artifacts from the actual supplied source, including concurrent namesakes.
+- Legacy RxInfer saved-file APIs preserve numeric zero and scalar posterior
+  values and collect each matching file once. Canonical VFE, timestep and
+  Gaussian covariance payloads retain the current reader's contract and receive
+  explicit guidance when supplied to a legacy reader.
+- JAX generation preserves explicitly authored ndarray/list parameters through
+  canonical validation and refuses invalid probabilities or malformed tables
+  before writing. Legacy table readers match exact parameter names and retain
+  signed preference values without replacing authored failures with defaults.
+  Saved programs and execution logs use explicit UTF-8. General categorical
+  programs configure their native output streams before diagnostics, retaining
+  scientific Unicode on Windows code pages and leaving imported caller streams
+  unchanged. Shared process supervision and numerical algorithms are preserved.
+  Partial inputs retain defaults only for omitted tables; supplied malformed
+  tables or parameter collections refuse through both public renderers before
+  writing. Valid tuples and read-only arrays preserve their scientific values.
+- Public CLI invocations emit native stdout/stderr in UTF-8 for Unicode paths,
+  validation markers and diagnostics, then restore caller-owned encoding and
+  error settings. Imported modules and nonnative capture streams are unchanged;
+  installed acceptance decodes and stores these CLI transcripts explicitly in
+  UTF-8 while preserving the original command outcomes and deadlines.
+- Saved validator round trips retain supplied parameters, nested values and
+  variable descriptions. ASN.1 and Z line-comment interchange payloads stop at
+  their actual line boundary; malformed payloads refuse conversion while
+  preserving the caller's previous destination.
+  Both Markdown readers retain authored bracket datatypes, including whitespace
+  and the existing int/bool aliases. Nested JSON boolean arrays preserve shape
+  and quoted text through the existing length/depth guards; malformed and
+  overlimit values retain their documented legacy recovery.
+  JSON/YAML reopening retains declared time step sizes, and the schema facade
+  exposes canonical datatype values. Valid YAML comments remain accepted;
+  malformed YAML and unsupported tags retain causal parse failures rather than
+  appearing as successful empty models. Agda extraction matches complete
+  declaration tokens without consuming an adjacent declaration as a body.
+  Formal-format extraction does not establish compiler or theorem validity.
+- Processing reports accept their native structural and typed validation
+  results. A processing run reports failure for missing, empty or failed
+  required reports and preserves completed partial artifacts and diagnoses.
+- Pipeline report aggregation honors the caller's requested formats and refuses
+  regular-file inputs before creating reports. Saved-run replay retains its
+  historical identity; unsupported formats and partial writer failures preserve
+  the documented best-effort outcome and actual completed-file summary.
+- Generated PyMDP specification literals preserve authored strings containing
+  JSON keywords. DisCoPy programs serialize model names safely, preserving
+  quotes, backslashes, newlines and Unicode in actual exported metadata.
+  PyMDP requires finite numeric values in the JSON-clean specification,
+  including metadata, and refuses NaN/infinities before replacing source.
+- GUI 1 edits recognize the canonical state-space section, retain following
+  sections and preserve the authored newline style. Ontology readers recognize
+  labeled concepts, relations, properties and annotations before bare mappings.
+  GUI 2 exports valid vector syntax and the declared transition tensor order
+  `B[next_state, previous_state, action]`, including noncubic action sets.
+  Finite edited numeric values retain round-trip float precision. Earlier
+  rounded or transposed exports require regeneration from authoritative source;
+  see the [saved-model migration](src/gnn/gui/gui_2/README.md#saved-models-and-migration).
+- Runtime validation uses the caller's absolute input/output paths and requires
+  a canonical summary bearing its fresh invocation identity. Inherited summaries
+  and workspace package shadows cannot establish current execution success.
+- MCP stdio retains coalesced and fragmented frames, applies its 1 MiB cap to
+  each line, and drains admitted work before EOF exit. Saved round-trip counts
+  include actual file-read failures; empty directories retain valid no-work.
+- Descriptor-relative POSIX directory, lease and deletion operations enforce
+  the documented trusted-parent boundary. Bounded owned process supervision
+  verifies cleanup and stream drainage; failed cleanup retains artifacts and
+  records. Native Windows supports direct-worker cleanup and refuses stronger
+  descendant guarantees before launch. See the
+  [precise guarantees](docs/security/filesystem_boundaries.md).
+  Output validation detects real symlink cycles on Python 3.13 and retains
+  causal resolution failures while preserving contained dangling links.
+- THRML joint composition reads admission limits from the canonical adapter at
+  the existing guards. Temporary earlier imports cannot retain stale limits;
+  thresholds, numerical values, axes and sampling behavior are unchanged.
+- Scientific figures preserve numerical arrays while identifying axis bases,
+  controls, reported policy-score conventions, full-tensor statistics, signed
+  generic tensors and categorical/Gaussian uncertainty. Rolling variance is
+  descriptive; it is not an inference convergence test. Finite actual figure
+  and sampled animation review retains source/data/artifact hashes.
+  Advanced POMDP plots use all canonical action planes, with previous state on
+  the horizontal axis and next state on the vertical axis.
+  Small correlation views use an explicit symmetric domain from the actual
+  finite values; an all-zero matrix uses a visible unit display domain without
+  modifying its numbers. Large views retain their existing presentation.
+- Saved-runtime reports describe fitted observations within the recorded
+  parameter ranges and qualify model, configuration and environment dependence.
+  They no longer insert unsupported fixed exponents or attribute timing to JIT
+  compilation or inference without evidence. The fitted numeric results remain
+  unchanged.
+  Runtime plots retain individual fitted exponents and use a descriptive global
+  title without averaging N-axis and T-axis fits. Watermarks use the canonical
+  package version with the actual generation time. Saved source-size tables
+  retain their counts without inferring cubic growth from line counts alone.
+- Partial saved ActiveInference.jl analysis resolves each model's actual CSV
+  path before recovery, preserving signed EFE, observation/action/belief
+  identity and decoded plot data. Malformed numeric CSV rows are refused
+  atomically; missing files do not invent observations. Saved NumPyro-labelled
+  consumer fixtures establish report behavior without claiming backend execution.
+- Lossless production PNG encoding defaults to level 3 while preserving caller
+  overrides. Two paired rounds across all 552 production PNGs measured 5.48%
+  less median encoder CPU and 3.07% more bytes with identical decoded pixels,
+  dimensions and metadata. The [measurement report](src/gnn/analysis/PERFORMANCE.md)
+  qualifies source epochs, repeated/concurrent native runs, variance, sampled
+  RSS, admission limits and bounded localhost transfer. No whole-pipeline or
+  cross-platform acceleration is inferred.
+- Maintained documentation uses canonical paths, live metadata and current-run
+  owners. Ordinary wheel acceptance executes outside checkout, including API
+  workspace isolation, registry concurrency, real scientific imports and native
+  filesystem/process witnesses. Support follows accepted native lane receipts.
+
+### Added
+
+- Externally observable authored-parser, backend-result, scientific-artifact,
+  public-admission and saved-round-trip behavior checks. Original core coverage
+  scope and its 60% enforced floor are preserved. The >80% per-environment goal
+  is accepted independently on all three full native environments. Comprehensive
+  CI now enforces an 80% floor and the strict integer >80% comparison; focused
+  coverage does not substitute for those reports.
+- A bounded real Step 8 developer benchmark records source/configuration hashes,
+  per-phase wall/process CPU, sampled process-tree RSS and actual artifacts.
+- Separate native comprehensive coverage reports preserve exact source and
+  environment identities, first-frame child tracing, raw/lane/combined line-set
+  parity and unreadable-data refusal. Short-deadline controls and explicit
+  unobserved startup limits remain intact; no foreign or inferred execution
+  contributes coverage.
+  Observer receipt publication uses owned exclusive temporaries and a
+  process-local lock with fresh child-fork state. Concurrent native launches
+  cannot replace each other's temporary files; genuine I/O errors still refuse
+  admission, and original execution deadlines remain unchanged.
+
+### Remaining acceptance
+
+Released THRML 0.1.4 still fails structural-zero/inactive-padding witnesses on
+both supported JAX splits; strict refusal remains until a compatible release
+passes. The exact 4.0.1 Zenodo source/manuscript archive is verified, but separate
+distribution assets and the 4.1.0 version archive still require public provider
+custody. [TO-DO.md](TO-DO.md) retains unfinished acceptance and major extensions.
+
 ## [4.0.1] - 2026-10-07
 
 Published at [v4.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.0.1) from `17c72cf0f98d7d3bbf0159d1b1cce8c77c4e4daf`.
@@ -2425,7 +2595,8 @@ Completes the remaining RED_TEAM_REVIEW.md items from the 2026-08-14 wave.
 - pytest test suite with comprehensive coverage
 - MCP tool registration framework
 
-[Unreleased]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.0.1...HEAD
+[Unreleased]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.0.1...v4.1.0
 [4.0.1]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.6.0...v4.0.0
 [3.6.0]: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/compare/v3.5.0...v3.6.0

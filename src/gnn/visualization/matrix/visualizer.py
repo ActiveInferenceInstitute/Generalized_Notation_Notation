@@ -10,6 +10,7 @@ Specialized support for 3D tensors like POMDP transition matrices.
 from __future__ import annotations
 
 import csv
+import hashlib
 import importlib.util
 import json
 import logging
@@ -17,9 +18,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from ..compat.viz_compat import MATPLOTLIB_AVAILABLE, get_sns, np, plt
-from ..plotting.utils import safe_tight_layout
+from ..plotting.utils import contrasting_text_color, safe_tight_layout, save_figure
 from .extract import (
     convert_to_matrix,
+    is_transition_tensor_name,
 )
 from .extract import (
     extract_matrix_data_from_parameters as extract_matrices_from_parameter_list,
@@ -114,17 +116,25 @@ class MatrixVisualizer:
                     for i, row in enumerate(matrix):
                         writer.writerow([f"Row {i}"] + row.tolist())
                 elif matrix.ndim == 3:
-                    # POMDP B tensors use (next_state, previous_state, action).
-                    for action in range(matrix.shape[2]):
-                        writer.writerow([f"Action slice {action}"])
+                    transition = is_transition_tensor_name(matrix_name)
+                    for index in range(matrix.shape[2]):
+                        plane = (
+                            f"Action slice {index}"
+                            if transition
+                            else f"Axis 2 slice {index}"
+                        )
+                        writer.writerow([plane])
                         writer.writerow(
-                            ["Next \\ Previous"]
-                            + [f"Previous {j}" for j in range(matrix.shape[1])]
+                            ["Next \\ Previous" if transition else "Axis 0 \\ Axis 1"]
+                            + [
+                                f"{'Previous' if transition else 'Axis 1'} {j}"
+                                for j in range(matrix.shape[1])
+                            ]
                         )
                         for next_state in range(matrix.shape[0]):
                             writer.writerow(
-                                [f"Next {next_state}"]
-                                + matrix[next_state, :, action].tolist()
+                                [f"{'Next' if transition else 'Axis 0'} {next_state}"]
+                                + matrix[next_state, :, index].tolist()
                             )
                         writer.writerow([])
 
@@ -199,6 +209,10 @@ class MatrixVisualizer:
         output_path: Path,
         title: Optional[str] = None,
         cmap: str = "viridis",
+        *,
+        units: str | None = None,
+        row_label: str | None = None,
+        column_label: str | None = None,
     ) -> bool:
         """
         Generate a heatmap visualization for a matrix.
@@ -227,7 +241,12 @@ class MatrixVisualizer:
 
             # Add colorbar
             cbar = plt.colorbar(im)
-            cbar.set_label("Value", rotation=270, labelpad=15)
+            unit_label = (
+                units.strip()
+                if isinstance(units, str) and units.strip()
+                else "units unspecified"
+            )
+            cbar.set_label(f"Value ({unit_label})", rotation=270, labelpad=15)
 
             # Add title
             if title is None:
@@ -235,8 +254,8 @@ class MatrixVisualizer:
             plt.title(title, fontsize=16, fontweight="bold")
 
             # Add axis labels
-            plt.xlabel("Column Index")
-            plt.ylabel("Row Index")
+            plt.xlabel(column_label or "Column Index (0-based)")
+            plt.ylabel(row_label or "Row Index (0-based)")
 
             # Add text annotations for matrix values (skip for large matrices)
             total_cells = matrix.shape[0] * matrix.shape[1]
@@ -250,7 +269,7 @@ class MatrixVisualizer:
                             f"{value:.3f}",
                             ha="center",
                             va="center",
-                            color="white" if value < 0.5 else "black",
+                            color=contrasting_text_color(im.cmap(im.norm(value))),
                             fontsize=8,
                             fontweight="bold",
                         )
@@ -265,7 +284,7 @@ class MatrixVisualizer:
                 output_path.parent.mkdir(parents=True, exist_ok=True)
             except OSError as e:
                 logger.debug("mkdir for %s: %s", output_path.parent, e)
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             # Export matrix data to CSV for accessibility
@@ -296,7 +315,7 @@ class MatrixVisualizer:
         tensor: np.ndarray,
         output_path: Path,
         title: Optional[str] = None,
-        tensor_type: str = "transition",
+        tensor_type: str | None = None,
     ) -> bool:
         """
         Generate specialized visualization for 3D tensors like POMDP transition matrices.
@@ -306,7 +325,8 @@ class MatrixVisualizer:
             tensor: 3D numpy array
             output_path: Output file path
             title: Optional title for the plot
-            tensor_type: Type of tensor ('transition', 'likelihood', etc.)
+            tensor_type: Explicit role; omitted role is transition only for canonical
+                B/B_fN names, otherwise generic with one shared value scale.
 
         Returns:
             True if successful, False otherwise
@@ -320,6 +340,12 @@ class MatrixVisualizer:
 
             # Get dimensions
             dim1, dim2, dim3 = tensor.shape
+            if tensor_type is None:
+                tensor_type = (
+                    "transition"
+                    if is_transition_tensor_name(tensor_name)
+                    else "generic"
+                )
 
             # Create figure with subplots for each slice (clamped to prevent overflow)
             fig = plt.figure(figsize=_safe_figsize(5 * dim3, 8))
@@ -330,13 +356,13 @@ class MatrixVisualizer:
             # Generate titles based on tensor type
             if tensor_type == "transition":
                 slice_titles = [f"Action {i}" for i in range(dim3)]
-                xlabel = "Previous State"
-                ylabel = "Next State"
+                xlabel = "Previous State (0-based)"
+                ylabel = "Next State (0-based)"
                 main_title = f"POMDP Transition Matrix {tensor_name} (P(s'|s,u))"
             else:
-                slice_titles = [f"Slice {i}" for i in range(dim3)]
-                xlabel = "Column"
-                ylabel = "Row"
+                slice_titles = [f"Axis 2 slice {i} (0-based)" for i in range(dim3)]
+                xlabel = "Axis 1 index (0-based)"
+                ylabel = "Axis 0 index (0-based)"
                 main_title = f"3D Tensor {tensor_name}"
 
             # Plot each slice as a heatmap
@@ -347,7 +373,14 @@ class MatrixVisualizer:
                 slice_data = tensor[:, :, i]
 
                 # Create heatmap
-                im = ax.imshow(slice_data, cmap="Blues", aspect="auto", vmin=0, vmax=1)
+                probability_range = (
+                    {"vmin": 0, "vmax": 1}
+                    if tensor_type == "transition"
+                    else {"vmin": float(np.min(tensor)), "vmax": float(np.max(tensor))}
+                )
+                im = ax.imshow(
+                    slice_data, cmap="Blues", aspect="auto", **probability_range
+                )
 
                 # Add text annotations for small matrices
                 if (
@@ -362,7 +395,7 @@ class MatrixVisualizer:
                                 f"{value:.2f}",
                                 ha="center",
                                 va="center",
-                                color="white" if value < 0.5 else "black",
+                                color=contrasting_text_color(im.cmap(im.norm(value))),
                                 fontsize=10,
                                 fontweight="bold",
                             )
@@ -379,7 +412,13 @@ class MatrixVisualizer:
                 # Add colorbar for first slice only
                 if i == 0:
                     cbar = plt.colorbar(im, ax=ax, shrink=0.8)
-                    cbar.set_label("Transition Probability", rotation=270, labelpad=15)
+                    cbar.set_label(
+                        "Transition Probability"
+                        if tensor_type == "transition"
+                        else "Value (units unspecified)",
+                        rotation=270,
+                        labelpad=15,
+                    )
 
             # Add summary statistics below
             ax_summary = fig.add_subplot(gs[1, :])
@@ -407,7 +446,7 @@ class MatrixVisualizer:
             fig.suptitle(main_title, fontsize=16, fontweight="bold", y=0.95)
 
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
             return True
 
@@ -477,21 +516,28 @@ class MatrixVisualizer:
             # POMDP transition tensors use (next_state, previous_state, action).
             # Each previous-state/action column must sum over next_state.
             column_sums = np.sum(tensor, axis=0)
-            valid_transitions = np.allclose(column_sums, 1.0, atol=1e-6)
+            valid_transitions = (
+                np.isfinite(tensor).all()
+                and np.all(tensor >= 0)
+                and np.all(tensor <= 1)
+                and np.allclose(column_sums, 1.0, atol=1e-6)
+            )
 
             # Calculate entropy of transitions
-            # Add small epsilon to avoid log(0)
-            epsilon = 1e-10
-            log_probs = np.log(tensor + epsilon)
-            entropy = -np.sum(tensor * log_probs, axis=0)
-            mean_entropy = np.mean(entropy)
+            if valid_transitions:
+                # The exact limit 0*log(0)=0 preserves deterministic entropy.
+                log_probs = np.log(np.where(tensor > 0, tensor, 1.0))
+                entropy = -np.sum(tensor * log_probs, axis=0) + 0.0
+                entropy_label = f"{np.mean(entropy):.3f} nats"
+            else:
+                entropy_label = "unavailable: not normalized nonnegative probabilities"
 
             stats = f"""Tensor {tensor_name} Statistics:
 Shape: {dim1}×{dim2}×{dim3} (Next×Previous×Actions)
 Mean: {mean_val:.3f}, Std: {std_val:.3f}
 Range: [{min_val:.3f}, {max_val:.3f}]
 Valid Transition Matrices: {"✓" if valid_transitions else "✗"}
-Mean Transition Entropy: {mean_entropy:.3f} bits"""
+Mean Transition Entropy: {entropy_label}"""
         else:
             stats = f"""Tensor {tensor_name} Statistics:
 Shape: {dim1}×{dim2}×{dim3}
@@ -607,6 +653,8 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                     # Vector - plot as bar chart
                     ax.bar(range(len(matrix)), matrix)
                     ax.set_title(f"{name} (Vector)")
+                    ax.set_xlabel("Element Index (0-based)")
+                    ax.set_ylabel("Value (units unspecified)")
                 elif matrix.ndim == 2:
                     # Matrix - plot as heatmap
                     if SEABORN_AVAILABLE:
@@ -615,27 +663,48 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                             ax=ax,
                             cmap="viridis",
                             annot=True if matrix.size <= 100 else False,
+                            cbar_kws={"label": "Value (units unspecified)"},
                         )
                     else:
                         im = ax.imshow(matrix, cmap="viridis", aspect="auto")
-                        plt.colorbar(im, ax=ax)
+                        plt.colorbar(im, ax=ax, label="Value (units unspecified)")
                     ax.set_title(f"{name} (Matrix {matrix.shape})")
+                    ax.set_xlabel("Column Index (0-based)")
+                    ax.set_ylabel("Row Index (0-based)")
                 elif matrix.ndim == 3:
-                    # 3D tensor - show first slice
+                    # Only the canonical named GNN transition tensor declares
+                    # an action axis. Other tensors retain their axis-0 slice.
+                    is_transition = is_transition_tensor_name(name)
+                    first_plane = matrix[:, :, 0] if is_transition else matrix[0]
                     if SEABORN_AVAILABLE:
                         sns.heatmap(
-                            matrix[0],
+                            first_plane,
                             ax=ax,
                             cmap="viridis",
-                            annot=True if matrix[0].size <= 100 else False,
+                            annot=True if first_plane.size <= 100 else False,
+                            cbar_kws={"label": "Value (units unspecified)"},
                         )
                     else:
-                        im = ax.imshow(matrix[0], cmap="viridis", aspect="auto")
-                        plt.colorbar(im, ax=ax)
-                    ax.set_title(f"{name} (3D Tensor {matrix.shape}, slice 0)")
+                        im = ax.imshow(first_plane, cmap="viridis", aspect="auto")
+                        plt.colorbar(im, ax=ax, label="Value (units unspecified)")
+                    plane_label = "action 0" if is_transition else "axis 0 slice 0"
+                    ax.set_title(f"{name} (3D Tensor {matrix.shape}, {plane_label})")
+                    ax.set_xlabel(
+                        "Previous State (0-based)"
+                        if is_transition
+                        else "Axis 2 Index (0-based)"
+                    )
+                    ax.set_ylabel(
+                        "Next State (0-based)"
+                        if is_transition
+                        else "Axis 1 Index (0-based)"
+                    )
 
                 # Add statistics text
-                stats_text = f"Mean: {np.mean(matrix):.3f}\nStd: {np.std(matrix):.3f}"
+                scope = "Full tensor" if matrix.ndim == 3 else "Displayed array"
+                stats_text = (
+                    f"{scope}\nMean: {np.mean(matrix):.3f}\nStd: {np.std(matrix):.3f}"
+                )
                 ax.text(
                     0.02,
                     0.98,
@@ -654,15 +723,30 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                 output_path.parent.mkdir(parents=True, exist_ok=True)
             except OSError as e:
                 logger.debug("mkdir for %s: %s", output_path.parent, e)
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             # Export CSV data for each matrix
             csv_exports: list[Any] = []
-            for name, matrix in matrices.items():
-                csv_success = self.export_matrix_to_csv(matrix, name, output_path)
+            for index, (name, matrix) in enumerate(matrices.items()):
+                # Index disambiguates labels which sanitize to the same filename.
+                label = "".join(
+                    c if c.isascii() and (c.isalnum() or c in "_-") else "_"
+                    for c in name
+                )[:80]
+                stem = output_path.stem
+                if len(stem.encode("utf-8")) > 100:
+                    stem = (
+                        stem.encode("utf-8")[:100].decode("utf-8", errors="ignore")
+                        + "_"
+                        + hashlib.sha256(output_path.stem.encode()).hexdigest()[:8]
+                    )
+                csv_path = output_path.with_name(
+                    f"{stem}_matrix_{index}_{label or 'unnamed'}.csv"
+                )
+                csv_success = self.export_matrix_to_csv(matrix, name, csv_path)
                 if csv_success:
-                    csv_exports.append(output_path.with_suffix(".csv"))
+                    csv_exports.append(csv_path)
 
             return True
 
@@ -732,7 +816,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                 ax = axes_flat[plot_idx]
 
                 # Create heatmap
-                ax.imshow(matrix, cmap="viridis", aspect="auto")
+                image = ax.imshow(matrix, cmap="viridis", aspect="auto")
 
                 # Add title
                 ax.set_title(f"Matrix {matrix_name}", fontweight="bold")
@@ -750,7 +834,9 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                                 f"{value:.2f}",
                                 ha="center",
                                 va="center",
-                                color="white" if value < 0.5 else "black",
+                                color=contrasting_text_color(
+                                    image.cmap(image.norm(value))
+                                ),
                                 fontsize=8,
                             )
 
@@ -769,7 +855,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
 
                 # Show first slice of 3D tensor
                 slice_data = matrix[:, :, 0]
-                ax.imshow(slice_data, cmap="Blues", aspect="auto")
+                image = ax.imshow(slice_data, cmap="Blues", aspect="auto")
 
                 # Add title
                 ax.set_title(f"Tensor {matrix_name} (Slice 0)", fontweight="bold")
@@ -785,7 +871,9 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                                 f"{value:.2f}",
                                 ha="center",
                                 va="center",
-                                color="white" if value < 0.5 else "black",
+                                color=contrasting_text_color(
+                                    image.cmap(image.norm(value))
+                                ),
                                 fontsize=8,
                             )
 
@@ -800,7 +888,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                 axes_flat[i].set_visible(False)
 
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
             return True
 
@@ -839,7 +927,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                     fontweight="bold",
                 )
                 plt.title("Matrix Statistics", fontsize=16, fontweight="bold")
-                plt.savefig(output_path, dpi=300, bbox_inches="tight")
+                save_figure(output_path, dpi=300, bbox_inches="tight")
                 plt.close()
                 return True
 
@@ -915,7 +1003,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                 ax4.text(i, 0.5, shape, ha="center", va="center", fontweight="bold")
 
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
             return True
 
@@ -1072,7 +1160,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
             plt.xlabel("Columns", fontsize=12)
             plt.ylabel("Rows", fontsize=12)
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             return True
@@ -1115,6 +1203,10 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
 
             sns = get_sns()
             if SEABORN_AVAILABLE and corr_matrix.size <= 100:
+                # Explicit limits center the signed palette without seaborn's
+                # older colormap mutation. All-zero data retain their
+                # values; the unit fallback supplies only a plotting domain.
+                color_limit = float(np.max(np.abs(corr_matrix))) or 1.0
                 sns.heatmap(
                     corr_matrix,
                     annot=True,
@@ -1122,7 +1214,8 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                     fmt=".2f",
                     cbar_kws={"shrink": 0.8},
                     square=True,
-                    center=0,
+                    vmin=-color_limit,
+                    vmax=color_limit,
                 )
             else:
                 im = plt.imshow(corr_matrix, cmap="coolwarm", aspect="auto")
@@ -1134,7 +1227,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
             plt.xlabel("Variables", fontsize=12)
             plt.ylabel("Variables", fontsize=12)
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             return True
@@ -1173,7 +1266,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
             plt.ylabel("Density", fontsize=12)
             plt.grid(True, alpha=0.3)
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             return True
@@ -1245,7 +1338,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
 
             plt.suptitle("Matrix Overview", fontsize=16, fontweight="bold")
             safe_tight_layout()
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            save_figure(output_path, dpi=300, bbox_inches="tight")
             plt.close()
 
             return True

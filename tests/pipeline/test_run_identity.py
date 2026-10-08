@@ -207,7 +207,33 @@ def test_parallel_children_receive_same_run_identity(
         "gnn.utils.pipeline_orchestration.pipeline_step_dependencies.PIPELINE_STEP_DEPENDENCIES",
         {0: [], 1: []},
     )
-    assert orchestrator.main(isolated_run) == 0
+    status = orchestrator.main(isolated_run)
+    failure_details: dict[str, Any] | None = None
+    if status != 0:
+        records: dict[str, Any] = {}
+        for name, path in (
+            ("canonical_summary", isolated_run.output_dir / PIPELINE_SUMMARY),
+            (
+                "run_context",
+                isolated_run.output_dir / "00_pipeline_summary" / "run_context.json",
+            ),
+        ):
+            try:
+                with path.open("rb") as stream:
+                    content = stream.read(65536 + 1)
+                records[name] = {
+                    "path": str(path),
+                    "content_utf8": content[:65536].decode("utf-8", errors="replace"),
+                    "truncated": len(content) > 65536,
+                }
+            except OSError as error:
+                records[name] = {
+                    "path": str(path),
+                    "missing_or_unreadable": str(error),
+                    "error_type": type(error).__name__,
+                }
+        failure_details = {"main_status": status, "owned_records": records}
+    assert status == 0, failure_details
     receipt = read_receipt(isolated_run)
     assert len(receipt["steps"]) == 2
     assert {step["stdout"].strip() for step in receipt["steps"]} == {receipt["run_id"]}

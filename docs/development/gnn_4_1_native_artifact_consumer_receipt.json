@@ -1,0 +1,258 @@
+{
+  "schema": "gnn_native_artifact_consumer_candidates_v1",
+  "source_commit": "67632ff7ff7b7bbaec335584415410c7dd1168fe",
+  "test_files": {
+    "tests/audio/test_native_audio_consumers_410.py": "b10382cd432357abc4028f10d7b116695c833c073220e092cb66151502c05df4",
+    "tests/export/test_native_export_consumers_410.py": "f5a9ed934157909b631a3cee1455457f917b6094cd87412bf71ef95ad37e8c08",
+    "tests/ontology/test_native_ontology_consumers_410.py": "5b09a3665160b692a857140a998c5b37fc4bb683032fda5b24c81c658388612c"
+  },
+  "production_source_manifest_sha256": "72cfe1365b52d7d0b44856b6a648d1d6d7a9dda377ed6806e41b2cadd259e3ea",
+  "configuration_files": {
+    "pyproject.toml": "08a4907f76c1600de2f16e1d36f1d8cb30d74cdc640dfad9cb0af4813c80c33c",
+    "uv.lock": "ec0f53b2e96f92210a3b676affdfe30d65fb3b8c8e8a70c6a60a00b2cd3fd06f",
+    "pytest.ini": "bb4ab14337809e136a0e09fd409cadcbfe67d66d74b7ee003e9478cd2fcd5cb5",
+    "input/config.yaml": "fb84cc5b670cb85e70ebcd18a56dba5b8efe954f4a825b6415d6e046359c0ae6"
+  },
+  "runtime": {
+    "python": "3.14.4 (main, Apr 14 2026, 14:46:33) [Clang 22.1.3 ]",
+    "platform": "darwin",
+    "installed_distribution_version": "4.1.0",
+    "coverage": "7.13.5"
+  },
+  "source_origin_receipt_sha256": "5bbeefd4eaa0caeb7f397d3da53d517c74796801872049bf4ef2079e6b99d55e",
+  "junit_sha256": "560bc6e286fce32091811b45cb82b4581f13c5ca70367735f678cf68e8bc1cd2",
+  "coverage_sha256": "a8ee64340a37eb4751648caa2a84cda625d95e7a7246dac271aee38d8ef0eabc",
+  "diagnostic_source": "96868cbe289d1c318370ed7e143c39193d55a481",
+  "diagnostic_inventory_sha256": "728e042f0779c2d449a7bd9f546e522366ab29861f4f0f41a139024b6b97eec9",
+  "result": {
+    "cases": 15,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "gains": [
+    {
+      "path": "src/gnn/audio/analyzer.py",
+      "source_sha256": "5485b357a17c34235e5bf8bd8a7bb0cc37879c6445c92eb29776f42c746abf53",
+      "original_missing_statement_candidates": [
+        127,
+        128,
+        147,
+        149,
+        151,
+        154,
+        155,
+        159,
+        162,
+        170,
+        171,
+        172,
+        174,
+        181,
+        182,
+        198,
+        200,
+        202,
+        205,
+        211,
+        213,
+        214,
+        221
+      ],
+      "candidate_count": 23
+    },
+    {
+      "path": "src/gnn/audio/classes.py",
+      "source_sha256": "2c02d7597e904f28edae240a74e8cace04d161200f423fd48700dbd4455f82da",
+      "original_missing_statement_candidates": [
+        25,
+        26,
+        29,
+        30,
+        33,
+        34,
+        35,
+        38,
+        40,
+        41,
+        42,
+        44,
+        45,
+        48,
+        50,
+        53,
+        54,
+        55,
+        58,
+        60,
+        61,
+        62,
+        63,
+        66,
+        68,
+        71,
+        72,
+        73,
+        75,
+        77,
+        78,
+        87,
+        89,
+        90,
+        91,
+        92,
+        94,
+        95,
+        96,
+        97,
+        98,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        115,
+        209,
+        210
+      ],
+      "candidate_count": 50
+    },
+    {
+      "path": "src/gnn/export/formatters.py",
+      "source_sha256": "e6fe07ea872882e1335cf7d3e411120f98d307c31df33c52eb418cf5650db174",
+      "original_missing_statement_candidates": [
+        207,
+        208,
+        209,
+        222,
+        223,
+        232,
+        233,
+        234,
+        235,
+        236,
+        241,
+        242,
+        243,
+        248,
+        249,
+        250,
+        256,
+        257,
+        258,
+        292,
+        299,
+        302,
+        303,
+        304,
+        325,
+        326,
+        327,
+        328,
+        333,
+        334,
+        335,
+        336,
+        339,
+        340,
+        341
+      ],
+      "candidate_count": 35
+    },
+    {
+      "path": "src/gnn/export/processor.py",
+      "source_sha256": "ed270577d533dcec9aea84d2f478a93ca607ea3f34204b471e0ee4c12059ae2f",
+      "original_missing_statement_candidates": [
+        479,
+        480,
+        481,
+        482,
+        483,
+        487,
+        488
+      ],
+      "candidate_count": 7
+    }
+  ],
+  "diagnostic_source_mismatches_excluded": [
+    {
+      "path": "src/gnn/ontology/processor.py",
+      "diagnostic_source_sha256": "0b9688821bdb8d5d6c4a7c2b3b15ca2a538be2dabed1cfe575f0d8e727f61e13",
+      "measured_source_sha256": "b27352f389f60b4854908993b8c8615787d9eddd880a0cbfdf0f6ba3fa9ae8c4",
+      "original_missing_intersection": "excluded: changed source"
+    }
+  ],
+  "total_original_missing_statement_candidates": 115,
+  "production_source_bookend_unchanged": true,
+  "installed_package_bookend_unchanged": true,
+  "installed_distribution_inventory_unchanged": true,
+  "configuration_bookend_unchanged": true,
+  "limits": [
+    "Native local macOS/Python 3.14 with an explicitly bound canonical source overlay; this is not ordinary installed-wheel acceptance.",
+    "Original-missing intersections are candidate witnesses from a different runtime/environment than the failed Python 3.12 comprehensive diagnostic; no combined percentage or accepted union.",
+    "No devices, providers, training, WAN, dependency installation, dormant effects, MIDI or compressed-audio acceptance.",
+    "The repaired ontology processor differs from the old failed diagnostic source and is excluded from original-missing statement intersections. Final comprehensive native matrix and final frozen installed-wheel acceptance remain separate parent gates."
+  ],
+  "repair_red": {
+    "source_commit": "0f9baf81545d4e62b370a0319ba921171cebcb65",
+    "receipt_sha256": "8af2024ac60243b44d8e48a0b59d18f32b3f26a25f25b3ca278fec1f05d75ff3",
+    "junit_sha256": "5bcdbca02b7480a924f3442710bbcb0165e072b7379138a75e6f4b22c1403198",
+    "result": {
+      "cases": 15,
+      "failures": 1,
+      "errors": 0,
+      "skips": 0
+    },
+    "observed_defect": "Annotation: s=HiddenState was saved as Annotation: s=HiddenState rather than the mapping s=HiddenState."
+  },
+  "repair_original_regression": {
+    "source_commit": "67632ff7ff7b7bbaec335584415410c7dd1168fe",
+    "execution": "Before commit; every imported gnn source hash independently matched the final committed repair.",
+    "original_test_files": {
+      "tests/ontology/test_ontology_annotations.py": "14ac0d3c30ebf6faf9e6865dd3d5441cf817e27f548d1981b6214feb660e8a5c",
+      "tests/ontology/test_ontology_composability.py": "0b2161d5553d612809b32b067066bcb0898048188309dd1d45280dd5ecd51089",
+      "tests/ontology/test_ontology_overall.py": "a3e92bb92cb68caed083436236a98f723348719dfcd6cbeef4a072165bba1d42",
+      "tests/ontology/test_ontology_public_api.py": "1e4201b9e777ffa374eb19c38d1ee179e9588b3ffe838b9ef18a270cf50d4607"
+    },
+    "junit_sha256": "09d993ff6042d446887773613f57c74046ffb4aaed5099cac7bb3f5a08ecfbe1",
+    "source_origin_sha256": "1c675b251758f9aff20b22490d277c956895e474420f3f4f1aba02a64b84995d",
+    "result": {
+      "cases": 117,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "selection": "All four original ontology suites plus all 15 new native artifact cases."
+  },
+  "preserved_custody": {
+    "baseline_commit": "500694a943499d7c3fcc6fef2f3cf54ce7b24fc0",
+    "changed_production_paths": [
+      "src/gnn/ontology/processor.py"
+    ],
+    "changed_documentation_paths": [
+      "src/gnn/ontology/README.md"
+    ],
+    "dependency_configuration_and_selectors_changed": false,
+    "source_repair_scope": "Recognized ontology colon labels precede bare mappings only; unknown labels and section boundaries retain existing behavior."
+  },
+  "artifact_contracts": {
+    "audio": [
+      "Independent stdlib WAV PCM/header reads for generated tonal, rhythmic, ambient and sonification outputs.",
+      "Saved SAPF JSON reopened before native WAV generation.",
+      "Caller-owned output file remains intact on real refusal; empty input creates no output."
+    ],
+    "export": [
+      "Saved JSON model independently reopened after public JSON/XML/TXT/DSL export.",
+      "Unicode/XML escaping, variable and connection identities, sections and neighbor preservation.",
+      "Unsupported format and blocked-output failures; truthful partial JSON success."
+    ],
+    "ontology": [
+      "Saved vocabulary index identities/categories/URIs and independent per-file/aggregate JSON reports.",
+      "Labeled mappings, bare mappings, bare terms, values containing equals, unknown labels and following section exclusion.",
+      "Authoritative malformed/case-ambiguous/invalid-metadata and missing vocabulary refusal; valid explicit search continuation."
+    ]
+  },
+  "evidence_directory": "evidence410-platform/native-artifact-consumers-67632ff7f-final",
+  "native_receipt_sha256": "c479d8f860ed9c35628314073ad04e0677ca2172d0e3064ceede0a948b188fd0"
+}

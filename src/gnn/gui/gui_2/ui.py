@@ -327,7 +327,10 @@ def build_visual_gui(
     c_initial = initial_state["C"]
     d_initial = initial_state["D"]
 
-    with gr.Blocks(title="GNN Visual Matrix Editor", theme=gr.themes.Soft()) as demo:
+    demo: gr.Blocks = gr.Blocks(
+        title="GNN Visual Matrix Editor", theme=gr.themes.Soft()
+    )
+    with demo:
         gr.Markdown("# 🎯 GNN Visual Matrix Editor")
         gr.Markdown(
             "🚀 **Interactive matrix editing with real-time heatmap visualization and dimension controls**"
@@ -385,7 +388,6 @@ def build_visual_gui(
                         interactive=True,
                         label="A Matrix Values - Edit cells directly",
                         row_count=a_initial["rows"],
-                        col_count=a_initial["cols"],
                     )
 
                 with gr.Tab("🟠 Matrix B (Transitions)"):
@@ -443,7 +445,6 @@ def build_visual_gui(
                         interactive=True,
                         label="B Matrix Values - Current Action Slice",
                         row_count=b_initial["rows"],
-                        col_count=b_initial["cols"],
                     )
 
                 with gr.Tab("🔴 Vectors C & D"):
@@ -471,7 +472,6 @@ def build_visual_gui(
                                 interactive=True,
                                 label="C Values",
                                 row_count=c_initial["size"],
-                                col_count=1,
                             )
 
                         with gr.Column():
@@ -496,7 +496,6 @@ def build_visual_gui(
                                 interactive=True,
                                 label="D Values",
                                 row_count=d_initial["size"],
-                                col_count=1,
                             )
 
                 # Control buttons
@@ -940,7 +939,6 @@ def build_visual_gui(
                         headers=headers,
                         interactive=True,
                         row_count=new_rows,
-                        col_count=new_cols,
                     ),
                 )
 
@@ -1025,7 +1023,6 @@ def build_visual_gui(
                         headers=headers,
                         interactive=True,
                         row_count=new_states,
-                        col_count=new_states,
                     ),
                 )
 
@@ -1078,7 +1075,6 @@ def build_visual_gui(
                         headers=["Preference"],
                         interactive=True,
                         row_count=new_size,
-                        col_count=1,
                     ),
                 )
 
@@ -1123,7 +1119,6 @@ def build_visual_gui(
                         headers=["Prior"],
                         interactive=True,
                         row_count=new_size,
-                        col_count=1,
                     ),
                 )
 
@@ -1347,7 +1342,6 @@ def build_visual_gui(
                 headers=[f"State_{index}" for index in range(columns)],
                 interactive=True,
                 row_count=max(1, len(selected_values)),
-                col_count=max(1, columns),
             )
 
         b_slice_selector.change(

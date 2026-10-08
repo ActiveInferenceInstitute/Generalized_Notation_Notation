@@ -13,7 +13,9 @@ Pipeline orchestration, configuration, and execution utilities.
 - `step_executor.py` - Opt-in consolidated in-process step execution (ADR 0001)
 
 ### Validation & Health
-- `pipeline_runtime_validator.py` - E2E pipeline validation
+- `pipeline_runtime_validator.py` - E2E pipeline validation in the caller's workspace;
+  safe-path module launch and a fresh child invocation ID admit only its canonical
+  current-run summary, under the existing 300-second subprocess timeout.
 - `health_check.py` - `run_enhanced_health_check`
 - `verify_pipeline.py` - Pipeline verification
 

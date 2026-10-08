@@ -5,6 +5,8 @@ import importlib
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, cast
 
+from gnn.render.admission import validate_model_render_options, validate_render_options
+
 from ._routes import RENDERER_ROUTES, RendererRoute, _safe_output_stem
 from ._support import _POMDPProcessorSupportMixin
 
@@ -77,6 +79,8 @@ class _RendererDispatchMixin(_POMDPProcessorSupportMixin):
             selected_options = configured_options.get(framework, {})
             if not isinstance(selected_options, dict):
                 raise ValueError(f"backend_options.{framework} must be a mapping")
+            selected_options = validate_render_options(framework, selected_options)
+            validate_model_render_options(framework, selected_options, gnn_spec)
             resolved_kwargs = (
                 dict(kwargs) if framework == "thrml" else {**kwargs, **selected_options}
             )

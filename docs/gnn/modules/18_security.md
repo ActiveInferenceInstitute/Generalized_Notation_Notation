@@ -330,7 +330,7 @@ File Input → Security Validation → Threat Detection → Access Control → S
 - `tests/security/test_security_functional.py` - Functional tests
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/security/ --cov=security --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/security/ --cov=gnn.security --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Security validation with various threat types

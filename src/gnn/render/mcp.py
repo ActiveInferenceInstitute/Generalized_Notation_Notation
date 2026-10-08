@@ -11,6 +11,12 @@ from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
+from gnn.pipeline.admission import validate_boolean
+from gnn.render.admission import (
+    SPEC_RENDER_TARGETS,
+    render_options_inventory,
+    validate_render_options,
+)
 from gnn.utils.mcp.dispatch import run_pipeline_step_mcp
 
 from . import process_render
@@ -84,7 +90,12 @@ def list_render_frameworks_mcp() -> Dict[str, Any]:
                 name, {"available": False, "description": name}
             )
             entry["available"] = True
-        return {"success": True, "frameworks": frameworks}
+        return {
+            "success": True,
+            "frameworks": frameworks,
+            "availability_scope": "renderer_registration",
+            "native_execution_ready": None,
+        }
     except Exception as e:
         return {
             "success": False,
@@ -98,6 +109,7 @@ def render_gnn_to_format_mcp(
     output_directory: str,
     framework: str = "pymdp",
     verbose: bool = False,
+    options: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Render a single GNN file to a specific target framework.
@@ -105,25 +117,23 @@ def render_gnn_to_format_mcp(
     Args:
         gnn_file_path:    Path to the GNN source file (.md)
         output_directory: Directory to write the rendered output
-        framework:        Target framework name (best-effort hint; see note below)
+        framework:        Exact registered target framework name
         verbose:          Enable verbose logging
 
     Returns:
         Dictionary with success status, output file path, and any errors.
     """
     try:
+        from gnn.cli.commands import find_render_artifact, render_processing_succeeded
+
+        validate_boolean(verbose, field_name="verbose")
+        options = validate_render_options(framework, options)
         gnn_path = Path(gnn_file_path)
         out_dir = Path(output_directory)
 
         if not gnn_path.exists():
             return {"success": False, "error": f"GNN file not found: {gnn_file_path}"}
 
-        # Use process_render on a single-file temp dir.
-        #
-        # NOTE: At present, this MCP tool does not filter to a single framework.
-        # It runs Step 11 rendering and returns any artifacts written under the
-        # requested output directory. The `framework` parameter is returned for
-        # caller context and may be used for filtering in a future revision.
         import shutil
         import tempfile
 
@@ -132,16 +142,26 @@ def render_gnn_to_format_mcp(
             tmp_in.mkdir()
             shutil.copy2(gnn_path, tmp_in / gnn_path.name)
             success = process_render(
-                target_dir=tmp_in, output_dir=out_dir, verbose=verbose
+                target_dir=tmp_in,
+                output_dir=out_dir,
+                verbose=verbose,
+                frameworks=[framework],
+                strict_framework_success=True,
+                backend_options={framework: options},
             )
-
-        output_files = list(out_dir.rglob(f"*{gnn_path.stem}*"))
+        success = render_processing_succeeded(success)
+        artifact = (
+            find_render_artifact(out_dir, framework, require_current=True)
+            if success
+            else None
+        )
+        success = success and artifact is not None
         return {
             "success": success,
             "gnn_file": str(gnn_path),
             "framework": framework,
             "output_directory": str(out_dir),
-            "output_files": [str(f) for f in output_files],
+            "output_files": [str(artifact)] if artifact is not None else [],
             "message": f"Rendering to {framework} {'succeeded' if success else 'failed'}",
         }
     except Exception as e:
@@ -159,10 +179,9 @@ def render_spec_to_format_mcp(
     """
     Render one GNN file to one framework through the canonical dispatch.
 
-    Unlike :func:`render_gnn_to_format_mcp` (which runs the full Step 11
-    directory flow and treats ``framework`` as a hint), this tool targets the
-    exact framework via ``render.processor.render_gnn_spec``, so artifact
-    lists contain only that framework's outputs.
+    This tool targets the exact framework via ``render.processor.render_gnn_spec``.
+    Artifact lists contain only that framework's outputs, like the single-file
+    Step 11 tool; the source-spec interface additionally accepts a filename.
 
     Args:
         gnn_file_path:    Path to the GNN source file (.md).
@@ -236,14 +255,20 @@ def get_render_module_info_mcp() -> Dict[str, Any]:
             "frameworks": [],
             "error": f"framework registry failure: {e}",
             "input_formats": ["markdown", "gnn"],
-            "output_formats": ["python", "julia", "julia_rxinfer"],
+            "output_formats": [],
         }
     return {
         "success": True,
         "module": __package__,
         "frameworks": frameworks,
         "input_formats": ["markdown", "gnn"],
-        "output_formats": ["python", "julia", "julia_rxinfer"],
+        "output_formats": sorted(
+            {spec["output_format"] for spec in get_available_renderers().values()}
+        ),
+        "spec_targets": list(SPEC_RENDER_TARGETS),
+        "availability_scope": "renderer_registration",
+        "native_execution_ready": None,
+        "backend_options": render_options_inventory(),
     }
 
 
@@ -297,7 +322,7 @@ def register_tools(mcp_instance: Any) -> None:
                 "framework": {
                     "type": "string",
                     "description": "Target framework for render_gnn_spec dispatch",
-                    "enum": get_supported_frameworks(),
+                    "enum": list(SPEC_RENDER_TARGETS),
                     "default": "pymdp",
                 },
                 "output_filename": {
@@ -307,6 +332,7 @@ def register_tools(mcp_instance: Any) -> None:
                 "options": {
                     "type": "object",
                     "description": "Framework-specific validated render options",
+                    "x-framework-options": render_options_inventory(spec_targets=True),
                 },
             },
             "required": ["gnn_file_path", "output_directory"],
@@ -341,7 +367,7 @@ def register_tools(mcp_instance: Any) -> None:
                 },
                 "framework": {
                     "type": "string",
-                    "description": "Target framework",
+                    "description": "Exact target framework",
                     "enum": get_supported_frameworks(),
                     "default": "pymdp",
                 },
@@ -350,10 +376,15 @@ def register_tools(mcp_instance: Any) -> None:
                     "description": "Enable verbose logging",
                     "default": False,
                 },
+                "options": {
+                    "type": "object",
+                    "description": "Framework-specific validated render options",
+                    "x-framework-options": render_options_inventory(),
+                },
             },
             "required": ["gnn_file_path", "output_directory"],
         },
-        "Render a single GNN file (runs Step 11 render; does not currently filter to one framework).",
+        "Render a single GNN file to exactly the requested framework with current artifacts.",
         module=__package__,
         category="render",
     )

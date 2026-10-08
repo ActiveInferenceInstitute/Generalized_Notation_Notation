@@ -1,0 +1,369 @@
+# GNN 4.1.0 integration handoff
+
+The user authorized completing every minor and medium workstream in the
+[existing roadmap](../../../TO-DO.md) toward 4.1.0. That file owns scope and
+acceptance; this handoff records integration ownership and outstanding evidence.
+Major scientific extensions remain outside this release campaign.
+
+## Current source and retained acceptance epochs
+
+Current software version is **4.1.0**. Its [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0) records exact tag, source, checks and artifacts; version metadata alone does not establish acceptance.
+Independent source review at `6be1506cac5957973dff8edeaf77e84e2e7ceb46` reproduces 759
+source Python files, 1,148 exact Exception handlers and 1,159 broad handlers.
+All nine original extraction hashes retain their accepted bytes. The maximum
+scoped decision proxy is 118, not an algorithmic complexity improvement.
+
+The 201-case integration retains source `63be7d35bcc88a6133f86a09879909c50c14eef1`;
+18 source gates retain `d13e2a885f83b4089487ab097ef36b078f3b8b24`;
+33 LOC regressions retain `50e8b8a3133e9510c191c45773dfa9f8d9d4d9d2`;
+27 filesystem diagnostics retain aa45/macOS. These counts are not pooled,
+metadata is not every installed byte, and macOS is not Windows acceptance.
+Original failures, observer collisions, incomplete databases and below-target
+coverage remain intact. Separate [coverage](../../../docs/development/native_comprehensive_coverage.md)
+and [installed](../../../docs/development/installed_platform_acceptance.md)
+records must meet their own three strict integer and five native environment gates.
+
+The original Windows diagnostic distinguishes an exited launcher from a live
+venv payload. An unsignaled wait result 258 with exit code 0 is not process-death
+evidence. The original
+failed assertion, budgets and payload identity are preserved; no production
+cleanup fix or descendant guarantee follows. The security owner's actual native
+identity proof and final matrix remain required.
+Released Gradio 6.29.1 source assessment retains the strict Python 3.14 callback
+blocker without upgrade or new native acceptance. Strict positive THRML remains;
+released structural-zero and full distribution archival scope remain external.
+DisCoPy Matrix evaluation and GEO optional derived-provenance interchange remain
+unsupported. Full SC-22, final companion/pair/main and public artifact custody
+remain distinct from source review; major S1/E1-E4 scope is unchanged.
+
+At `6be1506cac5957973dff8edeaf77e84e2e7ceb46`, all three complete five-lane coverage reports pass the strict
+integer >80% target independently. All five ordinary-installed platform lanes
+pass with 163 environment-specific THRML/boundary case executions and zero
+failures, errors or skips. Windows binds the actual direct worker PID/birth
+identity and confirms termination after handle closure; this does not admit
+descendant containment. The 86-case affected-consumer/API selection and 18
+source audits also pass at this epoch. Native packets stay bound to that
+revision; manuscript, companions, main/tag and downloaded artifacts have
+their own subsequent records. S3/E5 external and major scope remains open.
+
+Checkpoint narratives below are historical and retain their recorded status,
+including superseded pending statements and failed attempts.
+
+The historical independently replayed checkpoint `682e62f16` passed 96 actual
+public generation, generic visualization, saved meta-analysis/report and
+configuration/CLI cases in 25.39 seconds, with zero failures, errors or skips.
+These include native DisCoPy diagrams and exports, compiled PyMDP source,
+actual Steps 3/8/23 artifacts and historical saved-result consumers. The
+historical fixtures explicitly qualify their producer/source identity and do
+not establish current backend execution. Focused acceptance does not replace
+the complete final-source coverage, installed-platform or publication gates.
+
+The later datatype/array repair passes all 608 owner regressions and ten
+subtests, with zero failures, errors or skips and identical native bookends.
+Independent review found no blocking issue in the bounded diffs. Root replay
+passes 98 datatype/GUI/CLI/visualization/report cases; unrelated changelog and
+flag-cap metadata changed during that focused replay, so it does not certify a
+whole frozen checkout. Canonical and legacy PyMDP name checks pass 69 cases
+with unchanged runtime sources. Retain original failing receipts and existing
+parser guards. All canonical/legacy display-slot repairs are integrated; root's
+combined generation regression passes 92 cases with unchanged runtime sources.
+The preserved nonfinite metadata witness then exposes six source-generation
+failures. A bounded finite-JSON guard passes 98 generation/regression cases plus
+seven final text/refusal checks and documents the migration for both modes.
+The refreshed committed-runtime census records 759 Python files, 1,148 exact
+Exception handlers and 1,159 broad handlers; 27 cross-extra dependency overlaps
+retain their existing interpretation. Full native selectors, manuscript
+rendering and exact companion/publication checks remain pending.
+
+Frozen starting revision: `e5461954f45314cfea77b2cf06818e060f68bd0a`.
+The integration branch is `codex/gnn-4.1.0`. Implementation workers use separate
+worktrees and return local commits; the integrator owns publication and custody.
+
+| Owner | Delivery boundary |
+| --- | --- |
+| Integrator | M5 global documentation, independent reviews, roadmap closeout, version surfaces, exact-source checks, manuscript/FEP/GEO custody and release |
+| contracts410 | M2/M3 public admission, shared run/configuration/outcome contracts; render dispatch without scientific algorithm changes |
+| ownership410 | M1/M4 logging and website owners, RxInfer interchange/analysis, bounded authored-parser defects |
+| security410 | S5 filesystem operations, leases, owned worker cancellation and precise native containment guarantees |
+| science410 | M6 presentation/trace identity and M7 measured production-path bottlenecks |
+| coverage410 | S6 reproducible per-environment gap inventory and meaningful consumer/failure tests |
+| platform410 | M8 installed-package/native platform acceptance, S3 released upstream verification and E5 archive evidence |
+
+Keep focused tests and exact baselines with each checkpoint. Existing public
+exports, scientific/source contracts, required checks and coverage denominators
+remain acceptance constraints. Record decisions in [choices.md](choices.md).
+The integrator performs independent review before accepting worker commits.
+
+## Accepted checkpoint and active work
+
+The integration checkpoint `a8e116dbf2a9392d0b2faa0b5c945b85b04855d0`
+contains the logging, website and RxInfer ownership extractions; authored
+PKL/XML and CSV repairs; descriptor-based filesystem operations and bounded
+cleanup; the installed-platform driver; released THRML/archive evidence; and
+31 additional native authored-model/scientific-artifact consumer cases.
+Independent integrated suites passed 235 owner cases and 63 native boundary,
+parser, analysis and backend cases. These focused results certify their tested
+checkpoint, not the final release or all native platforms.
+
+The later checkpoint `d45fe6956` also integrates typed schema/GUI/RxInfer/
+logging/website diagnoses, Gaussian control/index/unit presentation, distinct
+saved round-trip format extensions and isolated supplied-source testing.
+The integrated diagnostic suite passed 28 cases; the complete testing-helper
+suite passed 112 cases and 10 subtests. The original core selectors and report
+scope remain intact. Maintained-document link, anchor, terminology, pattern and
+flag audits pass, with zero undocumented registered flags.
+
+Checkpoint `a261467aff5d899f207931c0ce0a663af50d0f18` integrates the final
+public-contract candidate and the additional saved-artifact consumer tests.
+Independent review found no remaining blocking admission/receipt finding;
+the concrete singular-step, workspace-configuration and fresh-other-run defects
+are repaired. The owner regression passed 1,640 cases with 21 existing optional
+skips. Root replay passed 124 integrated public/native/artifact cases. Full
+integrated static checks passed except formatting and terminology/flag drift,
+which the integrator is correcting with preserved AST parity for formatting.
+
+An ordinary wheel built from that checkpoint passed complete local macOS arm64
+Python 3.14 acceptance outside checkout: full API behavior, eight native THRML
+cases and nineteen native filesystem cases, with zero skips. Both real HTTP
+pipeline workers completed with verified cleanup and refused workspace package
+shadowing. Every archived source hash remained unchanged. This is evidence for
+that still-4.0.1-version wheel; final 4.1.0 and hosted platforms remain pending.
+
+The coverage observer passed five real isolation/child-execution controls and
+the full native MCP selection (524 cases). Independent review verified all
+measured subprocess identities, same-interpreter source scope and restoration
+of its exclusive temporary observation hook. These are focused reports; they
+do not prove the complete supported matrix or the >80% target.
+
+The integrated scientific implementation now includes the measured production
+encoder tradeoff and final native presentation refinements. Root replay passed
+42 actual presentation/performance cases. All eleven full PNGs and GIF frames
+00/03/05 were inspected; the three refined figures were re-inspected by root and
+an independent critic, with no remaining material/medium finding. The
+[durable visual receipt](../../../docs/development/gnn_4_1_0_visual_review.json)
+binds actual source/data/artifact hashes and the finite review limits.
+
+The full exploratory child-coverage run at `20cb2ebdd` passed 7,063 cases but
+failed twelve short-budget native controls before payload output, then encountered
+an incomplete raw coverage database. The actual cost probe shows eager observer
+startup changes timing. These results are diagnostic only; preserve the raw
+files, deadlines and full source scope. A later unmodified core run at
+`74a4dafab` ended without a terminal receipt at 72%; no success is inferred.
+Repair observer overhead and rerun full final-source gates before publication.
+
+Version metadata is being prepared for 4.1.0. Only the editable project's lock
+version changes, with revision 3 retained and both uv 0.12 and 0.10.7 offline
+lock checks passing. Dependency pins and the manuscript authored epoch remain
+unchanged. This is source preparation, not publication acceptance.
+
+The clean versioned checkpoint `65dd332fa84596d858249a61d40b030b85828061`
+passed the original complete core selection: 7,096 cases plus ten subtests,
+zero failures/errors/skips, in 396.18 seconds. Its unchanged full-source report
+covers 59,300 of 81,399 statements (72.8510%); the strict >80% target needs at
+least 5,820 additional unique covered statements. All remaining capability,
+v3 orchestration, skills, thin-orchestrator, dependency, validate-surface and
+document-path gates passed. The skills gate checked 31 skills and 580 surfaces
+with zero findings.
+
+An ordinary 4.1.0 wheel from that checkpoint passed local macOS arm64/Python
+3.14 acceptance, including all eight THRML and 21 native filesystem cases,
+actual HTTP pipeline workers, installed-code isolation and source-file bookends.
+The five final hosted native lanes still require exact-source terminal results.
+
+Fresh full MCP acceptance exposed one inventory omission: the deliberate
+internal `rxinfer_interchange` package was treated as a public MCP module.
+Independent review accepted an explicit internal-owner allowlist rationale,
+preserving the supported `gnn.rxinfer_bridge` facade and refusing any invented
+registry. The missing-file diagnostic now identifies its actual entrypoint.
+The corrected complete selection passed all 524 cases without skips.
+
+The original pipeline selection at `65dd332fa845` completed with 342 passes
+and seven failures. All seven share the same macOS CLI output-lease refusal
+at the standard `/var` temporary-directory alias. Preserve this failed receipt;
+repair canonical admission without weakening descriptor/race guarantees, then
+repeat the actual controls and complete selection. Its full-corpus Step 8
+case passed with the original 890-second budget. The coverage observer is also
+being repaired: eager startup changed short-deadline behavior. A lazy public
+audit-hook prototype passed seven real 200 ms standard-library controls and
+four existing deadline tests; independent fork/source-line proof and complete
+final-source reports remain required.
+
+The lease repair is integrated at `faa4eac9ff69a08bd4c9972afb8d420c98a483b5`.
+It resolves only operator-trusted POSIX parents and retains the final leaf and
+requested-path identity checks. All seven original failures passed unchanged
+on the repair checkpoint, and root independently replayed all 27 native
+filesystem cases without skips. The full final selection still requires a
+terminal source-bound report. The [ownership/diagnostic receipt](../../../docs/development/gnn_4_1_0_ownership_review.json)
+records the actual global census, coherent boundaries and their limitations.
+
+The independently reviewed lazy observer is integrated from `fe93e8063` and
+`d5c4bb061`. Its final five-case pilot passed with exact admitted raw, lane and
+combined line sets. Actual import, isolated, module, direct, runpy, fork and
+spawn controls preserve first-source statements and exact child identities;
+seven real 200 ms standard-library children and four unchanged deadline
+controls pass. The preserved corrupt SQLite replay retains the successful test
+receipt while refusing completion and unknown coverage. Startup bypasses remain
+explicitly unobserved. This accepts the observer for full measurement, not the
+strict >80% target. The new hosted matrix keeps original core gates and scope;
+the [procedure](../../../docs/development/native_comprehensive_coverage.md)
+requires exclusive environment use and unchanged source bookends.
+
+| Remaining dependency | Required next evidence |
+| --- | --- |
+| Public contracts and setup discovery | Final versioned integrated gates and ordinary installed native platform lanes |
+| Diagnostics and round-trip persistence | Accepted focused evidence; preserve it in final full-source checks |
+| Scientific presentation and performance | Accepted finite actual-image critique and paired raster CPU/size/pixel evidence; retain hashes during final-source checks |
+| Comprehensive coverage | Same-interpreter subprocess tracing and full unchanged source scope, alongside existing core reports |
+| Installed acceptance | Final ordinary wheel with complete local API checks, then all five hosted native lanes |
+| Publication custody | Frozen versioned source, fresh manuscript/template render and companion pins, followed by exact-source hosted and release gates |
+
+The full lazy observation run at `96868cbe289d1c318370ed7e143c39193d55a481`
+passed all 7,096 core and 524 MCP cases. The pipeline selection passed 348 of
+349 cases without skips; its complete 38-source Step 8 render passed in 482.82
+seconds. The failed unchanged detached-descendant cleanup case returned
+`FAILED` where `SUCCESS` was required. Native causal diagnosis found no reproduced cause;
+neither a passing repeat nor relaxed cleanup/deadline semantics closes it.
+All three observation hooks were restored and independently confirmed absent.
+Per-lane raw/line-set/source/metadata integrity passed, but the overall receipt
+is incomplete and cannot certify S6 or release acceptance. Its diagnostic-only
+same-environment statement union is 61,393/81,406, with 740 original exclusions;
+the strict target still needs 3,732 additional unique covered statements.
+
+New public JAX consumer tests reproduce silent replacement of explicitly
+authored ndarray parameters and fallback success after negative-probability
+validation fails. These are release blockers, not accepted behavior. Require
+faithful nonmutating source admission or precise refusal before artifact writes,
+preserving supported list/legacy and model-kind contracts. Focused documented
+RxInfer legacy file-reader repairs also address duplicate discovery and lost
+zero/scalar values. Canonical VFE/timestep/Gaussian traces must retain their
+distinct current-reader contract; do not relabel them as legacy iterations.
+
+Checkpoint `500694a943499d7c3fcc6fef2f3cf54ce7b24fc0` integrates the bounded
+legacy RxInfer saved-file repair. Independent replay passed all 34 original and
+new saved-file controls without skips, preserving five public signatures and
+imports. Canonical payloads receive explicit current-reader guidance rather
+than losing VFE, timestep or covariance semantics.
+
+The detached-worker investigation retained the original failed receipt. Ten
+unchanged native repeats, all 39 related cases and two exact observer pilots
+passed with the original three-second deadline. Traces showed one leader reap
+and no competing wait owner or query error; these observations do not explain
+the earlier failure. The assertion now preserves the complete supervisor result
+and owned fixture states on failure. Independent replay passed all 39 cases;
+production cleanup and success conditions remain unchanged. Require the next
+complete integrated selection to pass before release.
+
+The installed-platform workflow now explicitly selects and verifies the exact
+candidate revision before building. The maintained workflow indexes include
+all sixteen YAML workflows, with their actual triggers and evidence limits.
+Workflow lint, strict links/anchors and flag audits pass; 114 registered flags
+remain documented with the 129 phantom-token ceiling intact. Final native,
+manuscript/custody and publication acceptance remain pending.
+
+Temporary-directory and full-corpus image writes failed during a local disk
+capacity incident. Failed runs remain diagnostic evidence and cannot satisfy
+acceptance. Only completed campaign-owned disposable environments were removed;
+source, scientific artifacts and receipts were preserved. Re-run affected
+witnesses after capacity recovery and keep final storage usage bounded.
+
+## Dependencies requiring external evidence
+
+- S3: stock released THRML 0.1.4 still fails inactive-padding witnesses on both
+  supported JAX splits. Upstream issue closure is not a published compatible
+  fix. Retain strict rejection until ordinary released installation passes.
+- E5: the public 4.0.1 version archive is
+  [Zenodo 23222085](https://zenodo.org/records/23222085), separate from concept
+  DOI `10.5281/zenodo.7803313`. Its source archive matches the exact tag but
+  does not include attached wheel/sdist/checksum release assets. Verify the
+  selected 4.1.0 artifact archive directly before closing this workstream.
+- M8: local Python 3.14/macOS evidence does not replace fresh native Linux and
+  Windows lane results. Unsupported descendant guarantees must refuse.
+- S6: the clean versioned original core report is 59,300/81,399 statements
+  (72.8510%). Preserve scope and report each environment; the >80% goal still
+  needs direct complete evidence.
+
+## Integration and publication order
+
+Freeze accepted content and version metadata, commit the counted source, then
+perform the full manuscript variables/figures/template-render/custody ritual
+from [root AGENTS](../../../AGENTS.md). Follow the
+[paired-revision procedure](../../../docs/development/fep_lean_paired_revision.md)
+for FEP/GEO-bound owners. Commit the GNN FEP pin last. No amendment may invalidate
+custody. Publish a reviewable frozen branch when companion/native hosted checks
+need it, then merge only after required exact-revision gates pass.
+
+Release requires a unique nonconflicting tag, accepted wheel/sdist installation,
+public manuscript/checksum artifacts and terminal exact-tag hosted checks.
+Remove only accepted completed work from TO-DO; retain externally blocked work
+with precise evidence. Never treat a pending check or partial archive as done.
+
+## Latest integrated native consumer acceptance
+
+The clean checkpoint `b6b4eaac3` independently passed all 269 selected native
+consumer cases without failures, errors or skips. This includes 182 JAX cases,
+21 real MCP stdio cases, native processing reports and benchmarks, current-run
+runtime validation, filesystem/process refusal, saved execution outputs, network
+artifacts and matrix views. Ruff, formatting, all 758 source modules under mypy,
+and strict documentation/anchor audits passed. Cold MCP discovery retained its
+original 30-second optional-module timeout warnings; protocol correctness does
+not imply readiness for every optional module.
+
+Checkpoint `4090d8dbe` independently passed 48 additional saved-schema,
+validator-round-trip and actual POMDP artifact cases without skips. The bounded
+repairs preserve nested parameters, variable descriptions, causal malformed
+line-comment refusals and canonical action/state axes. The separate matrix
+overview witness is integrated afterward and awaits the final full selection.
+The original full failed observation receipt remains diagnostic; none of these
+focused results closes S6, the native platform matrix or publication custody.
+
+The AST broad-exception ratchet is tightened to the actual 1,148 exact handlers.
+A native small-correlation plotting failure is under bounded repair. Additional
+public audio/export/ontology consumers are being checked in isolated owned
+environments. Freeze and remeasure the complete unchanged source scope after
+these deliverables; do not add their candidate line counts or percentages.
+
+## Saved-consumer integration and remaining full gates
+
+The `11b04ac0f` frozen observation ended with 7,699 core passes and three
+failures: two FEP generated-source string oracles and a zero-skip audit. The
+rendered programs themselves parsed successfully. The repaired tests inspect
+their actual AST values; the Plotly and POSIX controls now use the declared
+dependency/platform selections. Preserve that failed receipt. MCP and pipeline
+did not run in that attempt, so its 62,290/81,587 statements are only a failed
+core diagnostic, not comprehensive acceptance.
+
+At `2a990b7ab`, all four installed Linux/macOS lanes passed. Windows reached
+native JAX execution but failed on CP1252 console output. Its separate local
+repair must preserve authored Unicode and the original supervision boundaries;
+the exact hosted Windows lane remains required.
+
+The public saved-result selection passes 28 new and 13 existing cases in
+separate native runs. Formal-format consumers pass 18 new and 121 existing
+cases after a bounded Agda token repair. Saved JSON/YAML consumers retain time
+step sizes and canonical datatypes and report malformed YAML causally; the
+original 20 witnesses and 584 existing cases plus ten subtests pass. These
+selections overlap and must not be added. Root's integrated replay passes
+89 cases with real THRML/CPOMDP and 50 parser/audit cases in separate runs.
+
+Explicit optional THRML/Gradio lanes are under independent declaration review
+and actual native validation. The ordinary three selectors, full denominator,
+exclusions, deadlines and core 60% floor remain intact. Every successful lane
+must now have nonempty JUnit and zero failures, errors or skips. Freeze the
+final source and locked environment before the full five-lane observation;
+the strict >80% target is still pending independently on all three Pythons.
+SC-22, final companion pairing and publication remain pending.
+
+## NextAgentPrompt
+
+Resume the owned `codex/gnn-4.1.0` integration worktree. Read this handoff,
+choices.md, existing TO-DO, current Git state and active worker messages before
+edits. Preserve uncommitted work and accepted local commits. Collect outstanding
+worker deliverables, review their consumer evidence and integrate clean commits
+in dependency order. The checkpoint above and the choices ledger distinguish
+accepted focused checks from pending release evidence. Do not re-use a failed
+disk-capacity run or an omitted-API receipt as acceptance. Complete all
+independent minor/medium scope before any
+external blocker decision. Refresh the final source, manuscript, companion,
+native-platform, coverage and release evidence after the last content change.
+Do not release or claim completion until the exact revision and public artifacts
+are verified. Do not broaden into major semantics or unrelated repositories.

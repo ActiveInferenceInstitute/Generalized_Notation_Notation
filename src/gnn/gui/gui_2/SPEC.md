@@ -13,6 +13,16 @@ Second-generation GNN constructor GUI: a Gradio web app for visual matrix editin
 - Tabbed matrix/vector editing (A, B, C, D) with live regeneration of the GNN markdown
 - Real-time validation feedback
 - POMDP template-based initialization
+- Saved transition tensors retain the declared GNN order
+  `B[next_state, previous_state, action]`; the editor's internal action-first
+  planes are converted only at the named B parsing/serialization boundaries.
+- Exported `type=float` values use shortest round-trip representations of
+  accepted finite Python floats, preserving their precision, signed values
+  and structural zeros. Original decimal formatting is not retained.
+
+See [saved-model migration](README.md#saved-models-and-migration) for earlier
+six-digit exports and transition/vector artifacts that require regeneration
+from authoritative source.
 
 ## Technology
 

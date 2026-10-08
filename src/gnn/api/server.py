@@ -133,6 +133,8 @@ def create_app() -> FastAPI:
                 skip_steps=request.skip_steps,
                 verbose=request.verbose,
                 strict=request.strict,
+                parallel=request.parallel,
+                consolidated_steps=request.consolidated_steps,
             )
         except ValueError as err:
             raise HTTPException(status_code=400, detail=str(err)) from err
@@ -179,6 +181,7 @@ def create_app() -> FastAPI:
             exit_code=job.get("exit_code"),
             error_message=job.get("error_message"),
             output_dir=job.get("output_dir"),
+            process_cleanup=job.get("process_cleanup"),
         )
         return success_envelope(
             response.model_dump(mode="json"), endpoint="job_status", job_id=job_id

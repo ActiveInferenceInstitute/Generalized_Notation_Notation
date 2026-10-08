@@ -1,13 +1,30 @@
-# Specification: .Agent Rules Ecosystem
+# Specification: development rules
 
-## Design Requirements
-The `.agent_rules` module operates outside the standard 25-step execution pipeline. Rather than mapping structural runtime logic, it establishes the **behavioral boundaries** and **compliance frameworks** for automated systems editing the repository.
+These guides describe editing and verification outside the 25-step runtime.
+They must agree with current owners, public interfaces and executable gates.
 
-## Components
-While it exports no executable classes, it provides static guarantees:
-1. All AI actions must check the real-implementation testing policy defined in `testing.md`.
-2. Pipeline architectural changes must conform to the Thin Orchestrator pattern outlined in `architecture.md`.
-3. Error handling must strictly follow the Safe-to-Fail principles in `error_handling.md`.
+Each guide has one subject and links to its source of truth. Examples use
+canonical installed `gnn.*` imports and declared locked environments.
+Illustrative patterns cannot be represented as exported APIs or measurements.
+Historical timings, guessed dependencies and unconditional success examples do
+not establish acceptance. No guide authorizes credential, permission or
+external infrastructure changes.
 
-## Interfaces
-These specifications are consumed natively during context injection phases by the connected Large Language Models (LLMs).
+[Testing](testing.md), [quality](quality.md), [error handling](error_handling.md)
+and [architecture](architecture.md) preserve behavior, explicit outcomes,
+source/run identity and custody.
+
+## Structure and acceptance
+
+README routes tasks; AGENTS governs maintenance. Topic modules own one concern
+and link shared workflow, run identity, scientific claims, interfaces, CI,
+documentation, security and release custody. Every module appears in routing.
+
+Local links/fragments resolve. Imports/commands match the installed public surface.
+Required failures remain failures; optional omissions retain reasons. Evidence
+claims name their source, environment, selection and denominator. Producers remain
+reachable and publication state comes from actual receipts, not guide dates.
+
+Run [documentation audits](documentation.md), real examples and applicable hosted
+gates. Rules-only work cannot waive a red gate or silently change the software
+version. Future tasks stay in the canonical backlog.

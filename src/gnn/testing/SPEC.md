@@ -10,12 +10,32 @@
 ## Requirements
 
 - **Python** >= 3.11 (see repo `pyproject.toml`).
+- The schema validator's round-trip adapter preserves supplied `ParsedGNN`
+  parameter names and values, including zero, false and nested containers.
+  Each conversion owns independent value copies; it does not normalize,
+  flatten or reinterpret the supplied parameters. Existing variable dimensions,
+  types, descriptions and model annotations follow the same adapter contract.
+- Saved round-trip artifacts use the canonical parser output extensions,
+  retaining the valid existing Z `.zed` suffix. Native PKL `.pkl` and binary
+  Pickle `.pickle` remain distinct, and each supported target has its own
+  artifact rather than overwriting another format's evidence.
+- `RoundTripTestStrategy` binds each supplied source to an independent native
+  tester and child artifact directory. It preserves the configured format
+  selection and shared template, attributes native rows to report provenance,
+  and keeps injected per-row source reports compatible. Missing inputs
+  retain their actual source path and typed failure rather than testing the
+  default reference or inventing successful format evidence.
 
 ## Running
 
+Saved-format conversion maps authored Markdown `int`/`bool` aliases to the
+existing INTEGER/BINARY enums. The parser facade retains its authored strings;
+serialized values, dimensions and comments retain their existing contracts.
+This does not add inference datatypes or change unknown-type recovery.
+
 ```bash
 uv run --extra dev python -m pytest tests/testing/ -q
-uv run --extra dev python -m pytest tests/test_gnn*.py -q
+uv run --extra dev python -m pytest tests/gnn/ -q
 ```
 
 See **[README.md](README.md)** and **[README_round_trip.md](README_round_trip.md)**.

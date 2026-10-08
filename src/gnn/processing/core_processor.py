@@ -128,7 +128,8 @@ class GNNProcessor:
                     self.logger.warning("Cross-format validation failed, continuing...")
 
             # Phase 5: Reporting
-            self._execute_reporting_phase(context)
+            if not self._execute_reporting_phase(context):
+                return False
 
             total_time = context.get_processing_time()
             self.logger.info(
@@ -235,8 +236,8 @@ class GNNProcessor:
             self.logger.error(f"Cross-format validation failed: {e}")
             return False
 
-    def _execute_reporting_phase(self, context: ProcessingContext) -> None:
-        """Execute reporting phase."""
+    def _execute_reporting_phase(self, context: ProcessingContext) -> bool:
+        """Write all required reports and preserve any partial output on failure."""
         context.log_phase(ProcessingPhase.REPORTING, "Generating comprehensive report")
         self.logger.info("Phase 5: Report generation")
         try:
@@ -244,9 +245,30 @@ class GNNProcessor:
                 context=context, output_dir=context.output_dir
             )
             context.processing_results["report"] = report
+            report_files = report["report_files"]
+            if "error" in report_files:
+                raise RuntimeError(report_files["error"])
+            for report_format in ("json", "markdown", "html"):
+                report_path = report_files.get(report_format)
+                if report_path is None:
+                    raise RuntimeError(
+                        f"Required {report_format} report was not returned"
+                    )
+                path = Path(report_path)
+                if not path.is_file() or path.stat().st_size == 0:
+                    raise RuntimeError(
+                        f"Required {report_format} report is absent or empty: {path}"
+                    )
+            context.processing_results.pop("report_error", None)
             self.logger.info("Report generation completed")
+            return True
         except Exception as e:
+            context.processing_results["report_error"] = str(e)
+            context.log_phase(
+                ProcessingPhase.REPORTING, f"Report generation failed: {e}"
+            )
             self.logger.error(f"Report generation failed: {e}")
+            return False
 
 
 def process_gnn_directory(

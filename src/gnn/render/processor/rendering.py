@@ -122,6 +122,42 @@ def render_gnn_spec(
         Tuple of (success, message, output_files: List[str])
     """
     try:
+        from gnn.frameworks import RENDER_FRAMEWORKS
+        from gnn.render.admission import (
+            SPEC_RENDER_TARGETS,
+            SPEC_TARGET_BACKENDS,
+            validate_model_render_options,
+            validate_render_options,
+        )
+
+        target_lower = target.lower()
+        option_target = SPEC_TARGET_BACKENDS.get(target_lower, target_lower)
+        if target_lower == "rxinfer_toml":
+            return (
+                False,
+                "rxinfer_toml target is no longer supported. Use target='rxinfer' for the canonical RxInfer.jl renderer",
+                [],
+            )
+        if option_target not in RENDER_FRAMEWORKS:
+            return (
+                False,
+                f"Unsupported target: {target}. Supported targets: {', '.join(SPEC_RENDER_TARGETS)}",
+                [],
+            )
+        if options is not None and not isinstance(options, dict):
+            raise ValueError("Render options must be a mapping")
+        supplied = dict(options or {})
+        filename = supplied.pop("output_filename", None)
+        options = validate_render_options(option_target, supplied)
+        if target_lower == "jax_pomdp" and options:
+            raise ValueError("JAX POMDP generator does not consume render options")
+        if option_target == "discopy" and options:
+            raise ValueError(
+                "DisCoPy matrix_permutations require the Step 11 render interface"
+            )
+        if filename is not None:
+            if not isinstance(filename, str) or not filename:
+                raise ValueError("output_filename must be a nonempty string")
         output_dir = Path(output_directory)
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -131,7 +167,6 @@ def render_gnn_spec(
             "bnlearn": (".bnlearn", "generate_bnlearn_code", "_bnlearn.py"),
         }
 
-        target_lower = target.lower()
         if isinstance(gnn_spec, dict):
             gnn_spec_mapping = _rehydrate_file_backed_parse_summary(
                 gnn_spec,
@@ -148,11 +183,12 @@ def render_gnn_spec(
             model_name = str(gnn_spec_mapping["model_name"])
         from gnn.render.execution_contracts import unsupported_contract
 
+        validate_model_render_options(target_lower, options, gnn_spec_mapping)
         contract_refusal = unsupported_contract(gnn_spec_mapping, target_lower)
         if contract_refusal:
             return False, contract_refusal, []
         files: list[Any] = []
-        requested_stem = (options or {}).get("output_filename", model_name)
+        requested_stem = filename or model_name
         output_stem = _safe_output_stem(requested_stem)
 
         from gnn.render.execution_contracts import execution_contract

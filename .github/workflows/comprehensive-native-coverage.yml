@@ -1,0 +1,146 @@
+name: Comprehensive native coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: comprehensive-native-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  comprehensive-native:
+    name: Comprehensive native (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+      NATIVE_COVERAGE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONHASHSEED: "0"
+      MPLBACKEND: Agg
+      GRADIO_ANALYTICS_ENABLED: "False"
+      HF_HUB_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Set up native Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12"
+          enable-cache: true
+      - name: Provision declared native environment
+        run: uv sync --frozen --extra dev --extra api --extra gui --extra thrml --extra cpomdp
+      - name: Choose fresh evidence destination
+        run: echo "NATIVE_COVERAGE_OUTPUT=$RUNNER_TEMP/gnn-native-coverage-$UV_PYTHON" >> "$GITHUB_ENV"
+      - name: Record original selections and explicit optional native lanes
+        run: |
+          uv run --frozen --no-sync python scripts/run_comprehensive_native_coverage.py \
+            --checkout "$GITHUB_WORKSPACE" --output "$NATIVE_COVERAGE_OUTPUT" \
+            --python-version "$UV_PYTHON" --workers 4 --lane-timeout 1800 \
+            --lane core --lane mcp --lane pipeline --lane thrml-native --lane gui-native
+      - name: Validate complete exact-source receipt
+        run: |
+          uv run --frozen --no-sync python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["NATIVE_COVERAGE_OUTPUT"])
+          receipt = json.loads((root / "receipt.json").read_text())
+          source = json.loads((root / "source-identity.json").read_text())
+          assert receipt["complete"] and receipt["complete_declared_core_mcp_pipeline_selection"]
+          assert receipt["complete_requested_optional_native_selection"]
+          assert receipt["requested_lanes"] == ["core", "mcp", "pipeline", "thrml-native", "gui-native"]
+          assert [lane["name"] for lane in receipt["lanes"]] == receipt["requested_lanes"]
+          for lane in receipt["lanes"]:
+              assert lane["returncode"] == 0 and lane["collected_nodes"] > 0
+              assert lane["junit"] and lane["junit"]["testcases"] > 0
+              assert not any(lane["junit"][kind] for kind in ["failures", "errors", "skips"])
+          assert not receipt["integrity_errors"] and not source["working_tree_changes"]
+          assert source["commit"] == receipt["commit"] == os.environ["NATIVE_COVERAGE_REVISION"]
+          totals = json.loads((root / "coverage-comprehensive.json").read_text())["totals"]
+          target_observed = 5 * totals["covered_lines"] > 4 * totals["num_statements"]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write(f"\nComprehensive native Python {os.environ['UV_PYTHON']}: "
+                            f"{totals['covered_lines']}/{totals['num_statements']} statements. "
+                            f"Roadmap >80% target observed: {target_observed}.\n")
+          assert target_observed, (
+              f"Strict >80% comprehensive target not met: "
+              f"{totals['covered_lines']}/{totals['num_statements']} statements"
+          )
+          PY
+      - name: Enforce comprehensive percentage floor
+        run: |
+          uv run --frozen --no-sync python -m coverage report \
+            --rcfile="$NATIVE_COVERAGE_OUTPUT/coverage-comprehensive.toml" --fail-under=80
+      - name: Upload native receipts and reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: comprehensive-native-${{ matrix.python-version }}
+          if-no-files-found: error
+          retention-days: 14
+          include-hidden-files: true
+          path: |
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/receipt.json
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/source-identity.json
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/coverage-comprehensive.*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/.coverage-comprehensive
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/observer/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/core/coverage.*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/core/junit.xml
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/core/run.log
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/core/.coverage*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/core/admitted/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/core/startups/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/core/collection*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/mcp/coverage.*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/mcp/junit.xml
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/mcp/run.log
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/mcp/.coverage*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/mcp/admitted/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/mcp/startups/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/mcp/collection*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/pipeline/coverage.*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/pipeline/junit.xml
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/pipeline/run.log
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/pipeline/.coverage*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/pipeline/admitted/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/pipeline/startups/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/pipeline/collection*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/coverage.*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/junit.xml
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/run.log
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/.coverage*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/admitted/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/startups/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/thrml-native/collection*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/coverage.*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/junit.xml
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/run.log
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/.coverage*
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/admitted/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/startups/
+            ${{ env.NATIVE_COVERAGE_OUTPUT }}/gui-native/collection*

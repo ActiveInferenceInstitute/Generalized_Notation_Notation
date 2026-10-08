@@ -26,10 +26,10 @@ except ImportError as e:
 
 from gnn.api import MODULE_VERSION
 from gnn.api.pipeline_runner import (
-    MAX_PIPELINE_STEP,
+    LLM_STEP_NUMBERS,
     PIPELINE_STEP_COUNT,
-    VALID_STEP_NUMBERS,
 )
+from gnn.pipeline.admission import validate_steps
 
 
 def validate_step_numbers(
@@ -43,27 +43,9 @@ def validate_step_numbers(
     unregistered numbers, and duplicate selections with an explicit
     ``ValueError``.
     """
-    if values is None:
-        return None
-    if not isinstance(values, list):
-        raise ValueError(f"{field_name} must be a list of integers")
-    invalid = sorted(
-        [
-            step
-            for step in values
-            if isinstance(step, bool)
-            or not isinstance(step, int)
-            or step not in VALID_STEP_NUMBERS
-        ],
-        key=str,
+    return validate_steps(
+        values, field_name=field_name, allow_empty=field_name != "steps"
     )
-    if invalid:
-        raise ValueError(
-            f"{field_name} must contain integers between 0 and {MAX_PIPELINE_STEP}: {invalid}"
-        )
-    if len(values) != len(set(values)):
-        raise ValueError(f"{field_name} must not contain duplicate step numbers")
-    return list(values)
 
 
 class JobStatus(str, Enum):
@@ -98,9 +80,16 @@ class ProcessRequest(BaseModel):
     )
     verbose: bool = Field(default=False, description="Enable verbose logging output")
     strict: bool = Field(default=False, description="Treat warnings as errors")
+    parallel: bool = Field(
+        default=False, description="Execute independent pipeline tiers concurrently"
+    )
+    consolidated_steps: bool = Field(
+        default=False, description="Run eligible steps in process"
+    )
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         extra="forbid",
+        strict=True,
         json_schema_extra={
             "example": {
                 "target_dir": "input/gnn_files",
@@ -149,7 +138,7 @@ class ToolRequest(BaseModel):
         description="Reserved for future step-specific parameters; currently must be empty",
     )
 
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid", strict=True)
 
     @field_validator("kwargs")
     @classmethod
@@ -186,6 +175,9 @@ class JobStatusResponse(BaseModel):
     exit_code: Optional[int] = None
     error_message: Optional[str] = None
     output_dir: Optional[str] = None
+    process_cleanup: Optional[Dict[str, Any]] = Field(
+        default=None, description="Supervisor cleanup and observed containment receipt"
+    )
 
 
 class ToolInfo(BaseModel):
@@ -219,22 +211,34 @@ class RunRequest(BaseModel):
 
     target_dir: str = Field(default="input/gnn_files", min_length=1)
     output_dir: str = Field(default="output", min_length=1)
+    steps: Optional[List[int]] = None
     skip_steps: List[int] = Field(default_factory=list)
     skip_llm: bool = False
     strict: bool = Field(default=False, description="Treat warnings as errors")
+    parallel: bool = False
+    consolidated_steps: bool = False
     config: Dict[str, Any] = Field(
         default_factory=dict,
         description="Reserved for future run configuration; currently must be empty",
     )
 
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid", strict=True)
 
-    @field_validator("skip_steps", mode="before")
+    @field_validator("steps", "skip_steps", mode="before")
     @classmethod
-    def validate_skip_steps(cls, values: List[int]) -> List[int]:
+    def validate_skip_steps(
+        cls, values: Optional[List[int]], info: ValidationInfo
+    ) -> Optional[List[int]]:
         """Require unique registered pipeline step numbers."""
-        checked = validate_step_numbers(values, field_name="skip_steps")
-        return checked if checked is not None else []
+        checked = validate_step_numbers(values, field_name=str(info.field_name))
+        return [] if info.field_name == "skip_steps" and checked is None else checked
+
+    @model_validator(mode="after")
+    def validate_step_selection(self) -> "RunRequest":
+        skipped = set(self.skip_steps) | (LLM_STEP_NUMBERS if self.skip_llm else set())
+        if set(self.steps or ()) & skipped:
+            raise ValueError("Pipeline steps cannot be both requested and skipped")
+        return self
 
     @field_validator("config")
     @classmethod
@@ -257,6 +261,9 @@ class RunStatus(BaseModel):
     steps_completed: int = 0
     total_steps: int = PIPELINE_STEP_COUNT
     errors: List[str] = Field(default_factory=list)
+    process_cleanup: Optional[Dict[str, Any]] = Field(
+        default=None, description="Supervisor cleanup and observed containment receipt"
+    )
 
 
 class RunHealthResponse(BaseModel):

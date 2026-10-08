@@ -149,10 +149,11 @@ julia --startup-file=no --project=src/gnn/execute/activeinference_jl \
 
 ### PyTorch and bnlearn
 
-These targets are intentionally not locked by default because their dependency chain
-currently carries a known unpatched PyTorch security concern. They are not evidence of
-a broken normal installation. Review `src/gnn/render/framework_registry.py` before enabling
-them manually.
+These targets are locked optional extras and are absent from a normal core
+installation. Provision them with `uv sync --frozen --extra torch` or
+`uv sync --frozen --extra bnlearn`. The locked PyTorch floor is declared in
+`pyproject.toml`; do not replace it with a floating manual install. Consult
+`src/gnn/render/framework_registry.py` for model admission and native readiness.
 
 ## Pipeline control and performance
 

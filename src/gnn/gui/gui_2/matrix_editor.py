@@ -179,7 +179,16 @@ def _parse_parameter_values(
         return None
     if name == "B" and len(shape) == 3:
         rows, columns, depth = shape
-        return _reshape_flat(numeric_values, [depth, rows, columns])
+        canonical = _reshape_flat(numeric_values, shape)
+        # GNN declares B[next_state, previous_state, action]; the editor
+        # displays one action plane as a two-dimensional table.
+        return [
+            [
+                [canonical[row][column][action] for column in range(columns)]
+                for row in range(rows)
+            ]
+            for action in range(depth)
+        ]
     return _reshape_flat(numeric_values, shape)
 
 
@@ -294,21 +303,36 @@ def _finite_float(value: Any) -> float:
 
 
 def _format_parameter(name: str, matrix: Dict[str, Any]) -> str:
+    """Write accepted finite floats without discarding their precision."""
     matrix_type = matrix.get("type")
     if matrix_type == "vector":
         values = [_finite_float(value) for value in matrix.get("values", [])]
-        return f"{name}={{(" + ", ".join(f"{value:.6g}" for value in values) + ")}}"
+        return f"{name}={{(" + ", ".join(repr(value) for value in values) + ")}"
     if matrix_type == "matrix":
         rows = [
-            "(" + ", ".join(f"{_finite_float(value):.6g}" for value in row) + ")"
+            "(" + ", ".join(repr(_finite_float(value)) for value in row) + ")"
             for row in matrix.get("values", [])
         ]
         return f"{name}={{\n  " + ",\n  ".join(rows) + "\n}"
     if matrix_type == "tensor":
+        tensor_values = matrix.get("values", [])
+        if name == "B":
+            # Invert the named transition tensor's UI representation only.
+            # Other tensors retain their literal axis order.
+            tensor_values = [
+                [
+                    [
+                        tensor_values[action][row][column]
+                        for action in range(matrix["depth"])
+                    ]
+                    for column in range(matrix["cols"])
+                ]
+                for row in range(matrix["rows"])
+            ]
         slices: List[str] = []
-        for slice_data in matrix.get("values", []):
+        for slice_data in tensor_values:
             rows = [
-                "(" + ", ".join(f"{_finite_float(value):.6g}" for value in row) + ")"
+                "(" + ", ".join(repr(_finite_float(value)) for value in row) + ")"
                 for row in slice_data
             ]
             slices.append("( " + ", ".join(rows) + " )")

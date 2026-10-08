@@ -23,6 +23,15 @@ Advanced visualization generation including 3D, interactive dashboards, and D2 d
 from gnn.advanced_visualization import process_advanced_viz
 ```
 
+## Saved POMDP Transition Axes
+
+`process_advanced_viz(..., viz_type="pomdp")` consumes canonical B tensors as
+`B[next_state, previous_state, action]`. Each action panel displays
+`B[:, :, action]`, with previous state on the horizontal axis and next state
+on the vertical axis. Passive two-dimensional B matrices use the same state
+axis labels. These plots retain the supplied values and do not reorder or
+rebuild the model or change policy metadata behavior.
+
 
 ---
 ## Documentation

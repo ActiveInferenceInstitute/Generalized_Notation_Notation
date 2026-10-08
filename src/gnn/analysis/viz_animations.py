@@ -5,7 +5,10 @@ Belief and GridWorld animation builders for GNN Step 16 analysis visualizations.
 Extracted from ``analysis.visualizations``.
 """
 
+import hashlib
+import json
 import logging
+from numbers import Integral
 from pathlib import Path
 from typing import (
     Any,
@@ -19,6 +22,7 @@ from matplotlib.animation import (
     PillowWriter,
 )
 
+from .result_adapter import categorical_trace
 from .viz_base import (
     np,
     plt,
@@ -35,6 +39,49 @@ from .viz_schema import (
 
 logger = logging.getLogger(__name__)
 
+_BELIEF_LINE_STYLES = ("-", "--", "-.", ":")
+_BELIEF_MARKERS = ("o", "s", "^", "D")
+
+
+def _animation_receipt(
+    output_path: Path, trace: Any, domain: str, *, frame_count: int | None = None
+) -> None:
+    """Bind generated frames to the displayed trace, without an inference claim."""
+    canonical = json.dumps(trace, allow_nan=False, separators=(",", ":"))
+    output_path.with_suffix(".manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "gnn.animation_trace/v1",
+                "artifact_sha256": hashlib.sha256(output_path.read_bytes()).hexdigest(),
+                "trace_sha256": hashlib.sha256(canonical.encode()).hexdigest(),
+                "sample_domain": domain,
+                "frame_count": len(trace) if frame_count is None else frame_count,
+                "index_base": 0,
+                "source_binding": "See the current-run result manifest; a trace hash alone does not establish model or inference equivalence.",
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _validated_gridworld_states(states: list[Any], state_count: Any) -> list[int]:
+    """Refuse invalid indices rather than silently moving a reported state."""
+    if (
+        isinstance(state_count, bool)
+        or not isinstance(state_count, Integral)
+        or state_count < 1
+    ):
+        raise ValueError("state_count must be a positive integer")
+    if not states or any(
+        isinstance(s, bool) or not isinstance(s, Integral) or s < 0 or s >= state_count
+        for s in states
+    ):
+        raise ValueError(
+            "GridWorld states must be nonempty integer indices within state_count"
+        )
+    return [int(s) for s in states]
+
 
 def plot_belief_evolution(
     beliefs: List[List[float]],
@@ -45,25 +92,33 @@ def plot_belief_evolution(
     """
     Plot belief evolution over time.
     """
-    plt.figure(figsize=(10, 6))
-    belief_array = np.array(beliefs)
+    belief_array = categorical_trace(beliefs, name="beliefs")
+    plt.figure(figsize=(10, 6), layout="constrained")
     time_steps = range(len(beliefs))
 
     for i in range(belief_array.shape[1]):
-        plt.plot(time_steps, belief_array[:, i], label=f"State {i + 1}")
+        plt.plot(
+            time_steps,
+            belief_array[:, i],
+            label=f"State {i}",
+            linestyle=_BELIEF_LINE_STYLES[i % len(_BELIEF_LINE_STYLES)],
+            marker=_BELIEF_MARKERS[i % len(_BELIEF_MARKERS)],
+            markevery=max(1, len(beliefs) // 6),
+            markersize=4,
+        )
 
     if true_states:
-        # Normalize true states if they are 1-indexed
-        _min_state = min(true_states)
         for t, s in enumerate(true_states):
             plt.scatter(t, 1.05, marker="*", color="black", alpha=0.5 if t > 0 else 0)
             plt.text(t, 1.1, f"S{s}", ha="center", fontsize=8)
 
     plt.title(title)
-    plt.xlabel("Time Step")
-    plt.ylabel("Probability")
+    plt.xlabel("Time Step (0-based)")
+    plt.ylabel("Categorical probability")
     plt.ylim(0, 1.2)
-    plt.legend()
+    plt.legend(
+        title="State index (0-based)", loc="upper left", bbox_to_anchor=(1.01, 1)
+    )
     plt.grid(True, alpha=0.3)
 
     saved = safe_savefig(output_path, log=logger)
@@ -78,18 +133,29 @@ def animate_belief_evolution(
     """
     Create a GIF animation of belief evolution.
     """
-    belief_array = np.array(beliefs)
+    belief_array = categorical_trace(beliefs, name="beliefs")
     n_steps, n_states = belief_array.shape
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-    lines = [ax.plot([], [], label=f"State {i + 1}")[0] for i in range(n_states)]
+    fig, ax = plt.subplots(figsize=(10, 6), layout="constrained")
+    lines = [
+        ax.plot(
+            [],
+            [],
+            label=f"State {i}",
+            linestyle=_BELIEF_LINE_STYLES[i % len(_BELIEF_LINE_STYLES)],
+            marker=_BELIEF_MARKERS[i % len(_BELIEF_MARKERS)],
+            markevery=max(1, n_steps // 6),
+            markersize=4,
+        )[0]
+        for i in range(n_states)
+    ]
 
-    ax.set_xlim(0, n_steps - 1)
+    ax.set_xlim(0, max(1, n_steps - 1))
     ax.set_ylim(0, 1.1)
     ax.set_title(title)
-    ax.set_xlabel("Time Step")
-    ax.set_ylabel("Probability")
-    ax.legend()
+    ax.set_xlabel("Time Step (0-based)")
+    ax.set_ylabel("Categorical probability")
+    ax.legend(title="State index (0-based)", loc="upper left", bbox_to_anchor=(1.01, 1))
     ax.grid(True, alpha=0.3)
 
     def init() -> Any:
@@ -102,14 +168,19 @@ def animate_belief_evolution(
         """Update operation."""
         for i in range(n_states):
             lines[i].set_data(range(frame + 1), belief_array[: frame + 1, i])
-        return lines
+        ax.set_title(f"{title}\nTimestep {frame} of {n_steps - 1} (0-based)")
+        return [*lines, ax.title]
 
-    ani = FuncAnimation(fig, update, frames=n_steps, init_func=init, blit=True)
+    ani = FuncAnimation(fig, update, frames=n_steps, init_func=init, blit=False)
 
     # Save as GIF
     writer = PillowWriter(fps=5)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     ani.save(output_path, writer=writer)
     plt.close()
+    _animation_receipt(
+        output_path, belief_array.tolist(), "categorical posterior timesteps"
+    )
     return str(output_path)
 
 
@@ -121,8 +192,7 @@ def animate_gridworld_trajectory(
     fps: int = 4,
 ) -> str:
     """Create a GIF showing a single GridWorld state trajectory."""
-    if not states:
-        raise ValueError("No states provided for GridWorld animation")
+    states = _validated_gridworld_states(states, state_count)
 
     side = _grid_side_for_states(state_count)
     fig, ax = plt.subplots(figsize=(4.5, 4.5))
@@ -140,6 +210,8 @@ def animate_gridworld_trajectory(
     ax.tick_params(which="minor", bottom=False, left=False)
     ax.set_xlim(-0.5, side - 0.5)
     ax.set_ylim(side - 0.5, -0.5)
+    ax.set_xlabel("Grid column (0-based)")
+    ax.set_ylabel("Grid row (0-based)")
 
     def _coords(sequence: list[int]) -> tuple[list[int], list[int]]:
         """Handle coords for internal callers."""
@@ -150,20 +222,21 @@ def animate_gridworld_trajectory(
     def update(frame: int) -> list[Any]:
         """Update operation."""
         current_states = states[: frame + 1]
-        current_state = max(0, min(state_count - 1, current_states[-1]))
+        current_state = current_states[-1]
         grid.fill(0.0)
         grid[current_state // side, current_state % side] = 1.0
         image.set_data(grid)
         cols, rows = _coords(current_states)
         path_line.set_data(cols, rows)
         marker.set_data([cols[-1]], [rows[-1]])
-        ax.set_title(f"{title}\nStep {frame + 1}: state {current_state}")
+        ax.set_title(f"{title}\nTimestep {frame} (0-based): state {current_state}")
         return [image, path_line, marker]
 
     animation = FuncAnimation(fig, update, frames=len(states), blit=False)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     animation.save(output_path, writer=PillowWriter(fps=fps))
     plt.close(fig)
+    _animation_receipt(output_path, states, "reported state timesteps")
     return str(output_path)
 
 
@@ -221,9 +294,15 @@ def animate_cross_framework_gridworld_trajectories(
     if len(usable_items) < 2:
         raise ValueError("Need at least two framework trajectories")
 
-    state_count = int(usable_items[0].get("state_count") or 9)
-    side = _grid_side_for_states(state_count)
     frame_count = max(len(item["states"]) for item in usable_items)
+
+    validated_items = []
+    for item in usable_items:
+        state_count = item.get("state_count")
+        if state_count is None:
+            state_count = 9
+        states = _validated_gridworld_states(item["states"], state_count)
+        validated_items.append((item, state_count, states))
 
     fig, axes = plt.subplots(
         1,
@@ -233,13 +312,19 @@ def animate_cross_framework_gridworld_trajectories(
     )
     flat_axes = list(axes[0])
     artists: list[dict[str, Any]] = []
-    for ax, item in zip(flat_axes, usable_items):
+    for ax, (item, state_count, states) in zip(flat_axes, validated_items):
+        side = _grid_side_for_states(state_count)
         grid = np.zeros((side, side), dtype=float)
         image = ax.imshow(grid, cmap="Blues", vmin=0.0, vmax=1.0)
         (path_line,) = ax.plot([], [], color="#F39C12", linewidth=2, alpha=0.8)
         (marker,) = ax.plot([], [], "o", color="#E74C3C", markersize=12)
         ax.plot([side - 1], [side - 1], "*", color="#27AE60", markersize=16)
-        ax.set_title(str(item.get("framework", "unknown")))
+        label = (
+            f"{item.get('framework', 'unknown')}: {item.get('model_name', 'unknown')}"
+        )
+        ax.set_title(label)
+        ax.set_xlabel("Grid column (0-based)")
+        ax.set_ylabel("Grid row (0-based)")
         ax.set_xticks(range(side))
         ax.set_yticks(range(side))
         ax.set_xticks(np.arange(-0.5, side, 1), minor=True)
@@ -251,16 +336,21 @@ def animate_cross_framework_gridworld_trajectories(
         artists.append(
             {
                 "item": item,
+                "state_count": state_count,
                 "grid": grid,
                 "image": image,
                 "path": path_line,
                 "marker": marker,
+                "side": side,
+                "states": states,
+                "label": label,
+                "axes": ax,
             }
         )
 
     fig.suptitle(title)
 
-    def _coords(sequence: list[int]) -> tuple[list[int], list[int]]:
+    def _coords(sequence: list[int], side: int) -> tuple[list[int], list[int]]:
         """Handle coords for internal callers."""
         cols = [int(state) % side for state in sequence]
         rows = [int(state) // side for state in sequence]
@@ -270,24 +360,41 @@ def animate_cross_framework_gridworld_trajectories(
         """Update operation."""
         changed: list[Any] = []
         for entry in artists:
-            states = entry["item"]["states"]
+            states = entry["states"]
+            side = entry["side"]
             frame_index = min(frame, len(states) - 1)
             current_states = states[: frame_index + 1]
-            current_state = max(0, min(state_count - 1, int(current_states[-1])))
+            current_state = current_states[-1]
             entry["grid"].fill(0.0)
             entry["grid"][current_state // side, current_state % side] = 1.0
             entry["image"].set_data(entry["grid"])
-            cols, rows = _coords(current_states)
+            cols, rows = _coords(current_states, side)
             entry["path"].set_data(cols, rows)
             entry["marker"].set_data([cols[-1]], [rows[-1]])
+            status = " (trace ended)" if frame >= len(states) else ""
+            entry["axes"].set_title(f"{entry['label']}\nTimestep {frame_index}{status}")
             changed.extend([entry["image"], entry["path"], entry["marker"]])
-        fig.suptitle(f"{title} - Step {frame + 1}")
+        fig.suptitle(f"{title} — display timestep {frame} (0-based)")
         return changed
 
     animation = FuncAnimation(fig, update, frames=frame_count, blit=False)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     animation.save(output_path, writer=PillowWriter(fps=fps))
     plt.close(fig)
+    _animation_receipt(
+        output_path,
+        [
+            {
+                "framework": entry["item"].get("framework"),
+                "model_name": entry["item"].get("model_name"),
+                "state_count": entry["state_count"],
+                "states": entry["states"],
+            }
+            for entry in artists
+        ],
+        "separate reported state timesteps (ended traces labeled)",
+        frame_count=frame_count,
+    )
     return str(output_path)
 
 
@@ -309,7 +416,9 @@ def generate_gridworld_animation_suite(
     for item in items:
         framework = str(item["framework"])
         model_name = str(item["model_name"])
-        state_count = int(item["state_count"] or 9)
+        state_count = item.get("state_count")
+        if state_count is None:
+            state_count = 9
         beliefs = item.get("beliefs", [])
         states = item.get("states", [])
 

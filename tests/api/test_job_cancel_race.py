@@ -1,6 +1,6 @@
 """Behavior tests for the job-cancel race in the async job manager.
 
-A cancelled job must stay ``cancelled`` at every race point:
+A cancelled job with verified cleanup must stay ``cancelled`` at every race point:
 
 - cancel mid-flight while ``communicate()`` waits → the terminal state stays
   ``cancelled`` (never re-reported ``failed`` with a stderr error message)
@@ -9,6 +9,7 @@ A cancelled job must stay ``cancelled`` at every race point:
 - double cancel → idempotent, the first cancel wins;
 - cancel while pending → the pipeline is never even launched;
 - cancel signals the whole process group → grandchildren die with the job.
+- cleanup cannot be verified → report ``failed`` with the cleanup receipt.
 """
 
 import asyncio
@@ -25,8 +26,8 @@ import pytest
 from gnn.api import processor as job_mgr
 from gnn.api.pipeline_runner import PIPELINE_SUMMARY
 
-#: A pid that cannot exist: os.getpgid raises ProcessLookupError, exercising
-#: the direct-child fallback in _terminate_process_tree instead of ever
+#: A pid that cannot exist: os.killpg raises ProcessLookupError, exercising
+#: the direct-child fallback in request_process_stop instead of ever
 #: signalling a real process group.
 _NO_SUCH_PID = 999_999_999
 
@@ -258,10 +259,10 @@ async def test_cancel_pending_job_never_launches_pipeline(
 
 
 @pytest.mark.asyncio
-async def test_cancel_survives_communication_exception(
+async def test_cancel_unverified_communication_reports_cleanup_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """An exception after a cancel keeps the cancelled terminal state."""
+    """A cancel request cannot certify a worker whose exit/drain was unverified."""
     job_id = job_mgr.create_job(target_dir=".")
     try:
         started = asyncio.Event()
@@ -295,8 +296,9 @@ async def test_cancel_survives_communication_exception(
         await asyncio.wait_for(task, timeout=10.0)
 
         final = _job(job_id)
-        assert final["status"] == "cancelled"
-        assert final["error_message"] is None
+        assert final["status"] == "failed"
+        assert "cleanup could not be verified" in final["error_message"]
+        assert final["process_cleanup"]["cleanup_verified"] is False
     finally:
         job_mgr._JOBS.pop(job_id, None)
 

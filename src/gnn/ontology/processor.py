@@ -517,26 +517,31 @@ def parse_gnn_ontology_section(content: str) -> Dict[str, Any]:
                 if line.startswith("#") or line.startswith("```"):
                     continue
                 line = re.sub(r"^[-*+]\s+", "", line)
-                # Parse ontology content
-                if "=" in line:
-                    # Handle A=LikelihoodMatrix style annotations
-                    key, value = line.split("=", 1)
-                    key = key.strip()
-                    value = value.strip()
-                    ontology_data["annotations"].append(f"{key}={value}")
-                elif ":" in line:
+                # Recognized labels own their complete value, including '='.
+                if ":" in line:
                     key, value = line.split(":", 1)
                     key = key.strip()
                     value = value.strip()
 
                     if key.lower() in ["concept", "concepts"]:
                         ontology_data["concepts"].append(value)
+                        continue
                     elif key.lower() in ["relation", "relations"]:
                         ontology_data["relations"].append(value)
+                        continue
                     elif key.lower() in ["property", "properties"]:
                         ontology_data["properties"].append(value)
+                        continue
                     elif key.lower() in ["annotation", "annotations"]:
                         ontology_data["annotations"].append(value)
+                        continue
+
+                if "=" in line:
+                    # Handle unlabeled A=LikelihoodMatrix style annotations.
+                    key, value = line.split("=", 1)
+                    key = key.strip()
+                    value = value.strip()
+                    ontology_data["annotations"].append(f"{key}={value}")
 
         return ontology_data
 

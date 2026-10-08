@@ -84,7 +84,7 @@ assert ok, message
 The CLI for the parent render module also exposes this path:
 
 ```bash
-python -m render.render --target discopy --gnn-file input/gnn_files/actinf_pomdp_agent.md
+uv run --frozen --no-sync python -m gnn.cli render input/gnn_files/discrete/actinf_pomdp_agent.md --framework discopy --output /tmp/gnn-discopy-example.py
 ```
 
 ---
@@ -132,7 +132,7 @@ Any exception raised during code generation is caught and returned as `(False, "
 ### Consumed by
 - `execute/discopy/` — runs the emitted script in Step 12.
 - `tests/render/test_render_cli_targets.py` — exercises the CLI dispatch.
-- `tests/test_render_discopy*.py` — focused unit tests.
+- `tests/render/test_native_discopy_generated_consumers_410.py` — saved-source compilation and actual categorical diagrams/metadata.
 
 ### Data flow
 ```
@@ -143,7 +143,7 @@ GNN spec → render_gnn_to_discopy → <output>.py → execute.discopy runs scri
 
 ## Testing
 
-- `uv run --extra dev python -m pytest tests/test_render_discopy*.py -v`
+- `uv run --frozen --no-sync python -m pytest tests/render/test_native_discopy_generated_consumers_410.py -v`
 - `uv run --extra dev python -m pytest tests/render/test_render_cli_targets.py -v` — verifies the `discopy` target dispatches correctly.
 
 ---
@@ -152,6 +152,12 @@ GNN spec → render_gnn_to_discopy → <output>.py → execute.discopy runs scri
 
 - The generated script assumes DisCoPy's Python API; categorical features that require `pytket` or `lambeq` are not emitted. These were aspirational in prior drafts and have been removed from this document.
 - JAX-backed diagram evaluation is not supported. See `render/jax/` for a JAX-specific renderer with a different code-path.
+- The compatibility facade still exports the experimental file-level
+  `gnn_file_to_discopy_matrix_diagram` utility. Native ordinary-table controls
+  expose real/complex pair ambiguity and incompatible tensor/matrix constructor
+  assumptions; its availability flags do not establish readiness. See the
+  [support boundary](README.md#experimental-matrix-route) and E4 before changing
+  its mathematical representation.
 - Matrix permutation support is currently a validated metadata contract. The emitted DisCoPy diagram is still built from the parsed variable and connection structure; non-identity permutation metadata is not yet reflected as reordered diagram construction.
 
 ---

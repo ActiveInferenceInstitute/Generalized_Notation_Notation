@@ -1,205 +1,108 @@
-# GNN API Documentation
+# GNN public APIs
 
-> **📋 Document Metadata**  
-> **Type**: API Reference | **Audience**: Developers, Integrators | **Complexity**: Intermediate-Advanced  
-> **Cross-References**: [AGENTS.md](AGENTS.md) | [Comprehensive API Reference](comprehensive_api_reference.md) | [Pipeline Architecture](../gnn/operations/gnn_tools.md) | [Main Documentation](../README.md) | [docs/SPEC.md](../SPEC.md) (versioning)
+Use the installed `gnn.*` package. The package's
+[public exports](../../src/gnn/__init__.py), module specifications and
+[live step registry](../../src/gnn/pipeline/step_registry.py) define the actual
+interfaces. The [API reference](comprehensive_api_reference.md) maps those
+owners; runnable examples require their declared dependencies and real inputs.
 
-## Overview
+## Discovery, parsing and scientific extraction
 
-This directory contains API-oriented documentation for the GNN (Generalized Notation Notation) codebase. **Authoritative Python exports** for the `gnn` package are in [`src/gnn/__init__.py`](../../src/gnn/__init__.py). [`comprehensive_api_reference.md`](comprehensive_api_reference.md) documents probe-verified import paths and classes for the `gnn` package.
+Lightweight discovery and parsing inspect authored files. They are distinct
+from complete POMDP extraction, multi-format processing and native inference.
 
-**Status**: ✅ Production Ready  
-**Version**: 1.0
+```python
+from pathlib import Path
+from gnn import GNNFormat, GNNParsingSystem, discover_gnn_files, parse_gnn_file
+
+source = Path("input/gnn_files/discrete/two_state_bistable.md")
+paths = discover_gnn_files(source.parent, recursive=True)
+assert source in paths
+info = parse_gnn_file(source)
+assert info["success"] and info["structure_info"]["has_variables"]
+parsed = GNNParsingSystem().parse_file(source, format_hint=GNNFormat.MARKDOWN)
+assert parsed.success and parsed.model is not None
+```
+
+For the scientific extractor and declared syntax validation:
+
+```bash
+UV_PYTHON=3.12 uv sync --frozen --extra dev
+uv run --frozen --no-sync gnn validate input/gnn_files/discrete/two_state_bistable.md
+uv run --frozen --no-sync gnn extract input/gnn_files/discrete/two_state_bistable.md
+```
+
+See the [model contract](../../src/gnn/SPEC.md),
+[syntax](../gnn/reference/gnn_syntax.md) and
+[backend support](../execution/FRAMEWORK_AVAILABILITY.md). A parse success or
+compatible tensor shape does not establish a native inference contract.
+
+## Pipeline and rendering
+
+The [pipeline API](../../src/gnn/pipeline/README.md) exposes `run_pipeline`,
+`PipelineOrchestrator`, `PipelineConfig` and step execution. Numbered scripts
+and the CLI delegate to shared owners. Registered executing steps and backend
+options require admission; discovery metadata is a broader inventory.
+
+```bash
+uv run --frozen --no-sync python src/gnn/main.py \
+  --target-dir input/gnn_files/basics \
+  --output-dir /tmp/gnn-api-example --only-steps "3,5" --verbose
+```
+
+Read the summary: exit 0 is success, 2 completed work with warnings, and 1
+failure. A run freezes its selected sources and resolved configuration. Empty
+model selections write no model artifacts; inherited output cannot establish
+current completion. See [run ownership](../development/run_ownership_migration.md).
+
+[Rendering](../../src/gnn/render/README.md) and
+[execution](../../src/gnn/execute/README.md) are separate. Derive backend
+metadata from [frameworks.py](../../src/gnn/frameworks.py) and the
+[registry](../../src/gnn/render/framework_registry.py). Experimental THRML and
+cpomdp require explicit selection. Unsupported models, missing dependencies,
+invalid options, backend failures and failed cleanup retain distinct diagnoses.
+
+## REST and MCP
+
+The local REST service is documented by its
+[API owner](../../src/gnn/api/README.md) and generated OpenAPI schema. Provision
+`api` explicitly. Authentication, workspace admission, owned process cleanup
+and artifact deletion follow their actual runtime contracts. Do not infer
+security or platform containment from a successful HTTP response alone.
+
+[MCP documentation](../gnn/mcp/README.md) describes tool registration,
+transport and real dispatch. Inspect current tools and their schemas:
+
+```bash
+uv run --frozen --no-sync gnn mcp list
+uv run --frozen --no-sync gnn mcp info cli.health
+```
+
+`gnn health` reports environment diagnoses; the Python
+`gnn.execute.collect_doctor_report` API and MCP `get_doctor_report` tool provide
+structured backend readiness. Importability and tool registration are separate
+from accepted native execution.
 
 ## Security
 
-API surfaces follow normal Python packaging and process boundaries: validate inputs at trust boundaries, avoid logging secrets, and review auto-generated clients. See [security/README.md](../security/README.md).
+Read the [API authentication and bind owner](../../src/gnn/api/auth.py) and
+[filesystem boundaries](../security/filesystem_boundaries.md) before exposing
+the service. Installed deployments configure the operator's trusted
+`GNN_API_ROOT` explicitly; request paths cannot change it. Output leases are
+advisory, and native cleanup receipts declare the actual process boundary.
+Unverified cleanup retains run records and artifacts instead of claiming
+successful deletion. Preserve provider secrets and use the documented local
+service defaults.
 
-## Quick Navigation
+## Verification and navigation
 
-### This Directory
-- **[README.md](README.md)**: Directory overview (this file)
-- **[AGENTS.md](AGENTS.md)**: Technical documentation and agent scaffolding
-- **[comprehensive_api_reference.md](comprehensive_api_reference.md)**: Complete API reference documentation
+Use [tests/AGENTS](../../tests/AGENTS.md), the relevant consumer suites and
+[current workflows](../../.github/workflows/README.md). Retain exact-source
+outcomes, optional skips, native platform limits and finite visual review scope.
+The [roadmap](../../TO-DO.md) defines remaining coverage and scientific work.
 
-### Main Documentation
-- **[docs/README.md](../README.md)**: Main documentation hub
-- **[CROSS_REFERENCE_INDEX.md](../CROSS_REFERENCE_INDEX.md)**: Complete cross-reference index
-- **[learning_paths.md](../learning_paths.md)**: Learning pathways
-
-### Related Directories
-- **[Pipeline Documentation](../gnn/operations/gnn_tools.md)**: Pipeline execution and orchestration
-- **[Development Guide](../development/README.md)**: Development workflows and contribution guidelines
-- **[MCP Integration](../mcp/README.md)**: Model Context Protocol APIs
-- **[Framework Integration](../gnn/integration/framework_integration_guide.md)**: Framework-specific APIs
-
-### Pipeline Integration
-- **[Pipeline Documentation](../gnn/operations/gnn_tools.md)**: Complete pipeline guide
-- **[src/gnn/AGENTS.md](../../src/gnn/AGENTS.md)**: Implementation details
-
-## Contents
-
-**Files**: 3 (`README.md`, `AGENTS.md`, `comprehensive_api_reference.md`) | **Subdirectories**: 0
-
-### Core Files
-
-- **`comprehensive_api_reference.md`**: Complete API reference documentation
-  - All programmatic interfaces for GNN integration
-  - Core Parsing API: GNN file parsing and validation
-  - Pipeline API: Pipeline execution and orchestration
-  - Framework Integration API: PyMDP, RxInfer, DisCoPy interfaces
-  - Visualization API: Programmatic visualization generation
-  - LLM Integration API: AI-enhanced model analysis
-  - MCP API: Model Context Protocol integration
-  - Performance API: Monitoring and optimization interfaces
-
-- **`AGENTS.md`**: Technical documentation and agent scaffolding
-  - Complete documentation structure
-  - Integration with pipeline
-  - Cross-references and navigation
-
-- **`README.md`**: Directory overview (this file)
-
-## API Categories
-
-### Core Parsing API (package `gnn`)
-- **GNNParsingSystem**, **GNNFormat**: Registry-backed multi-format I/O ([`src/gnn/parsers/system.py`](../../src/gnn/parsers/system.py))
-- **discover_gnn_files**, **parse_gnn_file**, **process_gnn_directory**, **process_gnn_multi_format**: Discovery and processing ([`src/gnn/__init__.py`](../../src/gnn/__init__.py))
-- **validate_gnn_syntax**, **validate_gnn_source**, **ValidationLevel**: Validation entry points
-- See [`src/gnn/SPEC.md`](../../src/gnn/SPEC.md) for format counts
-
-### Pipeline API
-- **Pipeline**: Pipeline execution and orchestration
-- **PipelineConfig**: Configuration management
-- **Step Execution**: Individual step processing
-- **Result Aggregation**: Result collection and reporting
-
-### Framework Integration API
-- **PyMDP Integration**: Python Active Inference framework interfaces
-- **RxInfer Integration**: Julia Bayesian inference interfaces
-- **DisCoPy Integration**: Category theory and quantum computing interfaces
-- **JAX Integration**: High-performance numerical computing interfaces
-
-### Visualization API
-- **Visualizer**: Programmatic visualization generation
-- **Graph Generation**: Network diagram creation
-- **Matrix Visualization**: Heatmap and matrix displays
-- **Interactive Diagrams**: Dynamic visualization interfaces
-
-### LLM Integration API
-- **LLMProcessor**: AI-enhanced model analysis
-- **Provider Interfaces**: Multi-provider LLM support
-- **Prompt Generation**: Automated prompt creation
-- **Response Processing**: LLM output interpretation
-
-### MCP API
-- **MCP Tools**: Model Context Protocol tool registration
-- **Tool Discovery**: Automatic tool detection
-- **Protocol Compliance**: Standard interface implementation
-
-### Performance API
-- **Performance Monitoring**: Operation timing and metrics
-- **Resource Tracking**: Memory and CPU usage
-- **Optimization Interfaces**: Performance tuning capabilities
-
-## Integration with Pipeline
-
-This documentation is integrated with the 25-step GNN processing pipeline:
-
-1. **Core Processing** (Steps 0-9): GNN parsing, validation, export
-   - Core Parsing API used throughout
-   - Validation interfaces for type checking
-
-2. **Simulation** (Steps 10-16): Model execution and analysis
-   - Framework Integration APIs for code generation
-   - Execution interfaces for running simulations
-
-3. **Integration** (Steps 17-24): System coordination and output
-   - MCP API for tool integration
-   - Performance API for monitoring
-   - Visualization API for output generation
-
-See [src/gnn/AGENTS.md](../../src/gnn/AGENTS.md) for complete pipeline documentation.
-
-## Usage Examples
-
-### Basic API Usage
-
-```python
-import logging
-from pathlib import Path
-from gnn import (
-    discover_gnn_files,
-    parse_gnn_file,
-    GNNParsingSystem,
-    GNNFormat,
-    process_gnn_multi_format,
-)
-
-paths = discover_gnn_files(Path("input/gnn_files"))
-info = parse_gnn_file(paths[0])
-system = GNNParsingSystem()
-result = system.parse_file(paths[0], format_hint=GNNFormat.MARKDOWN)
-
-logger = logging.getLogger(__name__)
-process_gnn_multi_format(Path("input/gnn_files"), Path("output"), logger)
-```
-
-Full pipeline runs use `uv run python src/gnn/main.py` (see [Pipeline docs](../gnn/operations/gnn_tools.md)).
-
-### Framework Integration
-
-```python
-from gnn.render import PyMDPRenderer, render_gnn_to_pymdp, render_gnn_to_rxinfer
-
-# Generate PyMDP code
-pymdp_renderer = PyMDPRenderer()
-pymdp_code = pymdp_renderer.render(model)
-
-# Generate RxInfer code
-rxinfer_code = render_gnn_to_rxinfer(model, output_path)
-```
-
-## Related Resources
-
-### Main GNN Documentation
-- **[GNN Overview](../gnn/gnn_overview.md)**: Core GNN concepts
-- **[GNN Quickstart](../gnn/tutorials/quickstart_tutorial.md)**: Getting started guide
-- **[GNN Examples](../gnn/tutorials/gnn_examples_doc.md)**: Example models
-
-### Development Resources
-- **[Development Guide](../development/README.md)**: Development workflows
-- **[Testing Guide](../testing/README.md)**: Testing strategies
-- **[Contributing Guide](../../CONTRIBUTING.md)**: Contribution guidelines
-
-### Pipeline Architecture
-- **[Pipeline Documentation](../gnn/operations/gnn_tools.md)**: Complete pipeline guide
-- **[Pipeline AGENTS](../../src/gnn/AGENTS.md)**: Implementation details
-- **[Pipeline README](../../src/gnn/README.md)**: Pipeline overview
-
-### Framework Integration
-- **[Framework Integration Guide](../gnn/integration/framework_integration_guide.md)**: Framework-specific documentation
-- **[PyMDP Integration](../pymdp/gnn_pymdp.md)**: PyMDP API details
-- **[RxInfer Integration](../rxinfer/gnn_rxinfer.md)**: RxInfer API details
-
-## Standards and Guidelines
-
-All documentation in this module adheres to professional standards:
-
-- **Clarity**: Concrete, technical writing with code examples
-- **Functionality**: Describes actual API capabilities
-- **Completeness**: Comprehensive coverage of all interfaces
-- **Consistency**: Uniform structure and style with GNN documentation ecosystem
-
-## See Also
-
-- **[API Reference](../CROSS_REFERENCE_INDEX.md#api-reference-integration)**: Cross-reference index entry
-- **[Development Guide](../development/README.md)**: Development workflows
-- **[MCP Integration](../mcp/README.md)**: Model Context Protocol documentation
-- **[Main Index](../README.md)**: Return to main documentation
-
----
-
-**Status**: ✅ Production Ready  
-**Compliance**: Professional documentation standards  
-**Maintenance**: Regular updates with new API features and capabilities
+- [Documentation hub](../README.md)
+- [Pipeline architecture](../../ARCHITECTURE.md)
+- [Configuration guide](../configuration/README.md)
+- [Security boundaries](../security/README.md)
+- [API agent guide](AGENTS.md) and [documentation specification](SPEC.md)

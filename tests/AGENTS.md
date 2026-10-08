@@ -8,11 +8,23 @@
 
 **Category**: Testing / Quality Assurance
 
-**Status**: Maintained; v4.0.1 published with exact hosted acceptance
+**Status**: Maintained; current acceptance is source-bound and selection-specific
 
-**Version**: [pyproject.toml](../pyproject.toml) (canonical; v4.0.1 published)
+**Version**: [pyproject.toml](../pyproject.toml) (canonical; current software 4.1.0)
 
 **Last Updated**: 2026-09-04 (historical module documentation)
+
+Current 4.1.0 acceptance belongs to its [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0)
+and exact-source records. The [coverage guide](../docs/development/native_comprehensive_coverage.md)
+requires three independent strict integer reports; the
+[installed guide](../docs/development/installed_platform_acceptance.md) requires
+five ordinary-installed native lanes. The 201-case focused integration at
+`63be7d35bcc88a6133f86a09879909c50c14eef1`, 33-case LOC regression at
+`50e8b8a3133e9510c191c45773dfa9f8d9d4d9d2`, 27-case macOS diagnostic at
+`aa45cea1067563539cf4d658e792c587a1b00c16` and 18 source gates at
+`d13e2a885f83b4089487ab097ef36b078f3b8b24` retain their tested epochs.
+They are not percentages or Windows acceptance; overlapping selections are not
+summed. Metadata bookends do not inventory every installed library byte.
 
 Release reconciliation: historical test counts and receipts retain their original
 source identities. The [v4.0.0 publication receipt](../docs/development/gnn_4_0_0_post_publication.json)

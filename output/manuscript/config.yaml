@@ -11,8 +11,8 @@ paper:
   cover:
     image: "output/figures/gnn_graphical_abstract.png"
     alt: "Graphical abstract: one plain-text GNN specification flowing through parse, validate, render, execute, and analyze cards into cross-repository interchange checks against the pinned GEO-INFER and fep-lean pairs."
-  version: "4.0.1"
-  date: "2026-10-07"
+  version: "4.1.0"
+  date: "2026-10-08"
 
 authors:
   - name: "Daniel Ari Friedman"
@@ -23,7 +23,7 @@ authors:
 
 publication:
   doi: "10.5281/zenodo.7803313"
-  # The v4-specific archival DOI remains pending; doi names the project concept.
+  # DOI names the project concept; the 4.1.0 version/distribution archive remains pending.
   github_repository: "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation"
   year: "2026"
   transmission_bookends:

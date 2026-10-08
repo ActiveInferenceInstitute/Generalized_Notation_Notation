@@ -39,6 +39,7 @@ if _src_dir not in sys.path:
 
 from gnn.api import DEFAULT_API_HOST, DEFAULT_API_PORT, MODULE_VERSION, processor  # noqa: E402,I001
 from gnn.api.auth import api_key_middleware, require_secure_bind
+from gnn.api.process_supervision import ProcessCleanupError, supervise_api_process
 from gnn.api.models import RunHealthResponse, RunRequest, RunStatus  # noqa: E402,I001
 from gnn.api.path_utils import (  # noqa: E402,I001
     PathValidationError,
@@ -49,6 +50,7 @@ from gnn.api.pipeline_runner import (  # noqa: E402,I001
     PIPELINE_STEP_COUNT,
     build_pipeline_command,
     normalize_summary_steps,
+    planned_step_numbers,
     pipeline_exit_succeeded,
     read_pipeline_summary,
 )
@@ -144,6 +146,9 @@ if FASTAPI_AVAILABLE:
                         | (LLM_STEP_NUMBERS if request.skip_llm else set())
                     ),
                     "strict": request.strict,
+                    "steps": request.steps,
+                    "parallel": request.parallel,
+                    "consolidated_steps": request.consolidated_steps,
                     "output_dir": str(output_path),
                 },
             )
@@ -173,10 +178,14 @@ if FASTAPI_AVAILABLE:
                 "started_at": datetime.now().isoformat(),
                 "request": normalized_request.model_dump(),
                 "steps_completed": 0,
-                "total_steps": PIPELINE_STEP_COUNT
-                - len(
-                    set(request.skip_steps)
-                    | (LLM_STEP_NUMBERS if request.skip_llm else set())
+                "total_steps": len(
+                    planned_step_numbers(
+                        request.steps,
+                        sorted(
+                            set(request.skip_steps)
+                            | (LLM_STEP_NUMBERS if request.skip_llm else set())
+                        ),
+                    )
                 ),
                 "errors": [],
                 "events": [],
@@ -212,6 +221,7 @@ if FASTAPI_AVAILABLE:
                 steps_completed=entry.get("steps_completed", 0),
                 total_steps=entry.get("total_steps", PIPELINE_STEP_COUNT),
                 errors=entry.get("errors", []),
+                process_cleanup=entry.get("process_cleanup"),
             )
             return success_envelope(
                 response.model_dump(mode="json"),
@@ -419,13 +429,17 @@ if FASTAPI_AVAILABLE:
             skipped_steps = set(request.skip_steps)
             if request.skip_llm:
                 skipped_steps.add(13)
-            repo_root = Path(__file__).resolve().parents[3]
+            from gnn.api.path_utils import get_repo_root
+
+            repo_root = get_repo_root()
             command = build_pipeline_command(
                 request.target_dir,
                 request.output_dir,
                 skip_steps=sorted(skipped_steps),
+                only_steps=request.steps,
                 strict=request.strict,
-                repo_root=repo_root,
+                parallel=request.parallel,
+                consolidated_steps=request.consolidated_steps,
             )
             invocation_id = uuid.uuid4().hex
             entry["run_id"] = invocation_id
@@ -441,18 +455,11 @@ if FASTAPI_AVAILABLE:
                 start_new_session=os.name == "posix",
             )
             entry["process_id"] = getattr(process, "pid", None)
-            comm_task = asyncio.create_task(process.communicate())
-            while True:
-                done, _pending = await asyncio.wait({comm_task}, timeout=0.25)
-                if comm_task in done:
-                    break
-                if cancel_token is not None and cancel_token.cancelled:
-                    # A delete landed mid-flight: signal the process tree,
-                    # then drain the streams before reporting the outcome.
-                    processor._terminate_process_tree(process, run_hash)
-                    await comm_task
-                    break
-            _stdout, stderr = comm_task.result()
+            _stdout, stderr, cleanup = await supervise_api_process(
+                process,
+                cancelled=lambda: cancel_token is not None and cancel_token.cancelled,
+            )
+            entry["process_cleanup"] = cleanup
 
             # A delete can race this coroutine: the delete path terminates
             # the subprocess while communicate() is still draining, and the
@@ -512,6 +519,12 @@ if FASTAPI_AVAILABLE:
                     RuntimeError(f"Pipeline exited with code {exit_code}"), start
                 )
 
+        except ProcessCleanupError as e:
+            entry["process_cleanup"] = e.receipt
+            tracker.mark_failed(
+                RuntimeError("Process cleanup could not be verified"), start
+            )
+            logger.error("Pipeline run %s cleanup failed: %s", run_hash, e)
         except Exception as e:
             if cancel_token is not None and cancel_token.cancelled:
                 # The delete won the race during the exception; keep the

@@ -182,6 +182,7 @@ def test_accepted_fep_source_preserves_two_state_policy_dimensions(
 ) -> None:
     source = tmp_path / "FepLeanSymmetricBool.md"
     source.write_text(FEP_SOURCE)
+    source_bytes = source.read_bytes()
     spec: GNNInternalRepresentation | dict[str, Any] | None
     if input_kind == "mapping":
         spec = parse_gnn_markdown(FEP_SOURCE, source)
@@ -194,7 +195,60 @@ def test_accepted_fep_source_preserves_two_state_policy_dimensions(
     success, message, artifacts = render_gnn_spec(spec, "pymdp", tmp_path / "render")
     assert success, message
     assert artifacts
-    script = Path(artifacts[0]).read_text()
-    ast.parse(script)
-    assert "0.25" in script and "0.75" in script
-    assert "NUM_STATES = 2" in script or '"num_hidden_states": 2' in script
+    program = Path(artifacts[0])
+    program_bytes = program.read_bytes()
+    tree = ast.parse(program_bytes)
+    main = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "main"
+    )
+    literals = {
+        node.targets[0].id: ast.literal_eval(node.value)
+        for node in main.body
+        if isinstance(node, ast.Assign)
+        and isinstance(node.targets[0], ast.Name)
+        and node.targets[0].id
+        in {"A_data", "B_data", "C_data", "D_data", "E_data", "gnn_spec"}
+    }
+    embedded = literals["gnn_spec"]
+    assert embedded["model_name"] == "FepLean Symmetric Boolean Generative Model"
+    parameters = embedded["model_parameters"]
+    assert {
+        name: parameters[name]
+        for name in ("num_hidden_states", "num_obs", "num_actions", "num_timesteps")
+    } == {
+        "num_hidden_states": 2,
+        "num_obs": 2,
+        "num_actions": 2,
+        "num_timesteps": 1,
+    }
+    dimensions = {
+        variable["name"]: variable["dimensions"] for variable in embedded["variables"]
+    }
+    assert {name: dimensions[name] for name in ("A", "B", "C", "D", "E")} == {
+        "A": [2, 2],
+        "B": [2, 2, 2],
+        "C": [2],
+        "D": [2],
+        "E": [2],
+    }
+    # These terminating decimals are the exact authored Lean rationals.
+    expected = {
+        "A": [[0.5, 0.5], [0.5, 0.5]],
+        "B": [[[0.5, 0.5], [0.5, 0.5]], [[0.5, 0.5], [0.5, 0.5]]],
+        "C": [0.5, 0.5],
+        "D": [0.5, 0.5],
+        "E": [0.25, 0.75],
+    }
+    assert {name: literals[name + "_data"] for name in expected} == expected
+    assert {
+        name: embedded["initialparameterization"][name] for name in expected
+    } == expected
+    if input_kind == "mapping":
+        assert (
+            embedded["raw_sections"]["Signature"]
+            == FEP_SOURCE.split("## Signature\n", 1)[1].strip()
+        )
+    assert source.read_bytes() == source_bytes
+    assert program.read_bytes() == program_bytes

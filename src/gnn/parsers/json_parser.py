@@ -317,7 +317,10 @@ class JSONGNNParser(BaseGNNParser):
             horizon = time_data.get("horizon")
 
             return TimeSpecification(
-                time_type=time_type, discretization=discretization, horizon=horizon
+                time_type=time_type,
+                discretization=discretization,
+                horizon=horizon,
+                step_size=time_data.get("step_size"),
             )
 
         except Exception as e:

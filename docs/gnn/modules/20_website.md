@@ -260,7 +260,7 @@ Pipeline Artifacts → Data Collection → Page Rendering → Asset Copying → 
 - `tests/website/test_website_overall.py` - Module-level tests
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/website/ --cov=src/gnn/website --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/website/ --cov=gnn.website --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Website generation from pipeline artifacts

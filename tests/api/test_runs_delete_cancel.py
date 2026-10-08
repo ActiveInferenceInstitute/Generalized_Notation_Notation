@@ -19,8 +19,8 @@ from gnn.api import mcp as api_mcp
 from gnn.api import processor as runs_processor
 from gnn.execute.subprocess_envelope import CancelToken
 
-#: A pid that cannot exist: os.getpgid raises ProcessLookupError, exercising
-#: the direct-child fallback in _terminate_process_tree instead of ever
+#: A pid that cannot exist: os.killpg raises ProcessLookupError, exercising
+#: the direct-child fallback in request_process_stop instead of ever
 #: signalling a real process group.
 _NO_SUCH_PID = 999_999_999
 

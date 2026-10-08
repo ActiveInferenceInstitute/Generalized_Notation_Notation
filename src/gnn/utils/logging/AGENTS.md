@@ -11,7 +11,9 @@ Follows the **Thin Orchestrator** pattern where individual steps delegate to thi
 ```
 logging/
 ├── __init__.py          # Public API exports
-├── logging_utils.py     # Core implementation (Hardened v1.6.0)
+├── logging_utils.py     # Handler lifecycle, logging events and timing
+├── formatters.py        # Correlation context and text/JSON record formatting
+├── visual.py            # Terminal formatting and in-memory progress
 ├── AGENTS.md            # Agent capabilities and status
 ├── README.md            # Developer usage guide
 └── SPEC.md              # Technical specification
@@ -21,7 +23,10 @@ logging/
 
 - **Remediated Duplication**: Fixed a handler collision between root and step-level handlers that caused duplicate terminal output.
 - **Unified Tracing**: Established a single-source-of-truth for correlation IDs, ensuring logs from subprocesses are correctly tagged and formatted.
-- **Logging Facade**: `src/gnn/utils/logging_utils.py` delegates to the structured logging system.
+- **Logging Facade**: `gnn.utils.logging_utils` retains the supported public imports;
+  internal formatter and progress names are also re-exported from
+  `logging/logging_utils.py`. The shared correlation context is owned by
+  `formatters.py`; importing presentation owners does not configure handlers.
 
 ## Key Capabilities
 

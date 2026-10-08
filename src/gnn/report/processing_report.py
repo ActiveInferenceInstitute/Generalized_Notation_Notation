@@ -8,6 +8,7 @@ results, including detailed analysis, performance metrics, and export formats.
 
 import json
 import logging
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
@@ -203,19 +204,31 @@ class ReportGenerator:
         error_patterns: dict[Any, Any] = {}
         warning_patterns: dict[Any, Any] = {}
 
-        for _, result in validation_results.items():
-            if result.is_valid:
+        for file_path, result in validation_results.items():
+            # Structural validation saves mappings; semantic validation saves
+            # typed results. Required fields retain either producer's failures.
+            if isinstance(result, Mapping):
+                is_valid = result["valid"]
+                errors = result["errors"]
+                warnings = result["warnings"]
+            else:
+                is_valid = result.is_valid
+                errors = result.errors
+                warnings = result.warnings
+            if not isinstance(is_valid, bool):
+                raise TypeError(f"Validation validity must be a bool for {file_path}")
+            if is_valid:
                 valid_count += 1
             else:
                 invalid_count += 1
 
             # Analyze error patterns
-            for error in result.errors:
+            for error in errors:
                 error_type = error.split(":")[0] if ":" in error else "General"
                 error_patterns[error_type] = error_patterns.get(error_type, 0) + 1
 
             # Analyze warning patterns
-            for warning in result.warnings:
+            for warning in warnings:
                 warning_type = warning.split(":")[0] if ":" in warning else "General"
                 warning_patterns[warning_type] = (
                     warning_patterns.get(warning_type, 0) + 1

@@ -1,175 +1,41 @@
-# Code Quality Standards
+# Code and documentation quality
 
-> **Principle**: Real implementations only. Avoid simulated replacements and incomplete surfaces.
+Preserve public behavior and explicit failures. Each concept has one coherent
+owner with typed public interfaces and docstrings for inputs, outputs, errors,
+units and constraints. Split responsibilities when justified, not solely for
+line-count relief.
 
-## Type Safety
-
-All public functions must have complete type hints:
-
-```python
-from typing import Dict, Any, List, Optional, Tuple
-from pathlib import Path
-
-
-def process_gnn_files(
-    target_dir: Path,
-    output_dir: Path,
-    *,
-    formats: List[str] = None,
-    validate: bool = True,
-    max_files: Optional[int] = None,
-) -> Dict[str, Any]:
-    """
-    Process GNN files and return results.
-
-    Args:
-        target_dir: Directory containing GNN files.
-        output_dir: Directory for output artifacts.
-        formats: List of output formats (default: all supported).
-        validate: Whether to validate files before processing.
-        max_files: Maximum number of files to process.
-
-    Returns:
-        Dictionary with keys: 'processed', 'failed', 'output_files', 'metrics'.
-
-    Raises:
-        FileNotFoundError: If target_dir does not exist.
-        ValueError: If an unsupported format is requested.
-
-    Example:
-        >>> result = process_gnn_files(Path("input/"), Path("output/"))
-        >>> print(result['processed'])
-        42
-    """
-```
-
----
-
-## Docstring Requirements
-
-Every public function, class, and module must have:
-- **Summary line**: One sentence, imperative mood
-- **Args**: All parameters with types and descriptions
-- **Returns**: What's returned and its structure
-- **Raises**: Exceptions that may be raised
-- **Example**: At least one working example
-
----
-
-## Linting and Formatting
+Use repository tool configuration and actual CI command scopes;
+[pyproject.toml](../pyproject.toml) declares tools and mypy configuration.
+After a frozen development install, use actual gates:
 
 ```bash
-# Format (Black-compatible, line length 100)
-uv run ruff format src/
-
-# Lint
-uv run ruff check src/
-
-# Type check
-uv run mypy src/ --strict
+uv run --frozen --no-sync ruff format --check src scripts
+uv run --frozen --no-sync ruff check src/gnn scripts
+uv run --frozen --no-sync mypy src/gnn --show-error-codes
+uv run --frozen --no-sync lint-imports
+uv run --frozen --no-sync python scripts/check_thin_orchestrators.py
+uv run --frozen --no-sync python scripts/check_flag_parity.py
+uv run --frozen --no-sync python scripts/check_dep_hygiene.py
+uv run --frozen --no-sync python docs/development/docs_audit.py --strict --check-anchors --no-write
+uv run --frozen --no-sync python scripts/check_doc_contracts.py --strict
 ```
 
-**Standards:**
-- Line length: 100 characters
-- String quotes: double quotes
-- Import order: stdlib → third-party → local (ruff enforces)
-- No unused imports, variables, or arguments
+Terminology, capabilities, validation, MCP health and manuscript gates remain
+required as declared in the [workflows](../.github/workflows/README.md).
+Do not increase ratchets or weaken gates for a regression.
 
----
+Examples use real exports and declared environments. Derive inventories from
+live owners; distinguish discovery, selection, readiness and native acceptance.
+Use measured test/coverage evidence instead of fixed counts. Performance,
+memory, convergence, platform support and scientific equivalence need direct
+evidence for their respective claims.
 
-## Implementation Quality Rules
+Review consumer/negative tests, changed paths, import pressure and public
+interfaces before committing. Scratch stays outside source. Preserve
+[root custody](../AGENTS.md) and
+[companion pairing](../docs/development/fep_lean_paired_revision.md).
 
-### Real Implementations ⚠️
-```python
-# ❌ WRONG
-class TestLogger:
-    def info(self, message): ...
+## Related contracts
 
-
-# ✅ CORRECT
-import logging
-
-logger = logging.getLogger("test")
-```
-
-### Real Data Testing
-```python
-# ❌ WRONG — hard-coded substitute data
-model = {"name": "example", "states": 2}
-
-# ✅ CORRECT — use actual GNN fixture files
-from tests.conftest import sample_gnn_files
-
-model = parse_gnn_file(sample_gnn_files["basic"])
-```
-
-### Error Messages — Actionable
-```python
-# ❌ WRONG
-raise ValueError("Invalid input")
-
-# ✅ CORRECT
-raise ValueError(
-    f"Invalid format '{format_name}'. "
-    f"Supported formats: {', '.join(SUPPORTED_FORMATS)}. "
-    f"See gnn_standards.md for format specifications."
-)
-```
-
----
-
-## Module Completeness Checklist
-
-Before submitting a new module, verify:
-
-- [ ] `__init__.py` with `__version__`, `FEATURES`, `get_module_info()`
-- [ ] `processor.py` with standard function signature
-- [ ] `mcp.py` with `register_tools(mcp_instance)` and explicit `register_tool(...)` schemas
-- [ ] `AGENTS.md` documenting capabilities
-- [ ] `README.md` with usage examples
-- [ ] Tests in `tests/MODULENAME/test_MODULENAME_overall.py`
-- [ ] All public functions have complete type hints
-- [ ] All public functions have docstrings with examples
-- [ ] No unused imports
-- [ ] No `print()` statements (use `logger.info()` etc.)
-- [ ] No hard-coded paths (use `Path` and parametrize)
-
----
-
-## Logging Standards
-
-```python
-import logging
-
-logger = logging.getLogger(__name__)
-
-# Levels:
-logger.debug("Detailed trace info for troubleshooting")
-logger.info("Normal operation milestones: files found, steps completed")
-logger.warning("Recoverable issue: optional dependency missing; emitted skipped status")
-logger.error("Non-fatal failure: file failed to process, step degraded")
-logger.critical("Fatal error: pipeline cannot continue")
-
-# Always include context:
-logger.info(f"Processed {n_files} files in {duration:.2f}s")
-logger.error(f"Failed to parse {file_path}: {e} — check file format")
-```
-
----
-
-## Performance Standards Per Step
-
-| Step | Target | Maximum |
-|------|--------|---------|
-| Template/Registry | <1s | 5s |
-| GNN Parse | <1s | 10s |
-| Type Check/Validation/Export | <1s | 30s |
-| Visualization | <1s | 60s |
-| Render/Execute | <60s | 300s |
-| Tests | <120s | 1200s |
-| LLM | <60s | 360s |
-| Full pipeline | <3 min | 30 min |
-
----
-
-**Last Updated**: 2026-05-20 | **Status**: Maintained Standard
+[Documentation ownership and complete audits](documentation.md) owns the cross-cutting guidance.

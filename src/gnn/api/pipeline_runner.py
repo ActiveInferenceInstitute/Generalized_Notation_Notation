@@ -25,8 +25,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from gnn.api.path_utils import get_repo_root
+from gnn.pipeline.admission import validate_boolean, validate_steps
 from gnn.pipeline.step_registry import STEPS, get_llm_steps
+from gnn.utils.pipeline_orchestration.pipeline_step_dependencies import (
+    resolve_step_dependencies,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +70,8 @@ def build_pipeline_command(
     skip_steps: Optional[List[int]] = None,
     verbose: bool = False,
     strict: bool = False,
+    parallel: bool = False,
+    consolidated_steps: bool = False,
     repo_root: Optional[Path] = None,
 ) -> List[str]:
     """Return the argv for one real ``src/gnn/main.py`` orchestrator invocation.
@@ -82,16 +87,26 @@ def build_pipeline_command(
         skip_steps: Steps to skip.
         verbose: Enable orchestrator verbose output.
         strict: Treat orchestrator warnings as errors.
-        repo_root: Repository root override (defaults to the resolved repo
-            root derived from this package's location).
+        repo_root: Explicit checkout script override. By default module execution
+            preserves the API workspace cwd for configuration and relative paths.
 
     Returns:
         The full argv list, starting with the current interpreter.
     """
-    root = (repo_root or get_repo_root()).resolve()
-    command: List[str] = [
-        sys.executable,
-        str(root / MAIN_SCRIPT),
+    only_steps = validate_steps(only_steps, field_name="steps", allow_empty=False)
+    skip_steps = validate_steps(skip_steps, field_name="skip_steps")
+    validate_boolean(verbose, field_name="verbose")
+    validate_boolean(strict, field_name="strict")
+    validate_boolean(parallel, field_name="parallel")
+    validate_boolean(consolidated_steps, field_name="consolidated_steps")
+    if set(only_steps or ()) & set(skip_steps or ()):
+        raise ValueError("Pipeline steps cannot be both requested and skipped")
+    command: List[str] = (
+        [sys.executable, str(repo_root.resolve() / MAIN_SCRIPT)]
+        if repo_root is not None
+        else [sys.executable, "-P", "-m", "gnn.main"]
+    )
+    command += [
         "--target-dir",
         str(target_dir),
         "--output-dir",
@@ -105,7 +120,25 @@ def build_pipeline_command(
         command.append("--verbose")
     if strict:
         command.append("--strict")
+    if parallel:
+        command.append("--parallel")
+    if consolidated_steps:
+        command.append("--consolidated-steps")
     return command
+
+
+def planned_step_numbers(
+    only_steps: Optional[List[int]], skip_steps: Optional[List[int]] = None
+) -> List[int]:
+    """Resolve the same prerequisites and skip set as the owned orchestrator."""
+    requested = validate_steps(only_steps, field_name="steps", allow_empty=False)
+    skipped = validate_steps(skip_steps, field_name="skip_steps")
+    selected = (
+        resolve_step_dependencies(requested)
+        if requested is not None
+        else sorted(VALID_STEP_NUMBERS)
+    )
+    return [number for number in selected if number not in set(skipped or ())]
 
 
 def read_pipeline_summary(

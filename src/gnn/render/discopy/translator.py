@@ -9,7 +9,10 @@ Mechanical split facade: implementations live in ``bootstrap``,
 ``file_translation``, and ``code_templates`` sibling modules; every
 previously public and private name is re-exported here so consumer
 import paths are unchanged. The standalone __main__ smoke harness is
-retained verbatim.
+retained as a diagnostic. The file-level JAX-backed MatrixDiagram utility
+is experimental and unsupported for numerical evaluation; see the sibling
+README support boundary. Abstract tensor diagrams and the supported package
+generator have separate contracts.
 """
 
 import logging

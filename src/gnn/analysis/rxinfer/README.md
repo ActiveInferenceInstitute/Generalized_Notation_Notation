@@ -2,6 +2,12 @@
 
 Framework-specific analysis for RxInfer.jl execution results.
 
+Filesystem/JSON discovery lives in [`result_ingestion.py`](result_ingestion.py),
+normalization and numerical diagnostics in [`metrics.py`](metrics.py), and the
+analysis orchestration and categorical plot dispatcher in
+[`analyzer.py`](analyzer.py). Existing analyzer imports remain available; the
+split preserves normalization and inference semantics.
+
 ## Public Surface
 
 - `generate_analysis_from_logs(execution_results_dir, output_dir, verbose=False)`

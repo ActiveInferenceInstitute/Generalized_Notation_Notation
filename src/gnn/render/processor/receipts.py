@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from gnn.frameworks import RENDER_FRAMEWORKS
 from gnn.render.framework_registry import get_lite_frameworks
 
 logger = logging.getLogger(__name__)
@@ -228,5 +229,13 @@ def parse_frameworks_selection(
             return None, False
         if normalized == "lite":
             return get_lite_frameworks(), False
-        return [f.strip() for f in frameworks.split(",")], True
+        frameworks = [f.strip() for f in frameworks.split(",")]
+    if frameworks is not None:
+        if not isinstance(frameworks, list) or not frameworks:
+            raise ValueError("Explicit frameworks must be a nonempty list")
+        for name in frameworks:
+            if not isinstance(name, str) or name not in RENDER_FRAMEWORKS:
+                raise ValueError(f"Unknown render framework: {name!r}")
+        if len(frameworks) != len(set(frameworks)):
+            raise ValueError("Framework selection must not contain duplicates")
     return frameworks, frameworks is not None

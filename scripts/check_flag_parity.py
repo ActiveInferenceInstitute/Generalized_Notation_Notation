@@ -71,7 +71,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ORCHESTRATOR_GLOB = "src/gnn/[0-9]*_*.py"
-FLAG_TOKEN_RE = re.compile(r"--[a-z0-9][a-z0-9_-]*")
+FLAG_TOKEN_RE = re.compile(r"(?<![a-zA-Z0-9_/-])--[a-z0-9][a-z0-9_-]*")
 CAP_FILE = ROOT / "scripts" / "flag_parity_caps.json"
 
 # Doc-tree exclusions, kept identical to scripts/check_doc_path_references.py
@@ -281,7 +281,9 @@ def registered_flags() -> set[str]:
     for relative in (
         "scripts/check_manuscript_tokens.py",
         "scripts/check_hydrated_prose.py",
+        "scripts/run_comprehensive_native_coverage.py",
         "src/gnn/render/thrml/runtime.py",
+        "src/gnn/analysis/performance_benchmark.py",
     ):
         for node in ast.walk(ast.parse((ROOT / relative).read_text(encoding="utf-8"))):
             if (

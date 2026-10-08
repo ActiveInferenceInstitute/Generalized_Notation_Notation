@@ -22,3 +22,6 @@
 
 - Missing Julia results → warning + empty analysis
 - Graceful degradation when matplotlib unavailable
+- CSV reconstruction admits a row only after every scalar column parses.
+  A malformed row is skipped atomically with file, line and typed-cause context;
+  valid rows retain their aligned timestep/observation/action/belief values.

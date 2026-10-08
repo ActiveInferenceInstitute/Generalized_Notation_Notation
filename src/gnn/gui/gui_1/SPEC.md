@@ -22,3 +22,16 @@ Form-based GNN model constructor GUI served as a Gradio web application.
 
 - Input: Existing GNN files or blank canvas
 - Output: GNN model files in markdown format (`constructed_model_gui1.md` by default)
+
+## State declaration insertion
+
+The public `add_state_space_entry` helper inserts into an existing canonical
+`## StateSpaceBlock` before its next level-two section. Existing editor heading
+aliases, including the existing spaced `## State Space`, remain supported by the
+editor; these aliases do not extend the native GNN readers' section grammar.
+Insertion retains all existing text and line endings outside the new declaration.
+It preserves physical duplicate declarations and the existing linear delimiter
+parser and 8,388,608-character input refusal.
+
+Headless export saves the supplied edited Markdown with a headless artifact
+marker. It does not invoke Gradio callbacks or validate scientific equivalence.

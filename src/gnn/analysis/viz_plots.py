@@ -5,14 +5,17 @@ Per-model execution-output plot generation for GNN Step 16 analysis visualizatio
 Extracted from ``analysis.visualizations``.
 """
 
+import hashlib
 import json
 import logging
+import textwrap
 from pathlib import Path
 from typing import (
     Any,
     Dict,
     List,
     Optional,
+    TypedDict,
 )
 
 from .viz_animations import generate_gridworld_animation_suite
@@ -34,6 +37,91 @@ from .viz_schema import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class _EnergyDeclaration(TypedDict):
+    quantity: str
+    convention: str | None
+    units: str | None
+    display_summary: str | None
+
+
+def _declared_text(value: Any) -> str | None:
+    """Use source-declared labels; missing metadata does not imply a unit."""
+    return value.strip() if isinstance(value, str) and value.strip() else None
+
+
+def _energy_note(name: str, convention: Any, units: Any) -> str:
+    convention_text, units_text = _declared_text(convention), _declared_text(units)
+    if convention_text is None and units_text is None:
+        return f"{name}: convention/units unspecified."
+    return (
+        f"{name} convention: {convention_text or 'unspecified'}; "
+        f"units: {units_text or 'unspecified'}."
+    )
+
+
+def _energy_annotations(
+    output_path: Path, quantities: list[tuple[str, Any, Any, Any]]
+) -> tuple[list[str], dict[str, Any] | None]:
+    """Keep long source declarations accessible beside a readable plot caption."""
+    declarations: list[_EnergyDeclaration] = [
+        {
+            "quantity": name,
+            "convention": _declared_text(convention),
+            "units": _declared_text(units),
+            "display_summary": _declared_text(summary),
+        }
+        for name, convention, units, summary in quantities
+    ]
+    needs_detail = any(
+        len(row["convention"] or "") > 200
+        or bool(row["convention"] and row["display_summary"])
+        for row in declarations
+    )
+    notes = []
+    for row in declarations:
+        convention = row["convention"]
+        if convention and row["display_summary"]:
+            # The caller supplies a source-bound summary; never infer an energy
+            # sign or utility formula from substring matches in arbitrary prose.
+            convention = row["display_summary"]
+        elif convention and len(convention) > 200:
+            convention = "source excerpt: " + convention[:160].rsplit(" ", 1)[0] + " …"
+        notes.append(_energy_note(row["quantity"], convention, row["units"]))
+    if not needs_detail:
+        return notes, None
+    detail = output_path.with_suffix(".conventions.json")
+    notes.append(f"Complete source-declared conventions: {detail.name}")
+    receipt = {
+        "schema_version": "gnn.energy_plot_declarations/v1",
+        "declarations": declarations,
+        "declarations_sha256": hashlib.sha256(
+            json.dumps(declarations, sort_keys=True).encode()
+        ).hexdigest(),
+    }
+    return notes, receipt
+
+
+def _write_energy_declarations(
+    output_path: Path, receipt: dict[str, Any] | None, saved: str | None
+) -> None:
+    if receipt is not None and saved is not None and output_path.is_file():
+        receipt["artifact_sha256"] = hashlib.sha256(
+            output_path.read_bytes()
+        ).hexdigest()
+        output_path.with_suffix(".conventions.json").write_text(
+            json.dumps(receipt, indent=2), encoding="utf-8"
+        )
+
+
+def _energy_footer(fig: Any, notes: list[str], *, base_height: float) -> float:
+    """Display complete conventions outside the plotted data, without truncation."""
+    text = "\n".join(textwrap.fill(note, width=115) for note in notes)
+    footer_height = 0.18 * (text.count("\n") + 1) + 0.25
+    fig.set_figheight(base_height + footer_height)
+    fig.text(0.02, 0.02, text, va="bottom", fontsize=9)
+    return footer_height / float(fig.get_figheight())
 
 
 def visualize_all_framework_outputs(
@@ -215,16 +303,16 @@ def visualize_all_framework_outputs(
         try:
             # Extract simulation data
             sim_data = data.get("simulation_data", {})
+            result = data["results"][0] if data.get("results") else {}
+            impl_dir = result.get("implementation_directory")
             if not sim_data and data.get("results"):
                 # Try to extract from first result
-                result = data["results"][0]
                 if framework in {"pymdp", "rxinfer", "activeinference_jl"}:
                     sim_data = _current_schema_visualization_data(result)
                 else:
                     sim_data = result.get("simulation_data", {})
 
                 # Also check implementation directory for files
-                impl_dir = result.get("implementation_directory")
                 if impl_dir:
                     impl_path = Path(impl_dir)
                     sim_data_dir = impl_path / "simulation_data"
@@ -287,14 +375,17 @@ def visualize_all_framework_outputs(
                                         for row in reader:
                                             if len(row) >= 3:
                                                 try:
-                                                    observations.append(
-                                                        int(float(row[1]))
+                                                    observation = int(float(row[1]))
+                                                    action = int(float(row[2]))
+                                                    belief = (
+                                                        [float(x) for x in row[3:]]
+                                                        if len(row) > 3
+                                                        else None
                                                     )
-                                                    actions.append(int(float(row[2])))
-                                                    if len(row) > 3:
-                                                        beliefs.append(
-                                                            [float(x) for x in row[3:]]
-                                                        )
+                                                    observations.append(observation)
+                                                    actions.append(action)
+                                                    if belief is not None:
+                                                        beliefs.append(belief)
                                                 except ValueError as e:
                                                     log.debug(
                                                         "Skipping non-numeric CSV row: %s",
@@ -335,6 +426,9 @@ def visualize_all_framework_outputs(
             vfe_energy = sim_data.get("variational_free_energy", []) or sim_data.get(
                 "vfe_history", []
             )
+            units = sim_data.get("units", {})
+            if not isinstance(units, dict):
+                units = {}
 
             if free_energy:
                 fe_file = (
@@ -345,6 +439,11 @@ def visualize_all_framework_outputs(
                         free_energy,
                         fe_file,
                         f"Free Energy - {model_name} ({framework})",
+                        convention=sim_data.get("expected_free_energy_convention"),
+                        convention_summary=sim_data.get(
+                            "expected_free_energy_convention_summary"
+                        ),
+                        units=units.get("expected_free_energy"),
                     )
                     generated_files.append(str(fe_file))
                     log.info(f"Generated free energy plot: {fe_file.name}")
@@ -362,6 +461,18 @@ def visualize_all_framework_outputs(
                         fe_dual_file,
                         f"Active Inference Energy Dynamics - {model_name} ({framework})",
                         vfe_per_iteration=bool(sim_data.get("vfe_per_iteration")),
+                        vfe_convention=sim_data.get(
+                            "variational_free_energy_convention"
+                        ),
+                        efe_convention=sim_data.get("expected_free_energy_convention"),
+                        vfe_convention_summary=sim_data.get(
+                            "variational_free_energy_convention_summary"
+                        ),
+                        efe_convention_summary=sim_data.get(
+                            "expected_free_energy_convention_summary"
+                        ),
+                        vfe_units=units.get("variational_free_energy"),
+                        efe_units=units.get("expected_free_energy"),
                     )
                     generated_files.append(str(fe_dual_file))
                     log.info(f"Generated dual free energy plot: {fe_dual_file.name}")
@@ -631,7 +742,13 @@ def generate_action_analysis(
 
 
 def generate_free_energy_plots(
-    free_energy: List[float], output_path: Path, title: str = "Free Energy Dynamics"
+    free_energy: List[float],
+    output_path: Path,
+    title: str = "Free Energy Dynamics",
+    *,
+    convention: str | None = None,
+    convention_summary: str | None = None,
+    units: str | None = None,
 ) -> str:
     """
     Generate visualization of free energy evolution.
@@ -639,7 +756,7 @@ def generate_free_energy_plots(
     Includes:
     - Free energy over time
     - Moving average trend
-    - Convergence analysis
+    - Descriptive rolling variation (not an inference convergence test)
 
     Args:
         free_energy: List of free energy values over time
@@ -652,13 +769,26 @@ def generate_free_energy_plots(
     if not free_energy:
         raise ValueError("No free energy values provided")
 
-    fe_array = np.array(free_energy)
+    from matplotlib.ticker import MaxNLocator
+
+    fe_array = np.asarray(free_energy, dtype=float)
+    if (
+        fe_array.ndim not in {1, 2}
+        or not fe_array.size
+        or not np.isfinite(fe_array).all()
+    ):
+        raise ValueError(
+            "Free energy must be a finite, nonempty scalar or policy trace"
+        )
+    unit_label = _declared_text(units) or "units unspecified"
     n_steps = len(fe_array)
     is_per_policy = fe_array.ndim == 2
 
     if is_per_policy:
         n_policies = fe_array.shape[1]
-        fe_summary = np.min(fe_array, axis=1)  # The EFE of the best policy at each step
+        fe_summary = np.min(
+            fe_array, axis=1
+        )  # Descriptive reduction, not agent selection.
     else:
         n_policies = 1
         fe_summary = fe_array
@@ -682,10 +812,16 @@ def generate_free_energy_plots(
     if is_per_policy:
         if n_policies <= 10:
             for p in range(n_policies):
-                # Only label first few to avoid legend clutter
-                lbl = f"Policy {p + 1}" if p < 5 else None
+                lbl = f"Policy {p} (0-based)"
                 ax1.plot(
-                    range(n_steps), fe_array[:, p], linewidth=1.0, alpha=0.6, label=lbl
+                    range(n_steps),
+                    fe_array[:, p],
+                    linewidth=1.0,
+                    alpha=0.6,
+                    label=lbl,
+                    linestyle=("-", "--", "-.", ":")[p % 4],
+                    marker=("o", "s", "^", "D", "v")[p % 5],
+                    markersize=3,
                 )
         else:
             # Add a heatmap background if there are many policies
@@ -698,9 +834,13 @@ def generate_free_energy_plots(
             )
             ax1.set_ylabel("Policy Index / EFE")
 
-        # Bold line for the selected/minimum EFE
+        # Bold line for the reported minimum; producer conventions determine policy selection.
         ax1.plot(
-            range(n_steps), fe_summary, "k-", linewidth=2, label="Min EFE (Selected)"
+            range(n_steps),
+            fe_summary,
+            "k-",
+            linewidth=2,
+            label="Minimum reported policy score",
         )
     else:
         ax1.plot(range(n_steps), fe_array, "b-", linewidth=1.5, label="Free Energy")
@@ -717,10 +857,11 @@ def generate_free_energy_plots(
             label=f"{window}-step Moving Average",
         )
 
-    ax1.set_xlabel("Time Step")
-    ax1.set_ylabel("Free Energy")
+    ax1.set_xlabel("Time Step (0-based)")
+    ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax1.set_ylabel(f"Free Energy ({unit_label})")
     ax1.set_title("Free Energy Evolution")
-    ax1.legend()
+    ax1.legend(loc="lower center", bbox_to_anchor=(0.5, 1.14), ncol=2, fontsize=9)
     ax1.grid(True, alpha=0.3)
 
     # Distribution of free energy values (using summary EFE)
@@ -751,9 +892,12 @@ def generate_free_energy_plots(
         linewidth=2,
         label=f"Median: {np.median(fe_summary):.3f}",
     )
-    ax2.set_xlabel("Free Energy (Selected)")
+    summary_label = (
+        "Minimum reported policy score" if is_per_policy else "Reported free energy"
+    )
+    ax2.set_xlabel(f"{summary_label} ({unit_label})")
     ax2.set_ylabel("Frequency")
-    ax2.set_title("Selected Free Energy Distribution")
+    ax2.set_title(f"{summary_label} distribution")
     ax2.legend()
 
     # Rate of change
@@ -767,8 +911,9 @@ def generate_free_energy_plots(
             alpha=0.7,
         )
         ax3.axhline(0, color="black", linestyle="-", linewidth=0.5)
-        ax3.set_xlabel("Time Step")
-        ax3.set_ylabel("\u0394FE")
+        ax3.set_xlabel("Transition Start Timestep (0-based)")
+        ax3.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax3.set_ylabel(f"\u0394FE ({unit_label})")
         ax3.set_title("Free Energy Change per Step")
 
         # Add summary statistics
@@ -784,7 +929,7 @@ def generate_free_energy_plots(
             bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
         )
 
-    # Convergence analysis
+    # Descriptive recent variation does not establish inference convergence.
     ax4 = axes[1, 1]
     if n_steps > 10:
         # Calculate rolling variance
@@ -793,27 +938,31 @@ def generate_free_energy_plots(
             np.var(fe_summary[max(0, i - window) : i]) for i in range(1, n_steps + 1)
         ]
         ax4.plot(range(1, n_steps + 1), rolling_var, "purple", linewidth=2)
-        ax4.set_xlabel("Time Step")
-        ax4.set_ylabel("Rolling Variance")
-        ax4.set_title(f"Convergence Analysis ({window}-step variance)")
+        ax4.set_xlabel("Window End Index (1-based)")
+        ax4.xaxis.set_major_locator(MaxNLocator(integer=True))
+        variance_units = (
+            f"{unit_label} squared" if _declared_text(units) else "units unspecified"
+        )
+        ax4.set_ylabel(f"Rolling Variance ({variance_units})")
+        ax4.set_title(f"Recent Variation ({window}-sample variance)")
         ax4.grid(True, alpha=0.3)
 
-        # Determine convergence status
+        # Retain the existing numerical threshold as an explicitly labeled heuristic.
         if rolling_var:
             final_var = rolling_var[-1]
-            converged = final_var < 0.1
-            status = "\u2713 Converged" if converged else "\u26a0 Not Converged"
+            below_threshold = final_var < 0.1
+            status = "Below" if below_threshold else "At or above"
             convergence_stats_ax.text(
                 0.98,
                 0.80,
-                f"{status}\nFinal Variance: {final_var:.4f}",
+                f"{status} 0.1 variance heuristic\nFinal variance: {final_var:.4f}\nNot an inference convergence test",
                 transform=convergence_stats_ax.transAxes,
                 verticalalignment="top",
                 horizontalalignment="right",
                 fontsize=10,
                 bbox={
                     "boxstyle": "round",
-                    "facecolor": "lightgreen" if converged else "lightyellow",
+                    "facecolor": "lightgreen" if below_threshold else "lightyellow",
                     "alpha": 0.7,
                 },
             )
@@ -821,15 +970,22 @@ def generate_free_energy_plots(
         ax4.text(
             0.5,
             0.5,
-            "Need > 10 steps\nfor convergence analysis",
+            "Need > 10 samples\nfor recent-variation analysis",
             ha="center",
             va="center",
             transform=ax4.transAxes,
         )
-        ax4.set_title("Convergence Analysis")
+        ax4.set_title("Recent Variation")
+        ax4.set_axis_off()
 
     plt.suptitle(title, fontsize=14, fontweight="bold")
+    notes, declarations = _energy_annotations(
+        output_path, [("Free energy", convention, units, convention_summary)]
+    )
+    footer = _energy_footer(fig, notes, base_height=11)
+    fig.set_layout_engine("constrained", rect=(0, footer, 1, 1 - footer))
     saved = safe_savefig(output_path, log=logger)
+    _write_energy_declarations(output_path, declarations, saved)
     return saved or str(output_path)
 
 
@@ -840,9 +996,18 @@ def generate_vfe_vs_efe_plot(
     title: str = "Variational vs Expected Free Energy",
     *,
     vfe_per_iteration: bool = False,
+    vfe_convention: str | None = None,
+    efe_convention: str | None = None,
+    vfe_convention_summary: str | None = None,
+    efe_convention_summary: str | None = None,
+    vfe_units: str | None = None,
+    efe_units: str | None = None,
 ) -> str:
     """
-    Generate VFE and EFE plots using their declared independent sample domains.
+    Generate VFE and reported-policy-score plots in independent sample domains.
+
+    The historical EFE input retains its numerical minimum reduction. Source
+    declarations own its sign/convention; display labels do not infer them.
 
     Args:
         vfe: List of variational free energy values (scalars)
@@ -857,14 +1022,35 @@ def generate_vfe_vs_efe_plot(
     """
     if not vfe or not efe:
         raise ValueError("Need both VFE and EFE data to generate plot")
+    from matplotlib.ticker import MaxNLocator
+
+    notes, declarations = _energy_annotations(
+        output_path,
+        [
+            ("VFE", vfe_convention, vfe_units, vfe_convention_summary),
+            ("EFE", efe_convention, efe_units, efe_convention_summary),
+        ],
+    )
+    vfe_unit_label = _declared_text(vfe_units) or "units unspecified"
+    efe_unit_label = _declared_text(efe_units) or "units unspecified"
+
+    vfe_array = np.asarray(vfe, dtype=float)
+    if vfe_array.ndim != 1 or not np.isfinite(vfe_array).all():
+        raise ValueError("VFE must be a finite scalar trace")
 
     # Process EFE (take min across policies if it's a list)
     efe_summary: list[Any] = []
     for efe_t in efe:
         if hasattr(efe_t, "__iter__") and not isinstance(efe_t, str):
-            efe_summary.append(min(efe_t) if len(efe_t) > 0 else 0)
+            scores = np.asarray(efe_t, dtype=float)
+            if scores.ndim != 1 or not scores.size or not np.isfinite(scores).all():
+                raise ValueError("EFE policy rows must be nonempty and finite")
+            efe_summary.append(float(np.min(scores)))
         else:
-            efe_summary.append(efe_t)
+            score = float(efe_t)
+            if not np.isfinite(score):
+                raise ValueError("EFE must contain finite values")
+            efe_summary.append(score)
 
     if vfe_per_iteration:
         fig, (vfe_ax, efe_ax) = plt.subplots(
@@ -872,7 +1058,9 @@ def generate_vfe_vs_efe_plot(
         )
         vfe_ax.plot(range(1, len(vfe) + 1), vfe, "o-", color="tab:blue", linewidth=2)
         vfe_ax.set_xlabel("Inference Iteration (1-based)")
-        vfe_ax.set_ylabel("Variational Free Energy (VFE)")
+        vfe_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        vfe_ax.set_ylabel(f"VFE ({vfe_unit_label})")
+        vfe_ax.set_title("Variational free energy: inference updates")
         vfe_ax.grid(True, alpha=0.3)
         efe_ax.plot(
             range(len(efe_summary)),
@@ -881,27 +1069,37 @@ def generate_vfe_vs_efe_plot(
             color="tab:orange",
             linewidth=2,
         )
-        efe_ax.set_xlabel("Time Step")
-        efe_ax.set_ylabel("Min Expected Free Energy (EFE)")
+        efe_ax.set_xlabel("Time Step (0-based)")
+        efe_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        efe_ax.set_ylabel(f"Minimum reported policy score\n({efe_unit_label})")
+        efe_ax.set_title("Reported policy scores")
         efe_ax.grid(True, alpha=0.3)
         fig.suptitle(title, fontsize=14, fontweight="bold")
+        footer = _energy_footer(fig, notes, base_height=7)
+        fig.set_layout_engine("constrained", rect=(0, footer, 1, 1 - footer))
         saved = safe_savefig(output_path, log=logger)
+        _write_energy_declarations(output_path, declarations, saved)
         return saved or str(output_path)
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
     color1 = "tab:blue"
-    ax1.set_xlabel("Time Step")
-    ax1.set_ylabel("Variational Free Energy (VFE)", color=color1)
-    ax1.plot(vfe, "o-", color=color1, linewidth=2, label="VFE (Belief Update Cost)")
+    ax1.set_xlabel("Time Step (0-based)")
+    ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax1.set_ylabel(f"VFE ({vfe_unit_label})", color=color1)
+    ax1.plot(vfe, "o-", color=color1, linewidth=2, label="VFE")
     ax1.tick_params(axis="y", labelcolor=color1)
     ax1.grid(True, alpha=0.3)
 
     ax2 = ax1.twinx()
     color2 = "tab:orange"
-    ax2.set_ylabel("Expected Free Energy (EFE)", color=color2)
+    ax2.set_ylabel(f"Minimum reported policy score\n({efe_unit_label})", color=color2)
     ax2.plot(
-        efe_summary, "s--", color=color2, linewidth=2, label="Min EFE (Policy Cost)"
+        efe_summary,
+        "s--",
+        color=color2,
+        linewidth=2,
+        label="Minimum reported policy score",
     )
     ax2.tick_params(axis="y", labelcolor=color2)
 
@@ -918,9 +1116,11 @@ def generate_vfe_vs_efe_plot(
         bbox_to_anchor=(0.5, -0.15),
         ncol=2,
     )
-    plt.subplots_adjust(bottom=0.2)
+    footer = _energy_footer(fig, notes, base_height=6)
+    plt.subplots_adjust(bottom=footer + 0.15)
 
     saved = safe_savefig(output_path, log=logger)
+    _write_energy_declarations(output_path, declarations, saved)
     return saved or str(output_path)
 
 

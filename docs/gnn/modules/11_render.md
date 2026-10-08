@@ -425,7 +425,7 @@ GNN Parsing → Model Validation → Framework Selection → Code Generation →
 - `tests/render/test_render_performance.py` - Performance tests
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/render/ --cov=render --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/render/ --cov=gnn.render --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Multi-framework code generation

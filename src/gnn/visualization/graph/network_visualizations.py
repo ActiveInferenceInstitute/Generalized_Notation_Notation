@@ -55,7 +55,7 @@ except ImportError:
     go = cast(Any, None)
     PLOTLY_AVAILABLE = False
 
-from ..plotting.utils import safe_tight_layout
+from ..plotting.utils import safe_tight_layout, save_figure
 
 logger = logging.getLogger(__name__)
 
@@ -236,7 +236,7 @@ def generate_network_visualizations(
         safe_tight_layout()
 
         network_path = output_dir / f"{model_name}_network_graph.png"
-        plt.savefig(network_path, dpi=300, bbox_inches="tight")
+        save_figure(network_path, dpi=300, bbox_inches="tight")
         plt.close()
         visualizations.append(str(network_path))
 

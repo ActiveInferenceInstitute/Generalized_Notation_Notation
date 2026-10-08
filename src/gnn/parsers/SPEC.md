@@ -25,6 +25,41 @@
 
 - **Python** >= 3.11 (project `requires-python`; see repo root `pyproject.toml`).
 - Optional extras (e.g. protobuf) may be required for some formats at runtime.
+- Installed PyYAML reads leading comments normally and reports malformed or
+  unsupported-tag input as a failed parse. Loader failure cannot become apparent
+  success through simplified recovery; the existing dependency-absent recovery
+  implementation remains in use.
+  Canonical JSON/YAML `time_specification.step_size` remains the supplied value
+  on saved-file reopen, without timestep inference or coercion.
+- Authored PKL class properties are parsed through complete line boundaries:
+  the full declared type and optional default value remain distinct, including
+  scalar and generic types. Type capture must not stop at its first character.
+- XML discovery may find one physical element through multiple container and
+  generic XPath paths. Each element contributes once, in discovery priority;
+  separate authored declarations remain separate even when their names match.
+- ASN.1 and Z native `MODEL_DATA` line comments admit a JSON object from that
+  line only. Later declarations cannot extend its payload or replace its model
+  identity; present malformed/non-object data fails with a causal diagnostic.
+  Absent metadata retains native declaration parsing, and existing ASN.1 block
+  comment payloads remain supported.
+- Alloy and Z saved-payload reconstruction preserves a supplied parameter
+  description without adding an interpretation or changing its value.
+- Markdown binds a trailing bracket `type=` field after trimming comma-field
+  whitespace. `int` and `bool` reuse the existing INTEGER and BINARY types;
+  `binary`, default float and unknown-type categorical recovery remain supported.
+  Adjacent annotation fields remain in source `raw_sections`, without inferring
+  initialized values or adding scientific datatype semantics.
+- Nested JSON lists with lowercase booleans reuse the public bounded literal
+  parser's length/depth guards before JSON decoding. Scalar values, quoted text
+  and shape are preserved; JSON mappings are not newly admitted. Rejected,
+  malformed and overlimit arrays retain their existing recovery behavior.
+- Native Agda function and constructor headers start at a complete source-line
+  token. A following function body must repeat the whole declared name;
+  adjacent `data` declarations cannot be consumed as a suffix-name body.
+  Blank lines and constructor indentation preserve the same declaration values.
+  This extraction does not compile Agda or certify its proofs. Untyped TLA+
+  variable roles remain name-based heuristics, rather than declared scientific
+  types or a theorem-prover result.
 
 ## Testing
 

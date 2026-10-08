@@ -9,6 +9,7 @@ wrapper, keeping all call sites and error behavior identical to the
 pre-extraction implementation.
 """
 
+import math
 import re
 from typing import Any, Dict
 
@@ -30,6 +31,8 @@ def _validate_params(
     Raises:
         MCPValidationError: If validation fails
     """
+    if not isinstance(params, dict):
+        raise MCPValidationError("Parameters must be a dictionary")
     if not strict:
         # Basic validation only
         if "required" in schema:
@@ -37,9 +40,6 @@ def _validate_params(
                 if required not in params:
                     raise MCPValidationError(f"Missing required parameter: {required}")
         return
-
-    if not isinstance(params, dict):
-        raise MCPValidationError("Parameters must be a dictionary")
 
     # Check required fields
     if "required" in schema:
@@ -51,11 +51,7 @@ def _validate_params(
                 )
 
     # Validate properties
-    if "properties" in schema:
-        for field_name, field_schema in schema["properties"].items():
-            if field_name in params:
-                field_value = params[field_name]
-                _validate_field(field_name, field_value, field_schema)
+    _validate_field("parameters", params, {**schema, "type": "object"})
 
     # Validate additional constraints
     if "minProperties" in schema and len(params) < schema["minProperties"]:
@@ -148,7 +144,11 @@ def _validate_field(
             )
 
     elif field_type == "number":
-        if isinstance(field_value, bool) or not isinstance(field_value, (int, float)):
+        if (
+            isinstance(field_value, bool)
+            or not isinstance(field_value, (int, float))
+            or not math.isfinite(field_value)
+        ):
             raise MCPValidationError(
                 f"Parameter '{field_name}' must be a number",
                 field=field_name,
@@ -220,6 +220,13 @@ def _validate_field(
                 field=field_name,
                 value=field_value,
             )
+
+        for required in field_schema.get("required", []):
+            if required not in field_value:
+                raise MCPValidationError(
+                    f"Required parameter '{field_name}.{required}' is missing",
+                    field=f"{field_name}.{required}",
+                )
 
         # Object-specific validations
         if "properties" in field_schema:

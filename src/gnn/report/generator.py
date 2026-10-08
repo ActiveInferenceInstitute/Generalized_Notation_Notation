@@ -58,12 +58,19 @@ def generate_comprehensive_report(
                 f"Pipeline output directory does not exist: {pipeline_output_dir}"
             )
             return False
+        if not pipeline_output_dir.is_dir():
+            logger.error(
+                f"Pipeline output path is not a directory: {pipeline_output_dir}"
+            )
+            return False
 
         # Create report output directory
         report_output_dir.mkdir(parents=True, exist_ok=True)
 
         # Set default report formats if not specified
-        report_formats = list(DEFAULT_REPORT_FORMATS)
+        report_formats = list(
+            DEFAULT_REPORT_FORMATS if report_formats is None else report_formats
+        )
 
         # Collect data from all pipeline steps
         logger.info("Collecting pipeline data for analysis")

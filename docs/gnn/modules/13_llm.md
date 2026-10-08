@@ -316,7 +316,7 @@ if result.returncode == 0:
 - `tests/llm/test_llm_ollama_integration.py` - Ollama integration tests
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/llm/ --cov=llm --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/llm/ --cov=gnn.llm --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Ollama detection and availability check

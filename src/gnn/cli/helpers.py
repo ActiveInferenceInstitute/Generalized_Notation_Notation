@@ -11,9 +11,12 @@ from ``cli.__init__``.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import logging
 import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Callable, Final, Optional
 
@@ -28,6 +31,23 @@ EXIT_WARNING: Final = 2
 
 #: Handler signature shared by every subcommand implementation.
 CommandHandler = Callable[[argparse.Namespace], int]
+
+
+@contextmanager
+def _utf8_output_streams() -> Iterator[None]:
+    """Use UTF-8 for one CLI call, retaining caller-owned stream settings."""
+    originals: list[tuple[io.TextIOWrapper, str, str | None]] = []
+    try:
+        for stream in (sys.stdout, sys.stderr):
+            if isinstance(stream, io.TextIOWrapper) and not stream.closed:
+                encoding, errors = stream.encoding, stream.errors
+                stream.reconfigure(encoding="utf-8", errors=errors)
+                originals.append((stream, encoding, errors))
+        yield
+    finally:
+        for stream, encoding, errors in reversed(originals):
+            if not stream.closed:
+                stream.reconfigure(encoding=encoding, errors=errors)
 
 
 def _envelope(

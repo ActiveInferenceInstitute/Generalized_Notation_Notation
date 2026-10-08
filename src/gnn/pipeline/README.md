@@ -28,6 +28,25 @@ src/gnn/pipeline/
 
 Beyond the API classes above, `gnn.pipeline.__all__` exports `STEP_METADATA`, `DEFAULT_TARGET_DIR`, `DEFAULT_OUTPUT_DIR`, `FEATURES`, `__version__`, `get_module_info`, `create_pipeline_config`, `get_pipeline_info`, `validate_pipeline_config`, and `EnhancedHealthChecker`.
 
+### Runtime validation workspace
+
+`python -m gnn.pipeline.pipeline_runtime_validator` runs the documented
+validation selection against the caller's `input/gnn_files`, `input/config.yaml`
+and `output`. The Python API `PipelineValidator.test_pipeline_execution(["3"])`
+can select only parsing. The package must already be installed or importable;
+the validator launches the same interpreter with safe-path module execution,
+so a workspace `gnn/` cannot replace the package through the default cwd entry.
+The subprocess retains its 300-second timeout. It does not redirect relative
+data paths into the package checkout or installation directory.
+
+Each validation execution supplies a fresh `GNN_RUN_ID` in the child environment
+without changing the parent's identity or context. Step results are admitted
+only from `output/00_pipeline_summary/pipeline_execution_summary.json` carrying
+that exact identity. A missing, malformed or other-run summary cannot validate
+success, including after failed admission; earlier-format summary locations
+are not current-run evidence. This diagnostic interface does not add the
+API's cancellation contract or an operating-system sandbox.
+
 ### v3.0.0 Long-Running Orchestration (safe-by-design)
 
 Three modules provide the foundation for long-running, resumable, deployable-by-plan runs **without
@@ -141,20 +160,37 @@ Returns the standardized per-step output directory (e.g. `output/3_gnn_output/`)
 
 ### Pipeline Execution (`execution.py`)
 
-#### `run_pipeline(pipeline_data=None, *, target_dir=None, output_dir=None, steps="all", verbose=False) -> dict`
+#### `run_pipeline(pipeline_data=None, *, target_dir=None, output_dir=None, steps=None, verbose=None, strict=None, parallel=None, consolidated_steps=None) -> dict`
 Executes the pipeline through `main.py` and returns a compact summary dict
 (`success`, `steps_executed`, `errors`, `exit_code`, `duration`, ...).
+Explicit keyword flags override `pipeline_data`, including `False`; omitted
+flags inherit it. Accepted data keys are paths (`target_dir`, `input_dir`,
+`temp_dir`, `output_dir`), selections (`steps`, `only_steps`, `skip_steps`) and
+the four flags above. Unknown keys fail admission. Steps accept registered
+integer/name aliases; empty, unknown, duplicate, boolean and fractional execution
+selections fail before dispatch. Omit steps or use `"all"` to select all.
+
+Every invocation resolves prerequisites, freezes exact model bytes and original
+source identities, and owns current-run artifact receipts. Serial, parallel and
+matrix dispatch consume that shared plan. An explicitly empty **model** selection
+is valid and yields skipped steps; it never expands to the input directory.
+Results include `run_id`, `run_hash`, `model_selection` and per-step `status` and
+artifact records. Inherited summaries are ignored. Exit 2 completes with warnings
+unless `strict=True`.
 
 #### `resolve_step_numbers(steps, pipeline_data=None) -> list[int]`
 Normalizes step identifiers (`"11"`, `"11_render"`, `"3,5"`, iterables, `"all"`)
-to sorted registered step numbers.
+to sorted registered step numbers. This discovery helper retains its permissive
+unknown-token filtering; execution independently performs strict admission.
 
 #### `execute_pipeline_step(step_name, step_config, pipeline_data) -> StepExecutionResult`
 Executes one step, returning a result object with `step_name`, `success`,
-`duration`, `output`, `error`, `warnings`.
+`duration`, `output`, `error`, `warnings`, and additive `status`, `run_id`, `artifacts`.
 
 #### `execute_pipeline_steps(steps, pipeline_data)`
-Executes an ordered list of steps.
+Executes the complete requested plan and prerequisites once. Requested outcomes
+return in canonical pipeline order under one run identity. An empty convenience
+batch returns no outcomes and performs no work.
 
 #### `get_pipeline_status() -> dict`
 Static readiness probe (`status`, `timestamp`, `steps_available`,

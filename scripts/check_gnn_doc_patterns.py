@@ -37,7 +37,7 @@ KNOWN_OUTSTANDING = {"src/gnn/doc/QUICK_REFERENCE.md"}
 # count). Fails on growth under --strict; prints the count on success. Lower
 # the baseline as sites are removed; raise it only with a decision note in the
 # doctrine page.
-EXCEPT_EXCEPTION_BASELINE = 1171
+EXCEPT_EXCEPTION_BASELINE = 1148
 
 # (regex, description) — tune as docs evolve
 PATTERNS: list[tuple[re.Pattern[str], str]] = [

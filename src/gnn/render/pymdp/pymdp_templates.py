@@ -23,8 +23,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-_PIPELINE_RUNNER_TEMPLATE = '''#!/usr/bin/env python3
-"""
+_PIPELINE_RUNNER_DOCSTRING = """
 pymdp 1.0.0 runner for {model_display_name}
 
 This file was generated from a GNN specification by
@@ -48,6 +47,9 @@ Initial matrices present in GNN spec:
   - D (state prior):  {D_present}
   - E (policy prior): {E_present}
 """
+
+_PIPELINE_RUNNER_TEMPLATE = '''#!/usr/bin/env python3
+{module_docstring_literal}
 from __future__ import annotations
 
 import json
@@ -132,10 +134,10 @@ def main() -> int:
     gnn_spec.setdefault("model_parameters", {{}})
     gnn_spec["model_parameters"].setdefault("num_timesteps", {num_timesteps})
 
-    output_dir = Path(os.environ.get("PYMDP_OUTPUT_DIR", "output/pymdp_simulations/{model_name}"))
+    output_dir = Path(os.environ.get("PYMDP_OUTPUT_DIR", {output_path_literal}))
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Running pymdp 1.0.0 rollout for {model_display_name}")
+    logger.info({rollout_message_literal})
     logger.info("Output directory: %s", output_dir)
 
     try:
@@ -167,8 +169,7 @@ if __name__ == "__main__":
 '''
 
 
-_STANDALONE_RUNNER_TEMPLATE = '''#!/usr/bin/env python3
-"""
+_STANDALONE_RUNNER_DOCSTRING = """
 Self-contained pymdp 1.0.0 rollout for {model_display_name}
 
 Generated from a GNN specification. This script is fully standalone: it does
@@ -178,6 +179,9 @@ and its JAX/equinox runtime.
 Model:        {model_display_name}
 Description:  {model_annotation}
 """
+
+_STANDALONE_RUNNER_TEMPLATE = """#!/usr/bin/env python3
+{module_docstring_literal}
 from __future__ import annotations
 
 import json
@@ -363,7 +367,7 @@ def main() -> int:
         "framework": "PyMDP",
         "pymdp_version": "1.0.0+",
         "backend": "jax",
-        "model_name": "{model_display_name}",
+        "model_name": {model_display_name_literal},
         "num_timesteps": num_timesteps,
         "observations": observations,
         "actions": actions,
@@ -378,7 +382,7 @@ def main() -> int:
         "success": True,
     }}
 
-    out_dir = Path("output/pymdp_simulations/{model_name}")
+    out_dir = Path({output_path_literal})
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "simulation_results.json").write_text(json.dumps(results, indent=2))
     logger.info("Done — wrote %s/simulation_results.json", out_dir)
@@ -387,7 +391,7 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-'''
+"""
 
 
 def _flag(label: str, value: Any) -> str:
@@ -397,19 +401,37 @@ def _flag(label: str, value: Any) -> str:
 
 def generate_pipeline_runner_script(ctx: Dict[str, Any]) -> str:
     """Render the pipeline runner template with the given GNN context."""
-    return _PIPELINE_RUNNER_TEMPLATE.format(
-        **ctx,
+    context = dict(ctx)
+    context.update(
         A_present=_flag("A", ctx.get("A_literal")),
         B_present=_flag("B", ctx.get("B_literal")),
         C_present=_flag("C", ctx.get("C_literal")),
         D_present=_flag("D", ctx.get("D_literal")),
         E_present=_flag("E", ctx.get("E_literal")),
     )
+    context["module_docstring_literal"] = repr(
+        _PIPELINE_RUNNER_DOCSTRING.format(**context)
+    )
+    context["output_path_literal"] = repr(
+        f"output/pymdp_simulations/{ctx['model_name']}"
+    )
+    context["rollout_message_literal"] = repr(
+        f"Running pymdp 1.0.0 rollout for {ctx['model_display_name']}"
+    )
+    return _PIPELINE_RUNNER_TEMPLATE.format(**context)
 
 
 def generate_standalone_runner_script(ctx: Dict[str, Any]) -> str:
     """Render the standalone runner template with the given GNN context."""
-    return _STANDALONE_RUNNER_TEMPLATE.format(**ctx)
+    context = dict(ctx)
+    context["module_docstring_literal"] = repr(
+        _STANDALONE_RUNNER_DOCSTRING.format(**context)
+    )
+    context["output_path_literal"] = repr(
+        f"output/pymdp_simulations/{ctx['model_name']}"
+    )
+    context["model_display_name_literal"] = repr(str(ctx["model_display_name"]))
+    return _STANDALONE_RUNNER_TEMPLATE.format(**context)
 
 
 # ---------------------------------------------------------------------------

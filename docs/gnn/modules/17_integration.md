@@ -202,7 +202,7 @@ Pipeline Steps → Integration Coordination → System State → Cross-Module Co
 - `tests/integration/test_integration_processor.py` - Processor-level integration tests
 
 ### Test Coverage
-- Measure: `uv run --extra dev python -m pytest tests/integration/ --cov=integration --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
+- Measure: `uv run --extra dev python -m pytest tests/integration/ --cov=gnn.integration --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).
 
 ### Key Test Scenarios
 1. Cross-module coordination with various step combinations

@@ -47,6 +47,8 @@ def _cmd_run(args: argparse.Namespace) -> int:
     original_argv = sys.argv
     try:
         from gnn.main import main as pipeline_main
+        from gnn.pipeline.admission import validate_steps
+        from gnn.pipeline.step_registry import get_llm_steps
 
         sys.argv = ["gnn"]
         extra_args: list[Any] = [
@@ -59,10 +61,19 @@ def _cmd_run(args: argparse.Namespace) -> int:
             extra_args.append("--verbose")
         if args.log_format == "json":
             extra_args.extend(["--log-format", "json"])
-        skipped_steps: set[int] = set(args.skip_steps or ())
+        for flag in ("strict", "parallel", "consolidated_steps"):
+            if getattr(args, flag, False):
+                extra_args.append("--" + flag.replace("_", "-"))
+        checked_skip = validate_steps(args.skip_steps, field_name="skip_steps")
+        checked_only = validate_steps(
+            getattr(args, "only_steps", None), field_name="steps", allow_empty=False
+        )
+        skipped_steps: set[int] = set(checked_skip or ())
         if args.skip_llm:
-            skipped_steps.add(13)
-        only_steps = set(getattr(args, "only_steps", None) or ())
+            skipped_steps.update(
+                int(step.script_stem.partition("_")[0]) for step in get_llm_steps()
+            )
+        only_steps = set(checked_only or ())
         overlap = skipped_steps & only_steps
         if overlap:
             logger.error(

@@ -1,101 +1,147 @@
-# GNN API Module
+# GNN API
 
-## Overview
+The optional FastAPI service exposes GNN validation, pipeline execution and run
+evidence over HTTP. Jobs and run records live in memory and are lost on restart;
+the service is intended for operator-controlled research workspaces.
 
-FastAPI-based REST interface for the GNN processing pipeline. Enables headless pipeline execution, job management, and individual tool invocation over HTTP.
+## Choose a service surface
 
-**Optional dependency**: Requires the `api` extra (`uv sync --extra api`)
+`gnn serve --surface runs` serves run submission, status, Markdown reports and
+SSE progress. `--surface jobs` serves explicit pipeline jobs and step discovery.
+Both share CLI-parity operations, request admission, response envelopes and
+subprocess supervision. Open `/docs` or `/openapi.json` on the selected service
+for its current routes and request schemas; [models.py](models.py) and
+[parity.py](parity.py) own those contracts.
 
-## Endpoints
+## Start from a checkout
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/v1/run` | Trigger pipeline execution with options |
-| `GET` | `/api/v1/runs` | List known runs |
-| `GET` | `/api/v1/runs/{run_hash}` | Poll run status |
-| `GET` | `/api/v1/runs/{run_hash}/report` | Download the Markdown report |
-| `GET` | `/api/v1/runs/{run_hash}/stream` | Stream progress as SSE |
-| `GET` | `/api/v1/health` | Inspect API and renderer health |
-
-## Usage
-
-### Start the API Server
+Run these commands from the repository root:
 
 ```bash
-# Via CLI
-gnn serve --host 0.0.0.0 --port 8000
-
-# Direct
-python -m uvicorn gnn.api.app:app --host 0.0.0.0 --port 8000
+UV_PYTHON=3.12 uv sync --frozen --extra api
+UV_PYTHON=3.12 uv run --frozen --no-sync gnn serve --surface runs --host 127.0.0.1 --port 8000
 ```
 
-### Example Requests
+To use the job surface, replace `runs` with `jobs`. Its equivalent module entry
+point is:
 
 ```bash
-# Run pipeline
-curl -X POST http://localhost:8000/api/v1/run \
-  -H "Content-Type: application/json" \
-  -d '{"target_dir": "input/gnn_files", "skip_steps": [13]}'
-
-# Stream pipeline progress
-curl -N http://localhost:8000/api/v1/runs/abc123/stream
+UV_PYTHON=3.12 uv run --frozen --no-sync python -m gnn.api.server --host 127.0.0.1 --port 8000
 ```
 
-## Architecture
+In another terminal, check readiness and validate a maintained example without
+starting pipeline execution or calling model providers:
 
-- **Framework**: FastAPI with async support
-- **Job management**: Background tasks with unique job IDs; run execution delegates
-  to the real `main.py` orchestrator in a worker thread
-- **SSE streaming**: Server-Sent Events for real-time progress updates
-- **Validation**: Shared validation logic from `gnn.schema`
-- **Entry point**: `api.app:start_server()` (called by `gnn serve`)
-- **Response contract**: JSON and SSE payloads use `{status,data,error,meta}`;
-  the report download intentionally remains `text/markdown`
-- **Job/tool surface**: `gnn.api.server:app` provides `/api/v1/process`,
-  `/api/v1/jobs`, and `/api/v1/tools` for explicit job and step management
-- **Shared parity surface**: both factories also register the 12-route
-  CLI-parity set via `gnn.api.parity.register_parity_routes`, including the
-  verify-only `POST /api/v1/reproduce` (resolves and verifies an indexed run
-  and returns the reconstructed configuration; execution is dispatched by
-  the caller)
-
-## File Structure
-
-```text
-api/
-├── __init__.py    # Module metadata and feature flags
-├── app.py         # FastAPI "run" surface; `gnn serve` entry point (start_server)
-├── server.py      # FastAPI "job/tool" surface (process/jobs/tools)
-├── processor.py   # In-memory job manager
-├── models.py      # Pydantic request/response models
-├── responses.py   # Shared response envelope and exception handlers
-├── auth.py        # Optional API-key authentication (GNN_API_KEY)
-├── path_utils.py  # Symlink-safe repo path resolution
-├── rate_limit.py  # Request rate limiting
-├── mcp.py         # MCP tool registration manifest
-├── AGENTS.md      # Agent documentation
-├── README.md      # This file
-├── SPEC.md        # Module specification
-└── SKILL.md       # Capability API
+```bash
+curl --fail http://127.0.0.1:8000/api/v1/health
+curl --fail -X POST http://127.0.0.1:8000/api/v1/validate \
+  -H 'Content-Type: application/json' \
+  -d '{"file_path":"input/gnn_files/basics/static_perception.md"}'
 ```
 
-## References
+## Use an installed package
 
-- [AGENTS.md](AGENTS.md) — Agent documentation
-- [SPEC.md](SPEC.md) — Module specification
+Install the distribution with its `api` extra in your chosen Python environment;
+see the [repository installation guide](../../../README.md). An ordinary wheel
+installation requires **`GNN_API_ROOT`**: an absolute, existing workspace whose
+path components are directories without symlinks or Windows reparse points.
+The default root is accepted only when the package belongs to a real source
+checkout. An unset or invalid installed workspace produces a path-validation
+error rather than treating the Python installation as writable storage.
 
+This portable launcher creates a local workspace and configures it before
+starting the run surface:
 
-### Reliability contract
+```python
+import os
+from pathlib import Path
 
-Both API surfaces use the same subprocess exit policy: rc0 completes, rc1 fails,
-and rc2 completes with warnings unless `strict=true`, which makes it fail.
-`RunRequest` and `ProcessRequest` both accept `strict`. Step selections must be
-actual integers; booleans, numeric strings, floats, duplicates, and out-of-range
-values are rejected. Summary ingestion tolerates malformed roots and ignores
-summaries older than the current subprocess invocation or carrying another
-`run_id`. Each API subprocess receives its unique `GNN_RUN_ID`; the orchestrator
-must preserve that ID in its canonical summary.
+workspace = Path("gnn-api-workspace").resolve()
+workspace.mkdir(parents=True, exist_ok=True)
+os.environ["GNN_API_ROOT"] = str(workspace)
 
-Deleting a queued or running run record returns HTTP 409 in the canonical API
-envelope. Completed/failed records remain removable. Run deduplication uses
-normalized input/output paths, sorted effective step selections, and strict policy.
+from gnn.api.app import start_server
+
+start_server(host="127.0.0.1", port=8000)
+```
+
+Place input files inside that workspace and submit workspace-relative paths.
+`GNN_API_ROOT` is operator configuration, not a request option. The operator must
+control its directory entries and ancestors. It selects data storage; pipeline
+code comes from the installed package's orchestrator.
+
+## Authentication and network binding
+
+Loopback research use permits an unset API key. Set **`GNN_API_KEY`** in the
+service environment to require its matching **`X-API-Key`** request header.
+Health and documentation routes remain public. Keep the value private; avoid
+putting it in URLs, committed launchers or shell history.
+
+The CLI and module starters refuse non-loopback binding without authentication.
+For a shared service, configure the key first, then start it:
+
+```bash
+: "${GNN_API_KEY:?Set a private API key before sharing the service}"
+gnn serve --surface jobs --host 0.0.0.0 --port 8000
+```
+
+Calling an ASGI server directly bypasses the starter's bind check, so its
+operator must enforce the same address and authentication policy. The shared
+API key controls service access; it does not provide per-user filesystem or
+process isolation. [auth.py](auth.py) owns the public-route and bind rules.
+
+## Execution, cancellation and evidence
+
+Both run and job requests accept `steps`, `parallel` and `consolidated_steps`;
+prerequisites are included in the execution plan and reported total. Omitted
+`steps` selects all; explicit `[]` is rejected. JSON flags must be booleans
+(strings and numeric coercions are rejected), and unknown request keys fail.
+The operator sets `GNN_API_ROOT` to an absolute existing workspace for installed
+packages; an ordinary installed API without that workspace refuses filesystem
+admission. A recognized source checkout retains its checkout-root default.
+Pipeline code always comes from the installed package, independently of this
+workspace. Output cannot equal or contain the input target. MCP
+`gnn_submit_job` accepts the same flags and an optional `output_dir`, and creates
+a pending record; callers explicitly start `execute_job_async` when appropriate.
+Job/run status exposes the supervisor's optional `process_cleanup` receipt,
+including the observed containment boundary and whether cleanup was verified.
+Workspace/code preparation errors finish failed instead of leaving a running job.
+
+Migration from 4.0: remove empty execution selections to request all, replace
+coerced flags with actual booleans, and remove previously ignored options. Empty
+frozen model selections remain valid skipped work. Renderer registration and
+code-generation availability do not certify native execution readiness.
+
+Pipeline work runs in asyncio subprocesses under
+[process_supervision.py](process_supervision.py). Each receives a unique
+`GNN_RUN_ID`; summaries from another run or an older invocation cannot count as
+current evidence. Exit code 0 completes, 1 fails, and 2 completes with warnings
+unless `strict=true`. JSON responses and SSE data use `{status,data,error,meta}`;
+report downloads retain `text/markdown`.
+
+Job cancellation requests termination; poll status for its cleanup receipt.
+A cancelled status requires verified cleanup within the reported boundary.
+Cleanup that cannot be verified produces a failed status and explicit receipt.
+Supervision uses a bounded graceful-stop interval followed by forced teardown;
+normal leader exit also triggers cleanup so inherited pipes cannot hold the
+request open indefinitely.
+
+Deleting an active run requests cancellation and waits for terminal state.
+Timeouts, ambiguous ownership or unverified cleanup return HTTP 409 and retain
+the run record. Workspace roots, their ancestors, the shared default output and
+redirected artifact paths are protected from removal. Inspect the deletion
+response's artifact-removal result and note rather than assuming every accepted
+record deletion removed its files.
+
+Linux and macOS supervise the owned process group and observed descendants.
+Windows supervision is **`direct_worker_only`**: it can stop the direct worker
+but cannot certify descendant cleanup or tree-wide resource accounting. Explicit
+requests for unsupported descendant guarantees are refused before execution.
+POSIX directory creation and lease operations pin directory descriptors;
+Windows filesystem operations require trusted directory entries. Neither scope
+is a sandbox for arbitrary hostile producer code.
+
+The [filesystem and platform boundary contract](../../../docs/security/filesystem_boundaries.md)
+owns the adversary model, operation-specific guarantees, cleanup bounds and
+native acceptance requirements. See [SPEC.md](SPEC.md) for API invariants and
+[AGENTS.md](AGENTS.md) for contributor guidance.
