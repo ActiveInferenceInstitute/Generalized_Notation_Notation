@@ -7,6 +7,7 @@ the report algebra. It is not a backend run or performance measurement.
 import csv
 import hashlib
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 
@@ -14,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
+from gnn import __version__
 from gnn.analysis import (
     extract_activeinference_jl_data,
     extract_rxinfer_data,
@@ -329,7 +331,8 @@ def test_public_native_paired_energy_refuses_unavailable_samples(
     assert not path.exists() and not path.with_suffix(".conventions.json").exists()
 
 
-def test_public_saved_scaling_report_uses_authored_fit_without_invented_cause(tmp_path):
+@pytest.fixture
+def saved_scaling_diagnostic(tmp_path):
     execution = tmp_path / "12_execute_output"
     # Explicitly authored algebra controls, not measured execution times. All
     # observations lie on runtime=(N/2)^2, giving slope 2 and R² 1 independently.
@@ -352,6 +355,14 @@ def test_public_saved_scaling_report_uses_authored_fit_without_invented_cause(tm
     result = run_meta_analysis(execution, output)
     assert result is not None and result["records"] == 3
     assert result["plots"]
+    yield result, output
+    assert tree_bytes(execution) == before
+
+
+def test_public_saved_scaling_report_uses_authored_fit_without_invented_cause(
+    saved_scaling_diagnostic,
+):
+    result, output = saved_scaling_diagnostic
     plots = [Path(path) for path in result["plots"] if Path(path).suffix == ".png"]
     assert {
         "runtime_scaling_curves.png",
@@ -378,4 +389,46 @@ def test_public_saved_scaling_report_uses_authored_fit_without_invented_cause(tm
     assert "N ≤ 128" not in content
     assert "dominated by constant **JIT compilation overhead**" not in content
     assert "descriptive" in content.lower() and "causal" in content.lower()
-    assert tree_bytes(execution) == before
+
+
+def test_saved_scaling_title_does_not_invent_an_unavailable_global_exponent(
+    figures, saved_scaling_diagnostic
+):
+    result, _ = saved_scaling_diagnostic
+    path = next(
+        Path(path)
+        for path in result["plots"]
+        if Path(path).name == "runtime_scaling_curves.png"
+    )
+    native_png(path)
+    figure = figures[path.name]
+    np.testing.assert_array_equal(figure.axes[0].lines[0].get_xdata(), [2, 4, 8])
+    np.testing.assert_array_equal(figure.axes[0].lines[0].get_ydata(), [1, 4, 16])
+    np.testing.assert_allclose(figure.axes[0].lines[1].get_ydata(), [1, 4, 16])
+    assert len(figure.axes[1].lines) == 0  # One T value supplies no T-axis fit.
+    labels = figure.axes[0].get_legend_handles_labels()[1]
+    assert "pymdp (T=2): α=2.00 (R²=1.000, RMSE=0.000)" in labels
+    assert (
+        figure._suptitle.get_text() == "Descriptive fits to saved runtime observations"
+    )
+
+
+def test_saved_native_plot_watermarks_use_canonical_package_version_and_live_timestamp(
+    figures, saved_scaling_diagnostic
+):
+    result, _ = saved_scaling_diagnostic
+    plots = [Path(path) for path in result["plots"] if Path(path).suffix == ".png"]
+    assert plots
+    pattern = rf"GNN Scaling Analysis \| \d{{4}}-\d{{2}}-\d{{2}} \d{{2}}:\d{{2}} \| v{re.escape(__version__)}"
+    for path in plots:
+        native_png(path)
+        watermarks = [
+            text.get_text()
+            for text in figures[path.name].texts
+            if text.get_text().startswith("GNN Scaling Analysis |")
+        ]
+        assert watermarks
+        assert all(re.fullmatch(pattern, watermark) for watermark in watermarks), (
+            watermarks
+        )
+
