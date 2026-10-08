@@ -432,3 +432,86 @@ def test_saved_native_plot_watermarks_use_canonical_package_version_and_live_tim
             watermarks
         )
 
+
+@pytest.mark.parametrize("framework", ["pymdp", "numpyro"])
+def test_public_saved_source_sizes_do_not_invent_cubic_runner_complexity(
+    tmp_path, framework
+):
+    """Actual static source files have constant LOC across the authored N grid."""
+    execution = tmp_path / "12_execute_output"
+    render = tmp_path / "11_render_output"
+    source = (
+        "# Authored source-size fixture, never executed as a model runner.\n"
+        "CONSTANT = 1\n\n"
+        "def fixture_value():\n"
+        "    return CONSTANT\n"
+    )
+    expected_loc = sum(
+        bool(line.strip()) and not line.lstrip().startswith("#")
+        for line in source.splitlines()
+    )
+    assert expected_loc == 3 and len(source.splitlines()) == 5
+    details, file_results = [], {}
+    for n, seconds in [(2, 1), (4, 4), (8, 16)]:
+        model_name = f"authored_source_diagnostic_N{n}_T2"
+        path = render / model_name / framework / "saved_fixture.py"
+        path.parent.mkdir(parents=True)
+        path.write_text(source, encoding="utf-8")
+        assert path.read_text(encoding="utf-8") == source
+        file_results[f"{model_name}.md"] = {
+            "framework_results": {
+                framework: {
+                    "code_metrics": {"lines_of_code": expected_loc, "total_lines": 5},
+                    "fixture_provenance": "authored constant source-size control, not generated backend code",
+                    "output_file": str(path),
+                    "source_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                }
+            }
+        }
+        details.append(
+            {
+                "model_name": model_name,
+                "framework": framework,
+                "success": True,
+                "execution_time": seconds,
+                "fixture_provenance": "authored report-algebra control, not an execution measurement",
+            }
+        )
+    saved_json(
+        execution / "summaries" / "execution_summary.json",
+        {"execution_details": details},
+    )
+    saved_json(
+        render / "render_processing_summary.json", {"file_results": file_results}
+    )
+    before = tree_bytes(tmp_path)
+    result = run_meta_analysis(
+        execution, tmp_path / "meta_report", render_output_dir=render
+    )
+    assert result is not None and result["records"] == 3
+    for path in result["plots"]:
+        if Path(path).suffix == ".png":
+            native_png(path)
+    report = Path(result["report"]).read_text()
+    assert "| 2 | 3 |\n| 4 | 3 |\n| 8 | 3 |" in report
+    for cell, rate in [
+        ("N=2, T=2", "2.00"),
+        ("N=4, T=2", "0.50"),
+        ("N=8, T=2", "0.12"),
+    ]:
+        assert f"| {cell} | {framework} | {rate} |" in report
+    with (tmp_path / "meta_report/visualizations/data/sweep_data.csv").open() as handle:
+        rows = list(csv.DictReader(handle))
+    assert [
+        (
+            int(row["num_states"]),
+            int(row["lines_of_code"]),
+            float(row["execution_time_s"]),
+        )
+        for row in rows
+    ] == [(2, 3, 1), (4, 3, 4), (8, 3, 16)]
+    assert all(
+        (tmp_path / path).read_bytes() == content for path, content in before.items()
+    )
+    assert "PyMDP runners exhibit $O(N^3)$" not in report
+    assert "asymptotic" in report and "source size" in report
