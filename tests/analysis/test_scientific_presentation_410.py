@@ -357,3 +357,30 @@ def test_compact_energy_caption_requires_explicit_source_bound_summary(
     )
     caption = " ".join(t.get_text() for t in figures[1].texts)
     assert "source excerpt" in caption and "expected utility +" not in caption
+
+
+def test_minimum_reported_policy_score_does_not_claim_agent_selection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from gnn.analysis import viz_plots
+
+    figures = []
+    real_save = viz_plots.safe_savefig
+
+    def capture(path, **kwargs):
+        figures.append(plt.gcf())
+        return real_save(path, **kwargs)
+
+    monkeypatch.setattr(viz_plots, "safe_savefig", capture)
+    scores = [[1.0, 3.0], [2.0, 4.0]]
+    viz_plots.generate_free_energy_plots(scores, tmp_path / "scores.png")
+    ax, distribution = figures[0].axes[:2]
+    minimum = next(
+        line for line in ax.lines if line.get_label() == "Minimum reported policy score"
+    )
+    np.testing.assert_array_equal(minimum.get_ydata(), [1.0, 2.0])
+    labels = " ".join(
+        [line.get_label() for line in ax.lines]
+        + [distribution.get_title(), distribution.get_xlabel()]
+    )
+    assert "Selected" not in labels and "Minimum reported policy score" in labels

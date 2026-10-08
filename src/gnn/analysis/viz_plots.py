@@ -783,7 +783,9 @@ def generate_free_energy_plots(
 
     if is_per_policy:
         n_policies = fe_array.shape[1]
-        fe_summary = np.min(fe_array, axis=1)  # The EFE of the best policy at each step
+        fe_summary = np.min(
+            fe_array, axis=1
+        )  # Descriptive reduction, not agent selection.
     else:
         n_policies = 1
         fe_summary = fe_array
@@ -829,9 +831,13 @@ def generate_free_energy_plots(
             )
             ax1.set_ylabel("Policy Index / EFE")
 
-        # Bold line for the selected/minimum EFE
+        # Bold line for the reported minimum; producer conventions determine policy selection.
         ax1.plot(
-            range(n_steps), fe_summary, "k-", linewidth=2, label="Min EFE (Selected)"
+            range(n_steps),
+            fe_summary,
+            "k-",
+            linewidth=2,
+            label="Minimum reported policy score",
         )
     else:
         ax1.plot(range(n_steps), fe_array, "b-", linewidth=1.5, label="Free Energy")
@@ -883,9 +889,12 @@ def generate_free_energy_plots(
         linewidth=2,
         label=f"Median: {np.median(fe_summary):.3f}",
     )
-    ax2.set_xlabel(f"Free Energy (Selected; {unit_label})")
+    summary_label = (
+        "Minimum reported policy score" if is_per_policy else "Reported free energy"
+    )
+    ax2.set_xlabel(f"{summary_label} ({unit_label})")
     ax2.set_ylabel("Frequency")
-    ax2.set_title("Selected Free Energy Distribution")
+    ax2.set_title(f"{summary_label} distribution")
     ax2.legend()
 
     # Rate of change
