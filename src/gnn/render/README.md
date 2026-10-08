@@ -10,6 +10,29 @@ This module provides **POMDP-aware code generation** for GNN models. It translat
 - **Implementation-specific outputs**: organizes code under per-model/per-framework subfolders.
 - **Structured summaries**: writes `render_processing_summary.json` and overview README content under the output directory.
 
+## Public admission and discovery
+
+Python, CLI, REST and MCP rendering validate backend options through
+`admission.py` before code generation. Only consumed option keys are accepted;
+booleans do not stand in for integers, numeric strings are rejected, and limits
+must be finite and in range. Configured `render.backend_options` merge per key
+with explicit options; explicit values win and unrelated configured keys remain.
+Scientific/model-kind and allocation constraints remain with the native adapter.
+Unsupported Gaussian/categorical or composed model semantics return explicit
+refusals rather than substituting another model or uncertainty family.
+
+Step 11 framework choices derive from `framework_registry.py`; `render_gnn_spec`
+also preserves the distinct `jax_pomdp` and `discopy_combined` generator targets.
+Direct DisCoPy `matrix_permutations` require the Step 11 interface. Renderer
+registration permits code generation and does not prove an installed native
+runtime; MCP discovery labels that scope and leaves native readiness unknown.
+MCP `render_gnn_to_format` renders exactly one requested framework and lists only
+the primary current artifact verified by its receipt, excluding inherited files.
+
+Migration from 4.0: replace coerced values with their declared types, remove
+previously ignored option keys, and choose an explicit nonempty framework list.
+Omitted framework selection retains the maintained default preset.
+
 ## POMDP Processing Pipeline
 
 <!-- 5 of 10 renderers shown; the full renderer set lives in framework_registry.py -->

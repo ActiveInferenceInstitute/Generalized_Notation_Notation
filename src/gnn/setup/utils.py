@@ -85,6 +85,7 @@ def get_module_info() -> Dict[str, Any]:
     return {
         "version": __version__,
         "description": "GNN environment setup and management with UV",
+        "optional_groups": _optional_groups(),
         "features": {
             "uv_environment_setup": True,
             "uv_dependency_management": True,
@@ -133,6 +134,7 @@ def get_setup_options() -> dict:
         Dictionary with setup options
     """
     return {
+        "optional_groups": _optional_groups(),
         "environment_types": ["uv", "venv", "conda", "pip"],
         "python_versions": [
             "3.11",
@@ -147,6 +149,13 @@ def get_setup_options() -> dict:
         "project_templates": ["basic", "advanced", "research", "production"],
         "output_formats": ["json", "yaml", "toml", "markdown"],
     }
+
+
+def _optional_groups() -> dict[str, str]:
+    """Return a caller-owned copy of the actual packaged extra inventory."""
+    from gnn.setup.constants import OPTIONAL_GROUPS
+
+    return dict(OPTIONAL_GROUPS)
 
 
 def setup_environment(verbose: bool = False, **kwargs: Any) -> bool:

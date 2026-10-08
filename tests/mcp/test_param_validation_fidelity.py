@@ -108,6 +108,62 @@ class TestSignatureMismatchClassification:
         assert "two_args" in response["error"]["message"]
 
 
+class TestStrictSchemaAdmission:
+    """Public JSON-RPC validation must run before a registered handler executes."""
+
+    @pytest.mark.parametrize(
+        "arguments",
+        [
+            {"config": {"budget": 1}, "unknown": True},
+            {"config": {}},
+            {"config": {"budget": float("nan")}},
+            {"config": {"budget": float("inf")}},
+        ],
+    )
+    def test_nested_required_unknown_keys_and_nonfinite_numbers_are_invalid_params(
+        self, arguments: dict
+    ) -> None:
+        registry = _registry(strict=True)
+        calls = []
+
+        def handler(config: dict) -> dict:
+            calls.append(config)
+            return {"accepted": config}
+
+        registry.register_tool(
+            name="bounded_consumer",
+            func=handler,
+            schema={
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "config": {
+                        "type": "object",
+                        "required": ["budget"],
+                        "properties": {"budget": {"type": "number", "minimum": 0}},
+                    }
+                },
+                "required": ["config"],
+            },
+            description="A bounded consumer with an explicit nested contract",
+        )
+        response = MCPServer(mcp_instance=registry).handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 41,
+                "method": "tools/call",
+                "params": {"name": "bounded_consumer", "arguments": arguments},
+            }
+        )
+        assert response["error"]["code"] == -32602
+        assert calls == []
+        accepted = registry.execute_tool(
+            "bounded_consumer", {"config": {"budget": 1.5}}
+        )
+        assert accepted == {"accepted": {"budget": 1.5}}
+        assert calls == [{"budget": 1.5}]
+
+
 class TestNoneOutputAllowed:
     """A tool with no declared output contract may return None."""
 

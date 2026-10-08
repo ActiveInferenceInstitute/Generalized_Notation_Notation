@@ -35,6 +35,14 @@ Unified command-line interface for the GNN pipeline. Provides subcommands for ru
 Exit codes follow one contract: `0` is success, `1` is error, and `2` is a
 completed command with warnings, validation findings, or degraded readiness.
 
+`gnn run` accepts `--parallel`, `--consolidated-steps` and `--strict` and delegates
+to the shared owned invocation. `--only-steps` must contain unique registered
+integers; an empty option, unknown steps and duplicates fail before dispatch.
+Omit it to select all steps. Required prerequisites are included automatically.
+An explicitly empty model selection remains skipped work. Renderer choices come
+from the shared live inventory; generated code does not establish native runtime
+readiness. Backend options reject unknown keys, coercions and invalid limits.
+
 ## Usage
 
 ```bash

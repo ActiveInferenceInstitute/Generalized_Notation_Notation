@@ -34,6 +34,7 @@ informational template GETs omit it.
 
 import json
 import logging
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -46,10 +47,11 @@ from typing import (
     Literal,
     Optional,
     TypeVar,
+    cast,
 )
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from gnn.api.path_utils import (
     PathValidationError,
@@ -68,25 +70,14 @@ from gnn.cli.commands import (
     render_processing_succeeded,
     run_validation_checks,
 )
+from gnn.frameworks import RENDER_FRAMEWORKS
+from gnn.render.admission import render_options_inventory
 
 logger = logging.getLogger(__name__)
 
 #: Frameworks accepted by ``POST /api/v1/render`` — the exact choice set of
 #: the CLI ``gnn render --framework`` argument.
-RenderFramework = Literal[
-    "pymdp",
-    "rxinfer",
-    "activeinference_jl",
-    "jax",
-    "numpyro",
-    "stan",
-    "pytorch",
-    "discopy",
-    "bnlearn",
-    "ngclearn",
-    "cpomdp",
-    "thrml",
-]
+RenderFramework = str
 
 ParseOutputFormat = Literal["json", "yaml", "summary"]
 GraphOutputFormat = Literal["mermaid", "text"]
@@ -109,6 +100,7 @@ class ValidateRequest(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         extra="forbid",
+        strict=True,
         json_schema_extra={
             "example": {
                 "file_path": "input/gnn_files/discrete/simple_mdp.md",
@@ -128,6 +120,7 @@ class ParseRequest(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         extra="forbid",
+        strict=True,
         json_schema_extra={
             "example": {"file_path": "input/gnn_files/discrete/simple_mdp.md"}
         },
@@ -148,6 +141,7 @@ class ExtractRequest(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         extra="forbid",
+        strict=True,
         json_schema_extra={
             "example": {"file_path": "input/gnn_files/discrete/simple_mdp.md"}
         },
@@ -158,10 +152,16 @@ class RenderRequest(BaseModel):
     """Request body for ``POST /api/v1/render``."""
 
     file_path: str = Field(min_length=1, description="Repository-local GNN file")
-    framework: RenderFramework = Field(description="Renderer framework to run")
+    framework: RenderFramework = Field(
+        description="Renderer framework to run",
+        json_schema_extra={"enum": list(RENDER_FRAMEWORKS)},
+    )
     options: Dict[str, Any] = Field(
         default_factory=dict,
         description="Framework-specific validated render options (for example THRML sampling and observations)",
+        json_schema_extra={
+            "x-framework-options": cast(Any, render_options_inventory())
+        },
     )
     output_dir: Optional[str] = Field(
         default=None,
@@ -173,6 +173,7 @@ class RenderRequest(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         extra="forbid",
+        strict=True,
         json_schema_extra={
             "example": {
                 "file_path": "input/gnn_files/discrete/simple_mdp.md",
@@ -180,6 +181,14 @@ class RenderRequest(BaseModel):
             }
         },
     )
+
+    @field_validator("framework")
+    @classmethod
+    def validate_framework(cls, value: str) -> str:
+        """Derive admission and OpenAPI choices from the shared live inventory."""
+        if value not in RENDER_FRAMEWORKS:
+            raise ValueError(f"Unknown render framework: {value!r}")
+        return value
 
 
 class GraphRequest(BaseModel):
@@ -192,6 +201,7 @@ class GraphRequest(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         extra="forbid",
+        strict=True,
         json_schema_extra={
             "example": {"file_path": "input/gnn_files/discrete/simple_mdp.md"}
         },
@@ -208,6 +218,7 @@ class PreflightRequest(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         extra="forbid",
+        strict=True,
         json_schema_extra={"example": {}},
     )
 
@@ -221,6 +232,7 @@ class ReportRequest(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         extra="forbid",
+        strict=True,
         json_schema_extra={"example": {"output_dir": "output"}},
     )
 
@@ -253,6 +265,7 @@ class PullRequest(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         extra="forbid",
+        strict=True,
         json_schema_extra={
             "example": {
                 "name": "pomdp-gridworld-3x3",
@@ -283,6 +296,7 @@ class ReproduceRequest(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         extra="forbid",
+        strict=True,
         json_schema_extra={
             "example": {
                 "run_hash": "a1b2c3d4e5f6",
@@ -470,6 +484,7 @@ class PreflightResponse(BaseModel):
     is_ok: bool
     exit_code: ParityExitCode
     issues: List[PreflightIssueModel] = Field(default_factory=list)
+    optional_groups: Dict[str, str] = Field(default_factory=dict)
 
 
 class ReportResponse(BaseModel):
@@ -483,7 +498,7 @@ class ReportResponse(BaseModel):
 
 # ── Shared plumbing ──────────────────────────────────────────────────────────
 
-_ResponseT = TypeVar("_ResponseT", bound=BaseModel)
+_ResponseT = TypeVar("_ResponseT")
 
 
 def _sanitize_detail(exc: BaseException) -> str:
@@ -493,7 +508,13 @@ def _sanitize_detail(exc: BaseException) -> str:
     value of the message while removing internal absolute paths.
     """
     message = str(exc)
-    for secret in (str(get_repo_root()), str(Path.home())):
+    secrets = [str(Path.home()), os.environ.get("GNN_API_ROOT", "")]
+    try:
+        secrets.append(str(get_repo_root()))
+    except PathValidationError:
+        # Sanitizing a failure must not require a valid execution workspace.
+        pass
+    for secret in sorted(set(secrets), key=len, reverse=True):
         if secret and secret in message:
             message = message.replace(secret, "<redacted>")
     return message[:500]
@@ -772,10 +793,12 @@ def _preflight(config_path: Optional[Path]) -> PreflightResponse:
             detail={
                 "message": "Preflight checks reported errors",
                 "issues": [issue.model_dump(mode="json") for issue in issues],
+                "optional_groups": getattr(report, "optional_groups", {}),
             },
         )
     exit_code: ParityExitCode = 2 if has_warnings else 0
     return PreflightResponse(
+        optional_groups=getattr(report, "optional_groups", {}),
         checks_passed=report.checks_passed,
         checks_failed=report.checks_failed,
         is_ok=report.is_ok,
@@ -914,6 +937,12 @@ def register_parity_routes(app: FastAPI) -> None:
     @app.post("/api/v1/render", response_model=APIEnvelope, tags=["Render"])
     def render_gnn_file(request: RenderRequest) -> APIEnvelope:
         """Render one GNN file to framework code (CLI ``gnn render`` parity)."""
+        from gnn.render.admission import validate_render_options
+
+        _run_backend(
+            lambda: validate_render_options(request.framework, request.options),
+            command="render",
+        )
         gnn_file = _require_input_file(request.file_path)
         if request.output_dir is not None:
             output_dir = _resolve_client_path(

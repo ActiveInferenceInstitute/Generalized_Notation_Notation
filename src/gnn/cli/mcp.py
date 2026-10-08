@@ -37,6 +37,7 @@ def cli_preflight(params: (Dict[str, Any]) | None = None) -> Dict[str, Any]:
             "success": report.is_ok,
             "checks_passed": report.checks_passed,
             "checks_failed": report.checks_failed,
+            "optional_groups": getattr(report, "optional_groups", {}),
             "issues": [
                 {
                     "category": issue.category,

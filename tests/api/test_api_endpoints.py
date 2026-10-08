@@ -316,7 +316,7 @@ async def test_run_api_executes_real_main_subprocess_and_preserves_warning_exit(
     try:
         await api_app._execute_pipeline(run_hash, request)
         entry = api_app._runs[run_hash]
-        assert captured_command[1].endswith("src/gnn/main.py")
+        assert captured_command[1:4] == ["-P", "-m", "gnn.main"]
         assert captured_command[captured_command.index("--skip-steps") + 1] == "4,13"
         assert entry["status"] == "completed"
         assert entry["exit_code"] == 2

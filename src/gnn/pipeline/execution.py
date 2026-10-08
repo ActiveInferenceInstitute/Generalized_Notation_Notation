@@ -8,14 +8,19 @@ scripts through ``main.py``.
 
 from __future__ import annotations
 
-import logging
+import json
+import os
 import sys
+import time
+import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Iterator, List, Optional
 
 from ._version import __version__ as _PACKAGE_VERSION
+from .admission import validate_boolean, validate_steps
 from .config import DEFAULT_OUTPUT_DIR, DEFAULT_TARGET_DIR, STEP_METADATA
 
 _STEP_SCRIPT_BY_NUM = {int(key.split("_", 1)[0]): f"{key}.py" for key in STEP_METADATA}
@@ -46,6 +51,22 @@ def _main_module() -> Any:
     from gnn import main as main_module
 
     return main_module
+
+
+@contextmanager
+def _owned_invocation_identity(main: Any) -> Iterator[str]:
+    """Bind a known UUID through main using its existing environment owner."""
+    with main._run_environment_lock:
+        inherited = os.environ.get("GNN_RUN_ID")
+        expected = inherited or uuid.uuid4().hex
+        os.environ["GNN_RUN_ID"] = expected
+        try:
+            yield expected
+        finally:
+            if inherited is None:
+                os.environ.pop("GNN_RUN_ID", None)
+            else:
+                os.environ["GNN_RUN_ID"] = inherited
 
 
 def resolve_step_numbers(
@@ -95,9 +116,11 @@ def _coerce_steps(steps: Any, pipeline_data: dict | None = None) -> list[int]:
 
 def _script_for_step(step_name: str) -> str | None:
     """Handle script for step for internal callers."""
-    steps = _coerce_steps([step_name])
-    if not steps:
-        return None
+    steps = validate_steps(
+        step_name, field_name="step_name", aliases=True, allow_empty=False
+    )
+    if steps is None or len(steps) != 1:
+        raise ValueError("step_name must identify exactly one registered step")
     return _STEP_SCRIPT_BY_NUM.get(steps[0])
 
 
@@ -132,6 +155,9 @@ class StepExecutionResult:
     error: Optional[str] = None
     warnings: Optional[List[str]] = None
     remediation: Optional[str] = None
+    status: Optional[str] = None
+    run_id: Optional[str] = None
+    artifacts: Optional[List[dict[str, Any]]] = None
 
     def __post_init__(self) -> Any:
         """Normalize fields after dataclass initialization."""
@@ -144,12 +170,18 @@ def run_pipeline(
     *,
     target_dir: Path | str | None = None,
     output_dir: Path | str | None = None,
-    steps: List[str] | str | None = "all",
-    verbose: bool = False,
+    steps: List[str] | str | None = None,
+    verbose: bool | None = None,
+    strict: bool | None = None,
+    parallel: bool | None = None,
+    consolidated_steps: bool | None = None,
 ) -> dict:
     """Execute pipeline steps through ``main.py`` and return a compact summary."""
     start = datetime.now()
-    pipeline_data = pipeline_data or {}
+    if pipeline_data is None:
+        pipeline_data = {}
+    if not isinstance(pipeline_data, dict):
+        raise ValueError("pipeline_data must be a mapping")
     resolved_target = (
         Path(target_dir)
         if target_dir is not None
@@ -164,8 +196,6 @@ def run_pipeline(
             "output_dir", pipeline_data=pipeline_data, fallback=DEFAULT_OUTPUT_DIR
         )
     )
-    step_numbers = _coerce_steps(steps, pipeline_data)
-
     results: dict[str, Any] = {
         "success": False,
         "steps_executed": [],
@@ -177,10 +207,52 @@ def run_pipeline(
     }
 
     try:
-        resolved_output.mkdir(parents=True, exist_ok=True)
-        if not step_numbers:
-            results["errors"].append(f"No valid pipeline steps requested: {steps!r}")
-            return results
+        allowed = {
+            "target_dir",
+            "input_dir",
+            "temp_dir",
+            "output_dir",
+            "steps",
+            "only_steps",
+            "skip_steps",
+            "verbose",
+            "strict",
+            "parallel",
+            "consolidated_steps",
+        }
+        unknown = set(pipeline_data) - allowed
+        if unknown:
+            raise ValueError(f"Unknown pipeline options: {sorted(unknown)}")
+        requested = steps
+        if requested is None:
+            requested = pipeline_data.get("steps", pipeline_data.get("only_steps"))
+        step_numbers = (
+            list(_STEP_SCRIPT_BY_NUM)
+            if requested is None or requested in ("all", "pipeline")
+            else validate_steps(
+                requested, field_name="steps", aliases=True, allow_empty=False
+            )
+        )
+        skipped = validate_steps(
+            pipeline_data.get("skip_steps"), field_name="skip_steps", aliases=True
+        )
+        if (
+            requested is not None
+            and requested not in ("all", "pipeline")
+            and set(step_numbers or ()) & set(skipped or ())
+        ):
+            raise ValueError("Pipeline steps cannot be both requested and skipped")
+        flags = {
+            "verbose": verbose,
+            "strict": strict,
+            "parallel": parallel,
+            "consolidated_steps": consolidated_steps,
+        }
+        for name, explicit in flags.items():
+            flags[name] = validate_boolean(
+                pipeline_data.get(name, False) if explicit is None else explicit,
+                field_name=name,
+            )
 
         main = _main_module()
         from gnn.utils.arguments.pipeline_arguments import PipelineArguments
@@ -188,25 +260,49 @@ def run_pipeline(
         args = PipelineArguments(
             target_dir=resolved_target,
             output_dir=resolved_output,
-            only_steps=",".join(str(step) for step in step_numbers),
-            verbose=verbose,
+            only_steps=",".join(str(step) for step in step_numbers or ()),
+            verbose=bool(flags["verbose"]),
+            strict=bool(flags["strict"]),
+            parallel=bool(flags["parallel"]),
+            consolidated_steps=bool(flags["consolidated_steps"]),
+            skip_steps=",".join(str(step) for step in skipped) if skipped else None,
         )
         config_override: dict[str, Any] = {
-            "pipeline": {"only_steps": args.only_steps, "skip_steps": []},
+            "pipeline": {"only_steps": args.only_steps, "skip_steps": skipped or []},
             "testing_matrix": {"enabled": False},
         }
-        exit_code = int(main.main(override_args=args, override_config=config_override))
+        with _owned_invocation_identity(main) as expected_run_id:
+            invocation_start_ns = time.time_ns()
+            exit_code = int(
+                main.main(override_args=args, override_config=config_override)
+            )
         results["exit_code"] = exit_code
-        results["success"] = exit_code == 0
+        results["success"] = exit_code == 0 or (exit_code == 2 and not flags["strict"])
         summary_file = (
             resolved_output / "00_pipeline_summary" / "pipeline_execution_summary.json"
         )
-        if summary_file.exists():
-            import json
-
+        if (
+            summary_file.is_file()
+            and summary_file.stat().st_mtime_ns >= invocation_start_ns
+        ):
             summary = json.loads(summary_file.read_text(encoding="utf-8"))
+            if (
+                not isinstance(summary, dict)
+                or summary.get("run_id") != expected_run_id
+            ):
+                raise ValueError(
+                    "Pipeline summary does not belong to the current invocation"
+                )
             results["summary_file"] = str(summary_file)
             results["overall_status"] = summary.get("overall_status")
+            if summary.get("error"):
+                results["errors"].append(str(summary["error"]))
+            results["run_id"] = summary.get("run_id")
+            results["run_hash"] = summary.get("run_hash")
+            results["model_selection"] = summary.get("model_selection", [])
+            results["artifact_inventory_contract"] = summary.get(
+                "artifact_inventory_contract"
+            )
             for step in summary.get("steps", []):
                 results["steps_executed"].append(
                     {
@@ -214,18 +310,17 @@ def run_pipeline(
                         "success": step.get("status") in _SUCCESS_STATUSES,
                         "duration": step.get("duration_seconds", 0.0),
                         "output": step.get("stdout", ""),
+                        "status": step.get("status"),
+                        "error": step.get("error") or step.get("stderr", ""),
+                        "warnings": step.get("dependency_warnings", []),
+                        "artifacts": step.get("artifacts", []),
                     }
                 )
         else:
-            for step in step_numbers:
-                results["steps_executed"].append(
-                    {
-                        "step_name": _STEP_SCRIPT_BY_NUM[step],
-                        "success": exit_code == 0,
-                        "duration": 0.0,
-                        "output": "",
-                    }
-                )
+            results["success"] = False
+            results["errors"].append(
+                "No current-invocation pipeline summary is available"
+            )
 
     except Exception as e:
         results["success"] = False
@@ -277,8 +372,11 @@ def create_pipeline_config() -> dict:
 def execute_pipeline_step(
     step_name: str, step_config: dict, pipeline_data: dict
 ) -> StepExecutionResult:
-    """Execute a single numbered pipeline step via ``main.execute_pipeline_step``."""
-    script_name = _script_for_step(step_name)
+    """Execute a registered step and its prerequisites in one owned invocation."""
+    try:
+        script_name = _script_for_step(step_name)
+    except ValueError as error:
+        return StepExecutionResult(step_name, False, 0.0, error=str(error))
     if step_config.get("script_path"):
         candidate = Path(step_config["script_path"])
         if not candidate.exists():
@@ -288,7 +386,23 @@ def execute_pipeline_step(
                 duration=0.0,
                 error=f"Step script not found: {candidate}",
             )
-        script_name = candidate.name
+        if (
+            candidate.resolve()
+            != (Path(__file__).resolve().parents[1] / candidate.name).resolve()
+        ):
+            return StepExecutionResult(
+                step_name=step_name,
+                success=False,
+                duration=0.0,
+                error="script_path must identify a packaged registered step",
+            )
+        if candidate.name != script_name:
+            return StepExecutionResult(
+                step_name=step_name,
+                success=False,
+                duration=0.0,
+                error="script_path must match the requested registered step",
+            )
     if not script_name:
         return StepExecutionResult(
             step_name=step_name,
@@ -297,56 +411,94 @@ def execute_pipeline_step(
             error=f"Unknown pipeline step: {step_name}",
         )
 
-    start = datetime.now()
-    try:
-        main = _main_module()
-        from gnn.utils.arguments.pipeline_arguments import PipelineArguments
-
-        args = PipelineArguments(
-            target_dir=_path_from_sources(
-                "target_dir",
-                pipeline_data=pipeline_data,
-                step_config=step_config,
-                fallback=DEFAULT_TARGET_DIR,
-            ),
-            output_dir=_path_from_sources(
-                "output_dir",
-                pipeline_data=pipeline_data,
-                step_config=step_config,
-                fallback=DEFAULT_OUTPUT_DIR,
-            ),
-            verbose=bool(
-                step_config.get("verbose") or pipeline_data.get("verbose", False)
-            ),
-        )
-        logger = logging.getLogger(f"pipeline.{Path(script_name).stem}")
-        raw = main.execute_pipeline_step(script_name, args, logger)
-        duration = (datetime.now() - start).total_seconds()
-        success = raw.get("status") in _SUCCESS_STATUSES
-        return StepExecutionResult(
-            step_name=script_name,
-            success=success,
-            duration=duration,
-            output=raw.get("stdout", ""),
-            error=raw.get("stderr") if not success else None,
-            warnings=raw.get("dependency_warnings", []),
-        )
-    except Exception as e:
+    unknown = set(step_config) - {
+        "target_dir",
+        "output_dir",
+        "verbose",
+        "strict",
+        "parallel",
+        "consolidated_steps",
+        "script_path",
+    }
+    if unknown:
         return StepExecutionResult(
             step_name=script_name,
             success=False,
-            duration=(datetime.now() - start).total_seconds(),
-            error=str(e),
+            duration=0.0,
+            error=f"Unknown step options: {sorted(unknown)}",
         )
+    data = {
+        **pipeline_data,
+        **{key: value for key, value in step_config.items() if key != "script_path"},
+    }
+    return execute_pipeline_steps([script_name], data)[0]
 
 
 def execute_pipeline_steps(
     steps: List[str], pipeline_data: dict
 ) -> List[StepExecutionResult]:
-    """Execute multiple pipeline steps."""
-    results: list[StepExecutionResult] = []
-    for step_name in steps:
-        step_config: dict[str, Any] = {}
-        result = execute_pipeline_step(step_name, step_config, pipeline_data)
-        results.append(result)
-    return results
+    """Execute the complete requested plan once under one frozen run context."""
+    # Public annotations do not validate values supplied by dynamic callers.
+    supplied_steps: Any = steps
+    supplied_data: Any = pipeline_data
+    if not isinstance(supplied_steps, (list, tuple)):
+        return [
+            StepExecutionResult(
+                "steps", False, 0.0, error="steps must be a list of registered steps"
+            )
+        ]
+    if not steps:
+        return []
+    if not isinstance(supplied_data, dict):
+        return [
+            StepExecutionResult(
+                str(step), False, 0.0, error="pipeline_data must be a mapping"
+            )
+            for step in steps
+        ]
+    try:
+        numbers = validate_steps(
+            steps, field_name="steps", aliases=True, allow_empty=False
+        )
+    except ValueError as error:
+        return [
+            StepExecutionResult(str(step), False, 0.0, error=str(error))
+            for step in steps
+        ]
+    result = run_pipeline(pipeline_data, steps=steps)
+    by_name = {record["step_name"]: record for record in result["steps_executed"]}
+    outcomes = []
+    for number in numbers or ():
+        name = _STEP_SCRIPT_BY_NUM[number]
+        record = by_name.get(name)
+        if record is None:
+            outcomes.append(
+                StepExecutionResult(
+                    name,
+                    False,
+                    0.0,
+                    error="; ".join(result["errors"]) or "No current step receipt",
+                    run_id=result.get("run_id"),
+                )
+            )
+            continue
+        outcomes.append(
+            StepExecutionResult(
+                name,
+                bool(result["success"] and record["success"]),
+                record["duration"],
+                output=record["output"],
+                error=(
+                    record["error"]
+                    or "; ".join(result["errors"])
+                    or f"Owned pipeline ended {result.get('overall_status')} (exit {result['exit_code']})"
+                )
+                if not result["success"] or not record["success"]
+                else None,
+                warnings=record["warnings"],
+                status=record["status"],
+                run_id=result.get("run_id"),
+                artifacts=record["artifacts"],
+            )
+        )
+    return outcomes

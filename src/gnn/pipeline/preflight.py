@@ -47,6 +47,7 @@ class PreflightReport:
     issues: List[PreflightIssue] = field(default_factory=list)
     checks_passed: int = 0
     checks_failed: int = 0
+    optional_groups: dict[str, str] = field(default_factory=dict)
 
     @property
     def is_ok(self) -> bool:
@@ -321,6 +322,9 @@ def run_preflight(config_path: Optional[Path] = None) -> PreflightReport:
     env_report = check_environment()
 
     combined = PreflightReport()
+    from gnn.setup.constants import OPTIONAL_GROUPS
+
+    combined.optional_groups = dict(OPTIONAL_GROUPS)
     combined.issues = config_report.issues + env_report.issues
     combined.checks_passed = config_report.checks_passed + env_report.checks_passed
     combined.checks_failed = config_report.checks_failed + env_report.checks_failed

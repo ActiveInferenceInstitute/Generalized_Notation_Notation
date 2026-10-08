@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 from gnn.api.models import validate_step_numbers as _shared_validate_step_numbers
-from gnn.api.path_utils import get_repo_root, resolve_repo_path
+from gnn.api.path_utils import get_repo_root, resolve_request_paths
 from gnn.api.pipeline_runner import (
     build_pipeline_command,
     normalize_summary_steps,
@@ -34,6 +34,7 @@ from gnn.api.process_supervision import (
     request_process_stop,
     supervise_api_process,
 )
+from gnn.pipeline.admission import validate_boolean
 from gnn.pipeline.step_registry import STEPS
 from gnn.utils.runtime_safety.filesystem import directory_handle, is_redirect
 
@@ -73,6 +74,8 @@ def create_job(
     skip_steps: Optional[List[int]] = None,
     verbose: bool = False,
     strict: bool = False,
+    parallel: bool = False,
+    consolidated_steps: bool = False,
 ) -> str:
     """
     Create a new pipeline job and return its ID.
@@ -90,20 +93,15 @@ def create_job(
     """
     steps = _validate_step_numbers(steps, field_name="steps")
     skip_steps = _validate_step_numbers(skip_steps, field_name="skip_steps")
+    validate_boolean(verbose, field_name="verbose")
+    validate_boolean(strict, field_name="strict")
+    validate_boolean(parallel, field_name="parallel")
+    validate_boolean(consolidated_steps, field_name="consolidated_steps")
     overlap = set(steps or ()) & set(skip_steps or ())
     if overlap:
         raise ValueError(f"steps and skip_steps must not overlap: {sorted(overlap)}")
 
-    target_path = resolve_repo_path(
-        target_dir,
-        purpose="Target directory",
-        must_exist=True,
-    )
-    output_path = resolve_repo_path(
-        output_dir or "output",
-        purpose="Output directory",
-        create=True,
-    )
+    target_path, output_path = resolve_request_paths(target_dir, output_dir or "output")
 
     job_id = str(uuid.uuid4())
     _JOBS[job_id] = {
@@ -117,6 +115,8 @@ def create_job(
         "skip_steps": skip_steps,
         "verbose": verbose,
         "strict": strict,
+        "parallel": parallel,
+        "consolidated_steps": consolidated_steps,
         "progress_step": None,
         "steps_completed": [],
         "steps_failed": [],
@@ -314,7 +314,7 @@ async def execute_job_async(job_id: str) -> None:
     """
     Execute a pipeline job asynchronously.
 
-    Runs `uv run python src/gnn/main.py` with appropriate arguments in a subprocess.
+    Runs the packaged `gnn.main` module with admitted arguments in a subprocess.
     Updates job status as execution progresses.
 
     This coroutine is meant to be launched with asyncio.create_task().
@@ -336,21 +336,23 @@ async def execute_job_async(job_id: str) -> None:
 
     # Build the real orchestrator command via the shared pure builder so the
     # job surface and the run surface can never drift on argv shape.
-    repo_root = Path(__file__).parent.parent.parent
-    output_dir = Path(job.get("output_dir") or (repo_root / "output"))
-    job["output_dir"] = str(output_dir)
+    from gnn.api.path_utils import get_repo_root
 
-    cmd = build_pipeline_command(
-        str(job["target_dir"]),
-        str(output_dir),
-        only_steps=job.get("steps") or None,
-        skip_steps=job.get("skip_steps") or None,
-        verbose=bool(job.get("verbose")),
-        strict=bool(job.get("strict")),
-        repo_root=repo_root,
-    )
-
+    repo_root: Optional[Path] = None
     try:
+        repo_root = get_repo_root()
+        output_dir = Path(job.get("output_dir") or (repo_root / "output"))
+        job["output_dir"] = str(output_dir)
+        cmd = build_pipeline_command(
+            str(job["target_dir"]),
+            str(output_dir),
+            only_steps=job.get("steps"),
+            skip_steps=job.get("skip_steps"),
+            verbose=job.get("verbose", False),
+            strict=job.get("strict", False),
+            parallel=job.get("parallel", False),
+            consolidated_steps=job.get("consolidated_steps", False),
+        )
         invocation_start_ns = time.time_ns()
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -426,7 +428,7 @@ async def execute_job_async(job_id: str) -> None:
             logger.info(f"Job {job_id} was cancelled; ignoring exception: {e}")
             return
         job["status"] = "failed"
-        job["error_message"] = str(e)
+        job["error_message"] = _sanitize_stderr(str(e), repo_root or Path.home())
         job["completed_at"] = datetime.now().isoformat()
         logger.error(f"Job {job_id} raised exception: {e}")
     finally:

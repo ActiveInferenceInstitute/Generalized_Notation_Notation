@@ -271,7 +271,7 @@ def execute_tool(args: Any) -> Any:
                     stats = mcp_instance.get_tool_performance_stats(args.tool_name)
                     if stats:
                         logger.info("\n📈 Tool Statistics:")
-                        logger.info(f"  Uses: {stats.get('use_count', 0)}")
+                        logger.info(f"  Uses: {stats.get('execution_count', 0)}")
                         logger.info(
                             f"  Avg Time: {stats.get('average_execution_time', 0):.3f}s"
                         )
@@ -398,9 +398,9 @@ def get_tool_info(args: Any) -> Any:
             logger.info(f"  Category: {detailed_info['category']}")
             logger.info(f"  Version: {detailed_info['version']}")
 
-            if detailed_info.get("use_count", 0) > 0:
+            if detailed_info.get("usage_count", 0) > 0:
                 logger.info("\n📈 Usage Statistics:")
-                logger.info(f"  Times Used: {detailed_info.get('use_count', 0)}")
+                logger.info(f"  Times Used: {detailed_info.get('usage_count', 0)}")
                 logger.info(
                     f"  Avg Execution Time: {detailed_info.get('average_execution_time', 0):.3f}s"
                 )

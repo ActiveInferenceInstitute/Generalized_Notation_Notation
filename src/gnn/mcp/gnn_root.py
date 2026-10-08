@@ -591,7 +591,7 @@ def get_gnn_module_info() -> Dict[str, Any]:
         Dictionary containing module metadata and feature information
     """
     try:
-        from . import get_module_info
+        from gnn import get_module_info
 
         module_info = get_module_info()
         module_info.update(

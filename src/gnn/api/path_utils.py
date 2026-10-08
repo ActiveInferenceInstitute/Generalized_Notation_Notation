@@ -142,6 +142,10 @@ def resolve_request_paths(target_dir: str, output_dir: str) -> tuple[Path, Path]
     output_path = resolve_repo_path(
         output_dir,
         purpose="Output directory",
-        create=True,
     )
+    if target_path == output_path or target_path.is_relative_to(output_path):
+        raise PathValidationError(
+            "Output directory must not equal or contain the target directory"
+        )
+    output_path = resolve_repo_path(output_dir, purpose="Output directory", create=True)
     return target_path, output_path

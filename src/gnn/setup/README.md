@@ -6,6 +6,15 @@ operations to [uv](https://docs.astral.sh/uv/) and reads dependencies from
 
 The thin orchestrator [`src/gnn/1_setup.py`](../1_setup.py) calls functions exported here.
 
+`OPTIONAL_GROUPS` derives selectable names from installed `Provides-Extra`
+metadata and preserves maintained descriptions. Source-only use reads the
+checkout's actual `project.optional-dependencies` when distribution metadata is
+absent; malformed installed metadata fails discovery rather than falling back.
+No optional scientific runtime is imported to discover groups. Python module
+metadata/options and CLI, REST and MCP preflight payloads expose this inventory,
+including groups added by the packaging owner. Discovery does not establish
+native readiness or perform an installation.
+
 ## Module Layout
 
 ```

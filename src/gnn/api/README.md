@@ -92,6 +92,26 @@ process isolation. [auth.py](auth.py) owns the public-route and bind rules.
 
 ## Execution, cancellation and evidence
 
+Both run and job requests accept `steps`, `parallel` and `consolidated_steps`;
+prerequisites are included in the execution plan and reported total. Omitted
+`steps` selects all; explicit `[]` is rejected. JSON flags must be booleans
+(strings and numeric coercions are rejected), and unknown request keys fail.
+The operator sets `GNN_API_ROOT` to an absolute existing workspace for installed
+packages; an ordinary installed API without that workspace refuses filesystem
+admission. A recognized source checkout retains its checkout-root default.
+Pipeline code always comes from the installed package, independently of this
+workspace. Output cannot equal or contain the input target. MCP
+`gnn_submit_job` accepts the same flags and an optional `output_dir`, and creates
+a pending record; callers explicitly start `execute_job_async` when appropriate.
+Job/run status exposes the supervisor's optional `process_cleanup` receipt,
+including the observed containment boundary and whether cleanup was verified.
+Workspace/code preparation errors finish failed instead of leaving a running job.
+
+Migration from 4.0: remove empty execution selections to request all, replace
+coerced flags with actual booleans, and remove previously ignored options. Empty
+frozen model selections remain valid skipped work. Renderer registration and
+code-generation availability do not certify native execution readiness.
+
 Pipeline work runs in asyncio subprocesses under
 [process_supervision.py](process_supervision.py). Each receives a unique
 `GNN_RUN_ID`; summaries from another run or an older invocation cannot count as

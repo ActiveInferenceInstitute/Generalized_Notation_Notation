@@ -42,12 +42,15 @@ kills its process group and descendants before output ownership is released.
 
 On macOS, descendant discovery uses the kernel's parent-filtered child query;
 on Linux, it reads child lists for each thread of owned processes. Kernels without
-the Linux child-list feature and other platforms explicitly report
-`process_group_only`. RSS sampling reuses observed identities and may omit
+the Linux child-list feature explicitly report `process_group_only`. Windows
+reports `direct_worker_only`; requests requiring descendant containment are
+refused before spawn on that platform. RSS sampling reuses observed identities and may omit
 unobserved children or large trees under its 10ms advisory work ceiling. Successful
 cleanup verifies the direct worker and observed descendants, rather than an OS
 sandbox against hostile instantaneous detachment. Denied, incomplete or expired
 cleanup fails the run even when the worker's command returned zero.
+The filesystem adversary model and native lease boundaries are defined in
+[filesystem boundaries](../security/filesystem_boundaries.md).
 
 The standalone `execute_step_in_process` callback API remains available for
 callers requiring in-memory injection. Its thread cancellation is cooperative:
@@ -75,6 +78,55 @@ process cleanup before releasing the output lease. Direct callers remain
 responsible for their own cluster's startup, shutdown, and remote containment.
 
 ## Entrypoints and resolved configuration
+
+Public execution admission now distinguishes omission from explicit emptiness.
+Omit execution `steps`/`only_steps` to request all registered steps; an explicit
+empty selection, unknown token, duplicate, boolean or fractional step fails
+before dispatch. Frozen empty **model** selections remain valid skipped work.
+The permissive `resolve_step_numbers` discovery helper retains its filtering
+behavior; it does not authorize execution. Serial, parallel and matrix steps,
+including skipped/expired work, retain the same invocation/source identities.
+
+`run_pipeline` accepts its documented path/selection/flag keys and rejects
+unknown data keys. Explicit keyword flags override data values, including
+`False`; omitted flags inherit data values. `execute_pipeline_steps` dispatches
+one complete owned plan with prerequisites and returns requested outcomes in
+canonical pipeline order. Results add `status`, `run_id` and current artifact
+records. A raw successful step status remains visible when the enclosing run
+fails, but the returned `success` is false and includes the run failure reason.
+The singular facade requires exactly one registered step and a matching packaged
+script override. An empty convenience batch performs no work. Exit 2 completes with
+warnings unless strict mode is enabled; stale summaries cannot satisfy a new run.
+The Python facade binds an authoritative invocation UUID using main's existing
+environment lock. A fresh summary from a subsequent independent run also fails
+identity admission; a missing current summary cannot certify successful completion.
+
+REST job/run and MCP submission expose `parallel` and `consolidated_steps`.
+JSON flags require actual booleans. Installed APIs require the operator's
+absolute existing `GNN_API_ROOT` workspace; a recognized checkout retains its
+checkout root. Execution code belongs to the installed package independently
+of that workspace. Output cannot equal or contain the input target. MCP job
+submission creates a pending record; the caller explicitly starts execution.
+API workers invoke `python -P -m gnn.main`, preserving workspace configuration even
+when the package is installed from a checkout. An explicit code-root override in
+the low-level argv builder retains direct checkout-script behavior.
+The safe-path flag excludes the workspace import prefix, preventing a local
+`gnn` package from replacing the installed orchestrator; operator-managed
+`PYTHONPATH` retains Python's ordinary trusted environment behavior.
+
+Backend option admission rejects unknown keys, coercions and invalid limits.
+Configured and explicit backend options merge per key, with explicit values
+winning; adapter-specific source declarations retain their documented semantics
+(for example RxInfer's declared inference mode remains authoritative). Framework
+help and request choices derive from the canonical inventory. Registration and
+code generation do not prove native runtime readiness. The direct spec targets
+`jax_pomdp` and `discopy_combined` retain their distinct generators. MCP
+`render_gnn_to_format` renders exactly the selected framework and returns only
+its hash-verified current primary artifact.
+JAX run options are admitted only by generators that consume them: declared
+execution contracts accept seed, timesteps and fast transitions; discrete
+factorized models accept seed and action precision. Other model generators
+refuse those options rather than reporting success while ignoring them.
 
 Installed `python -m gnn.main` and installed direct-file entrypoints retain the
 caller working directory. Place the configuration at `input/config.yaml` under

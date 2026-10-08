@@ -32,7 +32,10 @@ META_TOOL_NAMES = (
 
 @pytest.fixture(scope="module")
 def mcp_instance() -> MCP:
-    mcp, _, _ = initialize(halt_on_missing_sdk=False, force_proceed_flag=True)
+    # This suite promises a complete module census, independent of scoped callers.
+    mcp, _, _ = initialize(
+        halt_on_missing_sdk=False, force_proceed_flag=True, force_refresh=True
+    )
     return mcp
 
 
