@@ -325,7 +325,8 @@ class MatrixVisualizer:
             tensor: 3D numpy array
             output_path: Output file path
             title: Optional title for the plot
-            tensor_type: Type of tensor ('transition', 'likelihood', etc.)
+            tensor_type: Explicit role; omitted role is transition only for canonical
+                B/B_fN names, otherwise generic with one shared value scale.
 
         Returns:
             True if successful, False otherwise
@@ -373,7 +374,9 @@ class MatrixVisualizer:
 
                 # Create heatmap
                 probability_range = (
-                    {"vmin": 0, "vmax": 1} if tensor_type == "transition" else {}
+                    {"vmin": 0, "vmax": 1}
+                    if tensor_type == "transition"
+                    else {"vmin": float(np.min(tensor)), "vmax": float(np.max(tensor))}
                 )
                 im = ax.imshow(
                     slice_data, cmap="Blues", aspect="auto", **probability_range

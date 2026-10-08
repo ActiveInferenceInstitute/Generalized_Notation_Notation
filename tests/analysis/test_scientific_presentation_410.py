@@ -290,6 +290,11 @@ def test_generic_3d_likelihood_keeps_axes_without_claiming_actions(
         assert not any("analysis.png" in path for path in paths)
         fig = plt.gcf()
         assert all("Action" not in axis.get_title() for axis in fig.axes)
+        planes = [image for axis in fig.axes for image in axis.images]
+        assert len(planes) == 2
+        assert all(image.get_clim() == (-4.0, 7.0) for image in planes)
+        np.testing.assert_array_equal(planes[0].get_array(), original[:, :, 0])
+        np.testing.assert_array_equal(planes[1].get_array(), original[:, :, 1])
         np.testing.assert_array_equal(tensor, original)
         payload = json.loads((tmp_path / "generic_A_threejs.json").read_text())
         np.testing.assert_array_equal(payload["values"], original)
