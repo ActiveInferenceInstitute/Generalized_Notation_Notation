@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import shutil
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,13 +19,27 @@ from gnn.visualization.plotting.utils import save_figure
 
 def test_faster_png_encoding_preserves_pixels_metadata_and_explicit_options(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    native_encoder = Image._getencoder
+    png_compression_levels: list[int] = []
+
+    def observe_encoder(
+        mode: str, encoder_name: str, args: Any, extra: tuple[Any, ...] = ()
+    ) -> Any:
+        # Observe the actual PNG encoder configuration, then encode normally.
+        if encoder_name == "zip":
+            png_compression_levels.append(extra[1])
+        return native_encoder(mode, encoder_name, args, extra)
+
+    monkeypatch.setattr(Image, "_getencoder", observe_encoder)
     fig, ax = plt.subplots(figsize=(3, 2))
     ax.plot([0, 1, 2], [0.2, -0.3, 0.8], "o--", label="Reported values")
     ax.legend()
     baseline, candidate, requested = (
         tmp_path / name for name in ("baseline.png", "candidate.png", "requested.png")
     )
+    requested_options = {"compress_level": 6}
     try:
         plt.savefig(
             baseline,
@@ -37,15 +52,16 @@ def test_faster_png_encoding_preserves_pixels_metadata_and_explicit_options(
             requested,
             dpi=90,
             metadata={"Description": "Bound plot"},
-            pil_kwargs={"compress_level": 6},
+            pil_kwargs=requested_options,
         )
         with Image.open(baseline) as first, Image.open(candidate) as second:
             assert first.size == second.size
             assert first.info == second.info
             np.testing.assert_array_equal(np.asarray(first), np.asarray(second))
         assert requested.read_bytes() == baseline.read_bytes()
-        assert candidate.read_bytes() != baseline.read_bytes()
-        assert candidate.stat().st_size > baseline.stat().st_size
+        assert requested_options == {"compress_level": 6}
+        # Compression level does not guarantee encoded size or byte ordering.
+        assert png_compression_levels == [6, 3, 6]
     finally:
         plt.close(fig)
 
