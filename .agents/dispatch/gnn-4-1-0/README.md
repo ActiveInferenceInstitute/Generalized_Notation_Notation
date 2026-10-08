@@ -35,6 +35,21 @@ Independent integrated suites passed 235 owner cases and 63 native boundary,
 parser, analysis and backend cases. These focused results certify their tested
 checkpoint, not the final release or all native platforms.
 
+The later checkpoint `d45fe6956` also integrates typed schema/GUI/RxInfer/
+logging/website diagnoses, Gaussian control/index/unit presentation, distinct
+saved round-trip format extensions and isolated supplied-source testing.
+The integrated diagnostic suite passed 28 cases; the complete testing-helper
+suite passed 112 cases and 10 subtests. The original core selectors and report
+scope remain intact. Maintained-document link, anchor, terminology, pattern and
+flag audits pass, with zero undocumented registered flags.
+
+Independent public-contract review found partial execution of a mixed valid/
+unknown singular-step request and checkout working-directory substitution of
+an explicitly configured API workspace. The contracts owner is repairing both,
+plus pre-lease direct-main admission and supported model-aware JAX options.
+Do not accept the earlier broad regression as final until these repairs and
+their genuine public witnesses pass.
+
 | Remaining dependency | Required next evidence |
 | --- | --- |
 | Public contracts and setup discovery | Final consumer regression, coordinated source commits and integrated replay |
