@@ -70,6 +70,11 @@ checks alone cannot establish publication or the full supported matrix.
 - GUI 1 edits recognize the canonical state-space section, retain following
   sections and preserve the authored newline style. Ontology readers recognize
   labeled concepts, relations, properties and annotations before bare mappings.
+  GUI 2 exports valid vector syntax and the declared transition tensor order
+  `B[next_state, previous_state, action]`, including noncubic action sets.
+  Finite edited numeric values retain round-trip float precision. Earlier
+  rounded or transposed exports require regeneration from authoritative source;
+  see the [saved-model migration](src/gnn/gui/gui_2/README.md#saved-models-and-migration).
 - Runtime validation uses the caller's absolute input/output paths and requires
   a canonical summary bearing its fresh invocation identity. Inherited summaries
   and workspace package shadows cannot establish current execution success.
