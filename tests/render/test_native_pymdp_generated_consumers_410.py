@@ -2,8 +2,13 @@
 
 import ast
 import copy
+import json
+import os
 import pickle
 import py_compile
+import subprocess
+import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -207,4 +212,160 @@ def test_saved_pymdp_program_preserves_optional_policy_prior_absence(tmp_path, m
     assert literals["D_data"] == [0.8, 0.2]
     if mode == "pipeline":
         assert "E" not in literals["gnn_spec"]["initialparameterization"]
+    assert pickle.dumps(spec, protocol=5) == before
+
+
+def saved_main(tree):
+    return next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "main"
+    )
+
+
+def default_output_expression(tree, mode):
+    name = "output_dir" if mode == "pipeline" else "out_dir"
+    return next(
+        node.value
+        for node in saved_main(tree).body
+        if isinstance(node, ast.Assign)
+        and isinstance(node.targets[0], ast.Name)
+        and node.targets[0].id == name
+    )
+
+
+@pytest.mark.parametrize("mode", ["pipeline", "standalone"])
+@pytest.mark.parametrize("field", ["model_name", "annotation"])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "O'Brien observations",
+        'Double "quoted" Ω',
+        r"Backslash \ sensor",
+        "Newline\nsensor",
+        'Triple """ delimiter',
+        "Brace {not_python} sensor",
+    ],
+)
+def test_saved_pymdp_authored_display_text_is_literal_data_in_every_public_slot(
+    tmp_path, monkeypatch, mode, field, text
+):
+    spec = authored_model()
+    spec[field] = text
+    before = pickle.dumps(spec, protocol=5)
+    path = tmp_path / "consumer.py"
+    assert render_gnn_to_pymdp(spec, path, {"mode": mode})[0]
+    py_compile.compile(str(path), cfile=str(tmp_path / "compiled.pyc"), doraise=True)
+    tree = ast.parse(path.read_text())
+    doc = ast.get_docstring(tree, clean=False)
+    assert doc is not None
+    assert f"Model:        {spec['model_name']}\n" in doc
+    assert f"Description:  {spec['annotation']}\n" in doc
+    if mode == "pipeline":
+        embedded = emitted_main_literals(path)["gnn_spec"]
+        assert (
+            embedded["model_name"] == spec["model_name"]
+            and embedded["annotation"] == spec["annotation"]
+        )
+        messages = [
+            ast.literal_eval(node.value.args[0])
+            for node in saved_main(tree).body
+            if isinstance(node, ast.Expr)
+            and isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Attribute)
+            and node.value.func.attr == "info"
+        ]
+        assert messages[0] == f"Running pymdp 1.0.0 rollout for {spec['model_name']}"
+    else:
+        results = next(
+            node.value
+            for node in saved_main(tree).body
+            if isinstance(node, ast.Assign)
+            and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == "results"
+        )
+        names = {
+            ast.literal_eval(key): value
+            for key, value in zip(results.keys, results.values, strict=True)
+        }
+        assert ast.literal_eval(names["model_name"]) == spec["model_name"]
+    # Execute only the saved Path expression against actual Path/os. No model main.
+    monkeypatch.delenv("PYMDP_OUTPUT_DIR", raising=False)
+    expression = ast.Expression(default_output_expression(tree, mode))
+    generated_path = eval(
+        compile(expression, str(path), "eval"), {"Path": Path, "os": os}
+    )
+    assert generated_path == Path(f"output/pymdp_simulations/{spec['model_name']}")
+    assert pickle.dumps(spec, protocol=5) == before
+    assert not (tmp_path / "output").exists()
+
+
+@pytest.mark.parametrize("mode", ["pipeline", "standalone"])
+def test_saved_pymdp_default_name_and_existing_output_override_contract(
+    tmp_path, monkeypatch, mode
+):
+    spec = authored_model()
+    del spec["model_name"]
+    before = pickle.dumps(spec, protocol=5)
+    path = tmp_path / "default.py"
+    assert render_gnn_to_pymdp(spec, path, {"mode": mode})[0]
+    tree = ast.parse(path.read_text())
+    assert "Model:        GNN_Model\n" in ast.get_docstring(tree, clean=False)
+    expression = ast.Expression(default_output_expression(tree, mode))
+    monkeypatch.delenv("PYMDP_OUTPUT_DIR", raising=False)
+    assert eval(
+        compile(expression, str(path), "eval"), {"Path": Path, "os": os}
+    ) == Path("output/pymdp_simulations/GNN_Model")
+    if mode == "pipeline":
+        override = tmp_path / "existing override Ω"
+        monkeypatch.setenv("PYMDP_OUTPUT_DIR", str(override))
+        assert (
+            eval(compile(expression, str(path), "eval"), {"Path": Path, "os": os})
+            == override
+        )
+        assert not override.exists()
+    assert pickle.dumps(spec, protocol=5) == before
+
+
+@pytest.mark.parametrize("mode", ["pipeline", "standalone"])
+def test_saved_pymdp_native_import_retains_safe_metadata_without_invoking_main(
+    tmp_path, mode
+):
+    import gnn
+
+    spec = authored_model()
+    spec["model_name"] = 'Quoted """ Ω \\ name\n{not_a_call}'
+    spec["annotation"] = 'Authored "quoted" true false null\nΩ'
+    before = pickle.dumps(spec, protocol=5)
+    path = tmp_path / "native.py"
+    assert render_gnn_to_pymdp(spec, path, {"mode": mode})[0]
+    checkout = Path(gnn.__file__).resolve().parents[2]
+    env = os.environ.copy()
+    env["GNN_PROJECT_ROOT"] = str(checkout)
+    command = (
+        "import json,runpy,sys; from pathlib import Path; import gnn; "
+        "namespace=runpy.run_path(sys.argv[1],run_name='native_metadata_only'); "
+        "assert callable(namespace['main']); "
+        "assert hasattr(namespace['Agent'],'update_empirical_prior'); "
+        "print('NATIVE_METADATA_JSON='+json.dumps({'doc':namespace['__doc__'],'gnn_origin':str(Path(gnn.__file__).resolve())}))"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", command, str(path)],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    row = next(
+        line.removeprefix("NATIVE_METADATA_JSON=")
+        for line in result.stdout.splitlines()
+        if line.startswith("NATIVE_METADATA_JSON=")
+    )
+    metadata = json.loads(row)
+    assert metadata["gnn_origin"] == str(Path(gnn.__file__).resolve())
+    assert f"Model:        {spec['model_name']}\n" in metadata["doc"]
+    assert f"Description:  {spec['annotation']}\n" in metadata["doc"]
+    assert not (tmp_path / "output").exists()
     assert pickle.dumps(spec, protocol=5) == before
