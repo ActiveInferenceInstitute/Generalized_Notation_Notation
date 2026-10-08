@@ -86,6 +86,14 @@ Each API call writes a single Python script to `output_path`:
 - **POMDP solver**: JAX; optional Optax import with explicit "continue without Optax" behavior in generated code
 - **Combined model**: JAX + Flax + Optax
 
+Saved scripts use UTF-8. When the general categorical model runs as a program,
+it configures its native `TextIOWrapper` stdout/stderr streams to UTF-8 before
+printing diagnostics, including authored Unicode model names and paths. Model
+imports leave the caller's streams unchanged, and text captures such as
+`StringIO` retain their existing behavior. Its saved result JSON also uses UTF-8.
+This boundary matches the executor's existing UTF-8 byte decoding; it does not
+change the execution environment, numerical algorithms or deadline handling.
+
 Step 11 may place these scripts under:
 
 `output/11_render_output/<model_name>/jax/` (organization handled by the parent render processor).

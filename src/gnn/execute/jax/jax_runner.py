@@ -92,7 +92,7 @@ def execute_jax_script(
 
     # Validate script syntax
     try:
-        with open(script_path, "r") as f:
+        with open(script_path, "r", encoding="utf-8") as f:
             content = f.read()
             compile(content, script_path.name, "exec")
         logger.debug(f"✅ Script syntax valid: {script_path.name}")
@@ -164,11 +164,11 @@ def execute_jax_script(
 
         # Save stdout and stderr
         stdout_file = log_dir / "stdout.txt"
-        with open(stdout_file, "w") as f:
+        with open(stdout_file, "w", encoding="utf-8") as f:
             f.write(result_stdout)
 
         stderr_file = log_dir / "stderr.txt"
-        with open(stderr_file, "w") as f:
+        with open(stderr_file, "w", encoding="utf-8") as f:
             f.write(result_stderr)
 
         # Save execution log JSON
@@ -183,7 +183,7 @@ def execute_jax_script(
         }
 
         log_file = log_dir / "execution_log.json"
-        with open(log_file, "w") as f:
+        with open(log_file, "w", encoding="utf-8") as f:
             json_mod.dump(execution_log, f, indent=2)
 
         logger.debug(f"Execution logs saved to: {log_dir}")
