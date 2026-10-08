@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # --- Internal code generation helpers ---
 
 
-def _require_braced_assignments(text: str) -> None:
+def _require_braced_assignments(text: str) -> str:
     """Do not treat a present but malformed table as an omitted parameter."""
     uncommented = "\n".join(line.split("#", 1)[0] for line in text.splitlines())
     for name in ("A", "B", "C", "D"):
@@ -38,6 +38,7 @@ def _require_braced_assignments(text: str) -> None:
             raise ValueError(
                 f"Invalid authored {name} parameter: expected braced literal"
             )
+    return uncommented
 
 
 def _parse_gnn_matrix_string(matrix_str: str, *, strict: bool = False) -> np.ndarray:
@@ -56,6 +57,17 @@ def _parse_gnn_matrix_string(matrix_str: str, *, strict: bool = False) -> np.nda
         # Reconstruct the matrix string
         matrix_str = " ".join(cleaned_lines)
 
+        def numeric_fields(text: str) -> list[float]:
+            fields = text.split(",")
+            if strict:
+                # A single terminal comma is valid tuple/set syntax. An
+                # interior or leading empty field denotes a missing value.
+                if len(fields) > 1 and not fields[-1].strip():
+                    fields.pop()
+                if any(not field.strip() for field in fields):
+                    raise ValueError("Authored matrix contains an empty numeric field")
+            return [float(field.strip()) for field in fields if field.strip()]
+
         # Handle A matrix format: { (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0) }
         if matrix_str.startswith("{") and matrix_str.endswith("}"):
             inner = matrix_str[1:-1].strip()
@@ -73,6 +85,10 @@ def _parse_gnn_matrix_string(matrix_str: str, *, strict: bool = False) -> np.nda
 
                 if char == "," and paren_count == 0:
                     # End of a row
+                    if strict and not current_row.strip():
+                        raise ValueError(
+                            "Authored matrix contains an empty row or value"
+                        )
                     if current_row.strip():
                         rows.append(current_row.strip())
                     current_row = ""
@@ -95,25 +111,17 @@ def _parse_gnn_matrix_string(matrix_str: str, *, strict: bool = False) -> np.nda
                         nested_row_values: list[list[float]] = []
                         for nested_tuple in nested_tuples:
                             nested_tuple = nested_tuple.strip("()")
-                            tuple_values = [
-                                float(x.strip())
-                                for x in nested_tuple.split(",")
-                                if x.strip()
-                            ]
+                            tuple_values = numeric_fields(nested_tuple)
                             nested_row_values.append(tuple_values)
                         matrix.append(nested_row_values)
                     elif row.startswith("(") and row.endswith(")"):
                         # Parse tuple row
                         inner_row = row[1:-1]
-                        row_values = [
-                            float(x.strip()) for x in inner_row.split(",") if x.strip()
-                        ]
+                        row_values = numeric_fields(inner_row)
                         matrix.append(row_values)
                     else:
                         # Try to parse as simple values
-                        row_values = [
-                            float(x.strip()) for x in row.split(",") if x.strip()
-                        ]
+                        row_values = numeric_fields(row)
                         if row_values:
                             matrix.append(row_values)
                 except Exception as e:
@@ -374,7 +382,7 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
             "InitialParameterization", ""
         )
         if initial_params:
-            _require_braced_assignments(initial_params)
+            initial_params = _require_braced_assignments(initial_params)
             # Parse A matrix
             a_match = re.search(r"A\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
             if a_match:
@@ -556,7 +564,7 @@ def _extract_gnn_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
             logger.info(
                 "Found InitialParameterization section, attempting to parse matrix values"
             )
-            _require_braced_assignments(initial_params)
+            initial_params = _require_braced_assignments(initial_params)
 
             # Parse A matrix
             a_match = re.search(r"A\s*=\s*\{([^}]+)\}", initial_params, re.DOTALL)
@@ -821,9 +829,21 @@ def _validated_jax_matrices(gnn_spec: Dict[str, Any]) -> Dict[str, np.ndarray]:
                 dimensions.append(int(token))
             except ValueError:
                 continue
-        if dimensions and tuple(dimensions) != matrices[name].shape:
+        declared_source_shape = matrices[name].shape
+        initial = gnn_spec.get("initialparameterization", {})
+        if (
+            name == "B"
+            and "model_parameters" in gnn_spec
+            and isinstance(initial, dict)
+            and all(key in initial for key in ("A", "B", "C", "D"))
+        ):
+            # Declarations describe the authored tensor's axes. Canonical
+            # admission may transpose action-major B or add a passive action
+            # axis; neither operation rewrites the source declaration.
+            declared_source_shape = np.asarray(initial["B"]).shape
+        if dimensions and tuple(dimensions) != declared_source_shape:
             raise ValueError(
-                f"{name} shape {matrices[name].shape} does not match declared dimensions {dimensions}"
+                f"{name} source shape {declared_source_shape} does not match declared dimensions {dimensions}"
             )
 
     # C is a real-valued payoff vector, including negative preferences.
