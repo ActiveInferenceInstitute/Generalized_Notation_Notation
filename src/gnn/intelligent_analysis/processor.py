@@ -285,20 +285,47 @@ Please provide analysis in EXACTLY this format:
 """
 
     try:
-        from gnn.llm.defaults import DEFAULT_OLLAMA_MODEL
+        from gnn.llm.defaults import DEFAULT_OLLAMA_MODEL, ollama_generation_options
+        from gnn.llm.provider_identity import resolved_endpoint
+        from gnn.llm.providers.base_provider import ProviderType
 
+        selected_provider = ProviderType(os.getenv("DEFAULT_PROVIDER") or "ollama")
         model_name = analysis_model or os.getenv("OLLAMA_MODEL") or DEFAULT_OLLAMA_MODEL
+        if selected_provider != ProviderType.OLLAMA and analysis_model is None:
+            selected = processor.get_provider(selected_provider)
+            if selected is None:
+                raise RuntimeError("Configured analysis provider is unavailable")
+            model_name = selected.default_model
         messages: list[LLMMessage] = [LLMMessage(role="user", content=prompt)]
-
+        # Pin the configured provider; cloud credentials alone cannot redirect
+        # a default local report. DEFAULT_PROVIDER can explicitly select cloud.
+        _, endpoint_sha256 = resolved_endpoint(selected_provider)
+        cache_request = json.dumps(
+            {
+                "schema_version": 2,
+                "provider": selected_provider.value,
+                "endpoint_sha256": endpoint_sha256,
+                "prompt": prompt,
+                "max_tokens": 2500,
+                "generation_options": ollama_generation_options()
+                if selected_provider == ProviderType.OLLAMA
+                else {},
+                "completion_policy": "terminal_stop_v1",
+            },
+            sort_keys=True,
+        )
         cache_content = json.dumps(context, sort_keys=True)
         if cache is not None:
-            cached = cache.get(cache_content, model_name, prompt)
-            if cached is not None:
+            cached = cache.get(cache_content, model_name, cache_request)
+            if cached is not None and _is_complete_llm_report(cached):
                 logger.info("⚡ Cache HIT for step-24 LLM analysis")
                 return cached, "llm"
 
         response = await processor.get_response(
-            messages=messages, model_name=model_name, max_tokens=2500
+            messages=messages,
+            model_name=model_name,
+            max_tokens=2500,
+            provider_type=selected_provider,
         )
         content = response.content.strip()
 
@@ -307,6 +334,7 @@ Please provide analysis in EXACTLY this format:
         if (
             "```python" in content.lower()
             or "def " in content
+            or getattr(response, "finish_reason", None) != "stop"
             or not _is_complete_llm_report(content)
         ):
             logger.warning(
@@ -318,7 +346,7 @@ Please provide analysis in EXACTLY this format:
             )
 
         if cache is not None:
-            cache.put(cache_content, model_name, prompt, content)
+            cache.put(cache_content, model_name, cache_request, content)
 
         return content, "llm"
     except Exception as e:

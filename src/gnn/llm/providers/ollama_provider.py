@@ -23,7 +23,7 @@ import time
 from typing import Any, AsyncGenerator, List, Optional
 from urllib.parse import SplitResult, urlsplit
 
-from ..defaults import DEFAULT_OLLAMA_MODEL
+from ..defaults import DEFAULT_OLLAMA_MODEL, ollama_generation_options
 from .base_provider import (
     BaseLLMProvider,
     LLMConfig,
@@ -205,6 +205,8 @@ class OllamaProvider(BaseLLMProvider):
     AVAILABLE_MODELS = (
         "smollm2:135m-instruct-q4_K_S",
         "gemma3:4b",
+        "gemma3:12b",
+        "qwen3-coder:30b",
         "ministral-3:3b",
         "mistral:7b",
         "llama3.1:8b",
@@ -223,6 +225,10 @@ class OllamaProvider(BaseLLMProvider):
         )
         self.default_model_override = kwargs.get("default_model")
         self.default_max_tokens = kwargs.get("default_max_tokens", 256)
+        self.generation_options = ollama_generation_options(
+            kwargs.get("generation_options"),
+            inherit_environment="generation_options" not in kwargs,
+        )
         self.default_timeout = _positive_timeout(
             kwargs.get("timeout")
             if kwargs.get("timeout") is not None
@@ -291,6 +297,7 @@ class OllamaProvider(BaseLLMProvider):
             else self.default_timeout,
         )
         options = {
+            **self.generation_options,
             "num_predict": config.max_tokens
             if config.max_tokens is not None
             else self.default_max_tokens,
@@ -312,6 +319,8 @@ class OllamaProvider(BaseLLMProvider):
             "truncate": False,
             "shift": False,
         }
+        if config.response_format is not None:
+            payload["format"] = config.response_format
         return _ChatRequest(self._endpoint, timeout), payload
 
     @staticmethod
@@ -343,10 +352,15 @@ class OllamaProvider(BaseLLMProvider):
                 models = tags.get("models") if isinstance(tags, dict) else None
                 if not isinstance(models, list):
                     raise RuntimeError("Ollama returned a malformed model inventory")
-                if not any(
-                    isinstance(entry, dict) and entry.get("name") == model
-                    for entry in models
-                ):
+                entry = next(
+                    (
+                        entry
+                        for entry in models
+                        if isinstance(entry, dict) and entry.get("name") == model
+                    ),
+                    None,
+                )
+                if entry is None:
                     raise RuntimeError(
                         "Configured Ollama model is not installed on the configured HTTP host"
                     )
@@ -356,6 +370,8 @@ class OllamaProvider(BaseLLMProvider):
                     "server_version": transport.server_version,
                     "context_policy": "whole-context-v1",
                     "status": "ready",
+                    "model_digest": entry.get("digest"),
+                    "generation_options": self.generation_options,
                 }
             finally:
                 transport.close()
@@ -419,6 +435,7 @@ class OllamaProvider(BaseLLMProvider):
                 "shift": False,
                 "server_version": transport.server_version,
                 "context_policy": "whole-context-v1",
+                "generation_options": self.generation_options,
             },
         )
 
@@ -457,6 +474,10 @@ class OllamaProvider(BaseLLMProvider):
                         yield response["message"]["content"]
                     transport.remaining()
                     if response.get("done") is True:
+                        if response.get("done_reason") != "stop":
+                            raise RuntimeError(
+                                "Ollama stream returned an unfinished response"
+                            )
                         done = True
                         break
                 if not chunk and not done:

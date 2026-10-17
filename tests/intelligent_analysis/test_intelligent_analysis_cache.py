@@ -65,8 +65,15 @@ ANALYSIS_CONTEXT: dict[str, Any] = {
 class _FakeProcessor:
     """Counting fake standing in for the LLM boundary."""
 
-    def __init__(self, content: str, *, raise_if_called: bool = False) -> None:
+    def __init__(
+        self,
+        content: str,
+        *,
+        raise_if_called: bool = False,
+        finish_reason: str | None = "stop",
+    ) -> None:
         self._content = content
+        self._finish_reason = finish_reason
         self._raise_if_called = raise_if_called
         self.calls = 0
 
@@ -81,7 +88,7 @@ class _FakeProcessor:
         if self._raise_if_called:
             raise AssertionError("get_response called; expected a cache hit")
         self.calls += 1
-        return SimpleNamespace(content=self._content)
+        return SimpleNamespace(content=self._content, finish_reason=self._finish_reason)
 
 
 def _install_fake_processor(
@@ -253,3 +260,18 @@ def test_process_intelligent_analysis_wires_step24_cache_dir(
     )
     assert ok is True
     assert processor.calls == 1
+
+
+@pytest.mark.parametrize("finish_reason", [None, "length"])
+def test_valid_report_text_with_unfinished_native_response_is_not_cached(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, finish_reason: str | None
+) -> None:
+    processor = _FakeProcessor(VALID_REPORT, finish_reason=finish_reason)
+    _install_fake_processor(monkeypatch, processor)
+    content, source = asyncio.run(
+        _llm_call(
+            logging.getLogger("test-stop"), "test-model", tmp_path, ANALYSIS_CONTEXT
+        )
+    )
+    assert source == "rule_based"
+    assert _cache_json_entries(tmp_path) == []

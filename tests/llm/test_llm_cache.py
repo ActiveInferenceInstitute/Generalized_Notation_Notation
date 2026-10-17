@@ -88,3 +88,28 @@ class TestCacheSummary:
         assert summary["hit_ratio_pct"] == 50.0
         assert summary["entries_on_disk"] == 1
         assert summary["cache_dir"] == str(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("response", "changed"),
+        ("model", "changed"),
+        ("key", "wrong"),
+        ("schema_version", 1),
+        ("response_sha256", "wrong"),
+    ],
+)
+def test_valid_json_with_changed_response_or_identity_is_a_miss(
+    tmp_path: Path, field: str, value: object
+) -> None:
+    cache = LLMCache(cache_dir=tmp_path)
+    cache.put("content", "model", "prompt", "response")
+    path = next(tmp_path.glob("*.json"))
+    entry = json.loads(path.read_text())
+    entry[field] = value
+    path.write_text(json.dumps(entry))
+    assert cache.get("content", "model", "prompt") is None
+    assert cache.hits == 0
+    assert cache.misses == 1
+    assert not path.exists()

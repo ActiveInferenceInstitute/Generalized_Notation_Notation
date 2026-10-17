@@ -155,6 +155,15 @@ llm:
   # Per-prompt timeout in seconds
   prompt_timeout: 45
 
+  # Null uses each prompt template budget; a positive integer overrides it.
+  max_tokens: null
+
+  # Optional byte-preserving fragment analysis; null requests whole sources.
+  source_chunk_bytes: null
+
+  # Optional native Ollama context and deterministic seed, e.g. num_ctx: 65536.
+  ollama_options: {}
+
 # Logging settings
 logging:
   # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)

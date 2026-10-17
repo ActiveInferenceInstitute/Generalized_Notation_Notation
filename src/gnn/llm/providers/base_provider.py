@@ -59,6 +59,7 @@ class LLMConfig:
     presence_penalty: Optional[float] = None
     stream: bool = False
     timeout: Optional[float] = None
+    response_format: Optional[Dict[str, Any]] = None
 
 
 class BaseLLMProvider(ABC):

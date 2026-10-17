@@ -11,7 +11,6 @@ import os
 import shutil
 import subprocess  # nosec B404
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -156,6 +155,12 @@ class TestOllamaDetection:
 class TestOllamaModelSelection:
     """Test Ollama model selection logic."""
 
+    @pytest.fixture(autouse=True)
+    def isolate_selection_defaults(self, monkeypatch: Any) -> None:
+        """Live test model selection must not change pure preference controls."""
+        monkeypatch.delenv("OLLAMA_MODEL", raising=False)
+        monkeypatch.delenv("OLLAMA_TEST_MODEL", raising=False)
+
     def test_model_selection_with_empty_list(
         self, caplog: Any, monkeypatch: Any
     ) -> Any:
@@ -238,238 +243,106 @@ class TestOllamaModelSelection:
 
 
 class TestLLMProcessing:
-    """Test LLM processing with Ollama integration."""
+    """Opt-in native acceptance must establish completion, not merely files."""
 
-    @pytest.fixture
-    def test_gnn_dir(self) -> Any:
-        """Create temporary directory with test GNN files."""
-        test_dir = tempfile.mkdtemp()
-        gnn_dir = Path(test_dir) / "gnn_files"
-        gnn_dir.mkdir()
+    @pytest.mark.needs_ollama
+    @pytest.mark.timeout(600)
+    @pytest.mark.parametrize("batch_prompts", [False, True])
+    def test_native_corpus_completion_and_resume(
+        self, tmp_path: Path, batch_prompts: bool
+    ) -> None:
+        from gnn.llm.defaults import DEFAULT_OLLAMA_MODEL
 
-        # Create test GNN file
-        gnn_file = gnn_dir / "test_active_inference.md"
-        gnn_file.write_text("""
-# Test Active Inference Model
-
-## Description
-A simple active inference model for testing LLM analysis.
-
-## State Blocks
-[A]: Observation space (3)
-[B]: State transition matrix (3x3x2)
-[C]: Preference distribution (3)
-[D]: Observation likelihood (3x3)
-
-## Connections
-A -> D: "observations"
-B -> A: "state to observation"
-C -> B: "preferences influence transitions"
-
-## Parameters
-- learning_rate: 0.01
-- precision: 1.0
-- temperature: 0.5
-
-## Inference Goals
-Minimize free energy while maintaining preferred states.
-""")
-
-        yield gnn_dir
-
-        # Cleanup
-        shutil.rmtree(test_dir)
-
-    @pytest.fixture
-    def test_output_dir(self) -> Any:
-        """Create temporary output directory."""
-        test_dir = tempfile.mkdtemp()
-        output_dir = Path(test_dir) / "output"
-        output_dir.mkdir()
-
-        yield output_dir
-
-        # Cleanup
-        shutil.rmtree(test_dir)
-
-    @pytest.mark.slow
-    @pytest.mark.timeout(180)  # 3 minute timeout for LLM operations
-    def test_llm_processing_with_ollama(
-        self, test_gnn_dir: Any, test_output_dir: Any, caplog: Any
-    ) -> Any:
-        """Test LLM processing when Ollama is available (slow test - runs actual LLM prompts)."""
-        import logging
-
-        caplog.set_level(logging.INFO)
-
-        llm_output_dir = test_output_dir / "13_llm_output"
-        llm_output_dir.mkdir()
-
-        result = process_llm(
-            target_dir=test_gnn_dir, output_dir=llm_output_dir, verbose=True
+        model = (
+            os.getenv("OLLAMA_TEST_MODEL")
+            or os.getenv("OLLAMA_MODEL")
+            or DEFAULT_OLLAMA_MODEL
         )
-
-        # Should complete (success or graceful failure)
-        assert isinstance(result, bool)
-
-        # Check for results file - processor saves directly to output_dir
-        results_file = llm_output_dir / "llm_results.json"
-
-        # Test should pass if file exists OR if graceful recovery occurred
-        if results_file.exists():
-            with open(results_file) as f:
-                results = json.load(f)
-
-            # Verify results structure
-            assert "timestamp" in results
-            # ollama_available key may not exist if using recovery
-            assert "processed_files" in results or "analysis_results" in results
-            assert (
-                "provider_matrix" in results
-                or "errors" in results
-                or "analysis_results" in results
-            )
-        else:
-            # If no results file, check for alternative outputs (summary, logs, etc.)
-            summary_file = llm_output_dir / "llm_summary.md"
-            assert summary_file.exists() or result, (
-                "Should either create results file or complete gracefully"
-            )
-
-        # Check logging
-        log_text = caplog.text
+        source = (
+            Path(__file__).resolve().parents[2]
+            / "input/gnn_files/discrete/actinf_pomdp_agent.md"
+        )
+        target = tmp_path / "models"
+        target.mkdir()
+        shutil.copyfile(source, target / source.name)
+        output = tmp_path / "output"
+        options = dict(
+            provider="ollama",
+            model=model,
+            max_tokens=4096,
+            custom_prompts=[],
+            max_prompt_timeout=180,
+            response_words=160,
+            batch_prompts=batch_prompts,
+        )
+        assert process_llm(target, output, **options)
+        result = json.loads((output / "llm_results.json").read_text())
+        assert result["status"] == "success"
+        assert result["selected_model"] == model
         assert (
-            "LLM" in log_text
-            or "ollama" in log_text.lower()
-            or "llm" in log_text.lower()
+            result["coverage"]["prompts_completed"]
+            == result["coverage"]["prompts_required"]
+            == 6
+        )
+        assert result["coverage"]["summaries_completed"] == 1
+        assert result["unfinished_work"] == result["unfinished_source_parts"] == []
+        assert all(
+            o["status"] == "success"
+            for row in result["analysis_results"]
+            for o in row["part_outcomes"].values()
+        )
+        assert process_llm(target, output, resume=True, **options)
+        resumed = json.loads((output / "llm_results.json").read_text())
+        assert all(
+            o["resumed"]
+            for row in resumed["analysis_results"]
+            for o in row["prompt_outcomes"].values()
         )
 
-    @pytest.mark.slow
-    def test_llm_processing_without_ollama(
-        self, test_gnn_dir: Any, test_output_dir: Any, caplog: Any, monkeypatch: Any
-    ) -> Any:
-        """Test LLM processing works regardless of Ollama availability."""
-        import logging
+    @pytest.mark.timeout(15)
+    def test_unavailable_local_provider_retains_structural_work(
+        self, tmp_path: Path, monkeypatch: Any
+    ) -> None:
+        import socket
 
-        caplog.set_level(logging.INFO)
-
-        llm_output_dir = test_output_dir / "13_llm_output"
-        llm_output_dir.mkdir()
-
-        result = process_llm(
-            target_dir=test_gnn_dir, output_dir=llm_output_dir, verbose=True
+        target = tmp_path / "models"
+        target.mkdir()
+        (target / "model.md").write_text(
+            "## GNNSection\nActInfPOMDP\n## ModelName\nUnavailable\n"
         )
+        # A bound, non-listening port deterministically refuses connections.
+        with socket.socket() as unavailable:
+            unavailable.bind(("127.0.0.1", 0))
+            monkeypatch.setenv(
+                "OLLAMA_HOST", f"http://127.0.0.1:{unavailable.getsockname()[1]}"
+            )
+            output = tmp_path / "output"
+            assert not process_llm(
+                target,
+                output,
+                provider="ollama",
+                model="missing:exact",
+                llm_timeout=5,
+                max_prompt_timeout=2,
+            )
+        result = json.loads((output / "llm_results.json").read_text())
+        assert result["status"] == "partial"
+        assert result["coverage"]["structural_completed"] == 1
+        assert result["coverage"]["prompts_completed"] == 0
+        assert result["coverage"]["summaries_completed"] == 0
+        assert result["errors"][0]["stage"] == "preflight"
+        assert len(result["unfinished_work"]) == 9
 
-        # Should complete
-        assert isinstance(result, bool)
-
-    @pytest.mark.slow
-    @pytest.mark.timeout(180)  # 3 minute timeout for LLM processing
-    def test_llm_processing_model_selection(
-        self, test_gnn_dir: Any, test_output_dir: Any, caplog: Any
-    ) -> Any:
-        """Test that LLM processing selects and uses appropriate model (slow test)."""
-        import logging
-
-        caplog.set_level(logging.INFO)
-
-        llm_output_dir = test_output_dir / "13_llm_output"
-        llm_output_dir.mkdir()
-
-        # Use minimal custom prompts to avoid timeouts
-        process_llm(
-            target_dir=test_gnn_dir,
-            output_dir=llm_output_dir,
-            verbose=True,
-            custom_prompts=[],  # Skip custom prompts to speed up test
-            max_prompt_timeout=10,  # 10 second timeout per prompt
-        )
-
-        # Check results for model selection - processor saves directly to output_dir
-        results_file = llm_output_dir / "llm_results.json"
-        if results_file.exists():
-            with open(results_file) as f:
-                results = json.load(f)
-
-            # Check if ollama is available via provider_matrix
-            provider_matrix = results.get("provider_matrix", {})
-            ollama_info = provider_matrix.get("ollama", {})
-            ollama_available = ollama_info.get("available", False)
-
-            if ollama_available:
-                # Should have selected a model
-                selected_model = ollama_info.get("selected_model")
-                if selected_model:
-                    assert isinstance(selected_model, str)
-                    assert len(selected_model) > 0
-
-                    # Check logging mentions the model
-                    log_text = caplog.text
-                    assert "model" in log_text.lower() or "🤖" in log_text
-            # else: recovery mode, model selection not required
-
-    @pytest.mark.slow
-    @pytest.mark.timeout(120)  # 2 minute timeout
-    def test_llm_processing_creates_outputs(
-        self, test_gnn_dir: Any, test_output_dir: Any
-    ) -> Any:
-        """Test that LLM processing creates expected output files (slow test)."""
-        llm_output_dir = test_output_dir / "13_llm_output"
-        llm_output_dir.mkdir()
-
-        # Use minimal custom prompts to avoid timeouts
-        process_llm(
-            target_dir=test_gnn_dir,
-            output_dir=llm_output_dir,
-            verbose=False,
-            custom_prompts=[],  # Skip custom prompts to speed up test
-            max_prompt_timeout=10,  # 10 second timeout per prompt
-        )
-
-        # Check for key output files - processor saves directly to output_dir
-
-        # Should have results file
-        assert (llm_output_dir / "llm_results.json").exists(), (
-            f"Expected llm_results.json at {llm_output_dir}"
-        )
-
-        # Should have summary file
-        assert (llm_output_dir / "llm_summary.md").exists(), (
-            f"Expected llm_summary.md at {llm_output_dir}"
-        )
-
-        # May have prompt-specific directories if Ollama was available
-        prompt_dirs = list(llm_output_dir.glob("prompts_*"))
-        # At least 0 prompt directories (depends on Ollama availability)
-        assert isinstance(prompt_dirs, list)
-
-    @pytest.mark.slow
-    @pytest.mark.timeout(60)  # 1 minute timeout for error case
-    def test_llm_processing_error_handling(
-        self, test_output_dir: Any, caplog: Any
-    ) -> Any:
-        """Test LLM processing error handling with no input files (slow test)."""
-        import logging
-
-        caplog.set_level(logging.WARNING)
-
-        # Empty directory
-        empty_dir = test_output_dir / "empty_gnn"
-        empty_dir.mkdir()
-
-        llm_output_dir = test_output_dir / "13_llm_output"
-        llm_output_dir.mkdir()
-
-        result = process_llm(
-            target_dir=empty_dir, output_dir=llm_output_dir, verbose=True
-        )
-
-        # Should handle gracefully
-        assert isinstance(result, bool)
-
-        # Should log warning about no files
-        log_text = caplog.text.lower()
-        assert "no" in log_text and "files" in log_text or "warning" in log_text
+    def test_empty_selection_is_explicitly_skipped(self, tmp_path: Path) -> None:
+        target = tmp_path / "models"
+        target.mkdir()
+        output = tmp_path / "output"
+        assert process_llm(target, output, provider="ollama")
+        result = json.loads((output / "llm_results.json").read_text())
+        assert result["status"] == "skipped"
+        assert result["selected_files"] == 0
+        assert result["coverage"]["prompts_required"] == 0
+        assert not list(output.glob("prompts_*"))
 
 
 @pytest.mark.needs_ollama
@@ -494,3 +367,35 @@ class TestOllamaIntegrationEnd2End:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
+
+
+@pytest.mark.needs_ollama
+@pytest.mark.timeout(180)
+def test_native_convenience_and_mcp_inside_active_loop(monkeypatch: Any) -> None:
+    import asyncio
+
+    from gnn.llm.defaults import DEFAULT_OLLAMA_MODEL
+    from gnn.llm.llm_operations import LLMOperations
+    from gnn.llm.mcp import analyze_gnn_with_llm_mcp
+
+    model = (
+        os.getenv("OLLAMA_TEST_MODEL")
+        or os.getenv("OLLAMA_MODEL")
+        or DEFAULT_OLLAMA_MODEL
+    )
+    monkeypatch.setenv("OLLAMA_MODEL", model)
+    source = (
+        Path(__file__).resolve().parents[2]
+        / "input/gnn_files/discrete/actinf_pomdp_agent.md"
+    )
+
+    async def run() -> None:
+        ops = LLMOperations()
+        response = ops.get_llm_response("Reply with only the word ok.", max_tokens=32)
+        assert response.strip() and not response.startswith("Error:")
+        result = analyze_gnn_with_llm_mcp(str(source), provider="ollama")
+        assert result["success"] is True
+        assert result["llm_summary_status"] == "available"
+        assert isinstance(result["llm_summary"], str)
+
+    asyncio.run(run())

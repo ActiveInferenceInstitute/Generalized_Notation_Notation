@@ -3,6 +3,7 @@
 LLM processor module for GNN analysis.
 """
 
+import hashlib
 import json
 import logging
 import math
@@ -24,6 +25,8 @@ _logger = logging.getLogger(__name__)
 logger = logging.getLogger("llm")
 
 from gnn.pipeline.config import get_pipeline_config
+
+from .prompt_batch import parse_answers, response_schema
 
 
 def _get_llm_config() -> dict:
@@ -485,6 +488,9 @@ async def _execute_prompt(
     isolated: bool = False,
     endpoint_url: str | None = None,
     remaining_budget: Callable[[], float] | None = None,
+    generation_options: dict[str, Any] | None = None,
+    runtime_identity: dict[str, Any] | None = None,
+    output_fields: list[str] | None = None,
 ) -> str:
     """Run one LLM prompt with cache lookup, timeout, and auth fail-fast.
 
@@ -519,9 +525,10 @@ async def _execute_prompt(
 
     if provider_type and provider_type.value in failed_auth_providers:
         return _prompt_fallback_text(label, custom)
+    response_format = response_schema(output_fields) if output_fields else None
     request_definition = json.dumps(
         {
-            "schema_version": 3,
+            "schema_version": 4,
             "completion_policy": "terminal_stop_v1",
             "provider": provider_type.value if provider_type else "default",
             "model": model_name,
@@ -532,10 +539,21 @@ async def _execute_prompt(
             "prompt_text": prompt_text,
             "max_tokens": max_tokens,
             "temperature": 0.2,
+            "generation_options": generation_options or {},
+            "runtime_identity": runtime_identity or {},
+            "output_fields": output_fields,
+            "response_format": response_format,
+            "source_sha256": hashlib.sha256(cache_content.encode("utf-8")).hexdigest(),
         },
         sort_keys=True,
     )
     cached = cache.get(cache_content, model_name, request_definition)
+    request_sha256 = hashlib.sha256(request_definition.encode("utf-8")).hexdigest()
+    if cached and output_fields:
+        try:
+            parse_answers(cached, output_fields)
+        except (ValueError, TypeError):
+            cached = None
     if isinstance(cached, str) and cached.strip():
         if time.monotonic() >= prompt_deadline or (
             remaining_budget is not None and remaining_budget() <= 0
@@ -547,7 +565,11 @@ async def _execute_prompt(
             )
         logger.info(f"  ⚡ Cache HIT for {label}")
         if outcomes is not None:
-            outcomes[label] = {"status": "success", "cached": True}
+            outcomes[label] = {
+                "status": "success",
+                "cached": True,
+                "request_sha256": request_sha256,
+            }
         return cached
 
     # Fail fast when the provider that would serve this request already
@@ -579,6 +601,8 @@ async def _execute_prompt(
                 max_tokens=max_tokens,
                 timeout=request_timeout,
                 endpoint_url=endpoint_url,
+                generation_options=generation_options or {},
+                response_format=response_format,
             )
         else:
             resp = await asyncio.wait_for(
@@ -588,7 +612,10 @@ async def _execute_prompt(
                     provider_type=provider_type,
                     max_tokens=max_tokens,
                     temperature=0.2,
-                    config=LLMConfig(timeout=request_timeout),
+                    config=LLMConfig(
+                        timeout=request_timeout,
+                        response_format=response_format,
+                    ),
                 ),
                 timeout=request_timeout,
             )
@@ -613,10 +640,44 @@ async def _execute_prompt(
             # Retain partial text for inspection without admitting it as cached
             # or checkpointed completion. Resume must retry this prompt.
             return content
+        if output_fields:
+            try:
+                parse_answers(content, output_fields)
+            except (ValueError, TypeError):
+                if outcomes is not None:
+                    outcomes[label] = {
+                        "status": "failed",
+                        "reason": "Native batch did not return all required answers",
+                        "finish_reason": finish_reason,
+                    }
+                return content
         cache.put(cache_content, model_name, request_definition, content)
         check_deadline()
         if outcomes is not None:
-            outcomes[label] = {"status": "success", "cached": False}
+            outcomes[label] = {
+                "status": "success",
+                "cached": False,
+                "finish_reason": finish_reason,
+                "provider": getattr(resp, "provider", None),
+                "model": getattr(resp, "model_used", None),
+                "usage": getattr(resp, "usage", None),
+                "elapsed_seconds": time.monotonic()
+                - (prompt_deadline - max_prompt_timeout),
+                "native_timing": {
+                    key: value
+                    for key, value in (getattr(resp, "metadata", None) or {})
+                    .get("raw", {})
+                    .items()
+                    if key
+                    in {
+                        "total_duration",
+                        "load_duration",
+                        "prompt_eval_duration",
+                        "eval_duration",
+                    }
+                },
+                "request_sha256": request_sha256,
+            }
         logger.debug("  ✅ Prompt completed successfully")
         return content
     except asyncio.TimeoutError:
@@ -722,13 +783,11 @@ def process_llm(
     Returns:
         True if processing successful, False otherwise
     """
-    import asyncio
+    from .sync_bridge import run_async
 
     # Run the async implementation in a single event loop
     try:
-        return asyncio.run(
-            _process_llm_async(target_dir, output_dir, verbose, **kwargs)
-        )
+        return run_async(_process_llm_async(target_dir, output_dir, verbose, **kwargs))
     except Exception as e:
         logger = logging.getLogger("llm")
         log_step_error(logger, f"LLM processing failed: {e}")

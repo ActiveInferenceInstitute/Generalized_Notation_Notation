@@ -214,6 +214,8 @@ def generate_llm_summary(results: Dict[str, Any]) -> str:
             ("Structural Analyses", "structural"),
             ("LLM Summaries", "summaries"),
             ("LLM Prompts", "prompts"),
+            ("Source-part Answers", "source_parts"),
+            ("Provider Request Groups", "request_groups"),
         ):
             completed, required = f"{kind}_completed", f"{kind}_required"
             if completed in coverage and required in coverage:
@@ -226,6 +228,16 @@ def generate_llm_summary(results: Dict[str, Any]) -> str:
             "\nStructural analysis does not count as an LLM response. "
             "Required unfinished prompts prevent complete-source success.\n"
         )
+        multipart = sum(
+            analysis.get("source_context", {}).get("mode") == "multipart"
+            for analysis in results.get("analysis_results", [])
+        )
+        if multipart:
+            summary += (
+                f"\n**Multipart Sources**: {multipart}. Each source part is analyzed "
+                "independently for every prompt. Complete part coverage does not "
+                "establish joint analysis of cross-part relationships.\n"
+            )
 
     summary += f"""
 ## Analysis Results

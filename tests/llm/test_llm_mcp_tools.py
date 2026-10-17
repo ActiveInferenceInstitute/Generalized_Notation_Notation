@@ -13,6 +13,7 @@ from gnn.llm.defaults import DEFAULT_OLLAMA_MODEL
 from gnn.llm.mcp import (
     _ANALYSIS_TYPES,
     analyze_gnn_with_llm_mcp,
+    generate_llm_documentation_mcp,
     get_llm_module_info_mcp,
     get_llm_providers_mcp,
     process_llm_mcp,
@@ -163,3 +164,74 @@ class TestProcessLLMMCP:
         )
         assert result["success"] is True
         assert captured["verbose"] is True
+
+
+def test_mcp_local_override_uses_configured_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OLLAMA_MODEL", "local-capable:exact")
+    captured = {}
+
+    def analyze(path: Path, ollama_model: str | None = None) -> dict:
+        captured["model"] = ollama_model
+        return {"llm_summary_status": "unavailable"}
+
+    monkeypatch.setattr("gnn.llm.mcp.analyze_gnn_file_with_llm", analyze)
+    result = analyze_gnn_with_llm_mcp(str(SAMPLE_GNN), provider="ollama")
+    assert captured["model"] == "local-capable:exact"
+    assert result["success"] is False
+
+
+def test_mcp_inventory_reports_http_configuration_not_sdk_readiness(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OLLAMA_HOST", "http://127.0.0.1:23001")
+    monkeypatch.setenv("OLLAMA_DISABLED", "true")
+    ollama = get_llm_providers_mcp()["providers"]["ollama"]
+    assert ollama["available"] is True
+    assert ollama["configured"] is False
+    assert ollama["base_url"] == "http://127.0.0.1:23001"
+    assert ollama["readiness"] == "not_probed"
+
+
+@pytest.mark.asyncio
+async def test_mcp_resolves_async_analyzer_in_running_loop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def analyze(path: Path, ollama_model: str | None = None) -> dict:
+        return {"llm_summary_status": "available", "llm_summary": "awaited"}
+
+    monkeypatch.setattr("gnn.llm.mcp.analyze_gnn_file_with_llm", analyze)
+    result = analyze_gnn_with_llm_mcp(str(SAMPLE_GNN), provider="ollama")
+    assert result["success"] is True
+    assert result["llm_summary"] == "awaited"
+
+
+@pytest.mark.parametrize("format", ["markdown", "text"])
+def test_structural_documentation_writes_requested_readable_format(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, format: str
+) -> None:
+    output = tmp_path / f"documentation.{format}"
+    monkeypatch.setattr(
+        "gnn.llm.mcp._resolve_output_file", lambda value, **kwargs: Path(value)
+    )
+    result = generate_llm_documentation_mcp(str(SAMPLE_GNN), str(output), format)
+    assert result["success"] and result["analysis_source"] == "structural"
+    text = output.read_text()
+    assert text.startswith("# " if format == "markdown" else SAMPLE_GNN.name)
+    assert result["variable_documentation"][0]["name"] in text
+    assert "Variables" in text and "Connections" in text and "Usage Examples" in text
+    assert result["usage_examples"][0]["code"] in text
+    if format == "text":
+        assert "## " not in text and "**" not in text and "```" not in text
+
+
+def test_documentation_refuses_unknown_format_before_generation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def unexpected(*args: object, **kwargs: object) -> None:
+        raise AssertionError("Unknown format must fail before generation")
+
+    monkeypatch.setattr("gnn.llm.mcp.generate_documentation", unexpected)
+    result = generate_llm_documentation_mcp(str(SAMPLE_GNN), format="json")
+    assert not result["success"] and "format" in result["error"]

@@ -30,6 +30,17 @@ test-full:
 test-mod MODULE:
     uv run pytest tests/{{ MODULE }}/ -v
 
+# Explicit Mac local-LLM corpus profile; provision gemma3:12b first.
+llm-local-setup:
+    UV_PROJECT_ENVIRONMENT=.venv/local_llm uv sync --frozen --extra dev --python 3.14
+
+llm-local *ARGS:
+    UV_PROJECT_ENVIRONMENT=.venv/local_llm uv run --frozen --no-sync --python 3.14 python scripts/run_local_llm.py {{ ARGS }}
+
+# Live provider/pipeline tests. Set OLLAMA_TEST_MODEL to an installed tag.
+test-llm-local:
+    UV_PROJECT_ENVIRONMENT=.venv/local_llm uv run --frozen --no-sync --python 3.14 python -m pytest tests/llm -m ollama -q -rs
+
 # Run tests with coverage report (same marker filter as the default suite:
 # SC-44 replaced the per-file Ollama ignores with the `ollama` marker and
 # excludes env-heavy uv-sync tests).

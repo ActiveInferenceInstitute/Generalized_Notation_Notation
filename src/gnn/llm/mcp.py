@@ -8,7 +8,9 @@ through MCP.
 
 from __future__ import annotations
 
+import inspect
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -22,6 +24,7 @@ from . import (
     process_llm,
 )
 from .defaults import DEFAULT_OLLAMA_MODEL
+from .sync_bridge import run_async
 
 _GNN_MODEL_SUFFIXES = {".md", ".json", ".yaml", ".yml"}
 _ANALYSIS_TYPES = ("comprehensive", "summary", "complexity", "connections")
@@ -132,14 +135,19 @@ def analyze_gnn_with_llm_mcp(
     Args:
         gnn_file_path: Path to the GNN `.md` model file.
         analysis_type: One of "comprehensive", "summary", "complexity", "connections".
-        provider: Optional provider override; "ollama" pins the default
-            local tag for the summary call, any other value uses the
-            standard multi-provider routing.
+        provider: Optional override; "ollama" pins the configured local
+            tag for the summary call. None uses default routing;
+            other explicit values are rejected.
 
     Returns:
         Dictionary with success flag, analysis type, and LLM output.
     """
     try:
+        if provider not in (None, "ollama"):
+            return {
+                "success": False,
+                "error": "This tool supports explicit Ollama or default routing; use LLMProcessor for other explicit providers",
+            }
         if analysis_type not in _ANALYSIS_TYPES:
             return {
                 "success": False,
@@ -155,24 +163,58 @@ def analyze_gnn_with_llm_mcp(
         # Honor the provider override where the analyzer supports it: "ollama"
         # pins the pipeline's default local tag for the summary call; other
         # names use the standard multi-provider routing.
-        ollama_model = DEFAULT_OLLAMA_MODEL if provider == "ollama" else None
+        ollama_model = (
+            (os.getenv("OLLAMA_MODEL") or DEFAULT_OLLAMA_MODEL)
+            if provider == "ollama"
+            else None
+        )
         result = analyze_gnn_file_with_llm(gnn_path, ollama_model=ollama_model)
+        if inspect.iscoroutine(result):
+            result = run_async(result)
         if isinstance(result, dict):
             return {
-                "success": True,
+                "success": result.get("llm_summary_status") != "unavailable",
                 "analysis_type": analysis_type,
                 "provider": provider,
                 **result,
             }
         return {
-            "success": True,
+            "success": False,
             "analysis_type": analysis_type,
             "provider": provider,
-            "analysis": str(result),
+            "error": "LLM analyzer did not return an analysis dictionary",
         }
     except Exception as e:
         logger.error(f"analyze_gnn_with_llm_mcp error: {e}", exc_info=True)
         return {"success": False, "error": str(e)}
+
+
+def _format_structural_documentation(result: Dict[str, Any], format: str) -> str:
+    """Render every structural section as the requested human-readable format."""
+    overview = str(result.get("model_overview", "")).strip()
+    if format == "text":
+        import re
+
+        overview = re.sub(r"(?m)^#{1,6}\s+", "", overview).replace("**", "")
+    sections = [overview]
+    for title, key in (
+        ("Variables", "variable_documentation"),
+        ("Connections", "connection_documentation"),
+        ("Usage Examples", "usage_examples"),
+    ):
+        sections.append(f"### {title}" if format == "markdown" else title)
+        for item in result.get(key, []):
+            label = item.get("name") or item.get("title") or item.get("connection")
+            sections.append(f"- {label}: {item.get('description', '')}")
+            if item.get("definition"):
+                sections.append(str(item["definition"]))
+            if item.get("code"):
+                sections.append(
+                    f"```text\n{item['code']}\n```"
+                    if format == "markdown"
+                    else str(item["code"])
+                )
+    return "\n\n".join(sections).strip() + "\n"
 
 
 def generate_llm_documentation_mcp(
@@ -181,11 +223,11 @@ def generate_llm_documentation_mcp(
     format: str = "markdown",
 ) -> Dict[str, Any]:
     """
-    Generate human-readable documentation for a GNN model using an LLM.
+    Generate deterministic structural documentation for a GNN model.
 
-    Produces: title, abstract, StateSpace description, parameter tables,
-    mathematical formulations, and usage examples — formatted as Markdown
-    or plain text.
+    Produces a model overview, extracted variable and connection descriptions,
+    and generated usage examples, formatted as Markdown or plain text.
+    This operation does not call an LLM provider.
 
     Args:
         gnn_file_path: Path to the GNN `.md` model file.
@@ -196,6 +238,8 @@ def generate_llm_documentation_mcp(
         Dictionary with success flag and generated documentation string.
     """
     try:
+        if format not in ("markdown", "text"):
+            raise ValueError("format must be 'markdown' or 'text'")
         # Read the GNN file and build a lightweight analysis dict
         # that matches the signature of generate_documentation(file_analysis).
         gnn_path = _resolve_gnn_model_path(
@@ -257,17 +301,10 @@ def generate_llm_documentation_mcp(
             if resolved_output_path:
                 out = resolved_output_path
                 out.parent.mkdir(parents=True, exist_ok=True)
-                if format == "text":
-                    out.write_text(
-                        result.get("model_overview", str(result)), encoding="utf-8"
-                    )
-                else:
-                    import json as _json
-
-                    out.write_text(
-                        _json.dumps(result, indent=2, default=str), encoding="utf-8"
-                    )
-            return {"success": True, **result}
+                out.write_text(
+                    _format_structural_documentation(result, format), encoding="utf-8"
+                )
+            return {"success": True, "analysis_source": "structural", **result}
         return {"success": True, "documentation": str(result)}
     except Exception as e:
         logger.error(f"generate_llm_documentation_mcp error: {e}", exc_info=True)
@@ -297,7 +334,8 @@ def get_llm_providers_mcp() -> Dict[str, Any]:
         }
         # Anthropic
         providers["anthropic"] = {
-            "available": importlib.util.find_spec("anthropic") is not None,
+            "available": False,
+            "implemented": False,
             "configured": bool(os.getenv("ANTHROPIC_API_KEY")),
         }
         # OpenRouter and Perplexity ride the openai client library, so their
@@ -311,14 +349,20 @@ def get_llm_providers_mcp() -> Dict[str, Any]:
             "configured": bool(os.getenv("PERPLEXITY_API_KEY")),
         }
         # Ollama (local)
+        from .provider_identity import resolved_endpoint
+        from .providers.base_provider import ProviderType
+
+        ollama_endpoint, _ = resolved_endpoint(ProviderType.OLLAMA)
         providers["ollama"] = {
-            "available": importlib.util.find_spec("ollama") is not None,
-            "configured": bool(os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")),
-            "base_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+            "available": True,  # Maintained HTTP transport uses the standard library.
+            "configured": os.getenv("OLLAMA_DISABLED", "").lower() not in {"1", "true"},
+            "base_url": ollama_endpoint,
+            "readiness": "not_probed",  # Configuration is not live inference evidence.
         }
         # Google Gemini
         providers["google"] = {
-            "available": importlib.util.find_spec("google.generativeai") is not None,
+            "available": False,
+            "implemented": False,
             "configured": bool(os.getenv("GOOGLE_API_KEY")),
         }
 
@@ -446,7 +490,8 @@ def register_tools(mcp_instance: Any) -> None:
                     },
                     "provider": {
                         "type": "string",
-                        "description": "LLM provider override (openai, anthropic, ollama, google)",
+                        "enum": ["ollama"],
+                        "description": "Explicit local Ollama, or null for default routing",
                         "nullable": True,
                     },
                 },
@@ -477,7 +522,7 @@ def register_tools(mcp_instance: Any) -> None:
                 },
                 "required": ["gnn_file_path"],
             },
-            "Generate human-readable Markdown documentation for a GNN model using an LLM.",
+            "Generate Markdown or text documentation from deterministic GNN structural analysis.",
         ),
         (
             "get_llm_providers",

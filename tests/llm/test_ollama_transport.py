@@ -530,6 +530,8 @@ def test_http_preflight_has_no_sdk_cli_generation_or_model_replacement(
         "server_version": "0.35.0",
         "context_policy": "whole-context-v1",
         "status": "ready",
+        "model_digest": None,
+        "generation_options": {},
     }
     assert received.get_paths == ["/prefix/api/version", "/prefix/api/tags"]
     assert not received
@@ -633,3 +635,136 @@ def test_terminal_stream_consumer_delay_cannot_renew_completion_budget(
 
     with pytest.raises(TimeoutError):
         asyncio.run(collect())
+
+
+def test_context_and_seed_options_reach_native_payload(
+    daemon: Callable[..., Any],
+) -> None:
+    host, received, _ = daemon()
+    provider = OllamaProvider(
+        base_url=host, generation_options={"num_ctx": 32768, "seed": 42}
+    )
+    assert provider.initialize()
+    asyncio.run(
+        provider.generate_response(
+            [LLMMessage(role="user", content="source")], LLMConfig(model=MODEL)
+        )
+    )
+    assert received[0]["body"]["options"]["num_ctx"] == 32768
+    assert received[0]["body"]["options"]["seed"] == 42
+
+
+def test_frozen_empty_generation_options_do_not_inherit_later_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OLLAMA_NUM_CTX", "32768")
+    assert OllamaProvider().generation_options == {"num_ctx": 32768}
+    assert OllamaProvider(generation_options={}).generation_options == {}
+
+
+@pytest.mark.timeout(300)
+def test_model_digest_change_refuses_resume_and_invalidates_cache(
+    daemon: Callable[..., Any], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from gnn.llm import process_llm
+
+    inventory = {"models": [{"name": MODEL, "digest": "a" * 64}]}
+    host, received, _ = daemon(tags_response=inventory)
+    monkeypatch.setenv("OLLAMA_HOST", host)
+    target = tmp_path / "models"
+    target.mkdir()
+    (target / "model.md").write_text(
+        "## GNNSection\nActInfPOMDP\n## ModelName\nDigest control\n"
+    )
+    output = tmp_path / "output"
+    # This tests digest custody, not startup speed: coverage instruments each
+    # isolated request process, and six cold imports can exceed 30 seconds.
+    options = dict(provider="ollama", model=MODEL, custom_prompts=[], llm_timeout=120)
+    assert process_llm(target, output, **options), (
+        output / "llm_results.json"
+    ).read_text()
+    assert len(received) == 6
+    inventory["models"][0]["digest"] = "b" * 64
+    assert not process_llm(target, output, resume=True, **options)
+    refused = json.loads((output / "llm_results.json").read_text())
+    assert refused["coverage"]["prompts_completed"] == 0
+    assert len(refused["unfinished_work"]) == 6
+    assert "runtime/model digest" in refused["errors"][0]["error"]
+    assert len(received) == 6
+    assert process_llm(target, output, **options), (
+        output / "llm_results.json"
+    ).read_text()
+    assert len(received) == 12
+
+
+@pytest.mark.parametrize("reason", [None, "length"])
+def test_stream_cannot_hide_nonterminal_finish_reason(
+    daemon: Callable[..., Any], reason: str | None
+) -> None:
+    host, _, _ = daemon(
+        chunks=[
+            json.dumps(
+                _response(done_reason=reason, message={"content": "partial"})
+            ).encode()
+            + b"\n"
+        ]
+    )
+
+    async def consume() -> list[str]:
+        return [
+            part
+            async for part in _provider(host).generate_stream(
+                [LLMMessage("user", "source")], LLMConfig(model=MODEL)
+            )
+        ]
+
+    with pytest.raises(RuntimeError, match="unfinished"):
+        asyncio.run(consume())
+
+
+@pytest.mark.parametrize("valid", [True, False])
+def test_bundled_prompts_submit_source_once_and_require_all_answers(
+    daemon: Callable[..., Any],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    valid: bool,
+) -> None:
+    from gnn.llm import process_llm
+
+    labels = [
+        "explain_model",
+        "identify_components",
+        "analyze_structure",
+        "extract_parameters",
+        "practical_applications",
+        "technical_description",
+        "nontechnical_description",
+        "runtime_behavior",
+    ]
+    answers = {label: f"answer for {label}" for label in labels}
+    if not valid:
+        answers.pop(labels[-1])
+    host, received, _ = daemon(
+        response=_response(message={"content": json.dumps(answers)})
+    )
+    monkeypatch.setenv("OLLAMA_HOST", host)
+    target = tmp_path / "models"
+    target.mkdir()
+    source = "## GNNSection\nActInfPOMDP\n## ModelName\nUniqueBatchSource\n"
+    (target / "model.md").write_text(source)
+    output = tmp_path / "output"
+    options = dict(provider="ollama", model=MODEL, batch_prompts=True, llm_timeout=30)
+    assert process_llm(target, output, **options) is valid
+    assert len(received) == 2
+    payload = received[1]["body"]
+    assert payload["messages"][1]["content"].count(source) == 1
+    assert set(payload["format"]["required"]) == set(labels)
+    result = json.loads((output / "llm_results.json").read_text())
+    assert result["coverage"]["prompts_completed"] == (9 if valid else 1)
+    assert result["coverage"]["source_parts_completed"] == (9 if valid else 1)
+    if valid:
+        assert process_llm(target, output, resume=True, **options)
+        assert len(received) == 2
+    else:
+        assert len(result["unfinished_work"]) == 8
+        assert result["cache_stats"]["writes"] == 1

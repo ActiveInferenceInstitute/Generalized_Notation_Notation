@@ -51,6 +51,7 @@ async def test_async_summarize_with_ollama_model_uses_ollama_provider_and_config
         content="summary text",
         model_used="smollm2:135m-instruct-q4_K_S",
         provider="ollama",
+        finish_reason="stop",
     )
 
     class RecordingProcessor:

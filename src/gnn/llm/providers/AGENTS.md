@@ -1,40 +1,27 @@
 # LLM Provider Sub-module
 
-## Overview
+Providers implement `BaseLLMProvider`: `initialize`, `validate_config`, async
+`generate_response`, async-generator `generate_stream`, `close`, and
+`provider_type`, `default_model`, `available_models` properties. The advertised
+model list is not a live daemon/model readiness probe. There is no common
+`health_check` or `get_available_models` interface; OpenRouter has its own
+additional model-list method.
 
-Implements the provider abstraction layer for the LLM module. Each provider implements the `BaseLLMProvider` abstract class, ensuring consistent behavior across different LLM backends.
+The maintained adapters are Ollama, OpenAI, OpenRouter and Perplexity. Explicit
+provider requests remain pinned even on unavailable providers or circuit-breaker
+failure. Generic unpinned operations retain the shared processor's recovery
+behavior. See [parent contracts](../AGENTS.md).
 
-## Architecture
+Ollama uses bounded standard-library HTTP chat, preserving whole messages with
+input truncation and shifting disabled. `preflight_model` verifies stable runtime
+>=0.35.0 and the exact model tag, and records its digest and context/seed options.
+Generation uses one total request deadline, including runtime capability checks;
+pipeline workers supply hard process containment. Missing SDK/CLI is irrelevant
+to this transport. Never start/pull a daemon or change the model implicitly.
 
-```
-providers/
-├── __init__.py                # Provider registry and factory (48 lines)
-├── base_provider.py           # Abstract base class defining the provider interface (255 lines)
-├── ollama_provider.py         # Ollama local model provider (330 lines)
-├── openai_provider.py         # OpenAI API provider (354 lines)
-├── openrouter_provider.py     # OpenRouter multi-model gateway (436 lines)
-└── perplexity_provider.py     # Perplexity AI provider (419 lines)
-```
+Native completion is distinct from receiving text. Preserve finish reason,
+usage and transport metadata in `LLMResponse`. Token-limit and unfinished replies
+cannot satisfy complete prompt coverage or enter a completed response cache.
 
-## Provider Interface
-
-All providers implement `BaseLLMProvider` with these core members:
-
-- **`generate_response(messages, config) → LLMResponse`** — Text generation.
-- **`generate_stream(messages, config) → AsyncGenerator`** — Streaming text generation.
-- **`get_available_models() → List[str]`** — List models available from this provider.
-- **`health_check() → bool`** — Verify provider connectivity.
-- **`default_model` / `available_models`** — Properties declaring provider defaults.
-
-## Provider Selection
-
-The provider factory in `__init__.py` selects providers based on:
-1. Explicit configuration in `input/config.yaml`
-2. Environment variables (`OLLAMA_MODEL`, `OPENAI_API_KEY`, etc.)
-3. Fallback chain: Ollama → OpenAI → OpenRouter → Perplexity
-
-## Parent Module
-
-See [llm/AGENTS.md](../AGENTS.md) for the overall LLM architecture.
-
-**Version**: [pyproject.toml](../../../../pyproject.toml) (canonical)
+See [provider overview](README.md), [specification](SPEC.md), and
+[Mac runbook](../../../../docs/llm/README.md).

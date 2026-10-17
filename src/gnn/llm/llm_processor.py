@@ -415,11 +415,15 @@ class LLMProcessor:
             """Return whether healthy."""
             return self._circuit_breakers.get(ptype, 0) < self.MAX_FAILURES
 
-        if (
-            provider_type
-            and provider_type in self.providers
-            and _is_healthy(provider_type)
-        ):
+        if provider_type is not None:
+            if provider_type not in self.providers:
+                raise RuntimeError(
+                    f"Requested provider {provider_type.value} is unavailable"
+                )
+            if not _is_healthy(provider_type):
+                raise RuntimeError(
+                    f"Requested provider {provider_type.value} circuit breaker is open"
+                )
             return self.providers[provider_type]
 
         if analysis_type is not None:
@@ -486,6 +490,8 @@ class LLMProcessor:
             self._circuit_breakers[provider.provider_type] = (
                 self._circuit_breakers.get(provider.provider_type, 0) + 1
             )
+            if provider_type is not None:
+                raise
             # Try recovery provider
             return await self._try_fallback_analysis(
                 gnn_content, analysis_type, provider.provider_type, config
@@ -574,7 +580,6 @@ class LLMProcessor:
         ]
 
         # Execute all analyses in parallel
-        import asyncio
 
         responses = await asyncio.gather(*coros, return_exceptions=True)
         for provider_name, response in zip(provider_names, responses):
@@ -675,7 +680,8 @@ class LLMProcessor:
             self._circuit_breakers[provider.provider_type] = (
                 self._circuit_breakers.get(provider.provider_type, 0) + 1
             )
-
+            if provider_type is not None:
+                raise
             # Try recovery providers
             for fallback_provider in self.providers.values():
                 if (
@@ -1000,7 +1006,9 @@ def analyze_gnn_model(
             if isinstance(analysis_type, AnalysisType)
             else analysis_type
         )
-        return asyncio.run(analyze_gnn_with_llm(gnn_content, analysis_name))
+        from .sync_bridge import run_async
+
+        return run_async(analyze_gnn_with_llm(gnn_content, analysis_name))
     except Exception as e:
         return _error_result(e)
 

@@ -9,7 +9,6 @@ Uses the multi-provider LLM system for provider selection, request handling,
 and analysis.
 """
 
-import asyncio
 import logging
 import os
 from typing import Any, Dict, List, Optional, cast
@@ -23,11 +22,12 @@ from .llm_processor import (
 )
 from .llm_processor import get_processor as get_global_processor
 from .providers.base_provider import LLMConfig, LLMMessage, ProviderType
+from .sync_bridge import run_async
 
 logger = logging.getLogger(__name__)
 
 # Constants for default values
-DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_MODEL: Optional[str] = None  # Let the selected provider resolve its model.
 DEFAULT_MAX_TOKENS = 8000
 
 
@@ -84,19 +84,7 @@ class LLMOperations:
 
     def _run_async(self, coro: Any) -> Any:
         """Run a coroutine from synchronous context, handling already-running event loops."""
-        import concurrent.futures
-
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = cast(Any, None)
-
-        if loop and loop.is_running():
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                future = pool.submit(asyncio.run, coro)
-                return future.result()
-        else:
-            return asyncio.run(coro)
+        return run_async(coro)
 
     def construct_prompt(self, content_parts: List[str], task_description: str) -> str:
         """
@@ -132,7 +120,7 @@ class LLMOperations:
     def get_llm_response(
         self,
         prompt: str,
-        model: str = DEFAULT_MODEL,
+        model: Optional[str] = DEFAULT_MODEL,
         max_tokens: int = DEFAULT_MAX_TOKENS,
     ) -> str:
         """
@@ -158,7 +146,7 @@ class LLMOperations:
     async def _get_async_response(
         self,
         prompt: str,
-        model: str = DEFAULT_MODEL,
+        model: Optional[str] = DEFAULT_MODEL,
         max_tokens: int = DEFAULT_MAX_TOKENS,
     ) -> str:
         """Async version of get_llm_response."""
@@ -174,6 +162,8 @@ class LLMOperations:
                 temperature=0.3,
             )
 
+            if response.finish_reason != "stop":
+                raise RuntimeError(f"LLM response unfinished: {response.finish_reason}")
             return response.content
 
         except Exception as e:
@@ -203,6 +193,8 @@ class LLMOperations:
             config=config,
             additional_context=additional_context,
         )
+        if response.finish_reason != "stop":
+            raise RuntimeError(f"LLM analysis unfinished: {response.finish_reason}")
         return response.content
 
     def summarize_gnn(
@@ -245,7 +237,9 @@ class LLMOperations:
                 gnn_content,
                 AnalysisType.SUMMARY,
                 provider_type=ProviderType.OLLAMA,
-                config=LLMConfig(model=ollama_model),
+                config=LLMConfig(
+                    model=ollama_model, max_tokens=max(1024, max_length * 3)
+                ),
             )
         return await self._async_analyze(gnn_content, AnalysisType.SUMMARY)
 
@@ -406,7 +400,9 @@ def construct_prompt(content_parts: List[str], task_description: str) -> str:
 
 
 def get_llm_response(
-    prompt: str, model: str = DEFAULT_MODEL, max_tokens: int = DEFAULT_MAX_TOKENS
+    prompt: str,
+    model: Optional[str] = DEFAULT_MODEL,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
 ) -> str:
     """Convenience function for getting LLM response."""
     return _get_llm_ops().get_llm_response(prompt, model, max_tokens)

@@ -388,7 +388,6 @@ module = [
     "mpl_toolkits.*",
     "networkx.*",
     "openai.*",
-    "ollama.*",
     "pandas.*",
     "pedalboard.*",
     "plotly.*",

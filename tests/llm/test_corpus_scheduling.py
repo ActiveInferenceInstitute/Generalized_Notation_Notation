@@ -328,9 +328,10 @@ def test_checkpoint_binds_complete_context_policy(corpus: Any) -> None:
         root, output, llm_config={"model": "configured:exact"}, custom_prompts=[]
     )
     binding = json.loads((output / "llm_checkpoint.json").read_text())["binding"]
-    assert binding["schema_version"] == 2
+    assert binding["schema_version"] == 3
     assert binding["effective_options"]["input_policy"] == "complete_context_v1"
-    assert binding["effective_options"]["max_tokens_ceiling"] == 512
+    assert binding["effective_options"]["max_tokens"] is None
+    assert binding["effective_options"]["source_chunk_bytes"] is None
 
 
 @pytest.mark.asyncio
@@ -596,8 +597,12 @@ def test_last_cache_publication_cannot_make_exhausted_corpus_success(
 
 
 @pytest.mark.parametrize("finish_reason", ["length", "content_filter", "tool_calls"])
+@pytest.mark.parametrize("chunk_bytes", [None, 17])
 def test_incomplete_replies_are_retained_but_not_completed_or_cached(
-    corpus: Any, monkeypatch: pytest.MonkeyPatch, finish_reason: str
+    corpus: Any,
+    monkeypatch: pytest.MonkeyPatch,
+    finish_reason: str,
+    chunk_bytes: int | None,
 ) -> None:
     root, output, events = corpus
 
@@ -618,7 +623,11 @@ def test_incomplete_replies_are_retained_but_not_completed_or_cached(
             pass
 
     monkeypatch.setattr(api, "LLMProcessor", lambda **_: PartialProcessor())
-    options = {"llm_config": {"model": "configured:exact"}, "custom_prompts": []}
+    options = {
+        "llm_config": {"model": "configured:exact"},
+        "custom_prompts": [],
+        "source_chunk_bytes": chunk_bytes,
+    }
     for resume in (False, True):
         events.clear()
         assert not api.process_llm(root, output, resume=resume, **options)
@@ -626,17 +635,22 @@ def test_incomplete_replies_are_retained_but_not_completed_or_cached(
         assert result["coverage"]["structural_completed"] == 3
         assert result["coverage"]["prompts_completed"] == 0
         assert len(result["unfinished_work"]) == 18
-        assert events.count("partial_request") == 18
+        assert (
+            events.count("partial_request")
+            == result["coverage"]["source_parts_required"]
+        )
         assert (
             json.loads((output / "llm_checkpoint.json").read_text())["completed"] == {}
         )
         assert not list((output / ".cache").rglob("*.json"))
         for row in result["analysis_results"]:
-            assert set(row["llm_prompt_outputs"].values()) == {"partial text"}
+            assert all(
+                "partial text" in text for text in row["llm_prompt_outputs"].values()
+            )
             assert all(
                 outcome["status"] == "incomplete"
                 and outcome["finish_reason"] == finish_reason
-                for outcome in row["prompt_outcomes"].values()
+                for outcome in row["part_outcomes"].values()
             )
 
 
@@ -675,3 +689,118 @@ async def test_isolated_completion_requires_provider_stop_receipt(
         "success" if finish_reason == "stop" else "incomplete"
     )
     assert bool(list((tmp_path / "cache").glob("*.json"))) == (finish_reason == "stop")
+
+
+def test_multipart_pipeline_retains_exact_sources_and_resumes(corpus: Any) -> None:
+    root, output, events = corpus
+    options = dict(
+        llm_config={"model": "configured:exact"},
+        source_chunk_bytes=17,
+        custom_prompts=[],
+    )
+    assert api.process_llm(root, output, **options)
+    result = json.loads((output / "llm_results.json").read_text())
+    assert (
+        result["coverage"]["source_parts_completed"]
+        == result["coverage"]["source_parts_required"]
+    )
+    assert (
+        result["coverage"]["source_parts_required"]
+        > result["coverage"]["prompts_required"]
+    )
+    assert result["unfinished_source_parts"] == []
+    for row in result["analysis_results"]:
+        parts_dir = output / "source_parts" / row["artifact_stem"]
+        restored = b"".join(
+            path.read_bytes() for path in sorted(parts_dir.glob("part_*.txt"))
+        )
+        assert restored == (root / row["source_path"]).read_bytes()
+        assert row["source_context"]["joint_context"] is False
+        assert all(
+            "cross-part relationships have not been" in text
+            for text in row["llm_prompt_outputs"].values()
+        )
+    events.clear()
+    assert api.process_llm(root, output, resume=True, **options)
+    # No generation after a byte/configuration-matched explicit resume.
+    assert all(event.startswith("structure:") or event == "close" for event in events)
+    state = json.loads((output / "llm_checkpoint.json").read_text())
+    first = next(iter(state["completed_parts"]))
+    state["completed_parts"][first]["response"] = "corrupted"
+    (output / "llm_checkpoint.json").write_text(json.dumps(state))
+    assert not api.process_llm(root, output, resume=True, **options)
+
+
+def test_token_context_and_partition_changes_invalidate_resume(
+    corpus: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, output, _ = corpus
+    options = dict(
+        llm_config={"model": "configured:exact"},
+        max_tokens=3072,
+        source_chunk_bytes=24,
+        custom_prompts=[],
+    )
+    assert api.process_llm(root, output, **options)
+    checkpoint = json.loads((output / "llm_checkpoint.json").read_text())
+    assert checkpoint["binding"]["effective_options"]["max_tokens"] == 3072
+    assert not api.process_llm(
+        root, output, resume=True, **{**options, "max_tokens": 4096}
+    )
+    assert not api.process_llm(
+        root, output, resume=True, **{**options, "source_chunk_bytes": 28}
+    )
+    monkeypatch.setenv("OLLAMA_NUM_CTX", "32768")
+    assert not api.process_llm(root, output, resume=True, **options)
+
+
+def test_generation_options_bind_actual_cache_requests(
+    corpus: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, output, _ = corpus
+    options = dict(llm_config={"model": "configured:exact"}, custom_prompts=[])
+    assert api.process_llm(root, output, **options)
+    assert api.process_llm(root, output, **options)
+    assert (
+        json.loads((output / "llm_results.json").read_text())["cache_stats"]["hits"]
+        == 18
+    )
+    monkeypatch.setenv("OLLAMA_NUM_CTX", "16384")
+    assert api.process_llm(root, output, **options)
+    assert (
+        json.loads((output / "llm_results.json").read_text())["cache_stats"]["hits"]
+        == 0
+    )
+
+
+def test_invalid_provider_environment_retains_structural_receipt(
+    corpus: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, output, _ = corpus
+    monkeypatch.setattr(api, "LLMProcessor", api._LIVE_PROCESSOR_CLASS)
+    monkeypatch.setenv("OLLAMA_MAX_TOKENS", "invalid")
+    assert not api.process_llm(
+        root, output, llm_config={"model": "configured:exact"}, custom_prompts=[]
+    )
+    result = json.loads((output / "llm_results.json").read_text())
+    assert result["status"] == "partial"
+    assert result["coverage"]["structural_completed"] == 3
+    assert result["coverage"]["prompts_completed"] == 0
+    assert result["errors"][0]["stage"] == "initialization"
+    assert len(result["unfinished_work"]) == 18
+
+
+@pytest.mark.asyncio
+async def test_synchronous_corpus_entrypoint_works_inside_an_active_loop(
+    corpus: Any,
+) -> None:
+    root, output, _ = corpus
+    assert api.process_llm(
+        root, output, llm_config={"model": "configured:exact"}, custom_prompts=[]
+    )
+    assert (
+        json.loads((output / "llm_results.json").read_text())["coverage"][
+            "prompts_completed"
+        ]
+        == 18
+    )

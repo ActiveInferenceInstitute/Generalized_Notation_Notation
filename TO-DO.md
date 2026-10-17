@@ -67,7 +67,12 @@ required.
 ## Major work
 
 - [ ] **S1 — complete source-preserving long-context LLM processing (P1).**
-  Scope: design context admission and a complete multi-request/checkpoint method
+  Progress: explicit byte-preserving multipart prompts now retain independent
+  native fragment responses, exact part receipts and resumable part checkpoints.
+  Optional named-answer bundles preserve summary-first scheduling and avoid
+  resubmitting the same source for every additional task.
+  Complete part coverage does not establish joint cross-part interpretation.
+  Remaining scope: verified context admission and a joint synthesis/checkpoint method
   for large selected model sources and every required prompt. Preserve exact
   provider/model/source identities, declared budgets and original source content.
   Accept: genuine native completion for every selected source/prompt, truthful

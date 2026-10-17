@@ -49,17 +49,10 @@ def test_ollama_provider_initialize(monkeypatch: Any) -> Any:
     provider = OllamaProvider()
     ok = provider.initialize()
 
-    # The provider has a CLI recovery that can succeed even when the Python
-    # ollama package fails to list models. Test that initialization succeeds
-    # if either the Python client OR CLI recovery works.
-    if ok:
-        # Initialization succeeded (either via Python client or CLI recovery)
-        assert provider.is_initialized is True
-        info = provider.get_provider_info()
-        assert info["provider_type"] == "ollama"
-    else:
-        # Ollama is not available at all - neither Python client nor CLI
-        assert provider.is_initialized is False
+    # Transport initialization validates configuration without probing a daemon.
+    assert ok is True
+    assert provider.is_initialized is True
+    assert provider.get_provider_info()["provider_type"] == "ollama"
 
 
 @pytest.mark.unit
@@ -84,6 +77,7 @@ def test_ollama_simple_chat(monkeypatch: Any) -> Any:
         assert isinstance(result.content, str)
         assert len(result.content) > 0
         assert result.provider == "ollama"
+        assert result.finish_reason == "stop"
 
     asyncio.run(_run())
 
@@ -112,8 +106,6 @@ def test_ollama_streaming(monkeypatch: Any) -> Any:
         chunks: list[str] = []
         async for chunk in provider.generate_stream(messages, config):
             chunks.append(chunk)
-            if len("".join(chunks)) > 20:
-                break
 
         text = "".join(chunks)
         assert isinstance(text, str)

@@ -100,6 +100,10 @@ async def _analyze_gnn_file_with_llm(
             except Exception as e:
                 # Recovery: tests and earlier integrations may patch this provider.
                 try:
+                    if ollama_model is not None:
+                        raise RuntimeError(
+                            "Pinned local analysis cannot substitute a cloud provider"
+                        )
                     provider = OpenAIProvider()
                     candidate = provider.analyze(content, "summary")
                     if hasattr(candidate, "__await__"):

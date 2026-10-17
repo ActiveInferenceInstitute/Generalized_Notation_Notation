@@ -14,7 +14,9 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, Optional
+
+from gnn.pipeline._io import atomic_write_text
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +63,9 @@ class LLMCache:
     @staticmethod
     def _make_key(file_content: str, model_name: str, prompt_template: str) -> str:
         """Generate a deterministic cache key from content + model + prompt."""
-        payload = f"{file_content}\x00{model_name}\x00{prompt_template}"
+        payload = json.dumps(
+            [file_content, model_name, prompt_template], ensure_ascii=False
+        )
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def _cache_path(self, key: str) -> Path:
@@ -89,12 +93,28 @@ class LLMCache:
             try:
                 with open(path, "r") as f:
                     entry = json.load(f)
+                if not isinstance(entry, dict):
+                    raise ValueError("Cache record is not an object")
+                response = entry["response"]
+                if (
+                    entry.get("schema_version") != 2
+                    or entry.get("key") != key
+                    or entry.get("model") != model_name
+                    or not isinstance(response, str)
+                    or not response.strip()
+                    or entry.get("response_sha256")
+                    != hashlib.sha256(response.encode("utf-8")).hexdigest()
+                ):
+                    raise ValueError("Cache response identity or digest is invalid")
                 self.hits += 1
                 logger.debug(f"Cache HIT: {key[:12]}…")
-                return cast("str | None", entry.get("response"))
-            except (json.JSONDecodeError, KeyError) as exc:
+                return response
+            except (OSError, ValueError, KeyError) as exc:
                 logger.warning(f"Corrupt cache entry {key[:12]}…: {exc}")
-                path.unlink(missing_ok=True)
+                try:
+                    path.unlink(missing_ok=True)
+                except OSError:
+                    logger.debug("Cache entry could not be removed")
 
         self.misses += 1
         logger.debug(f"Cache MISS: {key[:12]}…")
@@ -120,17 +140,18 @@ class LLMCache:
         path = self._cache_path(key)
 
         entry: dict[str, Any] = {
+            "schema_version": 2,
             "key": key,
             "model": model_name,
             "timestamp": datetime.now().isoformat(),
             "content_length": len(file_content),
             "prompt_length": len(prompt_template),
             "response": response,
+            "response_sha256": hashlib.sha256(response.encode("utf-8")).hexdigest(),
         }
 
         try:
-            with open(path, "w") as f:
-                json.dump(entry, f, indent=2)
+            atomic_write_text(path, json.dumps(entry, indent=2))
             self.writes += 1
             logger.debug(f"Cache WRITE: {key[:12]}…")
         except OSError as exc:

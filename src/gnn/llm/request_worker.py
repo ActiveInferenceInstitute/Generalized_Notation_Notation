@@ -76,7 +76,9 @@ async def isolated_request(**payload: Any) -> LLMResponse:
     response = json.loads(envelope["stdout"])
     verify_remaining()
     if payload.get("preflight"):
-        ready = LLMResponse("ready", payload["model"], payload["provider"])
+        ready = LLMResponse(
+            "ready", payload["model"], payload["provider"], metadata=response
+        )
         verify_remaining()
         return ready
     if response["provider"] != payload["provider"]:
@@ -97,6 +99,12 @@ async def _request(payload: dict[str, Any]) -> dict[str, Any]:
                 "default_model": payload["model"],
                 "timeout": payload["timeout"],
                 **(
+                    {"generation_options": payload["generation_options"]}
+                    if provider == ProviderType.OLLAMA
+                    and "generation_options" in payload
+                    else {}
+                ),
+                **(
                     {"base_url": payload["endpoint_url"]}
                     if payload.get("endpoint_url")
                     else {}
@@ -115,7 +123,7 @@ async def _request(payload: dict[str, Any]) -> dict[str, Any]:
                 configured = processor.get_provider(provider)
                 if not isinstance(configured, OllamaProvider):
                     raise RuntimeError("Configured Ollama provider is unavailable")
-                await configured.preflight_model(
+                return await configured.preflight_model(
                     _validate_model_name(payload["model"]), timeout=payload["timeout"]
                 )
             return {"ready": True}
@@ -125,7 +133,11 @@ async def _request(payload: dict[str, Any]) -> dict[str, Any]:
             model_name=payload["model"],
             max_tokens=payload["max_tokens"],
             temperature=0.2,
-            config=LLMConfig(model=payload["model"], timeout=payload["timeout"]),
+            config=LLMConfig(
+                model=payload["model"],
+                timeout=payload["timeout"],
+                response_format=payload.get("response_format"),
+            ),
         )
         return asdict(response)
     finally:

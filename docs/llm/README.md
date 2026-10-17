@@ -1,384 +1,188 @@
-# LLM Multi-Provider System
+# Local and cloud LLM processing
 
-The GNN pipeline includes a sophisticated multi-provider LLM system that supports OpenAI, OpenRouter, and Perplexity APIs for analyzing GNN models. This system provides unified access to different AI capabilities while maintaining provider-specific optimizations.
+Local inference uses Ollama's HTTP chat API. Cloud keys are unnecessary. Ollama
+and downloaded model weights remain optional runtime components; ordinary
+parsing, inference backends and rule-based reports work without them. Use
+`--skip-llm` for a pipeline run without LLM calls.
 
-## Architecture Overview
+## Apple Silicon Mac setup
 
-```
-LLMProcessor
-├── OpenAIProvider (GPT-4, GPT-3.5, embeddings)
-├── OpenRouterProvider (unified access to 100+ models)
-└── PerplexityProvider (search-enhanced AI analysis)
-```
-
-## Quick Start
-
-### 1. Environment Setup
-
-Create a `.env` file based on the provided template:
+Install Ollama from [the official download](https://ollama.com/download), open
+its application, and verify the daemon. The app manages its own server; avoid
+starting a second Homebrew server on the same port.
 
 ```bash
-# Copy the example environment file
-cp src/gnn/llm/.env.example .env
-
-# Edit with your API keys
-nano .env
+ollama --version
+ollama list
+curl -f http://127.0.0.1:11434/api/version
+ollama pull smollm2:135m-instruct-q4_K_S
+ollama pull gemma3:12b
 ```
 
-Required environment variables:
-```bash
-# At least one provider key is required
-OPENAI_API_KEY=your_openai_api_key_here
-OPENROUTER_API_KEY=your_openrouter_api_key_here  
-PERPLEXITY_API_KEY=your_perplexity_api_key_here
+GNN requires a verified stable Ollama runtime >=0.35.0 for the maintained
+whole-context controls. The small default tag supports inexpensive transport
+smoke checks. A larger instruction model is preferable for detailed reports.
+The explicit Mac profile uses [Gemma 3 12B](https://ollama.com/library/gemma3:12b),
+131,072 context tokens and a 4,096-token response budget. Measure memory and
+latency on the actual host; available system memory alone does not prove GPU
+use. `ollama ps` reports processor allocation and effective context.
 
-# Optional configurations
-DEFAULT_PROVIDER=openai
-OPENROUTER_SITE_NAME="GNN Analysis Pipeline"
-```
-
-### 2. Basic Usage
-
-```python
-import asyncio
-from gnn.llm import initialize_global_processor, AnalysisType
-
-
-async def analyze_gnn_model():
-    # Initialize processor with environment settings
-    processor = await initialize_global_processor()
-
-    # Read your GNN file
-    with open("path/to/your/model.md", "r") as f:
-        gnn_content = f.read()
-
-    # Analyze the model
-    response = await processor.analyze_gnn(
-        gnn_content=gnn_content, analysis_type=AnalysisType.SUMMARY
-    )
-
-    print(f"Analysis from {response.provider}:")
-    print(response.content)
-
-    # Clean up
-    await processor.close()
-
-
-# Run the analysis
-asyncio.run(analyze_gnn_model())
-```
-
-## Provider Capabilities
-
-### OpenAI Provider
-- **Models**: GPT-4o, GPT-4o-mini, GPT-4-turbo, GPT-3.5-turbo
-- **Strengths**: General analysis, structured reasoning, embeddings
-- **Best for**: Summary, structure analysis, validation
-
-```python
-# Use OpenAI specifically
-response = await processor.analyze_gnn(
-    gnn_content=content,
-    provider_type=ProviderType.OPENAI,
-    analysis_type=AnalysisType.STRUCTURE,
-)
-```
-
-### OpenRouter Provider
-- **Models**: 100+ models from multiple providers (OpenAI, Anthropic, Google, Meta, etc.)
-- **Strengths**: Model diversity, cost optimization, provider routing
-- **Best for**: Enhancement suggestions, comparisons, specialized models
-
-```python
-# Use specific model through OpenRouter
-config = LLMConfig(
-    model="anthropic/claude-3.5-sonnet", max_tokens=2000, temperature=0.1
-)
-
-response = await processor.analyze_gnn(
-    gnn_content=content, provider_type=ProviderType.OPENROUTER, config=config
-)
-```
-
-### Perplexity Provider
-- **Models**: Sonar models with online search capabilities
-- **Strengths**: Real-time information, research augmentation, citations
-- **Best for**: Search-enhanced analysis, current research integration
-
-```python
-# Search-enhanced analysis with Perplexity
-response = await processor.analyze_gnn(
-    gnn_content=content, analysis_type=AnalysisType.SEARCH_ENHANCED
-)
-
-# Access citations if available
-if response.metadata and "citations" in response.metadata:
-    print("Sources:", response.metadata["citations"])
-```
-
-## Analysis Types
-
-The system supports different analysis types optimized for GNN models:
-
-```python
-class AnalysisType(Enum):
-    SUMMARY = "summary"  # Concise model overview
-    STRUCTURE = "structure"  # Detailed structural analysis
-    QUESTIONS = "questions"  # Generate insight questions
-    ENHANCEMENT = "enhancement"  # Improvement suggestions
-    VALIDATION = "validation"  # Model validation checks
-    COMPARISON = "comparison"  # Compare with other models
-    SEARCH_ENHANCED = "search_enhanced"  # Research-augmented analysis
-```
-
-## Advanced Features
-
-### Provider Comparison
-
-Compare responses from multiple providers:
-
-```python
-# Get analysis from all available providers
-results = await processor.compare_providers(
-    gnn_content=content, analysis_type=AnalysisType.SUMMARY
-)
-
-for provider_name, response in results.items():
-    if response:
-        print(f"\n--- {provider_name.upper()} ---")
-        print(response.content)
-```
-
-### Streaming Responses
-
-Get real-time streaming responses:
-
-```python
-messages = [
-    LLMMessage(role="system", content="You are a GNN expert."),
-    LLMMessage(role="user", content=f"Analyze this model: {gnn_content}"),
-]
-
-async for chunk in processor.generate_stream(messages):
-    print(chunk, end="", flush=True)
-```
-
-### Custom Configuration
-
-Fine-tune provider behavior:
-
-```python
-config = LLMConfig(
-    model="gpt-4o", max_tokens=3000, temperature=0.2, top_p=0.9, frequency_penalty=0.1
-)
-
-response = await processor.analyze_gnn(gnn_content=content, config=config)
-```
-
-## Provider Selection Logic
-
-The system automatically selects the best provider for each task:
-
-- **SEARCH_ENHANCED**: Perplexity → OpenRouter → OpenAI
-- **STRUCTURE**: OpenAI → OpenRouter → Perplexity  
-- **ENHANCEMENT**: OpenRouter → OpenAI → Perplexity
-- **Default**: Your configured preferred order
-
-Override with specific provider:
-```python
-response = await processor.analyze_gnn(
-    gnn_content=content, provider_type=ProviderType.PERPLEXITY
-)
-```
-
-## Error Handling
-
-The system includes comprehensive error handling with automatic fallbacks:
-
-```python
-try:
-    response = await processor.analyze_gnn(gnn_content)
-except RuntimeError as e:
-    print(f"All providers failed: {e}")
-except ValueError as e:
-    print(f"Configuration error: {e}")
-```
-
-Monitor provider availability:
-```python
-available = processor.get_available_providers()
-print(f"Available providers: {[p.value for p in available]}")
-
-info = processor.get_provider_info()
-for provider, details in info.items():
-    print(f"{provider}: {details}")
-```
-
-## Integration with GNN Pipeline
-
-The LLM processor integrates seamlessly with the GNN pipeline:
-
-```python
-# From pipeline step 13 (13_llm.py)
-from gnn.llm import get_global_processor
-
-
-async def analyze_discovered_models(gnn_files):
-    processor = get_global_processor()
-
-    if not processor:
-        processor = await initialize_global_processor()
-
-    results = []
-    for gnn_file in gnn_files:
-        try:
-            response = await processor.analyze_gnn(
-                gnn_content=gnn_file.read_text(), analysis_type=AnalysisType.STRUCTURE
-            )
-            results.append(
-                {
-                    "file": gnn_file.name,
-                    "analysis": response.content,
-                    "provider": response.provider,
-                    "tokens": response.usage,
-                }
-            )
-        except Exception as e:
-            logger.error(f"Failed to analyze {gnn_file}: {e}")
-
-    return results
-```
-
-## Configuration Options
-
-### Environment Variables
+Create the separate Python 3.14 local-LLM profile (the existing native environment is preserved):
 
 ```bash
-# Provider API Keys
-OPENAI_API_KEY=sk-...
-OPENROUTER_API_KEY=sk-or-...
-PERPLEXITY_API_KEY=pplx-...
-
-# Provider Preferences
-DEFAULT_PROVIDER=openai|openrouter|perplexity
-# Reserved — ENABLE_FALLBACK and ENABLE_STREAMING are not currently consumed by src/:
-ENABLE_FALLBACK=true|false
-ENABLE_STREAMING=true|false
-
-# Default Parameters — module-level defaults in src/gnn/llm, not read from env:
-# DEFAULT_TEMPERATURE is reserved (not currently consumed by src/);
-# DEFAULT_MAX_TOKENS is a module constant default, not an env var.
-DEFAULT_TEMPERATURE=0.3
-DEFAULT_MAX_TOKENS=2000
-
-# OpenAI Specific
-OPENAI_ORG_ID=org-...
-OPENAI_BASE_URL=https://api.openai.com/v1
-
-# OpenRouter Specific  
-OPENROUTER_SITE_URL=https://your-site.com
-OPENROUTER_SITE_NAME="Your Application Name"
+just llm-local-setup
 ```
 
-### Programmatic Configuration
+Then run:
 
-```python
-# Custom provider configuration
-provider_configs = {
-    "openai": {"organization": "org-your-org", "base_url": "https://api.openai.com/v1"},
-    "openrouter": {"site_url": "https://myapp.com", "site_name": "My GNN Analysis App"},
-}
-
-processor = LLMProcessor(
-    preferred_providers=[ProviderType.PERPLEXITY, ProviderType.OPENAI],
-    api_keys={"perplexity": "pplx-...", "openai": "sk-..."},
-    provider_configs=provider_configs,
-)
-```
-
-## Best Practices
-
-1. **API Key Security**:
-   - Use environment variables, never hardcode keys
-   - Rotate keys regularly
-   - Monitor usage and costs
-
-2. **Provider Selection**:
-   - Use Perplexity for research-heavy analysis
-   - Use OpenAI for general analysis and structured tasks
-   - Use OpenRouter for cost optimization and model diversity
-
-3. **Error Handling**:
-   - Always handle provider failures gracefully
-   - Implement retry logic for transient errors
-   - Monitor provider availability
-
-4. **Performance**:
-   - Use streaming for long responses
-   - Implement caching for repeated analyses
-   - Consider token limits and costs
-
-5. **GNN-Specific**:
-   - Provide context about Active Inference concepts
-   - Use structured prompts for consistent analysis
-   - Validate responses for scientific accuracy
-
-## Troubleshooting
-
-### Common Issues
-
-**No providers initialized**:
 ```bash
-# Check API keys are set
-env | grep -E "(OPENAI|OPENROUTER|PERPLEXITY)_API_KEY"
+# Real chat, streaming, provider selection and complete pipeline responses.
+OLLAMA_TEST_MODEL=gemma3:12b just test-llm-local
 
-# Verify key format and permissions
-python -c "import os; print('✓' if os.getenv('OPENAI_API_KEY', '').startswith('sk-') else '✗ Invalid OpenAI key format')"
+# All selected example models, every default prompt, local provider only.
+just llm-local --output-dir output/local_llm
+
+# Explicit resume, with identical model/source/options and verified responses.
+just llm-local --output-dir output/local_llm --resume
 ```
 
-**Provider connection errors**:
-```python
-# Test individual providers
-provider = OpenAIProvider(api_key="sk-...")
-success = provider.initialize()
-print(f"OpenAI initialization: {'✓' if success else '✗'}")
+Without `just`, set `UV_PROJECT_ENVIRONMENT=.venv/local_llm` and run `uv sync --frozen --extra dev --python 3.14`, then `uv run --frozen --no-sync --python 3.14 python scripts/run_local_llm.py`.
+The driver accepts `--model`, `--target-dir`, `--output-dir`, `--context-tokens`,
+`--source-chunk-bytes`, `--max-tokens`, `--prompt-timeout`, `--llm-timeout`, and
+`--response-words`, `--no-batch-prompts`, and `--resume`. It never starts a daemon, downloads weights, samples files, or
+changes the selected model. Provisioning is an explicit separate operation.
+Failures exit nonzero and retain coverage, partial text and checkpoints.
+
+## Full pipeline and single-file use
+
+The ordinary pipeline keeps the portable small default. To explicitly enable
+this Mac's larger local configuration:
+
+```bash
+export DEFAULT_PROVIDER=ollama
+export OLLAMA_MODEL=gemma3:12b
+export OLLAMA_NUM_CTX=131072
+export OLLAMA_SEED=42
+export GNN_LLM_MAX_TOKENS=4096
+export GNN_LLM_CHUNK_BYTES=65536
+export GNN_LLM_PROMPT_TIMEOUT=180
+export GNN_LLM_BATCH_PROMPTS=1
+export GNN_LLM_RESPONSE_WORDS=160
+UV_PROJECT_ENVIRONMENT=.venv/local_llm uv run --frozen --no-sync --python 3.14 python src/gnn/main.py --only-steps '13,23,24' --verbose
 ```
 
-**Rate limiting**:
-```python
-# Implement backoff
-import asyncio
+Step 24 uses the selected local tag for its executive report. Missing providers,
+unfinished responses and invalid report structure produce an explicitly
+`rule_based` report. An explicitly selected provider does not switch to a cloud
+provider after failure. Single-file MCP analysis with `provider="ollama"` honors
+`OLLAMA_MODEL` and reports an unavailable summary as failure while preserving
+structural results.
 
+For Python, call `gnn.llm.process_llm` with `provider="ollama"`, `model=...`,
+`max_tokens=4096`, `source_chunk_bytes=65536`, and
+`llm_config={"ollama_options": {"num_ctx": 131072, "seed": 42}}`.
+Use `gnn.llm.UnifiedLLMProcessor.get_response` with
+`provider_type=ProviderType.OLLAMA` for a pinned single request; its `LLMResponse`
+includes completion reason, usage and native transport metadata. This processor
+is also named `LLMProcessor` in `gnn.llm.llm_processor`; the package-level
+`gnn.llm.LLMProcessor` is a separate structural compatibility facade. See the
+[native request example](../../src/gnn/llm/providers/README.md).
+Generic convenience calls without a model use the
+selected provider's default, rather than sending a cloud model name to Ollama.
 
-async def analyze_with_backoff(processor, content, max_retries=3):
-    for attempt in range(max_retries):
-        try:
-            return await processor.analyze_gnn(content)
-        except Exception as e:
-            if "rate_limit" in str(e).lower() and attempt < max_retries - 1:
-                wait_time = 2**attempt
-                await asyncio.sleep(wait_time)
-                continue
-            raise
-```
+## Context, completion and evidence
 
-## Contributing
+Whole-source mode is the default. The provider sends intact messages with
+`truncate=false` and `shift=false`; it refuses oversized context instead of
+shortening the source. HTTP reads, initialization, inference and worker cleanup
+share the request deadline. The default per-request budget is 45 seconds;
+explicit finite positive `max_prompt_timeout`/`llm.prompt_timeout` values override
+it, still bounded by the invocation deadline. A large cold model may need a
+larger explicit budget. Automatic corpus budget is 600 seconds per selected
+model; `llm_timeout` imposes an explicit total limit.
 
-To add a new provider:
+The optional multipart mode partitions UTF-8 source bytes without dropping,
+reordering or normalizing them. Every part is submitted independently for every
+required prompt, with at most 1,024 response tokens and instructions for a short
+fragment analysis. Original part files and byte/hash manifests are retained.
+A prompt completes only when every part ends with the provider's `stop` reason.
+The combined report preserves all part responses in order. It **does not claim
+joint reasoning about relationships across parts**. This distinction matters for
+the large dense scaling examples; full cross-part synthesis remains roadmap S1.
+A byte limit bounds payload size, not tokenizer context or peak memory; the
+runtime must still admit every intact part.
 
-1. Create `src/gnn/llm/providers/new_provider.py`
-2. Inherit from `BaseLLMProvider`  
-3. Implement required abstract methods
-4. Add to `ProviderType` enum
-5. Register in `LLMProcessor._create_provider`
-6. Add configuration support
-7. Write tests and documentation
+`llm_results.json` records source identities, whole/multipart modes, structural,
+prompt, summary and source-part coverage, unfinished work, provider/model,
+runtime version/model digest and cache statistics. `llm_checkpoint.json` version
+3 binds source bytes, partitions, prompt definitions, endpoint, model, generation
+options and budgets. Resume verifies response digests and the live runtime/model
+identity. Cache request version 4 binds full messages, response budgets, context,
+seed and runtime identity. A token-limit response remains inspectable but does
+not enter completed checkpoints or response caches.
 
-## API Reference
+## Other providers and optionality
 
-See the individual provider modules for detailed API documentation:
-- `src/gnn/llm/providers/base_provider.py` - Base interface
-- `src/gnn/llm/providers/openai_provider.py` - OpenAI implementation
-- `src/gnn/llm/providers/openrouter_provider.py` - OpenRouter implementation  
-- `src/gnn/llm/providers/perplexity_provider.py` - Perplexity implementation
-- `src/gnn/llm/llm_processor.py` - Main processor interface 
+OpenAI, OpenRouter and Perplexity have separate adapters, enabled by their API
+keys. `ANTHROPIC_API_KEY` appears only in the configuration matrix; there is no
+Anthropic adapter. Explicit provider choices remain pinned. Generic unpinned
+multi-provider operations retain their documented recovery behavior.
+
+Neither the Python Ollama SDK nor the Ollama CLI is required by the maintained
+chat transport. A configured HTTP daemon and exact installed model are required
+for live local inference. `OLLAMA_HOST` selects the endpoint (default
+`http://127.0.0.1:11434`); URL credentials are rejected. The pipeline does not
+implicitly invoke the separate daemon-start/model-pull helper functions.
+
+## Verification and troubleshooting
+
+- Run offline contracts with `uv run --frozen --no-sync python -m pytest tests/llm -m 'not ollama' -q`.
+- Run native tests only after provisioning the exact `OLLAMA_TEST_MODEL` tag.
+- Inspect `llm_results.json`, not the presence of Markdown files, for completion.
+- Missing model: pull the exact configured tag; the pipeline never substitutes one.
+- Context refusal: choose an admitted context or explicit multipart configuration.
+- Incomplete response: increase the response budget or simplify the requested output.
+- Timeout: inspect `ollama ps`, warm the model, and set an explicit measured budget.
+- GPU validation: retain `ollama ps` and native request timing/usage alongside results.
+
+The maintained local backend is Ollama. MLX and llama.cpp are not separate GNN
+provider adapters; Ollama's own runner selection is reported by the runtime.
+
+See [module contracts](../../src/gnn/llm/README.md),
+[provider interface](../../src/gnn/llm/providers/README.md), and
+[roadmap](../../TO-DO.md).
+
+## Named answer bundles
+
+The explicit Mac driver keeps the summary round first, then bundles the other
+eight prompts into one structured request per source part. The source appears
+once in that request. Every named answer must be present, nonempty and textual;
+missing, extra or duplicate keys fail, and unfinished JSON never becomes cached
+completion. Native batch text is retained alongside per-task answers. Shared
+`request_sha256` values identify answers from the same provider call: count
+request groups separately from task/part answers, and deduplicate native usage
+by that identity. `--no-batch-prompts` restores independent requests.
+
+The Mac profile explicitly uses a 180-second request budget and concise answer
+targets (160 words, or 120 per fragment). The ordinary pipeline keeps its
+45-second default and template response lengths. Large numeric source fragments
+can tokenize almost one token per byte; source-byte size is not a token count.
+A measured 64 KiB fragment needed 67,132 tokens and was correctly refused by a
+65,536-token context. The 131,072-token profile admits that fragment; complete
+eight-answer generation was measured separately at approximately 118 seconds.
+These are host observations, not performance guarantees.
+
+For larger-memory Macs, `ollama pull qwen3-coder:30b` provisions the optional
+[Qwen3-Coder sparse coding model](https://ollama.com/library/qwen3-coder:30b).
+Use `just llm-local --model qwen3-coder:30b --output-dir output/local_llm_qwen`.
+Installed tags and runtime measurements determine readiness; the catalog alone
+does not establish local acceptance.
+
+The local profile lives in ignored `.venv/local_llm/`; model weights live in Ollama's
+managed store. `just llm-local-setup` installs the frozen dev profile once; run
+commands use frozen, no-sync Python 3.14. Ollama remains an explicit optional
+service. MCP documentation generation is labeled structural, and single-file
+MCP analysis supports explicit Ollama or default routing. Other explicit
+providers are available through `UnifiedLLMProcessor`, rather than silently ignored
+provider names in the MCP wrapper. Sync entrypoints also work inside an active
+event loop through an owned loop bridge.
