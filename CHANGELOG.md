@@ -7,6 +7,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+## [5.0.1] - 2026-10-24
+
+### Release qualification repair
+
+- Remove an unused bibliography entry whose URL returned HTTP 404 in the
+  version-tag documentation audit. Keep the dead-link policy unchanged.
+- Preserve the failed `v5.0.0` tag and its original observations. Qualify this
+  compatible patch from its own source, manuscript, companion pin and hosted
+  candidate/main/tag checks before publication.
+- Retain the numerical witnesses, website interactions and CPU worker controls
+  implemented for 5.0.0. Their original measurements keep their source epochs;
+  a version label does not establish a new performance or scientific result.
+
 ## [5.0.0] - 2026-10-23
 
 ### Replayable numerical and formal evidence

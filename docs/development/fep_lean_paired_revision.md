@@ -7,7 +7,7 @@ the mechanism GEO_INFER already runs for this repository: its
 `.github/gnn-pair.json`. The GEO_INFER direction (GEO_INFER pinning GNN) is
 covered in the mirror-image section below.
 
-## Current-source qualification for GNN 5.0.0
+## Current-source qualification for GNN 5.0.x
 
 The active paired workflow checks the current GNN candidate against the exact
 FEP_Formal revision in `.github/fep-lean-pair.json`. It checks out one GNN tree
@@ -15,7 +15,7 @@ and passes that tree and its exact revision to the runtime custody runner.
 There is no accepted-scientific-baseline checkout or release-root exception in
 the active workflow.
 
-GNN 5.0.0 preparation does not itself establish a synchronized pair. Current
+GNN 5.0.x preparation does not itself establish a synchronized pair. Current
 pair qualification requires a reviewed companion pin, successful strict bridge
 and current-Q7 source checks, fresh separately validated native evidence and
 the repository/release gates described below. Until those checks finish, any

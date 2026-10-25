@@ -24,7 +24,7 @@ The package version is owned by `pyproject.toml` and mirrored by
 `gnn.__version__`, the frozen lock and citation metadata. Prepare a release
 candidate on an isolated branch; finish content first, then perform the
 [manuscript and companion ritual](../development/fep_lean_paired_revision.md#closeout-ordering-canonical).
-GNN 5.0.0 uses strict current-source pairing with its reviewed FEP_Formal pin.
+GNN 5.0.x uses strict current-source pairing with its reviewed FEP_Formal pin.
 A candidate version or workflow migration does not establish synchronized-pair
 qualification or publication; the actual source, native, manuscript and hosted
 gates must pass. The historical 4.2.1/4.3.0

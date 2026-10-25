@@ -3,7 +3,7 @@
 **Describe an Active Inference generative model once. Validate its structure,
 render framework-specific code, execute admitted models and inspect the evidence.**
 
-[![Version: 5.0.0](https://img.shields.io/badge/version-5.0.0-00a6b8.svg)](../CHANGELOG.md#500---2026-10-23)
+[![Version: 5.0.1](https://img.shields.io/badge/version-5.0.1-00a6b8.svg)](../CHANGELOG.md#501---2026-10-24)
 [![CI](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml)
 [![CI Python: 3.11–3.14](https://img.shields.io/badge/CI%20Python-3.11%E2%80%933.14-3776ab.svg)](workflows/ci.yml)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-lightgrey.svg)](../LICENSE.md)
@@ -28,16 +28,16 @@ scientific workflow** spanning parsing, validation, visualization, simulation,
 analysis and publication. Start with the CLI below, or explore the
 [Python and service interfaces](#interfaces).
 
-**Software:** 5.0.0. [Published release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases) own accepted tags and assets.
+**Software:** 5.0.1. [Published release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases) own accepted tags and assets.
 
 This major version adds replayable numerical witnesses, interactive evidence
 inspection and configurable file workers. It targets coordinated FEP_Formal
-2.0.0 qualification against the current scientific sources; see the
+2 qualification against the current scientific sources; see the
 [paired release procedure](../docs/development/fep_lean_paired_revision.md).
 Version metadata does not establish publication or completed pairing.
-[Candidate release notes](../CHANGELOG.md#500---2026-10-23) describe the changes;
+[Candidate release notes](../CHANGELOG.md#501---2026-10-24) describe the changes;
 [package metadata](../pyproject.toml) owns version and dependency requirements.
-**Page updated:** 2026-10-23.
+**Page updated:** 2026-10-24.
 
 ## Start here
 
@@ -153,7 +153,7 @@ The **5.0.0 implementation** adds `gnn witness` for independent source-bound rep
 offline evidence filters and posterior/residual trace controls, and bounded
 per-file process workers in Steps 3 and 5. The numerical and scalar Lean
 evidence have separate assumptions; they do not establish universal
-translation equivalence. See the [candidate changes](../CHANGELOG.md#500---2026-10-23)
+translation equivalence. See the [5.0.0 implementation](../CHANGELOG.md#500---2026-10-23)
 and [CPU worker controls](../README.md#cpu-workers-for-multiple-files).
 
 ## From model source to evidence

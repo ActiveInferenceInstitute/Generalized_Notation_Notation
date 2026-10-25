@@ -157,4 +157,3 @@ The open-source nature of the project, combined with its educational focus and p
 [29] https://zoo.cuichen.cc/playground
 [30] https://zoo.cuichen.cc/quick-reference
 [31] https://zoo.cuichen.cc/research
-[33] http://dagstuhl.sunsite.rwth-aachen.de/opus/frontdoor.php
