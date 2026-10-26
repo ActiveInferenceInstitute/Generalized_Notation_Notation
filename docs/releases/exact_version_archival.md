@@ -6,6 +6,21 @@ A specific software release needs its own version DOI and directly verified
 public archive. The [2023 article record 7803328](https://zenodo.org/records/7803328)
 is a historical manuscript publication, not a GNN 4.x software version.
 
+## Published GNN 5.0.1 checkpoint
+
+The current published software source record is
+[10.5281/zenodo.23631909](https://doi.org/10.5281/zenodo.23631909), version
+`v5.0.1`, paired with the immutable
+[GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1).
+Its released source is `e54813b4197df36f7ae0054d5e79f3ad2d5db0ff`, tree
+`c81cb1848585e86c0feda51ec230f7abd3544dd5`, annotated tag object
+`35e71d1a6f109f6e0d08fda2acd5a94376482cf4`.
+Later development commits do not change that source or its acceptance.
+The distinct published [FEP_Formal 2.1.0 manuscript](https://doi.org/10.5281/zenodo.23607007)
+and [software source archive](https://doi.org/10.5281/zenodo.23631895)
+retain their own DOI identities. Current archival success does not complete
+the historical distribution-inventory requirement below.
+
 ## Verified GNN 4.0.1 source archive
 
 The existing GitHub/Zenodo integration published
@@ -38,13 +53,21 @@ a DOI from expectation or reuse a historical DOI as the current software DOI.
 
 ## GNN 4.1.0 archival acceptance
 
-After the release owner accepts the exact source, annotated tag and publication
-assets, check the concept DOI for a new record with exact `v4.1.0` metadata.
-A successful GitHub release can trigger the already configured integration;
-verify that result rather than treating release publication as archive success.
-Download the new ZIP from its version-specific record, check the provider
-checksum, compare each Git blob to the peeled release commit and match the
-manuscript bytes to the accepted release artifact.
+The published [record 23245091](https://zenodo.org/records/23245091), version
+`v4.1.0`, has exact DOI
+[10.5281/zenodo.23245091](https://doi.org/10.5281/zenodo.23245091).
+Its existing provider source ZIP and manuscript parity were verified at the
+historical source epoch recorded in [the backlog](../../TO-DO.md).
+Preserve that ZIP, metadata and DOI when completing the separate inventory.
+
+On 2026-10-26, the 13 public GitHub release assets plus exact tagged citation
+and license files were staged and hash-verified as a 15-file supplement for
+peeled release source `9255e19f951d4c9c1461514464d420bd3fc8b912`.
+Staging is not provider archival acceptance. Upload requires the record owner's
+actual editing controls; a signed-in account without them cannot complete it.
+Do not create a duplicate version/concept to work around that prerequisite.
+After an authorized edit, independently download every public file and verify
+its size/hash inventory and the unchanged original source ZIP before closing E5.
 
 For the full archival scope, the provider package also needs the accepted
 wheel, sdist, manuscript, `SHA256SUMS` and citation metadata. Preserve the original

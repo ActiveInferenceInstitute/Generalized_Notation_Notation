@@ -15,6 +15,8 @@ from typing import Any
 from gnn.pipeline._io import atomic_write_text
 from gnn.pipeline.run_context import current_run_context, selected_model_sources
 
+from .cross_part_synthesis import POLICY as SYNTHESIS_POLICY
+from .cross_part_synthesis import build_plan, checked_child, checked_mode
 from .defaults import OLLAMA_RUNTIME_VALIDATION_POLICY, ollama_generation_options
 from .prompt_batch import batch_prompt, parse_answers, response_schema
 from .provider_identity import resolved_endpoint
@@ -153,6 +155,20 @@ async def run_corpus(
         if provider == ProviderType.OLLAMA
         else {}
     )
+    synthesis_mode = checked_mode(
+        kwargs.get("synthesis_mode", config.get("synthesis_mode", "none"))
+    )
+    synthesis_tokens = kwargs.get(
+        "synthesis_max_tokens", config.get("synthesis_max_tokens", 4096)
+    )
+    if isinstance(synthesis_tokens, str) and synthesis_tokens.isdecimal():
+        synthesis_tokens = int(synthesis_tokens)
+    if type(synthesis_tokens) is not int or synthesis_tokens <= 0:
+        raise ValueError("synthesis_max_tokens must be a positive integer")
+    if synthesis_mode != "none" and (
+        provider != ProviderType.OLLAMA or "num_ctx" not in generation_options
+    ):
+        raise ValueError("S1 synthesis requires pinned Ollama and explicit num_ctx")
     token_limit = kwargs.get(
         "max_tokens", os.getenv("GNN_LLM_MAX_TOKENS") or config.get("max_tokens")
     )
@@ -213,7 +229,7 @@ async def run_corpus(
     ):
         raise ValueError("Prompt labels must be unique safe file names")
     binding = {
-        "schema_version": 4,
+        "schema_version": 5 if synthesis_mode != "none" else 4,
         "effective_options": {
             "max_files": cap,
             "budget_seconds": budget,
@@ -230,6 +246,16 @@ async def run_corpus(
             "temperature": 0.2,
             "input_policy": "complete_context_v1",
             "completion_policy": "terminal_stop_v1",
+            **(
+                {
+                    "synthesis_mode": synthesis_mode,
+                    "synthesis_max_tokens": synthesis_tokens,
+                    "synthesis_policy": SYNTHESIS_POLICY,
+                    "context_admission_policy": "reviewed_ollama_gguf_no_truncation_v1",
+                }
+                if synthesis_mode != "none"
+                else {}
+            ),
             "runtime_validation_policy": OLLAMA_RUNTIME_VALIDATION_POLICY
             if provider == ProviderType.OLLAMA
             else None,
@@ -302,6 +328,7 @@ async def run_corpus(
         "fingerprint": fingerprint,
         "completed": {},
         "completed_parts": {},
+        **({"completed_syntheses": {}} if synthesis_mode != "none" else {}),
     }
     if kwargs.get("resume") and checkpoint.exists():
         prior = json.loads(checkpoint.read_text())
@@ -310,7 +337,11 @@ async def run_corpus(
                 "LLM resume identity/configuration does not match checkpoint"
             )
         state = prior
-        for entry in [*state["completed"].values(), *state["completed_parts"].values()]:
+        for entry in [
+            *state["completed"].values(),
+            *state["completed_parts"].values(),
+            *state.get("completed_syntheses", {}).values(),
+        ]:
             text = entry.get("response")
             if (
                 not isinstance(text, str)
@@ -318,12 +349,25 @@ async def run_corpus(
                 or hashlib.sha256(text.encode()).hexdigest() != entry.get("sha256")
             ):
                 raise ValueError("LLM checkpoint response digest is invalid")
+            if (
+                synthesis_mode != "none"
+                and "outcome" in entry
+                and hashlib.sha256(
+                    json.dumps(entry["outcome"], sort_keys=True).encode()
+                ).hexdigest()
+                != entry.get("outcome_sha256")
+            ):
+                raise ValueError("LLM checkpoint native evidence digest is invalid")
     output_dir.mkdir(parents=True, exist_ok=True)
     cache = api.LLMCache(
         cache_dir=output_dir
         / ".cache"
         / provider.value
-        / "complete_context_v1"
+        / (
+            "complete_context_s1_v1"
+            if synthesis_mode != "none"
+            else "complete_context_v1"
+        )
         / endpoint_sha256
     )
     results: dict[str, Any] = {
@@ -338,6 +382,9 @@ async def run_corpus(
         "budget_seconds": budget,
         "provider": provider.value,
         "selected_model": model,
+        "synthesis_mode": synthesis_mode,
+        "independent_token_retention_attested": False,
+        "attention_verified": False,
         "endpoint_sha256": endpoint_sha256,
         "generation_options": generation_options,
         "errors": [],
@@ -374,6 +421,15 @@ async def run_corpus(
                 prompt_outcomes={},
                 part_outcomes={},
                 llm_summary_status="pending",
+                **(
+                    {
+                        "synthesis_outcomes": {},
+                        "fragment_prompt_outputs": {},
+                        "synthesis_prompt_outputs": {},
+                    }
+                    if synthesis_mode != "none"
+                    else {}
+                ),
                 source_context={
                     "mode": "multipart" if len(plans[path]) > 1 else "whole",
                     "source_bytes": len(contents[path].encode("utf-8")),
@@ -438,6 +494,7 @@ async def run_corpus(
                         preflight=True,
                         endpoint_url=endpoint_url,
                         generation_options=generation_options,
+                        context_admission=synthesis_mode != "none",
                         timeout=min(prompt_ceiling, remaining()),
                     )
                     runtime_identity = preflight.metadata or {}
@@ -469,6 +526,58 @@ async def run_corpus(
                 part_statuses = []
                 for index, part in enumerate(parts):
                     part_key = f"{key}:part_{index + 1:04d}"
+                    cfg = (
+                        api.get_prompt(prompt_type, part.text)
+                        if prompt_type
+                        else {
+                            "system_message": "You are an expert in Active Inference and GNN.",
+                            "user_prompt": f"{custom_text}\n\nGNN Model Content:\n{part.text}",
+                        }
+                    )
+                    prompt = cfg["user_prompt"]
+                    tokens = (
+                        token_limit
+                        if token_limit is not None
+                        else cfg.get("max_tokens", 2048)
+                    )
+                    if len(parts) > 1:
+                        scope = multipart_instruction(
+                            part,
+                            index,
+                            len(parts),
+                            word_limit=min(response_words or 120, 120),
+                        )
+                        prompt = scope + prompt
+                        cfg = {
+                            **cfg,
+                            "system_message": cfg["system_message"]
+                            + "\n\n"
+                            + scope
+                            + "Symbols in task descriptions are illustrative, "
+                            "not source declarations. Report missing context explicitly.",
+                        }
+                        tokens = min(tokens, 1024)
+                    if response_words is not None:
+                        prompt += f"\n\nComplete all requested topics concisely in at most {min(response_words, 120) if len(parts) > 1 else response_words} words."
+                    output_fields = None
+                    if batching and label != structured[0].value:
+                        output_fields = [task[0] for task in tasks[1:]]
+                        cfg = batch_prompt(
+                            api,
+                            tasks[1:],
+                            part.text,
+                            scope=multipart_instruction(
+                                part, index, len(parts), word_limit=None
+                            )
+                            if len(parts) > 1
+                            else "This request contains the complete source.",
+                            words=min(response_words or 160, 120)
+                            if len(parts) > 1
+                            else response_words or 160,
+                            max_chars=answer_max_chars,
+                        )
+                        prompt = cfg["user_prompt"]
+                        tokens = token_limit or 4096
                     prior = state["completed_parts"].get(part_key)
                     if isolated and not ready:
                         prior = None  # Old parts cannot establish current runtime acceptance.
@@ -496,6 +605,32 @@ async def run_corpus(
                                 raise ValueError(
                                     "LLM checkpoint lacks verified request runtime identity"
                                 )
+                        if synthesis_mode != "none":
+                            if type(tokens) is not int or tokens <= 0:
+                                raise ValueError(
+                                    "S1 map output reserve must be a positive integer"
+                                )
+                            checked_child(
+                                prior,
+                                label,
+                                answer_max_chars,
+                                expected_fields=output_fields,
+                            )
+                            from .context_admission import validate_context_receipt
+
+                            validate_context_receipt(
+                                prior.get("outcome", {}).get("context_admission"),
+                                messages=[
+                                    {
+                                        "role": "system",
+                                        "content": cfg["system_message"],
+                                    },
+                                    {"role": "user", "content": prompt},
+                                ],
+                                identity=runtime_identity,
+                                max_tokens=tokens,
+                                native=isolated,
+                            )
                         outcome = {
                             **prior.get("outcome", {}),
                             "status": "success",
@@ -507,58 +642,6 @@ async def run_corpus(
                         text = "Source part unfinished: provider unavailable or request budget exhausted."
                         outcome = {"status": "pending"}
                     else:
-                        cfg = (
-                            api.get_prompt(prompt_type, part.text)
-                            if prompt_type
-                            else {
-                                "system_message": "You are an expert in Active Inference and GNN.",
-                                "user_prompt": f"{custom_text}\n\nGNN Model Content:\n{part.text}",
-                            }
-                        )
-                        prompt = cfg["user_prompt"]
-                        tokens = (
-                            token_limit
-                            if token_limit is not None
-                            else cfg.get("max_tokens", 2048)
-                        )
-                        if len(parts) > 1:
-                            scope = multipart_instruction(
-                                part,
-                                index,
-                                len(parts),
-                                word_limit=min(response_words or 120, 120),
-                            )
-                            prompt = scope + prompt
-                            cfg = {
-                                **cfg,
-                                "system_message": cfg["system_message"]
-                                + "\n\n"
-                                + scope
-                                + "Symbols in task descriptions are illustrative, "
-                                "not source declarations. Report missing context explicitly.",
-                            }
-                            tokens = min(tokens, 1024)
-                        if response_words is not None:
-                            prompt += f"\n\nComplete all requested topics concisely in at most {min(response_words, 120) if len(parts) > 1 else response_words} words."
-                        output_fields = None
-                        if batching and label != structured[0].value:
-                            output_fields = [task[0] for task in tasks[1:]]
-                            cfg = batch_prompt(
-                                api,
-                                tasks[1:],
-                                part.text,
-                                scope=multipart_instruction(
-                                    part, index, len(parts), word_limit=None
-                                )
-                                if len(parts) > 1
-                                else "This request contains the complete source.",
-                                words=min(response_words or 160, 120)
-                                if len(parts) > 1
-                                else response_words or 160,
-                                max_chars=answer_max_chars,
-                            )
-                            prompt = cfg["user_prompt"]
-                            tokens = token_limit or 4096
                         text = await api._execute_prompt(
                             processor,
                             cache,
@@ -586,6 +669,7 @@ async def run_corpus(
                             output_fields=output_fields,
                             answer_max_chars=answer_max_chars,
                             remaining_budget=remaining,
+                            context_admission=synthesis_mode != "none",
                         )
                         outcome = analysis["part_outcomes"][part_key]
                         if outcome.get("reason") == "runtime_changed":
@@ -638,18 +722,54 @@ async def run_corpus(
                                 prefetched[field_key] = (field_text, field_outcome)
                                 if outcome["status"] == "success":
                                     state["completed_parts"][field_key] = {
+                                        **(
+                                            {
+                                                "answer_key": field,
+                                                "native_response": text,
+                                                "native_response_sha256": hashlib.sha256(
+                                                    text.encode()
+                                                ).hexdigest(),
+                                            }
+                                            if synthesis_mode != "none"
+                                            else {}
+                                        ),
                                         "response": field_text,
                                         "sha256": hashlib.sha256(
                                             field_text.encode()
                                         ).hexdigest(),
                                         "outcome": field_outcome,
+                                        **(
+                                            {
+                                                "outcome_sha256": hashlib.sha256(
+                                                    json.dumps(
+                                                        field_outcome, sort_keys=True
+                                                    ).encode()
+                                                ).hexdigest()
+                                            }
+                                            if synthesis_mode != "none"
+                                            else {}
+                                        ),
                                     }
                             text, outcome = prefetched[part_key]
                         if outcome["status"] == "success":
                             state["completed_parts"][part_key] = {
+                                **(
+                                    state["completed_parts"].get(part_key, {})
+                                    if synthesis_mode != "none"
+                                    else {}
+                                ),
                                 "response": text,
                                 "sha256": hashlib.sha256(text.encode()).hexdigest(),
                                 "outcome": outcome,
+                                **(
+                                    {
+                                        "outcome_sha256": hashlib.sha256(
+                                            json.dumps(outcome, sort_keys=True).encode()
+                                        ).hexdigest()
+                                    }
+                                    if synthesis_mode != "none"
+                                    else {}
+                                ),
                             }
                     analysis["part_outcomes"][part_key] = outcome
                     api.logger.info(
@@ -702,6 +822,154 @@ async def run_corpus(
                     analysis["prompt_outcomes"][label].update(
                         analysis["part_outcomes"][f"{key}:part_0001"]
                     )
+                if synthesis_mode != "none" and len(parts) > 1:
+                    from .context_admission import validate_context_receipt
+                    from .corpus_synthesis import run_prompt_synthesis
+
+                    fragment_status = status
+                    analysis["prompt_outcomes"][label]["status"] = "pending"
+                    analysis["fragment_prompt_outputs"][label] = response
+                    synthesis_outcome: dict[str, Any] = {
+                        "status": "pending",
+                        "reason": "Source-part dependencies are unfinished",
+                        "synthesis_mode": synthesis_mode,
+                    }
+                    if status == "success" and ready and remaining() > 0:
+                        task = (
+                            api.get_prompt(
+                                prompt_type,
+                                "[Use the supplied original source or derived evidence below.]",
+                            )
+                            if prompt_type
+                            else {
+                                "system_message": "You are an expert in Active Inference and GNN.",
+                                "user_prompt": custom_text,
+                            }
+                        )
+                        plan = build_plan(
+                            content=content,
+                            parts=parts,
+                            children=[
+                                state["completed_parts"][f"{key}:part_{i + 1:04d}"]
+                                for i in range(len(parts))
+                            ],
+                            label=label,
+                            task=task,
+                            mode=synthesis_mode,
+                            answer_words=response_words,
+                            batch_fields=output_fields,
+                        )
+
+                        async def execute_synthesis(
+                            plan: Any,
+                            node_key: str,
+                            *,
+                            source_content: str = content,
+                            custom_request: bool = prompt_type is None,
+                            output_label: str = label,
+                        ) -> tuple[str, dict[str, Any]]:
+                            nonlocal ready
+                            outcomes: dict[str, Any] = {}
+                            text = await api._execute_prompt(
+                                processor,
+                                cache,
+                                cache_content=source_content,
+                                model_name=model,
+                                messages=[api.LLMMessage(**m) for m in plan.messages],
+                                prompt_text=plan.user_prompt,
+                                label=node_key,
+                                custom=custom_request,
+                                max_tokens=synthesis_tokens,
+                                max_prompt_timeout=min(prompt_ceiling, remaining()),
+                                failed_auth_providers=failed_auth,
+                                auth_errors=results["auth_errors"],
+                                outcomes=outcomes,
+                                provider_type=provider,
+                                isolated=isolated,
+                                endpoint_url=endpoint_url,
+                                generation_options=generation_options,
+                                runtime_identity=runtime_identity,
+                                output_fields=[output_label],
+                                answer_max_chars=answer_max_chars,
+                                remaining_budget=remaining,
+                                context_admission=True,
+                                synthesis_plan_sha256=plan.sha256,
+                            )
+                            outcome = outcomes[node_key]
+                            if outcome.get("reason") == "runtime_changed":
+                                ready = False
+                                results["errors"].append(
+                                    {
+                                        "stage": "synthesis_runtime_identity",
+                                        "error": "Runtime/model identity changed; native dispatch stopped",
+                                    }
+                                )
+                                results["provider_matrix"][provider.value].update(
+                                    available=False, reason="runtime_changed"
+                                )
+                            return text, outcome
+
+                        def validate_synthesis(
+                            plan: Any, outcome: dict[str, Any]
+                        ) -> None:
+                            validate_context_receipt(
+                                outcome.get("context_admission"),
+                                messages=plan.messages,
+                                identity=runtime_identity,
+                                max_tokens=synthesis_tokens,
+                                native=isolated,
+                            )
+                            if isolated and (
+                                outcome.get("runtime_identity") != runtime_identity
+                                or outcome.get("runtime_identity_after")
+                                != runtime_identity
+                            ):
+                                raise ValueError(
+                                    "Synthesis checkpoint runtime identity differs"
+                                )
+
+                        (
+                            answer,
+                            native_text,
+                            synthesis_outcome,
+                        ) = await run_prompt_synthesis(
+                            plan=plan,
+                            key=key + ":synthesis",
+                            state=state,
+                            execute=execute_synthesis,
+                            validate=validate_synthesis,
+                            max_chars=answer_max_chars,
+                            save=save,
+                        )
+                        folder = (
+                            output_dir
+                            / f"prompts_{identity['artifact_stem']}"
+                            / "synthesis"
+                        )
+                        folder.mkdir(parents=True, exist_ok=True)
+                        atomic_write_text(
+                            folder / f"{label}.request.json",
+                            json.dumps(plan.ledger, ensure_ascii=False, indent=2),
+                        )
+                        atomic_write_text(folder / f"{label}.native.json", native_text)
+                        if answer is not None:
+                            response = answer
+                            analysis["synthesis_prompt_outputs"][label] = answer
+                    analysis["synthesis_outcomes"][label] = synthesis_outcome
+                    status = synthesis_outcome["status"]
+                    if status != "success":
+                        response = (
+                            "Requested cross-part synthesis is unfinished. The following retained answers are independent fragment analyses.\n\n"
+                            + response
+                        )
+                        state["completed"].pop(key, None)
+                    analysis["prompt_outcomes"][label].update(
+                        status=status,
+                        fragment_status=fragment_status,
+                        synthesis_mode=synthesis_mode,
+                        synthesis_status=status,
+                        resumed=synthesis_outcome.get("resumed", False),
+                    )
                 if status == "success":
                     state["completed"][key] = {
                         "response": response,
@@ -750,6 +1018,7 @@ async def run_corpus(
                     endpoint_url=endpoint_url,
                     generation_options=generation_options,
                     timeout=min(prompt_ceiling, remaining()),
+                    context_admission=synthesis_mode != "none",
                 )
                 results["final_runtime_identity"] = final_identity.metadata
                 if final_identity.metadata != runtime_identity:
@@ -785,17 +1054,37 @@ async def run_corpus(
                 {
                     outcome["request_sha256"]
                     for _, analysis, _, _ in records
-                    for outcome in analysis["part_outcomes"].values()
+                    for outcome in [
+                        *analysis["part_outcomes"].values(),
+                        *analysis.get("synthesis_outcomes", {}).values(),
+                    ]
                     if outcome["status"] == "success" and outcome.get("request_sha256")
                 }
             ),
             "request_groups_required": sum(len(plans[path]) for path in paths)
-            * (2 if batching else len(labels)),
+            * (2 if batching else len(labels))
+            + (
+                sum(len(plans[path]) > 1 for path in paths) * len(labels)
+                if synthesis_mode != "none"
+                else 0
+            ),
+            "syntheses_required": sum(len(plans[path]) > 1 for path in paths)
+            * len(labels)
+            if synthesis_mode != "none"
+            else 0,
+            "syntheses_completed": sum(
+                o.get("status") == "success"
+                for _, a, _, _ in records
+                for o in a.get("synthesis_outcomes", {}).values()
+            ),
             "new_provider_requests_completed": len(
                 {
                     outcome["request_sha256"]
                     for _, analysis, _, _ in records
-                    for outcome in analysis["part_outcomes"].values()
+                    for outcome in [
+                        *analysis["part_outcomes"].values(),
+                        *analysis.get("synthesis_outcomes", {}).values(),
+                    ]
                     if outcome["status"] == "success"
                     and outcome.get("request_sha256")
                     and not outcome.get("cached")

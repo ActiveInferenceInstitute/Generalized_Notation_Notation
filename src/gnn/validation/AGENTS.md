@@ -50,6 +50,13 @@ numbers. Scientific bounds and explicit evidence limits live in the
 [E4 contract](../../../docs/development/remaining_roadmap_contracts.md#e4-replayable-semantic-evidence-v2).
 `tests/helpers/numerical_witness.py` remains a separate test-only oracle.
 
+`witness_composition_source.py` independently admits the E4-IG1 passive
+Gaussian product contract. `witness_composition.py` compares complete native
+JAX child results with joint block-diagonal prefix conditioning, using the
+additive v3 receipt. Cross-agent zero covariance is a reference assumption,
+not measured native covariance; control, coupling and smoothing remain refused.
+See the [bounded composition contract](../../../docs/development/e4_independent_gaussian_composition.md).
+
 ### Key Capabilities
 - Comprehensive model validation
 - Semantic consistency checking

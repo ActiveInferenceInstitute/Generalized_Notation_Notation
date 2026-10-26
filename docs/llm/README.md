@@ -94,6 +94,67 @@ is also named `LLMProcessor` in `gnn.llm.llm_processor`; the package-level
 Generic convenience calls without a model use the
 selected provider's default, rather than sending a cloud model name to Ollama.
 
+
+## Explicit cross-part synthesis and resume
+
+Python callers can select `synthesis_mode="joint_source"` or
+`synthesis_mode="part_evidence"`; the default `"none"` preserves independent
+fragment reports. These options also live in the resolved `llm` configuration.
+Set an explicit `ollama_options.num_ctx` and positive `synthesis_max_tokens`.
+For example, add `synthesis_mode="joint_source", synthesis_max_tokens=256`
+to a bounded `process_llm(...)` invocation with `source_chunk_bytes` and
+`llm_config={"ollama_options": {"num_ctx": 8192, "seed": 42}}`.
+No new command-line flag is implied by this Python/configuration interface.
+
+For each multipart logical task, `joint_source` makes a final real request with
+the exact original UTF-8 source and every ordered fragment answer. Its request
+ledger identifies the original byte range, all part hashes, child request and
+response hashes, and complete messages. The v2 layout separates task instructions,
+exact source and fallible answers; hashes stay in the ledger. Its full plan hash
+also binds the cache when two plans have identical visible messages.
+`response_words` applies to both fragment and final request instructions.
+`part_evidence` instead supplies all
+fragment answers and source identities; it explicitly does not present the raw
+source jointly. Neither mode silently substitutes for the other. Joint source
+must fit the selected model's context; splitting the map requests cannot make
+an arbitrarily large original fit the final request.
+
+One final request is required per task and multipart file, even when map tasks
+are batched. With six default structured tasks, no custom tasks, two parts and
+batching disabled, this is twelve map requests plus six synthesis requests.
+All summaries, including their synthesis, finish before other task rounds.
+The invocation and per-request deadlines also cover the added requests.
+
+S1 context admission is deliberately narrower than generic Ollama support:
+only reviewed Ollama **0.35.0** (llama.cpp **b11081**) and **0.40.11**
+(**b11845**) GGUF contracts are admitted. Unsupported versions, missing model
+metadata, model changes or unavailable loaded capacity refuse acceptance.
+The adapter sends `truncate=false` and `shift=false`, binds `/api/show` template
+and maximum context, observes exact-model `/api/ps` capacity, and retains native
+terminal usage. Acceptance requires `stop` and space for the observed prompt,
+the full declared output reserve, and a terminal token. This is a post-response
+bounded admission check under the reviewed provider contract, not a predictive
+client tokenizer. Overflow and length termination retain unfinished outputs.
+The official [Ollama request handling](https://github.com/ollama/ollama/blob/v0.40.11/server/routes.go),
+[runner wrapper](https://github.com/ollama/ollama/blob/v0.40.11/llm/llama_server.go)
+and [pinned runner](https://github.com/ggml-org/llama.cpp/blob/b11845/tools/server/server-context.cpp)
+own the no-shortening/error behavior.
+
+Receipts distinguish exact client byte coverage, native terminal completion,
+and `admission_basis="reviewed_provider_contract"`. Token retention is
+`provider_reported_not_independent`; `attention_verified=false`. Completion
+does not establish scientific correctness or detailed model understanding.
+Fixture protocol tests establish none of the native model claims.
+
+Opt-in cache request version 6, proof-bearing cache record version 3 and
+checkpoint version 5 bind this policy separately from existing requests. Resume
+rebuilds part messages and synthesis dependencies, validates retained proofs and
+native JSON, and reuses only exact completed nodes. A stopped run can preserve
+finished parts while leaving a synthesis unfinished. A complete resume makes
+no generation requests, but still checks current runtime/model identity.
+The reports retain fragment answers, final answers, each `.request.json`
+ledger and `.native.json` response under `prompts_<id>/synthesis/`.
+
 ## Context, completion and evidence
 
 Whole-source mode is the default. The provider sends intact messages with
@@ -112,14 +173,15 @@ fragment analysis. Original part files and byte/hash manifests are retained.
 A prompt completes only when every part ends with the provider's `stop` reason.
 The combined report preserves all part responses in order. It **does not claim
 joint reasoning about relationships across parts**. This distinction matters for
-the large dense scaling examples; full cross-part synthesis remains roadmap S1.
+the large dense scaling examples. Explicit cross-part modes below add a separate
+provider request; they do not change this default fragment contract.
 A byte limit bounds payload size, not tokenizer context or peak memory; the
 runtime must still admit every intact part.
 
 `llm_results.json` records source identities, whole/multipart modes, structural,
 prompt, summary and source-part coverage, unfinished work, provider/model,
-runtime version/model digest and cache statistics. `llm_checkpoint.json` version
-4 binds source bytes, partitions, prompt definitions, endpoint, model, generation
+runtime version/model digest and cache statistics. In default `none` mode,
+`llm_checkpoint.json` version 4 binds source bytes, partitions, prompt definitions, endpoint, model, generation
 options and budgets. Resume verifies response digests and the live runtime/model
 identity. Cache request version 5 binds full messages, response budgets, context,
 seed and runtime identity. A token-limit response remains inspectable but does

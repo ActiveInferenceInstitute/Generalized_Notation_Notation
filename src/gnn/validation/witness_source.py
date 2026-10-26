@@ -1,8 +1,9 @@
 """Restricted source reader and bounded independent numerical references.
 
 This module deliberately imports no GNN parser, extractor, renderer or backend.
-It accepts only the explicitly declared v1 source subset. Finite path sums and
-joint-Gaussian conditioning are numerical witnesses, not translation proofs.
+It accepts only explicit single-factor and passive independent-agent source
+contracts. Finite path sums and joint-Gaussian conditioning are numerical
+witnesses, not translation proofs.
 """
 
 from __future__ import annotations
@@ -72,8 +73,8 @@ def _array(value: Any, name: str) -> np.ndarray:
     return result
 
 
-def read_source(source: bytes) -> dict[str, Any]:
-    """Read only the declared witness subset, independently of GNN extraction."""
+def _source_sections(source: bytes) -> dict[str, str]:
+    """Read the bounded exact section envelope shared by witness contracts."""
     if len(source) > 1024 * 1024:
         raise ValueError("source byte budget exceeded")
     text = source.decode("utf-8").replace("\r\n", "\n")
@@ -101,7 +102,20 @@ def read_source(source: bytes) -> dict[str, Any]:
         sections[name] = parts[index + 1].strip()
     if set(sections) != required:
         raise ValueError("reference grammar: missing or unsupported source section")
+    return sections
+
+
+def read_source(source: bytes) -> dict[str, Any]:
+    """Read only declared witness subsets, independently of GNN extraction."""
+    sections = _source_sections(source)
     declaration = _json(sections["NumericalWitness"])
+    if (
+        isinstance(declaration, dict)
+        and declaration.get("schema") == "gnn-independent-gaussian-composition-v1"
+    ):
+        from .witness_composition_source import read_composition_source
+
+        return read_composition_source(source, sections)
     keys = {
         "schema",
         "model",

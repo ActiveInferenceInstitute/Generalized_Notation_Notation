@@ -19,6 +19,8 @@ apply to every Python source edit.
 | `processor.py` | Public `process_llm`, configuration/helper compatibility and request/cache funnel |
 | `corpus_runner.py` | Frozen selection, structural-first processing, summary-first prompt rounds, coverage and checkpoints |
 | `prompt_batch.py`, `sync_bridge.py` | Strict named answers and safe sync calls inside active loops |
+| `context_admission.py` | Exact reviewed provider contracts and retained context bounds; no attention attestation |
+| `cross_part_synthesis.py`, `corpus_synthesis.py` | Source-preserving joint/derived request plans and exact reducer checkpoints |
 | `source_parts.py` | Exact UTF-8 partitions, byte receipts and explicitly fragment-scoped reports |
 | `request_worker.py` | One pinned request per supervised, killable process |
 | `providers/ollama_provider.py` | Bounded HTTP transport, version/model preflight, intact messages and streaming |
@@ -57,6 +59,8 @@ Separate selection/provisioning helper functions are not the corpus path.
 | `max_tokens` / `GNN_LLM_MAX_TOKENS` / `llm.max_tokens` | Prompt template budget (custom: 2048); explicit positive integer overrides |
 | `source_chunk_bytes` / `GNN_LLM_CHUNK_BYTES` / `llm.source_chunk_bytes` | Whole-source mode unless explicitly partitioned; integer >=4 |
 | `llm.ollama_options` | Validated `num_ctx` and `seed`; corresponding `OLLAMA_NUM_CTX`/`OLLAMA_SEED` env defaults |
+| `synthesis_mode` | `none`; explicit `joint_source` or `part_evidence` for multipart reducers |
+| `synthesis_max_tokens` | Positive reducer output reserve, default 4096 |
 | `resume` | False; explicit matching checkpoint reuse only |
 
 Standalone HTTP uses `OLLAMA_HOST` and `OLLAMA_TIMEOUT` (60 seconds); provider
@@ -165,3 +169,18 @@ forced string closure cannot prove a complete answer. Keep these responses
 unavailable to completed checkpoints and caches even with terminal `stop`.
 Scope and brevity constraints in the system message override task-template
 verbosity; task-template symbols are illustrative, not source declarations.
+
+## Opt-in cross-part synthesis
+
+`synthesis_mode` is `none` by default. `joint_source` submits a real final
+request containing every original source byte plus ordered fragment answers;
+`part_evidence` submits derived answers only and keeps that limitation explicit.
+Each multipart task has its own checkpointed reducer. Required unfinished
+reducers prevent success; no model or mode fallback shortens source.
+`synthesis_max_tokens` is a positive output reserve (default 4096), with
+explicit `llm.ollama_options.num_ctx` required. The reviewed context contract is
+limited to GGUF Ollama 0.35.0/b11081 and 0.40.11/b11845. Proof records distinguish
+provider-contract admission from unavailable independent token/attention
+attestation. Opt-in checkpoint5/cache-request6/cache-record3 preserve actual
+context observations; existing default schemas remain separate. See the
+[complete interface and evidence limits](../../../docs/llm/README.md#explicit-cross-part-synthesis-and-resume).

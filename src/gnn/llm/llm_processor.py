@@ -485,6 +485,12 @@ class LLMProcessor:
             raise RuntimeError("LLM Processor not initialized")
 
         provider = self._select_provider(provider_type, analysis_type)
+        if (
+            config is not None
+            and config.context_admission
+            and provider.provider_type != ProviderType.OLLAMA
+        ):
+            raise ValueError("S1 context admission unsupported for this provider")
 
         # Handle search-enhanced analysis for Perplexity
         if analysis_type == AnalysisType.SEARCH_ENHANCED and isinstance(
@@ -510,7 +516,9 @@ class LLMProcessor:
             self._circuit_breakers[provider.provider_type] = (
                 self._circuit_breakers.get(provider.provider_type, 0) + 1
             )
-            if provider_type is not None:
+            if provider_type is not None or (
+                config is not None and config.context_admission
+            ):
                 raise
             # Try recovery provider
             return await self._try_fallback_analysis(
@@ -569,6 +577,10 @@ class LLMProcessor:
         if not self._initialized:
             raise RuntimeError("LLM Processor not initialized")
 
+        if config is not None and config.context_admission:
+            raise ValueError(
+                "S1 context admission requires a retained non-streaming response"
+            )
         provider = self._select_provider(provider_type)
 
         async for chunk in provider.generate_stream(messages, config):
@@ -591,6 +603,8 @@ class LLMProcessor:
         Returns:
             Dictionary mapping provider names to their responses
         """
+        if config is not None and config.context_admission:
+            raise ValueError("S1 context admission requires one pinned Ollama provider")
         results: dict[Any, Any] = {}
 
         provider_names = [pt.value for pt in self.providers]
@@ -619,6 +633,12 @@ class LLMProcessor:
         config: Optional[LLMConfig],
     ) -> LLMResponse:
         """Helper method for provider-specific analysis."""
+        if (
+            config is not None
+            and config.context_admission
+            and provider.provider_type != ProviderType.OLLAMA
+        ):
+            raise ValueError("S1 context admission unsupported for this provider")
         if analysis_type == AnalysisType.SEARCH_ENHANCED and isinstance(
             provider, PerplexityProvider
         ):
@@ -679,6 +699,12 @@ class LLMProcessor:
             raise RuntimeError("LLM Processor not initialized")
 
         provider = self._select_provider(provider_type)
+        if (
+            config is not None
+            and config.context_admission
+            and provider.provider_type != ProviderType.OLLAMA
+        ):
+            raise ValueError("S1 context admission unsupported for this provider")
 
         # Create or update config
         if config is None:
@@ -700,7 +726,9 @@ class LLMProcessor:
             self._circuit_breakers[provider.provider_type] = (
                 self._circuit_breakers.get(provider.provider_type, 0) + 1
             )
-            if provider_type is not None:
+            if provider_type is not None or (
+                config is not None and config.context_admission
+            ):
                 raise
             # Try recovery providers
             for fallback_provider in self.providers.values():

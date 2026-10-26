@@ -216,6 +216,7 @@ def generate_llm_summary(results: Dict[str, Any]) -> str:
             ("LLM Prompts", "prompts"),
             ("Source-part Answers", "source_parts"),
             ("Provider Request Groups", "request_groups"),
+            ("Cross-part Syntheses", "syntheses"),
         ):
             completed, required = f"{kind}_completed", f"{kind}_required"
             if completed in coverage and required in coverage:
@@ -238,6 +239,15 @@ def generate_llm_summary(results: Dict[str, Any]) -> str:
                 "independently for every prompt. Complete part coverage does not "
                 "establish joint analysis of cross-part relationships.\n"
             )
+
+    if results.get("synthesis_mode", "none") != "none":
+        summary += (
+            f"\n**Requested synthesis scope**: {results['synthesis_mode']}. "
+            "Only completed provider requests in the synthesis outcomes establish joint processing. "
+            "part_evidence uses derived answers, not the full original source. "
+            "Admission follows a reviewed provider contract and recorded runtime bounds; "
+            "independent token-retention, model attention and scientific accuracy are not attested.\n"
+        )
 
     summary += f"""
 ## Analysis Results

@@ -7,6 +7,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Independent Gaussian composition and evidence views
+
+- Add an explicitly bounded two-agent passive Gaussian witness with independent
+  authored-source extraction, joint-prefix conditioning and complete native
+  child metadata. Reject coupling, shared noise, control and unsupported axes
+  or conditioning. Source-declared cross-agent zeros remain assumptions.
+- Display per-agent traces, full covariance tables, independent FEP replay
+  comparisons and separately compiled finite product-weight laws. Keep numerical
+  agreement, proof scope, source custody and execution authentication distinct.
+
+### Explicit source-preserving synthesis
+
+- Add opt-in joint-source and derived-part-evidence synthesis, reviewed Ollama
+  context admission, request dependency identities and strict native completion
+  checks. Bind cache and resume to the current task, source, model, native
+  response and synthesis plan; refuse overflow and incomplete responses.
+- Preserve serial defaults and the default model. The explicit local Qwen
+  profile completed all 21 requests, recovered both controlled cross-part facts
+  and resumed with zero generations. Other retained partial/failed models,
+  larger sources and general interpretation quality retain their own limits.
+
+### Maintained release guidance
+
+- Reconcile delivery priorities with published GNN 5.0.1, FEP_Formal 2.1.0
+  and GEO-INFER 0.4.0. Preserve exact published tags/assets and historical
+  receipts; these development changes require fresh source-pair qualification.
+- Distinguish the current software source DOI from the historical GNN 4.1.0
+  distribution supplement, whose upload still requires actual archive-owner
+  controls and public-download acceptance.
+
 ## [5.0.1] - 2026-10-24
 
 ### Release qualification repair

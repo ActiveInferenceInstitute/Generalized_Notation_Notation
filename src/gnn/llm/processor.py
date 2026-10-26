@@ -493,6 +493,8 @@ async def _execute_prompt(
     runtime_identity: dict[str, Any] | None = None,
     output_fields: list[str] | None = None,
     answer_max_chars: int | None = None,
+    context_admission: bool = False,
+    synthesis_plan_sha256: str | None = None,
 ) -> str:
     """Run one LLM prompt with cache lookup, timeout, and auth fail-fast.
 
@@ -519,6 +521,14 @@ async def _execute_prompt(
 
     prompt_deadline = time.monotonic() + max_prompt_timeout
     native_local = isolated and provider_type in (None, ProviderType.OLLAMA)
+    if context_admission and provider_type != ProviderType.OLLAMA:
+        return "S1 context admission requires the explicitly pinned Ollama provider"
+    if synthesis_plan_sha256 is not None and (
+        not context_admission
+        or not isinstance(synthesis_plan_sha256, str)
+        or re.fullmatch("[0-9a-f]{64}", synthesis_plan_sha256) is None
+    ):
+        return "Synthesis cache identity requires a complete context-bound plan hash"
     if native_local and not runtime_identity:
         if outcomes is not None:
             outcomes[label] = {
@@ -542,7 +552,17 @@ async def _execute_prompt(
     )
     request_definition = json.dumps(
         {
-            "schema_version": 5,
+            "schema_version": 6 if context_admission else 5,
+            **(
+                {"synthesis_plan_sha256": synthesis_plan_sha256}
+                if synthesis_plan_sha256 is not None
+                else {}
+            ),
+            **(
+                {"context_admission_policy": "reviewed_ollama_gguf_no_truncation_v1"}
+                if context_admission
+                else {}
+            ),
             "runtime_validation_policy": OLLAMA_RUNTIME_VALIDATION_POLICY
             if native_local
             else None,
@@ -566,7 +586,31 @@ async def _execute_prompt(
         },
         sort_keys=True,
     )
-    cached = cache.get(cache_content, model_name, request_definition)
+    verified_cache = (
+        cache.get_verified(cache_content, model_name, request_definition)
+        if context_admission
+        else None
+    )
+    cached = (
+        verified_cache["response"]
+        if verified_cache
+        else None
+        if context_admission
+        else cache.get(cache_content, model_name, request_definition)
+    )
+    if verified_cache:
+        from .context_admission import validate_context_receipt
+
+        try:
+            validate_context_receipt(
+                verified_cache["metadata"].get("context_admission"),
+                messages=[{"role": m.role, "content": m.content} for m in messages],
+                identity=runtime_identity or {},
+                max_tokens=max_tokens,
+                native=native_local,
+            )
+        except ValueError:
+            cached = None
     request_sha256 = hashlib.sha256(request_definition.encode("utf-8")).hexdigest()
     if cached and output_fields:
         try:
@@ -596,6 +640,16 @@ async def _execute_prompt(
                 "runtime_validation_policy": OLLAMA_RUNTIME_VALIDATION_POLICY
                 if native_local
                 else None,
+                **(
+                    {
+                        "context_admission": verified_cache["metadata"][
+                            "context_admission"
+                        ],
+                        "context_evidence_reused": True,
+                    }
+                    if verified_cache
+                    else {}
+                ),
             }
         return cached
 
@@ -631,6 +685,7 @@ async def _execute_prompt(
                 generation_options=generation_options or {},
                 response_format=response_format,
                 runtime_identity=runtime_identity,
+                context_admission=context_admission,
             )
         else:
             resp = await asyncio.wait_for(
@@ -643,6 +698,7 @@ async def _execute_prompt(
                     config=LLMConfig(
                         timeout=request_timeout,
                         response_format=response_format,
+                        context_admission=context_admission,
                     ),
                 ),
                 timeout=request_timeout,
@@ -667,13 +723,18 @@ async def _execute_prompt(
             )
         finish_reason = getattr(resp, "finish_reason", None)
         if finish_reason not in (None, "stop") or (
-            isolated and finish_reason != "stop"
+            (isolated or context_admission) and finish_reason != "stop"
         ):
             if outcomes is not None:
                 outcomes[label] = {
                     "status": "incomplete",
                     "finish_reason": finish_reason,
                     "reason": "Provider did not confirm a complete text response",
+                    **(
+                        {"context_admission": metadata.get("context_admission")}
+                        if context_admission
+                        else {}
+                    ),
                 }
             # Retain partial text for inspection without admitting it as cached
             # or checkpointed completion. Resume must retry this prompt.
@@ -693,7 +754,37 @@ async def _execute_prompt(
                         "finish_reason": finish_reason,
                     }
                 return content
-        cache.put(cache_content, model_name, request_definition, content)
+        if context_admission:
+            from .context_admission import validate_context_receipt
+
+            try:
+                validate_context_receipt(
+                    metadata.get("context_admission"),
+                    messages=[{"role": m.role, "content": m.content} for m in messages],
+                    identity=runtime_identity or {},
+                    max_tokens=max_tokens,
+                    native=native_local,
+                )
+            except ValueError as exc:
+                if outcomes is not None:
+                    outcomes[label] = {
+                        "status": "incomplete",
+                        "reason": "context_admission_refused",
+                        "finish_reason": finish_reason,
+                        "request_sha256": request_sha256,
+                        "context_admission": metadata.get("context_admission"),
+                        "context_error": str(exc),
+                    }
+                return content
+            cache.put_verified(
+                cache_content,
+                model_name,
+                request_definition,
+                content,
+                {"context_admission": metadata["context_admission"]},
+            )
+        else:
+            cache.put(cache_content, model_name, request_definition, content)
         check_deadline()
         if outcomes is not None:
             outcomes[label] = {
@@ -722,6 +813,11 @@ async def _execute_prompt(
                 "runtime_identity": metadata.get("runtime_identity"),
                 "runtime_identity_after": metadata.get("runtime_identity_after"),
                 "runtime_validation_policy": metadata.get("runtime_validation_policy"),
+                **(
+                    {"context_admission": metadata["context_admission"]}
+                    if context_admission
+                    else {}
+                ),
             }
         logger.debug("  ✅ Prompt completed successfully")
         return content

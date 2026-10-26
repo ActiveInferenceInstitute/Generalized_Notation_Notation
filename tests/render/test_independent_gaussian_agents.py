@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -109,6 +110,17 @@ def test_native_agents_execute_with_source_bound_controls(
         # RxInfer reports smoothed beliefs but controls were computed online
         # during data collection. JAX beliefs are the same online estimand.
         if backend == "jax":
+            retained = data["agent_results"][name]
+            assert retained["parameters"]["H"] == agent.H.tolist()
+            assert retained["random_seed"] == agent.random_seed
+            assert retained["dtype"] == "float64"
+            assert retained["inference_mode"] == "gaussian_filtering"
+            assert (
+                retained["generated_script_sha256"]
+                == hashlib.sha256(script.read_bytes()).hexdigest()
+            )
+            assert retained["beliefs"] == view["beliefs"]
+            assert retained["posterior_cov"] == view["posterior_cov"]
             np.testing.assert_allclose(
                 view["controls"],
                 agent.control_gain * (agent.goal_mean - np.asarray(view["beliefs"])),

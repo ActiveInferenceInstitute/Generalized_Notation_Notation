@@ -154,3 +154,18 @@ The explicit Mac bundle profile targets 60 words per answer and supplies a
 including a valid JSON object with `stop`; admission requires every answer below
 the limit. `answer_max_chars` / `GNN_LLM_ANSWER_MAX_CHARS` is optional outside the
 Mac profile. No client-side text slicing satisfies completion.
+
+## Opt-in cross-part synthesis
+
+`synthesis_mode` is `none` by default. `joint_source` submits a real final
+request containing every original source byte plus ordered fragment answers;
+`part_evidence` submits derived answers only and keeps that limitation explicit.
+Each multipart task has its own checkpointed reducer. Required unfinished
+reducers prevent success; no model or mode fallback shortens source.
+`synthesis_max_tokens` is a positive output reserve (default 4096), with
+explicit `llm.ollama_options.num_ctx` required. The reviewed context contract is
+limited to GGUF Ollama 0.35.0/b11081 and 0.40.11/b11845. Proof records distinguish
+provider-contract admission from unavailable independent token/attention
+attestation. Opt-in checkpoint5/cache-request6/cache-record3 preserve actual
+context observations; existing default schemas remain separate. See the
+[complete interface and evidence limits](../../../docs/llm/README.md#explicit-cross-part-synthesis-and-resume).

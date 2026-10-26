@@ -418,7 +418,7 @@ provide accepted version tags and downloadable source-bound artifacts. The
 source-bound numerical witnesses and earlier CI documentation checks. The
 [E4 contract](docs/development/remaining_roadmap_contracts.md#e4-foundation-source-bound-numerical-witness-v1)
 states the exact finite/Gaussian scope and its limits; the
-[versioned roadmap](TO-DO.md#versioned-delivery-plan-430-through-490) owns remaining work.
+[current delivery priorities](TO-DO.md#current-delivery-priorities) owns remaining work.
 
 [GNN 4.2.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.2.1)
 provides the ordinary wheel/sdist, manuscript PDF, overview image, source binding,
