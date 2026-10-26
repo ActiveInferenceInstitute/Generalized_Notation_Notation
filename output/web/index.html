@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc 3.12.1" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="Daniel Ari Friedman" />
   <meta name="description" content="A text language and modular processing pipeline for Active Inference generative models" />
@@ -14,7 +14,10 @@ Inference Models</title>
     */
     html {
       color: #1a1a1a;
+      color: light-dark(#1a1a1a, #fdfdfd);
       background-color: #fdfdfd;
+      background-color: light-dark(#fdfdfd, #1a1a1a);
+      color-scheme: light dark;
     }
     body {
       margin: 0 auto;
@@ -39,11 +42,16 @@ Inference Models</title>
     }
     @media print {
       html {
-        background-color: white;
+        color-scheme: light only;
       }
-      body {
+      html, body, pre, code {
         background-color: transparent;
+      }
+      body, a, a:visited, blockquote {
         color: black;
+      }
+      pre, code {
+        padding: 0;
       }
       p, h2, h3 {
         orphans: 3;
@@ -56,11 +64,8 @@ Inference Models</title>
     p {
       margin: 1em 0;
     }
-    a {
-      color: #1a1a1a;
-    }
-    a:visited {
-      color: #1a1a1a;
+    a, a:visited {
+      color: inherit;
     }
     img {
       max-width: 100%;
@@ -89,8 +94,11 @@ Inference Models</title>
     blockquote {
       margin: 1em 0 1em 1.7em;
       padding-left: 1em;
-      border-left: 2px solid #e6e6e6;
+      border-left: 2px solid;
+      border-color: #e6e6e6;
+      border-color: light-dark(#e6e6e6, #4c4c4c);
       color: #606060;
+      color: light-dark(#606060, #b6b6b6);
     }
     code {
       white-space: pre-wrap;
@@ -114,7 +122,7 @@ Inference Models</title>
     }
     hr {
       border: none;
-      border-top: 1px solid #1a1a1a;
+      border-top: 1px solid currentColor;
       height: 1px;
       margin: 1em 0;
     }
@@ -131,11 +139,11 @@ Inference Models</title>
     }
     tbody {
       margin-top: 0.5em;
-      border-top: 1px solid #1a1a1a;
-      border-bottom: 1px solid #1a1a1a;
+      border-top: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
     }
     th {
-      border-top: 1px solid #1a1a1a;
+      border-top: 1px solid currentColor;
       padding: 0.25em 0.5em 0.25em 0.5em;
     }
     td {
@@ -843,10 +851,14 @@ class="toc-section-number">5.1</span> Model-Family Coverage</a></li>
 id="toc-semantic-fidelity-and-cross-framework-reliability-gates"><span
 class="toc-section-number">5.2</span> Semantic-Fidelity and
 Cross-Framework Reliability Gates</a></li>
+<li><a href="#source-preserving-llm-processing"
+id="toc-source-preserving-llm-processing"><span
+class="toc-section-number">5.3</span> Source-Preserving LLM
+Processing</a></li>
 <li><a href="#repository-scale" id="toc-repository-scale"><span
-class="toc-section-number">5.3</span> Repository Scale</a></li>
+class="toc-section-number">5.4</span> Repository Scale</a></li>
 <li><a href="#claim-discipline" id="toc-claim-discipline"><span
-class="toc-section-number">5.4</span> Claim Discipline</a></li>
+class="toc-section-number">5.5</span> Claim Discipline</a></li>
 </ul></li>
 <li><a href="#sec:reproducibility" id="toc-sec:reproducibility"><span
 class="toc-section-number">6</span> Reproducibility</a>
@@ -905,7 +917,7 @@ class="header-section-number">1</span> Abstract</h1>
 alt="End-to-end summary panel of the GNN pipeline in seven left-to-right stage cards: a plain-text GNN document declaring A, B, C, D and E; parsing; validation and type checking with the B-tensor orientation check; code rendering to the registered backends; supervised dispatch through execution adapters including the bnlearn lane; analysis; and cross-repository interchange with GEO-INFER and fep_lean. Step pills name the pipeline step behind each stage, a callout states the two newest capabilities, and a footer strip carries the producer&#x27;s scale counts for steps, families, backends and MCP tools." /><span class="figure-full-size-label" aria-hidden="true">Open full-size figure</span></a>
 <figcaption>Figure 1: The GeneralizedNotationNotation
 (GNN) pipeline at a glance, generated from the producer’s token map at
-commit 7a874fe80. A plain-text specification — the
+commit 6f06b4a54. A plain-text specification — the
 <code>StateSpaceBlock</code> declaring the model’s tensors,
 <code>A</code>, <code>B</code>, <code>C</code>, <code>D</code>, and
 <code>E</code> for the discrete categorical kind of eq. <a
@@ -1283,19 +1295,19 @@ standard formulation <span class="citation"
 data-cites="dacosta2020 smith2022">(<a href="#ref-dacosta2020"
 role="doc-biblioref">Da Costa et al. 2020</a>; <a href="#ref-smith2022"
 role="doc-biblioref">Smith et al. 2022</a>)</span>.</p>
-<p><span id="eq:generative_model"><span class="math display">\[
-P(o_{1:T},\, s_{1:T},\, \pi) \;=\; P(\pi)\; P(s_1) \prod_{t=1}^{T} P(o_t
-\mid s_t) \prod_{t=2}^{T} P(s_t \mid s_{t-1},\, \pi)
-\qquad{(1)}\]</span></span></p>
+<p><span id="eq:generative_model"><span
+class="math display">\[P(o_{1:T},\, s_{1:T},\, \pi) \;=\; P(\pi)\;
+P(s_1) \prod_{t=1}^{T} P(o_t \mid s_t) \prod_{t=2}^{T} P(s_t \mid
+s_{t-1},\, \pi)\qquad{(1)}\]</span></span></p>
 <p>The four matrices named in the <code>StateSpaceBlock</code> are
 exactly the factors of eq. <a href="#eq:generative_model">1</a>, and
 this correspondence is what makes the notation translatable rather than
 merely descriptive. The <code>A</code> matrix is the likelihood, a
 column-stochastic map from hidden states to observation outcomes, given
 in eq. <a href="#eq:likelihood">2</a>.</p>
-<p><span id="eq:likelihood"><span class="math display">\[
-P(o_t = i \mid s_t = j) \;=\; A_{ij}, \qquad \sum_i A_{ij} = 1
-\qquad{(2)}\]</span></span></p>
+<p><span id="eq:likelihood"><span class="math display">\[P(o_t = i \mid
+s_t = j) \;=\; A_{ij}, \qquad \sum_i A_{ij} =
+1\qquad{(2)}\]</span></span></p>
 <p>The <code>B</code> matrix is the controlled transition dynamics: one
 column-stochastic slice per action, as in eq. <a
 href="#eq:transition">3</a>. The canonical reading of the tensor is
@@ -1306,21 +1318,18 @@ href="#ref-heins2022" role="doc-biblioref">Heins et al.
 2022</a>)</span>; validation records every declared tensor’s detected
 orientation and can transpose row-stochastic textbook literals on
 request, as described in sec. <a href="#sec:methods">4</a>.</p>
-<p><span id="eq:transition"><span class="math display">\[
-P(s_{t+1} = i \mid s_t = j,\, u_t = k) \;=\; B^{(k)}_{ij}, \qquad \sum_i
-B^{(k)}_{ij} = 1
-\qquad{(3)}\]</span></span></p>
+<p><span id="eq:transition"><span class="math display">\[P(s_{t+1} = i
+\mid s_t = j,\, u_t = k) \;=\; B^{(k)}_{ij}, \qquad \sum_i B^{(k)}_{ij}
+= 1\qquad{(3)}\]</span></span></p>
 <p>The <code>C</code> vector holds log-preferences over observations,
 which enter inference as the biased outcome distribution of eq. <a
 href="#eq:preference">4</a>; the <code>D</code> vector is the prior over
 initial hidden states, eq. <a href="#eq:prior">5</a>.</p>
-<p><span id="eq:preference"><span class="math display">\[
-\tilde{P}(o_t = i) \;=\; \sigma(C)_i \;=\; \frac{\exp C_i}{\sum_j \exp
-C_j}
-\qquad{(4)}\]</span></span></p>
-<p><span id="eq:prior"><span class="math display">\[
-P(s_1 = i) \;=\; D_i, \qquad \sum_i D_i = 1
-\qquad{(5)}\]</span></span></p>
+<p><span id="eq:preference"><span class="math display">\[\tilde{P}(o_t =
+i) \;=\; \sigma(C)_i \;=\; \frac{\exp C_i}{\sum_j \exp
+C_j}\qquad{(4)}\]</span></span></p>
+<p><span id="eq:prior"><span class="math display">\[P(s_1 = i) \;=\;
+D_i, \qquad \sum_i D_i = 1\qquad{(5)}\]</span></span></p>
 <p>Given those factors, perception is approximate Bayesian inference: a
 variational posterior <span class="math inline">\(Q(s)\)</span> is
 fitted by minimizing the variational free energy of eq. <a
@@ -1328,12 +1337,11 @@ href="#eq:vfe">6</a>, which decomposes into a complexity term and an
 accuracy term <span class="citation" data-cites="friston2010">(<a
 href="#ref-friston2010" role="doc-biblioref">Friston
 2010</a>)</span>.</p>
-<p><span id="eq:vfe"><span class="math display">\[
-F[Q] \;=\; \underbrace{D_{\mathrm{KL}}\!\left[\,Q(s) \,\|\,
+<p><span id="eq:vfe"><span class="math display">\[F[Q] \;=\;
+\underbrace{D_{\mathrm{KL}}\!\left[\,Q(s) \,\|\,
 P(s)\,\right]}_{\text{complexity}} \;-\;
 \underbrace{\mathbb{E}_{Q(s)}\!\left[\ln P(o \mid
-s)\right]}_{\text{accuracy}}
-\qquad{(6)}\]</span></span></p>
+s)\right]}_{\text{accuracy}}\qquad{(6)}\]</span></span></p>
 <p>Action is expected-free-energy minimization: each policy <span
 class="math inline">\(\pi\)</span> is scored over future steps <span
 class="math inline">\(\tau\)</span> by eq. <a href="#eq:efe">7</a>,
@@ -1342,20 +1350,19 @@ and the extent to which its predicted outcomes match <code>C</code>
 <span class="citation" data-cites="dacosta2020">(<a
 href="#ref-dacosta2020" role="doc-biblioref">Da Costa et al.
 2020</a>)</span>.</p>
-<p><span id="eq:efe"><span class="math display">\[
-G(\pi) \;=\; -\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid
-\pi)}\!\left[\ln Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid
+<p><span id="eq:efe"><span class="math display">\[G(\pi) \;=\;
+-\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid \pi)}\!\left[\ln
+Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid
 \pi)\right]}_{\text{epistemic value}} \;-\;
 \underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln
-\tilde{P}(o_\tau)\right]}_{\text{pragmatic value}}
-\qquad{(7)}\]</span></span></p>
+\tilde{P}(o_\tau)\right]}_{\text{pragmatic
+value}}\qquad{(7)}\]</span></span></p>
 <p>The policy posterior then combines those scores with the habit prior
 <code>E</code> declared in the specification, as in eq. <a
 href="#eq:policy">8</a>, and the selected action <span
 class="math inline">\(u\)</span> is sampled from it.</p>
-<p><span id="eq:policy"><span class="math display">\[
-Q(\pi) \;=\; \sigma\!\left(\ln E - G\right)
-\qquad{(8)}\]</span></span></p>
+<p><span id="eq:policy"><span class="math display">\[Q(\pi) \;=\;
+\sigma\!\left(\ln E - G\right)\qquad{(8)}\]</span></span></p>
 <p>The discrete categorical kind is the language’s original and most
 densely exercised target: 29 of the 38 exemplar specifications in the
 corpus are discrete-state. The discrete family folder holds the kind’s
@@ -1404,13 +1411,11 @@ time: a Gaussian latent state <span class="math inline">\(x_t \in
 \mathbb{R}^n\)</span> evolves linearly, and a Gaussian observation <span
 class="math inline">\(y_t \in \mathbb{R}^m\)</span> reads it out
 linearly.</p>
-<p><span id="eq:lgssm_state"><span class="math display">\[
-x_1 \sim \mathcal{N}(\mu_0,\, \Sigma_0), \qquad x_t = F\, x_{t-1} +
-u_{t-1} + w_t, \qquad w_t \sim \mathcal{N}(0,\, Q)
-\qquad{(9)}\]</span></span></p>
-<p><span id="eq:lgssm_obs"><span class="math display">\[
-y_t = H\, x_t + v_t, \qquad v_t \sim \mathcal{N}(0,\, R)
-\qquad{(10)}\]</span></span></p>
+<p><span id="eq:lgssm_state"><span class="math display">\[x_1 \sim
+\mathcal{N}(\mu_0,\, \Sigma_0), \qquad x_t = F\, x_{t-1} + u_{t-1} +
+w_t, \qquad w_t \sim \mathcal{N}(0,\, Q)\qquad{(9)}\]</span></span></p>
+<p><span id="eq:lgssm_obs"><span class="math display">\[y_t = H\, x_t +
+v_t, \qquad v_t \sim \mathcal{N}(0,\, R)\qquad{(10)}\]</span></span></p>
 <p>Here <code>F</code> is the state-transition matrix, <code>H</code>
 the observation matrix, <code>Q</code> the process-noise covariance, and
 <code>R</code> the observation-noise covariance; <code>prior_mean</code>
@@ -1433,10 +1438,9 @@ scalar proportional gain) alongside a control input <span
 class="math inline">\(u_t\)</span>, the rendered model closes the loop
 on beliefs: the controller steers the filtered posterior mean toward the
 preferred state.</p>
-<p><span id="eq:closed_loop"><span class="math display">\[
-u_t \;=\; k \,\bigl(\mu^\star - \mu_t\bigr), \qquad \mu_t =
-\mathbb{E}\!\left[x_t \,\middle|\, y_{1:t}\right]
-\qquad{(11)}\]</span></span></p>
+<p><span id="eq:closed_loop"><span class="math display">\[u_t \;=\; k
+\,\bigl(\mu^\star - \mu_t\bigr), \qquad \mu_t = \mathbb{E}\!\left[x_t
+\,\middle|\, y_{1:t}\right]\qquad{(11)}\]</span></span></p>
 <p>This is how
 <code>input/gnn_files/continuous/continuous_navigation.md</code> is
 built: a two-dimensional navigator whose position persists between steps
@@ -1644,7 +1648,7 @@ of <code>src/gnn/STEP_INDEX.md</code>, which mirrors the live step
 registry. Parsing (Step 3) precedes many later steps. Optional artifact
 enrichments are documented separately and are not shown as required
 edges. The figure is generated from <code>src/gnn/STEP_INDEX.md</code>
-at commit 7a874fe80; its footer restates the step count, the number of
+at commit 6f06b4a54; its footer restates the step count, the number of
 required prerequisites, and the layout rule.</figcaption>
 </figure>
 <p>The per-step responsibilities are enumerated in tbl. <a
@@ -1800,7 +1804,7 @@ describes.</caption>
 </table></div>
 <p>This staged design keeps the architecture modular. The implementation
 is organized into 44 source packages, one cluster of responsibilities
-per concern, and is documented across 647 documentation files so that
+per concern, and is documented across 648 documentation files so that
 each step’s contract, inputs, and outputs are specified independently of
 the others. New backends or analyses attach to the graph by declaring
 their dependencies rather than by editing a monolith, and deterministic
@@ -1839,7 +1843,7 @@ projections. The executable node summarizes 12 of 12 registered render
 targets with implemented Step 12 execution adapters and previews three
 by name; execution depends on runtime readiness, admitted model kind,
 and a successful source-bound run receipt. Counts are producer tokens at
-commit 7a874fe80, and the panel is generated by
+commit 6f06b4a54, and the panel is generated by
 <code>scripts/manuscript_fig_triple_play.py</code>. Take-away: a model
 is authored once and then read, seen, and run from that single
 source.</figcaption>
@@ -2169,7 +2173,7 @@ the reliability gate profiles for the continuous family; the tan row
 maintained set, so it is never profiled; a red Render-Subdir cell would
 mean a registry entry with no subdirectory. The table is read directly
 from <code>src/gnn/render/framework_registry.py</code> and the
-model-family manifest at commit 7a874fe80, and its footer summarizes the
+model-family manifest at commit 6f06b4a54, and its footer summarizes the
 row counts. Take-away: registration, render presence, and profiling
 status are three different claims, and the table keeps them
 apart.</figcaption>
@@ -2359,7 +2363,7 @@ class="header-section-number">4.7</span> Reproducibility and
 Auto-Injection</h2>
 <p>Every count reported in this manuscript is emitted by the producer
 <code>scripts/z_generate_manuscript_variables.py</code> from the
-repository state at commit 7a874fe80, not typed by hand. The producer
+repository state at commit 6f06b4a54, not typed by hand. The producer
 reads that commit’s source surfaces directly — the step modules, the
 source tree, the model-family manifest, and the framework registry —
 together with the project’s maintained ledgers, notably the Model
@@ -2406,7 +2410,7 @@ class="header-section-number">5</span> Artifacts and Evidence</h1>
 <p>This section reports what the project has actually produced and how
 each quantitative claim is grounded. Every number below is substituted
 at render time from the deterministic producer, which reads the
-repository state at commit 7a874fe80, so each figure here is regenerated
+repository state at commit 6f06b4a54, so each figure here is regenerated
 from the artifacts it describes rather than transcribed.</p>
 <h2 data-number="5.1" id="model-family-coverage"><span
 class="header-section-number">5.1</span> Model-Family Coverage</h2>
@@ -2549,7 +2553,7 @@ declares; the grid is deliberately sparse — most families declare a
 single backend, and only continuous, discrete, and gridworld declare
 several. Read it as declared intent, not as profiled outcomes: the gates
 described below supply the outcomes. The matrix is generated from the
-two registries at commit 7a874fe80.</figcaption>
+two registries at commit 6f06b4a54.</figcaption>
 </figure>
 <p>These families are not illustrative prose: they are the inputs over
 which the parser, the type checker, and the cross-framework code
@@ -2611,13 +2615,29 @@ structural analogue of the multidimensional Gaussian fixture, not a
 proof of its parser, runner or complete translation. Numerical
 agreement, source custody, actual program execution and formal
 compilation remain separate evidence planes.</p>
+<p>An additional <code>gnn-semantic-witness-v3</code> contract admits
+two independent stationary passive Gaussian agents. It reconstructs
+their authored source independently, builds the joint block-diagonal
+Gaussian model and conditions observation prefixes, while retaining
+complete native JAX child records and their within-agent covariance
+matrices. A separate FEP adapter checks those same authored inputs and
+native records with recursive Kalman/Joseph updates. The cross-agent
+zero covariance is a consequence of the declared product model, not a
+measured native joint covariance. Separate finite post-evidence
+product-weight laws and false-claim controls establish their stated
+algebraic premises; they do not prove Gaussian conditioning, a parser or
+generated execution. Coupling, shared noise, control and unsupported
+source or conditioning contracts refuse explicitly.</p>
 <p>The generated website exposes reported outcomes through offline
 status/text filters, posterior and covariance-variance traces, and
 residual views, with full tables and raw receipts available alongside
-them. Changing a display control does not rerun a numerical reference or
-a proof compiler. Missing or incompatible evidence remains unavailable
-or refused; an informative visualization cannot strengthen its
-underlying scientific claim.</p>
+them. Per-agent selectors and full covariance tables expose retained
+component results; separate cards show the independent FEP comparisons
+and finite compiler controls with their stated scope. Changing a display
+control does not rerun a numerical reference or a proof compiler.
+Missing or incompatible evidence remains unavailable or refused; an
+informative visualization cannot strengthen its underlying scientific
+claim.</p>
 <p>The cross-framework reliability gate,
 <code>scripts/run_cross_framework_reliability.py</code>, takes a single
 GNN model and renders it across multiple simulation backends, then
@@ -2654,12 +2674,38 @@ writing its receipts even on failure. Like the gates above it is stated
 as a command, not as a pass count, and its pinned pair
 (<code>ActiveInferenceInstitute/GEO_INFER</code> at a recorded revision)
 is what makes “interchange” a checkable claim rather than a promise.</p>
-<h2 data-number="5.3" id="repository-scale"><span
-class="header-section-number">5.3</span> Repository Scale</h2>
+<h2 data-number="5.3" id="source-preserving-llm-processing"><span
+class="header-section-number">5.3</span> Source-Preserving LLM
+Processing</h2>
+<p>The LLM analysis step retains exact UTF-8 source parts, task
+identities, native responses and resumable checkpoints. Its opt-in
+<code>joint_source</code> mode makes a final request containing the
+original source and all ordered fragment answers for each multipart
+task; <code>part_evidence</code> instead supplies derived answers and
+source identities. The latter mode does not present the original source
+jointly, and neither silently substitutes for the other. Every submitted
+source block, task and output reserve must fit the selected model’s
+context; <code>joint_source</code> additionally requires the complete
+original to fit its final request. Exact source, request, response and
+dependency hashes bind cache and resume; incomplete or nonterminal
+native outputs remain unfinished.</p>
+<p>Context admission is limited to reviewed Ollama GGUF runtime
+contracts. It binds the exact model digest, advertised and loaded
+capacity, request messages, native usage and declared output reserve,
+with explicit no-shortening controls and overflow refusal. This is
+admission under a reviewed provider contract, not an independent
+tokenizer or attention measurement. A retained explicit
+<code>qwen3-coder:30b</code> profile checks controlled cross-part fact
+recovery and a resume with no new generations; they do not establish
+general scientific interpretation, arbitrarily large source coverage or
+another model’s completion quality. The website presents retained
+evidence without strengthening those claims.</p>
+<h2 data-number="5.4" id="repository-scale"><span
+class="header-section-number">5.4</span> Repository Scale</h2>
 <p>The repository’s scale is itself evidence of the surface that the
 gates and pipeline cover, and it is reported in fig. <a
 href="#fig:repo_metrics">7</a> directly from the tracked files at commit
-7a874fe80.</p>
+6f06b4a54.</p>
 <figure id="fig:repo_metrics">
 <a class="figure-full-size-link" href="../figures/gnn_repo_metrics.png" target="_blank" rel="noopener" aria-label="Open full-size Figure 7, Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered…"><img src="../figures/gnn_repo_metrics.png" style="width:80.0%"
 alt="Horizontal bar chart on a logarithmic axis of repository-scale counts: pipeline steps, model families, registered backends, render-target adapters, MCP tools, source packages, test files, example models and documentation files. Each bar is annotated with its exact value; all values come from output/data/manuscript_variables.json." /><span class="figure-full-size-label" aria-hidden="true">Open full-size figure</span></a>
@@ -2669,7 +2715,7 @@ render-target execution adapters, Model Context Protocol tools, source
 packages, test files, example models, and documentation files. Every bar
 is annotated with its exact value, and every value is a producer token
 read from <code>output/data/manuscript_variables.json</code> at commit
-7a874fe80 — the same token map that substitutes the prose counts. The
+6f06b4a54 — the same token map that substitutes the prose counts. The
 figure-freshness suite binds the committed image digest and its recorded
 producer inputs and counts; semantic content and visual correctness
 require their own review. The two backend bars are deliberately
@@ -2680,9 +2726,9 @@ execution-only Lean bridge and is not a count of observed native runs.
 Read the chart as the scale of the surface the pipeline maintains, not
 as a quality measure.</figcaption>
 </figure>
-<p>The test suite comprises 666 test files containing 6882 test
-functions, exercising a source base of 771 Python files across 44
-packages (229212 lines of source). The pipeline’s step modules — the
+<p>The test suite comprises 670 test files containing 6933 test
+functions, exercising a source base of 776 Python files across 44
+packages (231304 lines of source). The pipeline’s step modules — the
 thin orchestrators named in tbl. <a href="#tbl:pipeline_steps">2</a> —
 number 25, one per numbered step. The Model Context Protocol surface —
 which exposes GNN’s capabilities to external agents and tools — provides
@@ -2690,8 +2736,8 @@ which exposes GNN’s capabilities to external agents and tools — provides
 (0–24), and 7 figure artifacts from the rendering of figures, models,
 and reports are committed under <code>output/</code>, of which 7 are the
 manuscript’s own.</p>
-<h2 data-number="5.4" id="claim-discipline"><span
-class="header-section-number">5.4</span> Claim Discipline</h2>
+<h2 data-number="5.5" id="claim-discipline"><span
+class="header-section-number">5.5</span> Claim Discipline</h2>
 <p>A claim is manuscript-ready only when it is bound to a verifiable
 artifact. Concretely, every claim in this manuscript must rest on one of
 four support types:</p>
@@ -2842,8 +2888,8 @@ so a missing copy degrades rather than failing the build.</p>
 <p>Because the variables file is regenerated before rendering, the
 counts in the rendered PDF track the repository state at the commit
 recorded in <code>output/data/manuscript_variables.json</code>
-(7a874fe80): a code change that alters, for example, the test inventory
-(666 test files, 6882 test functions) propagates into the prose on the
+(6f06b4a54): a code change that alters, for example, the test inventory
+(670 test files, 6933 test functions) propagates into the prose on the
 next regeneration without any manual editing.</p>
 <h2 data-number="6.4" id="reproducibility-contract"><span
 class="header-section-number">6.4</span> Reproducibility Contract</h2>
@@ -3026,8 +3072,8 @@ version control; the generated artifacts it produces are described
 separately so that the boundary between hand-written source and
 reproducible output stays explicit.</p>
 <p>The <code>src/</code> tree is the executable core of GNN. It is
-organized into 44 Python packages spanning 771 source files and roughly
-229212 lines of code. Alongside these packages sit the 25 top-level step
+organized into 44 Python packages spanning 776 source files and roughly
+231304 lines of code. Alongside these packages sit the 25 top-level step
 modules (0–24) that implement the numbered pipeline as thin
 orchestrators delegating into the packages, each module owning one stage
 of the progression from a parsed GNN text model through visualization,
@@ -3063,7 +3109,7 @@ throughout the manuscript. Treating these scripts as the source of
 reproduction commands keeps reported numbers bound to what the code
 actually computes.</p>
 <p>The <code>docs/</code> tree is the prose and reference surface,
-comprising 647 files of specification, tutorial, and design
+comprising 648 files of specification, tutorial, and design
 documentation for the GNN language and its Active Inference grounding
 <span class="citation" data-cites="gnn2023">(<a href="#ref-gnn2023"
 role="doc-biblioref">Smékal and Friedman 2023</a>)</span>. It is the
