@@ -1,6 +1,6 @@
 # TO-DO — GNN next steps
 
-Updated 2026-10-21.
+Updated 2026-10-26.
 Current software version is owned by [pyproject.toml](pyproject.toml).
 [GitHub release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases)
 own exact tags, accepted sources, checks and public artifacts. Version metadata
@@ -40,47 +40,49 @@ released compatibility. Full source-preserving multi-request processing,
 independent semantic extraction and coupled/native extension acceptance remain
 required.
 
-## Next major release: synchronize GNN and FEP_Formal
+## Published coordinated checkpoint
 
-GNN 4.3.0 retains the last accepted fixed FEP baseline introduced in 4.2.1 under the bounded
-[compatibility policy](docs/development/fep_lean_paired_revision.md#fixed-baseline-for-gnn-421).
-For the next major release of both projects, finish source changes first,
-refresh bridge emissions and Q7 provenance, compile and validate new native
-receipts at new paths, qualify the exact paired heads and replace the temporary
-baseline mode with synchronized checks. Preserve historical receipts. This is
-release coordination work, separate from the seven scientific S/E workstreams.
+[GNN 5.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1),
+[FEP_Formal 2.1.0](https://github.com/ActiveInferenceInstitute/fep_formal/releases/tag/v2.1.0)
+and [GEO-INFER 0.4.0](https://github.com/ActiveInferenceInstitute/GEO_INFER/releases/tag/v0.4.0)
+are published. Their exact accepted sources, artifacts, companion pins and
+native evidence retain their original identities. The earlier coordinated-major
+release preparation is complete; it is not a remaining scientific workstream.
+New source changes follow the active
+[paired-revision procedure](docs/development/fep_lean_paired_revision.md).
 
-## Versioned delivery plan: 4.3.0 through 4.9.0
+GNN's software source archive is version DOI
+[10.5281/zenodo.23631909](https://doi.org/10.5281/zenodo.23631909).
+The FEP_Formal software source archive is version DOI
+[10.5281/zenodo.23631895](https://doi.org/10.5281/zenodo.23631895).
+These software records are separate from the FEP manuscript deposit and from
+E5's historical GNN 4.1.0 distribution-inventory requirement.
 
-The 4.3.0 row names its bounded numerical witness implementation; 4.4.0–4.9.0
-are proposed compatible scopes, not implemented capabilities or calendar promises. Each release takes one bounded slice of the stable workstreams
-below; a version does not automatically close its whole S/E item. If implementation
-requires a breaking public contract, review a major-version migration instead.
-The roles named here identify required reviewers, not assigned people.
+<a id="versioned-delivery-plan-430-through-490"></a>
 
-The 4.3.0 foundation adds test/reference and documentation surfaces while retaining
-covered scientific runtime bytes. Later rows that change those covered owners
-cannot ship under the fixed-FEP policy: perform the coordinated major release
-first and reassign their version targets during that planning. The 4.4–4.9 labels
-retain the requested planning horizons; they do not authorize runtime drift or
-promise those exact minor versions under the present baseline.
+## Current delivery priorities
 
-| Target | Bounded deliverable | Prerequisite and review ownership | Acceptance before release |
-|---|---|---|---|
-| **4.3.0** | **E4 foundation:** independent finite enumeration and linear-Gaussian filtering witnesses for explicitly admitted source contracts | GNN parser/extractor and numerical maintainers; FEP bridge reviewer for changed formal owners | Asymmetric fixtures; independent extraction; declared conditioning/time/precision; axis, source, action-time and covariance negative controls; fresh formal/native/custody receipts remain separate |
-| **4.4.0** | **S1:** complete one declared source-preserving multi-request LLM task with joint synthesis and resumable checkpoints | 4.3 source identity conventions; LLM/provider and run-ownership reviewers; verified tokenizer/context admission | Every selected byte and required prompt accounted for; native terminal completion and cross-part evidence; exact provider/model identity; refusal, resume, cancellation, budget and context-boundary controls |
-| **4.5.0** | **E1:** centralized coupled linear-Gaussian filtering with explicit agent identity and full cross-covariance | 4.3 independent semantic witnesses; continuous/JAX/RxInfer reviewers | Unequal state/observation dimensions, directional coupling and asymmetric covariance; independent reference; zero-coupling recovery and agent-permutation controls; explicit rejection of unsupported compositions |
-| **4.6.0** | **E3:** one explicitly specified cpomdp search extension beyond accepted E3-FA1 finite controls | 4.3 numerical method, source-declared controls and resource supervision; cpomdp/numerical reviewers | Complete policy/component receipts against an independent Kalman/EFE reference; exact authored action order; finite option validation, ties and all-invalid rejection; total evaluation/allocation/deadline bounds; passive mode allocates no search |
-| **4.7.0** | **S3:** admit structural zeros only after a suitable ordinary released THRML fix passes compatibility | External upstream release; dependency and THRML/JAX reviewers | Locked installation on both supported Python/JAX splits; exact-zero/inactive-padding independent witnesses; no NaNs or source/seed/sample changes; unsupported inputs still reject explicitly |
-| **4.8.0** | **E2 first slice:** separately specified coupled finite THRML inference on supported released software | 4.3 semantic witnesses and 4.7 if zeros are required; THRML/scientific reviewers | Independent native categorical witnesses, coupling/admission and process/resource controls on both splits; continuous/hybrid models, policy search, hardware, energy and speed require separate future contracts and evidence |
-| **4.9.0** | **E5 closeout and compatibility review:** exact released source, ordinary distributions, manuscript, citation and checksums archived as one public version record | Archive-owner access and accepted release bytes; release/archive owner plus independent artifact reviewer | DOI resolves to the exact version; download every advertised asset and verify hashes/member inventory; cross-check documented backend/runtime support against accepted matrices; package-index delivery remains separately owned |
+The former 4.3.0–4.9.0 sequence was a planning horizon. It does not describe
+unpublished releases to produce after 5.0.1. Use the stable workstream IDs below
+and assign a new version only after the actual change and compatibility review.
+Accepted foundations remain described in the
+[roadmap contracts](docs/development/remaining_roadmap_contracts.md).
 
-E5 may complete earlier when archive access is available. S3 and any dependent E2
-scope stay blocked if no suitable released fix exists; never substitute an epsilon,
-local upstream patch or relabelled receipt to meet a target. Re-scope openly instead
-of shipping an empty version. S1 synthesis and E3 search design must be reviewed
-before coding, because independent fragment answers and exhaustive enumeration
-already have narrower accepted contracts.
+| Order | Workstream and next bounded unit | Acceptance before integration |
+|---|---|---|
+| 1 | **E4:** independent source-bound numerical semantics for explicitly admitted compositions | Independent extraction and numerical references, asymmetric dimensions, full covariance, identity/axis/conditioning counterexamples, separate formal and native evidence, current companion custody |
+| 2 | **S1:** explicit joint synthesis with source and response identity, declared context admission and resumable checkpoints | Every selected byte and required prompt accounted for; supported provider contract and genuine native terminal completion; no silent truncation, fallback or manufactured completion; cancellation, budget, refusal and resume controls |
+| 3 | **E1:** coupled continuous-agent semantics beyond independent Gaussian products | Explicit coupling and control identity, cross-covariance, independent reference, zero-coupling and permutation controls; unsupported compositions refuse |
+| 4 | **E3:** separately specified cpomdp search beyond accepted finite controls | Complete policy/component receipts against independent Kalman/EFE references; action order, ties/all-invalid rejection and total resource bounds |
+| External prerequisite | **S3:** qualify a suitable ordinary released THRML structural-zero fix | Locked compatibility on supported JAX splits, independent exact-zero/inactive-padding witnesses and no changed source/seed/sample semantics |
+| After its prerequisites | **E2:** separately specified coupled finite THRML inference | Independent native categorical witnesses and admission/resource controls; continuous models, search, hardware, energy and speed retain separate scopes |
+| Archive-owner access | **E5:** complete the historical exact-version distribution inventory | Preserve existing source ZIP/DOI; add only accepted version-matching distributions/checksums where provider controls permit, then verify every public download |
+
+E5 can proceed independently when archive access permits. S3 and dependent E2
+scope remain blocked without suitable released compatibility. Do not substitute
+an epsilon, a private upstream patch or relabeled historical evidence. Review
+S1 context/synthesis and E3 search designs before implementation; independent
+fragment answers and exhaustive enumeration retain narrower accepted contracts.
 
 ### Release iteration and CI work across every minor
 
@@ -136,19 +138,23 @@ The lists below own outstanding work; this table owns target-version sequencing.
 ## Major work
 
 - [ ] **S1 — complete source-preserving long-context LLM processing (P1).**
-  Progress: explicit byte-preserving multipart prompts now retain independent
-  native fragment responses, exact part receipts and resumable part checkpoints.
-  Optional named-answer bundles preserve summary-first scheduling and avoid
-  resubmitting the same source for every additional task.
-  Complete part coverage does not establish joint cross-part interpretation.
-  Remaining scope: verified context admission and a joint synthesis/checkpoint method
-  for large selected model sources and every required prompt. Preserve exact
-  provider/model/source identities, declared budgets and original source content.
-  Accept: genuine native completion for every selected source/prompt, truthful
-  structural/native coverage and unfinished-work reporting, resumable checkpoints
-  and timeout/cancellation/context-refusal controls. No silent truncation,
-  sampling, model substitution or manufactured completion. Depends on verified
-  model/provider context admission and the M2/M3 result/configuration contracts.
+  Progress: byte-preserving multipart prompts retain native fragment responses,
+  exact part receipts and resumable checkpoints. The unreleased opt-in
+  [synthesis modes](docs/llm/README.md#explicit-cross-part-synthesis-and-resume)
+  add a final exact-source request (`joint_source`) or explicitly derived
+  fragment evidence (`part_evidence`), with source/request/response dependency
+  hashes, reviewed Ollama context admission and strict native-stop resume.
+  A bounded explicit Qwen profile completed 21 requests over two source parts,
+  returned both controlled cross-part facts and resumed with no new generations.
+  Default Smollm partial runs and the Gemma controlled-fact failure remain
+  retained; the default model is unchanged. This establishes the admitted local
+  profile, not general scientific interpretation or independent attention.
+  Remaining: broader large-source/provider and answer-quality acceptance;
+  native `part_evidence` qualification. Every joint source and prompt must fit
+  the selected context. Preserve exact provider/model/source identities,
+  budgets, original bytes and explicit refusal/unfinished states. No silent
+  truncation, sampling, model substitution or manufactured completion. Depends
+  on verified model/provider admission and M2/M3 result/configuration contracts.
 
 - [ ] **E1 — extend coupled multi-agent continuous semantics (P2).**
   Scope: reconcile existing continuous/factored/hybrid/nonstationary and
@@ -185,8 +191,13 @@ The lists below own outstanding work; this table owns target-version sequencing.
   Progress: the 4.3.0 [witness foundation](docs/development/remaining_roadmap_contracts.md#e4-foundation-source-bound-numerical-witness-v1)
   independently reads a restricted source subset, enumerates finite paths and
   conditions joint Gaussians. Native bnlearn/JAX comparisons and counterexamples
-  cover their declared filtering fixtures. Broader source contracts, inference
-  algorithms, translations and formal equivalence remain open.
+  cover their declared filtering fixtures. The unreleased
+  [E4-IG1 composition extension](docs/development/e4_independent_gaussian_composition.md)
+  adds independent extraction and joint-prefix conditioning for two passive
+  Gaussian agents, full retained child metadata and separate FEP Kalman/Joseph
+  replay. Its finite product-weight algebra has separate native proof controls;
+  it is not a Gaussian conditioning or program-equivalence theorem. Broader
+  source contracts, coupled models, algorithms and formal equivalence remain open.
   Scope: specify independent extraction and semantic witnesses for declared
   finite/continuous models, translations, inference algorithms and precision
   assumptions beyond source/hash/value/shape custody. Accept: exact assumptions,

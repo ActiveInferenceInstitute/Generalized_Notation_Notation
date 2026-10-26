@@ -60,6 +60,7 @@ class LLMConfig:
     stream: bool = False
     timeout: Optional[float] = None
     response_format: Optional[Dict[str, Any]] = None
+    context_admission: bool = False
 
 
 class BaseLLMProvider(ABC):

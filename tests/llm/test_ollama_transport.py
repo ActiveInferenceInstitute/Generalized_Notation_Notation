@@ -60,6 +60,8 @@ def daemon() -> Iterator[
         tags_delay: float = 0,
         after_chat: Callable[[], None] | None = None,
         after_get: Callable[[str], None] | None = None,
+        show_response: Any = None,
+        ps_response: Any = None,
     ) -> tuple[str, list[dict[str, Any]], threading.Event]:
         received = _Requests()
         opened = threading.Event()
@@ -77,6 +79,9 @@ def daemon() -> Iterator[
                         else tags_response
                     )
                     wait = tags_delay
+                elif self.path.endswith("/api/ps"):
+                    value = ps_response
+                    wait = 0
                 else:
                     value = (
                         {"version": "0.35.0"}
@@ -106,6 +111,13 @@ def daemon() -> Iterator[
                         ),
                     }
                 )
+                if self.path.endswith("/api/show"):
+                    result = json.dumps(show_response).encode()
+                    self.send_response(200)
+                    self.send_header("Content-Length", str(len(result)))
+                    self.end_headers()
+                    self.wfile.write(result)
+                    return
                 if after_chat is not None:
                     after_chat()
                 time.sleep(header_delay)
@@ -1241,3 +1253,37 @@ def test_bundled_prompts_submit_source_once_and_require_all_answers(
                 ]
                 == "incomplete"
             )
+
+
+@pytest.mark.parametrize("capacity, expected", [(8192, "admitted"), (4096, "refused")])
+def test_s1_context_observations_bind_exact_local_http_request(
+    daemon, capacity, expected
+):
+    """Local HTTP fixture proves transport behavior, never native model quality."""
+    show = {
+        "details": {"format": "gguf"},
+        "model_info": {"general.architecture": "llama", "llama.context_length": 8192},
+        "template": "fixture-template",
+    }
+    host, received, _ = daemon(
+        show_response=show,
+        ps_response={
+            "models": [{"name": MODEL, "digest": DIGEST, "context_length": capacity}]
+        },
+    )
+    provider = _provider(host, generation_options={"num_ctx": 8192})
+    response = asyncio.run(
+        provider.generate_response(
+            [LLMMessage(role="user", content="α\r\nω")],
+            LLMConfig(model=MODEL, max_tokens=256, context_admission=True),
+        )
+    )
+    assert response.metadata["context_admission"]["status"] == expected
+    chats = [r for r in received if r["path"].endswith("/api/chat")]
+    assert len(chats) == 1
+    assert chats[0]["body"]["truncate"] is False
+    assert chats[0]["body"]["shift"] is False
+    assert chats[0]["body"]["messages"][0]["content"] == "α\r\nω"
+    assert any(p.endswith("/api/ps") for p in received.get_paths)
+    if expected == "admitted":
+        assert response.metadata["context_admission"]["attention_verified"] is False

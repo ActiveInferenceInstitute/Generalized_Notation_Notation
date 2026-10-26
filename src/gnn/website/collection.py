@@ -197,7 +197,8 @@ def _selected_semantic_evidence(receipt: dict[str, Any]) -> bool:
     Neutral receipt filenames cannot identify a model. Generic analysis keeps
     its existing path-based admission; standalone receipts remain unverified
     display data. This check establishes selection identity, not numerical or
-    formal acceptance.
+    formal acceptance. The standalone FEP product audit has no retained source
+    bytes: its root digest establishes declared selection identity only.
     """
     from gnn.pipeline.run_context import current_run_context
 
@@ -205,22 +206,47 @@ def _selected_semantic_evidence(receipt: dict[str, Any]) -> bool:
     if context is None:
         return True
     schema = receipt.get("schema")
-    if not isinstance(schema, str) or schema not in {
+    if not isinstance(schema, str):
+        return "schema" not in receipt
+    if schema in {"fep-gnn-semantic-native-v1", "fep-gnn-finite-product-native-v1"}:
+        return True  # Global formal source identity is not a selected GNN model.
+    if schema == "fep-gaussian-product-witness-audit-v1":
+        digest = receipt.get("source_sha256")
+        # This standalone audit supplies a declared digest, not retained source bytes.
+        return (
+            isinstance(digest, str)
+            and re.fullmatch(r"[0-9a-f]{64}", digest) is not None
+            and digest in {model.sha256 for model in context.selected_models(20)}
+        )
+    if schema not in {
         "gnn-semantic-witness-v2",
+        "gnn-semantic-witness-v3",
         "gnn-independent-numerical-witness-v1",
         "fep-semantic-witness-audit-v1",
     }:
-        return True
+        # Unknown semantic versions cannot borrow generic analysis admission.
+        return not schema.startswith(
+            (
+                "gnn-semantic-witness-",
+                "gnn-independent-numerical-witness-",
+                "fep-semantic-witness-audit-",
+                "fep-gaussian-product-witness-audit-",
+                "fep-gnn-finite-product-native-",
+                "fep-gnn-semantic-native-",
+            )
+        )
     witness = receipt
     if schema == "fep-semantic-witness-audit-v1":
         nested = receipt.get("gnn_witness")
         if (
             not isinstance(nested, dict)
-            or nested.get("schema") != "gnn-semantic-witness-v2"
+            or not isinstance(nested.get("schema"), str)
+            or nested["schema"]
+            not in {"gnn-semantic-witness-v2", "gnn-semantic-witness-v3"}
         ):
             return False
         witness = nested
-        schema = "gnn-semantic-witness-v2"
+        schema = nested["schema"]
     contract = witness.get("source_contract")
     if not isinstance(contract, dict):
         return False
@@ -231,7 +257,7 @@ def _selected_semantic_evidence(receipt: dict[str, Any]) -> bool:
         or digest not in {model.sha256 for model in context.selected_models(20)}
     ):
         return False
-    if schema == "gnn-semantic-witness-v2":
+    if schema in {"gnn-semantic-witness-v2", "gnn-semantic-witness-v3"}:
         artifacts = witness.get("artifacts")
         source = artifacts.get("source") if isinstance(artifacts, dict) else None
         if (

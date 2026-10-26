@@ -159,6 +159,7 @@ def run_simulation():
         else:
             os.environ["GNN_OUTPUT_DIR"] = previous
     record = {{**RECORD, "runtime_metadata": {{**RECORD["runtime_metadata"]}}}}
+    record["agent_results"] = results
     for key in KEYS:
         record[key + "_by_agent"] = {{name: result.get(key, []) for name, result in results.items()}}
     record["validation"] = {{"all_valid": all(r["validation"]["all_valid"] for r in results.values()), "per_agent": {{name: r["validation"] for name, r in results.items()}}}}

@@ -1,6 +1,6 @@
 """Replayable source-bound numerical comparisons, separate from execution/proof.
 
-Only the restricted v1 authored source subset is admitted. Candidate metadata
+Only explicitly declared bounded authored source subsets are admitted. Candidate metadata
 comes from the result artifact; absent declarations are never copied from the
 source. Verification rebuilds the complete receipt from its retained bytes.
 """
@@ -288,6 +288,10 @@ def build_semantic_witness(
     source_artifact, result_artifact = _artifact(source), _artifact(result)
     program_artifact = _artifact(program) if program is not None else None
     contract = read_source(source)
+    if contract["model"] == "gaussian_product":
+        from .witness_composition import build_composition_witness
+
+        return build_composition_witness(source, result, program, contract)
     payload = _json(result_artifact["utf8"])
     if not isinstance(payload, dict):
         raise ValueError("native result must be a JSON object")
@@ -437,7 +441,7 @@ def verify_semantic_witness(receipt: object) -> list[str]:
     try:
         if not isinstance(receipt, dict):
             return ["semantic witness receipt must be a mapping"]
-        if receipt.get("schema") != SCHEMA:
+        if receipt.get("schema") not in (SCHEMA, "gnn-semantic-witness-v3"):
             return ["unsupported semantic witness schema"]
         artifacts = receipt["artifacts"]
         if not isinstance(artifacts, dict) or set(artifacts) != {

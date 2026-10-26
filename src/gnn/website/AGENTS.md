@@ -43,9 +43,9 @@ provenance, formal references, compilation, execution and pair custody distinct.
 Unknown or malformed optional fields must not establish a pass or fail the page.
 The seven-page catalogue, current artifact filtering and pure-dict seam remain
 unchanged.
-For recognized v1/v2 witnesses and FEP audit wrappers, `collection.py` also binds
+For recognized v1/v2/v3 witnesses and FEP audit wrappers, `collection.py` also binds
 the receipt's declared source digest to Step 20's selected original-model hashes.
-V2 and wrapped-v2 retained source bytes must reproduce that digest. Filename
+V2/v3 and their wrapped variants retain source bytes that must reproduce that digest. Filename
 ownership alone cannot admit evidence for another model. This collection check
 does not certify numerical replay, execution or formal proof; generic analysis
 datasets and standalone/pure-dict presentation keep their existing contracts.
@@ -55,7 +55,18 @@ record expected false-claim rejections. Preserve compiler and axiom output,
 proof hole diagnostics, source/toolchain identity and the explicit finite-weight
 and scalar prior-measurement scope; do not infer matrix/translation proofs or
 source-model bindings from global native compilation.
-The numerical trace explorer consumes retained v2 reference/candidate arrays,
+
+The standalone `fep-gaussian-product-witness-audit-v1` adapter displays its
+reported independent Kalman/Joseph replay comparisons separately. Its root
+source digest binds only declared selection identity: the audit contains no
+retained source bytes and must not be promoted into a wrapped GNN witness.
+Complete recorded component arrays remain in its saved-audit disclosure.
+`fep-gnn-finite-product-native-v1` is a separate global compiler profile for
+finite post-evidence product-weight algebra and its false controls. Its fixed
+scope excludes Gaussian measure/kernel and matrix-conditioning proofs. Keep
+both compiler profiles' scopes and expected negative-control names separate;
+future unknown semantic or compiler versions cannot borrow active-run admission.
+The numerical trace explorer consumes retained v2 arrays and aligned v3 component arrays,
 never a backend or scientific replay. Guard recorded identity admission,
 metadata alignment and finite nonboolean shapes at eight prefixes/four state
 axes. Unavailable/refused identity records produce no SVG; failed numerical

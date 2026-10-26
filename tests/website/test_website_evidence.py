@@ -7,6 +7,8 @@ from copy import deepcopy
 from html.parser import HTMLParser
 from pathlib import Path
 
+import pytest
+
 from gnn.website import WebsiteGenerator
 from gnn.website.evidence import PROOF_BOUNDARY, render_evidence_section
 
@@ -85,6 +87,7 @@ def _trace_receipt() -> dict:
     contract = receipt["source_contract"]
     contract.update(
         model_parameters={"num_timesteps": 2, "random_seed": 0},
+        axes={"F": ["next_state", "previous_state"], "H": ["observation", "state"]},
         initial_time="first_observation_uses_prior",
     )
     contract["state_ids"] = ["position </script><x>", "velocity"]
@@ -680,3 +683,700 @@ def test_malformed_rows_remain_visible_without_page_failure(tmp_path: Path) -> N
     assert "No recognized numerical evidence receipts" in render_evidence_section(
         [None, {"schema": "unsupported"}]
     )
+
+
+def _composition_receipt() -> dict:
+    """Presentation-only asymmetric components, with no execution claim."""
+    child = _trace_receipt()
+    components, references, candidates, comparisons = {}, {}, {}, {}
+    for agent in ("agent1", "agent2"):
+        component = deepcopy(child["source_contract"])
+        reference = deepcopy(child["reference"])
+        candidate = deepcopy(child["candidate"])
+        if agent == "agent2":
+            component["state_ids"] = ["temperature"]
+            candidate["num_states"] = 1
+            for record in (reference, candidate):
+                record["quantities"]["beliefs"] = [
+                    [row[0]] for row in record["quantities"]["beliefs"]
+                ]
+                record["quantities"]["posterior_cov"] = [
+                    [[matrix[0][0]]] for matrix in record["quantities"]["posterior_cov"]
+                ]
+        component["schema"] = "gnn-independent-gaussian-composition-v1"
+        component["parameters"] = (
+            {
+                "F": [[0.9, 0.1], [0.0, 0.8]],
+                "H": [[1.0, 0.0]],
+                "Q": [[0.1, 0.01], [0.01, 0.2]],
+                "R": [[0.3]],
+                "prior_mean": [0.0, 0.0],
+                "prior_cov": [[1.0, 0.1], [0.1, 0.8]],
+            }
+            if agent == "agent1"
+            else {
+                "F": [[0.7]],
+                "H": [[1.3]],
+                "Q": [[0.2]],
+                "R": [[0.4]],
+                "prior_mean": [1.5],
+                "prior_cov": [[0.8]],
+            }
+        )
+        reference["observations"] = [[0.25], [0.5]]
+        candidate.update(
+            schema_version="gnn_lgssm_filter_v1",
+            model_kind="continuous",
+            framework="jax",
+            parameters=deepcopy(component["parameters"]),
+            controls=[[0.0] * len(component["state_ids"]) for _ in range(2)],
+            observations_continuous=deepcopy(reference["observations"]),
+            validation={"all_valid": True},
+        )
+        components[agent] = component
+        references[agent] = {
+            **reference,
+            "state_ids": component["state_ids"],
+            "observation_ids": component["observation_ids"],
+        }
+        candidates[agent] = {**candidate, **candidate["quantities"]}
+        for key, value in child["comparisons"].items():
+            comparisons[agent + ":" + key] = deepcopy(value)
+        required = (
+            "identity:framework",
+            "identity:schema_version",
+            "identity:model_kind",
+            "identity:validation.all_valid",
+            "identity:parameter_keys",
+            "parameter:F",
+            "parameter:H",
+            "parameter:Q",
+            "parameter:R",
+            "parameter:prior_mean",
+            "parameter:prior_cov",
+            "controls",
+            "observations",
+            "projection:beliefs",
+            "projection:posterior_cov",
+            "projection:controls",
+            "projection:observations_continuous",
+            "validity:beliefs",
+            "validity:posterior_cov",
+        )
+        comparisons.update(
+            {agent + ":" + key: {"status": "passed"} for key in required}
+        )
+    comparisons.update(
+        {
+            "identity:" + key: {"status": "passed"}
+            for key in (
+                "schema_version",
+                "model_kind",
+                "framework",
+                "agents",
+                "agent_coupling",
+                "num_timesteps",
+                "validation.all_valid",
+                "agent_results",
+                "beliefs_projection_agents",
+                "posterior_cov_projection_agents",
+                "controls_projection_agents",
+                "observations_continuous_projection_agents",
+            )
+        }
+    )
+    contract = {
+        "schema": "gnn-independent-gaussian-composition-v1",
+        "model": "gaussian_product",
+        "agents": ["agent1", "agent2"],
+        "question": "filtering",
+        "dtype": "float64",
+        "initial_time": child["source_contract"]["initial_time"],
+        "source_sha256": "a" * 64,
+        "axes": child["source_contract"]["axes"],
+        "components": components,
+        "model_parameters": {
+            "num_timesteps": 2,
+            "nr_agents": 2,
+            "agent_coupling": "independent",
+            "random_seed_agent1": 0,
+            "random_seed_agent2": 0,
+        },
+        "parameters": {
+            f"{key}_{agent}": value
+            for agent, component in components.items()
+            for key, value in component["parameters"].items()
+        },
+    }
+    for key in ("state_ids", "observation_ids"):
+        contract[key] = [
+            f"{agent}:{label}"
+            for agent, component in components.items()
+            for label in component[key]
+        ]
+    assumptions = {
+        key: contract[key]
+        for key in (
+            "state_ids",
+            "observation_ids",
+            "axes",
+            "initial_time",
+            "question",
+        )
+    }
+    assumptions.update(
+        agent_coupling="independent",
+        control_mode="passive",
+        conditioning_horizon=[1, 2],
+    )
+    return {
+        "schema": "gnn-semantic-witness-v3",
+        "status": "failed",
+        "source_contract": contract,
+        "reference": {"conditioning_horizon": [1, 2], "components": references},
+        "candidate": {"agents": ["agent1", "agent2"], "components": candidates},
+        "comparisons": comparisons,
+        "assumptions": assumptions,
+        "formal_evidence": {"status": "unavailable", "universal_equivalence": False},
+        "execution_evidence": {
+            "status": "artifact_only",
+            "execution_source_verified": False,
+        },
+    }
+
+
+def test_composition_explorer_preserves_agents_full_covariance_and_reported_mismatch(
+    tmp_path: Path,
+) -> None:
+    receipt = _composition_receipt()
+    original = deepcopy(receipt)
+    result = WebsiteGenerator().generate_website(
+        {"output_dir": tmp_path, "analysis": [receipt]}, filesystem=False
+    )
+    assert result["success"] and result["pages_created"] == 7
+    html = (tmp_path / "analysis.html").read_text()
+    assert receipt == original
+    assert 'id="trace-title-0-agent1"' in html
+    assert 'id="trace-title-0-agent2"' in html
+    encoded = re.findall(
+        r'<script type="application/json" data-trace-data>(.*?)</script>',
+        html,
+        re.DOTALL,
+    )
+    assert len(encoded) == 2
+    payloads = [json.loads(value) for value in encoded]
+    assert (
+        payloads[0]["states"]
+        == original["source_contract"]["components"]["agent1"]["state_ids"]
+    )
+    assert payloads[1]["states"] == ["temperature"]
+    assert payloads[0]["series"]["beliefs"]["status"] == "failed"
+    assert payloads[0]["covariance_matrices"]["reference"][0][0][1] == 0.1
+    assert "including off-diagonal entries" in html
+    assert "not a measured native joint covariance or a proof of independence" in html
+    assert "position &lt;/script&gt;&lt;x&gt;" in html
+    assert all("</" not in value for value in encoded)
+    assert PROOF_BOUNDARY in html
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "null_labels",
+        "bad_labels",
+        "dimension_budget",
+        "wrong_agents",
+        "root_axis_identity",
+        "child_seed",
+        "child_parameter",
+        "future_prefix",
+        "boolean_array",
+        "missing_child",
+        "shared_noise",
+        "refused_status",
+    ],
+)
+def test_composition_explorer_does_not_draw_incompatible_or_malformed_records(
+    mutation: str,
+) -> None:
+    receipt = _composition_receipt()
+    contract = receipt["source_contract"]
+    if mutation == "null_labels":
+        contract["components"]["agent1"]["state_ids"] = None
+    elif mutation == "bad_labels":
+        contract["components"]["agent1"]["state_ids"] = {"axis": "wrong"}
+    elif mutation == "dimension_budget":
+        contract["components"]["agent1"]["state_ids"] = ["a", "b", "c", "d"]
+    elif mutation == "wrong_agents":
+        receipt["candidate"]["agents"] = ["agent2", "agent1"]
+    elif mutation == "root_axis_identity":
+        receipt["comparisons"]["identity:agents"]["status"] = "refused"
+    elif mutation == "child_seed":
+        receipt["candidate"]["components"]["agent2"]["random_seed"] = 999
+    elif mutation == "child_parameter":
+        receipt["comparisons"]["agent1:parameter:H"]["status"] = "refused"
+    elif mutation == "future_prefix":
+        receipt["reference"]["conditioning_horizon"] = [2, 3]
+    elif mutation == "boolean_array":
+        receipt["candidate"]["components"]["agent1"]["beliefs"] = [
+            [True, False],
+            [True, False],
+        ]
+        receipt["candidate"]["components"]["agent1"]["posterior_cov"] = None
+    elif mutation == "missing_child":
+        del receipt["candidate"]["components"]["agent2"]
+    elif mutation == "shared_noise":
+        receipt["assumptions"]["agent_coupling"] = "shared_noise"
+    elif mutation == "refused_status":
+        receipt["status"] = "refused"
+    html = render_evidence_section([receipt])
+    assert (
+        '<div class="details-body evidence-trace-explorer" data-trace-explorer>'
+        not in html
+    )
+    assert PROOF_BOUNDARY in html
+
+
+def test_v3_and_wrapped_v3_collection_bind_original_source_bytes(
+    tmp_path: Path, monkeypatch
+) -> None:
+    from gnn.pipeline.run_context import build_run_context
+    from gnn.website.collection import _selected_semantic_evidence
+
+    source = tmp_path / "input"
+    source.mkdir()
+    raw = b"# Selected composition\r\n"
+    (source / "product.md").write_bytes(raw)
+    context = build_run_context(source, tmp_path / "output", "v3-evidence", [20], {})
+    monkeypatch.setattr("gnn.pipeline.run_context.current_run_context", lambda: context)
+    receipt = _composition_receipt()
+    digest = hashlib.sha256(raw).hexdigest()
+    receipt["source_contract"]["source_sha256"] = digest
+    receipt["artifacts"] = {"source": {"sha256": digest, "utf8": raw.decode()}}
+    for record in (
+        receipt,
+        {"schema": "fep-semantic-witness-audit-v1", "gnn_witness": receipt},
+    ):
+        assert _selected_semantic_evidence(record)
+        corrupted = deepcopy(record)
+        target = corrupted.get("gnn_witness", corrupted)
+        target["artifacts"]["source"]["utf8"] += "changed"
+        assert not _selected_semantic_evidence(corrupted)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "status_list",
+        "status_dict",
+        "coherent_wrong_axes",
+        "root_dtype",
+        "root_coupling",
+        "root_seed_float",
+        "child_model",
+        "missing_parameter_row",
+        "changed_native_parameter",
+        "extra_native_parameter",
+        "nonzero_controls",
+        "native_failed_validation",
+        "missing_observations",
+        "extra_refused_identity",
+        "boolean_means",
+        "boolean_covariance",
+        "nan_mean",
+        "oversized_integer",
+        "missing_source_hash",
+        "missing_projection_row",
+        "malformed_child_options",
+    ],
+)
+def test_composition_guard_checks_raw_alignment_and_malformed_optional_fields(mutation):
+    receipt = _composition_receipt()
+    contract = receipt["source_contract"]
+    native = receipt["candidate"]["components"]["agent1"]
+    if mutation == "status_list":
+        receipt["status"] = ["passed"]
+    elif mutation == "status_dict":
+        receipt["status"] = {"outcome": "passed"}
+    elif mutation == "coherent_wrong_axes":
+        wrong = {"F": ["previous_state", "next_state"], "H": ["state", "observation"]}
+        contract["axes"] = wrong
+        receipt["assumptions"]["axes"] = deepcopy(wrong)
+        for agent in ("agent1", "agent2"):
+            contract["components"][agent]["axes"] = deepcopy(wrong)
+            receipt["candidate"]["components"][agent]["axes"] = deepcopy(wrong)
+    elif mutation == "root_dtype":
+        contract["dtype"] = "float32"
+    elif mutation == "root_coupling":
+        contract["model_parameters"]["agent_coupling"] = "shared_noise"
+    elif mutation == "root_seed_float":
+        contract["model_parameters"]["random_seed_agent1"] = 0.0
+    elif mutation == "child_model":
+        contract["components"]["agent1"]["model"] = "finite"
+    elif mutation == "missing_parameter_row":
+        del receipt["comparisons"]["agent1:parameter:Q"]
+    elif mutation == "changed_native_parameter":
+        native["parameters"]["H"][0][0] = 1.5
+    elif mutation == "extra_native_parameter":
+        native["parameters"]["goal_mean"] = [0.0, 0.0]
+    elif mutation == "nonzero_controls":
+        native["controls"][0][0] = 0.1
+    elif mutation == "native_failed_validation":
+        native["validation"]["all_valid"] = False
+    elif mutation == "missing_observations":
+        del receipt["reference"]["components"]["agent1"]["observations"]
+    elif mutation == "extra_refused_identity":
+        receipt["comparisons"]["identity:additional_runtime_claim"] = {
+            "status": "refused"
+        }
+    elif mutation == "boolean_means":
+        native["beliefs"][0][0] = True
+    elif mutation == "boolean_covariance":
+        native["posterior_cov"][0][0][0] = True
+    elif mutation == "nan_mean":
+        native["beliefs"][0][0] = float("nan")
+    elif mutation == "oversized_integer":
+        native["beliefs"][0][0] = 10**400
+    elif mutation == "missing_source_hash":
+        contract["source_sha256"] = None
+        for component in contract["components"].values():
+            component["source_sha256"] = None
+    elif mutation == "missing_projection_row":
+        del receipt["comparisons"]["identity:beliefs_projection_agents"]
+    else:
+        contract["components"]["agent1"]["model_parameters"] = []
+    html = render_evidence_section([receipt])
+    assert (
+        '<div class="details-body evidence-trace-explorer" data-trace-explorer>'
+        not in html
+    )
+    assert PROOF_BOUNDARY in html
+    assert "Complete saved receipt (unverified)" in html
+
+
+def test_failed_recorded_covariance_keeps_full_matrix_fallback_and_display_overflow():
+    receipt = _composition_receipt()
+    receipt["comparisons"]["agent1:posterior_cov"]["status"] = "failed"
+    receipt["reference"]["components"]["agent1"]["quantities"]["posterior_cov"][0][0][
+        1
+    ] = -1e308
+    receipt["candidate"]["components"]["agent1"]["posterior_cov"][0][0][1] = 1e308
+    html = render_evidence_section([receipt])
+    encoded = re.findall(
+        r'<script type="application/json" data-trace-data>(.*?)</script>',
+        html,
+        re.DOTALL,
+    )
+    assert len(encoded) == 2
+    payload = json.loads(encoded[0])
+    assert payload["series"]["posterior_variance"]["status"] == "failed"
+    assert payload["covariance_matrices"]["candidate"][0][0][1] == 1e308
+    assert "unavailable (display overflow)" in html
+    assert "Recorded full covariance; display only" in html
+    assert "not a measured native joint covariance" in html
+
+
+def test_bound_selection_quarantines_unknown_semantic_schemas_and_malformed_wrappers(
+    tmp_path, monkeypatch
+):
+    from gnn.pipeline.run_context import build_run_context
+    from gnn.website.collection import _selected_semantic_evidence
+
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "model.md").write_text("# Selected model")
+    context = build_run_context(
+        source, tmp_path / "output", "schema-quarantine", [20], {}
+    )
+    monkeypatch.setattr("gnn.pipeline.run_context.current_run_context", lambda: context)
+    for schema in (
+        "gnn-semantic-witness-v99",
+        "gnn-independent-numerical-witness-v99",
+        "fep-semantic-witness-audit-v99",
+        None,
+        [],
+        {},
+    ):
+        assert not _selected_semantic_evidence({"schema": schema})
+    for schema in (None, [], {}, "gnn-semantic-witness-v99"):
+        assert not _selected_semantic_evidence(
+            {
+                "schema": "fep-semantic-witness-audit-v1",
+                "gnn_witness": {"schema": schema},
+            }
+        )
+    assert _selected_semantic_evidence({"comparisons": {"metric_agreement": {}}})
+    assert _selected_semantic_evidence({"schema": "domain-analysis-v1"})
+    assert _selected_semantic_evidence({"schema": "fep-gnn-semantic-native-v1"})
+
+
+def test_lone_json_surrogates_remain_visible_as_escapes_without_failing_site(tmp_path):
+    receipt = _composition_receipt()
+    receipt["source_contract"]["components"]["agent1"]["state_ids"][0] = "\ud800"
+    receipt["notes"] = {"diagnostic": "\udfff"}
+    result = WebsiteGenerator().generate_website(
+        {"output_dir": tmp_path, "analysis": [receipt]}, filesystem=False
+    )
+    assert result["success"] and result["pages_created"] == 7
+    html = (tmp_path / "analysis.html").read_text()
+    assert "\\ud800" in html and "\\udfff" in html
+    assert (
+        '<div class="details-body evidence-trace-explorer" data-trace-explorer>'
+        not in html
+    )
+    assert PROOF_BOUNDARY in html
+
+
+def _fep_product_audit_receipt():
+    comparisons = {
+        f"{agent}:{target}:{quantity}": {
+            "status": "passed",
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "atol": 1e-12,
+            "rtol": 1e-10,
+            "reason": "",
+        }
+        for agent in ("agent1", "agent2")
+        for target in ("reference", "candidate")
+        for quantity in ("beliefs", "posterior_cov")
+    }
+    comparisons.update(
+        {
+            "joint_reference:" + quantity: {"status": "passed", "max_abs_error": 0.0}
+            for quantity in ("beliefs", "posterior_cov")
+        }
+    )
+    return {
+        "schema": "fep-gaussian-product-witness-audit-v1",
+        "status": "passed",
+        "source_sha256": "a" * 64,
+        "input": {"path": "retained-witness.json", "sha256": "b" * 64},
+        "input_bookends_equal": True,
+        "independent_replay": {
+            "algorithm": "separate_agent_kalman_joseph",
+            "comparisons": comparisons,
+            "components": {
+                "agent1": {"beliefs": [[1.25]], "posterior_cov": [[[0.4]]]},
+                "agent2": {
+                    "beliefs": [[-0.5, 0.2]],
+                    "posterior_cov": [[[0.5, 0.1], [0.1, 0.7]]],
+                },
+                "retained_marker": "unique retained FEP component payload",
+            },
+        },
+        "formal_evidence": {
+            "status": "referenced_not_compiled",
+            "alignment": "finite_weight_algebra_only",
+            "native_claim_ready": False,
+            "universal_equivalence": False,
+            "source_path": "specs/gnn-semantic-witness-v1/composition_laws.lean",
+            "source_sha256": "c" * 64,
+            "scope": "Finite nonnegative weight products; not a Gaussian conditioning proof.",
+        },
+        "execution_evidence": {
+            "status": "artifact_only",
+            "execution_source_verified": False,
+        },
+        "cross_agent_covariance": "zero_by_declared_product_model; not a measured native quantity",
+        "errors": [],
+    }
+
+
+def _finite_product_native_receipt():
+    return {
+        "schema": "fep-gnn-finite-product-native-v1",
+        "status": "passed",
+        "source_path": "specs/gnn-semantic-witness-v1/composition_laws.lean",
+        "source_sha256": "c" * 64,
+        "toolchain": {"lean_toolchain": "leanprover/lean4:v4.35.0"},
+        "results": {
+            "positive": {
+                "compiles": True,
+                "accepted": True,
+                "has_sorry": False,
+                "stdout": "'FEPSemanticComposition.normalized_product' depends on axioms: [propext, Classical.choice]",
+                "source_sha256": "c" * 64,
+            },
+            "zero-product-normalizer": {
+                "compiles": False,
+                "accepted": True,
+                "has_sorry": False,
+                "stdout": "error: unsolved goals",
+                "source_sha256": "d" * 64,
+            },
+            "omitted-product-assumption": {
+                "compiles": False,
+                "accepted": True,
+                "has_sorry": False,
+                "stdout": "error: unsolved goals",
+                "source_sha256": "e" * 64,
+            },
+        },
+        "scope": "An untrusted reported scope cannot replace the fixed profile.",
+        "execution_source_verified": False,
+        "universal_equivalence": False,
+    }
+
+
+def test_fep_product_audit_displays_all_ten_recorded_comparisons_without_wrapping(
+    tmp_path,
+):
+    receipt = _fep_product_audit_receipt()
+    original = deepcopy(receipt)
+    result = WebsiteGenerator().generate_website(
+        {"output_dir": tmp_path, "analysis": [receipt]}, filesystem=False
+    )
+    assert result["success"] and result["pages_created"] == 7
+    html = (tmp_path / "analysis.html").read_text()
+    table = html.split(
+        "<caption>FEP recorded independent Gaussian product replay comparisons</caption>",
+        1,
+    )[1].split("</table>", 1)[0]
+    assert table.count("<tr>") == 11
+    for name in receipt["independent_replay"]["comparisons"]:
+        assert name in table
+    assert table.count("Reported passed") == 10
+    assert html.count("unique retained FEP component payload") == 1
+    assert "FEP recorded independent Gaussian product replay" in html
+    assert "separate_agent_kalman_joseph" in html
+    assert "referenced_not_compiled" in html and "finite_weight_algebra_only" in html
+    assert "not supplied by this audit schema" in html
+    assert "Source selection matches the declared digest only" in html
+    assert "no retained source bytes" in html
+    assert (
+        "No measured native joint covariance or Gaussian conditioning proof is inferred"
+        in html
+    )
+    assert "Complete saved FEP product audit (unverified)" in html
+    assert "gnn_witness" not in html and "gnn-semantic-witness-v3" not in html
+    assert (
+        '<div class="details-body evidence-trace-explorer" data-trace-explorer>'
+        not in html
+    )
+    assert receipt == original
+    assert PROOF_BOUNDARY in html
+
+
+def test_fep_product_replay_retains_reported_mismatch_and_refusal():
+    receipt = _fep_product_audit_receipt()
+    receipt["status"] = "failed"
+    row = receipt["independent_replay"]["comparisons"]["agent2:candidate:beliefs"]
+    row.update(status="failed", max_abs_error=0.5, reason="independent replay mismatch")
+    html = render_evidence_section([receipt])
+    assert "Reported audit status: failed" in html
+    assert "Reported failed" in html and "independent replay mismatch" in html
+    assert "0.5" in html
+    receipt["status"] = "refused"
+    receipt["errors"] = ["source identity mismatch"]
+    assert "source identity mismatch" in render_evidence_section([receipt])
+
+
+def test_finite_product_native_profile_uses_its_fixed_scope_and_false_controls():
+    receipt = _finite_product_native_receipt()
+    html = render_evidence_section([receipt])
+    assert "Retained finite product algebra compiler controls" in html
+    assert "Finite post-evidence product-weight normalization/nonnegativity" in html
+    assert (
+        "no Gaussian measure/kernel, matrix-conditioning, parser/runner or general composition proof"
+        in html
+    )
+    assert "scalar arbitrary-H" not in html
+    assert html.count("Reported negative control: false claim rejected") == 2
+    assert "Reported positive compilation: compiled" in html
+    assert "Reported failed" not in html
+    assert "FEPSemanticComposition.normalized_product" in html
+    assert (
+        "Global formal artifact; no source-model numerical binding is claimed" in html
+    )
+    assert "Complete saved native compiler receipt (unverified)" in html
+    assert PROOF_BOUNDARY in html
+    receipt["results"]["omitted-product-assumption"]["compiles"] = True
+    assert "false claim compiled unexpectedly" in render_evidence_section([receipt])
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "audit_status",
+        "replay",
+        "components",
+        "comparisons",
+        "formal",
+        "execution",
+        "native_results",
+        "native_compiles",
+        "native_hole",
+    ],
+)
+def test_new_fep_optional_fields_remain_unverified_without_page_failure(
+    tmp_path, mutation
+):
+    audit, native = _fep_product_audit_receipt(), _finite_product_native_receipt()
+    if mutation == "audit_status":
+        audit["status"] = {"outcome": "passed"}
+    elif mutation == "replay":
+        audit["independent_replay"] = ["malformed"]
+    elif mutation == "components":
+        audit["independent_replay"]["components"] = None
+    elif mutation == "comparisons":
+        audit["independent_replay"]["comparisons"] = []
+    elif mutation == "formal":
+        audit["formal_evidence"] = "malformed"
+    elif mutation == "execution":
+        audit["execution_evidence"] = []
+    elif mutation == "native_results":
+        native["results"] = ["malformed"]
+    elif mutation == "native_compiles":
+        native["results"]["zero-product-normalizer"]["compiles"] = 0
+    else:
+        native["results"]["zero-product-normalizer"]["has_sorry"] = ["unknown"]
+    result = WebsiteGenerator().generate_website(
+        {"output_dir": tmp_path, "analysis": [audit, native]}, filesystem=False
+    )
+    assert result["success"] and result["pages_created"] == 7
+    html = (tmp_path / "analysis.html").read_text()
+    assert "Complete saved FEP product audit (unverified)" in html
+    assert "Complete saved native compiler receipt (unverified)" in html
+    assert PROOF_BOUNDARY in html
+    if mutation in {"native_compiles", "native_hole"}:
+        assert html.count("Reported negative control: false claim rejected") == 1
+    if mutation == "audit_status":
+        assert "Reported audit status: unavailable" in html
+
+
+def test_product_audit_selection_uses_only_declared_source_identity_and_known_versions(
+    tmp_path, monkeypatch
+):
+    from gnn.pipeline.run_context import build_run_context
+    from gnn.website.collection import _selected_semantic_evidence
+
+    source = tmp_path / "source"
+    source.mkdir()
+    raw = b"# Selected Gaussian product\r\n"
+    (source / "product.md").write_bytes(raw)
+    context = build_run_context(source, tmp_path / "output", "product-audit", [20], {})
+    monkeypatch.setattr("gnn.pipeline.run_context.current_run_context", lambda: context)
+    audit = _fep_product_audit_receipt()
+    audit["source_sha256"] = hashlib.sha256(raw).hexdigest()
+    assert "artifacts" not in audit and "gnn_witness" not in audit
+    assert _selected_semantic_evidence(audit)
+    for digest in (
+        None,
+        True,
+        [],
+        {},
+        "invalid",
+        "0" * 64,
+        hashlib.sha256(b"# unselected model").hexdigest(),
+    ):
+        assert not _selected_semantic_evidence({**audit, "source_sha256": digest})
+    assert _selected_semantic_evidence(_finite_product_native_receipt())
+    for schema in (
+        "fep-gaussian-product-witness-audit-v99",
+        "fep-gnn-finite-product-native-v99",
+        "fep-gnn-semantic-native-v99",
+    ):
+        assert not _selected_semantic_evidence({**audit, "schema": schema})
+        html = render_evidence_section([{**audit, "schema": schema}])
+        assert "No recognized numerical evidence receipts" in html

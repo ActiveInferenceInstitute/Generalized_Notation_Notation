@@ -67,6 +67,7 @@ async def isolated_request(**payload: Any) -> LLMResponse:
             raise RuntimeIdentityChanged(expected, observed)
         diagnoses = {
             "context_limit": "Configured LLM model context cannot admit the complete input",
+            "context_admission_unsupported": "S1 context admission is unsupported by the configured provider/runtime",
             "runtime_unsupported": "Configured Ollama runtime cannot verify the whole-context policy",
             "model_unavailable": "Configured Ollama model is not installed",
             "model_identity_unavailable": "Configured Ollama model digest is unavailable",
@@ -139,8 +140,16 @@ async def _request(payload: dict[str, Any]) -> dict[str, Any]:
                 if not isinstance(configured, OllamaProvider):
                     raise RuntimeError("Configured Ollama provider is unavailable")
                 return await configured.preflight_model(
-                    _validate_model_name(payload["model"]), timeout=payload["timeout"]
+                    _validate_model_name(payload["model"]),
+                    timeout=payload["timeout"],
+                    **(
+                        {"verify_context": True}
+                        if payload.get("context_admission")
+                        else {}
+                    ),
                 )
+            if payload.get("context_admission"):
+                raise ValueError("S1 context admission unsupported for this provider")
             return {"ready": True}
         response = await processor.get_response(
             messages=[LLMMessage(**message) for message in payload["messages"]],
@@ -152,6 +161,7 @@ async def _request(payload: dict[str, Any]) -> dict[str, Any]:
                 model=payload["model"],
                 timeout=payload["timeout"],
                 response_format=payload.get("response_format"),
+                context_admission=payload.get("context_admission", False),
             ),
         )
         return asdict(response)
@@ -175,6 +185,8 @@ def main() -> None:
             category = "timeout"
         elif _classify_auth_error(str(exc)):
             category = "authentication"
+        elif "s1 context admission unsupported" in message:
+            category = "context_admission_unsupported"
         elif "whole-context policy" in message or "stable runtime" in message:
             category = "runtime_unsupported"
         elif "configured ollama model is not installed" in message:

@@ -23,6 +23,7 @@ import time
 from typing import Any, AsyncGenerator, List, Optional
 from urllib.parse import SplitResult, urlsplit
 
+from ..context_admission import checked_model_context, context_receipt
 from ..defaults import (
     DEFAULT_OLLAMA_MODEL,
     OLLAMA_RUNTIME_VALIDATION_POLICY,
@@ -91,6 +92,8 @@ class _ChatRequest:
         self.path = endpoint.path.rstrip("/") + "/api/chat"
         self.version_path = endpoint.path.rstrip("/") + "/api/version"
         self.tags_path = endpoint.path.rstrip("/") + "/api/tags"
+        self.show_path = endpoint.path.rstrip("/") + "/api/show"
+        self.ps_path = endpoint.path.rstrip("/") + "/api/ps"
         self.response: http.client.HTTPResponse | None = None
         self.socket: socket.socket | None = None
         self.bytes_read = 0
@@ -353,7 +356,11 @@ class OllamaProvider(BaseLLMProvider):
         return response
 
     async def preflight_model(
-        self, model: str, timeout: Optional[float] = None
+        self,
+        model: str,
+        timeout: Optional[float] = None,
+        *,
+        verify_context: bool = False,
     ) -> dict[str, Any]:
         """Verify the exact model on the configured HTTP host without generation."""
         transport, _ = self._request(
@@ -386,7 +393,7 @@ class OllamaProvider(BaseLLMProvider):
                 ):
                     raise RuntimeError("Configured Ollama model digest is unavailable")
                 transport.remaining()
-                return {
+                identity = {
                     "model": model,
                     "server_version": transport.server_version,
                     "context_policy": "whole-context-v1",
@@ -394,6 +401,20 @@ class OllamaProvider(BaseLLMProvider):
                     "model_digest": digest,
                     "generation_options": dict(self.generation_options),
                 }
+                if verify_context:
+                    transport._exchange(
+                        "POST",
+                        transport.show_path,
+                        json.dumps({"model": model, "verbose": False}).encode(),
+                    )
+                    show = json.loads(transport.read_all())
+                    if not isinstance(show, dict):
+                        raise RuntimeError("Model context metadata unavailable")
+                    identity["context_capability"] = checked_model_context(
+                        show, identity
+                    )
+                transport.remaining()
+                return identity
             finally:
                 transport.close()
 
@@ -412,7 +433,9 @@ class OllamaProvider(BaseLLMProvider):
         prepared = False
         try:
             identity = await self.preflight_model(
-                payload["model"], timeout=transport.remaining()
+                payload["model"],
+                timeout=transport.remaining(),
+                **({"verify_context": True} if config.context_admission else {}),
             )
             request_options = {
                 key: payload["options"][key]
@@ -439,7 +462,11 @@ class OllamaProvider(BaseLLMProvider):
         self, transport: _ChatRequest, model: str, identity: dict[str, Any]
     ) -> dict[str, Any]:
         """Refuse changes during generation without renewing its deadline."""
-        observed = await self.preflight_model(model, timeout=transport.remaining())
+        observed = await self.preflight_model(
+            model,
+            timeout=transport.remaining(),
+            **({"verify_context": True} if "context_capability" in identity else {}),
+        )
         if transport.server_version != identity["server_version"]:
             raise RuntimeIdentityChanged(
                 identity, {**observed, "server_version": transport.server_version}
@@ -449,12 +476,70 @@ class OllamaProvider(BaseLLMProvider):
         transport.remaining()
         return observed
 
+    async def _observe_context(
+        self,
+        transport: _ChatRequest,
+        messages: List[LLMMessage],
+        config: LLMConfig,
+        identity: dict[str, Any],
+        usage: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Retain loaded capacity and native usage under the reviewed contract."""
+        probe, _ = self._request(
+            [],
+            LLMConfig(model=config.model, timeout=transport.remaining()),
+            stream=False,
+        )
+
+        def call() -> dict[str, Any]:
+            try:
+                probe.check_version()
+                if probe.server_version != identity["server_version"]:
+                    raise RuntimeError("Context probe runtime identity changed")
+                probe._exchange("GET", probe.ps_path)
+                value = json.loads(probe.read_all())
+                models = value.get("models") if isinstance(value, dict) else None
+                if not isinstance(models, list):
+                    raise ValueError("Loaded model context metadata unavailable")
+                matches = [
+                    r
+                    for r in models
+                    if isinstance(r, dict) and r.get("name") == identity["model"]
+                ]
+                if len(matches) != 1:
+                    raise ValueError("Exact loaded model context unavailable")
+                return context_receipt(
+                    messages=[{"role": m.role, "content": m.content} for m in messages],
+                    identity=identity,
+                    loaded=matches[0],
+                    usage=usage,
+                    max_tokens=config.max_tokens
+                    if config.max_tokens is not None
+                    else self.default_max_tokens,
+                )
+            finally:
+                probe.close()
+
+        try:
+            return await asyncio.to_thread(call)
+        except (ValueError, RuntimeError, OSError, TimeoutError) as exc:
+            return {
+                "status": "refused",
+                "policy": "reviewed_ollama_gguf_no_truncation_v1",
+                "reason": "Native context observation unavailable or inconsistent",
+                "error_type": type(exc).__name__,
+                "attention_verified": False,
+            }
+        finally:
+            probe.close()
+
     async def generate_response(
         self, messages: List[LLMMessage], config: Optional[LLMConfig] = None
     ) -> LLMResponse:
         """Generate from all messages without SDK/CLI retries or truncation."""
+        effective = config or LLMConfig()
         transport, payload, identity = await self._prepare_generation(
-            messages, config or LLMConfig(), stream=False
+            messages, effective, stream=False
         )
 
         def call() -> dict[str, Any]:
@@ -489,6 +574,11 @@ class OllamaProvider(BaseLLMProvider):
             value = response.get(source)
             if isinstance(value, int) and not isinstance(value, bool):
                 usage[target] = value
+        admission = (
+            await self._observe_context(transport, messages, effective, identity, usage)
+            if effective.context_admission
+            else None
+        )
         return LLMResponse(
             content=response["message"]["content"],
             model_used=response["model"],
@@ -508,6 +598,11 @@ class OllamaProvider(BaseLLMProvider):
                 "runtime_identity": identity,
                 "runtime_identity_after": verified,
                 "runtime_validation_policy": OLLAMA_RUNTIME_VALIDATION_POLICY,
+                **(
+                    {"context_admission": admission}
+                    if effective.context_admission
+                    else {}
+                ),
             },
         )
 
@@ -515,6 +610,10 @@ class OllamaProvider(BaseLLMProvider):
         self, messages: List[LLMMessage], config: Optional[LLMConfig] = None
     ) -> AsyncGenerator[str, None]:
         """Stream role-preserving chat with one budget across every chunk."""
+        if config is not None and config.context_admission:
+            raise ValueError(
+                "S1 context admission requires a retained non-streaming response"
+            )
         transport, payload, identity = await self._prepare_generation(
             messages, config or LLMConfig(), stream=True
         )

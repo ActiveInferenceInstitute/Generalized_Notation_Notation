@@ -157,6 +157,78 @@ class LLMCache:
         except OSError as exc:
             logger.warning(f"Failed to write cache entry {key[:12]}…: {exc}")
 
+    def get_verified(
+        self, file_content: str, model_name: str, prompt_template: str
+    ) -> dict[str, Any] | None:
+        """Read a response with its digest-bound native admission evidence."""
+        key = self._make_key(file_content, model_name, prompt_template)
+        path = self._cache_path(key)
+        try:
+            entry = json.loads(path.read_text()) if path.exists() else None
+            if entry is not None:
+                response, metadata = entry["response"], entry["metadata"]
+                if (
+                    entry.get("schema_version") != 3
+                    or entry.get("key") != key
+                    or entry.get("model") != model_name
+                    or not isinstance(response, str)
+                    or not response.strip()
+                    or not isinstance(metadata, dict)
+                    or entry.get("response_sha256")
+                    != hashlib.sha256(response.encode()).hexdigest()
+                    or entry.get("metadata_sha256")
+                    != hashlib.sha256(
+                        json.dumps(
+                            metadata,
+                            sort_keys=True,
+                            ensure_ascii=False,
+                            allow_nan=False,
+                        ).encode()
+                    ).hexdigest()
+                ):
+                    raise ValueError("Verified cache evidence differs")
+                self.hits += 1
+                return {"response": response, "metadata": metadata}
+        except (OSError, ValueError, KeyError, TypeError):
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                logger.debug("Invalid verified cache entry could not be removed")
+        self.misses += 1
+        return None
+
+    def put_verified(
+        self,
+        file_content: str,
+        model_name: str,
+        prompt_template: str,
+        response: str,
+        metadata: dict[str, Any],
+    ) -> None:
+        """Store response and actual admission evidence atomically."""
+        if not isinstance(response, str) or not response.strip():
+            raise ValueError("Verified cache response must be nonempty")
+        encoded = json.dumps(
+            metadata, sort_keys=True, ensure_ascii=False, allow_nan=False
+        )
+        key = self._make_key(file_content, model_name, prompt_template)
+        entry = {
+            "schema_version": 3,
+            "key": key,
+            "model": model_name,
+            "response": response,
+            "response_sha256": hashlib.sha256(response.encode()).hexdigest(),
+            "metadata": metadata,
+            "metadata_sha256": hashlib.sha256(encoded.encode()).hexdigest(),
+        }
+        try:
+            atomic_write_text(
+                self._cache_path(key), json.dumps(entry, indent=2, allow_nan=False)
+            )
+            self.writes += 1
+        except OSError as exc:
+            logger.warning("Failed to write verified cache entry %s: %s", key[:12], exc)
+
     def summary(self) -> dict[str, Any]:
         """Return cache statistics for logging."""
         total = self.hits + self.misses
