@@ -21,8 +21,9 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Source imports and the repository-only test harness have separate roots.
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path[:0] = [str(_PROJECT_ROOT / "src"), str(_PROJECT_ROOT)]
 
 
 def _default_output_dir() -> str:
@@ -43,38 +44,31 @@ def run_test_configuration(
     configurations: dict[str, Any] = {
         "fast": {
             "args": ["--fast-only"],
-            "description": "Run only fast tests (< 3 minutes) for quick validation",
-            "expected_duration": "2-3 minutes",
+            "description": "Run the Step 2 fast selection",
         },
         "standard": {
             "args": [],
-            "description": "Run fast and standard tests (recommended for development)",
-            "expected_duration": "5-10 minutes",
+            "description": "Run source tests outside slow and performance selections",
         },
         "full": {
             "args": ["--comprehensive"],
             "description": "Run all tests including slow integration tests",
-            "expected_duration": "15-25 minutes",
         },
         "performance": {
-            "args": ["--include-performance"],
+            "args": [],
             "description": "Include performance benchmark tests",
-            "expected_duration": "20-30 minutes",
         },
         "debug": {
             "args": ["--verbose"],
             "description": "Run with verbose output for debugging test issues",
-            "expected_duration": "5-15 minutes",
         },
         "coverage": {
             "args": ["--verbose"],
             "description": "Run with detailed coverage reporting",
-            "expected_duration": "10-15 minutes",
         },
         "minimal": {
-            "args": ["--fast-only", "--no-coverage"],
+            "args": ["--fast-only"],
             "description": "Minimal test run with no coverage for maximum speed",
-            "expected_duration": "1-2 minutes",
         },
     }
 
@@ -82,13 +76,27 @@ def run_test_configuration(
         print(f"Unknown configuration: {config_name}")
         print("Available configurations:")
         for name, config in configurations.items():
-            print(f"  {name}: {config['description']} ({config['expected_duration']})")
+            print(f"  {name}: {config['description']}")
         return False
 
     config = configurations[config_name]
 
+    if config_name in {"standard", "performance", "coverage"}:
+        selections = {
+            "standard": "not slow and not performance",
+            "performance": "performance",
+            "coverage": "not slow and not performance",
+        }
+        return run_custom_tests(
+            markers=selections[config_name],
+            target_dir=target_dir,
+            output_dir=output_dir,
+            verbose=verbose,
+            coverage=config_name == "coverage",
+        )
+
     # Build command
-    test_script = Path(__file__).parent.parent / "2_tests.py"
+    test_script = Path(__file__).resolve().parents[1] / "src" / "gnn" / "2_tests.py"
     cmd: list[Any] = [
         sys.executable,
         str(test_script),
@@ -107,7 +115,6 @@ def run_test_configuration(
 
     print(f"🚀 Running test configuration: {config_name}")
     print(f"📋 Description: {config['description']}")
-    print(f"⏱️  Expected duration: {config['expected_duration']}")
     print(f"🔧 Command: {' '.join(cmd)}")
     print("-" * 60)
 
@@ -141,13 +148,13 @@ def run_test_configuration(
 def list_configurations() -> None:
     """List all available test configurations."""
     configurations: dict[str, Any] = {
-        "fast": "Quick validation tests (< 3 minutes)",
-        "standard": "Fast and standard tests (5-10 minutes)",
-        "full": "All tests including slow integration (15-25 minutes)",
-        "performance": "Include performance benchmarks (20-30 minutes)",
-        "debug": "Verbose output for debugging (5-15 minutes)",
-        "coverage": "Detailed coverage reporting (10-15 minutes)",
-        "minimal": "Minimal run with no coverage (1-2 minutes)",
+        "fast": "Step 2 fast selection",
+        "standard": "Source tests outside slow and performance selections",
+        "full": "Step 2 comprehensive selection",
+        "performance": "Source performance selection",
+        "debug": "Step 2 fast selection with verbose output",
+        "coverage": "Source selection with coverage reporting",
+        "minimal": "Step 2 fast selection without coverage",
     }
 
     print("Available test configurations:")
@@ -164,33 +171,32 @@ def list_configurations() -> None:
 def run_custom_tests(
     markers: Optional[str] = None, timeout: Optional[int] = None, **kwargs: Any
 ) -> bool:
-    """Run tests with custom configuration."""
-    test_script = Path(__file__).parent.parent / "2_tests.py"
-    cmd: list[Any] = [sys.executable, str(test_script)]
+    """Run source tests with the requested marker expression and total timeout."""
+    from gnn.utils.testing.runner import TestRunner
 
-    # Add standard arguments
-    for key, value in kwargs.items():
-        if value is not None:
-            if key.replace("_", "-") in ["target-dir", "output-dir"]:
-                cmd.extend([f"--{key.replace('_', '-')}", str(value)])
-            elif isinstance(value, bool) and value:
-                cmd.append(f"--{key.replace('_', '-')}")
-
-    # Add custom markers if specified
-    if markers:
-        print(f"🎯 Running tests with custom markers: {markers}")
-
-    if timeout:
-        print(f"⏱️  Custom timeout: {timeout} seconds")
-
-    print(f"🔧 Command: {' '.join(cmd)}")
-
-    try:
-        result = subprocess.run(cmd, cwd=Path(__file__).parent.parent)  # nosec B603
-        return result.returncode == 0
-    except Exception as e:
-        print(f"❌ Custom test execution failed: {e}")
+    if timeout is not None and (isinstance(timeout, bool) or timeout <= 0):
+        print("Custom timeout must be a positive number of seconds")
         return False
+    if kwargs.get("target_dir", "input/gnn_files") != "input/gnn_files":
+        print(
+            "Custom pytest selections use repository tests; a GNN target override is unsupported"
+        )
+        return False
+    profile = "not ollama and not env_heavy and not toolchain"
+    selection = f"({markers}) and ({profile})" if markers else profile
+    options = {
+        "markers": [selection],
+        "timeout_seconds": timeout or 300,
+        "parallel": False,
+        "coverage": bool(kwargs.get("coverage", False)),
+        "verbose": bool(kwargs.get("verbose", False)),
+    }
+    output = Path(kwargs.get("output_dir") or _default_output_dir()) / "custom_tests"
+    result = TestRunner(options).run_tests(
+        [Path(__file__).resolve().parent],
+        output,
+    )
+    return bool(result["success"])
 
 
 def main() -> int:

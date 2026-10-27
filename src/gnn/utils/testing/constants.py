@@ -88,5 +88,5 @@ TEST_CONFIG: dict[str, Any] = {
     "fast_only": False,
     "include_performance": True,
     # Required by tests
-    "test_data_dir": "src/tests/test_data",
+    "test_data_dir": str(TEST_DIR / "test_data"),
 }

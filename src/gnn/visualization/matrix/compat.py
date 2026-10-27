@@ -16,12 +16,19 @@ except ImportError:
 
 
 def parse_matrix_data(matrix_str: str) -> Optional[Any]:
-    """Parse a matrix from its string representation into a numpy array."""
+    """Extract a flat finite numeric array for advisory visualization, or None."""
     try:
-        numbers = re.findall(r"[-+]?\d*\.\d+|\d+", matrix_str)
-        if numbers and _NP_AVAILABLE and np is not None:
-            return np.array([float(n) for n in numbers])
-        return None
+        if not isinstance(matrix_str, str) or not _NP_AVAILABLE or np is None:
+            return None
+        if re.search(r"\b(?:nan|inf(?:inity)?)\b", matrix_str, re.IGNORECASE):
+            return None
+        numbers = re.findall(
+            r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?", matrix_str
+        )
+        if not numbers:
+            return None
+        values = np.array([float(number) for number in numbers])
+        return values if np.isfinite(values).all() else None
     except Exception:
         return None
 

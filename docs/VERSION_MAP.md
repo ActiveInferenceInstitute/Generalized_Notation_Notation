@@ -4,7 +4,7 @@ One-stop map of release changes and authoritative records. Current
 software version is **5.0.1**. Publication is established by the
 [release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases),
 not this version label.
-The [4.2.0 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.2.0) owns publication and exact source-bound assets. Historical 4.1.0 retains its original receipt. Its [changelog](../CHANGELOG.md#410---2026-10-08)
+The [5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1) owns publication and exact source-bound assets for the current software version. Historical 4.2.0 and 4.1.0 retain their original release records and receipts. The 4.1.0 [changelog](../CHANGELOG.md#410---2026-10-08)
 describes the bounded minor/medium campaign. Its [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0)
 records exact tag/source/check/artifact identities; version metadata alone does
 not establish acceptance. Native coverage, ordinary installation and manuscript/

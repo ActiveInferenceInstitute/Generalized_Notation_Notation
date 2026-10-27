@@ -92,6 +92,8 @@ class TestRunner:
                 memory_peak_mb=0.0,
                 error_message=str(e),
             )
+        finally:
+            self.resource_monitor.stop_monitoring()
 
     def _build_pytest_command(
         self, test_paths: List[Path], output_dir: Path
@@ -120,7 +122,7 @@ class TestRunner:
             cov_html = output_dir / "htmlcov"
             cmd.extend(
                 [
-                    "--cov=src",
+                    "--cov=gnn",
                     f"--cov-report=json:{cov_json}",
                     f"--cov-report=html:{cov_html}",
                     "--cov-report=term-missing",
@@ -180,6 +182,14 @@ class TestRunner:
 
             # Parse results
             results = self._parse_pytest_output(stdout, stderr)
+            process_success = (
+                result.get("status") == "SUCCESS" and result.get("exit_code") == 0
+            )
+            results["success"] = bool(results["success"] and process_success)
+            if not process_success:
+                results["error_message"] = result.get("cleanup_error") or (
+                    f"pytest exited with status {result.get('status')} and code {result.get('exit_code')}"
+                )
             results["stdout"] = stdout
             results["stderr"] = stderr
 
@@ -230,7 +240,7 @@ class TestRunner:
                                 # Not a number, skip
                                 continue
                     # Calculate total from summary
-                    if tests_passed > 0 or tests_failed > 0:
+                    if tests_passed > 0 or tests_failed > 0 or tests_skipped > 0:
                         tests_run = tests_passed + tests_failed + tests_skipped
                         break
 
@@ -254,7 +264,7 @@ class TestRunner:
                     collection_errors.append(line)
 
             # Determine success - fail if no tests collected or collection errors
-            success = tests_failed == 0 and tests_run > 0 and not collection_errors
+            success = tests_failed == 0 and tests_passed > 0 and not collection_errors
 
             # Extract coverage if present
             coverage_percentage = None

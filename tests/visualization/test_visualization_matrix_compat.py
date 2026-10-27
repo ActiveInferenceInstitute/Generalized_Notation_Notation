@@ -58,3 +58,59 @@ class TestMatrixCompatFacade:
         # The facade must forward the exact same callables.
         assert parse_matrix_data is real.parse_matrix_data
         assert generate_matrix_visualizations is real.generate_matrix_visualizations
+
+
+def test_analysis_matrix_parser_keeps_shared_public_surface() -> None:
+    from gnn.analysis.analyzer import parse_matrix_data as analyzer_parse
+    from gnn.analysis.simulation_visualizations import (
+        parse_matrix_data as analysis_parse,
+    )
+    from gnn.visualization.matrix.compat import parse_matrix_data
+
+    assert analysis_parse is parse_matrix_data
+    assert analyzer_parse is parse_matrix_data
+    assert parse_matrix_data("no numeric data") is None
+    assert parse_matrix_data("[[1 2] [3 4]]").tolist() == [1.0, 2.0, 3.0, 4.0]
+
+
+@pytest.mark.parametrize(
+    "module_name",
+    [
+        "gnn.visualization.matrix_compat",
+        "gnn.analysis.simulation_visualizations",
+    ],
+)
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("-3", [-3.0]),
+        ("[[-3, +2], [.5, -.25]]", [-3.0, 2.0, 0.5, -0.25]),
+        ("[-1e-3, +2E2, 3.e-2, -.5e+1]", [-0.001, 200.0, 0.03, -5.0]),
+        ("[1, 1e309]", None),
+        ("[-1E999, 2]", None),
+        ("[NaN, 1]", None),
+        ("[-Infinity, 2]", None),
+        ("[+inf, -3]", None),
+        ("", None),
+        ("[]", None),
+        ("no numeric data", None),
+        (None, None),
+        ([[1, 2]], None),
+    ],
+)
+def test_shared_advisory_parser_preserves_numeric_values_or_refuses(
+    module_name: str,
+    value: object,
+    expected: list[float] | None,
+) -> None:
+    from importlib import import_module
+
+    import numpy as np
+
+    parse = import_module(module_name).parse_matrix_data
+    result = parse(value)
+    if expected is None:
+        assert result is None
+    else:
+        assert result.ndim == 1
+        np.testing.assert_array_equal(result, expected)
