@@ -33,7 +33,10 @@ def _test_file(tmp_path: Path, body: str) -> Path:
         ("def test_fail(): assert False\n", False, 0),
         ("value = 1\n", False, 0),
         (
-            "import pytest\n@pytest.mark.skip(reason='unavailable')\ndef test_skipped(): pass\n",
+            (
+                Path(__file__).resolve().parents[1]
+                / "test_data/runner/all_skipped.py.txt"
+            ).read_text(encoding="utf-8"),
             False,
             0,
         ),
