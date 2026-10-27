@@ -23,12 +23,32 @@ SC-38 facade takedown; new code imports from this package.
 - The family `__init__.py` re-exports all public names eagerly (real
   objects, design §4.3.1) and must never import psutil or matplotlib at
   module scope (`tests/tests/test_light_import.py` is the gate).
-- `_EXPORT_MAP` keys in `gnn/utils/__init__.py` are frozen (113 keys,
-  golden-asserted); this package's leaf modules are the *values* for the
-  35 `testing.*` entries.
+- `_EXPORT_MAP` keys in `gnn/utils/__init__.py` are frozen by the golden
+  key-set assertion; this package's leaf modules supply the `testing.*` values.
+  Keep that key set and the separate `__all__` export list unchanged.
 - Cross-family imports go through leaf modules (`pipeline_arguments`,
   `resource_manager`), never the `gnn.utils` facade (design I5).
 - `_PerformanceTracker` is private to `perf.py` (§4.3.4).
+
+## Execution contract
+
+Execution imports the canonical monitored runner lazily, checks that both its
+configuration and runner modules resolve to the repository-owned harness files,
+and runs one pytest process at a time. Missing or foreign harness files refuse;
+this path ownership check does not establish an operating-system sandbox. Category/stage names are validated; absent harnesses,
+nonzero exits and empty selections fail. Source selections exclude Ollama,
+environment-mutating and external-toolchain profiles; those require explicit
+acceptance commands. MCP-shaped reports contain only observed category results.
+The public `results` mapping retains boolean statuses; additive `category_results`
+contains measured counters, selection and diagnostics. Saved-report readback
+preserves that boolean mapping, including older structured category records.
+Saved views remain unverified readback and retain the selected source path.
+Multiple candidate views require an explicit file; category passes never upgrade
+an explicitly failed overall outcome. Cleanup precedes aggregate publication.
+Stages requesting parallel execution are refused by the serial adapter; their
+public metadata stays unchanged. Use the category helper for an explicit serial
+selection. Fixture data paths resolve from the repository, independent of cwd.
+The public export names remain unchanged.
 
 ## Tests
 

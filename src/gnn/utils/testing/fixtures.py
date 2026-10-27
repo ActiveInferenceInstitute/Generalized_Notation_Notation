@@ -60,7 +60,7 @@ def get_sample_pipeline_arguments() -> Dict[str, Any]:
         "dev": False,
         "duration": 30.0,
         "audio_backend": "auto",
-        "test_data_dir": "src/tests/test_data",
+        "test_data_dir": TEST_CONFIG["test_data_dir"],
     }
 
 
