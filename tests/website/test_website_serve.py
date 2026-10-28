@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import os
 import socket
+import subprocess
 import sys
+import textwrap
 import time
 import urllib.error
 import urllib.request
@@ -91,6 +93,69 @@ class TestStaticServing:
             assert server.landing_url == server.url
         finally:
             server.shutdown()
+
+        # Schedule serving entry after shutdown clears its instance reference.
+        # The child uses a real socket and stdlib shutdown, and has its own
+        # deadline so a deadlock fails this case without killing a pytest worker.
+        child = textwrap.dedent(
+            """
+            import faulthandler
+            from pathlib import Path
+            import socket
+            import sys
+            import threading
+            from gnn.website.serve import WebsiteServer
+
+            entered = threading.Event()
+            resume = threading.Event()
+
+            class OrderedServer(WebsiteServer):
+                def __setattr__(self, name, value):
+                    super().__setattr__(name, value)
+                    if name == '_server' and value is None and entered.is_set():
+                        resume.set()
+
+                def _serve_forever(self, *args, **kwargs):
+                    entered.set()
+                    if not resume.wait(2):
+                        raise RuntimeError('Serving entry was never released')
+                    return super()._serve_forever(*args, **kwargs)
+
+            root = Path(sys.argv[1])
+            root.mkdir()
+            (root / '00_pipeline_summary').mkdir()
+            server = OrderedServer(root, port=0)
+            server.start()
+            assert entered.wait(2)
+            port = server.bound_port
+            assert port > 0 and server.landing_url == server.url
+            faulthandler.dump_traceback_later(4, exit=True)
+            server.shutdown()
+            faulthandler.cancel_dump_traceback_later()
+            with socket.socket() as client:
+                client.settimeout(1)
+                assert client.connect_ex(('127.0.0.1', port)) != 0
+            server.shutdown()
+            print('Delayed serving entry stopped and released its real port')
+            """
+        )
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-X",
+                "faulthandler",
+                "-c",
+                child,
+                str(tmp_path / "ordered"),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        (tmp_path / "ordered.stdout").write_text(result.stdout, encoding="utf-8")
+        (tmp_path / "ordered.stderr").write_text(result.stderr, encoding="utf-8")
+        assert result.returncode == 0, (result.returncode, result.stdout, result.stderr)
+        assert "released its real port" in result.stdout
 
 
 class TestLiveReload:
