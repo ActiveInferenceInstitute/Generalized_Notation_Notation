@@ -25,9 +25,33 @@ STAGES = ("installed", "status", "finite", "continuous", "final")
 Q7_STAGE = "q7-source"
 Q7_CONTRACT = "specs/gnn-bridge-q7-continuous-ou-proof/verify_native.py"
 
+# Reviewed companion project identities. Each identity is bound to its own
+# namespace and declared console script, so an importable alias cannot select an
+# origin. `fep-formal` is the canonical project; `fep_lean` remains admissible
+# for a fixed release baseline that pins a pre-rename companion checkout.
+FEP_CLI_CONTRACTS = {
+    "fep-formal": ("fep_formal", "fep-formal", "fep_formal.cli:main"),
+    "fep_lean": ("fep_lean", "fep-lean", "fep_lean.cli:main"),
+}
+
 
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def companion_cli_contract(root: Path) -> dict[str, str]:
+    """Select one physical CLI from the pinned checkout's project metadata."""
+    metadata = root / "pyproject.toml"
+    project = tomllib.loads(metadata.read_text(encoding="utf-8"))["project"]
+    name = project.get("name") if isinstance(project, dict) else None
+    contract = FEP_CLI_CONTRACTS.get(name) if isinstance(name, str) else None
+    if contract is None:
+        raise ValueError("unsupported companion project identity")
+    _, script, target = contract
+    scripts = project.get("scripts")
+    if not isinstance(scripts, dict) or scripts.get(script) != target:
+        raise ValueError("companion CLI entry point differs from project identity")
+    return {"project_name": name, "pyproject_sha256": digest(metadata)}
 
 
 def read(path: Path) -> dict[str, Any]:
@@ -108,8 +132,8 @@ def source(root: Path, expected_revision: str) -> dict[str, Any]:
 
 
 def fep_namespace(root: Path) -> str:
-    """Prefer the canonical source layout; retain pinned legacy checkouts."""
-    return "fep_formal" if (root / "src/fep_formal").is_dir() else "fep_lean"
+    """Namespace of the checkout whose declared project identity is reviewed."""
+    return FEP_CLI_CONTRACTS[companion_cli_contract(root)["project_name"]][0]
 
 
 def fep_module_path(root: Path, suffix: str) -> Path:
@@ -222,6 +246,7 @@ def custody(args: argparse.Namespace) -> dict[str, Any]:
         "runtime": runtime(args.expected_python, args.environment),
         "gnn": source(args.gnn_root, args.gnn_revision),
         "fep": source(args.fep_root, args.fep_revision),
+        "companion_cli": companion_cli_contract(args.fep_root),
         "pin": pin,
     }
 
@@ -243,11 +268,12 @@ def accepted(path: Path, stage: str, baseline: dict[str, Any]) -> dict[str, Any]
         or result.get("after") != baseline
     ):
         raise ValueError(f"missing or incompatible successful runtime receipt: {path}")
+    fep_root = Path(baseline["fep"]["root"])
     if stage in ("status", "finite", "continuous"):
         if (
             result.get("exit_code") != 0
             or result.get("cli_source")
-            != str(fep_module_path(Path(baseline["fep"]["root"]), "cli"))
+            != str(fep_module_path(fep_root, "cli"))
             or result.get("command")
             != bridge_command(baseline["fep"]["root"], baseline["gnn"]["root"], stage)
         ):

@@ -16,6 +16,11 @@ import venv
 from pathlib import Path
 
 HELPER = Path(__file__).with_name("fep_paired_runtime.py")
+#: Reviewed companion project identities: name, console script, declared entry point.
+PROJECT_METADATA = {
+    "fep_lean": ("fep_lean", "fep-lean", "fep_lean.cli:main"),
+    "fep_formal": ("fep-formal", "fep-formal", "fep_formal.cli:main"),
+}
 CLI = """import json, sys
 from pathlib import Path
 def main(argv):
@@ -90,6 +95,7 @@ class RuntimeCustodyTests(unittest.TestCase):
             self.git(root, "config", "user.name", "Runtime test")
             self.git(root, "config", "user.email", "runtime@example.invalid")
             (root / "uv.lock").write_text("fixture lock\n")
+        self.write_project_identity(*PROJECT_METADATA[self.package_name])
         package = self.fep / "src" / self.package_name
         package.mkdir(parents=True)
         (package / "__init__.py").write_text("")
@@ -124,6 +130,25 @@ class RuntimeCustodyTests(unittest.TestCase):
         self.git(root, "add", ".")
         self.git(root, "commit", "-qm", "fixture")
         return self.git(root, "rev-parse", "HEAD")
+
+    def write_project_identity(self, name, script, target):
+        (self.fep / "pyproject.toml").write_text(
+            f'[project]\nname = "{name}"\nrequires-python = ">=3.11"\n\n'
+            f'[project.scripts]\n{script} = "{target}"\n'
+        )
+
+    def recommit_pair(self):
+        self.fep_revision = self.commit(self.fep)
+        pin = self.gnn / ".github/fep-lean-pair.json"
+        pin.write_text(
+            json.dumps(
+                {
+                    "repository": "ActiveInferenceInstitute/fep_formal",
+                    "revision": self.fep_revision,
+                }
+            )
+        )
+        self.gnn_revision = self.commit(self.gnn)
 
     def run_stage(
         self, stage, *, version=None, python=None, environment=None, success=True
@@ -301,6 +326,50 @@ class RuntimeCustodyTests(unittest.TestCase):
         self.assertIn(
             "verify_native.py" if self.version == "3.14" else "CPython 3.14",
             rejected["error"],
+        )
+
+    def test_receipt_records_reviewed_companion_identity(self):
+        self.run_stage("installed")
+        receipt = json.loads((self.receipts / "runtime-installed.json").read_text())
+        self.assertEqual(
+            receipt["before"]["companion_cli"],
+            {
+                "project_name": PROJECT_METADATA[self.package_name][0],
+                "pyproject_sha256": hashlib.sha256(
+                    (self.fep / "pyproject.toml").read_bytes()
+                ).hexdigest(),
+            },
+        )
+
+    def test_unreviewed_project_identity_rejected(self):
+        self.write_project_identity("fep_bridge", "fep-bridge", "fep_lean.cli:main")
+        self.recommit_pair()
+        result = self.run_stage("installed", success=False)
+        self.assertIn("unsupported companion project identity", result.stderr)
+
+    def test_aliased_console_script_rejected(self):
+        self.write_project_identity("fep-formal", "fep-formal", "fep_lean.cli:main")
+        self.recommit_pair()
+        result = self.run_stage("installed", success=False)
+        self.assertIn(
+            "companion CLI entry point differs from project identity", result.stderr
+        )
+
+    def test_declared_origin_beats_layout_decoy(self):
+        """The declared project identity selects the package, not directory presence."""
+        decoy = "fep_formal" if self.package_name == "fep_lean" else "fep_lean"
+        package = self.fep / "src" / decoy
+        package.mkdir(parents=True)
+        (package / "__init__.py").write_text("")
+        (package / "cli.py").write_text(
+            'def main(argv):\n    print(\'{"status": "error"}\')\n    return 9\n'
+        )
+        self.recommit_pair()
+        self.run_stage("installed")
+        self.run_stage("status")
+        receipt = json.loads((self.receipts / "runtime-status.json").read_text())
+        self.assertEqual(
+            receipt["cli_source"], str(self.fep / "src" / self.package_name / "cli.py")
         )
 
     def test_wrong_requested_interpreter_rejected(self):
