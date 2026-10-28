@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import hashlib
+import importlib
 import json
 import os
 import re
@@ -22,6 +23,41 @@ from typing import Any
 STAGES = ("installed", "status", "finite", "continuous", "final")
 Q7_STAGE = "q7-source"
 Q7_CONTRACT = "specs/gnn-bridge-q7-continuous-ou-proof/verify_native.py"
+
+# Exact released project identities; an importable alias cannot select an origin.
+FEP_CLI_CONTRACTS = {
+    "fep_lean": ("fep_lean", "fep-lean", "fep_lean.cli:main"),
+    "fep-formal": ("fep_formal", "fep-formal", "fep_formal.cli:main"),
+}
+
+
+def companion_cli_contract(root: Path) -> dict[str, str]:
+    """Select one physical CLI from the pinned checkout's project metadata."""
+    metadata = root / "pyproject.toml"
+    project = tomllib.loads(metadata.read_text(encoding="utf-8"))["project"]
+    name = project.get("name") if isinstance(project, dict) else None
+    if not isinstance(name, str) or name not in FEP_CLI_CONTRACTS:
+        raise ValueError("unsupported companion project identity")
+    _, script, target = FEP_CLI_CONTRACTS[name]
+    scripts = project.get("scripts")
+    if not isinstance(scripts, dict) or scripts.get(script) != target:
+        raise ValueError("companion CLI entry point differs from project identity")
+    return {"project_name": name, "pyproject_sha256": digest(metadata)}
+
+
+def companion_cli_namespace(baseline: dict[str, Any]) -> str:
+    """Use the frozen selection when validating transported receipts."""
+    contract = baseline.get("companion_cli")
+    if (
+        not isinstance(contract, dict)
+        or set(contract) != {"project_name", "pyproject_sha256"}
+        or not isinstance(contract["project_name"], str)
+        or contract["project_name"] not in FEP_CLI_CONTRACTS
+        or not isinstance(contract["pyproject_sha256"], str)
+        or re.fullmatch("[0-9a-f]{64}", contract["pyproject_sha256"]) is None
+    ):
+        raise ValueError("invalid frozen companion CLI contract")
+    return FEP_CLI_CONTRACTS[contract["project_name"]][0]
 
 
 def digest(path: Path) -> str:
@@ -127,7 +163,12 @@ def release_binding(args: argparse.Namespace) -> dict[str, Any]:
         or policy["fep_revision"] != args.fep_revision
     ):
         raise ValueError("invalid fixed release baseline")
-    from fep_lean.bridge.operations import owner_roster
+    namespace = companion_cli_namespace(
+        {"companion_cli": companion_cli_contract(args.fep_root)}
+    )
+    owner_roster = importlib.import_module(
+        f"{namespace}.bridge.operations"
+    ).owner_roster
 
     pin = read(args.fep_root / "specs/gnn-bridge-w2-source-custody/source-pin.json")
     owners = pin["gnn"]["owners"]
@@ -195,6 +236,7 @@ def custody(args: argparse.Namespace) -> dict[str, Any]:
         "runtime": runtime(args.expected_python, args.environment),
         "gnn": source(args.gnn_root, args.gnn_revision),
         "fep": source(args.fep_root, args.fep_revision),
+        "companion_cli": companion_cli_contract(args.fep_root),
         "pin": pin,
     }
 
@@ -216,11 +258,12 @@ def accepted(path: Path, stage: str, baseline: dict[str, Any]) -> dict[str, Any]
         or result.get("after") != baseline
     ):
         raise ValueError(f"missing or incompatible successful runtime receipt: {path}")
+    namespace = companion_cli_namespace(baseline)
     if stage in ("status", "finite", "continuous"):
         if (
             result.get("exit_code") != 0
             or result.get("cli_source")
-            != str(Path(baseline["fep"]["root"]) / "src/fep_lean/cli.py")
+            != str(Path(baseline["fep"]["root"]) / "src" / namespace / "cli.py")
             or result.get("command")
             != bridge_command(baseline["fep"]["root"], baseline["gnn"]["root"], stage)
         ):
@@ -283,10 +326,11 @@ def execute(args: argparse.Namespace) -> None:
             for stage in prior:
                 accepted(args.receipts / f"runtime-{stage}.json", stage, baseline)
             if args.stage != "final":
-                from fep_lean import cli
+                namespace = companion_cli_namespace(baseline)
+                cli = importlib.import_module(f"{namespace}.cli")
 
                 module = Path(cli.__file__).resolve()
-                if not module.is_relative_to(args.fep_root / "src/fep_lean"):
+                if module != args.fep_root / "src" / namespace / "cli.py":
                     raise ValueError(f"installed CLI source mismatch: {module}")
                 if args.stage == Q7_STAGE:
                     verifier = args.fep_root / Q7_CONTRACT
