@@ -51,8 +51,8 @@ new release.
 ## What is pinned
 
 `.github/fep-lean-pair.json` records the reviewed companion revision — the
-fep_lean repository slug and a full 40-hex SHA of fep_lean main HEAD that the
-GNN-side contract was checked against. That file is the live source of truth
+`ActiveInferenceInstitute/fep_formal` repository and a full 40-hex SHA from its
+main branch that the GNN contract was checked against. That file is the live source of truth
 for the current pin; read it directly. This doc deliberately quotes no SHA,
 so it cannot go stale the way a quoted pin does.
 
@@ -121,15 +121,15 @@ the pair must be re-pinned together, not the check suppressed.
 
 ## Who bumps the pin
 
-Pin bumps are paired with fep_lean-side re-pins:
+Pin updates coordinate source pins in FEP_Formal:
 
 - **GNN side**: changing GNN sources that the bridge's source binding covers
-  requires a paired commit on fep_lean (per its FEP-EVIDENCE-CURRENT policy)
+  requires a paired commit on FEP_Formal (per its FEP-EVIDENCE-CURRENT policy)
   that re-records digests against the new GNN state; the GNN-side PR then
-  bumps `.github/fep-lean-pair.json` to the new fep_lean revision in the same
+  bumps `.github/fep-lean-pair.json` to the new FEP_Formal revision in the same
   change set.
-- **fep_lean side**: when fep_lean main moves, this repository's pin is
-  updated to the new reviewed fep_lean SHA together with any GNN-side source
+- **FEP_Formal side**: when FEP_Formal main moves, this repository's pin is
+  updated to the new reviewed FEP_Formal SHA together with any GNN-side source
   changes the new pin requires.
 
 A green run therefore certifies agreement between two specific, named
@@ -138,7 +138,7 @@ revisions — never a floating main.
 ## What the workflow proves and does NOT prove
 
 A passing current-source workflow is a **drift-detection** result. It establishes that the pinned
-fep_lean checkout and this GNN checkout still agree on the bridge's source
+FEP_Formal checkout and this GNN checkout still agree on the bridge's source
 binding (owner rosters and content digests), finite/continuous freshness, the
 syntax surface, the contract mirror, and the formal projection with no drift.
 
@@ -146,7 +146,7 @@ It does **not** prove any Lean theorem, and no notation mapping claim may
 promote it into one: the bridge compares symbols and constructs across the two
 repositories; correspondence of notation is a documentation-level statement.
 Evidence planes stay distinct — a green paired run says "the two checkouts are
-in the state fep_lean reviewed", nothing about the truth of formal claims.
+in the state FEP_Formal reviewed", nothing about the truth of formal claims.
 
 ## Closeout ordering (canonical)
 
@@ -173,17 +173,17 @@ not exempt a current release from this sequence:
    Its workflow must fetch an exact commit; an unpublished local SHA cannot
    establish hosted pairing. Keep main publication pending and make no further
    owner-file edits after this source/artifact freeze.
-3. **fep_lean bridge and current-Q7 re-pin**: bridge pin → emit
+3. **FEP_Formal bridge and current-Q7 re-pin**: bridge pin → emit
    `--refresh-digests` → emit `--check` (finite + continuous) → canonical Q7
    `refresh_render.py` against that exact GNN checkout → Q7 probe generation
    and `--check` → fresh current Q7 native compilation and retained-check validation at a new
-   receipt path → PR → merge on the fep_lean side. Include the current fixture,
+   receipt path → PR → merge on the FEP_Formal side. Include the current fixture,
    render provenance and generated manifest; ordinary bridge checks alone do
    not validate these derived inputs. Preserve historical native receipts and
    the reviewed runner/scaffold constraints. Do not hand-edit their hashes or
    promote an earlier native receipt to the new source pair.
 4. **GNN pin bump as the FINAL commit**: bump `.github/fep-lean-pair.json` to
-   the new reviewed fep_lean revision in the final commit, then push that final
+   the new reviewed FEP_Formal revision in the final commit, then push that final
    revision. The earlier draft-branch publication only supplies the fetchable
    source revision; merge to GNN main requires the final paired and repository
    gates.
@@ -203,4 +203,4 @@ GEO_INFER-side PR updates its pin to the new reviewed GNN revision.
 ## Related
 
 - [GEO_INFER paired interchange (GNN-side docs)](geo_infer_2026_09.md)
-- fep_lean bridge contract (GNN-side docs): `docs/other/fep_lean/bridge-contract.md`
+- FEP_Formal bridge contract (GNN-side docs): `docs/other/fep_lean/bridge-contract.md`
