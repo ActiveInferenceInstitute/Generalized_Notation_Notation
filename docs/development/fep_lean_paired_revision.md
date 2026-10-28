@@ -1,7 +1,7 @@
 # Cross-repo custody: the FEP_Formal and GEO_INFER pairing contracts (GNN-04)
 
 This is the canonical statement of GNN's cross-repo custody obligations. The
-GNN side hosts paired-revision CI for the fep_lean bridge pair, mirroring
+GNN side hosts paired-revision CI for the FEP_Formal bridge pair, mirroring
 the mechanism GEO_INFER already runs for this repository: its
 `.github/workflows/gnn-interchange.yml` workflow with pin file
 `.github/gnn-pair.json`. The GEO_INFER direction (GEO_INFER pinning GNN) is
@@ -64,7 +64,7 @@ In the mirror direction, GEO_INFER pins GNN from its own checkout via its
 `.github/workflows/fep-lean-paired-revision.yml`:
 
 1. Reads and validates the pin (known repository slug, 40-hex revision).
-2. Checks out fep_lean at exactly the pinned SHA.
+2. Checks out FEP_Formal at exactly the pinned SHA.
 3. Records both checkout revisions plus the pin file as receipts, retained as
    workflow artifacts (`if: always()`, mirroring GEO's receipt semantics).
 4. Installs each Python 3.11/3.12/3.14 row once with `uv sync --frozen`, explicit
@@ -73,17 +73,18 @@ In the mirror direction, GEO_INFER pins GNN from its own checkout via its
    Unqualified `uv run` can select the companion's local `.python-version`
    and replace the installed environment; the matrix label alone is not
    execution evidence.
-5. Runs fep_lean's **read-only** bridge surface against this GNN checkout:
+5. Runs FEP_Formal's **read-only** bridge surface against this GNN checkout:
 
-   - `fep-lean bridge status --gnn-root <gnn checkout>`
-   - `fep-lean bridge emit --check --model finite --gnn-root <gnn>`
-   - `fep-lean bridge emit --check --model continuous --gnn-root <gnn>`
+   - `fep-formal bridge status --gnn-root <gnn checkout>`
+   - `fep-formal bridge emit --check --model finite --gnn-root <gnn>`
+   - `fep-formal bridge emit --check --model continuous --gnn-root <gnn>`
 
    `status` and `emit --check` never write: they compare source bytes and
    emitted-document digests only.
 
 The workflow-local [runtime runner](../../.github/fep_paired_runtime.py)
-calls the installed `fep_lean.cli.main` in the inspected Python process.
+calls the installed canonical `fep_formal.cli.main` in the inspected Python
+process, with deprecated-layout compatibility for older pinned checkouts.
 It records the requested and actual major/minor, full interpreter version,
 executable and prefix, virtual-environment inode, interpreter/link identity,
 `pyvenv.cfg`, both source revisions, lock hashes and tracked-file hashes.

@@ -72,6 +72,8 @@ class WorkflowConfigurationTests(unittest.TestCase):
 
 
 class RuntimeCustodyTests(unittest.TestCase):
+    package_name = "fep_lean"
+
     def setUp(self):
         self.root = Path(tempfile.mkdtemp(prefix="fep-runtime-control-"))
         print(f"retained control: {self.root}", flush=True)
@@ -88,7 +90,7 @@ class RuntimeCustodyTests(unittest.TestCase):
             self.git(root, "config", "user.name", "Runtime test")
             self.git(root, "config", "user.email", "runtime@example.invalid")
             (root / "uv.lock").write_text("fixture lock\n")
-        package = self.fep / "src/fep_lean"
+        package = self.fep / "src" / self.package_name
         package.mkdir(parents=True)
         (package / "__init__.py").write_text("")
         (package / "cli.py").write_text(CLI)
@@ -187,7 +189,7 @@ class RuntimeCustodyTests(unittest.TestCase):
                 }
             )
         )
-        package = self.fep / "src/fep_lean/bridge"
+        package = self.fep / "src" / self.package_name / "bridge"
         package.mkdir()
         (package / "__init__.py").write_text("")
         (package / "operations.py").write_text(
@@ -389,6 +391,79 @@ class RuntimeCustodyTests(unittest.TestCase):
         original = path.read_bytes()
         self.run_stage("installed", success=False)
         self.assertEqual(path.read_bytes(), original)
+
+    def test_wrong_namespace_receipt_origin_rejected(self):
+        self.run_stage("installed")
+        self.run_stage("status")
+        path = self.receipts / "runtime-status.json"
+        receipt = json.loads(path.read_text())
+        other = "fep_lean" if self.package_name == "fep_formal" else "fep_formal"
+        receipt["cli_source"] = str(self.fep / "src" / other / "cli.py")
+        path.write_text(json.dumps(receipt))
+        self.run_stage("finite", success=False)
+
+    def test_external_import_origin_rejected(self):
+        package = self.root / "shadow" / self.package_name
+        package.mkdir(parents=True)
+        (package / "__init__.py").write_text("")
+        (package / "cli.py").write_text(CLI)
+        site = subprocess.check_output(
+            [str(self.python), "-c", "import site; print(site.getsitepackages()[0])"],
+            text=True,
+        ).strip()
+        Path(site, "shadow.pth").write_text(
+            f"import sys; sys.path.insert(0, {str(package.parent)!r})\n"
+        )
+        self.run_stage("installed")
+        result = self.run_stage("status", success=False)
+        self.assertIn("module source mismatch", result.stderr)
+
+    def test_symlinked_cli_origin_rejected(self):
+        cli = self.fep / "src" / self.package_name / "cli.py"
+        retained = self.root / "outside-cli.py"
+        cli.rename(retained)
+        cli.symlink_to(retained)
+        self.fep_revision = self.commit(self.fep)
+        pin = self.gnn / ".github/fep-lean-pair.json"
+        pin.write_text(
+            json.dumps(
+                {
+                    "repository": "ActiveInferenceInstitute/fep_formal",
+                    "revision": self.fep_revision,
+                }
+            )
+        )
+        self.gnn_revision = self.commit(self.gnn)
+        self.run_stage("installed")
+        result = self.run_stage("status", success=False)
+        self.assertIn("invalid FEP module source", result.stderr)
+
+
+class CanonicalRuntimeCustodyTests(RuntimeCustodyTests):
+    package_name = "fep_formal"
+
+    def test_mixed_legacy_module_alias_rejected(self):
+        legacy = self.fep / "src/fep_lean"
+        legacy.mkdir()
+        (legacy / "__init__.py").write_text("")
+        (legacy / "cli.py").write_text(CLI)
+        (self.fep / "src/fep_formal/__init__.py").write_text(
+            'import sys\nfrom fep_lean import cli\nsys.modules["fep_formal.cli"] = cli\n'
+        )
+        self.fep_revision = self.commit(self.fep)
+        pin = self.gnn / ".github/fep-lean-pair.json"
+        pin.write_text(
+            json.dumps(
+                {
+                    "repository": "ActiveInferenceInstitute/fep_formal",
+                    "revision": self.fep_revision,
+                }
+            )
+        )
+        self.gnn_revision = self.commit(self.gnn)
+        self.run_stage("installed")
+        result = self.run_stage("status", success=False)
+        self.assertIn("module source mismatch", result.stderr)
 
 
 if __name__ == "__main__":

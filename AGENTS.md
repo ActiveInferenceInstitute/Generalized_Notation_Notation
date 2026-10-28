@@ -485,9 +485,9 @@ in README.md under Runtime defaults and required profiles. Preserve protected
 producer metadata/locks and existing compatibility/native/paired rosters.
 `uv.toml` mirrors all configurable uv settings from the protected pyproject.
 
-## Cross-repo custody (fep_lean, GEO-INFER)
+## Cross-repo custody (FEP_Formal, GEO-INFER)
 
-This repository shares custody pairs with FEP_Formal (`fep_lean` bridge)
+This repository shares custody pairs with FEP_Formal (`fep_formal` bridge)
 and GEO-INFER (interchange). Each side pins a reviewed companion revision and
 qualifies the actual source pair. GNN 5.0.x uses the active current-source
 workflow; the older 4.2.1/4.3.0 fixed-baseline policy is historical and cannot

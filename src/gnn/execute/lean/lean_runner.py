@@ -1,8 +1,8 @@
-"""Lean verification runner: drives ``fep-lean bridge verify-document``.
+"""Lean verification runner: drives ``fep-formal bridge verify-document``.
 
-Resolves the sibling ``fep_lean`` checkout (env ``FEP_LEAN_ROOT`` overrides
-the ``../fep_lean`` default), discovers emitted Lean/GNN documents under the
-rendered target directory, and verifies each through the fep_lean bridge
+Resolves the sibling ``fep_formal`` checkout (env ``FEP_FORMAL_ROOT`` overrides
+the ``../fep_formal`` default; legacy root names remain supported), discovers emitted Lean/GNN documents under the
+rendered target directory, and verifies each through the FEP_Formal bridge
 ``verify-document`` operation (bridge contract v0.6, Direction 2 S7:
 well-formedness against the ``FEP.GnnDocument`` typed AST).
 """
@@ -12,9 +12,14 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import tempfile
+import tomllib
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Union
+from types import MappingProxyType
+from typing import Any, Final, Optional, Union
 
 from gnn.execute.subprocess_envelope import (
     NEVER_STARTED,
@@ -24,31 +29,147 @@ from gnn.execute.subprocess_envelope import (
 
 logger = logging.getLogger(__name__)
 
-#: Env override naming the fep_lean checkout.
-FEP_LEAN_ROOT_ENV = "FEP_LEAN_ROOT"
+#: Canonical checkout override; FEP_LEAN_ROOT remains a deprecated alias.
+FEP_FORMAL_ROOT_ENV: Final = "FEP_FORMAL_ROOT"
+FEP_LEAN_ROOT_ENV: Final = "FEP_LEAN_ROOT"
 
 #: Default ceiling for one verify-document invocation (Lean + Mathlib).
 _VERIFY_TIMEOUT_SECONDS = 1800
 
 
-def resolve_fep_lean_root() -> Path | None:
-    """Resolve and validate the fep_lean checkout root, or ``None``.
+def resolve_fep_formal_root() -> Path | None:
+    """Resolve the canonical checkout, retaining legacy environment/layout support.
 
-    ``FEP_LEAN_ROOT`` wins when set; otherwise the default is the
-    ``fep_lean`` sibling of the GNN repository root. A checkout must carry
-    ``pyproject.toml`` and the ``src/fep_lean`` package.
+    An explicit canonical override wins over the deprecated override, even
+    when invalid. Without overrides, prefer the canonical sibling checkout.
     """
-    env = os.environ.get(FEP_LEAN_ROOT_ENV)
-    root = Path(env) if env else Path(__file__).resolve().parents[4].parent / "fep_lean"
-    root = root.resolve()
-    if (root / "pyproject.toml").is_file() and (root / "src" / "fep_lean").is_dir():
-        return root
+    env = os.environ.get(FEP_FORMAL_ROOT_ENV)
+    if env is None:
+        env = os.environ.get(FEP_LEAN_ROOT_ENV)
+    if env is not None and not env.strip():
+        return None
+    parent = Path(__file__).resolve().parents[4].parent
+    candidates = (
+        (Path(env),)
+        if env is not None
+        else (parent / "fep_formal", parent / "fep_lean")
+    )
+    for candidate in candidates:
+        root = candidate.resolve()
+        if (root / "pyproject.toml").is_file() and any(
+            (root / "src" / package).is_dir() for package in ("fep_formal", "fep_lean")
+        ):
+            return root
     return None
 
 
+def resolve_fep_lean_root() -> Path | None:
+    """Deprecated compatibility alias for :func:`resolve_fep_formal_root`."""
+    return resolve_fep_formal_root()
+
+
+def fep_bridge_executable(root: Path) -> str:
+    """Select the canonical CLI, retaining support for legacy-only checkouts."""
+    return "fep-formal" if (root / "src" / "fep_formal").is_dir() else "fep-lean"
+
+
+class FepRuntimeConfigurationError(ValueError):
+    """The companion's declared runtime cannot be safely selected."""
+
+
+@dataclass(frozen=True, slots=True)
+class FepRuntimeInvocation:
+    """Command and controlled child overrides; never contains caller secrets."""
+
+    command: tuple[str, ...]
+    environment: Mapping[str, str]
+
+
+def fep_runtime_invocation(
+    root: Path, arguments: Sequence[str]
+) -> FepRuntimeInvocation:
+    """Bind the exact companion uv pin, declared Python and installed environment."""
+    root = root.resolve()
+    try:
+        project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+        standalone = root / "uv.toml"
+        uv_config = (
+            tomllib.loads(standalone.read_text(encoding="utf-8"))
+            if standalone.is_file()
+            else None
+        )
+        python = (root / ".python-version").read_text(encoding="utf-8").strip()
+    except (OSError, tomllib.TOMLDecodeError, UnicodeError):
+        raise FepRuntimeConfigurationError(
+            "FEP runtime metadata is missing or malformed"
+        ) from None
+    tool = project.get("tool", {})
+    project_uv = tool.get("uv", {}) if isinstance(tool, dict) else None
+    if not isinstance(project_uv, dict):
+        raise FepRuntimeConfigurationError("FEP uv metadata must be a table")
+    config = uv_config if uv_config is not None else project_uv
+    pin = config.get("required-version")
+    if (
+        not isinstance(pin, str)
+        or re.fullmatch(r"==[0-9]+\.[0-9]+\.[0-9]+", pin) is None
+    ):
+        raise FepRuntimeConfigurationError(
+            "FEP requires an exact stable uv version pin"
+        )
+    if uv_config is not None and project_uv.get("required-version", pin) != pin:
+        raise FepRuntimeConfigurationError("FEP uv metadata contains conflicting pins")
+    if re.fullmatch(r"3\.[0-9]+(?:\.[0-9]+)?", python) is None:
+        raise FepRuntimeConfigurationError("FEP requires one declared CPython version")
+    environment = root / ".venv"
+    try:
+        venv_metadata = (environment / "pyvenv.cfg").read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        raise FepRuntimeConfigurationError(
+            "FEP project environment is not installed"
+        ) from None
+    installed_versions = re.findall(
+        r"^(?:version_info|version)\s*=\s*(3\.[0-9]+(?:\.[0-9]+)?)\s*$",
+        venv_metadata,
+        re.MULTILINE,
+    )
+    if not installed_versions or any(
+        version.split(".")[: len(python.split("."))] != python.split(".")
+        for version in installed_versions
+    ):
+        raise FepRuntimeConfigurationError(
+            "FEP installed environment does not match declared Python"
+        )
+    return FepRuntimeInvocation(
+        command=(
+            "uv",
+            "tool",
+            "run",
+            "--from",
+            f"uv{pin}",
+            "uv",
+            "run",
+            "--project",
+            str(root),
+            "--frozen",
+            "--no-sync",
+            "--python",
+            python,
+            *arguments,
+        ),
+        environment=MappingProxyType(
+            {
+                "UV_PROJECT_ENVIRONMENT": str(environment),
+                "VIRTUAL_ENV": str(environment),
+                "UV_PYTHON": python,
+                "UV_PYTHON_DOWNLOADS": "never",
+            }
+        ),
+    )
+
+
 def lean_toolchain_available() -> bool:
-    """True when a fep_lean checkout is resolvable for verification."""
-    return resolve_fep_lean_root() is not None
+    """True when a FEP_Formal checkout is resolvable for verification."""
+    return resolve_fep_formal_root() is not None
 
 
 def verify_document(
@@ -61,18 +182,18 @@ def verify_document(
     timeout: int = _VERIFY_TIMEOUT_SECONDS,
     cancel_token: CancelToken | None = None,
 ) -> dict[str, Any]:
-    """Verify one emitted document via ``fep-lean bridge verify-document``.
+    """Verify one emitted document via ``fep-formal bridge verify-document``.
 
     Returns a record with ``success`` plus either the parsed receipt or an
     ``error`` message captured from the bridge CLI (fail-closed). A fired
     ``cancel_token`` cancels the dispatch cooperatively inside the
     subprocess envelope (pre-spawn or mid-flight).
     """
-    root = resolve_fep_lean_root()
+    root = resolve_fep_formal_root()
     if root is None:
         logger.info(
-            "ℹ️ fep_lean not available - skipping Lean verification (set %s)",
-            FEP_LEAN_ROOT_ENV,
+            "ℹ️ FEP_Formal not available - skipping Lean verification (set %s)",
+            FEP_FORMAL_ROOT_ENV,
         )
         return {"success": False, "error": "fep_lean unavailable"}
 
@@ -115,10 +236,9 @@ def _verify_document_impl(
     timeout: int,
     cancel_token: CancelToken | None,
 ) -> dict[str, Any]:
-    command = [
-        "uv",
-        "run",
-        "fep-lean",
+    root = Path(_lean_cwd(gnn_root_path))
+    arguments = [
+        fep_bridge_executable(root),
         "bridge",
         "verify-document",
         "--gnn-root",
@@ -131,7 +251,19 @@ def _verify_document_impl(
         str(receipt_path),
     ]
     if fail_on_warnings:
-        command.append("--fail-on-warnings")
+        arguments.append("--fail-on-warnings")
+    try:
+        invocation = fep_runtime_invocation(root, arguments)
+    except FepRuntimeConfigurationError as error:
+        return {
+            "success": False,
+            "document": str(document_path),
+            "error": str(error),
+            "error_type": type(error).__name__,
+            "return_code": NEVER_STARTED,
+            "returncode": NEVER_STARTED,
+        }
+    command = list(invocation.command)
 
     record: dict[str, Any] = {
         "success": False,
@@ -141,7 +273,8 @@ def _verify_document_impl(
     envelope = run_subprocess_envelope(
         command,
         timeout=timeout,
-        cwd=str(_lean_cwd(gnn_root_path)),
+        cwd=str(root),
+        env=dict(invocation.environment),
         cancel_token=cancel_token,
     )
     # Canonical ``return_code`` key (MAJ-10); ``returncode`` kept for
@@ -176,8 +309,8 @@ def _verify_document_impl(
 
 
 def _lean_cwd(gnn_root_path: Path) -> str:
-    """Resolve the fep-lean cwd for the subprocess envelope."""
-    root = resolve_fep_lean_root()
+    """Resolve the FEP_Formal cwd for the subprocess envelope."""
+    root = resolve_fep_formal_root()
     return str(root) if root is not None else str(gnn_root_path.parent)
 
 
@@ -194,17 +327,17 @@ def run_lean_scripts(
 
     Mirrors the per-framework runner contract: returns ``True`` when every
     discovered document verifies (or when there is nothing to verify),
-    ``False`` when the fep_lean checkout is unavailable or any document
+    ``False`` when the FEP_Formal checkout is unavailable or any document
     fails. Per-document receipts are written under ``execution_output_dir``.
     When ``timeout`` is given it overrides the per-document ceiling;
     ``None`` keeps ``verify_document``'s default. ``cancel_token`` threads
     into every per-document call; the envelope owns the cooperative checks
     (pre-spawn and mid-flight).
     """
-    if resolve_fep_lean_root() is None:
+    if resolve_fep_formal_root() is None:
         logger.info(
-            "ℹ️ fep_lean not available - skipping Lean verification (set %s)",
-            FEP_LEAN_ROOT_ENV,
+            "ℹ️ FEP_Formal not available - skipping Lean verification (set %s)",
+            FEP_FORMAL_ROOT_ENV,
         )
         return False
 

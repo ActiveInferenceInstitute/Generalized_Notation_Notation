@@ -56,26 +56,34 @@ def julia_env_ready() -> bool:
 
 @functools.lru_cache(maxsize=1)
 def lean_ready() -> bool:
-    """fep_lean checkout resolves, ``lake`` is on PATH, bridge has verify-document."""
+    """FEP_Formal checkout resolves, ``lake`` is on PATH, bridge has verify-document."""
     if shutil.which("lake") is None:
         return False
-    from gnn.execute.lean.lean_runner import resolve_fep_lean_root
+    from gnn.execute.lean.lean_runner import (
+        FepRuntimeConfigurationError,
+        fep_bridge_executable,
+        fep_runtime_invocation,
+        resolve_fep_formal_root,
+    )
 
-    root = resolve_fep_lean_root()
+    root = resolve_fep_formal_root()
     if root is None:
         return False
+    from gnn.execute.subprocess_envelope import run_subprocess_envelope
+
     try:
-        completed = subprocess.run(  # nosec B603 B607
-            ["uv", "run", "fep-lean", "bridge", "--help"],
-            cwd=str(root),
-            capture_output=True,
-            text=True,
-            timeout=120,
-            check=False,
+        invocation = fep_runtime_invocation(
+            root, [fep_bridge_executable(root), "bridge", "--help"]
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except FepRuntimeConfigurationError:
         return False
-    return "verify-document" in completed.stdout
+    completed = run_subprocess_envelope(
+        list(invocation.command),
+        cwd=root,
+        env=dict(invocation.environment),
+        timeout=120,
+    )
+    return bool(completed["success"] and "verify-document" in completed["stdout"])
 
 
 @functools.lru_cache(maxsize=1)
@@ -221,7 +229,7 @@ TOOLCHAIN_MARKERS: dict[str, tuple[Callable[[], bool], str]] = {
     ),
     "needs_lean": (
         lean_ready,
-        "fep_lean toolchain or bridge verify-document op unavailable",
+        "FEP_Formal toolchain or bridge verify-document op unavailable",
     ),
     "needs_cmdstan": (
         cmdstan_ready,
