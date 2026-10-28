@@ -37,7 +37,7 @@ typed surface owned by the sibling `fep_formal` checkout (bridge contract v0.5,
 Canonical checkout selection uses `FEP_FORMAL_ROOT` before the deprecated
 `FEP_LEAN_ROOT` alias, then the `fep_formal` sibling before `fep_lean`.
 An invalid explicit override fails closed. `resolve_fep_formal_root` is the
-canonical resolver; `resolve_fep_lean_root` remains a compatibility alias.
+canonical resolver. The deprecated `resolve_fep_lean_root` calls that function.
 `FEP_FORMAL_ROOT_ENV` names the canonical variable. `fep_bridge_executable`
 selects `fep-formal` for a canonical package and `fep-lean` for a legacy-only
 checkout. Frozen pair pins and proof receipts keep their original identities;
