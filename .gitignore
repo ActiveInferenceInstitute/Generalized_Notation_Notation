@@ -473,3 +473,6 @@ docs/cognitive_phenomena/meta-aware-2/figures/*.png
 # paper. The pattern here pins the figure-raster class under the figures_fig*
 # doc-stub dirs so they cannot silently return as tracked files.
 docs/cognitive_phenomena/meta-awareness/figures_fig*/*.png
+
+# Private agent plans, captures and isolated task environments
+/.omo/

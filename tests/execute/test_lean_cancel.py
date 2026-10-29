@@ -32,8 +32,13 @@ from gnn.execute.subprocess_envelope import NEVER_STARTED, CancelToken
 
 
 def _pin_fake_root(monkeypatch: pytest.MonkeyPatch, root: Path) -> None:
-    """Resolve fep_lean to a stub checkout so the envelope call is reached."""
-    monkeypatch.setattr(lean_runner, "resolve_fep_lean_root", lambda: root)
+    """Resolve FEP_Formal to a stub checkout so the envelope call is reached."""
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "pyproject.toml").write_text('[tool.uv]\nrequired-version = "==0.13.0"\n')
+    (root / ".python-version").write_text("3.14\n")
+    (root / ".venv").mkdir()
+    (root / ".venv/pyvenv.cfg").write_text("version_info = 3.14.0\n")
+    monkeypatch.setattr(lean_runner, "resolve_fep_formal_root", lambda: root)
 
 
 def _cancelled_envelope() -> Dict[str, Any]:
@@ -82,6 +87,8 @@ def test_prespawn_cancel_reports_cancellation_and_never_spawns(
 
     assert len(calls) == 1, f"expected one envelope call; got {calls}"
     assert calls[0]["cancel_token"] is token, "token object must reach the envelope"
+    assert calls[0]["env"]["UV_PROJECT_ENVIRONMENT"] == str(tmp_path / "fep_lean/.venv")
+    assert "uv==0.13.0" in calls[0]["command"]
     assert record["success"] is False
     assert record["cancelled"] is True
     assert record["error_type"] == "Cancelled"

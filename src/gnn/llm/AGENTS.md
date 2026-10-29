@@ -9,7 +9,7 @@ The maintained local adapter is Ollama HTTP, not separate MLX/llama.cpp adapters
 
 Read [README](README.md), [SPEC](SPEC.md) and the
 [local Mac runbook](../../../docs/llm/README.md) before changing these contracts.
-Root [custody rules](../../../AGENTS.md#cross-repo-custody-fep_lean-geo-infer)
+Root [custody rules](../../../AGENTS.md#cross-repo-custody-fep_formal-geo-infer)
 apply to every Python source edit.
 
 ## Architecture

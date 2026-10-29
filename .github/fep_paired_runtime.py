@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import hashlib
+import importlib
 import json
 import os
 import re
@@ -17,6 +18,7 @@ import subprocess
 import sys
 import tomllib
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 STAGES = ("installed", "status", "finite", "continuous", "final")
@@ -105,6 +107,31 @@ def source(root: Path, expected_revision: str) -> dict[str, Any]:
     }
 
 
+def fep_namespace(root: Path) -> str:
+    """Prefer the canonical source layout; retain pinned legacy checkouts."""
+    return "fep_formal" if (root / "src/fep_formal").is_dir() else "fep_lean"
+
+
+def fep_module_path(root: Path, suffix: str) -> Path:
+    """Require an exact source file, refusing symlinked package escapes."""
+    expected = root / "src" / fep_namespace(root) / (suffix.replace(".", "/") + ".py")
+    if expected.resolve() != expected or not expected.is_file():
+        raise ValueError(f"invalid FEP module source: {expected}")
+    return expected
+
+
+def import_fep_module(root: Path, suffix: str) -> ModuleType:
+    """Import only the module belonging to the selected checkout namespace."""
+    expected = fep_module_path(root, suffix)
+    module = importlib.import_module(f"{fep_namespace(root)}.{suffix}")
+    actual = Path(module.__file__).resolve() if module.__file__ else None
+    if actual != expected:
+        raise ValueError(
+            f"installed FEP module source mismatch: {actual}; expected {expected}"
+        )
+    return module
+
+
 def release_binding(args: argparse.Namespace) -> dict[str, Any]:
     """Admit only a reviewed version/lock delta from the fixed scientific pair."""
     release = args.gnn_release_root
@@ -127,7 +154,7 @@ def release_binding(args: argparse.Namespace) -> dict[str, Any]:
         or policy["fep_revision"] != args.fep_revision
     ):
         raise ValueError("invalid fixed release baseline")
-    from fep_lean.bridge.operations import owner_roster
+    owner_roster = import_fep_module(args.fep_root, "bridge.operations").owner_roster
 
     pin = read(args.fep_root / "specs/gnn-bridge-w2-source-custody/source-pin.json")
     owners = pin["gnn"]["owners"]
@@ -220,7 +247,7 @@ def accepted(path: Path, stage: str, baseline: dict[str, Any]) -> dict[str, Any]
         if (
             result.get("exit_code") != 0
             or result.get("cli_source")
-            != str(Path(baseline["fep"]["root"]) / "src/fep_lean/cli.py")
+            != str(fep_module_path(Path(baseline["fep"]["root"]), "cli"))
             or result.get("command")
             != bridge_command(baseline["fep"]["root"], baseline["gnn"]["root"], stage)
         ):
@@ -283,11 +310,8 @@ def execute(args: argparse.Namespace) -> None:
             for stage in prior:
                 accepted(args.receipts / f"runtime-{stage}.json", stage, baseline)
             if args.stage != "final":
-                from fep_lean import cli
-
-                module = Path(cli.__file__).resolve()
-                if not module.is_relative_to(args.fep_root / "src/fep_lean"):
-                    raise ValueError(f"installed CLI source mismatch: {module}")
+                cli = import_fep_module(args.fep_root, "cli")
+                module = fep_module_path(args.fep_root, "cli")
                 if args.stage == Q7_STAGE:
                     verifier = args.fep_root / Q7_CONTRACT
                     contract = runpy.run_path(str(verifier), run_name="fep_current_q7")

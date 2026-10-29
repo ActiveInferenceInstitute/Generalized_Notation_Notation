@@ -1,10 +1,11 @@
-# Bridge contract: fep_lean and GNN
+# Bridge contract: FEP_Formal and GNN
 
 | Field | Value |
 | --- | --- |
 | Version | 0.6 |
 | Date | 2026-09-06 |
-| Canonical copy | `../fep_lean/docs/design/gnn-bridge/bridge-contract.md` — edit there first |
+| Interface clarification | 2026-10-28; canonical names, unchanged model semantics |
+| Canonical copy | `../fep_formal/docs/design/gnn-bridge/bridge-contract.md` — edit there first |
 | Mirror copy | this file, `docs/other/fep_lean/bridge-contract.md` |
 | Change rule | substance changes bump the version and land in both checkouts in the same working session |
 
@@ -12,12 +13,16 @@
 
 This contract is the formal articulation between two sibling repositories:
 
-- `fep_lean` — a standalone catalogue of 155 FEP / Active Inference /
+- FEP_Formal (`fep_formal`) — a standalone catalog of FEP / Active Inference /
   Bayesian Mechanics / Information Geometry / Thermodynamics topics with
   Lean 4 theorem bodies, a pinned workspace, and distinct evidence planes.
 - `GeneralizedNotationNotation` (GNN) — a text-based notation for Active
   Inference generative models with a 25-step pipeline that parses, type
   checks, renders, and executes model documents.
+
+Public Python imports use `fep_formal`, commands use `fep-formal`, and public
+settings use `FEP_FORMAL_`. Legacy names remain deprecated aliases through 2.x.
+Lean theorem namespaces and historical receipt keys retain their identities.
 
 The contract scopes two directions of collaboration and nothing else. It
 creates no capabilities, no catalogue rows, and no evidence claims. All
@@ -28,7 +33,7 @@ markdown links.
 
 | Concern | Authority |
 | --- | --- |
-| Semantics of FEP objects (laws, kernels, blankets, free energy, policies) | fep_lean |
+| Semantics of FEP objects (laws, kernels, blankets, free energy, policies) | fep_formal |
 | Syntax, parsing, rendering, and execution of model documents | GNN |
 | The mapping between them | this contract, edited in both repositories |
 | Evidence classification (what counts as what) | each repository's own contract; see section 7 |
@@ -86,8 +91,8 @@ targeted. A document without provenance is not a bridge artifact.
 
 | Stage | Owner | Input to output | Acceptance |
 | --- | --- | --- | --- |
-| S1 Selection | fep_lean | a named Lean definition family (e.g. the finite posterior–decision–action certificate carrier or an `active_inference.lean` `GenerativeModel` instance) | the named definition compiles warning-free under `fep-lean verify` before projection |
-| S2 Projection | fep_lean (prospective module beside `src/fep_lean/formal/`) | Lean definition → typed projection: index types, law/kernel components, dependencies, parameters, timescale | deterministic and regenerable; no judgment calls |
+| S1 Selection | fep_formal | a named Lean definition family (e.g. the finite posterior–decision–action certificate carrier or an `active_inference.lean` `GenerativeModel` instance) | the named definition compiles warning-free under `fep-formal verify` before projection |
+| S2 Projection | fep_formal (prospective module beside `src/fep_formal/formal/`) | Lean definition → typed projection: index types, law/kernel components, dependencies, parameters, timescale | deterministic and regenerable; no judgment calls |
 | S3 Emission | bridge tooling | projection → GNN document with provenance | passes `uv run gnn validate <file> --strict` in the GNN checkout |
 | S4 Toolchain | GNN | steps 3 (parse), 5 (type check), 10 (ontology), 11 (render), 12 (execute) | render and execution summaries produced; statuses reported honestly (`unsupported` is distinct from `failed`) |
 | S5 Certificate | joint | execution-derived quantities vs Lean-witnessed properties | every compared quantity names its evidence plane; disagreement is a finding, never silently averaged away |
@@ -97,14 +102,14 @@ targeted. A document without provenance is not a bridge artifact.
 | Stage | Owner | Target | Acceptance |
 | --- | --- | --- | --- |
 | S1 Syntax surface freeze | GNN | the normative section inventory in `docs/gnn/gnn_syntax.md` | a pinned version reference both sides cite |
-| S2 Document AST | fep_lean (prospective) | GNN sections, state-space blocks, and connections as Lean inductive types | compiles in the pinned workspace |
-| S3 Well-formedness | fep_lean | decidable predicates mirroring parse, connection grammar, state-space typing, and ontology binding checks | every `input/gnn_files` exemplar decides correctly |
-| S4 Dynamic semantics | fep_lean | discrete-family denotation over `FiniteLaw`/`FiniteKernel`/`FiniteHMM`; continuous-family denotation over `LinearGaussianParameters` | theorem statements for both families accepted in a slice |
-| S5 FEP instantiation | both | GNN conventions ↔ fep_lean definitions (`A/B/C/D` ↔ `GenerativeModel`; `F[1]` ↔ `variationalFreeEnergy`; the `G=ExpectedFreeEnergy` ontology binding ↔ `expectedFreeEnergy_eq_risk_add_ambiguity`) | alignment statements named as prospective until proven |
-| S6 Renderer statements | fep_lean | semantics-preservation statements for render targets | statements first; proofs are later slices |
+| S2 Document AST | fep_formal (prospective) | GNN sections, state-space blocks, and connections as Lean inductive types | compiles in the pinned workspace |
+| S3 Well-formedness | fep_formal | decidable predicates mirroring parse, connection grammar, state-space typing, and ontology binding checks | every `input/gnn_files` exemplar decides correctly |
+| S4 Dynamic semantics | fep_formal | discrete-family denotation over `FiniteLaw`/`FiniteKernel`/`FiniteHMM`; continuous-family denotation over `LinearGaussianParameters` | theorem statements for both families accepted in a slice |
+| S5 FEP instantiation | both | GNN conventions ↔ fep_formal definitions (`A/B/C/D` ↔ `GenerativeModel`; `F[1]` ↔ `variationalFreeEnergy`; the `G=ExpectedFreeEnergy` ontology binding ↔ `expectedFreeEnergy_eq_risk_add_ambiguity`) | alignment statements named as prospective until proven |
+| S6 Renderer statements | fep_formal | semantics-preservation statements for render targets | statements first; proofs are later slices |
 
 Direction 2 detail lives in
-`fep_lean/docs/design/gnn-bridge/direction-2-gnn-to-lean.md` (cross-repository reference).
+`fep_formal/docs/design/gnn-bridge/direction-2-gnn-to-lean.md` (cross-repository reference).
 
 ## 7. Evidence firewall
 
@@ -113,9 +118,9 @@ each other:
 
 | Plane | Producer | Establishes | Never establishes |
 | --- | --- | --- | --- |
-| Native Lean compilation | `fep-lean verify` | the named body compiles without warnings or `sorry` | semantic reach, executed behavior |
+| Native Lean compilation | `fep-formal verify` | the named body compiles without warnings or `sorry` | semantic reach, executed behavior |
 | Semantic review | `config/theorem_maturity.yaml` | how far a theorem proxy reaches toward its topic label | compilation sufficiency |
-| Numerical witness | `fep-lean dashboard` | typed, explanatory finite witnesses | proof or empirical validation |
+| Numerical witness | `fep-formal dashboard` | typed, explanatory finite witnesses | proof or empirical validation |
 | GNN pipeline run | steps 3–12 | the document parses, renders, and executes | mathematical correctness of the model |
 
 A bridge certificate may only state agreement between quantities that each
@@ -124,13 +129,13 @@ proved property.
 
 ## 8. Synchronization and ownership
 
-- Canonical contract: `fep_lean/docs/design/gnn-bridge/bridge-contract.md`.
+- Canonical contract: `fep_formal/docs/design/gnn-bridge/bridge-contract.md`.
   Mirror: `GeneralizedNotationNotation/docs/other/fep_lean/bridge-contract.md`.
 - Contract edits land in both checkouts in the same working session; the
   mirror stays identical to the canonical body except for (a) the
   canonical-pointer header rows and (b) cross-repository markdown links,
   which the mirror renders as inline code paths.
-- `fep_lean/docs/design/gnn-bridge/` is maintained by fep_lean-side agents;
+- `fep_formal/docs/design/gnn-bridge/` is maintained by fep_formal-side agents;
   `docs/other/fep_lean/` in the GNN checkout by GNN-side agents.
 - Version bumps follow the change rule in the header table.
 
@@ -168,7 +173,7 @@ renderer-payload proof has a separate artifact/native verification receipt and
 does not establish runtime behavior or general renderer correctness.
 
 The historical P3 comparison default is read-only; report writing requires
-`--output`. Supported source-bound operations use `fep-lean bridge` with an
+`--output`. Supported source-bound operations use `fep-formal bridge` with an
 explicit `--gnn-root`.
 
 v0.6 extraction-package migration: the pinned render route is
@@ -192,11 +197,11 @@ test alone does not establish native acceptance.
 | Q6 | Two canonical Boolean Julia runners; their embedded JSON tables agree with independent symmetric and asymmetric Lean payloads. | Consumed runtime preferences, EFE equivalence, or ActiveInference.jl behavior: the runner transforms C and does not consume E in its action selector. |
 | Q7 | A canonical scalar-OU JAX render; decoded binary64 coefficients have bounded error against the selected exact-real OU formulas and one-step prediction. | Floating-point execution, accumulated trajectory error, a general SDE solution, or physical applicability. |
 
-The source locations are `fep_lean/specs/gnn-bridge-q5-artifact-proof/`,
-`fep_lean/specs/gnn-bridge-q6-activeinference-artifact/`, and
-`fep_lean/specs/gnn-bridge-q7-continuous-ou-proof/`. Each slice declares an
+The source locations are `fep_formal/specs/gnn-bridge-q5-artifact-proof/`,
+`fep_formal/specs/gnn-bridge-q6-activeinference-artifact/`, and
+`fep_formal/specs/gnn-bridge-q7-continuous-ou-proof/`. Each slice declares an
 immutable contract consumed by the shared
-`fep_lean/src/fep_lean/verification/gnn_artifact_receipt.py` engine.
+`fep_formal/src/fep_formal/verification/gnn_artifact_receipt.py` engine.
 
 Schema-2 native receipts bind source snapshots before and after compilation,
 the full slice contract, exact generator/extractor/probe bytes, canonical
@@ -224,11 +229,11 @@ Horizon 2 terminal acceptance combines the exact mandatory native-test roster,
 unchanged native-source snapshots, the explicitly enabled Fin4 supplement,
 independent typed scalar/Fin4 numerical witnesses, retained predecessor
 contracts, and three distinct source-bound Lean, domain, and skeptical reviews.
-The validator under `fep_lean/specs/done/horizon-2-smooth-stochastic/readiness/`
+The validator under `fep_formal/specs/done/horizon-2-smooth-stochastic/readiness/`
 rejects absent, stale, malformed, or incomplete evidence.
 
 An accepted terminal record opens only read-only H3.G0 eligibility review.
-`fep_lean/specs/h3-reference-study/` validates the accepted carrier and required
+`fep_formal/specs/h3-reference-study/` validates the accepted carrier and required
 prospective study declarations. It does not select a dataset, invent license
 or sampling metadata, or authorize H3.0--H3.7 empirical execution. Numerical
 witnesses and bridge proofs do not replace these study requirements.
@@ -241,7 +246,7 @@ former top-level pipeline module (including the numbered step drivers and
 `tests/`. The root package is the one aggregate facade.
 
 The `verify-document` operation (Direction 2 S7) checks one emitted GNN
-document: `fep-lean bridge verify-document --gnn-root PATH --document PATH`
+document: `fep-formal bridge verify-document --gnn-root PATH --document PATH`
 `[--model finite|continuous] [--receipt PATH] [--fail-on-warnings]`. It
 extracts the typed payload through the pinned render route
 (`gnn.extract.pomdp_extractor.extract_pomdp_from_file`, strict validation; full

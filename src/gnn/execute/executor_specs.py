@@ -285,15 +285,15 @@ def _framework_specs(
             available=lean_state.available,
             runner=lean_state.runner,
             operation_name="execute_lean_verification",
-            start_message="🚀 Verifying documents with fep_lean (Lean 4)...",
+            start_message="🚀 Verifying documents with FEP_Formal (Lean 4)...",
             success_message="Lean verification completed successfully",
             failure_message="Lean verification failed",
             unavailable_log=(
-                "ℹ️ fep_lean not available - skipping Lean verification "
-                "(set FEP_LEAN_ROOT to the fep_lean checkout)"
+                "ℹ️ FEP_Formal not available - skipping Lean verification "
+                "(set FEP_FORMAL_ROOT; deprecated alias FEP_LEAN_ROOT)"
             ),
             unavailable_message=(
-                "fep_lean not available (optional dependency - set FEP_LEAN_ROOT)"
+                "FEP_Formal not available (optional dependency - set FEP_FORMAL_ROOT; alias FEP_LEAN_ROOT)"
             ),
             success_log="Lean document verification completed",
             warning_log_prefix="Lean verification failed",
