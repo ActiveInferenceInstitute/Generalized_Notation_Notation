@@ -1,8 +1,8 @@
 """Lean verification runner: drives ``fep-formal bridge verify-document``.
 
-Resolves the sibling ``fep_formal`` checkout (env ``FEP_FORMAL_ROOT`` overrides
-the ``../fep_formal`` default; legacy root names remain supported), discovers emitted Lean/GNN documents under the
-rendered target directory, and verifies each through the FEP_Formal bridge
+Resolves ``FEP_FORMAL_ROOT`` (then the released ``FEP_LEAN_ROOT`` name) or the
+canonical ``../fep_formal`` sibling before ``../fep_lean``. It discovers emitted
+Lean/GNN documents and verifies each through the FEP_Formal bridge
 ``verify-document`` operation (bridge contract v0.6, Direction 2 S7:
 well-formedness against the ``FEP.GnnDocument`` typed AST).
 """
@@ -29,18 +29,58 @@ from gnn.execute.subprocess_envelope import (
 
 logger = logging.getLogger(__name__)
 
-#: Canonical checkout override; FEP_LEAN_ROOT remains a deprecated alias.
+#: Canonical checkout override; FEP_LEAN_ROOT is retained throughout FEP 2.x.
 FEP_FORMAL_ROOT_ENV: Final = "FEP_FORMAL_ROOT"
 FEP_LEAN_ROOT_ENV: Final = "FEP_LEAN_ROOT"
+_FEP_CLI_CONTRACTS: Final = {
+    "fep_lean": ("fep_lean", "fep-lean", "fep_lean.cli:main"),
+    "fep-formal": ("fep_formal", "fep-formal", "fep_formal.cli:main"),
+}
 
 #: Default ceiling for one verify-document invocation (Lean + Mathlib).
 _VERIFY_TIMEOUT_SECONDS = 1800
 
 
-def resolve_fep_formal_root() -> Path | None:
-    """Resolve the canonical checkout, retaining legacy environment/layout support.
+class FepRuntimeConfigurationError(ValueError):
+    """The companion's declared source/runtime cannot be safely selected."""
 
-    An explicit canonical override wins over the deprecated override, even
+
+def _fep_cli_contract(
+    root: Path, metadata: Mapping[str, Any] | None = None
+) -> tuple[str, str]:
+    """Select one physical CLI using the two released project identities."""
+    try:
+        data = (
+            metadata
+            if metadata is not None
+            else tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+        )
+        project = data.get("project")
+        if not isinstance(project, dict):
+            raise FepRuntimeConfigurationError("Unsupported FEP project identity")
+        name = project.get("name")
+        if not isinstance(name, str) or name not in _FEP_CLI_CONTRACTS:
+            raise FepRuntimeConfigurationError("Unsupported FEP project identity")
+        namespace, executable, target = _FEP_CLI_CONTRACTS[name]
+        scripts = project.get("scripts")
+        if not isinstance(scripts, dict) or scripts.get(executable) != target:
+            raise FepRuntimeConfigurationError(
+                "FEP CLI entry point differs from project identity"
+            )
+        cli = root / "src" / namespace / "cli.py"
+        if not cli.is_file() or cli.resolve() != cli:
+            raise FepRuntimeConfigurationError("FEP physical CLI source is unavailable")
+    except (OSError, tomllib.TOMLDecodeError, UnicodeError):
+        raise FepRuntimeConfigurationError(
+            "FEP project metadata is missing or malformed"
+        ) from None
+    return namespace, executable
+
+
+def resolve_fep_formal_root() -> Path | None:
+    """Resolve the canonical checkout and the older released root name.
+
+    An explicit canonical override wins over the older override, even
     when invalid. Without overrides, prefer the canonical sibling checkout.
     """
     env = os.environ.get(FEP_FORMAL_ROOT_ENV)
@@ -56,30 +96,28 @@ def resolve_fep_formal_root() -> Path | None:
     )
     for candidate in candidates:
         root = candidate.resolve()
-        if (root / "pyproject.toml").is_file() and any(
-            (root / "src" / package).is_dir() for package in ("fep_formal", "fep_lean")
-        ):
+        try:
+            _fep_cli_contract(root)
+        except FepRuntimeConfigurationError:
+            continue
+        else:
             return root
     return None
 
 
 def resolve_fep_lean_root() -> Path | None:
-    """Deprecated compatibility alias for :func:`resolve_fep_formal_root`."""
+    """Released 2.x alias for :func:`resolve_fep_formal_root`."""
     return resolve_fep_formal_root()
 
 
 def fep_bridge_executable(root: Path) -> str:
-    """Select the canonical CLI, retaining support for legacy-only checkouts."""
-    return "fep-formal" if (root / "src" / "fep_formal").is_dir() else "fep-lean"
-
-
-class FepRuntimeConfigurationError(ValueError):
-    """The companion's declared runtime cannot be safely selected."""
+    """Select the CLI declared by the exact released project/script contract."""
+    return _fep_cli_contract(root.resolve())[1]
 
 
 @dataclass(frozen=True, slots=True)
 class FepRuntimeInvocation:
-    """Command and controlled child overrides; never contains caller secrets."""
+    """Only explicit child overrides; unrelated caller settings omitted."""
 
     command: tuple[str, ...]
     environment: Mapping[str, str]
@@ -88,7 +126,12 @@ class FepRuntimeInvocation:
 def fep_runtime_invocation(
     root: Path, arguments: Sequence[str]
 ) -> FepRuntimeInvocation:
-    """Bind the exact companion uv pin, declared Python and installed environment."""
+    """Plan offline source execution in an already provisioned companion runtime.
+
+    This reads path/metadata prerequisites; it does not certify an installed
+    wheel or invoke a tool. The selected interpreter/source origin is checked
+    inside the existing subprocess envelope before the CLI main function runs.
+    """
     root = root.resolve()
     try:
         project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
@@ -103,6 +146,11 @@ def fep_runtime_invocation(
         raise FepRuntimeConfigurationError(
             "FEP runtime metadata is missing or malformed"
         ) from None
+    namespace, executable = _fep_cli_contract(root, project)
+    if not arguments or arguments[0] != executable:
+        raise FepRuntimeConfigurationError(
+            "FEP invocation does not select its declared CLI"
+        )
     tool = project.get("tool", {})
     project_uv = tool.get("uv", {}) if isinstance(tool, dict) else None
     if not isinstance(project_uv, dict):
@@ -139,29 +187,72 @@ def fep_runtime_invocation(
         raise FepRuntimeConfigurationError(
             "FEP installed environment does not match declared Python"
         )
+    bin_dir = environment / ("Scripts" if os.name == "nt" else "bin")
+    interpreter = bin_dir / ("python.exe" if os.name == "nt" else "python")
+    console = bin_dir / (executable + (".exe" if os.name == "nt" else ""))
+    if (
+        not interpreter.is_file()
+        or not console.is_file()
+        or console.resolve().parent != bin_dir.resolve()
+        or (
+            os.name != "nt"
+            and not all(os.access(p, os.X_OK) for p in (interpreter, console))
+        )
+    ):
+        raise FepRuntimeConfigurationError(
+            "FEP environment Python or declared console is not provisioned"
+        )
+    # A single owned child checks the actual interpreter and Source import;
+    # there is no extra origin/version probe outside the existing envelope.
+    bootstrap = (
+        "import importlib,sys\nfrom pathlib import Path\n"
+        f"expected={python!r}.split('.')\n"
+        "actual=[str(v) for v in sys.version_info[:len(expected)]]\n"
+        f"if (actual!=expected or Path(sys.prefix).resolve()!=Path({str(environment)!r}).resolve() "
+        f"or Path(sys.executable).absolute()!=Path({str(interpreter)!r}).absolute()):\n"
+        " raise RuntimeError('FEP interpreter differs from the declared environment')\n"
+        f"cli=importlib.import_module({namespace + '.cli'!r})\n"
+        f"if Path(cli.__file__).resolve()!=Path({str(root / 'src' / namespace / 'cli.py')!r}):\n"
+        " raise RuntimeError('FEP imported CLI source differs')\n"
+        f"sys.argv=[{str(console)!r},*sys.argv[1:]]\n"
+        "raise SystemExit(cli.main())"
+    )
+    source_path = str(root / "src")
+    inherited_pythonpath = os.environ.get("PYTHONPATH")
+    if inherited_pythonpath:
+        source_path += os.pathsep + inherited_pythonpath
     return FepRuntimeInvocation(
         command=(
             "uv",
             "tool",
             "run",
+            "--offline",
             "--from",
             f"uv{pin}",
             "uv",
             "run",
+            "--offline",
             "--project",
             str(root),
             "--frozen",
             "--no-sync",
             "--python",
-            python,
-            *arguments,
+            str(interpreter),
+            str(interpreter),
+            "-B",
+            "-c",
+            bootstrap,
+            *arguments[1:],
         ),
         environment=MappingProxyType(
             {
                 "UV_PROJECT_ENVIRONMENT": str(environment),
                 "VIRTUAL_ENV": str(environment),
-                "UV_PYTHON": python,
+                "UV_PYTHON": str(interpreter),
                 "UV_PYTHON_DOWNLOADS": "never",
+                "UV_OFFLINE": "1",
+                "PYTHONPATH": source_path,
+                "PYTHONDONTWRITEBYTECODE": "1",
             }
         ),
     )
@@ -237,22 +328,22 @@ def _verify_document_impl(
     cancel_token: CancelToken | None,
 ) -> dict[str, Any]:
     root = Path(_lean_cwd(gnn_root_path))
-    arguments = [
-        fep_bridge_executable(root),
-        "bridge",
-        "verify-document",
-        "--gnn-root",
-        str(gnn_root_path),
-        "--document",
-        str(document_path),
-        "--model",
-        model,
-        "--receipt",
-        str(receipt_path),
-    ]
-    if fail_on_warnings:
-        arguments.append("--fail-on-warnings")
     try:
+        arguments = [
+            fep_bridge_executable(root),
+            "bridge",
+            "verify-document",
+            "--gnn-root",
+            str(gnn_root_path),
+            "--document",
+            str(document_path),
+            "--model",
+            model,
+            "--receipt",
+            str(receipt_path),
+        ]
+        if fail_on_warnings:
+            arguments.append("--fail-on-warnings")
         invocation = fep_runtime_invocation(root, arguments)
     except FepRuntimeConfigurationError as error:
         return {

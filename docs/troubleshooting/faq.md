@@ -298,7 +298,7 @@ See [Performance Guide](performance.md) for optimization strategies.
    uv sync  # Install runtime dependencies from pyproject.toml / uv.lock
    ```
 
-3. **Python version compatibility**: GNN requires Python 3.11 through 3.13
+3. **Python version compatibility**: Use the [runtime defaults and required profiles](../../README.md#runtime-defaults-and-required-profiles) for the current Python range, default and backend exceptions.
 
    ```bash
    python --version  # Check your version

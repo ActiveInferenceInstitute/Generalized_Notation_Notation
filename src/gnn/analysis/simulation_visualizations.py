@@ -20,6 +20,7 @@ from typing import (
 import numpy as np
 
 from gnn.visualization.compat.viz_compat import get_sns
+from gnn.visualization.matrix.compat import parse_matrix_data
 
 from .result_adapter import categorical_trace, model_family, numeric_trace
 from .viz_base import (
@@ -330,21 +331,6 @@ def visualize_simulation_results(
                 continue
 
     return visualizations
-
-
-def parse_matrix_data(matrix_str: str) -> Optional[np.ndarray]:
-    """Parse matrix data from string representation."""
-    try:
-        # Simplified parsing logic for moving to analyzer
-        import re
-
-        numbers = re.findall(r"[-+]?\d*\.\d+|\d+", matrix_str)
-        if len(numbers) >= 1:
-            return np.array([float(n) for n in numbers])
-        return None
-    except Exception as e:
-        logger.debug(f"Failed to extract numeric array from value: {e}")
-        return None
 
 
 def visualize_cross_framework_metrics(

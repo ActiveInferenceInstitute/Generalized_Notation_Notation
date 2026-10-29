@@ -112,47 +112,22 @@ PATTERNS: list[tuple[re.Pattern[str], str]] = [
 ]
 
 
-# These exact FEP_Formal identity-migration statements document supported
-# transitional interfaces and their deprecation status. Keep that status explicit.
-# Path, diagnostic and complete line must all match: neither a whole-file waiver
-# nor a general permission for stale APIs is granted. The paired-revision guide
-# owns the migration; changes to these statements require a fresh review here.
+# Exact migration statements and the two reviewed transport-test boundary lines.
+# Each exception requires its path, diagnostic and complete stripped line.
+# Existing paired tests use a controlled read boundary to prove accepted()
+# consumes frozen metadata without consulting a live companion checkout.
+# Copies, changed statements and unrelated test-double terms still fail.
 _REVIEWED_FEP_MIGRATION_TERMS = frozenset(
     {
         (
-            ".github/fep_paired_runtime.py",
-            "stale-version wording",
-            '"""Prefer the canonical source layout; retain pinned legacy checkouts."""',
+            ".github/test_fep_paired_runtime.py",
+            "test-double wording",
+            "from unittest import mock",
         ),
         (
             ".github/test_fep_paired_runtime.py",
-            "stale-version wording",
-            '(legacy / "__init__.py").write_text("")',
-        ),
-        (
-            ".github/test_fep_paired_runtime.py",
-            "stale-version wording",
-            '(legacy / "cli.py").write_text(CLI)',
-        ),
-        (
-            ".github/test_fep_paired_runtime.py",
-            "stale-version wording",
-            'legacy = self.fep / "src/fep_lean"',
-        ),
-        (
-            ".github/test_fep_paired_runtime.py",
-            "stale-version wording",
-            "legacy.mkdir()",
-        ),
-        (
-            ".github/workflows/fep-lean-paired-revision.yml",
-            "stale-version wording",
-            "# checkout (verified against the selected canonical/legacy bridge CLI at the pin).",
-        ),
-        (
-            "docs/development/fep_lean_paired_revision.md",
-            "stale-version wording",
-            "process, with deprecated-layout compatibility for older pinned checkouts.",
+            "test-double wording",
+            "with mock.patch.object(",
         ),
         (
             "src/gnn/execute/executor_specs.py",
@@ -165,64 +140,9 @@ _REVIEWED_FEP_MIGRATION_TERMS = frozenset(
             "Canonical checkout selection uses `FEP_FORMAL_ROOT` before the deprecated",
         ),
         (
-            "src/gnn/execute/lean/AGENTS.md",
-            "stale-version wording",
-            "canonical resolver. The deprecated `resolve_fep_lean_root` calls that function.",
-        ),
-        (
-            "src/gnn/execute/lean/AGENTS.md",
-            "stale-version wording",
-            "selects `fep-formal` for a canonical package and `fep-lean` for a legacy-only",
-        ),
-        (
             "src/gnn/execute/lean/README.md",
             "stale-version wording",
             "Canonical checkout selection uses `FEP_FORMAL_ROOT` before the deprecated",
-        ),
-        (
-            "src/gnn/execute/lean/README.md",
-            "stale-version wording",
-            "canonical resolver. The deprecated `resolve_fep_lean_root` calls that function.",
-        ),
-        (
-            "src/gnn/execute/lean/README.md",
-            "stale-version wording",
-            "selects `fep-formal` for a canonical package and `fep-lean` for a legacy-only",
-        ),
-        (
-            "src/gnn/execute/lean/lean_runner.py",
-            "compatibility-only API",
-            '"""Deprecated compatibility alias for :func:`resolve_fep_formal_root`."""',
-        ),
-        (
-            "src/gnn/execute/lean/lean_runner.py",
-            "stale-version wording",
-            '"""Deprecated compatibility alias for :func:`resolve_fep_formal_root`."""',
-        ),
-        (
-            "src/gnn/execute/lean/lean_runner.py",
-            "stale-version wording",
-            '"""Resolve the canonical checkout, retaining legacy environment/layout support.',
-        ),
-        (
-            "src/gnn/execute/lean/lean_runner.py",
-            "stale-version wording",
-            '"""Select the canonical CLI, retaining support for legacy-only checkouts."""',
-        ),
-        (
-            "src/gnn/execute/lean/lean_runner.py",
-            "stale-version wording",
-            "#: Canonical checkout override; FEP_LEAN_ROOT remains a deprecated alias.",
-        ),
-        (
-            "src/gnn/execute/lean/lean_runner.py",
-            "stale-version wording",
-            "An explicit canonical override wins over the deprecated override, even",
-        ),
-        (
-            "src/gnn/execute/lean/lean_runner.py",
-            "stale-version wording",
-            "the ``../fep_formal`` default; legacy root names remain supported), discovers emitted Lean/GNN documents under the",
         ),
     }
 )

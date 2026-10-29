@@ -1,4 +1,4 @@
-"""Lean execution backend: FEP_Formal bridge document verification (v0.5)."""
+"""Lean execution backend: FEP_Formal bridge document verification (v0.6)."""
 
 from .lean_runner import (
     FEP_FORMAL_ROOT_ENV,

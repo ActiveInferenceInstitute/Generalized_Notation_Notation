@@ -7,6 +7,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Maintained execution utilities
+
+- Replace simulated testing passes and invented MCP-shaped category results with
+  serial execution through the canonical monitored pytest runner. Preserve public
+  utility exports and reject unavailable harnesses, empty selections and failed
+  subprocesses; native and environment-changing profiles remain explicit.
+- Repair relocated experiment and test-helper paths, apply custom test controls,
+  retire the unreachable test-tool registration file, consolidate matrix parsing
+  behind the existing public surfaces and link troubleshooting to current runtime
+  profiles. Historical releases, receipts and negative fixtures retain their roles.
+
 ### Independent Gaussian composition and evidence views
 
 - Add an explicitly bounded two-agent passive Gaussian witness with independent

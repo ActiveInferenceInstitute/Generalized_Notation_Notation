@@ -19,6 +19,7 @@ no ``needs_lean`` markers.
 from __future__ import annotations
 
 import inspect
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
@@ -32,12 +33,28 @@ from gnn.execute.subprocess_envelope import NEVER_STARTED, CancelToken
 
 
 def _pin_fake_root(monkeypatch: pytest.MonkeyPatch, root: Path) -> None:
-    """Resolve FEP_Formal to a stub checkout so the envelope call is reached."""
+    """Supply path/metadata planning inputs; no external tool is represented."""
     root.mkdir(parents=True, exist_ok=True)
-    (root / "pyproject.toml").write_text('[tool.uv]\nrequired-version = "==0.13.0"\n')
+    source = root / "src/fep_formal"
+    source.mkdir(parents=True)
+    (source / "cli.py").write_text("def main():\n    return 0\n")
+    (root / "pyproject.toml").write_text(
+        "[project]\nname='fep-formal'\n[project.scripts]\n"
+        "fep-formal='fep_formal.cli:main'\n"
+        '[tool.uv]\nrequired-version = "==0.13.0"\n'
+    )
     (root / ".python-version").write_text("3.14\n")
     (root / ".venv").mkdir()
     (root / ".venv/pyvenv.cfg").write_text("version_info = 3.14.0\n")
+    bindir = root / ".venv" / ("Scripts" if os.name == "nt" else "bin")
+    bindir.mkdir()
+    for name in (
+        "python.exe" if os.name == "nt" else "python",
+        "fep-formal.exe" if os.name == "nt" else "fep-formal",
+    ):
+        path = bindir / name
+        path.write_text("Planning input only; not an executable tool implementation.\n")
+        path.chmod(0o755)
     monkeypatch.setattr(lean_runner, "resolve_fep_formal_root", lambda: root)
 
 
@@ -89,6 +106,8 @@ def test_prespawn_cancel_reports_cancellation_and_never_spawns(
     assert calls[0]["cancel_token"] is token, "token object must reach the envelope"
     assert calls[0]["env"]["UV_PROJECT_ENVIRONMENT"] == str(tmp_path / "fep_lean/.venv")
     assert "uv==0.13.0" in calls[0]["command"]
+    assert calls[0]["command"].count("--offline") == 2
+    assert calls[0]["env"]["UV_OFFLINE"] == "1"
     assert record["success"] is False
     assert record["cancelled"] is True
     assert record["error_type"] == "Cancelled"

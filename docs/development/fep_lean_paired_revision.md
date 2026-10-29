@@ -84,7 +84,14 @@ In the mirror direction, GEO_INFER pins GNN from its own checkout via its
 
 The workflow-local [runtime runner](../../.github/fep_paired_runtime.py)
 calls the installed canonical `fep_formal.cli.main` in the inspected Python
-process, with deprecated-layout compatibility for older pinned checkouts.
+process, retaining the explicitly released older project/script contract.
+Production Step 12 Lean dispatch separately selects `FEP_FORMAL_ROOT` (or its
+released `FEP_LEAN_ROOT` alias) and binds the companion's declared uv/Python to
+its already provisioned `.venv`. Its pinned uv tool and child run offline,
+without environment synchronization or Python downloads. Cache/environment
+provisioning is a separate action; metadata/path checks do not certify a wheel
+or Lean execution. The existing envelope owns cancellation and timeouts.
+
 It records the requested and actual major/minor, full interpreter version,
 executable and prefix, virtual-environment inode, interpreter/link identity,
 `pyvenv.cfg`, both source revisions, lock hashes and tracked-file hashes.

@@ -12,7 +12,7 @@
 
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
 
-**Last Updated**: 2026-09-25
+**Last Updated**: 2026-10-28
 
 ---
 
@@ -336,7 +336,7 @@ The module-info inventory and `register_tools()` use these same six names.
 
 ## Version History
 
-Module `__version__` is re-exported from `gnn` (`__init__.py`); the pipeline/repo release is `3.5.0`. No formal changelog is maintained in this file.
+Module `__version__` is re-exported from `gnn` (`__init__.py`); the current pipeline/repository version is declared in [pyproject.toml](../../../pyproject.toml). No formal changelog is maintained in this file.
 
 ---
 ## References
@@ -351,7 +351,7 @@ Module `__version__` is re-exported from `gnn` (`__init__.py`); the pipeline/rep
 
 ---
 
-**Last Updated**: 2026-09-25
+**Last Updated**: 2026-10-28
 **Maintainer**: GNN Pipeline Team
 **Status**: Production Ready
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)

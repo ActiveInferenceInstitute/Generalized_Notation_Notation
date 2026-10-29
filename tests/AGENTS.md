@@ -564,12 +564,10 @@ uv run --extra dev python -m pytest tests/ -q --tb=no -rsx --ignore=tests/llm/te
 
 ## MCP Integration
 
-### Tools Registered
-- `run_all_tests` - Run comprehensive test suite for the pipeline
-- `run_unit_tests` - Run the unit test suite
-- `run_integration_tests` - Run the integration test suite
-
-All three are registered by `tests/mcp.py::register_tools` (plain names, no `tests.` prefix).
+The `tests/mcp/` package validates the maintained tools discovered beneath
+`src/gnn/`. The test harness does not register separate test-execution tools.
+Python callers can explicitly invoke `gnn.utils.testing`; its MCP-shaped result
+helper reports actual configured source-test selections and outcomes.
 
 ---
 

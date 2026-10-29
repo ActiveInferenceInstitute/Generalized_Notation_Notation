@@ -20,10 +20,9 @@ _SCRIPT = (
 
 @pytest.fixture(scope="module")
 def scaling_mod() -> Any:
-    # The script imports `from pymdp_spec_generator import ...` — a sibling
-    # module in the same `scripts/` directory. Plain ``importlib`` does not
-    # add the script's directory to ``sys.path``; the helper injects it for
-    # the duration of the load.
+    # The generator lives in scripts/; the relocated runner anchors that
+    # directory from the repository root. The helper adds experiments/ only
+    # for the duration of this module load.
     return load_module_from_path("pymdp_scaling", _SCRIPT, sys_path=_SCRIPT.parent)
 
 
@@ -52,7 +51,9 @@ def test_skip_reason_timeout_pair(scaling_mod: Any) -> None:
 def test_relative_output_dir_resolves_from_project_root(scaling_mod: Any) -> None:
     out_dir = scaling_mod._resolve_output_dir("input/gnn_files/pymdp_scaling_study")
 
-    assert out_dir == scaling_mod.PROJECT_ROOT / "input/gnn_files/pymdp_scaling_study"
+    project_root = Path(__file__).resolve().parents[2]
+    assert scaling_mod.PROJECT_ROOT == project_root
+    assert out_dir == project_root / "input/gnn_files/pymdp_scaling_study"
 
 
 def test_pipeline_invocation_uses_project_root_python_and_frameworks(
@@ -67,6 +68,7 @@ def test_pipeline_invocation_uses_project_root_python_and_frameworks(
 
     assert cwd == scaling_mod.PROJECT_ROOT
     assert cmd[:4] == ["uv", "run", "python", "src/gnn/main.py"]
+    assert (cwd / cmd[3]).is_file()
     assert cmd[cmd.index("--target-dir") + 1] == str(tmp_path)
     assert cmd[cmd.index("--output-dir") + 1] == str(tmp_path / "pipeline_output")
     assert cmd[cmd.index("--render-output-dir") + 1] == str(

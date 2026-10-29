@@ -7,6 +7,7 @@ the workflow separately executes the actual pinned FEP bridge.
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import subprocess
 import sys
@@ -14,6 +15,7 @@ import tempfile
 import unittest
 import venv
 from pathlib import Path
+from unittest import mock
 
 HELPER = Path(__file__).with_name("fep_paired_runtime.py")
 CLI = """import json, sys
@@ -72,7 +74,39 @@ class WorkflowConfigurationTests(unittest.TestCase):
 
 
 class RuntimeCustodyTests(unittest.TestCase):
-    package_name = "fep_lean"
+    PROJECT_NAME = "fep_lean"
+    NAMESPACE = "fep_lean"
+    SCRIPT = "fep-lean"
+
+    def project_metadata(self, *, name=None, target=None):
+        return (
+            "[project]\n"
+            f'name = "{name or self.PROJECT_NAME}"\n'
+            "[project.scripts]\n"
+            f'{self.SCRIPT} = "{target or self.NAMESPACE + ".cli:main"}"\n'
+        )
+
+    def change_project_metadata(self, *, name=None, target=None):
+        (self.fep / "pyproject.toml").write_text(
+            self.project_metadata(name=name, target=target)
+        )
+        self.fep_revision = self.commit(self.fep)
+        pin = self.gnn / ".github/fep-lean-pair.json"
+        declaration = json.loads(pin.read_text())
+        declaration["revision"] = self.fep_revision
+        pin.write_text(json.dumps(declaration))
+        self.gnn_revision = self.commit(self.gnn)
+
+    def transported_validator(self):
+        spec = importlib.util.spec_from_file_location("paired_runtime_control", HELPER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        members = {
+            path.name: path.read_bytes() for path in self.receipts.glob("*.json")
+        }
+        module.read = lambda path: json.loads(members[path.name])
+        module.digest = lambda path: hashlib.sha256(members[path.name]).hexdigest()
+        return module, members
 
     def setUp(self):
         self.root = Path(tempfile.mkdtemp(prefix="fep-runtime-control-"))
@@ -90,7 +124,8 @@ class RuntimeCustodyTests(unittest.TestCase):
             self.git(root, "config", "user.name", "Runtime test")
             self.git(root, "config", "user.email", "runtime@example.invalid")
             (root / "uv.lock").write_text("fixture lock\n")
-        package = self.fep / "src" / self.package_name
+        (self.fep / "pyproject.toml").write_text(self.project_metadata())
+        package = self.fep / "src" / self.NAMESPACE
         package.mkdir(parents=True)
         (package / "__init__.py").write_text("")
         (package / "cli.py").write_text(CLI)
@@ -110,7 +145,8 @@ class RuntimeCustodyTests(unittest.TestCase):
             [str(self.python), "-c", "import site; print(site.getsitepackages()[0])"],
             text=True,
         ).strip()
-        Path(site, "fixture.pth").write_text(str(self.fep / "src"))
+        self.fixture_pth = Path(site, "fixture.pth")
+        self.fixture_pth.write_text(str(self.fep / "src"))
         self.receipts = self.root / "receipts"
         self.receipts.mkdir()
         self.release_flags = []
@@ -189,7 +225,7 @@ class RuntimeCustodyTests(unittest.TestCase):
                 }
             )
         )
-        package = self.fep / "src" / self.package_name / "bridge"
+        package = self.fep / "src" / self.NAMESPACE / "bridge"
         package.mkdir()
         (package / "__init__.py").write_text("")
         (package / "operations.py").write_text(
@@ -392,78 +428,98 @@ class RuntimeCustodyTests(unittest.TestCase):
         self.run_stage("installed", success=False)
         self.assertEqual(path.read_bytes(), original)
 
-    def test_wrong_namespace_receipt_origin_rejected(self):
+    def test_unknown_project_identity_rejected(self):
+        self.change_project_metadata(name="unreviewed-fep")
+        self.run_stage("installed", success=False)
+        result = json.loads(
+            (self.receipts / "runtime-installed-failed.json").read_text()
+        )
+        self.assertIn("unsupported companion project identity", result["error"])
+
+    def test_cross_namespace_entry_point_rejected(self):
+        other = "fep_formal" if self.NAMESPACE == "fep_lean" else "fep_lean"
+        self.change_project_metadata(target=f"{other}.cli:main")
+        self.run_stage("installed", success=False)
+        result = json.loads(
+            (self.receipts / "runtime-installed-failed.json").read_text()
+        )
+        self.assertIn("companion CLI entry point differs", result["error"])
+
+    def test_cli_from_another_checkout_rejected(self):
+        foreign = self.root / "foreign" / self.NAMESPACE
+        foreign.mkdir(parents=True)
+        (foreign / "__init__.py").write_text("")
+        (foreign / "cli.py").write_text(CLI)
+        self.fixture_pth.write_text(str(foreign.parent))
+        self.run_stage("installed")
+        self.run_stage("status", success=False)
+        result = json.loads((self.receipts / "runtime-status-failed.json").read_text())
+        self.assertIn("installed CLI source mismatch", result["error"])
+
+    def test_cross_namespace_cli_receipt_rejected(self):
         self.run_stage("installed")
         self.run_stage("status")
         path = self.receipts / "runtime-status.json"
-        receipt = json.loads(path.read_text())
-        other = "fep_lean" if self.package_name == "fep_formal" else "fep_formal"
-        receipt["cli_source"] = str(self.fep / "src" / other / "cli.py")
-        path.write_text(json.dumps(receipt))
+        result = json.loads(path.read_text())
+        other = "fep_formal" if self.NAMESPACE == "fep_lean" else "fep_lean"
+        result["cli_source"] = str(self.fep / "src" / other / "cli.py")
+        path.write_text(json.dumps(result))
         self.run_stage("finite", success=False)
-
-    def test_external_import_origin_rejected(self):
-        package = self.root / "shadow" / self.package_name
-        package.mkdir(parents=True)
-        (package / "__init__.py").write_text("")
-        (package / "cli.py").write_text(CLI)
-        site = subprocess.check_output(
-            [str(self.python), "-c", "import site; print(site.getsitepackages()[0])"],
-            text=True,
-        ).strip()
-        Path(site, "shadow.pth").write_text(
-            f"import sys; sys.path.insert(0, {str(package.parent)!r})\n"
+        rejected = json.loads(
+            (self.receipts / "runtime-finite-failed.json").read_text()
         )
-        self.run_stage("installed")
-        result = self.run_stage("status", success=False)
-        self.assertIn("module source mismatch", result.stderr)
+        self.assertIn("wrong command or installed CLI receipt", rejected["error"])
 
-    def test_symlinked_cli_origin_rejected(self):
-        cli = self.fep / "src" / self.package_name / "cli.py"
-        retained = self.root / "outside-cli.py"
-        cli.rename(retained)
-        cli.symlink_to(retained)
-        self.fep_revision = self.commit(self.fep)
-        pin = self.gnn / ".github/fep-lean-pair.json"
-        pin.write_text(
-            json.dumps(
-                {
-                    "repository": "ActiveInferenceInstitute/fep_formal",
-                    "revision": self.fep_revision,
-                }
-            )
-        )
-        self.gnn_revision = self.commit(self.gnn)
+    def test_transported_validator_uses_frozen_cli_contract(self):
         self.run_stage("installed")
-        result = self.run_stage("status", success=False)
-        self.assertIn("invalid FEP module source", result.stderr)
+        self.run_stage("status")
+        module, members = self.transported_validator()
+        baseline = json.loads(members["runtime-installed.json"])["before"]
+        self.assertEqual(baseline["companion_cli"]["project_name"], self.PROJECT_NAME)
+        self.assertEqual(
+            baseline["companion_cli"]["pyproject_sha256"],
+            hashlib.sha256((self.fep / "pyproject.toml").read_bytes()).hexdigest(),
+        )
+        with mock.patch.object(
+            Path, "read_text", side_effect=AssertionError("live read")
+        ):
+            module.accepted(Path("runtime-status.json"), "status", baseline)
+
+    def test_transported_unknown_contract_rejected(self):
+        self.run_stage("installed")
+        self.run_stage("status")
+        module, members = self.transported_validator()
+        baseline = json.loads(members["runtime-installed.json"])["before"]
+        baseline["companion_cli"]["project_name"] = "unreviewed-fep"
+        result = json.loads(members["runtime-status.json"])
+        result["before"] = result["after"] = baseline
+        members["runtime-status.json"] = json.dumps(result).encode()
+        with self.assertRaisesRegex(
+            ValueError, "invalid frozen companion CLI contract"
+        ):
+            module.accepted(Path("runtime-status.json"), "status", baseline)
+
+    def test_transported_malformed_metadata_hash_rejected(self):
+        self.run_stage("installed")
+        self.run_stage("status")
+        module, members = self.transported_validator()
+        baseline = json.loads(members["runtime-installed.json"])["before"]
+        baseline["companion_cli"]["pyproject_sha256"] = "not-a-source-hash"
+        result = json.loads(members["runtime-status.json"])
+        result["before"] = result["after"] = baseline
+        members["runtime-status.json"] = json.dumps(result).encode()
+        with self.assertRaisesRegex(
+            ValueError, "invalid frozen companion CLI contract"
+        ):
+            module.accepted(Path("runtime-status.json"), "status", baseline)
 
 
 class CanonicalRuntimeCustodyTests(RuntimeCustodyTests):
-    package_name = "fep_formal"
+    """Run every custody and rejection control against the canonical package."""
 
-    def test_mixed_legacy_module_alias_rejected(self):
-        legacy = self.fep / "src/fep_lean"
-        legacy.mkdir()
-        (legacy / "__init__.py").write_text("")
-        (legacy / "cli.py").write_text(CLI)
-        (self.fep / "src/fep_formal/__init__.py").write_text(
-            'import sys\nfrom fep_lean import cli\nsys.modules["fep_formal.cli"] = cli\n'
-        )
-        self.fep_revision = self.commit(self.fep)
-        pin = self.gnn / ".github/fep-lean-pair.json"
-        pin.write_text(
-            json.dumps(
-                {
-                    "repository": "ActiveInferenceInstitute/fep_formal",
-                    "revision": self.fep_revision,
-                }
-            )
-        )
-        self.gnn_revision = self.commit(self.gnn)
-        self.run_stage("installed")
-        result = self.run_stage("status", success=False)
-        self.assertIn("module source mismatch", result.stderr)
+    PROJECT_NAME = "fep-formal"
+    NAMESPACE = "fep_formal"
+    SCRIPT = "fep-formal"
 
 
 if __name__ == "__main__":

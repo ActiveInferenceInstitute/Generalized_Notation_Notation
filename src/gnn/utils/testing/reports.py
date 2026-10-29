@@ -9,15 +9,39 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, cast
 
-from gnn.utils.testing.runner import run_all_tests
+from gnn.utils.testing.runner import _run_all_test_results
 
 
 def get_test_results(output_dir: Path) -> Dict[str, Any]:
-    """Get test results from output directory."""
-    results_file = output_dir / "test_results.json"
-    if results_file.exists():
-        with open(results_file, "r") as f:
-            return cast("dict[str, Any]", json.load(f))
+    """Read an unambiguous saved report; this does not verify a new run."""
+    supplied = Path(output_dir)
+    candidates = (
+        [supplied]
+        if supplied.is_file()
+        else [
+            candidate
+            for candidate in (
+                supplied / "test_results" / "test_report.json",
+                supplied / "test_report.json",
+                supplied / "test_results.json",
+            )
+            if candidate.is_file()
+        ]
+    )
+    if len(candidates) > 1:
+        return {
+            "status": "ambiguous_results",
+            "success": False,
+            "error": "Multiple saved result views; supply an explicit report file",
+            "candidates": [str(path) for path in candidates],
+        }
+    if candidates:
+        results_file = candidates[0]
+        with results_file.open(encoding="utf-8") as stream:
+            data = cast("dict[str, Any]", json.load(stream))
+        report = _canonical_category_report(data)
+        report.update(source_report=str(results_file), readback_only=True)
+        return report
     return {"status": "no_results"}
 
 
@@ -26,7 +50,7 @@ def generate_test_report(results: Dict[str, Any], output_dir: Path) -> bool:
     try:
         report_file = output_dir / "test_report.json"
         with open(report_file, "w") as f:
-            json.dump(results, f, indent=2)
+            json.dump(_canonical_category_report(results), f, indent=2)
         return True
     except Exception:
         return False
@@ -136,22 +160,13 @@ def run_all_tests_mcp(
         target_dir = Path(target_directory)
         output_dir = Path(output_directory)
 
-        # Run tests
-        success = run_all_tests(target_dir, output_dir, verbose)
-
+        report = _run_all_test_results(target_dir, output_dir, verbose)
         return {
-            "success": success,
+            **report,
             "target_directory": target_directory,
             "output_directory": output_directory,
             "verbose": verbose,
             "timestamp": datetime.now().isoformat(),
-            "test_categories": ["fast", "standard", "slow", "performance"],
-            "results": {
-                "fast": True,
-                "standard": True,
-                "slow": True,
-                "performance": True,
-            },
         }
 
     except Exception as e:
@@ -165,9 +180,48 @@ def run_all_tests_mcp(
         }
 
 
+def _category_passed(result: Any) -> bool:
+    """Read explicit category status, retaining boolean saved-report support."""
+    return result is True or (
+        isinstance(result, dict) and result.get("success") is True
+    )
+
+
+def _canonical_category_report(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Keep public status booleans and move saved structured outcomes to details."""
+    results = data.get("results")
+    if not isinstance(results, dict):
+        return data
+    normalized = dict(data)
+    details = data.get("category_results", {})
+    category_results = {
+        category: details[category]
+        for category in results
+        if isinstance(details, dict) and category in details
+    }
+    statuses: dict[str, bool] = {}
+    for category, result in results.items():
+        if not isinstance(result, bool) and not (
+            isinstance(result, dict) and isinstance(result.get("success"), bool)
+        ):
+            raise ValueError("Saved category results must declare boolean success")
+        statuses[category] = _category_passed(result)
+        if isinstance(result, dict):
+            category_results[category] = dict(result)
+    normalized["results"] = statuses
+    normalized["declared_success"] = data.get("declared_success", data.get("success"))
+    normalized["success"] = (
+        data.get("success") is True and bool(statuses) and all(statuses.values())
+    )
+    if category_results:
+        normalized["category_results"] = category_results
+    return normalized
+
+
 def generate_html_report_file(data: Dict[str, Any], output_path: Path) -> bool:
     """Generate an HTML test report file."""
     try:
+        data = _canonical_category_report(data)
         html_content = f"""
 <!DOCTYPE html>
 <html>
@@ -202,8 +256,8 @@ def generate_html_report_file(data: Dict[str, Any], output_path: Path) -> bool:
 
         if "results" in data:
             for category, result in data["results"].items():
-                status_class = "success" if result else "failure"
-                status_text = "Passed" if result else "Failed"
+                status_class = "success" if _category_passed(result) else "failure"
+                status_text = "Passed" if _category_passed(result) else "Failed"
                 html_content += f'            <li><span class="{status_class}">{category}: {status_text}</span></li>\n'
 
         html_content += """
@@ -226,6 +280,7 @@ def generate_html_report_file(data: Dict[str, Any], output_path: Path) -> bool:
 def generate_markdown_report_file(data: Dict[str, Any], output_path: Path) -> bool:
     """Generate a Markdown test report file."""
     try:
+        data = _canonical_category_report(data)
         markdown_content = f"""# GNN Test Report
 
 **Generated**: {data.get("timestamp", "Unknown")}
@@ -242,8 +297,8 @@ def generate_markdown_report_file(data: Dict[str, Any], output_path: Path) -> bo
 
         if "results" in data:
             for category, result in data["results"].items():
-                status_icon = "✅" if result else "❌"
-                status_text = "Passed" if result else "Failed"
+                status_icon = "✅" if _category_passed(result) else "❌"
+                status_text = "Passed" if _category_passed(result) else "Failed"
                 markdown_content += f"- **{category}**: {status_icon} {status_text}\n"
 
         markdown_content += """
@@ -267,7 +322,7 @@ def generate_json_report_file(data: Dict[str, Any], output_path: Path) -> bool:
     """Generate a JSON test report file."""
     try:
         with open(output_path, "w") as f:
-            json.dump(data, f, indent=2)
+            json.dump(_canonical_category_report(data), f, indent=2)
 
         return True
 
@@ -279,25 +334,19 @@ def generate_json_report_file(data: Dict[str, Any], output_path: Path) -> bool:
 def generate_comprehensive_report(
     pipeline_dir: Path, output_dir: Path, logger: logging.Logger
 ) -> bool:
-    """Generate a comprehensive test report."""
+    """Render a saved test report; the return value describes artifact generation."""
     try:
         # Create report directory
         report_dir = output_dir / "test_reports"
         report_dir.mkdir(parents=True, exist_ok=True)
 
-        # Generate test data
-        test_data: dict[str, Any] = {
-            "success": True,
-            "timestamp": datetime.now().isoformat(),
-            "target_directory": str(pipeline_dir),
-            "output_directory": str(output_dir),
-            "results": {
-                "fast": True,
-                "standard": True,
-                "slow": True,
-                "performance": True,
-            },
-        }
+        # Render only the explicitly supplied saved execution report. This
+        # operation does not execute tests or certify a new run's completion.
+        test_data = get_test_results(pipeline_dir)
+        if test_data.get("status") in {"ambiguous_results", "no_results"}:
+            raise ValueError(test_data.get("error", "Saved test report is unavailable"))
+        if not isinstance(test_data.get("results"), dict):
+            raise ValueError("Saved test report must contain category results")
 
         # Generate different report formats
         success = True

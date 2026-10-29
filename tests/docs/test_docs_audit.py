@@ -441,9 +441,9 @@ def test_terminology_scanners_flag_stale_phrases(tmp_path: Path) -> None:
     repo_terms.MAINTAINED_ROOTS = [isolated]
     approved: dict[str, set[str]] = {}
     for path, reason, line in repo_terms._REVIEWED_FEP_MIGRATION_TERMS:
-        assert reason in {"stale-version wording", "compatibility-only API"}
+        assert reason in {"stale-version wording", "test-double wording"}
         approved.setdefault(path, set()).add(line)
-    assert len(repo_terms._REVIEWED_FEP_MIGRATION_TERMS) == 21
+    assert len(repo_terms._REVIEWED_FEP_MIGRATION_TERMS) == 5
     for path, lines in approved.items():
         target = isolated / path
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -473,7 +473,7 @@ def test_terminology_scanners_flag_stale_phrases(tmp_path: Path) -> None:
     assert sum(
         row[2] == "stale PyMDP converter name" for row in changed_findings
     ) == sum(len(lines) for lines in approved.values())
-    assert sum(row[2] != "stale PyMDP converter name" for row in changed_findings) == 21
+    assert sum(row[2] != "stale PyMDP converter name" for row in changed_findings) == 5
 
 
 def test_maintained_doc_terms_skips_generated_and_archive_paths(tmp_path: Path) -> None:
