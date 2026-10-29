@@ -74,6 +74,13 @@ The [`lib/`](lib/) subdirectory provides shared utility functions for multiple a
 
 ## Operational Standards
 
+The repository terminology audit permits only the exact reviewed FEP_Formal
+identity-migration statements and transported-metadata test boundaries registered
+in `check_repo_terminology.py`. Their
+path, diagnostic and complete text must match. Other statements and altered
+lines remain failures; the [paired-revision guide](../docs/development/fep_lean_paired_revision.md)
+owns the migration contract.
+
 - Strict adherence to Pythonic PEP validation and real-implementation testing principles.
 - All scripts must contain structured `argparse` implementations mapped for headless CI.
 - Orchestrators must implement explicit safety guardrails for resource-intensive operations.

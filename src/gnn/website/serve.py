@@ -218,7 +218,10 @@ class WebsiteServer:
             ) from exc
         self._bind_host = bind_host
         self._thread = threading.Thread(
-            target=self._serve_forever, name="gnn-website-serve", daemon=True
+            target=self._serve_forever,
+            args=(self._server,),
+            name="gnn-website-serve",
+            daemon=True,
         )
         self._thread.start()
         logger.debug("Website server serving %s at %s", root, self.url)
@@ -245,13 +248,10 @@ class WebsiteServer:
             )
         self._thread.join()
 
-    def _serve_forever(self) -> None:
-        if self._server is None:
-            raise RuntimeError(
-                "WebsiteServer._serve_forever called without a bound server"
-            )
+    def _serve_forever(self, server: ThreadingHTTPServer) -> None:
+        # Retain the bound server when immediate shutdown clears instance state.
         try:
-            self._server.serve_forever()
+            server.serve_forever()
         except OSError:
             logger.exception("Website server thread failed")
 

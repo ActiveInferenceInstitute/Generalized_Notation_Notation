@@ -12,7 +12,7 @@
 
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
 
-**Last Updated**: 2026-09-25
+**Last Updated**: 2026-10-28
 
 ---
 
@@ -336,7 +336,7 @@ The module-info inventory and `register_tools()` use these same six names.
 
 ## Version History
 
-Module `__version__` is re-exported from `gnn` (`__init__.py`); the pipeline/repo release is `3.5.0`. No formal changelog is maintained in this file.
+Module `__version__` is re-exported from `gnn` (`__init__.py`); the current pipeline/repository version is declared in [pyproject.toml](../../../pyproject.toml). No formal changelog is maintained in this file.
 
 ---
 ## References
@@ -351,7 +351,7 @@ Module `__version__` is re-exported from `gnn` (`__init__.py`); the pipeline/rep
 
 ---
 
-**Last Updated**: 2026-09-25
+**Last Updated**: 2026-10-28
 **Maintainer**: GNN Pipeline Team
 **Status**: Production Ready
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
@@ -371,3 +371,7 @@ Module `__version__` is re-exported from `gnn` (`__init__.py`); the pipeline/rep
 **Purpose**: `serve.py` (imported as `gnn.website.serve`; a leaf module not re-exported from `gnn.website`) serves the generated pipeline output tree over loopback HTTP so `20_website_output/`, `22_gui_output/`, and `00_pipeline_summary/` all resolve under one server root. It is stdlib-only and imports nothing from `gnn`, mirroring the `MCPHTTPServer` start/shutdown thread pattern from `src/gnn/mcp/server_http.py` and the loopback-only bind precedent from `src/gnn/cli/handlers_service.py` (`require_secure_bind`).
 
 **Public API**: `WebsiteServer` (`start`/`shutdown`/`wait`; `url`, `landing_url`, `bound_port` properties), `serve_website(output_root, port=8090, open_browser=False, live_reload=False, host="127.0.0.1")` (blocking wrapper; Ctrl-C shuts down cleanly), and the error hierarchy `WebsiteServerError` → `PortInUseError` / `LoopbackViolationError` / `OutputRootNotFoundError` (non-loopback hosts and missing output roots fail loudly). With `live_reload=True` a poller snippet is injected before the last `</body>` of served HTML pages and `GET /_livereload` returns a cheap mtime-based sha256 digest; with the flag off the endpoint 404s. Default port **8090** (port map: 8000 API / 8080 MCP / 7860-7862 GUIs / 5151 oxdraw / 8090 website); the CLI `serve --surface website` wrapper lives in `src/gnn/cli/handlers_service.py`.
+
+The serving thread retains the bound HTTP server until it exits. Immediate
+shutdown can clear instance state while that thread starts; the retained handle
+lets shutdown finish and release the listening port in either startup order.

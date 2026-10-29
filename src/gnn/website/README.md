@@ -341,3 +341,7 @@ check return values and that paths are absolute or resolvable from the cwd.
 - **[AGENTS](AGENTS.md)**: Agentic Workflows
 - **[SPEC](SPEC.md)**: Architectural Specification
 - **[SKILL](SKILL.md)**: Capability API
+
+The serving thread retains the bound HTTP server until it exits. Immediate
+shutdown can clear instance state while that thread starts; the retained handle
+lets shutdown finish and release the listening port in either startup order.

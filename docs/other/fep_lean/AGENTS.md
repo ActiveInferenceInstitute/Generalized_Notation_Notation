@@ -1,4 +1,16 @@
-# fep_lean (docs/other archive entry)
+# FEP_Formal (retained docs/other/fep_lean path)
+
+## Current identity
+
+The folder and linked filenames retain their published `fep_lean` names.
+Current companion imports use `fep_formal`, commands use `fep-formal`, and
+`FEP_FORMAL_ROOT` selects the checkout. Older public names are deprecated
+aliases throughout FEP 2.x. The production resolver validates the exact project,
+script and physical CLI contract; its provisioned environment/tool cache runs
+offline. Historical evidence below retains its original Source pairs and dates;
+current qualification requires the named current pair and fresh artifact/native
+checks. The [paired-revision procedure](../../development/fep_lean_paired_revision.md)
+owns current integration and closeout ordering.
 
 ## Overview
 
@@ -12,13 +24,13 @@ with the sibling Lean 4 repository `fep_lean`: how generative models that
 have Lean expressions can be rendered and executed by the GNN pipeline, and
 how GNN's steps and methods are being formalized in Lean. This folder is the
 GNN-side mirror of the fep_lean design program at
-`../fep_lean/docs/design/gnn-bridge/` (cross-repo references are inline code
+`../fep_formal/docs/design/gnn-bridge/` (cross-repo references are inline code
 paths, never markdown links).
 
 On the fep_lean side, W2 source custody and Q5–Q7 concrete artifact proofs
 have current schema-2 native receipts. H2.7 acceptance opens only read-only
 H3.G0 eligibility. Current evidence and exact boundaries live in
-`../fep_lean/specs/gnn-bridge-w2-source-custody/WAVE2-REPORT.md`.
+`../fep_formal/specs/gnn-bridge-w2-source-custody/WAVE2-REPORT.md`.
 The mirrored bridge contract is version 0.6.
 
 ## Contents
@@ -67,7 +79,7 @@ the continuous family so kind detection stays mechanical. Details:
 ## Editing rules
 
 - The bridge contract in this folder is a **mirror**. Edit the canonical copy
-  first (`../fep_lean/docs/design/gnn-bridge/bridge-contract.md`), then update
+  first (`../fep_formal/docs/design/gnn-bridge/bridge-contract.md`), then update
   this mirror in the same working session, keeping the bodies identical.
 - Keep all links relative and verify targets exist; the repository-wide
   documentation audit (`uv run --extra dev python

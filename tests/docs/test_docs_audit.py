@@ -419,7 +419,7 @@ def test_format_strict_issue_detail_bc17_empty_by_default() -> None:
     assert "Stale version claims" not in detail
 
 
-def test_maintained_doc_terms_flags_stale_phrase(tmp_path: Path) -> None:
+def test_terminology_scanners_flag_stale_phrases(tmp_path: Path) -> None:
     mod = _load_doc_terms()
     readme = tmp_path / "README.md"
     readme.write_text(
@@ -431,6 +431,49 @@ def test_maintained_doc_terms_flags_stale_phrase(tmp_path: Path) -> None:
     assert len(findings) == 1
     assert findings[0].path == Path("README.md")
     assert "stale PyMDP" in findings[0].description
+
+    repo_terms = load_module_from_path(
+        "check_repo_terminology", REPO_ROOT / "scripts/check_repo_terminology.py"
+    )
+    isolated = tmp_path / "repo-terms"
+    isolated.mkdir()
+    repo_terms.ROOT = isolated
+    repo_terms.MAINTAINED_ROOTS = [isolated]
+    approved: dict[str, set[str]] = {}
+    for path, reason, line in repo_terms._REVIEWED_FEP_MIGRATION_TERMS:
+        assert reason in {"stale-version wording", "test-double wording"}
+        approved.setdefault(path, set()).add(line)
+    assert len(repo_terms._REVIEWED_FEP_MIGRATION_TERMS) == 5
+    for path, lines in approved.items():
+        target = isolated / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("\n".join(sorted(lines)) + "\n", encoding="utf-8")
+    assert repo_terms.scan() == []
+
+    # Identical words outside the reviewed owner still fail the same scanner.
+    unrelated = isolated / "docs/unreviewed.md"
+    unrelated.parent.mkdir(parents=True, exist_ok=True)
+    unrelated.write_text(
+        "\n".join(sorted({line for lines in approved.values() for line in lines})),
+        encoding="utf-8",
+    )
+    copied_findings = repo_terms.scan()
+    assert copied_findings
+    assert all(row[0] == Path("docs/unreviewed.md") for row in copied_findings)
+    unrelated.write_text("Current canonical interfaces.\n", encoding="utf-8")
+
+    # A permitted owner cannot admit an altered statement or another banned term.
+    for path, lines in approved.items():
+        target = isolated / path
+        target.write_text(
+            "\n".join(line + " PyMDPConverter" for line in sorted(lines)) + "\n",
+            encoding="utf-8",
+        )
+    changed_findings = repo_terms.scan()
+    assert sum(
+        row[2] == "stale PyMDP converter name" for row in changed_findings
+    ) == sum(len(lines) for lines in approved.values())
+    assert sum(row[2] != "stale PyMDP converter name" for row in changed_findings) == 5
 
 
 def test_maintained_doc_terms_skips_generated_and_archive_paths(tmp_path: Path) -> None:

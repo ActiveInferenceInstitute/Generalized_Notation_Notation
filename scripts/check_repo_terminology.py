@@ -112,6 +112,42 @@ PATTERNS: list[tuple[re.Pattern[str], str]] = [
 ]
 
 
+# Exact migration statements and the two reviewed transport-test boundary lines.
+# Each exception requires its path, diagnostic and complete stripped line.
+# Existing paired tests use a controlled read boundary to prove accepted()
+# consumes frozen metadata without consulting a live companion checkout.
+# Copies, changed statements and unrelated test-double terms still fail.
+_REVIEWED_FEP_MIGRATION_TERMS = frozenset(
+    {
+        (
+            ".github/test_fep_paired_runtime.py",
+            "test-double wording",
+            "from unittest import mock",
+        ),
+        (
+            ".github/test_fep_paired_runtime.py",
+            "test-double wording",
+            "with mock.patch.object(",
+        ),
+        (
+            "src/gnn/execute/executor_specs.py",
+            "stale-version wording",
+            '"(set FEP_FORMAL_ROOT; deprecated alias FEP_LEAN_ROOT)"',
+        ),
+        (
+            "src/gnn/execute/lean/AGENTS.md",
+            "stale-version wording",
+            "Canonical checkout selection uses `FEP_FORMAL_ROOT` before the deprecated",
+        ),
+        (
+            "src/gnn/execute/lean/README.md",
+            "stale-version wording",
+            "Canonical checkout selection uses `FEP_FORMAL_ROOT` before the deprecated",
+        ),
+    }
+)
+
+
 def _is_generated_path(path: Path) -> bool:
     try:
         rel = path.relative_to(ROOT)
@@ -159,6 +195,13 @@ def scan() -> list[tuple[Path, int, str, str]]:
         for line_no, line in enumerate(text.splitlines(), start=1):
             for pattern, description in PATTERNS:
                 if pattern.search(line):
+                    identity = (
+                        path.relative_to(ROOT).as_posix(),
+                        description,
+                        line.strip(),
+                    )
+                    if identity in _REVIEWED_FEP_MIGRATION_TERMS:
+                        continue
                     violations.append(
                         (path.relative_to(ROOT), line_no, description, line.strip())
                     )
