@@ -93,7 +93,7 @@ jobs:
           uv sync --project fep-lean --frozen --python "$UV_PYTHON"
       # Read-only bridge surface only: `status` and `emit --check` inspect
       # source bytes and emitted-document digests and never write to either
-      # checkout (verified against src/fep_lean/bridge/cli.py at the pin).
+      # checkout (verified against the selected canonical/legacy bridge CLI at the pin).
       - name: Bound runtime status and finite/continuous bridge checks
         run: |
           set -euo pipefail
