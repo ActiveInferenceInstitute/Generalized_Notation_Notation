@@ -56,7 +56,9 @@ def _fep_cli_contract(
             else tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
         )
         project = data.get("project")
-        name = project.get("name") if isinstance(project, dict) else None
+        if not isinstance(project, dict):
+            raise FepRuntimeConfigurationError("Unsupported FEP project identity")
+        name = project.get("name")
         if not isinstance(name, str) or name not in _FEP_CLI_CONTRACTS:
             raise FepRuntimeConfigurationError("Unsupported FEP project identity")
         namespace, executable, target = _FEP_CLI_CONTRACTS[name]
