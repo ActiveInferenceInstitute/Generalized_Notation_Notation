@@ -491,11 +491,16 @@ This repository shares custody pairs with FEP_Formal (`fep_formal` bridge)
 and GEO-INFER (interchange). Each side pins a reviewed companion revision and
 qualifies the actual source pair. GNN 5.0.x uses the active current-source
 workflow; the older 4.2.1/4.3.0 fixed-baseline policy is historical and cannot
-admit a new candidate. **Any edit to `src/gnn/**/*.py` (or `pyproject.toml`,
-`uv.lock`, `src/gnn/main.py`, `docs/gnn/gnn_syntax.md`, or
-`src/gnn/pipeline/step_registry.py`) re-drifts the FEP custody pair** and must
-close through fresh bridge/Q7 and native qualification before the final GNN
-companion pin. Canonical ordering and workflow details:
+admit a new candidate. GNN owns its implementation source: the FEP bridge binds
+only the declared notation contract — `pyproject.toml`, `uv.lock`,
+`src/gnn/main.py`, `docs/gnn/gnn_syntax.md`,
+`src/gnn/pipeline/step_registry.py` and the mirrored
+`docs/other/fep_lean/bridge-contract.md`. **Edits to those contract files
+re-drift the FEP custody pair** and must close through fresh bridge/Q7 and
+native qualification before the final GNN companion pin; other
+`src/gnn/**/*.py` implementation edits do not. The paired check is release-time
+(version tags and manual dispatch), not per-pull-request. Canonical ordering and
+workflow details:
 [paired-revision procedure](docs/development/fep_lean_paired_revision.md).
 Published tags, source archives and original proof receipts retain their
 accepted identities while development continues.

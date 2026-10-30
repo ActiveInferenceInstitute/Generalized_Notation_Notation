@@ -13,7 +13,15 @@ The active paired workflow checks the current GNN candidate against the exact
 FEP_Formal revision in `.github/fep-lean-pair.json`. It checks out one GNN tree
 and passes that tree and its exact revision to the runtime custody runner.
 There is no accepted-scientific-baseline checkout or release-root exception in
-the active workflow.
+the active workflow. The workflow runs at release time (version tags and manual
+dispatch), not on ordinary pull requests or main pushes.
+
+GNN owns its implementation source. The bridge's GNN owner roster binds only
+the declared notation contract: `pyproject.toml`, `uv.lock`, `src/gnn/main.py`,
+`docs/gnn/gnn_syntax.md`, `src/gnn/pipeline/step_registry.py` and the mirrored
+`docs/other/fep_lean/bridge-contract.md`. Other `src/gnn/**/*.py` implementation
+files are not owners, so editing them does not re-drift the pair; emitted
+documents are re-verified at run time by `emit --check`.
 
 GNN 5.0.x preparation does not itself establish a synchronized pair. Current
 pair qualification requires a reviewed companion pin, successful strict bridge
@@ -116,18 +124,23 @@ The Q7 parser accepts CPython 3.14; the 3.11/3.12 bridge compatibility rows rema
 This additional gate performs no Lean compilation or generated-runner execution
 and keeps `native_claim_ready: false`.
 
-Strictness mirrors GEO: the job is blocking. A red run is the drift signal —
-the pair must be re-pinned together, not the check suppressed.
+Strictness mirrors GEO: the job is blocking when it runs. A red run is the
+drift signal — the pair must be re-pinned together, not the check suppressed.
+Because the job runs at release time rather than on every pull request, that
+drift signal is expected at release qualification; ordinary GNN implementation
+edits do not trigger it.
 
 ## Who bumps the pin
 
 Pin updates coordinate source pins in FEP_Formal:
 
-- **GNN side**: changing GNN sources that the bridge's source binding covers
-  requires a paired commit on FEP_Formal (per its FEP-EVIDENCE-CURRENT policy)
-  that re-records digests against the new GNN state; the GNN-side PR then
-  bumps `.github/fep-lean-pair.json` to the new FEP_Formal revision in the same
-  change set.
+- **GNN side**: changing the GNN contract files that the bridge's source
+  binding covers (the owner roster above) requires a paired commit on
+  FEP_Formal (per its FEP-EVIDENCE-CURRENT policy) that re-records digests
+  against the new GNN state; the GNN-side PR then bumps
+  `.github/fep-lean-pair.json` to the new FEP_Formal revision in the same
+  change set. Editing a non-owner `src/gnn/**/*.py` implementation file
+  requires no re-pin.
 - **FEP_Formal side**: when FEP_Formal main moves, this repository's pin is
   updated to the new reviewed FEP_Formal SHA together with any GNN-side source
   changes the new pin requires.
@@ -139,8 +152,9 @@ revisions — never a floating main.
 
 A passing current-source workflow is a **drift-detection** result. It establishes that the pinned
 FEP_Formal checkout and this GNN checkout still agree on the bridge's source
-binding (owner rosters and content digests), finite/continuous freshness, the
-syntax surface, the contract mirror, and the formal projection with no drift.
+binding (the declared contract owner roster and its content digests),
+finite/continuous freshness, the syntax surface, the contract mirror, and the
+formal projection with no drift.
 
 It does **not** prove any Lean theorem, and no notation mapping claim may
 promote it into one: the bridge compares symbols and constructs across the two
@@ -154,8 +168,8 @@ Changes touching files the bridge's source binding covers close out in this
 order. The [historical fixed-baseline policy](#fixed-baseline-for-gnn-421) does
 not exempt a current release from this sequence:
 
-1. **All content edits land first** — never after the ritual. Any later
-   owner-file edit re-drifts the pair.
+1. **All content edits land first** — never after the ritual. Any later edit
+   to a contract owner file re-drifts the pair.
 2. **Manuscript/token ritual** (when manuscript inputs changed): follow the
    SC-22 ritual in the `scripts/z_generate_manuscript_variables.py` module
    docstring — regenerate the token map → rebuild figures → run the template's

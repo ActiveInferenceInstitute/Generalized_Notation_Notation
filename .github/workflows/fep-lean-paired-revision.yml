@@ -15,13 +15,15 @@ name: Paired fep_formal revision
 # docs/releases; they cannot admit a current release through this workflow.
 # Pair qualification requires these current-source bridge/Q7 checks to pass.
 # Native proof, generated-runner execution and release acceptance remain separate.
+#
+# Release-time only: GNN owns its own implementation source and the bridge binds
+# only the declared notation contract, so ordinary development (pull requests and
+# main pushes) is not gated on the companion bridge. Version tags run the paired
+# qualification; manual dispatch is available for an explicit re-check.
 
 on:
   push:
     tags: ["v[0-9]*"]
-    branches: ["main"]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -46,7 +48,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: gnn
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Read pinned companion revision
         id: pair
@@ -103,7 +105,7 @@ jobs:
               --expected-python "$UV_PYTHON" \
               --environment "$UV_PROJECT_ENVIRONMENT" \
               --gnn-root "$GITHUB_WORKSPACE/gnn" \
-              --gnn-revision "${{ github.event.pull_request.head.sha || github.sha }}" \
+              --gnn-revision "${{ github.sha }}" \
               --fep-root "$GITHUB_WORKSPACE/fep-lean" \
               --fep-revision "${{ steps.pair.outputs.revision }}" \
               --receipts "$GITHUB_WORKSPACE/receipts"
@@ -116,7 +118,7 @@ jobs:
             --expected-python "$UV_PYTHON" \
             --environment "$UV_PROJECT_ENVIRONMENT" \
             --gnn-root "$GITHUB_WORKSPACE/gnn" \
-            --gnn-revision "${{ github.event.pull_request.head.sha || github.sha }}" \
+            --gnn-revision "${{ github.sha }}" \
             --fep-root "$GITHUB_WORKSPACE/fep-lean" \
             --fep-revision "${{ steps.pair.outputs.revision }}" \
             --receipts "$GITHUB_WORKSPACE/receipts"

@@ -44,12 +44,12 @@ class WorkflowConfigurationTests(unittest.TestCase):
         self.assertNotIn("--gnn-release-", workflow)
         self.assertNotIn(".github/fep-release-baseline.json", workflow)
         self.assertEqual(workflow.count('--gnn-root "$GITHUB_WORKSPACE/gnn"'), 2)
-        self.assertEqual(
-            workflow.count(
-                '--gnn-revision "${{ github.event.pull_request.head.sha || github.sha }}"'
-            ),
-            2,
-        )
+        self.assertEqual(workflow.count('--gnn-revision "${{ github.sha }}"'), 2)
+        # Release-time only: GNN owns its implementation source, so ordinary
+        # pull-request and main-branch development is not gated on the pair.
+        self.assertNotIn("pull_request:", workflow)
+        self.assertNotIn('branches: ["main"]', workflow)
+        self.assertIn('tags: ["v[0-9]*"]', workflow)
         self.assertIn("for stage in installed status finite continuous final", workflow)
         self.assertIn("fep_paired_runtime.py q7-source", workflow)
         self.assertIn("if: matrix.python == '3.14'", workflow)
