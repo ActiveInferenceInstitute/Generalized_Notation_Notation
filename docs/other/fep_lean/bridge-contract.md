@@ -2,9 +2,10 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 0.6 |
+| Version | 0.7 |
 | Date | 2026-09-06 |
 | Interface clarification | 2026-10-28; canonical names, unchanged model semantics |
+| Roster narrowing | 2026-10-30; GNN owner roster binds the declared notation contract, not the implementation tree |
 | Canonical copy | `../fep_formal/docs/design/gnn-bridge/bridge-contract.md` — edit there first |
 | Mirror copy | this file, `docs/other/fep_lean/bridge-contract.md` |
 | Change rule | substance changes bump the version and land in both checkouts in the same working session |
@@ -176,14 +177,16 @@ The historical P3 comparison default is read-only; report writing requires
 `--output`. Supported source-bound operations use `fep-formal bridge` with an
 explicit `--gnn-root`.
 
-v0.6 extraction-package migration: the pinned render route is
-`gnn.extract.pomdp_extractor` (the extraction concern is packaged at
+v0.7 owner-roster narrowing: the GNN owner roster binds the declared notation
+contract only — `pyproject.toml`, `uv.lock`, `src/gnn/main.py`, the mirror, and
+the pinned syntax files (`docs/gnn/gnn_syntax.md`,
+`src/gnn/pipeline/step_registry.py`). The `src/gnn/**/*.py` implementation tree
+is GNN-owned and is no longer pinned; emitted-document freshness is verified at
+run time by `emit --check`. v0.6 extraction-package migration: the pinned render
+route is `gnn.extract.pomdp_extractor` (the extraction concern is packaged at
 `src/gnn/extract/`; `python -m gnn.extract` is preserved via the package
 `__main__`). v0.5 rename migration: the canonical GNN Python package is `gnn`
-(src-layout `src/gnn/`); the GNN owner roster is re-pinned to the single glob
-`src/gnn/**/*.py` plus fixed owners `pyproject.toml`, `uv.lock`,
-`src/gnn/main.py`, the mirror, and the pinned syntax files
-(`docs/gnn/gnn_syntax.md`, `src/gnn/pipeline/step_registry.py`).
+(src-layout `src/gnn/`); its roster glob is narrowed by v0.7 above.
 
 ## 11. Concrete artifact proofs and shared receipts (v0.4)
 

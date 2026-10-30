@@ -4,42 +4,77 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GNN Pipeline Performance Dashboard</title>
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!--
+  Self-contained dashboard: no external scripts, stylesheets or fonts.
+  The pipeline summary JSON is injected into the inline script below, so this
+  page renders identically offline (file://), on a loopback server, or in a
+  hosted preview. Step records carry `script_name`, `duration_seconds`,
+  `memory_usage_mb` and `peak_memory_mb` (see gnn.pipeline.summary_wiring).
+-->
 <style>
 :root {
-  --bg: #0f172a; --surface: #1e293b; --border: #334155;
+  --bg: #0f172a; --surface: #1e293b; --surface-2: #172033; --border: #334155;
   --text: #e2e8f0; --muted: #94a3b8; --accent: #3b82f6;
-  --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+  --success: #22c55e; --warning: #f59e0b; --danger: #ef4444; --skipped: #64748b;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 32px; }
-.header { margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
-.header h1 { font-size: 28px; font-weight: 700; color: #fff; }
-.header p { color: var(--muted); margin-top: 8px; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg); color: var(--text); padding: 32px;
+  line-height: 1.4; -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); }
+.header { margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+.header h1 { font-size: 26px; font-weight: 700; color: #fff; }
+.header p { color: var(--muted); margin-top: 8px; font-variant-numeric: tabular-nums; }
+.header .counts { margin-top: 6px; font-size: 13px; }
 
-.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 40px; }
-.metric-card { background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
-.metric-value { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
-.metric-label { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 20px; margin-bottom: 32px; }
+.metric-card { background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+.metric-value { font-size: 30px; font-weight: 700; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+.metric-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
 
-.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 40px; }
-.chart-container { background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); }
-.chart-container h2 { font-size: 18px; margin-bottom: 16px; color: #fff; }
+.panel { background: var(--surface); padding: 22px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; }
+.panel h2 { font-size: 17px; margin-bottom: 16px; color: #fff; }
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; margin-bottom: 28px; }
+.charts-grid .panel { margin-bottom: 0; }
 
-.gantt-container { background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); overflow-x: auto; margin-bottom: 40px; }
-.gantt-container h2 { font-size: 18px; margin-bottom: 16px; color: #fff; }
-#gantt-chart { min-width: 800px; height: 400px; }
+.chart-row { display: grid; grid-template-columns: 190px 1fr 84px; align-items: center; gap: 10px; margin: 5px 0; font-size: 12px; }
+.chart-row .label { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart-row .track { background: rgba(148, 163, 184, 0.15); border-radius: 4px; height: 16px; overflow: hidden; }
+.chart-row .fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.chart-row .value { text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+
+.timeline-row { display: grid; grid-template-columns: 190px 1fr; align-items: center; gap: 10px; margin: 5px 0; font-size: 12px; }
+.timeline-row .label { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timeline-track { position: relative; height: 18px; background: rgba(148, 163, 184, 0.12); border-radius: 4px; }
+.timeline-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 3px; min-width: 3px; }
+.timeline-bar .dur { position: absolute; right: 4px; top: -1px; font-size: 10px; color: #0b1220; font-weight: 600; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; list-style: none; font-size: 12px; color: var(--muted); }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.legend .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+table.steps { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.steps th, table.steps td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+table.steps th { color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; font-size: 11px; }
+table.steps td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.steps tr:last-child td { border-bottom: none; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; color: #0b1220; }
+
+.empty { background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; padding: 32px; text-align: center; color: var(--muted); }
+.footer { color: var(--muted); font-size: 11.5px; margin-top: 8px; text-align: center; }
 </style>
 </head>
 <body>
 
 <div class="header">
   <h1>GNN Pipeline Performance</h1>
-  <p id="dashboard-meta">Loading execution metrics...</p>
+  <p id="dashboard-meta">Loading execution metrics&hellip;</p>
+  <p id="dashboard-counts" class="counts"></p>
 </div>
 
-<div class="metrics-grid">
+<div class="metrics-grid" aria-label="Summary metrics">
   <div class="metric-card">
     <div class="metric-value" id="val-health" style="color: var(--success)">--</div>
     <div class="metric-label">Overall Health Score</div>
@@ -58,183 +93,231 @@ body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color
   </div>
 </div>
 
-<div class="charts-grid">
-  <div class="chart-container">
-    <h2>Step Duration Distribution</h2>
-    <canvas id="durationChart"></canvas>
+<div id="dashboard-body">
+  <div class="charts-grid">
+    <div class="panel">
+      <h2>Step Duration (seconds)</h2>
+      <div id="duration-chart" class="chart"></div>
+    </div>
+    <div class="panel">
+      <h2>Memory Profile (MB)</h2>
+      <div id="memory-chart" class="chart"></div>
+    </div>
   </div>
-  <div class="chart-container">
-    <h2>Memory Usage Profile</h2>
-    <canvas id="memoryChart"></canvas>
+
+  <div class="panel">
+    <h2>Execution Timeline</h2>
+    <div id="gantt-chart" class="gantt"></div>
+    <ul class="legend" aria-label="Status legend">
+      <li><span class="swatch" style="background: var(--success)"></span> success</li>
+      <li><span class="swatch" style="background: var(--warning)"></span> warning</li>
+      <li><span class="swatch" style="background: var(--danger)"></span> failed / timeout</li>
+      <li><span class="swatch" style="background: var(--skipped)"></span> skipped</li>
+      <li><span class="swatch" style="background: var(--accent)"></span> other</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>Step Details</h2>
+    <div id="step-table"></div>
   </div>
 </div>
 
-<div class="gantt-container">
-  <h2>Execution Gantt Chart (D3.js)</h2>
-  <div id="gantt-chart"></div>
-</div>
+<div id="empty-state" class="empty" hidden>No valid execution data found.</div>
+<div class="footer">Generated from a single pipeline summary JSON; rendered without external resources.</div>
 
 <script>
 // SUMMARY_JSON is injected by the dashboard renderer.
 const rawData = {SUMMARY_JSON};
 
-document.addEventListener("DOMContentLoaded", () => {
-    try {
-        if (!rawData || !rawData.steps) {
-            document.getElementById('dashboard-meta').innerText = 'No valid execution data found.';
-            return;
-        }
+(function () {
+  "use strict";
 
-        // 1. Populate Header & Metrics
-        const status = rawData.overall_status || 'UNKNOWN';
-        document.getElementById('dashboard-meta').innerText = `Execution ID: ${rawData.run_id || 'Unknown'} | Status: ${status} | Started: ${rawData.start_time || ''}`;
-        
-        // Derive a health score when Step 24 has not produced one yet.
-        const failedSteps = rawData.steps.filter(step => step.status === 'FAILED' || step.status === 'TIMEOUT').length;
-        const health = status === 'FAILED' ? 0 : (rawData.health_score ?? Math.max(0, 100 - failedSteps * 10));
-        document.getElementById('val-health').innerText = `${health}/100`;
-        // Color code health
-        document.getElementById('val-health').style.color = health > 80 ? 'var(--success)' : health > 50 ? 'var(--warning)' : 'var(--danger)';
+  var STATUS_COLORS = {
+    success: "#22c55e",
+    warning: "#f59e0b",
+    failed: "#ef4444",
+    skipped: "#64748b",
+    other: "#3b82f6"
+  };
 
-        document.getElementById('val-duration').innerText = (rawData.total_duration_seconds || rawData.total_duration || 0).toFixed(2);
-        
-        // Find Peak Memory
-        const maxMem = Math.max(0, ...rawData.steps.map(s => s.peak_memory_mb || s.memory_usage_mb || s.memory_mb || 0));
-        document.getElementById('val-memory').innerText = maxMem > 0 ? maxMem.toFixed(1) : 'N/A';
-        
-        const errs = failedSteps + (rawData.error ? 1 : 0);
-        document.getElementById('val-errors').innerText = errs;
+  function statusKey(status) {
+    var s = String(status || "").toLowerCase();
+    if (s.indexOf("success") !== -1) return "success";
+    if (s.indexOf("warn") !== -1) return "warning";
+    if (s.indexOf("fail") !== -1 || s.indexOf("error") !== -1 || s.indexOf("timeout") !== -1) return "failed";
+    if (s.indexOf("skip") !== -1) return "skipped";
+    return "other";
+  }
 
+  function statusColor(status) {
+    return STATUS_COLORS[statusKey(status)];
+  }
 
-        // 2. Prepare Chart Data
-        const labels = rawData.steps.map(s => s.name);
-        const durations = rawData.steps.map(s => Math.max(0, s.duration_seconds || 0));
-        const memories = rawData.steps.map(s => Math.max(0, s.memory_mb || 0));
+  function num(value) {
+    return typeof value === "number" && isFinite(value) ? value : 0;
+  }
 
-        // 3. Duration Chart (Chart.js)
-        new Chart(document.getElementById('durationChart'), {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Duration (seconds)',
-                    data: durations,
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: { 
-                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } },
-                    x: { ticks: { maxRotation: 45, minRotation: 45 }, grid: { display: false } }
-                }
-            }
-        });
+  // Per-step memory: prefer the recorded peak, then the end-of-step usage.
+  function stepMemory(step) {
+    if (num(step.peak_memory_mb) > 0) return step.peak_memory_mb;
+    if (num(step.memory_usage_mb) > 0) return step.memory_usage_mb;
+    return 0;
+  }
 
-        // 4. Memory Chart (Chart.js)
-        new Chart(document.getElementById('memoryChart'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Memory (MB)',
-                    data: memories,
-                    borderColor: 'rgba(245, 158, 11, 0.8)',
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: { 
-                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } },
-                    x: { ticks: { maxRotation: 45, minRotation: 45 }, grid: { display: false } }
-                }
-            }
-        });
+  function stepName(step, index) {
+    if (step.script_name) return step.script_name;
+    if (step.name) return step.name;
+    var n = step.step_number != null ? step.step_number : index;
+    return "step-" + n;
+  }
 
-        // 5. Build D3 Gantt Chart
-        const ganttDiv = d3.select("#gantt-chart");
-        const width = 800;
-        const height = rawData.steps.length * 30 + 50;
+  function stepLabel(step, index) {
+    var n = step.step_number != null ? step.step_number : index;
+    return n + " \u00b7 " + stepName(step, index);
+  }
 
-        const svg = ganttDiv.append("svg")
-            .attr("width", "100%")
-            .attr("height", height)
-            .style("background", "var(--surface)");
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
+  }
 
-        // We build cumulative start times
-        let currentStart = 0;
-        const ganttData = rawData.steps.map(s => {
-            const dur = Math.max(0.1, s.duration_seconds || 0); // min 0.1s for visibility
-            const item = {
-                name: s.name,
-                status: s.status,
-                start: currentStart,
-                duration: dur,
-                end: currentStart + dur
-            };
-            currentStart += dur;
-            return item;
-        });
+  function barChart(root, rows, unit) {
+    root.textContent = "";
+    if (!rows.length) { root.appendChild(el("p", "label", "No step data.")); return; }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.value; }).concat([0.0001]));
+    rows.forEach(function (row) {
+      var line = el("div", "chart-row");
+      line.appendChild(el("span", "label", row.label));
+      var track = el("div", "track");
+      var fill = el("div", "fill");
+      fill.style.width = Math.max(1, (row.value / max) * 100) + "%";
+      fill.style.background = row.color;
+      track.appendChild(fill);
+      line.appendChild(track);
+      line.appendChild(el("span", "value", row.value.toFixed(2) + unit));
+      root.appendChild(line);
+    });
+  }
 
-        const xScale = d3.scaleLinear()
-            .domain([0, currentStart])
-            .range([200, width - 40]);
+  function timeline(root, rows) {
+    root.textContent = "";
+    if (!rows.length) { root.appendChild(el("p", "label", "No step data.")); return; }
+    var total = rows.reduce(function (acc, r) { return acc + r.value; }, 0);
+    if (total <= 0) total = 1;
+    var offset = 0;
+    rows.forEach(function (row) {
+      var line = el("div", "timeline-row");
+      line.appendChild(el("span", "label", row.label));
+      var track = el("div", "timeline-track");
+      var bar = el("div", "timeline-bar");
+      bar.style.left = (offset / total) * 100 + "%";
+      bar.style.width = Math.max(0.4, (row.value / total) * 100) + "%";
+      bar.style.background = row.color;
+      bar.title = row.label + ": " + row.value.toFixed(2) + "s";
+      if (row.value / total > 0.06) {
+        bar.appendChild(el("span", "dur", row.value.toFixed(2) + "s"));
+      }
+      track.appendChild(bar);
+      line.appendChild(track);
+      root.appendChild(line);
+      offset += row.value;
+    });
+  }
 
-        const yScale = d3.scaleBand()
-            .domain(ganttData.map(d => d.name))
-            .range([0, height - 30])
-            .padding(0.2);
+  function stepTable(root, steps) {
+    root.textContent = "";
+    var table = el("table", "steps");
+    var thead = el("thead");
+    var headRow = el("tr");
+    ["#", "Step", "Status", "Duration (s)", "Peak memory (MB)"].forEach(function (label) {
+      headRow.appendChild(el("th", null, label));
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    var tbody = el("tbody");
+    steps.forEach(function (step, index) {
+      var n = step.step_number != null ? step.step_number : index;
+      var tr = el("tr");
+      tr.appendChild(el("td", "num", String(n)));
+      tr.appendChild(el("td", null, stepName(step, index)));
+      var statusCell = el("td");
+      var badge = el("span", "badge", String(step.status || "UNKNOWN"));
+      badge.style.background = statusColor(step.status);
+      statusCell.appendChild(badge);
+      tr.appendChild(statusCell);
+      tr.appendChild(el("td", "num", num(step.duration_seconds).toFixed(2)));
+      var mem = stepMemory(step);
+      tr.appendChild(el("td", "num", mem > 0 ? mem.toFixed(1) : "\u2014"));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    root.appendChild(table);
+  }
 
-        // Name Labels
-        svg.selectAll(".gantt-label")
-            .data(ganttData)
-            .enter().append("text")
-            .attr("x", 190)
-            .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2 + 4)
-            .attr("text-anchor", "end")
-            .attr("fill", "#94a3b8")
-            .attr("font-size", "12px")
-            .text(d => d.name.length > 25 ? d.name.substring(0,25)+'...' : d.name);
+  function init() {
+    var meta = document.getElementById("dashboard-meta");
+    var body = document.getElementById("dashboard-body");
+    var empty = document.getElementById("empty-state");
 
-        // Bars
-        svg.selectAll(".gantt-bar")
-            .data(ganttData)
-            .enter().append("rect")
-            .attr("x", d => xScale(d.start))
-            .attr("y", d => yScale(d.name))
-            .attr("width", d => Math.max(2, xScale(d.end) - xScale(d.start))) // Min 2px width
-            .attr("height", yScale.bandwidth())
-            .attr("rx", 4)
-            .attr("fill", d => {
-                const s = String(d.status).toLowerCase();
-                if (s.includes("success") || s.includes("passed")) return "#22c55e";
-                if (s.includes("warn")) return "#f59e0b";
-                if (s.includes("fail") || s.includes("error")) return "#ef4444";
-                return "#3b82f6";
-            })
-            .style("opacity", 0.9);
-
-        // Duration overlay inside/next to bar
-        svg.selectAll(".gantt-dur")
-            .data(ganttData)
-            .enter().append("text")
-            .attr("x", d => xScale(d.end) + 5)
-            .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2 + 4)
-            .attr("fill", "#64748b")
-            .attr("font-size", "10px")
-            .text(d => d.duration.toFixed(2) + "s");
-
-    } catch (err) {
-        console.error(err);
-        document.getElementById('dashboard-meta').innerText = 'Error initializing dashboard visuals.';
+    if (!rawData || !rawData.steps || !rawData.steps.length) {
+      meta.textContent = "No valid execution data found.";
+      body.hidden = true;
+      empty.hidden = false;
+      return;
     }
-});
+
+    var steps = rawData.steps;
+    var status = rawData.overall_status || "UNKNOWN";
+    meta.textContent = "Execution ID: " + (rawData.run_id || "Unknown") +
+      " | Status: " + status + " | Started: " + (rawData.start_time || "");
+
+    var counts = { success: 0, warning: 0, failed: 0, skipped: 0, other: 0 };
+    steps.forEach(function (s) { counts[statusKey(s.status)]++; });
+    document.getElementById("dashboard-counts").textContent =
+      counts.success + " success \u00b7 " + counts.warning + " warning \u00b7 " +
+      counts.failed + " failed \u00b7 " + counts.skipped + " skipped";
+
+    var failedSteps = steps.filter(function (s) {
+      return s.status === "FAILED" || s.status === "TIMEOUT";
+    }).length;
+    var health = status === "FAILED" ? 0 :
+      (rawData.health_score != null ? rawData.health_score : Math.max(0, 100 - failedSteps * 10));
+    var healthEl = document.getElementById("val-health");
+    healthEl.textContent = health + "/100";
+    healthEl.style.color = health > 80 ? "var(--success)" : health > 50 ? "var(--warning)" : "var(--danger)";
+
+    document.getElementById("val-duration").textContent =
+      num(rawData.total_duration_seconds != null ? rawData.total_duration_seconds : rawData.total_duration).toFixed(2);
+
+    var peak = steps.reduce(function (acc, s) { return Math.max(acc, stepMemory(s)); }, 0);
+    document.getElementById("val-memory").textContent = peak > 0 ? peak.toFixed(1) : "N/A";
+
+    document.getElementById("val-errors").textContent =
+      String(failedSteps + (rawData.error ? 1 : 0));
+
+    var durationRows = steps.map(function (s, i) {
+      return { label: stepLabel(s, i), value: num(s.duration_seconds), color: statusColor(s.status) };
+    });
+    barChart(document.getElementById("duration-chart"), durationRows, "s");
+
+    var memoryRows = steps.map(function (s, i) {
+      return { label: stepLabel(s, i), value: stepMemory(s), color: "var(--warning)" };
+    });
+    barChart(document.getElementById("memory-chart"), memoryRows, " MB");
+
+    timeline(document.getElementById("gantt-chart"), durationRows);
+    stepTable(document.getElementById("step-table"), steps);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
 </script>
 </body>
 </html>

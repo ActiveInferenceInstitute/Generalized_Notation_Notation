@@ -552,7 +552,20 @@ fig.~6.
 
 \begin{archiveimageframe}
 
-\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={The GNN rendering backend registry as a table: one row per registered backend, with its registry key, display name, implementation language, whether a render-output subdirectory exists under src/gnn/render/, and its role in the cross-framework reference comparison. Amber rows are the backends the reliability gate profiles for the continuous family; the tan row (Stan, ngc-learn) is declared by that family but sits outside the maintained set, so it is never profiled; a red Render-Subdir cell would mean a registry entry with no subdirectory. The table is read directly from src/gnn/render/framework\_registry.py and the model-family manifest at commit 7a874fe80, and its footer summarizes the row counts. Take-away: registration, render presence, and profiling status are three different claims, and the table keeps them apart.}]{../figures/gnn_backend_capability_matrix.png}
+\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={The
+GNN rendering backend registry as a table: one row per registered
+backend, with its registry key, display name, implementation language,
+whether a render-output subdirectory exists under src/gnn/render/, and
+its role in the cross-framework reference comparison. Amber rows are the
+backends the reliability gate profiles for the continuous family; the
+tan row (Stan, ngc-learn) is declared by that family but sits outside
+the maintained set, so it is never profiled; a red Render-Subdir cell
+would mean a registry entry with no subdirectory. The table is read
+directly from src/gnn/render/framework\_registry.py and the model-family
+manifest at commit 11a696d6e, and its footer summarizes the row counts.
+Take-away: registration, render presence, and profiling status are three
+different claims, and the table keeps them
+apart.}]{../figures/gnn_backend_capability_matrix.png}
 
 \end{archiveimageframe}
 
@@ -583,7 +596,7 @@ family but sits outside the maintained set, so it is never profiled; a
 red Render-Subdir cell would mean a registry entry with no subdirectory.
 The table is read directly from
 \breaktt{src/gnn/render/framework\_registry.py} and the model-family
-manifest at commit 7a874fe80, and its footer summarizes the row counts.
+manifest at commit 11a696d6e, and its footer summarizes the row counts.
 Take-away: registration, render presence, and profiling status are three
 different claims, and
 
@@ -782,7 +795,21 @@ Contracts}
 
 \begin{archiveimageframe}
 
-\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={The three safe-by-design orchestration contracts introduced in GNN 3.0.0, side by side inside the dashed boundary that states their shared invariant: generate and validate data only, never mutate live infrastructure. Each column names the contract's source module under src/gnn/pipeline/ and chains its stages top to bottom --- StreamManifest, ExecutionTrace, and replay for durable observation streams; checkpoint, resume, status, and safe cleanup for resumable run sessions; generate, static security review, and rollback for container plans. Arrows give the order the stages run in, and nothing exits the boundary. The panel is a fixed-layout drawing of the three contracts; the acceptance gates and the Model Context Protocol tools that exercise them are described in the text above. Take-away: long-running orchestration gains capability only as fast as it becomes inspectable.}]{../figures/gnn_orchestration.png}
+\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={The
+three safe-by-design orchestration contracts introduced in GNN 3.0.0,
+side by side inside the dashed boundary that states their shared
+invariant: generate and validate data only, never mutate live
+infrastructure. Each column names the contract's source module under
+src/gnn/pipeline/ and chains its stages top to bottom ---
+StreamManifest, ExecutionTrace, and replay for durable observation
+streams; checkpoint, resume, status, and safe cleanup for resumable run
+sessions; generate, static security review, and rollback for container
+plans. Arrows give the order the stages run in, and nothing exits the
+boundary. The panel is a fixed-layout drawing of the three contracts;
+the acceptance gates and the Model Context Protocol tools that exercise
+them are described in the text above. Take-away: long-running
+orchestration gains capability only as fast as it becomes
+inspectable.}]{../figures/gnn_orchestration.png}
 
 \end{archiveimageframe}
 
@@ -867,7 +894,7 @@ Auto-Injection}\label{reproducibility-and-auto-injection}
 Auto-Injection}
 Every count reported in this manuscript is emitted by the producer
 \breaktt{scripts/z\_generate\_manuscript\_variables.py} from the
-repository state at commit 7a874fe80, not typed by hand. The producer
+repository state at commit 11a696d6e, not typed by hand. The producer
 reads that commit's source surfaces directly --- the step modules, the
 source tree, the model-family manifest, and the framework registry ---
 together with the project's maintained ledgers, notably the Model

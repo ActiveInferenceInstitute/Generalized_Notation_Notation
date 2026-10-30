@@ -37,6 +37,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   distribution supplement, whose upload still requires actual archive-owner
   controls and public-download acceptance.
 
+## [5.0.2] - 2026-10-30
+
+### Custody, release timing and dashboard repair
+
+- Give GNN ownership of its own source. The FEP_Formal bridge pinned every
+  `src/gnn/**/*.py` file, so any GNN source edit re-drifted the paired bridge.
+  The pinned roster is now the declared notation contract
+  (`pyproject.toml`, `uv.lock`, `src/gnn/main.py`, `docs/gnn/gnn_syntax.md`,
+  `src/gnn/pipeline/step_registry.py` and the bridge-contract mirror), and
+  emitted-document freshness stays enforced at run time by `emit --check`.
+- Run the paired-revision check at release time. `fep-lean-paired-revision`
+  now triggers on version tags and manual dispatch rather than every push and
+  pull request to `main`; the job was never a required status.
+- Repair the performance dashboard. Chart labels read `name` where records
+  carry `script_name`, the memory series read a field records do not carry,
+  and the page loaded D3 and Chart.js from CDNs so it rendered blank offline.
+  It is now self-contained, with inline bar charts, a timeline view, a status
+  legend and a per-step detail table.
+
 ## [5.0.1] - 2026-10-24
 
 ### Release qualification repair

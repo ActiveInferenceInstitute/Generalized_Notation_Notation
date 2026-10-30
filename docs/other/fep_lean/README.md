@@ -33,8 +33,11 @@ Current status (2026-09-06): W2 source custody and the Q5 PyMDP, Q6 Julia
 embedded-input, and Q7 scalar-OU coefficient proofs have validated schema-2
 native receipts in `../fep_lean/specs/`. The
 [bridge contract mirror](bridge-contract.md) is version 0.6: the GNN-side
-Python package is canonically `gnn` (src-layout `src/gnn/`), the owner
-rosters are re-pinned to `src/gnn/**` paths, and the new `verify-document`
+Python package is canonically `gnn` (src-layout `src/gnn/`), the GNN owner
+roster binds the declared notation contract (`pyproject.toml`, `uv.lock`,
+`src/gnn/main.py`, `docs/gnn/gnn_syntax.md`,
+`src/gnn/pipeline/step_registry.py` and this mirror) instead of the whole
+`src/gnn/**/*.py` implementation tree, and the new `verify-document`
 bridge operation checks any emitted document against the `FEP.GnnDocument`
 typed surface (syntax + `WellFormed`; conformance proofs stay out of scope).
 H2.7 acceptance opens only read-only H3.G0 eligibility; actual study metadata

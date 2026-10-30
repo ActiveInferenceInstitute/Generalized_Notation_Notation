@@ -206,12 +206,16 @@ final content state when manuscript inputs changed), then the fep_lean-side
 bridge re-pin, then the GNN pin bump as the final commit; the GEO_INFER
 direction is the mirror image.
 
-Edits outside surfaces 1-5 must not force sibling re-pinning. The known
-counter-pressure is census break-class B1: the bridge's source binding
-currently covers a whole-tree owner glob, so any byte change to any owner
-file re-drifts the pair. Shrinking that roster to the true import closure
-is an fep_lean-side design change, proposed and landed on the fep_lean
-side — never a GNN-side pin edit.
+Edits outside surfaces 1-5 must not force sibling re-pinning. Census
+break-class B1 (the bridge's source binding covering a whole-tree owner glob)
+was repaired on the fep_lean side: the GNN owner roster now binds the declared
+contract surface only — `pyproject.toml`, `uv.lock`, `src/gnn/main.py`,
+`docs/gnn/gnn_syntax.md`, `src/gnn/pipeline/step_registry.py` and the mirrored
+`docs/other/fep_lean/bridge-contract.md` — so ordinary `src/gnn/**/*.py`
+implementation edits no longer re-drift the pair. Emitted-document freshness is
+verified at run time by `emit --check` instead of by pinning the implementation
+tree. Widening or narrowing that roster remains an fep_lean-side design change,
+never a GNN-side pin edit.
 
 ## Enforcement
 
