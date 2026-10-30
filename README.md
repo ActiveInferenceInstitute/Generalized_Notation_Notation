@@ -3,7 +3,7 @@
 **Describe an Active Inference generative model in Markdown, validate it, render
 framework-specific code, and inspect the evidence from its execution.**
 
-[![Version: 5.0.1](https://img.shields.io/badge/version-5.0.1-00a6b8.svg)](pyproject.toml)
+[![Version: 5.0.2](https://img.shields.io/badge/version-5.0.2-00a6b8.svg)](pyproject.toml)
 [![CI](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml)
 [![Python 3.11–3.14](https://img.shields.io/badge/python-3.11%E2%80%933.14-blue.svg)](pyproject.toml)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](LICENSE.md)
@@ -13,7 +13,7 @@ framework-specific code, and inspect the evidence from its execution.**
 [Documentation](#documentation) · [Examples](#examples) ·
 [Contributing](#contributing)
 
-**Software:** 5.0.1. [Published release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases) own accepted tags and assets.
+**Software:** 5.0.2. [Published release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases) own accepted tags and assets.
 
 This major version adds replayable numerical witnesses, interactive evidence
 inspection and configurable file workers. It targets coordinated FEP_Formal

@@ -1,7 +1,7 @@
 # GNN Version Map
 
 One-stop map of release changes and authoritative records. Current
-software version is **5.0.1**. Publication is established by the
+software version is **5.0.2**. Publication is established by the
 [release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases),
 not this version label.
 The [4.2.0 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.2.0) owns publication and exact source-bound assets. Historical 4.1.0 retains its original receipt. Its [changelog](../CHANGELOG.md#410---2026-10-08)
@@ -16,6 +16,7 @@ original source identity and limits. The manuscript authored epoch remains
 
 | Version | Date | Theme | Primary record |
 | --- | --- | --- | --- |
+| 5.0.2 | 2026-10-30 | GNN source custody decoupling, release-time paired check and a self-contained performance dashboard | [CHANGELOG §5.0.2](../CHANGELOG.md#502---2026-10-30) |
 | 5.0.1 | 2026-10-24 | Remove an unused dead bibliography URL; renew exact-source manuscript, pairing and release qualification | [CHANGELOG §5.0.1](../CHANGELOG.md#501---2026-10-24) |
 | 5.0.0 | 2026-10-23 | Replayable semantic evidence, interactive inspection, bounded file workers and coordinated FEP_Formal 2.0 qualification | [CHANGELOG §5.0.0](../CHANGELOG.md#500---2026-10-23) |
 | 4.3.0 | 2026-10-21 | Independent source-bound finite/Gaussian numerical witnesses; fixed FEP baseline retained | [CHANGELOG §4.3.0](../CHANGELOG.md#430---2026-10-21) |
