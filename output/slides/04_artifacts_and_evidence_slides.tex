@@ -270,7 +270,7 @@
 This section reports what the project has actually produced and how each
 quantitative claim is grounded. Every number below is substituted at
 render time from the deterministic producer, which reads the repository
-state at commit 7a874fe80, so each figure here is regenerated from the
+state at commit 11a696d6e, so each figure here is regenerated from the
 artifacts it describes rather than transcribed.
 \end{frame}
 
@@ -422,7 +422,17 @@ from the family registry rather than from a hand-maintained table.
 
 \begin{archiveimageframe}
 
-\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={Model-family coverage across the registered rendering backends: one row per family from input/model\_family\_manifest.json, one column per backend from src/gnn/render/framework\_registry.py, and a green cell wherever the family declares that backend in its frameworks field. The right-hand count states how many backends each family declares; the grid is deliberately sparse --- most families declare a single backend, and only continuous, discrete, and gridworld declare several. Read it as declared intent, not as profiled outcomes: the gates described below supply the outcomes. The matrix is generated from the two registries at commit 7a874fe80.}]{../figures/gnn_family_framework_matrix.png}
+\includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={Model-family
+coverage across the registered rendering backends: one row per family
+from input/model\_family\_manifest.json, one column per backend from
+src/gnn/render/framework\_registry.py, and a green cell wherever the
+family declares that backend in its frameworks field. The right-hand
+count states how many backends each family declares; the grid is
+deliberately sparse --- most families declare a single backend, and only
+continuous, discrete, and gridworld declare several. Read it as declared
+intent, not as profiled outcomes: the gates described below supply the
+outcomes. The matrix is generated from the two registries at commit
+11a696d6e.}]{../figures/gnn_family_framework_matrix.png}
 
 \end{archiveimageframe}
 
@@ -452,7 +462,7 @@ single
 backend, and only continuous, discrete, and gridworld declare several.
 Read it as declared intent, not as profiled outcomes: the gates
 described below supply the outcomes. The matrix is generated from the
-two registries at commit 7a874fe80.
+two registries at commit 11a696d6e.
 
 \end{archivecaptionframe}
 
@@ -540,14 +550,39 @@ evidence planes.
 
 \begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
 Cross-Framework Reliability Gates}
+An additional \breaktt{gnn-semantic-witness-v3} contract admits two
+independent stationary passive Gaussian agents. It reconstructs their
+authored source independently, builds the joint block-diagonal Gaussian
+model and conditions observation prefixes, while retaining complete
+native JAX child records and their within-agent covariance matrices. A
+separate FEP adapter checks those same authored inputs and native
+records with recursive Kalman/Joseph updates. The cross-agent zero
+covariance is a consequence of the declared product model, not a
+measured native joint covariance. Separate finite post-evidence
+product-weight laws and false-claim controls establish their stated
+algebraic premises; they do not prove Gaussian conditioning, a parser or
+generated execution. Coupling, shared noise, control and unsupported
+source or conditioning contracts refuse explicitly.
+
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
+Cross-Framework Reliability Gates}
 The generated website exposes reported outcomes through offline
 status/text filters, posterior and covariance-variance traces, and
 residual views, with full tables and raw receipts available alongside
-them. Changing a display control does not rerun a numerical reference or
-a proof compiler. Missing or incompatible evidence remains unavailable
-or refused; an informative visualization cannot strengthen its
-underlying scientific claim.
+them. Per-agent selectors and full covariance tables expose retained
+component results; separate cards show the independent FEP comparisons
+and finite compiler controls with their stated scope. Changing a display
+control does not rerun a numerical reference or a proof compiler.
+Missing or incompatible evidence remains unavailable or refused; an
+informative visualization cannot strengthen its underlying scientific
+claim.
 
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
+Cross-Framework Reliability Gates}
 The cross-framework reliability gate,
 \breaktt{scripts/run\_cross\_framework\_reliability.py}, takes a single
 GNN model and renders it across multiple simulation backends, then
@@ -556,25 +591,21 @@ were generated from. The reference comparison runs on the continuous
 family across JAX, NumPyro, RxInfer.jl --- 3 independent Active
 Inference engines spanning the Python and Julia ecosystems (Heins et al.
 2022). The family declares 5 backends (JAX, NumPyro, Stan, RxInfer.jl,
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
-Cross-Framework Reliability Gates}
 ngc-learn); Stan, ngc-learn is declared but not among the 7 frameworks
 the gate profiles, so it is excluded from the comparison. Because the
 same source model drives all 3 renderings, source identity helps
 investigate disagreement. The gate compares shared matrix shapes, trace
 lengths, timesteps, and reported seeds, recording absent comparable
 fields separately. These checks do not establish numerical equivalence:
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
+Cross-Framework Reliability Gates}
 a mismatch may arise from extraction, code generation, runtime or
 toolchain behavior, inference mode, dtype, or a backend defect.
 Numerical comparisons require compatible models and inference semantics,
 explicit tolerances, and source-bound numerical witnesses.
 
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
-Cross-Framework Reliability Gates}
 Both gates are stated here as commands you can run, not as asserted pass
 counts. The manuscript deliberately does not quote a fixed number of
 passing checks: an authoritative result is a retained command receipt
@@ -582,6 +613,10 @@ bound to its source revision, selected corpus, environment, and
 artifacts, and binding a frozen count into prose would invite exactly
 the drift the auto-injection contract exists to prevent.
 
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
+Cross-Framework Reliability Gates}
 A third interchange check extends the same discipline across
 repositories: \breaktt{scripts/run\_geo\_interchange\_checks.py}
 validates the committed pin in \breaktt{.github/gnn-pair.json} against a
@@ -590,19 +625,48 @@ tracked gridworld, a compiled H3 stay/diffuse model, a rectangular
 Gaussian, and an explicit factored fixture --- inside the GEO
 environment, writing its receipts even on failure. Like the gates above
 it is stated as a command, not as a pass count, and its pinned pair
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
-Cross-Framework Reliability Gates}
 (\breaktt{ActiveInferenceInstitute/GEO\_INFER} at a recorded revision) is
 what makes ``interchange'' a checkable claim rather than a promise.
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Source-Preserving LLM
+Processing}
+\protect\phantomsection\label{source-preserving-llm-processing}
+The LLM analysis step retains exact UTF-8 source parts, task identities,
+native responses and resumable checkpoints. Its opt-in
+\texttt{joint\_source} mode makes a final request containing the
+original source and all ordered fragment answers for each multipart
+task; \texttt{part\_evidence} instead supplies derived answers and
+source identities. The latter mode does not present the original source
+jointly, and neither silently substitutes for the other. Every submitted
+source block, task and output reserve must fit the selected model's
+context; \texttt{joint\_source} additionally requires the complete
+original to fit its final request. Exact source, request, response and
+dependency hashes bind cache and resume; incomplete or nonterminal
+native outputs remain unfinished.
+
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Source-Preserving LLM
+Processing}
+Context admission is limited to reviewed Ollama GGUF runtime contracts.
+It binds the exact model digest, advertised and loaded capacity, request
+messages, native usage and declared output reserve, with explicit
+no-shortening controls and overflow refusal. This is admission under a
+reviewed provider contract, not an independent tokenizer or attention
+measurement. A retained explicit \texttt{qwen3-coder:30b} profile checks
+controlled cross-part fact recovery and a resume with no new
+generations; they do not establish general scientific interpretation,
+arbitrarily large source coverage or another model's completion quality.
+The website presents retained evidence without strengthening those
+claims.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Repository Scale}
 \protect\phantomsection\label{repository-scale}
 The repository's scale is itself evidence of the surface that the gates
 and pipeline cover, and it is reported in fig.~7
-directly from the tracked files at commit 7a874fe80.
+directly from the tracked files at commit 11a696d6e.
 
 \end{frame}
 
@@ -612,7 +676,22 @@ directly from the tracked files at commit 7a874fe80.
 
 \begin{archiveimageframe}
 
-\includegraphics[width=0.8\linewidth,height=0.40\textheight,keepaspectratio,alt={Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered backends, render-target execution adapters, Model Context Protocol tools, source packages, test files, example models, and documentation files. Every bar is annotated with its exact value, and every value is a producer token read from output/data/manuscript\_variables.json at commit 7a874fe80 --- the same token map that substitutes the prose counts. The figure-freshness suite binds the committed image digest and its recorded producer inputs and counts; semantic content and visual correctness require their own review. The two backend bars are deliberately distinct: registered backends (12) counts render targets, render-target adapters (12) counts the render-target subset with implemented Step 12 execution adapters. It excludes the separate execution-only Lean bridge and is not a count of observed native runs. Read the chart as the scale of the surface the pipeline maintains, not as a quality measure.}]{../figures/gnn_repo_metrics.png}
+\includegraphics[width=0.8\linewidth,height=0.40\textheight,keepaspectratio,alt={Repository-scale
+counts on a logarithmic axis: pipeline steps, model families, registered
+backends, render-target execution adapters, Model Context Protocol
+tools, source packages, test files, example models, and documentation
+files. Every bar is annotated with its exact value, and every value is a
+producer token read from output/data/manuscript\_variables.json at
+commit 11a696d6e --- the same token map that substitutes the prose
+counts. The figure-freshness suite binds the committed image digest and
+its recorded producer inputs and counts; semantic content and visual
+correctness require their own review. The two backend bars are
+deliberately distinct: registered backends (12) counts render targets,
+render-target adapters (12) counts the render-target subset with
+implemented Step 12 execution adapters. It excludes the separate
+execution-only Lean bridge and is not a count of observed native runs.
+Read the chart as the scale of the surface the pipeline maintains, not
+as a quality measure.}]{../figures/gnn_repo_metrics.png}
 
 \end{archiveimageframe}
 
@@ -628,7 +707,7 @@ backends, render-target execution adapters, Model Context Protocol
 tools, source packages, test files, example models, and documentation
 files. Every bar is annotated with its exact value, and every value is a
 producer token read from \breaktt{output/data/manuscript\_variables.json}
-at commit 7a874fe80 --- the same token
+at commit 11a696d6e --- the same token
 
 \end{archivecaptionframe}
 
@@ -663,8 +742,8 @@ surface the pipeline maintains, not as a quality measure.
 
 \begin{frame}[fragile,allowframebreaks]{Repository Scale}
 
-The test suite comprises 666 test files containing 6882 test functions,
-exercising a source base of 771 Python files across 44 packages (229212
+The test suite comprises 670 test files containing 6943 test functions,
+exercising a source base of 776 Python files across 44 packages (231443
 lines of source). The pipeline's step modules --- the thin orchestrators
 named in tbl.~2 --- number 25, one per numbered
 step. The Model Context Protocol surface --- which exposes GNN's

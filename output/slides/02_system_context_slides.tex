@@ -435,9 +435,7 @@ process over a horizon \(T\), factorized as in
 eq.~\ref{eq:generative_model} following the standard formulation (Da
 Costa et al. 2020; Smith et al. 2022).
 
-\begin{equation}\protect\phantomsection\label{eq:generative_model}{
-P(o_{1:T},\, s_{1:T},\, \pi) \;=\; P(\pi)\; P(s_1) \prod_{t=1}^{T} P(o_t \mid s_t) \prod_{t=2}^{T} P(s_t \mid s_{t-1},\, \pi)
-}\end{equation}
+\begin{equation}\protect\phantomsection\label{eq:generative_model}{P(o_{1:T},\, s_{1:T},\, \pi) \;=\; P(\pi)\; P(s_1) \prod_{t=1}^{T} P(o_t \mid s_t) \prod_{t=2}^{T} P(s_t \mid s_{t-1},\, \pi)}\end{equation}
 
 The four matrices named in the \texttt{StateSpaceBlock} are exactly the
 factors of eq.~\ref{eq:generative_model}, and this correspondence is
@@ -448,9 +446,7 @@ states to observation outcomes, given in eq.~\ref{eq:likelihood}.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{The Discrete Categorical Kind}
-\begin{equation}\protect\phantomsection\label{eq:likelihood}{
-P(o_t = i \mid s_t = j) \;=\; A_{ij}, \qquad \sum_i A_{ij} = 1
-}\end{equation}
+\begin{equation}\protect\phantomsection\label{eq:likelihood}{P(o_t = i \mid s_t = j) \;=\; A_{ij}, \qquad \sum_i A_{ij} = 1}\end{equation}
 
 The \texttt{B} matrix is the controlled transition dynamics: one
 column-stochastic slice per action, as in eq.~\ref{eq:transition}. The
@@ -464,22 +460,16 @@ on request, as described in sec.~4.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{The Discrete Categorical Kind}
-\begin{equation}\protect\phantomsection\label{eq:transition}{
-P(s_{t+1} = i \mid s_t = j,\, u_t = k) \;=\; B^{(k)}_{ij}, \qquad \sum_i B^{(k)}_{ij} = 1
-}\end{equation}
+\begin{equation}\protect\phantomsection\label{eq:transition}{P(s_{t+1} = i \mid s_t = j,\, u_t = k) \;=\; B^{(k)}_{ij}, \qquad \sum_i B^{(k)}_{ij} = 1}\end{equation}
 
 The \texttt{C} vector holds log-preferences over observations, which
 enter inference as the biased outcome distribution of
 eq.~\ref{eq:preference}; the \texttt{D} vector is the prior over initial
 hidden states, eq.~\ref{eq:prior}.
 
-\begin{equation}\protect\phantomsection\label{eq:preference}{
-\tilde{P}(o_t = i) \;=\; \sigma(C)_i \;=\; \frac{\exp C_i}{\sum_j \exp C_j}
-}\end{equation}
+\begin{equation}\protect\phantomsection\label{eq:preference}{\tilde{P}(o_t = i) \;=\; \sigma(C)_i \;=\; \frac{\exp C_i}{\sum_j \exp C_j}}\end{equation}
 
-\begin{equation}\protect\phantomsection\label{eq:prior}{
-P(s_1 = i) \;=\; D_i, \qquad \sum_i D_i = 1
-}\end{equation}
+\begin{equation}\protect\phantomsection\label{eq:prior}{P(s_1 = i) \;=\; D_i, \qquad \sum_i D_i = 1}\end{equation}
 
 Given those factors, perception is approximate Bayesian inference: a
 variational posterior \(Q(s)\) is fitted by minimizing the variational
@@ -489,21 +479,14 @@ and an accuracy term (Friston 2010).
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{The Discrete Categorical Kind}
-\begin{equation}\protect\phantomsection\label{eq:vfe}{
-F[Q] \;=\; \underbrace{D_{\mathrm{KL}}\!\left[\,Q(s) \,\|\, P(s)\,\right]}_{\text{complexity}} \;-\; \underbrace{\mathbb{E}_{Q(s)}\!\left[\ln P(o \mid s)\right]}_{\text{accuracy}}
-}\end{equation}
+\begin{equation}\protect\phantomsection\label{eq:vfe}{F[Q] \;=\; \underbrace{D_{\mathrm{KL}}\!\left[\,Q(s) \,\|\, P(s)\,\right]}_{\text{complexity}} \;-\; \underbrace{\mathbb{E}_{Q(s)}\!\left[\ln P(o \mid s)\right]}_{\text{accuracy}}}\end{equation}
 
 Action is expected-free-energy minimization: each policy \(\pi\) is
 scored over future steps \(\tau\) by eq.~\ref{eq:efe}, whose two terms
 are the information gain a policy is expected to yield and the extent to
 which its predicted outcomes match \texttt{C} (Da Costa et al. 2020).
 
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{The Discrete Categorical Kind}
-\begin{equation}\protect\phantomsection\label{eq:efe}{
-G(\pi) \;=\; -\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid \pi)}\!\left[\ln Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid \pi)\right]}_{\text{epistemic value}} \;-\; \underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln \tilde{P}(o_\tau)\right]}_{\text{pragmatic value}}
-}\end{equation}
+\begin{equation}\protect\phantomsection\label{eq:efe}{G(\pi) \;=\; -\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid \pi)}\!\left[\ln Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid \pi)\right]}_{\text{epistemic value}} \;-\; \underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln \tilde{P}(o_\tau)\right]}_{\text{pragmatic value}}}\end{equation}
 
 The policy posterior then combines those scores with the habit prior
 \texttt{E} declared in the specification, as in eq.~\ref{eq:policy}, and
@@ -512,9 +495,7 @@ the selected action \(u\) is sampled from it.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{The Discrete Categorical Kind}
-\begin{equation}\protect\phantomsection\label{eq:policy}{
-Q(\pi) \;=\; \sigma\!\left(\ln E - G\right)
-}\end{equation}
+\begin{equation}\protect\phantomsection\label{eq:policy}{Q(\pi) \;=\; \sigma\!\left(\ln E - G\right)}\end{equation}
 
 The discrete categorical kind is the language's original and most
 densely exercised target: 29 of the 38 exemplar specifications in the
@@ -530,10 +511,10 @@ factors (a factored model), per-level and per-agent matrix declarations
 (sec.~\breaktt{sec:structural\_variants}), and Dirichlet priors that turn a
 declared matrix into a learned latent
 (sec.~7) are all extensions of this same
+categorical substrate.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{The Discrete Categorical Kind}
-categorical substrate.
 
 Recent work continues to refine how expected-free-energy objectives
 relate to variational inference and to alternative but equivalent
@@ -548,10 +529,10 @@ and, if dynamic, how the horizon \(T\) and its discretization are
 organized. Because every one of these sections is explicit text, a GNN
 file is at once human-readable, diffable under version control, and
 unambiguous to a parser --- the property that makes the declared source
+contract inspectable; numerical replay also depends on the chosen
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{The Discrete Categorical Kind}
-contract inspectable; numerical replay also depends on the chosen
 inference and runtime configuration.
 \end{frame}
 
@@ -565,17 +546,9 @@ state-space model stepped in discrete time: a Gaussian latent state
 \(x_t \in \mathbb{R}^n\) evolves linearly, and a Gaussian observation
 \(y_t \in \mathbb{R}^m\) reads it out linearly.
 
-\begin{equation}\protect\phantomsection\label{eq:lgssm_state}{
-x_1 \sim \mathcal{N}(\mu_0,\, \Sigma_0), \qquad x_t = F\, x_{t-1} + u_{t-1} + w_t, \qquad w_t \sim \mathcal{N}(0,\, Q)
-}\end{equation}
+\begin{equation}\protect\phantomsection\label{eq:lgssm_state}{x_1 \sim \mathcal{N}(\mu_0,\, \Sigma_0), \qquad x_t = F\, x_{t-1} + u_{t-1} + w_t, \qquad w_t \sim \mathcal{N}(0,\, Q)}\end{equation}
 
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{The Continuous Linear-Gaussian
-Kind}
-\begin{equation}\protect\phantomsection\label{eq:lgssm_obs}{
-y_t = H\, x_t + v_t, \qquad v_t \sim \mathcal{N}(0,\, R)
-}\end{equation}
+\begin{equation}\protect\phantomsection\label{eq:lgssm_obs}{y_t = H\, x_t + v_t, \qquad v_t \sim \mathcal{N}(0,\, R)}\end{equation}
 
 Here \texttt{F} is the state-transition matrix, \texttt{H} the
 observation matrix, \texttt{Q} the process-noise covariance, and
@@ -585,15 +558,15 @@ prior over the initial state, so the model's randomness is declared
 entirely in its parameterization rather than in categorical tables. The
 shape contract mirrors the semantics: \texttt{prior\_mean} must carry
 exactly \(n\) entries, and \texttt{Q}, \texttt{R}, and
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{The Continuous Linear-Gaussian
+Kind}
 \texttt{prior\_cov} must be \(n \times n\), \(m \times m\), and
 \(n \times n\) respectively --- a mismatch is a validation-time
 diagnostic in the notation, not a runtime surprise inside a numerical
 backend.
 
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{The Continuous Linear-Gaussian
-Kind}
 The kind also carries an optional closed-loop control structure. When a
 specification declares \texttt{goal\_mean} (\(\mu^\star\), the preferred
 state) and \texttt{control\_gain} (\(k\), a scalar proportional gain)
@@ -601,14 +574,12 @@ alongside a control input \(u_t\), the rendered model closes the loop on
 beliefs: the controller steers the filtered posterior mean toward the
 preferred state.
 
-\begin{equation}\protect\phantomsection\label{eq:closed_loop}{
-u_t \;=\; k \,\bigl(\mu^\star - \mu_t\bigr), \qquad \mu_t = \mathbb{E}\!\left[x_t \,\middle|\, y_{1:t}\right]
-}\end{equation}
-
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{The Continuous Linear-Gaussian
 Kind}
+\begin{equation}\protect\phantomsection\label{eq:closed_loop}{u_t \;=\; k \,\bigl(\mu^\star - \mu_t\bigr), \qquad \mu_t = \mathbb{E}\!\left[x_t \,\middle|\, y_{1:t}\right]}\end{equation}
+
 This is how
 \breaktt{input/gnn\_files/continuous/continuous\_navigation.md} is built:
 a two-dimensional navigator whose position persists between steps
@@ -858,7 +829,18 @@ files, including optional enrichments.
 
 \begin{archiveimageframe}
 
-\includegraphics[width=0.9\linewidth,height=0.40\textheight,keepaspectratio,alt={The 25-step GNN processing pipeline as a directed acyclic graph, arranged in rowwise topological order and colored by execution phase (legend above the nodes). Each node is the thin step orchestrator under src/gnn/ named in tbl.~; each arrow is a required orchestration prerequisite parsed from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, which mirrors the live step registry. Parsing (Step 3) precedes many later steps. Optional artifact enrichments are documented separately and are not shown as required edges. The figure is generated from src/gnn/STEP\_INDEX.md at commit 7a874fe80; its footer restates the step count, the number of required prerequisites, and the layout rule.}]{../figures/gnn_pipeline_dag.png}
+\includegraphics[width=0.9\linewidth,height=0.40\textheight,keepaspectratio,alt={The
+25-step GNN processing pipeline as a directed acyclic graph, arranged in
+rowwise topological order and colored by execution phase (legend above
+the nodes). Each node is the thin step orchestrator under src/gnn/ named
+in tbl.~; each arrow is a required orchestration prerequisite parsed
+from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, which
+mirrors the live step registry. Parsing (Step 3) precedes many later
+steps. Optional artifact enrichments are documented separately and are
+not shown as required edges. The figure is generated from
+src/gnn/STEP\_INDEX.md at commit 11a696d6e; its footer restates the step
+count, the number of required prerequisites, and the layout
+rule.}]{../figures/gnn_pipeline_dag.png}
 
 \end{archiveimageframe}
 
@@ -887,7 +869,7 @@ step registry. Parsing (Step
 
 3) precedes many later steps. Optional artifact enrichments are
 documented separately and are not shown as required edges. The figure is
-generated from \breaktt{src/gnn/STEP\_INDEX.md} at commit 7a874fe80; its
+generated from \breaktt{src/gnn/STEP\_INDEX.md} at commit 11a696d6e; its
 footer restates the step count, the number of required prerequisites,
 and the layout rule.
 
@@ -1054,7 +1036,7 @@ analysis \& executive reports \\
 \begin{frame}[fragile,allowframebreaks]{The Processing Pipeline}
 This staged design keeps the architecture modular. The implementation is
 organized into 44 source packages, one cluster of responsibilities per
-concern, and is documented across 647 documentation files so that each
+concern, and is documented across 648 documentation files so that each
 step's contract, inputs, and outputs are specified independently of the
 others. New backends or analyses attach to the graph by declaring their
 dependencies rather than by editing a monolith, and deterministic step
@@ -1094,7 +1076,20 @@ specification at their center.
 
 \begin{archiveimageframe}
 
-\includegraphics[width=0.7\linewidth,height=0.40\textheight,keepaspectratio,alt={The Triple Play: one GNN text specification (left) and its three coordinated projections (right) --- the human-readable text form, graphical model visualizations, and executable simulation code. All three arrows originate at the same source box to show their shared parsed input. Source binding, parameter validation, and semantic-fidelity checks provide evidence of agreement among the projections. The executable node summarizes 12 of 12 registered render targets with implemented Step 12 execution adapters and previews three by name; execution depends on runtime readiness, admitted model kind, and a successful source-bound run receipt. Counts are producer tokens at commit 7a874fe80, and the panel is generated by scripts/manuscript\_fig\_triple\_play.py. Take-away: a model is authored once and then read, seen, and run from that single source.}]{../figures/gnn_triple_play.png}
+\includegraphics[width=0.7\linewidth,height=0.40\textheight,keepaspectratio,alt={The
+Triple Play: one GNN text specification (left) and its three coordinated
+projections (right) --- the human-readable text form, graphical model
+visualizations, and executable simulation code. All three arrows
+originate at the same source box to show their shared parsed input.
+Source binding, parameter validation, and semantic-fidelity checks
+provide evidence of agreement among the projections. The executable node
+summarizes 12 of 12 registered render targets with implemented Step 12
+execution adapters and previews three by name; execution depends on
+runtime readiness, admitted model kind, and a successful source-bound
+run receipt. Counts are producer tokens at commit 11a696d6e, and the
+panel is generated by scripts/manuscript\_fig\_triple\_play.py.
+Take-away: a model is authored once and then read, seen, and run from
+that single source.}]{../figures/gnn_triple_play.png}
 
 \end{archiveimageframe}
 
@@ -1124,7 +1119,7 @@ executable node summarizes 12 of 12 registered render targets with
 implemented Step 12 execution adapters and previews three by name;
 execution depends on runtime readiness, admitted model kind, and a
 successful source-bound run receipt. Counts are producer tokens at
-commit 7a874fe80, and the panel is generated by
+commit 11a696d6e, and the panel is generated by
 \breaktt{scripts/manuscript\_fig\_triple\_play.py}. Take-away: a model is
 authored once and then read,
 

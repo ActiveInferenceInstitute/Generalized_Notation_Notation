@@ -2,6 +2,7 @@
 \beamer@slide {tbl:model_families}{6}
 \beamer@slide {fig:family_matrix}{9}
 \beamer@slide {semantic-fidelity-and-cross-framework-reliability-gates}{13}
-\beamer@slide {repository-scale}{21}
-\beamer@slide {fig:repo_metrics}{22}
-\beamer@slide {claim-discipline}{27}
+\beamer@slide {source-preserving-llm-processing}{22}
+\beamer@slide {repository-scale}{24}
+\beamer@slide {fig:repo_metrics}{25}
+\beamer@slide {claim-discipline}{30}
