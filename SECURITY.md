@@ -38,7 +38,7 @@ We are committed to ensuring the security of the GeneralizedNotationNotation (GN
 
 | Version | Supported | Security Coverage |
 | ------- | ------------------ | ----------------- |
-| 5.0.2 | Candidate line; exact release qualification pending | Existing dependency floors, bounded receipt admission and owned process cleanup; platform/native evidence required |
+| 5.0.3 | Candidate line; exact release qualification pending | Existing dependency floors, bounded receipt admission and owned process cleanup; platform/native evidence required |
 | 5.0.1 | Previous published release; exact native gates required | Existing dependency floors, bounded receipt admission and owned process cleanup; platform/native evidence required |
 | 4.3.0 | Previous published release; exact native gates required | aiohttp >=3.14.4 and Pillow >=13.0.0; frozen uv GUI override and audit scope documented in README |
 | 4.1.0 | Previous published release; exact native gates required | Descriptor-relative POSIX operations and verified owned cleanup; Windows direct-worker limits are explicit |

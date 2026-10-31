@@ -3,7 +3,7 @@
 **Describe an Active Inference generative model once. Validate its structure,
 render framework-specific code, execute admitted models and inspect the evidence.**
 
-[![Version: 5.0.2](https://img.shields.io/badge/version-5.0.2-00a6b8.svg)](../CHANGELOG.md#502---2026-10-30)
+[![Version: 5.0.3](https://img.shields.io/badge/version-5.0.3-00a6b8.svg)](../CHANGELOG.md#503---2026-10-31)
 [![CI](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml)
 [![CI Python: 3.11–3.14](https://img.shields.io/badge/CI%20Python-3.11%E2%80%933.14-3776ab.svg)](workflows/ci.yml)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-lightgrey.svg)](../LICENSE.md)
@@ -28,7 +28,7 @@ scientific workflow** spanning parsing, validation, visualization, simulation,
 analysis and publication. Start with the CLI below, or explore the
 [Python and service interfaces](#interfaces).
 
-**Software:** 5.0.2. [Published release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases) own accepted tags and assets.
+**Software:** 5.0.3. [Published release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases) own accepted tags and assets.
 
 This major version adds replayable numerical witnesses, interactive evidence
 inspection and configurable file workers. It targets coordinated FEP_Formal
@@ -37,7 +37,7 @@ inspection and configurable file workers. It targets coordinated FEP_Formal
 Version metadata does not establish publication or completed pairing.
 [Candidate release notes](../CHANGELOG.md#501---2026-10-24) describe the changes;
 [package metadata](../pyproject.toml) owns version and dependency requirements.
-**Page updated:** 2026-10-24.
+**Page updated:** 2026-10-31.
 
 ## Start here
 

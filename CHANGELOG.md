@@ -37,6 +37,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   distribution supplement, whose upload still requires actual archive-owner
   controls and public-download acceptance.
 
+## [5.0.3] - 2026-10-31
+
+### Release qualification repair
+
+- Remove an unused bibliography entry whose URL returned HTTP 404 in the
+  version-tag documentation audit. The upstream collection deleted the linked
+  guide, so the entry cannot be re-pointed at the same document. Keep the
+  dead-link policy unchanged.
+- Preserve the failed `v5.0.2` tag and its original observations. Qualify this
+  compatible patch from its own source, manuscript, companion pin and hosted
+  main/tag checks before publication.
+- Carry the GNN source-custody decoupling, release-time paired check and
+  self-contained performance dashboard prepared for 5.0.2 into this release.
+  Their development records keep their original source epochs; a version label
+  does not establish publication or a new scientific result.
+
 ## [5.0.2] - 2026-10-30
 
 ### Custody, release timing and dashboard repair
