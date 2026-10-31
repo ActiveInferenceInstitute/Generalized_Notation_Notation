@@ -8,19 +8,24 @@ framework-specific code, and inspect the evidence from its execution.**
 [![Python 3.11–3.14](https://img.shields.io/badge/python-3.11%E2%80%933.14-blue.svg)](pyproject.toml)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](LICENSE.md)
 [![Project DOI](https://img.shields.io/badge/Project%20DOI-10.5281%2Fzenodo.7803313-blue.svg)](https://doi.org/10.5281/zenodo.7803313)
+[![Software archive](https://img.shields.io/badge/Software%20archive-10.5281%2Fzenodo.23631909-blue.svg)](https://doi.org/10.5281/zenodo.23631909)
 
 [Quick start](#quick-start) · [Models and backends](#model-kinds-and-framework-support) ·
 [Documentation](#documentation) · [Examples](#examples) ·
-[Contributing](#contributing)
+[Contributing](#contributing) · [Zenodo archives](#zenodo-archives)
 
-**Software:** 5.0.3. [Published release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases) own accepted tags and assets.
+**Software:** 5.0.3. [Published release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases) own accepted tags and assets;
+the [Zenodo software archive](https://doi.org/10.5281/zenodo.23631909) holds the
+published 5.0.1 source record.
 
-This major version adds replayable numerical witnesses, interactive evidence
-inspection and configurable file workers. It targets coordinated FEP_Formal
-2 qualification against the current scientific sources; see the
+The current line completes GNN's custody of its own source: the FEP_Formal bridge
+pins only the declared notation contract, the paired check runs at release time
+rather than per pull request, and the performance dashboard is self-contained.
+It targets coordinated FEP_Formal qualification against the current scientific
+sources; see the
 [paired release procedure](docs/development/fep_lean_paired_revision.md).
 Version metadata does not establish publication or completed pairing.
-**Page updated:** 2026-10-24. [Package metadata](pyproject.toml) owns the version
+**Page updated:** 2026-10-31. [Package metadata](pyproject.toml) owns the version
 and dependency requirements; [CHANGELOG.md](CHANGELOG.md) owns release history.
 
 ## Overview
@@ -256,7 +261,7 @@ Commands below run from the repository root and reuse the frozen environment.
 ```bash
 git clone https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git
 cd Generalized_Notation_Notation
-git checkout v4.3.0
+git checkout v5.0.1   # latest published release tag
 uv sync --frozen --python 3.14
 uv run --frozen --no-sync gnn --help
 ```
@@ -264,6 +269,8 @@ uv run --frozen --no-sync gnn --help
 For development, stay on `main` instead of checking out the release tag and install the tools with
 `uv sync --frozen --extra dev --python 3.14`. Add only the extras required by your
 backend; see [SETUP_GUIDE.md](SETUP_GUIDE.md) for Julia, Stan, GUI and other profiles.
+The published source archive for the checked-out release is listed under
+[Zenodo archives](#zenodo-archives).
 
 Validate and extract one committed model:
 
@@ -414,23 +421,43 @@ their documented producer and re-pin procedures.
 
 [Release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases)
 provide accepted version tags and downloadable source-bound artifacts. The
+[GNN 5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
+carries the ordinary wheel and sdist, the manuscript PDF, a source archive, the
+source binding and verification records, and `SHA256SUMS`. The
 [4.3.0 changelog](CHANGELOG.md#430---2026-10-21) describes independent
 source-bound numerical witnesses and earlier CI documentation checks. The
 [E4 contract](docs/development/remaining_roadmap_contracts.md#e4-foundation-source-bound-numerical-witness-v1)
 states the exact finite/Gaussian scope and its limits; the
 [current delivery priorities](TO-DO.md#current-delivery-priorities) owns remaining work.
 
-[GNN 4.2.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.2.1)
-provides the ordinary wheel/sdist, manuscript PDF, overview image, source binding,
-verification records and checksums. Main can contain later documentation changes;
-released artifacts retain their original tag/source identities.
+Main can contain later documentation changes; released artifacts retain their
+original tag and source identities.
+
+### Zenodo archives
+
+| Record | DOI | Scope |
+| --- | --- | --- |
+| Project concept | [10.5281/zenodo.7803313](https://doi.org/10.5281/zenodo.7803313) | Identifies the version family and resolves to the latest published record |
+| GNN 5.0.1 software source | [10.5281/zenodo.23631909](https://doi.org/10.5281/zenodo.23631909) | Published source record for `v5.0.1`, paired with its GitHub release |
+| GNN 4.1.0 software source | [10.5281/zenodo.23245091](https://doi.org/10.5281/zenodo.23245091) | Historical version-specific record |
+| GNN 4.0.1 software source | [10.5281/zenodo.23222085](https://doi.org/10.5281/zenodo.23222085) | Historical version-specific record |
+| 2023 article | [zenodo.org/records/7803328](https://zenodo.org/records/7803328) | Historical manuscript publication, not a software version |
+
+A specific software release needs its own version DOI and a directly verified
+public archive; the concept DOI does not identify one version, and a historical
+DOI is never reused as a current software DOI. GitHub release assets (the wheel,
+sdist, manuscript PDF and checksums) and the Zenodo source archive are separate
+acceptances, and publishing a GitHub release does not by itself create a Zenodo
+deposit. New versions follow the
+[exact-version archival procedure](docs/releases/exact_version_archival.md),
+which requires the archive owner's authorized provider access. The companion
+[FEP_Formal 2.1.0 manuscript](https://doi.org/10.5281/zenodo.23607007) and
+[software source archive](https://doi.org/10.5281/zenodo.23631895) retain their
+own DOI identities.
 
 For academic use, follow [CITATION.cff](CITATION.cff). The initial publication is
 Smékal, J., & Friedman, D. A. (2023), *Generalized Notation Notation for Active
-Inference Models*, Active Inference Journal. The
-[project concept DOI](https://doi.org/10.5281/zenodo.7803313) identifies the project;
-exact-version source and distribution archival are separate acceptance steps.
-See [archival guidance](docs/releases/exact_version_archival.md) and
+Inference Models*, Active Inference Journal. See
 [release history](CHANGELOG.md) for historical records.
 
 ## License
