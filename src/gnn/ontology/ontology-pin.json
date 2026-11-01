@@ -1,0 +1,12 @@
+{
+  "repository": "ActiveInferenceInstitute/Active_Inference_Ontology",
+  "commit": "4450e8ddbd06cca02a0009f0c29364e1b96a709c",
+  "release": "v5",
+  "path": "GNN/act_inf_ontology_terms.json",
+  "schema": "active-inference-ontology/gnn-terms/v1",
+  "sha256": "b19e3d4c70cb7d47276978f4b1f21777089243f6a8514e86656b9e15f639656a",
+  "sourceSha256": "82fc5b03b3110e9dd9f74049d7ea0e578e05541a3cdeb0c6c24eaa0f99a9be0f",
+  "exportSha256": "a2c8371264e9e3d83319268e93b2a8047a8ba5576b1a22ea26716b87828cb706",
+  "copy": "src/gnn/ontology/active_inference_ontology_terms.json",
+  "provenanceNote": "Pinned at the published ontology merge commit 4450e8dd (PR #2, gnn-term-alignment merged into Active_Inference_Ontology main). The bridge bytes are unchanged from the branch tip b04797ee."
+}

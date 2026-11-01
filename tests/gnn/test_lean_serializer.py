@@ -1,7 +1,7 @@
 """Regression tests for the canonical ``FEP.GnnDocument`` Lean serializer.
 
 The serializer must emit the frozen 13-section inventory in canonical rank
-order (``fep_lean/src/fep_lean/formal/gnn_document.lean``) and a round-trip
+order (``fep_formal/src/fep_formal/formal/gnn_document.lean``) and a round-trip
 ``-- MODEL_DATA:`` payload carrying the canonical typed keys.
 """
 

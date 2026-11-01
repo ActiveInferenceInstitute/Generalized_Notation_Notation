@@ -6,9 +6,12 @@ annotation extraction, and ontology report generation through MCP.
 """
 
 import logging
+import re
 from typing import Any, Dict, List, Union
 
 logger = logging.getLogger(__name__)
+
+_HEADING_WHITESPACE = re.compile(r"\s+")
 
 from gnn.utils.mcp.dispatch import run_pipeline_step_mcp
 
@@ -74,7 +77,8 @@ def validate_ontology_terms_mcp(terms: Union[str, List[str]]) -> Dict[str, Any]:
 def extract_ontology_annotations_mcp(gnn_content: str) -> Dict[str, Any]:
     """Extract ``ActInfOntologyAnnotation`` entries from GNN model content.
 
-    Parses the ``## ActInfOntologyAnnotation`` section and returns all
+    Parses the ``## ActInfOntologyAnnotation`` section (the spaced
+    ``## ActInf Ontology Annotation`` spelling is equivalent) and returns all
     variable-to-term mappings found, partitioned by whether the mapped
     term exists in the Active Inference ontology. Validation uses the real
     vocabulary (:func:`load_defined_ontology_terms`) matched
@@ -95,7 +99,16 @@ def extract_ontology_annotations_mcp(gnn_content: str) -> Dict[str, Any]:
 
         for line in lines:
             stripped = line.strip()
-            if stripped == "## ActInfOntologyAnnotation":
+            # Headings compare with whitespace collapsed, so the spaced spelling
+            # "## ActInf Ontology Annotation" opens the same block as the
+            # canonical heading instead of yielding silently empty bindings.
+            # Whitespace is the only accepted variance: case folding and the
+            # "## Ontology" alias of parse_gnn_ontology_section stay deferred.
+            if (
+                stripped.startswith("## ")
+                and _HEADING_WHITESPACE.sub("", stripped[3:])
+                == "ActInfOntologyAnnotation"
+            ):
                 in_annotation = True
                 continue
             if in_annotation:

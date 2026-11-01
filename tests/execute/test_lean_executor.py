@@ -48,7 +48,7 @@ def test_executor_lean_unavailable_message(monkeypatch: pytest.MonkeyPatch) -> N
         lambda key: _RunnerState(available=False, runner=None),
     )
     result = GNNExecutor()._execute_lean_verification("model.md")
-    assert result == {"success": False, "error": "fep_lean unavailable"}
+    assert result == {"success": False, "error": "FEP_Formal not available"}
 
 
 @pytest.mark.parametrize("package", ["fep_formal", "fep_lean"])

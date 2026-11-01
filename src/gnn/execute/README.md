@@ -17,7 +17,7 @@ This module is responsible for running GNN models that have been rendered into f
 | **THRML** | Python/JAX | `thrml/` | `*_thrml.py` | Experimental categorical Gibbs smoothing; explicit `thrml` extra and selection; fresh sample/result binding |
 | **cpomdp** | Python/JAX | `cpomdp/` | `*_cpomdp.py` | Experimental continuous inference/control; explicit `cpomdp` extra and selection |
 | **ngc-learn** | Python/JAX | `ngclearn/` | `*_ngclearn.py` | Continuous predictive processing; Python >=3.12 optional runtime |
-| **Lean 4** | Lean (fep_lean bridge) | `lean/` | `*.lean` + emitted `*.md` | ✅ Full support (requires the fep_lean checkout via `FEP_LEAN_ROOT`; skipped otherwise) |
+| **Lean 4** | Lean (FEP_Formal bridge) | `lean/` | `*.lean` + emitted `*.md` | ✅ Full support (requires the FEP_Formal checkout via `FEP_FORMAL_ROOT`; the former `FEP_LEAN_ROOT` name is still accepted; skipped otherwise) |
 | **bnlearn** | Python (generator-backed; `.R` lane via Rscript) | `bnlearn/` | `*_bnlearn.py`, `*.R` | ✅ Full support (requires the `bnlearn` extra or R + R `bnlearn` package; skipped otherwise) |
 JAX, NumPyro, PyTorch, and DisCoPy are **core** dependencies (`uv sync`). If the environment is incomplete, their scripts report an explicit skipped status. Requested Julia frameworks require Julia plus their package set; in strict requested-framework runs, missing packages make Step 12 fail.
 

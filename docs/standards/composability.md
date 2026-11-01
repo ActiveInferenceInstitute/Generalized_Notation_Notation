@@ -34,20 +34,34 @@ five-seam doctrine; ADR 048 records that it is superseded, not adopted.
 ### Seam A — orchestrator → module processor
 
 **Canonical pattern.** A numbered script `src/gnn/N_<name>.py` is a thin
-orchestrator: the src-layout bootstrap, one import of its implementation
+orchestrator: the stdlib-shadowing guard, one import of its implementation
 module, and a single `create_standardized_pipeline_script` call
 (`src/gnn/utils/pipeline_orchestration/pipeline_template.py`). Step logic
 belongs in `src/gnn/<module>/`, never in the numbered file.
 
-**Conformance.** All 25 numbered scripts conform — each carries the
-bootstrap, one module import, and the template call (verified 2026-09-21).
+**Conformance.** All 25 numbered scripts conform — each carries the guard
+before its first import, one module import, and the template call
+(re-verified 2026-11-01).
 
-**Exception.** COMP-010 (tracked, see the exceptions table): the bootstrap
-itself is 25 hand-rolled copies (`0_template.py:38` …
-`4_model_registry.py:39`; `2_tests.py:22`, with a second repository-root
-copy at `2_tests.py:41`). Direction: hoist into
-`create_standardized_pipeline_script`. Growth of the numbered files is
-additionally bounded by the thin-orchestrator gate (see Enforcement).
+**Guard requirement.** The guard is the same three lines in every directly
+runnable script (`0_template.py:35-36` … `24_intelligent_analysis.py:14-15`):
+
+```python
+if globals().get("__package__") is None and not sys.flags.safe_path:
+    sys.path.pop(0)
+```
+
+It must run before the first import that could resolve inside `src/gnn/`:
+`src/gnn/types/` shadows the standard-library `types` module when a numbered
+script is executed directly (`python src/gnn/N_*.py` puts `src/gnn/` first
+on `sys.path`). The 2026-09-21 census read this as a src-layout bootstrap
+and filed it as COMP-010 with a hoist direction; the hoist is unreachable
+because `create_standardized_pipeline_script` is itself imported after the
+guard, so the guard is a required pre-import step, not a removable
+duplicate. It is enforced by `scripts/check_stdlib_shadow_guard.py` (see
+Enforcement). `2_tests.py:41-42` adds a repository-root insertion before
+importing the `tests` package; that edit is unrelated to the guard and
+stays local to the step.
 
 ### Seam B — pipeline.config output-dir / registry
 
@@ -129,21 +143,53 @@ Every integration that does not fit the five seams is a named, tracked
 exception — never hidden, never silently normalized. Tracker refs are the
 COMP ids of the 2026-09-21 census.
 
+Re-censused 2026-11-01 against the tree carrying this revision; every
+file:line below was re-read in that tree. All six exceptions in the
+2026-09-21 census table are resolved — five remediated by their fix
+directions and COMP-010 retired by the gate-enforced guard requirement in
+Seam A — and are listed under *Resolved exceptions*; COMP-011 stays
+recorded as a folded INFO note.
+
 | Ref | Severity | Site | Issue | Direction |
 | --- | --- | --- | --- | --- |
-| COMP-003 | HIGH | `src/gnn/sapf/` vs `src/gnn/audio/sapf/` | One module family, two canonical homes: `sapf/__init__.py:5-12` re-exports the audio implementation, while the `sapf/` package also ships its own metadata and an `mcp.py`; tests exercise both paths (`tests/sapf/test_sapf_processor.py:14`, `tests/test_fast_suite.py:221`) | Pick one home; the other stays a pure re-export surface with a golden export test; define metadata once; migrate callers and tests |
-| COMP-004 | MEDIUM | `src/gnn/cli/__init__.py:979-980` | Private cross-module import: the reproduce command reaches into `gnn.main` internals (`_resolve_steps_to_execute`) | Promote to a public API with a contract test |
-| COMP-005 | MEDIUM | `src/gnn/api/parity.py:569,607,670,751,774` | Parity by mirror: the API re-states `gnn.cli._cmd_*` severity and payload checks in five handlers | Extract the mirrored check bodies into shared pure helpers both surfaces consume |
-| COMP-006 | MEDIUM | `src/gnn/utils/__init__.py:280-281` vs `src/gnn/export/core.py:10`, `src/gnn/pipeline/pipeline_step_template.py:46` | Dual canonical path for `get_output_dir_for_script` and `execute_pipeline_step_template` (facade map AND direct `gnn.pipeline` import) | Single path = `gnn.pipeline`; drop the facade re-exports; update the facade golden list (`tests/tests/test_infrastructure_exports.py`) |
-| COMP-009 | LOW | `src/gnn/pipeline/pipeline_step_template.py:46-72,561-565` + `src/gnn/pipeline/pipeline_validation.py` | Pre-registry second convention kept inside the composition package (template body plus an 871-line self-validation module; only consumers `tests/pipeline/test_pipeline_infrastructure.py:74-142`) | Retire both; move the guidance to `src/gnn/pipeline/AGENTS.md`; migrate the tests to `step_executor` and `step_registry` |
-| COMP-010 | LOW | `0_template.py:38` … `4_model_registry.py:39` (25 files) | 25 hand-rolled src-layout bootstrap copies | Hoist into `create_standardized_pipeline_script` |
 | COMP-011 | INFO (folded) | `src/gnn/gui/oxdraw/processor.py:18,87`; `src/gnn/mcp/server_stdio.py:32-33`; `src/gnn/mcp/server_http.py:64-65` | Documented integration notes: the websocket bridge contract note and the direct-script import recovery in the MCP servers | Recorded, not re-reported |
 
-Remediated in the wave that landed this standard (no longer open):
-COMP-007 — the `pipeline_template.py:136` facade import was inverted to the
-leaf path, and `lint-imports` reports 3 contracts kept, 0 broken on this
-branch — and COMP-008 — the import-linter contracts were unwired and are
-now wired (see Enforcement).
+Resolved exceptions (each verified in the tree carrying this revision):
+
+- **COMP-003** — `fba7bf86a` ("comp-003: one home for SAPF — delete
+  `src/gnn/sapf` alias package"). `src/gnn/sapf/` is gone; `git ls-files
+  src/gnn/sapf/` is empty and `src/gnn/audio/sapf/` is the single home.
+- **COMP-004** — `ed3d150c8` ("comp-004: promote
+  `gnn.main._resolve_steps_to_execute` to public `resolve_steps_to_execute`").
+  No `_resolve_steps_to_execute` reference survives in `src/`, `tests/` or
+  `scripts/`.
+- **COMP-005** — `959f5a4fc` ("refactor(api,cli): extract shared command
+  semantics (COMP-005)"). `gnn/cli/commands.py` is the single home for the
+  shared command bodies and exports exactly the helpers the fix direction
+  named (`run_validation_checks`, `build_parse_payload`,
+  `extract_payload_defect`, `find_render_artifact`,
+  `render_processing_succeeded`, `preflight_severities`,
+  `publish_pipeline_report`); both `gnn/cli/handlers_pipeline.py` and
+  `gnn/api/parity.py` call into it. The nine `gnn/api/parity.py` docstrings
+  that still described the adapters as mirrors were corrected 2026-11-01 to
+  name the shared helpers; the adapters keep only the HTTP presentation.
+- **COMP-006** — `6712c63b7` ("comp-006+009: `gnn.pipeline` is the single
+  output-dir path; delete pre-registry template modules"). Neither
+  `get_output_dir_for_script` nor `execute_pipeline_step_template` appears in
+  `src/gnn/utils/__init__.py`; `gnn/pipeline/__init__.py:19` is the sole
+  export path.
+- **COMP-007 / COMP-008** — remediated in the wave that landed the original
+  standard: the `pipeline_template.py` facade import was inverted to the leaf
+  path, and the import-linter contracts moved from unwired to wired (see
+  Enforcement).
+- **COMP-009** — `6712c63b7`, same commit as COMP-006.
+  `src/gnn/pipeline/pipeline_step_template.py` and
+  `src/gnn/pipeline/pipeline_validation.py` no longer exist.
+- **COMP-010** — retired by enforcement: the stdlib-shadowing guard is the
+  canonical pattern of Seam A, not a removable duplicate.
+  `scripts/check_stdlib_shadow_guard.py` (test:
+  `tests/scripts/test_stdlib_shadow_guard.py`) fails any directly runnable
+  `src/gnn/[0-9]*_*.py` that drops the guard or imports ahead of it.
 
 ## Consumer seams: declared cross-repo surfaces
 
@@ -164,13 +210,13 @@ repositories consume exactly these five declared surfaces:
    `src/gnn/extract/pomdp_extractor.py:1628`, content variant at `:1663`)
    and `gnn.schema.parse_state_space` (`src/gnn/schema/parser.py:164`).
    Consumers inject this checkout onto `sys.path` and import exactly these
-   symbols (fep_lean's `verify-document`).
+   symbols (FEP_Formal's `verify-document`).
 3. **Syntax surface** — `docs/gnn/gnn_syntax.md` and
    `src/gnn/pipeline/step_registry.py`. Exactly these two files form the
    hand-maintained syntax pin that the bridge status check compares against
    the live bytes.
 4. **Mirror contract** — `docs/other/fep_lean/bridge-contract.md`, the
-   mirror of fep_lean's canonical
+   mirror of FEP_Formal's canonical
    `docs/design/gnn-bridge/bridge-contract.md`. The two bodies stay equal
    (only the Canonical/Mirror table rows may differ); substance changes
    bump the contract version and land in both checkouts in the same
@@ -202,19 +248,19 @@ Changes to surfaces 1-5 are announce-and-repin events: follow the closeout
 ordering in
 [docs/development/fep_lean_paired_revision.md](../development/fep_lean_paired_revision.md)
 — all content edits land first (the manuscript/token ritual runs at the
-final content state when manuscript inputs changed), then the fep_lean-side
+final content state when manuscript inputs changed), then the FEP_Formal-side
 bridge re-pin, then the GNN pin bump as the final commit; the GEO_INFER
 direction is the mirror image.
 
 Edits outside surfaces 1-5 must not force sibling re-pinning. Census
 break-class B1 (the bridge's source binding covering a whole-tree owner glob)
-was repaired on the fep_lean side: the GNN owner roster now binds the declared
+was repaired on the FEP_Formal side: the GNN owner roster now binds the declared
 contract surface only — `pyproject.toml`, `uv.lock`, `src/gnn/main.py`,
 `docs/gnn/gnn_syntax.md`, `src/gnn/pipeline/step_registry.py` and the mirrored
 `docs/other/fep_lean/bridge-contract.md` — so ordinary `src/gnn/**/*.py`
 implementation edits no longer re-drift the pair. Emitted-document freshness is
 verified at run time by `emit --check` instead of by pinning the implementation
-tree. Widening or narrowing that roster remains an fep_lean-side design change,
+tree. Widening or narrowing that roster remains a FEP_Formal-side design change,
 never a GNN-side pin edit.
 
 ## Enforcement
@@ -225,6 +271,9 @@ standard):
 
 - `scripts/check_thin_orchestrators.py` — numbered orchestrator line cap
   (150 hard, 133 ratchet file).
+- `scripts/check_stdlib_shadow_guard.py` — every directly runnable
+  `src/gnn/[0-9]*_*.py` carries the canonical stdlib-shadowing guard before
+  its first import (test: `tests/scripts/test_stdlib_shadow_guard.py`).
 - `scripts/check_flag_parity.py` — argparse-registered flags vs
   maintained-doc flag mentions (ratcheted).
 - `scripts/check_dep_hygiene.py` — extras and mypy overrides vs actual

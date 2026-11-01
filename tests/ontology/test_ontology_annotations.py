@@ -124,3 +124,20 @@ def test_parse_ontology_section_handles_case_bullets_and_comments() -> None:
         "s=HiddenState",
         "o=Observation # sensory value",
     ]
+
+
+def test_parse_gnn_ontology_section_accepts_the_spaced_heading() -> None:
+    """The spaced spelling is the same heading, not a silently skipped one."""
+    from gnn.ontology import analyze_ontology_content, parse_gnn_ontology_section
+
+    content = "## ActInf Ontology Annotation\ns=HiddenState\no=Observation\n"
+
+    parsed = parse_gnn_ontology_section(content)
+    assert parsed["annotations"] == ["s=HiddenState", "o=Observation"]
+
+    analyzed = analyze_ontology_content(content)
+    assert analyzed["ontology_data"]["annotations"] == [
+        "s=HiddenState",
+        "o=Observation",
+    ]
+    assert len(analyzed["validation_result"]["valid_annotations"]) == 2

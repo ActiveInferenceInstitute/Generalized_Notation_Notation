@@ -12,6 +12,7 @@ This directory contains documentation and references for the Integration domain 
 - **[GNN Export Guide](gnn_export.md)**
 - **[GNN Implementation Guide](gnn_implementation.md)**
 - **[GNN Visualization Guide](gnn_visualization.md)**
+- **[Downstream Adoption Guide](downstream_adoption.md)** — how a sibling repository makes GNN the specification of its generative models, and what each adoption pattern proves
 
 ## Navigation
 

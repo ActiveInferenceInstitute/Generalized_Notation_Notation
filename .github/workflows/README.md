@@ -1,7 +1,7 @@
 # GitHub workflows
 
 The local default and primary ordinary test matrix now include Python 3.14,
-with exact uv 0.13.4. The named h5py/HDF5 host exception and removal checks are
+with exact uv 0.13.6. The named h5py/HDF5 host exception and removal checks are
 in root README.md. General docs/local/MCP/security jobs select 3.14; coupled
 3.12 required statuses and native/paired/manuscript/GUI rosters remain explicit
 compatibility or evidence profiles. Existing acceptance receipts retain their
@@ -9,9 +9,9 @@ original source, runtime and tool identities; this configuration change does
 not renew those receipts.
 
 The GEO pair installs each repository with its own exact tool: uv 0.13.1 is
-a companion-only exception for GEO_INFER, while GNN retains uv 0.13.4.
+a companion-only exception for GEO_INFER, while GNN retains uv 0.13.6.
 Separate pinned setup steps install GEO first and GNN last, so the later GNN
-qualification controls also use uv 0.13.4. These controls reuse the installed
+qualification controls also use uv 0.13.6. These controls reuse the installed
 Python 3.11 environment with `--frozen --no-sync`; the local default does not
 replace its H3-enabled runtime. The [local paired-runtime procedure](../../docs/development/geo_infer_2026_09.md#independent-uv-toolchains)
 uses the same split. Manuscript audit artifacts retain the full render output and the render
@@ -92,7 +92,7 @@ PR and the event revision for main/manual runs. It verifies that revision before
 building the wheel and records the actual checkout, wheel and lock hashes.
 
 The FEP bridge job selects its companion-required uv 0.13.0 independently of
-GNN-owned uv 0.13.4 installs. Supply-chain requirement resolution uses core Python 3.14 and the declared
+GNN-owned uv 0.13.6 installs. Supply-chain requirement resolution uses core Python 3.14 and the declared
 all-extras Python 3.12 profile, rather than prospective Python 3.15.
 
 The docs audit runs the existing exit-code documentation contract immediately

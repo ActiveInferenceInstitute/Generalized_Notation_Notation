@@ -52,7 +52,7 @@ Version metadata does not establish publication or completed pairing.
 
 ## Quick start
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) **0.13.4** and use
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) **0.13.6** and use
 Python **3.14** for the frozen default. Ordinary CI also tests Python 3.11–3.13.
 See the [runtime exceptions and required profiles](../README.md#runtime-defaults-and-required-profiles)
 for the Python 3.15 HDF5 constraint, Python-specific scientific stack and the

@@ -243,7 +243,9 @@ Run the appropriate import, flag, thin-orchestrator, dependency and security
 gates. Changes to FEP/GEO-bound owners require the
 [paired-revision procedure](docs/development/fep_lean_paired_revision.md).
 Manuscript input/count changes require the full figure, template-render and
-custody ritual in [AGENTS.md](AGENTS.md). Keep local checks, hosted tests,
+custody ritual in [AGENTS.md](AGENTS.md); `just manuscript-custody` runs the dry
+half of that ritual (token map, hydrated prose, figure and render freshness) and
+`just manuscript-figures` rebuilds the figures — both run inside `just quality`. Keep local checks, hosted tests,
 installation, native numerical witnesses and finite visual review separate;
 report source identities, failures, optional skips and actual review coverage.
 

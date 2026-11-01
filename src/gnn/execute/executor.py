@@ -659,10 +659,10 @@ class GNNExecutor:
         *,
         cancel_token: Optional[CancelToken] = None,
     ) -> Dict[str, Any]:
-        """Verify one document via the fep_lean bridge (contract v0.6).
+        """Verify one document via the FEP_Formal bridge (contract v0.7).
 
         ``cancel_token`` forwards into the envelope-backed dispatch; a fired
-        token cancels the run pre-spawn or mid-flight GNN-side (the fep-lean
+        token cancels the run pre-spawn or mid-flight GNN-side (the FEP_Formal
         bridge process itself has no in-process cooperative protocol).
         """
         precondition = _execution_precondition(timeout, cancel_token)
@@ -670,7 +670,7 @@ class GNNExecutor:
             return precondition
         state = _runner_state("lean")
         if not state.available or state.runner is None:
-            return {"success": False, "error": "fep_lean unavailable"}
+            return {"success": False, "error": "FEP_Formal not available"}
 
         from .lean.lean_runner import verify_document
 

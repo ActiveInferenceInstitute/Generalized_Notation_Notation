@@ -15,7 +15,7 @@ src/gnn/extract/
 
 ## Cross-Repo Note
 
-This module is **bridge-pinned**: the fep_lean bridge `verify-document` operation imports `gnn.extract.pomdp_extractor.extract_pomdp_from_file` as its render route for reading emitted GNN documents. The bridge contract (`docs/other/fep_lean/bridge-contract.md`, §13) cites this import path; do not move or rename it without updating the fep_lean checkout and re-pinning source custody.
+This module is **bridge-pinned**: the FEP_Formal bridge `verify-document` operation imports `gnn.extract.pomdp_extractor.extract_pomdp_from_file` as its render route for reading emitted GNN documents. The bridge contract (`docs/other/fep_lean/bridge-contract.md`, §13) cites this import path; do not move or rename it without updating the FEP_Formal checkout and re-pinning source custody.
 
 ## Usage
 
@@ -66,5 +66,5 @@ The `OnErrorMode` literal (`"lenient"`, `"raise"`, `"collect"`) controls how ext
 
 ## Related Documentation
 
-- [Bridge contract](../../../docs/other/fep_lean/bridge-contract.md) — fep_lean ↔ GNN contract; §13 cites this module as the render route.
+- [Bridge contract](../../../docs/other/fep_lean/bridge-contract.md) — FEP_Formal ↔ GNN contract; §13 cites this module as the render route.
 - [POMDP extraction overview](../../../docs/gnn/integration/gnn_implementation.md)

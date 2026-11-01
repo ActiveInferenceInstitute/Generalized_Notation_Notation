@@ -21,6 +21,15 @@ from gnn.utils.observability.structured_logging import (
     log_step_success,
 )
 
+from .bridge import (
+    DECLARED_STATUS_BRIDGE_UNAVAILABLE,
+    DeclaredIndex,
+    declared_label_index,
+    ontology_bridge_status,
+    pinned_declared_index,
+    resolve_declared_label,
+)
+
 logger = logging.getLogger("ontology")
 
 # Maximum Levenshtein distance at which a candidate term is offered as a
@@ -375,11 +384,13 @@ def process_ontology(
         results_dir = output_dir
         results_dir.mkdir(parents=True, exist_ok=True)
 
+        bridge_status = ontology_bridge_status()
         results: dict[str, Any] = {
             "processed_files": 0,
             "reports": [],
             "success": True,
             "errors": [],
+            "ontology_bridge": bridge_status,
             "configuration": {
                 "strict_validation": strict_validation,
                 "recursive": recursive,
@@ -388,6 +399,11 @@ def process_ontology(
                 else None,
             },
         }
+        if not bridge_status["verified"]:
+            local_logger.warning(
+                "Pinned ontology vocabulary bridge failed verification: %s",
+                "; ".join(bridge_status["errors"]) or "unspecified reason",
+            )
 
         if not isinstance(strict_validation, bool) or not isinstance(recursive, bool):
             results["success"] = False
@@ -502,10 +518,11 @@ def parse_gnn_ontology_section(content: str) -> Dict[str, Any]:
             if not line:
                 continue
 
-            # Markdown section names are case-insensitive for GNN processing,
-            # but only an exact level-two ontology heading opens this block.
+            # Markdown section names are case- and spacing-insensitive for GNN
+            # processing: "## ActInf Ontology Annotation" opens the same block
+            # as "## ActInfOntologyAnnotation".
             if line.startswith("##"):
-                heading = line[2:].strip().casefold()
+                heading = re.sub(r"\s+", "", line[2:].strip()).casefold()
                 current_section = (
                     "ontology"
                     if heading in {"ontology", "actinfontologyannotation"}
@@ -705,7 +722,8 @@ def load_defined_ontology_terms(
             order after ``ontology_terms_file``.
 
     Returns:
-        Dictionary mapping term names to their definitions (including description and URI)
+        Dictionary mapping term names to their definitions (descriptions; the
+        pinned vocabulary bridge supplies ontology identifiers)
     """
     explicit_file = (
         Path(ontology_terms_file) if ontology_terms_file is not None else None
@@ -752,36 +770,29 @@ def load_defined_ontology_terms(
             logger.warning("Failed to load ontology from %s: %s", ontology_file, exc)
             continue
 
-    # Return default Active Inference terms if no file found
-    logger.warning("No ontology terms file found, using defaults")
+    # Return the built-in default term set when no file is found. The entries
+    # carry descriptions only: ontology identifiers come from the pinned
+    # vocabulary bridge (gnn.ontology.bridge), never from this default set.
+    logger.warning("No ontology terms file found, using built-in defaults")
     return {
         "HiddenState": {
-            "description": "A state of the environment or agent that is not directly observable.",
-            "uri": "obo:ACTO_000001",
+            "description": "A state of the environment or agent that is not directly observable."
         },
         "Observation": {
-            "description": "Data received from the environment through sensory input.",
-            "uri": "obo:ACTO_000003",
+            "description": "Data received from the environment through sensory input."
         },
         "Action": {
-            "description": "An output of the agent that can affect the environment.",
-            "uri": "obo:ACTO_000004",
+            "description": "An output of the agent that can affect the environment."
         },
         "LikelihoodMatrix": {
-            "description": "A probabilistic mapping from hidden states to observations.",
-            "uri": "obo:TEMP_000061",
+            "description": "A probabilistic mapping from hidden states to observations."
         },
         "TransitionMatrix": {
-            "description": "A probabilistic mapping defining the dynamics of hidden states.",
-            "uri": "obo:ACTO_000009",
+            "description": "A probabilistic mapping defining the dynamics of hidden states."
         },
-        "VariationalFreeEnergy": {
-            "description": "A bound on Bayesian model evidence.",
-            "uri": "obo:ACTO_000012",
-        },
+        "VariationalFreeEnergy": {"description": "A bound on Bayesian model evidence."},
         "ExpectedFreeEnergy": {
-            "description": "A quantity minimized by the agent to select policies.",
-            "uri": "obo:ACTO_000011",
+            "description": "A quantity minimized by the agent to select policies."
         },
     }
 
@@ -812,7 +823,10 @@ def parse_annotation(annotation: str) -> ParsedAnnotation:
 
 
 def validate_annotations(
-    annotations: List[str], ontology_terms: Optional[Dict[str, Any]] = None
+    annotations: List[str],
+    ontology_terms: Optional[Dict[str, Any]] = None,
+    *,
+    ontology_bridge: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Validate annotations against ontology terms.
 
@@ -820,10 +834,19 @@ def validate_annotations(
     against ontology term names. The returned dict preserves the established
     contract consumed by ``src/llm/processor.py`` (verbatim JSON injection into
     LLM prompts): ``valid_annotations``, ``invalid_annotations``,
-    ``matched_terms`` (``key -> {annotation, term_name, description, uri, key,
-    value, comment}``), ``suggestions`` (each
-    ``{annotation, suggested_term, description}``), ``coverage_score``, and
-    ``invalid_details``.
+    ``matched_terms`` (``key -> {annotation, term_name, description,
+    ontology_id, ontology_status, ontology_term, ontology_reason, key, value,
+    comment}``), ``suggestions`` (each
+    ``{annotation, suggested_term, description}``), ``coverage_score``,
+    ``invalid_details``, and ``ontology_identifier_counts``.
+
+    Each matched term is additionally resolved against the pinned vocabulary
+    bridge (:mod:`gnn.ontology.bridge`): ``ontology_id`` is the release-v5
+    ``term-*`` identifier when the declared label resolves, and ``None`` when
+    the declared label has no counterpart in release v5 or lies outside the
+    audited declared set, with ``ontology_status``/``ontology_reason`` saying
+    which case applies. Declared ``obo:`` values are never emitted as
+    identifiers.
 
     The suggestion scan and term-lookup construction are delegated to the pure
     helpers :func:`_build_term_lookup`, :func:`_term_matches`, and
@@ -832,20 +855,35 @@ def validate_annotations(
     Args:
         annotations: Annotation strings (e.g., ``["A=LikelihoodMatrix"]``).
         ontology_terms: Term dictionary; loaded by default.
+        ontology_bridge: Optional bridge-document override (tests, alternate
+            pins); omitted, the pinned copy is loaded.
     """
     try:
         if ontology_terms is None:
             ontology_terms = load_defined_ontology_terms()
+
+        declared: Optional[DeclaredIndex]
+        bridge_error: Optional[str]
+        if ontology_bridge is not None:
+            declared, bridge_error = declared_label_index(ontology_bridge), None
+        else:
+            declared, bridge_error = pinned_declared_index()
 
         term_lookup = _build_term_lookup(ontology_terms)
 
         validation_result: dict[str, Any] = {
             "valid_annotations": [],
             "invalid_annotations": [],
-            "matched_terms": {},  # key -> {term_name, description, uri}
+            "matched_terms": {},  # key -> resolved term metadata
             "suggestions": [],
             "coverage_score": 0.0,
             "invalid_details": [],
+            "ontology_identifier_counts": {
+                "resolved": 0,
+                "unresolved": 0,
+                "not_declared": 0,
+                "bridge_unavailable": 0,
+            },
         }
 
         for annotation in annotations:
@@ -894,16 +932,29 @@ def validate_annotations(
                     }
                 )
                 continue
+            resolution = resolve_declared_label(str(match_info["name"]), declared)
+            reason = (
+                bridge_error
+                if resolution.status == DECLARED_STATUS_BRIDGE_UNAVAILABLE
+                and bridge_error
+                else resolution.reason
+            )
+
             validation_result["valid_annotations"].append(annotation)
             validation_result["matched_terms"][mapping_key] = {
                 "annotation": annotation,
                 "term_name": match_info["name"],
                 "description": match_info["data"].get("description", ""),
-                "uri": match_info["data"].get("uri", ""),
+                "ontology_id": resolution.identifier,
+                "ontology_status": resolution.status,
+                "ontology_term": resolution.ontology_term,
+                "ontology_reason": reason,
                 "key": classification.key,
                 "value": classification.value,
                 "comment": classification.comment,
             }
+            counts = validation_result["ontology_identifier_counts"]
+            counts[resolution.status] = counts.get(resolution.status, 0) + 1
 
         # Calculate coverage score
         total_annotations = len(annotations)

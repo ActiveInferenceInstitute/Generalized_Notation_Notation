@@ -83,7 +83,7 @@ literal.
 The validation harness lives in the GEO-INFER-TEST module of the sibling
 checkout. First install the separate environments using the
 [paired-runtime procedure](../../development/geo_infer_2026_09.md#independent-uv-toolchains):
-GNN requires uv 0.13.4; the GEO installation alone requires uv 0.13.1.
+GNN requires uv 0.13.6; the GEO installation alone requires uv 0.13.1.
 Then run the installed GEO interpreter from its checkout, pointing it at this repo:
 
 ```
@@ -97,9 +97,9 @@ The harness re-exports known exemplars with this repo's interpreter and
 checks the produced artifacts against the contract schemas and provenance
 requirements.
 
-## Relationship to fep_lean
+## Relationship to FEP_Formal
 
-fep_lean verifies the well-formedness of GNN **source documents** in Lean 4,
+FEP_Formal verifies the well-formedness of GNN **source documents** in Lean 4,
 upstream of export (see [docs/other/fep_lean/](../fep_lean/README.md));
 explicitly, `fep-lean bridge verify-document` consumes GNN Markdown via
 `gnn.extract.pomdp_extractor` and cannot validate GEO_INFER's interchange
@@ -116,7 +116,7 @@ run Lean, and successful export does not inherit that slice's receipt.
 - [Experiment qualification](experiment_qualification.md) — real producer
   reproduction for each retained Cascadia condition, with failure controls.
 
-- [fep_lean bridge program](../fep_lean/README.md) — upstream document
+- [FEP_Formal bridge program](../fep_lean/README.md) — upstream document
   well-formedness verification
 - [Framework integration guide](../../gnn/integration/framework_integration_guide.md)
 - [docs/other archive](../README.md) — this folder's parent

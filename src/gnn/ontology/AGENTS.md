@@ -12,7 +12,7 @@
 
 **Version**: re-exports canonical package `__version__` (SC-16)
 
-**Last Updated**: 2026-09-24
+**Last Updated**: 2026-11-01
 
 ---
 
@@ -64,7 +64,7 @@ success = process_ontology(
 )
 ```
 #### `parse_gnn_ontology_section(content: str) -> Dict[str, Any]`
-**Description**: Extract the ontology annotation section (e.g. `## ActInfOntologyAnnotation`) from GNN Markdown content.
+**Description**: Extract the ontology annotation section (e.g. `## ActInfOntologyAnnotation`, also accepted as the spaced `## ActInf Ontology Annotation` or the `## Ontology` alias) from GNN Markdown content.
 
 **Parameters**:
 - `content` (str): Raw GNN Markdown content
@@ -74,21 +74,22 @@ success = process_ontology(
 #### `load_defined_ontology_terms(ontology_terms_file: Path | None = None, *, search_paths: Sequence[Path] | None = None) -> Dict[str, Any]`
 **Description**: Load the ontology term dictionary. Precedence: explicit `ontology_terms_file` (authoritative, fails closed) → caller-supplied `search_paths` (warn-and-continue on each miss) → built-in module-relative paths → built-in default term set. The `search_paths` keyword is the dependency-injection hook for tests and alternate installs.
 
-**Returns**: `Dict[str, Any]` - Term definitions (including description and URI).
+**Returns**: `Dict[str, Any]` - Term definitions (descriptions; ontology identifiers come from the pinned vocabulary bridge, never from the declared `uri` metadata)
 
 #### `build_ontology_terms(terms: List[str], *, descriptions: Dict[str, str] | None = None, uris: Dict[str, str] | None = None) -> Dict[str, Any]`
 **Description**: Build a normalized ontology-terms dictionary in memory (the shape `load_defined_ontology_terms` returns and `validate_annotations` consumes), without writing a JSON file. Rejects empty names, exact duplicates, and case-folded duplicates (e.g. `["A", "a"]`) so the built vocabulary upholds the case-insensitive lookup invariant. Complement of `_normalise_ontology_terms`.
 
 **Returns**: `Dict[str, Any]` - Term-name -> `{"description", "uri"?}` mapping.
 
-#### `validate_annotations(annotations: List[str], ontology_terms: Dict[str, Any] | None = None) -> Dict[str, Any]`
-**Description**: Validate ontology annotations (e.g. `A=LikelihoodMatrix`) against the known ontology term set.
+#### `validate_annotations(annotations: List[str], ontology_terms: Dict[str, Any] | None = None, *, ontology_bridge: Dict[str, Any] | None = None) -> Dict[str, Any]`
+**Description**: Validate ontology annotations (e.g. `A=LikelihoodMatrix`) against the known ontology term set, then resolve each matched label through the pinned vocabulary bridge.
 
 **Parameters**:
 - `annotations` (List[str]): Annotation strings
 - `ontology_terms` (Dict[str, Any] | None): Optional explicit ontology term set (default: module’s loaded terms)
+- `ontology_bridge` (Dict[str, Any] | None): Optional bridge-document override (tests, alternate pins); omitted, the pinned copy is loaded
 
-**Returns**: `Dict[str, Any]` - Validation details (valid/invalid annotations, suggestions when available)
+**Returns**: `Dict[str, Any]` - Validation details: `valid_annotations`, `invalid_annotations`, `matched_terms` (each carrying `ontology_id`, `ontology_status`, `ontology_term`, `ontology_reason` next to `annotation`/`term_name`/`description`), `suggestions`, `coverage_score`, `invalid_details` and `ontology_identifier_counts` (`resolved`, `unresolved`, `not_declared`, `bridge_unavailable`). Declared `obo:` values are never emitted as identifiers.
 
 #### `process_gnn_ontology(gnn_file: str, ontology_terms: Dict[str, Any] | None = None) -> Dict[str, Any]`
 **Description**: Process ontology annotations for a single GNN file path (reads file, parses ontology section, validates annotations). Delegates the parse→load→validate pipeline to `analyze_ontology_content`.
@@ -111,6 +112,9 @@ success = process_ontology(
 
 #### `validate_ontology_terms(terms: List[str] | str | None = None) -> bool`
 **Description**: Convenience validator for terms/annotations (returns boolean validity; used by integrations/tests).
+
+#### Vocabulary bridge (`gnn.ontology.bridge`)
+**Description**: Resolves declared vocabulary labels to ontology identifiers through the pinned Active Inference Ontology vocabulary bridge. `load_ontology_bridge`/`load_ontology_pin` read the copy (`active_inference_ontology_terms.json`, schema `active-inference-ontology/gnn-terms/v1`, release v5, 64 declared labels) and its pin (`ontology-pin.json`); `verify_ontology_pin` checks copy SHA-256, schema, embedded source/export digests, counts and the resolved/unresolved identifier invariants; `ontology_bridge_status` returns the compact record stored in run artifacts; `pinned_declared_index` (cached) returns the case-folded declared map; `resolve_declared_label(label, declared)` returns `DeclaredResolution(status, identifier, ontology_term, reason)` with statuses `resolved`, `unresolved` (`not in ontology release v5`), `not_declared` or `bridge_unavailable`. The declared `obo:ACTO_*`/`obo:TEMP_*` values are metadata only — no `ACTO` ontology is registered in the OBO Foundry, Bioregistry or OLS4 and `http://purl.obolibrary.org/obo/ACTO_000001` returns HTTP 404 — so they are never emitted as identifiers. Gate: `scripts/check_ontology_pin.py` (`just ontology-pin`).
 
 ### Public Classes
 
@@ -187,8 +191,8 @@ print(result["success"], result.get("validation_result", {}))
 ## Output Specification
 
 ### Output Products
-- `ontology_results.json` - Aggregate summary across processed files
-- `*_ontology_report.json` - Per-model ontology validation reports
+- `ontology_results.json` - Aggregate summary across processed files (carries the `ontology_bridge` verification record)
+- `*_ontology_report.json` - Per-model ontology validation reports (including `ontology_identifier_counts`)
 
 ### Output Directory Structure
 ```
@@ -375,7 +379,7 @@ Registered by `src/gnn/ontology/mcp.py` `register_tools(mcp_instance)` (4 tools)
 
 ---
 
-**Last Updated**: 2026-09-24
+**Last Updated**: 2026-11-01
 **Maintainer**: GNN Pipeline Team
 **Status**: Production Ready
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)

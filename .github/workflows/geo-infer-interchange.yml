@@ -76,7 +76,7 @@ jobs:
           path: geo-infer
           persist-credentials: false
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python }}
           check-latest: true
@@ -87,7 +87,7 @@ jobs:
           git -C geo-infer rev-parse HEAD > receipts/geo-infer-revision.txt
           cp gnn/.github/gnn-pair.json receipts/pair.json
       - name: Install GEO uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           # GEO owns its exact toolchain independently of GNN.
           version: "0.13.1"
@@ -102,10 +102,10 @@ jobs:
             --no-install-package cupy --no-install-package mayavi \
             --no-install-package vaex --no-install-package vaex-core
       - name: Install GNN uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          # Match exact uv 0.13.4 in GNN's uv.toml and Docker bootstrap.
-          version: "0.13.4"
+          # Match exact uv 0.13.6 in GNN's uv.toml and Docker bootstrap.
+          version: "0.13.6"
           enable-cache: true
           cache-dependency-glob: gnn/uv.lock
       - name: Install GNN locked runtime

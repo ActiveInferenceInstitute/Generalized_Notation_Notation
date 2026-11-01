@@ -94,6 +94,7 @@ is_valid = validator.validate_ontology(content)
 - `OntologyProcessor` — class with `process_ontology()`, `validate_terms()`
 - `OntologyValidator` — class with `validate_ontology()`, `check_consistency()`
 - `OntologyTermIndex` — prebuilt case-insensitive vocabulary index with lookup, known_terms, validate, suggest and contains checks
+- `resolve_declared_label` / `pinned_declared_index` / `verify_ontology_pin` — resolve declared labels to release-v5 `term-*` identifiers through the pinned vocabulary bridge (verify the copy against its pin with `just ontology-pin`)
 
 ## Output
 

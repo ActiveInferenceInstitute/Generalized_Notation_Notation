@@ -1,8 +1,8 @@
 """GNN Lean serializer: canonical ``FEP.GnnDocument`` typed-AST emission.
 
 Serializes GNN internal representations to the frozen 13-section typed
-surface defined by ``fep_lean/src/fep_lean/formal/gnn_document.lean``
-(``FEP.GnnDocument``, fep_lean bridge contract v0.5). Every section kind is
+surface defined by ``fep_formal/src/fep_formal/formal/gnn_document.lean``
+(``FEP.GnnDocument``, FEP_Formal bridge contract v0.7). Every section kind is
 emitted exactly once, in canonical rank order, as a typed Lean value; the
 aggregate ``document`` value assembles them into a ``GnnDocument``.
 
@@ -104,7 +104,7 @@ class LeanSerializer(BaseGNNSerializer):
                 '.signature "'
                 + lean_escape(
                     "serializer=gnn.parsers.lean_serializer; "
-                    "contract=fep_lean bridge v0.5; "
+                    "contract=FEP_Formal bridge v0.7; "
                     f"model_family={self._model_family(model)}"
                 )
                 + '"'
@@ -112,7 +112,7 @@ class LeanSerializer(BaseGNNSerializer):
         }
 
         lines: list[str] = []
-        lines.append("-- Canonical: FEP.GnnDocument (fep_lean v0.5)")
+        lines.append("-- Canonical: FEP.GnnDocument (FEP_Formal bridge v0.7)")
         lines.append(f"-- Model: {model.model_name}")
         if model.annotation:
             lines.append(f"-- {model.annotation}")

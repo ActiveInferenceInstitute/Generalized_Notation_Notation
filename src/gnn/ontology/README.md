@@ -62,7 +62,9 @@ Consumed `**kwargs`: `strict_validation` (default `False`), `recursive` (default
 #### `parse_gnn_ontology_section(content: str) -> Dict[str, Any]`
 Extracts the ontology annotation section from GNN Markdown content.
 
-Within `## Ontology` or `## ActInfOntologyAnnotation`, the case-insensitive
+Within `## Ontology`, `## ActInfOntologyAnnotation`, or the spaced
+`## ActInf Ontology Annotation` spelling (heading whitespace is not
+significant, and the heading is case-insensitive), the case-insensitive
 `Concept`, `Relation`, `Property` and `Annotation` colon labels (including their
 plural forms) keep their complete value. For example, `Annotation: s=HiddenState`
 produces the mapping `s=HiddenState`, and `Annotation: HiddenState` produces a
@@ -179,6 +181,7 @@ Tests live in `tests/ontology/`:
 - `test_ontology_annotations.py` — annotation parsing/validation
 - `test_ontology_public_api.py` — public export surface
 - `test_ontology_composability.py` — composability helpers, vocabulary dedup invariant, MCP real-vocabulary behavior
+- `test_ontology_bridge.py` — pinned vocabulary bridge: copy/pin verification (SHA-256, schema, embedded digests, counts), declared-label resolution rules, identifier-free output, gate-script behavior
 
 Run: `uv run --extra dev python -m pytest tests/ontology/ -v`
 
@@ -189,6 +192,7 @@ Standard library only (`json`, `pathlib`, `re`, `collections`). No external NLP 
 ## Troubleshooting
 - **Validation fails for valid terms**: check that `src/gnn/ontology/act_inf_ontology_terms.json` exists, is valid JSON, and includes the terms; term matching is case-insensitive (case-folded), so `hiddenstate` and `HiddenState` are equivalent.
 - **No reports produced**: run step 3 first so GNN files are parsed, and pass `verbose=True` for per-file logs.
+- **`ontology_id` is `null`**: the matched label has no counterpart in ontology release v5 (declared metadata is not an identifier); run `just ontology-pin` to confirm the pinned copy still matches its pin.
 
 ## Summary
 

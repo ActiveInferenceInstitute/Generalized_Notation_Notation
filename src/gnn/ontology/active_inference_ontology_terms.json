@@ -1,0 +1,2993 @@
+{
+  "counts": {
+    "declaredLabels": 64,
+    "resolvedDeclaredLabels": 12,
+    "terms": 429,
+    "unresolvedDeclaredLabels": 52
+  },
+  "declared": {
+    "Action": {
+      "id": "term-action",
+      "match": "normalized-label",
+      "ontologyTerm": "Action",
+      "status": "resolved"
+    },
+    "ActionFactor1": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "BetaParameter": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "BetaUpdateTerm": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "ConstraintParameter": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "ControlInputMatrix": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "ControlVariance": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "ExpectedFreeEnergy": {
+      "id": "term-expected-free-energy",
+      "match": "normalized-label",
+      "ontologyTerm": "Expected Free Energy",
+      "status": "resolved"
+    },
+    "ExpectedFreeEnergyPerPolicy": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "GammaParameter": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "GenerativeModel": {
+      "id": "term-generative-model",
+      "match": "normalized-label",
+      "ontologyTerm": "Generative Model",
+      "status": "resolved"
+    },
+    "GenerativeProcess": {
+      "id": "term-generative-process",
+      "match": "normalized-label",
+      "ontologyTerm": "Generative Process",
+      "status": "resolved"
+    },
+    "GoalConstraintVariance": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "Habit": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "HiddenState": {
+      "id": "term-hidden-state",
+      "match": "normalized-label",
+      "ontologyTerm": "Hidden State",
+      "status": "resolved"
+    },
+    "HiddenStateFactor0": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "HiddenStateFactor1": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "InferenceIterations": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "InitialBeta": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "InitialPolicyProbability": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "InitialStateVariance": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "LikelihoodMapping": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "LikelihoodMatrix": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "LikelihoodMatrixModality0": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "LikelihoodMatrixModality1": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "LikelihoodMatrixModality2": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "LogPreferenceVector": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "LogPreferenceVectorModality0": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "LogPreferenceVectorModality1": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "LogPreferenceVectorModality2": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "NextHiddenState": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "NextHiddenStateFactor0": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "NextHiddenStateFactor1": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "NumberOfAgents": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "ObservableState": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "Observation": {
+      "id": "term-observation",
+      "match": "normalized-label",
+      "ontologyTerm": "Observation",
+      "status": "resolved"
+    },
+    "ObservationMatrix": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "ObservationModality0": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "ObservationModality1": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "ObservationModality2": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "Policy": {
+      "id": "term-policy",
+      "match": "normalized-label",
+      "ontologyTerm": "Policy",
+      "status": "resolved"
+    },
+    "PolicyVector": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "PolicyVectorFactor1": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "PosteriorBelief": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "Precision": {
+      "id": "term-precision",
+      "match": "normalized-label",
+      "ontologyTerm": "Precision",
+      "status": "resolved"
+    },
+    "PrecisionParameter": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "Preference": {
+      "id": "term-preference",
+      "match": "normalized-label",
+      "ontologyTerm": "Preference",
+      "status": "resolved"
+    },
+    "Preferences": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "Prior": {
+      "id": "term-prior",
+      "match": "normalized-label",
+      "ontologyTerm": "Prior",
+      "status": "resolved"
+    },
+    "PriorBelief": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "PriorOnAction": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "PriorOverHiddenStates": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "PriorOverHiddenStatesFactor0": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "PriorOverHiddenStatesFactor1": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "RecognitionMatrix": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "SoftminTemperature": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "StateTransitionMatrix": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "Time": {
+      "id": "term-time",
+      "match": "normalized-label",
+      "ontologyTerm": "time",
+      "status": "resolved"
+    },
+    "TimeStep": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "TrajectoryLength": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "TransitionMatrix": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "TransitionMatrixFactor0": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "TransitionMatrixFactor1": {
+      "id": null,
+      "match": null,
+      "ontologyTerm": null,
+      "status": "unresolved"
+    },
+    "VariationalFreeEnergy": {
+      "id": "term-variational-free-energy",
+      "match": "normalized-label",
+      "ontologyTerm": "Variational Free Energy",
+      "status": "resolved"
+    }
+  },
+  "export": {
+    "path": "ontology.json",
+    "schema": "active-inference-ontology/export/v2",
+    "schemaVersion": "2.0",
+    "sha256": "a2c8371264e9e3d83319268e93b2a8047a8ba5576b1a22ea26716b87828cb706"
+  },
+  "generator": "scripts/ontology.py gnn-terms",
+  "matchRule": "casefold and remove every character outside [a-z0-9], then require exactly one ontology label (or alias) to normalize to the same key",
+  "notes": [
+    "The audited GNN vocabulary declares `obo:ACTO_*` and `obo:TEMP_*` uri values. Those prefixes do not resolve (no ACTO ontology exists in the OBO Foundry, Bioregistry, or OLS) and are never used as mapping targets; this document maps labels to stable `term-*` IDs only.",
+    "`declared` entries with status `unresolved` have no counterpart in the current ontology release; they require ontology curation or GNN-side model migration and are never guessed."
+  ],
+  "release": {
+    "date": "2023-05-25",
+    "label": "May 25, 2023",
+    "version": "v5"
+  },
+  "schema": "active-inference-ontology/gnn-terms/v1",
+  "source": {
+    "path": "ontology.source.json",
+    "schema": "active-inference-ontology/source/v2",
+    "sha256": "82fc5b03b3110e9dd9f74049d7ea0e578e05541a3cdeb0c6c24eaa0f99a9be0f"
+  },
+  "terms": {
+    "Abstract Accuracy": {
+      "description": null,
+      "id": "term-abstract-accuracy",
+      "status": "published",
+      "tag": null
+    },
+    "Abstract Action": {
+      "description": null,
+      "id": "term-abstract-action",
+      "status": "published",
+      "tag": null
+    },
+    "Abstract Bayesian Inference": {
+      "description": null,
+      "id": "term-abstract-bayesian-inference",
+      "status": "published",
+      "tag": null
+    },
+    "Abstract External State": {
+      "description": null,
+      "id": "term-abstract-external-state",
+      "status": "published",
+      "tag": null
+    },
+    "Abstract Generative Model": {
+      "description": null,
+      "id": "term-abstract-generative-model",
+      "status": "published",
+      "tag": null
+    },
+    "Abstract Hidden State": {
+      "description": null,
+      "id": "term-abstract-hidden-state",
+      "status": "published",
+      "tag": null
+    },
+    "Abstract Internal State": {
+      "description": null,
+      "id": "term-abstract-internal-state",
+      "status": "published",
+      "tag": null
+    },
+    "Abstract Sensory State": {
+      "description": null,
+      "id": "term-abstract-sensory-state",
+      "status": "published",
+      "tag": null
+    },
+    "Abstract System": {
+      "description": null,
+      "id": "term-abstract-system",
+      "status": "published",
+      "tag": null
+    },
+    "Abstract action prediction": {
+      "description": null,
+      "id": "term-abstract-action-prediction",
+      "status": "published",
+      "tag": null
+    },
+    "Abstract epistemic value": {
+      "description": null,
+      "id": "term-abstract-epistemic-value",
+      "status": "published",
+      "tag": null
+    },
+    "Accuracy": {
+      "description": "Broad sense: how “close to the mark” an Estimator is.",
+      "id": "term-accuracy",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Action": {
+      "description": "Broad sense: The dynamics, mechanisms, and measurements of Behavior",
+      "id": "term-action",
+      "status": "published",
+      "tag": "Action"
+    },
+    "Action Integral": {
+      "description": null,
+      "id": "term-action-integral",
+      "status": "published",
+      "tag": null
+    },
+    "Action Planning": {
+      "description": "The selection of an Affordance based upon Inference of Expected Free Energy",
+      "id": "term-action-planning",
+      "status": "published",
+      "tag": "Action"
+    },
+    "Action Prediction": {
+      "description": "Inference on current and future Expectation of Action",
+      "id": "term-action-prediction",
+      "status": "published",
+      "tag": "Action"
+    },
+    "Action and Planning as Divergence Minimization": {
+      "description": null,
+      "id": "term-action-and-planning-as-divergence-minimization",
+      "status": "published",
+      "tag": null
+    },
+    "Action at a distance": {
+      "description": null,
+      "id": "term-action-at-a-distance",
+      "status": "published",
+      "tag": null
+    },
+    "Active Blockference": {
+      "description": null,
+      "id": "term-active-blockference",
+      "status": "published",
+      "tag": null
+    },
+    "Active Inference": {
+      "description": "Active Inference is a Process Theory related to Free Energy Principle .",
+      "id": "term-active-inference",
+      "status": "published",
+      "tag": "Free Energy"
+    },
+    "Active States": {
+      "description": "In the Friston Blanket formalism, the Blanket State are the Sense State (incoming Sensory input) and Active States (outgoing influence of Policy selection )",
+      "id": "term-active-states",
+      "status": "published",
+      "tag": "Markov Partitioning"
+    },
+    "Active Vision": {
+      "description": "refers to the process of visual perceptions, in terms of oculomotor Sensorimotor Behavior and Cognitive System Generative Model",
+      "id": "term-active-vision",
+      "status": "published",
+      "tag": null
+    },
+    "Active learning": {
+      "description": null,
+      "id": "term-active-learning",
+      "status": "published",
+      "tag": null
+    },
+    "Affordance": {
+      "description": "Options or capacities for Action by an Agent (sometimes called “Affordance 3.0”)",
+      "id": "term-affordance",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Agency": {
+      "description": "The ability of an Agent to engage in Action in their Niche and enact Goal-driven selection or Policy selection based upon Preference",
+      "id": "term-agency",
+      "status": "published",
+      "tag": "Action"
+    },
+    "Agency based model": {
+      "description": null,
+      "id": "term-agency-based-model",
+      "status": "published",
+      "tag": null
+    },
+    "Agency free model": {
+      "description": null,
+      "id": "term-agency-free-model",
+      "status": "published",
+      "tag": null
+    },
+    "Agent": {
+      "description": "Entity as modeled by Active Inference , with Internal State separated from External State by Blanket State",
+      "id": "term-agent",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Algorithm": {
+      "description": null,
+      "id": "term-algorithm",
+      "status": "published",
+      "tag": null
+    },
+    "Alignment": {
+      "description": null,
+      "id": "term-alignment",
+      "status": "published",
+      "tag": null
+    },
+    "Ambiguity": {
+      "description": "Broad sense: Extent to which stimuli have multiple plausible interpretations, requiring priors &/or Action for disambiguation",
+      "id": "term-ambiguity",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Analytical Philosophy": {
+      "description": null,
+      "id": "term-analytical-philosophy",
+      "status": "published",
+      "tag": null
+    },
+    "Appraisal theories of emotion": {
+      "description": null,
+      "id": "term-appraisal-theories-of-emotion",
+      "status": "published",
+      "tag": null
+    },
+    "Artificial": {
+      "description": null,
+      "id": "term-artificial",
+      "status": "published",
+      "tag": null
+    },
+    "Attention": {
+      "description": "Broad sense: Generative Model that is aware of some Stimulus, reflected by its Salience",
+      "id": "term-attention",
+      "status": "published",
+      "tag": "Perception"
+    },
+    "Attenuation of response": {
+      "description": null,
+      "id": "term-attenuation-of-response",
+      "status": "published",
+      "tag": null
+    },
+    "Attracting set": {
+      "description": null,
+      "id": "term-attracting-set",
+      "status": "published",
+      "tag": null
+    },
+    "Augmented reality": {
+      "description": null,
+      "id": "term-augmented-reality",
+      "status": "published",
+      "tag": null
+    },
+    "Autopoiesis": {
+      "description": "Phenomena of a System that recapitulates the material and informational causes of its own composition/existence.",
+      "id": "term-autopoiesis",
+      "status": "published",
+      "tag": null
+    },
+    "Bayes-optimal control": {
+      "description": null,
+      "id": "term-bayes-optimal-control",
+      "status": "published",
+      "tag": null
+    },
+    "Bayesian": {
+      "description": null,
+      "id": "term-bayesian",
+      "status": "published",
+      "tag": null
+    },
+    "Bayesian Brain": {
+      "description": null,
+      "id": "term-bayesian-brain",
+      "status": "published",
+      "tag": null
+    },
+    "Bayesian Inference": {
+      "description": "As opposed to frequentist analysis, Bayesian Inference uses a specified Prior or Empirical prior to Update the distributional Posterior",
+      "id": "term-bayesian-inference",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Bayesian Model Selection": {
+      "description": null,
+      "id": "term-bayesian-model-selection",
+      "status": "published",
+      "tag": null
+    },
+    "Bayesian belief updating": {
+      "description": null,
+      "id": "term-bayesian-belief-updating",
+      "status": "published",
+      "tag": null
+    },
+    "Bayesian mechanics": {
+      "description": null,
+      "id": "term-bayesian-mechanics",
+      "status": "published",
+      "tag": null
+    },
+    "Bayesian surprise": {
+      "description": null,
+      "id": "term-bayesian-surprise",
+      "status": "published",
+      "tag": null
+    },
+    "Behavior": {
+      "description": "The sequence of Action that an Agent is observed to enact.",
+      "id": "term-behavior",
+      "status": "published",
+      "tag": "Action"
+    },
+    "Belief": {
+      "description": "Broad sense: Felt sense by an Agent of something being true, or confidence it is the case.",
+      "id": "term-belief",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Belief updating": {
+      "description": "Belief updating is changes in a Bayesian Inference Belief through time.",
+      "id": "term-belief-updating",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Bethe approximation": {
+      "description": null,
+      "id": "term-bethe-approximation",
+      "status": "published",
+      "tag": null
+    },
+    "Blanket State": {
+      "description": "Set of states in the Markov Blanket Partition that make Internal State and External State have Conditional Probability that are independent.",
+      "id": "term-blanket-state",
+      "status": "published",
+      "tag": "Markov Partitioning"
+    },
+    "Blanket index": {
+      "description": null,
+      "id": "term-blanket-index",
+      "status": "published",
+      "tag": null
+    },
+    "Bottom-up attentional control": {
+      "description": null,
+      "id": "term-bottom-up-attentional-control",
+      "status": "published",
+      "tag": null
+    },
+    "Category Theory": {
+      "description": null,
+      "id": "term-category-theory",
+      "status": "published",
+      "tag": null
+    },
+    "Circular causality": {
+      "description": null,
+      "id": "term-circular-causality",
+      "status": "published",
+      "tag": null
+    },
+    "Co-category": {
+      "description": null,
+      "id": "term-co-category",
+      "status": "published",
+      "tag": null
+    },
+    "Coarse graining": {
+      "description": null,
+      "id": "term-coarse-graining",
+      "status": "published",
+      "tag": null
+    },
+    "Cognition": {
+      "description": "An Agent modifying the weights of its Internal State for the purpose of Action Planning and/or Belief updating . (This is a @realistCounterpart of Goal-driven selection .)",
+      "id": "term-cognition",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Cognitive Science": {
+      "description": null,
+      "id": "term-cognitive-science",
+      "status": "published",
+      "tag": null
+    },
+    "Cognitive System": {
+      "description": null,
+      "id": "term-cognitive-system",
+      "status": "published",
+      "tag": null
+    },
+    "Cognitivism": {
+      "description": null,
+      "id": "term-cognitivism",
+      "status": "published",
+      "tag": null
+    },
+    "Collective behavior": {
+      "description": null,
+      "id": "term-collective-behavior",
+      "status": "published",
+      "tag": null
+    },
+    "Complexity": {
+      "description": "The extent to which an Agent must revise a Belief to explain incoming Sensory observations.",
+      "id": "term-complexity",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Conceptual metaphor": {
+      "description": null,
+      "id": "term-conceptual-metaphor",
+      "status": "published",
+      "tag": null
+    },
+    "Conditional Probability": {
+      "description": null,
+      "id": "term-conditional-probability",
+      "status": "published",
+      "tag": null
+    },
+    "Conditional density": {
+      "description": null,
+      "id": "term-conditional-density",
+      "status": "published",
+      "tag": null
+    },
+    "Confidence": {
+      "description": null,
+      "id": "term-confidence",
+      "status": "published",
+      "tag": null
+    },
+    "Congruence": {
+      "description": null,
+      "id": "term-congruence",
+      "status": "published",
+      "tag": null
+    },
+    "Connectionism": {
+      "description": null,
+      "id": "term-connectionism",
+      "status": "published",
+      "tag": null
+    },
+    "Continental Philosophy": {
+      "description": null,
+      "id": "term-continental-philosophy",
+      "status": "published",
+      "tag": null
+    },
+    "Continuous state space": {
+      "description": null,
+      "id": "term-continuous-state-space",
+      "status": "published",
+      "tag": null
+    },
+    "Control (states)": {
+      "description": null,
+      "id": "term-control-states",
+      "status": "published",
+      "tag": null
+    },
+    "Control theory": {
+      "description": null,
+      "id": "term-control-theory",
+      "status": "published",
+      "tag": null
+    },
+    "Counterfactual": {
+      "description": null,
+      "id": "term-counterfactual",
+      "status": "published",
+      "tag": null
+    },
+    "Cue": {
+      "description": "a Stimulus , event, object , or Guidance signal that serves to guide Behavior , such as a retrieval cue, or that acts as a @Signal to the presentation of another stimulus, event, or object, such as an unconditioned stimulus or reinforcement. (dictionary.apa.org)",
+      "id": "term-cue",
+      "status": "published",
+      "tag": "Information"
+    },
+    "Culture": {
+      "description": "Culture is the Niche for social Agent, that structures their Regime of Attention",
+      "id": "term-culture",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Cybernetics": {
+      "description": null,
+      "id": "term-cybernetics",
+      "status": "published",
+      "tag": null
+    },
+    "Data": {
+      "description": "Data are a set of values of qualitative or quantitative variables about one or more Agent or object .",
+      "id": "term-data",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "DeSci": {
+      "description": null,
+      "id": "term-desci",
+      "status": "published",
+      "tag": null
+    },
+    "Decision-making": {
+      "description": "Within Active Inference , this is the same as Policy selection",
+      "id": "term-decision-making",
+      "status": "published",
+      "tag": null
+    },
+    "Deflationary": {
+      "description": null,
+      "id": "term-deflationary",
+      "status": "published",
+      "tag": null
+    },
+    "Density": {
+      "description": null,
+      "id": "term-density",
+      "status": "published",
+      "tag": null
+    },
+    "Deontic Action": {
+      "description": null,
+      "id": "term-deontic-action",
+      "status": "published",
+      "tag": null
+    },
+    "Development": {
+      "description": null,
+      "id": "term-development",
+      "status": "published",
+      "tag": null
+    },
+    "Discrete state space": {
+      "description": null,
+      "id": "term-discrete-state-space",
+      "status": "published",
+      "tag": null
+    },
+    "Dissipation": {
+      "description": null,
+      "id": "term-dissipation",
+      "status": "published",
+      "tag": null
+    },
+    "Distribution": {
+      "description": null,
+      "id": "term-distribution",
+      "status": "published",
+      "tag": null
+    },
+    "Domain": {
+      "description": null,
+      "id": "term-domain",
+      "status": "published",
+      "tag": null
+    },
+    "Domain-generality": {
+      "description": null,
+      "id": "term-domain-generality",
+      "status": "published",
+      "tag": null
+    },
+    "Domain-specificity": {
+      "description": null,
+      "id": "term-domain-specificity",
+      "status": "published",
+      "tag": null
+    },
+    "Dynamic Causal Modelling": {
+      "description": null,
+      "id": "term-dynamic-causal-modelling",
+      "status": "published",
+      "tag": null
+    },
+    "Dynamic expectation maximization": {
+      "description": null,
+      "id": "term-dynamic-expectation-maximization",
+      "status": "published",
+      "tag": null
+    },
+    "Dynamicism": {
+      "description": null,
+      "id": "term-dynamicism",
+      "status": "published",
+      "tag": null
+    },
+    "EcoEvoDevo": {
+      "description": "Ecology, Evolution, Development",
+      "id": "term-ecoevodevo",
+      "status": "published",
+      "tag": null
+    },
+    "Ecology": {
+      "description": null,
+      "id": "term-ecology",
+      "status": "published",
+      "tag": null
+    },
+    "Effective": {
+      "description": null,
+      "id": "term-effective",
+      "status": "published",
+      "tag": null
+    },
+    "Effectivity": {
+      "description": null,
+      "id": "term-effectivity",
+      "status": "published",
+      "tag": null
+    },
+    "Embedded Embodied Encultured Enactive Inference": {
+      "description": null,
+      "id": "term-embedded-embodied-encultured-enactive-inference",
+      "status": "published",
+      "tag": null
+    },
+    "Embodied Belief": {
+      "description": null,
+      "id": "term-embodied-belief",
+      "status": "published",
+      "tag": null
+    },
+    "Embodied Cybernetic Complexity": {
+      "description": null,
+      "id": "term-embodied-cybernetic-complexity",
+      "status": "published",
+      "tag": null
+    },
+    "Emotion": {
+      "description": null,
+      "id": "term-emotion",
+      "status": "published",
+      "tag": null
+    },
+    "Empirical prior": {
+      "description": null,
+      "id": "term-empirical-prior",
+      "status": "published",
+      "tag": null
+    },
+    "Enactivism": {
+      "description": null,
+      "id": "term-enactivism",
+      "status": "published",
+      "tag": null
+    },
+    "Ensemble": {
+      "description": "Group of more than one Agent.",
+      "id": "term-ensemble",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Entropy": {
+      "description": null,
+      "id": "term-entropy",
+      "status": "published",
+      "tag": null
+    },
+    "Epistemic foraging": {
+      "description": null,
+      "id": "term-epistemic-foraging",
+      "status": "published",
+      "tag": null
+    },
+    "Epistemic value": {
+      "description": "is the value of Information gain or Expectation of reduction in Uncertainty about a State with respect to a Policy, used in Policy selection",
+      "id": "term-epistemic-value",
+      "status": "published",
+      "tag": "Free Energy"
+    },
+    "Ergodicity": {
+      "description": null,
+      "id": "term-ergodicity",
+      "status": "published",
+      "tag": null
+    },
+    "Estimator": {
+      "description": null,
+      "id": "term-estimator",
+      "status": "published",
+      "tag": null
+    },
+    "Event-related potential": {
+      "description": null,
+      "id": "term-event-related-potential",
+      "status": "published",
+      "tag": null
+    },
+    "Evidence": {
+      "description": "Data as recognized and interpreted by Generative Model of Agent",
+      "id": "term-evidence",
+      "status": "published",
+      "tag": "Perception"
+    },
+    "Evolution": {
+      "description": null,
+      "id": "term-evolution",
+      "status": "published",
+      "tag": null
+    },
+    "Expectation": {
+      "description": "Within a Bayesian Inference framework, Expectation is an Estimator about future timesteps",
+      "id": "term-expectation",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Expectation maximization": {
+      "description": null,
+      "id": "term-expectation-maximization",
+      "status": "published",
+      "tag": null
+    },
+    "Expected Free Energy": {
+      "description": "Measure for performing Inference on Action over a given time horizon (Policy selection , Action and Planning as Divergence Minimization ).",
+      "id": "term-expected-free-energy",
+      "status": "published",
+      "tag": "Free Energy"
+    },
+    "Expected Utility Theory": {
+      "description": null,
+      "id": "term-expected-utility-theory",
+      "status": "published",
+      "tag": null
+    },
+    "Experience of body ownership": {
+      "description": null,
+      "id": "term-experience-of-body-ownership",
+      "status": "published",
+      "tag": null
+    },
+    "Explaining Away": {
+      "description": null,
+      "id": "term-explaining-away",
+      "status": "published",
+      "tag": null
+    },
+    "Explanation": {
+      "description": null,
+      "id": "term-explanation",
+      "status": "published",
+      "tag": null
+    },
+    "Extended Cognition": {
+      "description": null,
+      "id": "term-extended-cognition",
+      "status": "published",
+      "tag": null
+    },
+    "External State": {
+      "description": "States with Conditional density independent from Internal State, conditioned on Blanket State.",
+      "id": "term-external-state",
+      "status": "published",
+      "tag": "Markov Partitioning"
+    },
+    "Exteroception": {
+      "description": null,
+      "id": "term-exteroception",
+      "status": "published",
+      "tag": null
+    },
+    "Factor graph": {
+      "description": null,
+      "id": "term-factor-graph",
+      "status": "published",
+      "tag": null
+    },
+    "Falsification": {
+      "description": null,
+      "id": "term-falsification",
+      "status": "published",
+      "tag": null
+    },
+    "Far-from-equilibrium": {
+      "description": null,
+      "id": "term-far-from-equilibrium",
+      "status": "published",
+      "tag": null
+    },
+    "Filter": {
+      "description": null,
+      "id": "term-filter",
+      "status": "published",
+      "tag": null
+    },
+    "Fokker-Planck Equation": {
+      "description": null,
+      "id": "term-fokker-planck-equation",
+      "status": "published",
+      "tag": null
+    },
+    "Foraging": {
+      "description": null,
+      "id": "term-foraging",
+      "status": "published",
+      "tag": null
+    },
+    "Forney": {
+      "description": null,
+      "id": "term-forney",
+      "status": "published",
+      "tag": null
+    },
+    "Free Energy": {
+      "description": "Free Energy is an Information Theoretic quantity that constitutes an upper bound on Surprisal .",
+      "id": "term-free-energy",
+      "status": "published",
+      "tag": "Free Energy"
+    },
+    "Free Energy Principle": {
+      "description": "A generalization of Predictive Coding (PC) according to which organisms minimize an upper bound on the Entropy of Sensory input (or sensory signals) (the Free Energy). Under specific assumptions, Free Energy translates toPrediction error .",
+      "id": "term-free-energy-principle",
+      "status": "published",
+      "tag": "Free Energy"
+    },
+    "Friction": {
+      "description": null,
+      "id": "term-friction",
+      "status": "published",
+      "tag": null
+    },
+    "Friston Blanket": {
+      "description": "Markov Blanket with partitioned Active States and Sense State .",
+      "id": "term-friston-blanket",
+      "status": "published",
+      "tag": "Markov Partitioning"
+    },
+    "Friston's Law": {
+      "description": null,
+      "id": "term-friston-s-law",
+      "status": "published",
+      "tag": null
+    },
+    "Functor": {
+      "description": null,
+      "id": "term-functor",
+      "status": "published",
+      "tag": null
+    },
+    "Gauge theory": {
+      "description": null,
+      "id": "term-gauge-theory",
+      "status": "published",
+      "tag": null
+    },
+    "Gaussian distribution": {
+      "description": null,
+      "id": "term-gaussian-distribution",
+      "status": "published",
+      "tag": null
+    },
+    "Generalized Free Energy": {
+      "description": "Past Variational Free Energy plus future Expected Free Energy (each totaled over Policy).",
+      "id": "term-generalized-free-energy",
+      "status": "published",
+      "tag": "Free Energy"
+    },
+    "Generalized Synchrony": {
+      "description": null,
+      "id": "term-generalized-synchrony",
+      "status": "published",
+      "tag": null
+    },
+    "Generalized coordinates": {
+      "description": null,
+      "id": "term-generalized-coordinates",
+      "status": "published",
+      "tag": null
+    },
+    "Generative Model": {
+      "description": "A formalism that describes the mapping between Hidden State, and Expectations of Action Prediction , Sensory outcome .",
+      "id": "term-generative-model",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Generative Process": {
+      "description": "Underlying @dynamical process in the Niche giving rise to Agent Observation and @agent Action Prediction",
+      "id": "term-generative-process",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Generative density": {
+      "description": null,
+      "id": "term-generative-density",
+      "status": "published",
+      "tag": null
+    },
+    "Generative modelling": {
+      "description": null,
+      "id": "term-generative-modelling",
+      "status": "published",
+      "tag": null
+    },
+    "Gestalt": {
+      "description": null,
+      "id": "term-gestalt",
+      "status": "published",
+      "tag": null
+    },
+    "Goal-driven selection": {
+      "description": null,
+      "id": "term-goal-driven-selection",
+      "status": "published",
+      "tag": null
+    },
+    "Gradient Descent": {
+      "description": null,
+      "id": "term-gradient-descent",
+      "status": "published",
+      "tag": null
+    },
+    "Graphical": {
+      "description": null,
+      "id": "term-graphical",
+      "status": "published",
+      "tag": null
+    },
+    "Group Renormalization Theory": {
+      "description": null,
+      "id": "term-group-renormalization-theory",
+      "status": "published",
+      "tag": null
+    },
+    "Guidance signal": {
+      "description": null,
+      "id": "term-guidance-signal",
+      "status": "published",
+      "tag": null
+    },
+    "Habit learning/formation": {
+      "description": null,
+      "id": "term-habit-learning-formation",
+      "status": "published",
+      "tag": null
+    },
+    "Hamilton's Principle of Least Action": {
+      "description": null,
+      "id": "term-hamilton-s-principle-of-least-action",
+      "status": "published",
+      "tag": null
+    },
+    "Helmholtz Decomposition": {
+      "description": null,
+      "id": "term-helmholtz-decomposition",
+      "status": "published",
+      "tag": null
+    },
+    "Helmholtz Free Energy": {
+      "description": null,
+      "id": "term-helmholtz-free-energy",
+      "status": "published",
+      "tag": null
+    },
+    "Helmholtz machine": {
+      "description": null,
+      "id": "term-helmholtz-machine",
+      "status": "published",
+      "tag": null
+    },
+    "Hermeneutics": {
+      "description": null,
+      "id": "term-hermeneutics",
+      "status": "published",
+      "tag": null
+    },
+    "Hidden State": {
+      "description": "Unobserved variable in Bayesian Inference , can reflect a Latent cause .",
+      "id": "term-hidden-state",
+      "status": "published",
+      "tag": "Markov Partitioning"
+    },
+    "Hierarchical Model": {
+      "description": "A hierarchy of Estimators, which operate at different spatiotemporal timescales (so they track features at different scales); all carrying out Predictive Processing",
+      "id": "term-hierarchical-model",
+      "status": "published",
+      "tag": "Systems"
+    },
+    "Hierarchically Mechanistic Mind": {
+      "description": null,
+      "id": "term-hierarchically-mechanistic-mind",
+      "status": "published",
+      "tag": null
+    },
+    "High road": {
+      "description": "One of two roads (arguments) that lead to the Free Energy Principle as a possible conclusion which starts with philosophical questions about what properties a thing must have to “exist” (i.e. it must be measurable) and then uses principles of Autopoiesis and non-equilibrium Thermodynamic systems from a statistical perspective to show what kinds of systems could continue to maintain themselves over time (see Friston 2019: Beyond the Desert Landscape and the other road, the Low road ). “The high road stands in for a top-down approach that starts by asking fundamental questions about the necessary properties things must possess if they exist. Using mathematical (variational) principles, once can then show that existence is an embodied exchange of a creatures with its environment - that necessarily entails predictive processing as one aspect of self-evidencing mechanics.”",
+      "id": "term-high-road",
+      "status": "published",
+      "tag": null
+    },
+    "Homeostasis": {
+      "description": null,
+      "id": "term-homeostasis",
+      "status": "published",
+      "tag": null
+    },
+    "Homeostatic system": {
+      "description": null,
+      "id": "term-homeostatic-system",
+      "status": "published",
+      "tag": null
+    },
+    "Hyperprior": {
+      "description": null,
+      "id": "term-hyperprior",
+      "status": "published",
+      "tag": null
+    },
+    "Hypothesis": {
+      "description": null,
+      "id": "term-hypothesis",
+      "status": "published",
+      "tag": null
+    },
+    "Inference": {
+      "description": "Process of reaching a (local or global) conclusion within a Model, for example with Bayesian Inference.",
+      "id": "term-inference",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Inflationary": {
+      "description": null,
+      "id": "term-inflationary",
+      "status": "published",
+      "tag": null
+    },
+    "Information": {
+      "description": "Measured in bits, the reduction of Uncertainty on a Belief distribution of some type. Usually Syntactic (Shannon) but also can be Semantic (e.g. Bayesian ).",
+      "id": "term-information",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Information Geometry": {
+      "description": "A Statistical manifold each of whose points corresponds to a Probability distribution (e.g. the expectation and variance of a normal density).",
+      "id": "term-information-geometry",
+      "status": "published",
+      "tag": "Information"
+    },
+    "Information bottleneck": {
+      "description": null,
+      "id": "term-information-bottleneck",
+      "status": "published",
+      "tag": null
+    },
+    "Instrumentalism": {
+      "description": null,
+      "id": "term-instrumentalism",
+      "status": "published",
+      "tag": null
+    },
+    "Interface": {
+      "description": null,
+      "id": "term-interface",
+      "status": "published",
+      "tag": null
+    },
+    "Internal State": {
+      "description": "States with Conditional density independent from External State , conditioned on Blanket State.",
+      "id": "term-internal-state",
+      "status": "published",
+      "tag": "Markov Partitioning"
+    },
+    "Interoception": {
+      "description": null,
+      "id": "term-interoception",
+      "status": "published",
+      "tag": null
+    },
+    "Interoceptive sensitivity": {
+      "description": null,
+      "id": "term-interoceptive-sensitivity",
+      "status": "published",
+      "tag": null
+    },
+    "Interpretation": {
+      "description": null,
+      "id": "term-interpretation",
+      "status": "published",
+      "tag": null
+    },
+    "Inverse problem": {
+      "description": null,
+      "id": "term-inverse-problem",
+      "status": "published",
+      "tag": null
+    },
+    "Kullback-Leibler Divergence": {
+      "description": null,
+      "id": "term-kullback-leibler-divergence",
+      "status": "published",
+      "tag": null
+    },
+    "Lagrangian": {
+      "description": null,
+      "id": "term-lagrangian",
+      "status": "published",
+      "tag": null
+    },
+    "Latent cause": {
+      "description": null,
+      "id": "term-latent-cause",
+      "status": "published",
+      "tag": null
+    },
+    "Lateral geniculate nucleus": {
+      "description": null,
+      "id": "term-lateral-geniculate-nucleus",
+      "status": "published",
+      "tag": null
+    },
+    "Learning": {
+      "description": "Broad sense: Process of an Agent engaged in Updates to Cognition (and possibly) Behavior.",
+      "id": "term-learning",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Least action": {
+      "description": null,
+      "id": "term-least-action",
+      "status": "published",
+      "tag": null
+    },
+    "Lens": {
+      "description": null,
+      "id": "term-lens",
+      "status": "published",
+      "tag": null
+    },
+    "Likelihood": {
+      "description": null,
+      "id": "term-likelihood",
+      "status": "published",
+      "tag": null
+    },
+    "Living system": {
+      "description": "Agent engaged in Autopoiesis",
+      "id": "term-living-system",
+      "status": "published",
+      "tag": "Systems"
+    },
+    "Logic": {
+      "description": null,
+      "id": "term-logic",
+      "status": "published",
+      "tag": null
+    },
+    "Low road": {
+      "description": "One of two roads (arguments) that lead to the Free Energy Principle as a possible conclusion which starts with fundamental questions from neuroscience and psychology about the nature of perception in biological organisms within a changing environment (see Friston 2019: Beyond the Desert Landscape and the other road, the High road ). “The low road is to pursue the agenda established by Kant and Helmholtz to generalize - in a bottom up way - the capacity for inference and prediction to see how far it takes us in understand embodied exchange with the environment.”",
+      "id": "term-low-road",
+      "status": "published",
+      "tag": null
+    },
+    "Marginal approximation": {
+      "description": null,
+      "id": "term-marginal-approximation",
+      "status": "published",
+      "tag": null
+    },
+    "Markov Blanket": {
+      "description": "Markov Partitioning Model of System, reflecting Agent as delineated from the Niche via an Interface. The Markov Blanket Blanket State reflect the State(s) upon which Internal State and External State are conditionally independent.",
+      "id": "term-markov-blanket",
+      "status": "published",
+      "tag": "Markov Partitioning"
+    },
+    "Markov Decision Process": {
+      "description": "Bayesian Inference Model where Agent Generative Model can implement Policy selection on Affordances reflected by Active States, while other features of the Generative Process are outside the Control (states) of the Agent .",
+      "id": "term-markov-decision-process",
+      "status": "published",
+      "tag": "Markov Partitioning"
+    },
+    "Markovian Monism": {
+      "description": "Markovian Monism",
+      "id": "term-markovian-monism",
+      "status": "published",
+      "tag": null
+    },
+    "Marr's Levels of Description": {
+      "description": null,
+      "id": "term-marr-s-levels-of-description",
+      "status": "published",
+      "tag": null
+    },
+    "Material science": {
+      "description": null,
+      "id": "term-material-science",
+      "status": "published",
+      "tag": null
+    },
+    "Mean": {
+      "description": null,
+      "id": "term-mean",
+      "status": "published",
+      "tag": null
+    },
+    "Mean field approximation": {
+      "description": null,
+      "id": "term-mean-field-approximation",
+      "status": "published",
+      "tag": null
+    },
+    "Memory": {
+      "description": null,
+      "id": "term-memory",
+      "status": "published",
+      "tag": null
+    },
+    "Message Passing": {
+      "description": null,
+      "id": "term-message-passing",
+      "status": "published",
+      "tag": null
+    },
+    "Mismatch negativity": {
+      "description": null,
+      "id": "term-mismatch-negativity",
+      "status": "published",
+      "tag": null
+    },
+    "Mode": {
+      "description": null,
+      "id": "term-mode",
+      "status": "published",
+      "tag": null
+    },
+    "Model": {
+      "description": null,
+      "id": "term-model",
+      "status": "published",
+      "tag": null
+    },
+    "Model Inversion": {
+      "description": "Model Inversion",
+      "id": "term-model-inversion",
+      "status": "published",
+      "tag": null
+    },
+    "Model accuracy": {
+      "description": null,
+      "id": "term-model-accuracy",
+      "status": "published",
+      "tag": null
+    },
+    "Monad": {
+      "description": null,
+      "id": "term-monad",
+      "status": "published",
+      "tag": null
+    },
+    "Morphogenesis": {
+      "description": null,
+      "id": "term-morphogenesis",
+      "status": "published",
+      "tag": null
+    },
+    "Multi-scale system": {
+      "description": "Realism framing of Hierarchical Model",
+      "id": "term-multi-scale-system",
+      "status": "published",
+      "tag": "Systems"
+    },
+    "Multisensory integration": {
+      "description": null,
+      "id": "term-multisensory-integration",
+      "status": "published",
+      "tag": null
+    },
+    "Narrative": {
+      "description": "Information used by Agent in context of entity- and event-oriented Cognition, specifically Hierarchical Model (Hierarchically Mechanistic Mind ).",
+      "id": "term-narrative",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Natural": {
+      "description": null,
+      "id": "term-natural",
+      "status": "published",
+      "tag": null
+    },
+    "Nested": {
+      "description": null,
+      "id": "term-nested",
+      "status": "published",
+      "tag": null
+    },
+    "Network": {
+      "description": null,
+      "id": "term-network",
+      "status": "published",
+      "tag": null
+    },
+    "Neuronal Ensemble": {
+      "description": null,
+      "id": "term-neuronal-ensemble",
+      "status": "published",
+      "tag": null
+    },
+    "Niche": {
+      "description": "Ecology System constituting the Generative Process (as Partitioned from the Agent who instantiates a Generative Model ).",
+      "id": "term-niche",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Niche construction": {
+      "description": null,
+      "id": "term-niche-construction",
+      "status": "published",
+      "tag": null
+    },
+    "Noisy signal": {
+      "description": null,
+      "id": "term-noisy-signal",
+      "status": "published",
+      "tag": null
+    },
+    "Non-Equilibrium Steady State": {
+      "description": "Technically, a Non-Equilibrium Steady State requires a solution to the Fokker Planck equation (i.e., density dynamics). A nonequilibrium steady-state solution entails solenoidal (i.e., conservative or divergence free) dynamics that break detailed balance (and underwrite stochastic chaos ). In other words, The dynamics of systems at Non-Equilibrium Steady State are not time reversible (unlike equilibrium steady states, in which the flow is entirely dissipative).",
+      "id": "term-non-equilibrium-steady-state",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Non-linear dynamical systems": {
+      "description": null,
+      "id": "term-non-linear-dynamical-systems",
+      "status": "published",
+      "tag": null
+    },
+    "Novelty": {
+      "description": "The Internal State assumed by an Agent‘s epistemic Affordance, when unable to immediately (e.g. locally) resolve Uncertainty about the contingencies — i.e. the opportunity to resolve Uncertainty about ‘what would happen if I did that?’ (The Precision of this assumed Internal State has a distinctive, e.g. multimodal, distribution, i.e. exhibits Ambiguity .)",
+      "id": "term-novelty",
+      "status": "published",
+      "tag": "Perception"
+    },
+    "Observation": {
+      "description": "The Belief updating of an Internal State registered by a Sensory input, given the weighting assigned to that class of input in comparison with weighting of the competing Priors. (This is a narrow sense of “observation,” where the Agent is “looking for this kind of input.” This sense excludes situations where (a) an incoming stimulus with these attributes has already been explained-away or pre-discounted, or (b) the prior is so strongly weighted as to exclude updating in response to any inputs (other than, perhaps, “catastrophic” ones, as may occur in e.g. fainting, hysterical blindness).)",
+      "id": "term-observation",
+      "status": "published",
+      "tag": "Perception"
+    },
+    "Ontology-to-Model Link": {
+      "description": null,
+      "id": "term-ontology-to-model-link",
+      "status": "published",
+      "tag": null
+    },
+    "Optimal control": {
+      "description": null,
+      "id": "term-optimal-control",
+      "status": "published",
+      "tag": null
+    },
+    "Outcome": {
+      "description": "If we consider the environment as a Generative Process that can be sampled when in a particular state, the statistical result (Data, Sensory observation) of the sampling is known as the outcome.",
+      "id": "term-outcome",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Partially Observed Markov Decision Process": {
+      "description": null,
+      "id": "term-partially-observed-markov-decision-process",
+      "status": "published",
+      "tag": null
+    },
+    "Particle": {
+      "description": "An Agent consisting of Blanket State and Internal State , partitioned off from Niche .",
+      "id": "term-particle",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Partition": {
+      "description": null,
+      "id": "term-partition",
+      "status": "published",
+      "tag": null
+    },
+    "Path integral": {
+      "description": null,
+      "id": "term-path-integral",
+      "status": "published",
+      "tag": null
+    },
+    "Path of Least Action": {
+      "description": null,
+      "id": "term-path-of-least-action",
+      "status": "published",
+      "tag": null
+    },
+    "Perception": {
+      "description": "Posterior State Inference after each new Observation.",
+      "id": "term-perception",
+      "status": "published",
+      "tag": "Perception"
+    },
+    "Policy": {
+      "description": "Sequence of Actions, reflected by series of Active States as implemented in Policy selection which is Action Prediction or Action and Planning as Divergence Minimization",
+      "id": "term-policy",
+      "status": "published",
+      "tag": "Action"
+    },
+    "Policy posterior": {
+      "description": null,
+      "id": "term-policy-posterior",
+      "status": "published",
+      "tag": null
+    },
+    "Policy prior": {
+      "description": null,
+      "id": "term-policy-prior",
+      "status": "published",
+      "tag": null
+    },
+    "Policy selection": {
+      "description": "The process of an Agent engaging in Action Planning from set of Affordance, in Active Inference based upon minimization of Expected Free Energy",
+      "id": "term-policy-selection",
+      "status": "published",
+      "tag": "Action"
+    },
+    "Posterior": {
+      "description": "The Update to the Prior after Observation has occurred",
+      "id": "term-posterior",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Pragmatic Value": {
+      "description": "Pragmatic Value is the benefit to an organism of a given Policy or Action , measured in terms of probability of a Policy leading to Expectation of Random variable values that are aligned with the Preference of the Agent",
+      "id": "term-pragmatic-value",
+      "status": "published",
+      "tag": "Free Energy"
+    },
+    "Precariousness": {
+      "description": null,
+      "id": "term-precariousness",
+      "status": "published",
+      "tag": null
+    },
+    "Precision": {
+      "description": null,
+      "id": "term-precision",
+      "status": "published",
+      "tag": null
+    },
+    "Prediction": {
+      "description": "An Estimator about a State in a Model at a future time.",
+      "id": "term-prediction",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Prediction error": {
+      "description": null,
+      "id": "term-prediction-error",
+      "status": "published",
+      "tag": null
+    },
+    "Prediction error minimization": {
+      "description": null,
+      "id": "term-prediction-error-minimization",
+      "status": "published",
+      "tag": null
+    },
+    "Predictive Coding": {
+      "description": null,
+      "id": "term-predictive-coding",
+      "status": "published",
+      "tag": null
+    },
+    "Predictive Processing": {
+      "description": null,
+      "id": "term-predictive-processing",
+      "status": "published",
+      "tag": null
+    },
+    "Preference": {
+      "description": "parameter in Bayesian Inference Markov Decision Process that ranks or scores the extent to how an Agent values Sensory input .",
+      "id": "term-preference",
+      "status": "published",
+      "tag": "Action"
+    },
+    "Principle": {
+      "description": "Principle",
+      "id": "term-principle",
+      "status": "published",
+      "tag": null
+    },
+    "Prior": {
+      "description": "The initial or preceding state of a Belief in Bayesian Inference, before Sensory Data (Observation or Evidence ) occurs.",
+      "id": "term-prior",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Probability distribution": {
+      "description": null,
+      "id": "term-probability-distribution",
+      "status": "published",
+      "tag": null
+    },
+    "Probably Approximately Correct": {
+      "description": null,
+      "id": "term-probably-approximately-correct",
+      "status": "published",
+      "tag": null
+    },
+    "Process Theory": {
+      "description": "A hypothesis or Model proposal for how a Principle is realized (e.g. the Free Energy Principle)",
+      "id": "term-process-theory",
+      "status": "published",
+      "tag": "Free Energy"
+    },
+    "Propositional attitude": {
+      "description": null,
+      "id": "term-propositional-attitude",
+      "status": "published",
+      "tag": null
+    },
+    "Proprioception": {
+      "description": null,
+      "id": "term-proprioception",
+      "status": "published",
+      "tag": null
+    },
+    "Psychological attitude": {
+      "description": null,
+      "id": "term-psychological-attitude",
+      "status": "published",
+      "tag": null
+    },
+    "Quantum": {
+      "description": null,
+      "id": "term-quantum",
+      "status": "published",
+      "tag": null
+    },
+    "Quantum mechanics": {
+      "description": null,
+      "id": "term-quantum-mechanics",
+      "status": "published",
+      "tag": null
+    },
+    "Quantum-like": {
+      "description": null,
+      "id": "term-quantum-like",
+      "status": "published",
+      "tag": null
+    },
+    "Qubit": {
+      "description": null,
+      "id": "term-qubit",
+      "status": "published",
+      "tag": null
+    },
+    "Random variable": {
+      "description": null,
+      "id": "term-random-variable",
+      "status": "published",
+      "tag": null
+    },
+    "Realism": {
+      "description": "Realism",
+      "id": "term-realism",
+      "status": "published",
+      "tag": null
+    },
+    "Receptive field": {
+      "description": null,
+      "id": "term-receptive-field",
+      "status": "published",
+      "tag": null
+    },
+    "Recognition Model": {
+      "description": "Recognition Model is the kind of Model that affords Variational Inference, which lets us calculate or approximate a probability distribution. Recognition Model is a synonym for Variational Model.",
+      "id": "term-recognition-model",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Recognition density": {
+      "description": null,
+      "id": "term-recognition-density",
+      "status": "published",
+      "tag": null
+    },
+    "Regime of Attention": {
+      "description": "feedback mechanisms among practices in a Culture of scaffolding individuals’ Attention, that guide Agents’ style of Attention; act as determined by bodily, language, and contextual Cues in a given community; and are encoded in higher levels of the cortical hierarchy.",
+      "id": "term-regime-of-attention",
+      "status": "published",
+      "tag": "Perception"
+    },
+    "Renormalization": {
+      "description": null,
+      "id": "term-renormalization",
+      "status": "published",
+      "tag": null
+    },
+    "Representation": {
+      "description": "A structural correspondence between some Random variable inside a System and some Random variable outside the System (isomorphism being the strongest kind of correspondence), such that the Systemengages in Inference carried out by the System maintains the correspondence",
+      "id": "term-representation",
+      "status": "published",
+      "tag": "Agents in the Niche"
+    },
+    "Representationalism": {
+      "description": null,
+      "id": "term-representationalism",
+      "status": "published",
+      "tag": null
+    },
+    "Reservoir Computing": {
+      "description": null,
+      "id": "term-reservoir-computing",
+      "status": "published",
+      "tag": null
+    },
+    "Reward": {
+      "description": null,
+      "id": "term-reward",
+      "status": "published",
+      "tag": null
+    },
+    "Risk": {
+      "description": "Risk",
+      "id": "term-risk",
+      "status": "published",
+      "tag": null
+    },
+    "Salience": {
+      "description": "The extent to which a Cue commands the Attention of an Agent given their Regime of Attention",
+      "id": "term-salience",
+      "status": "published",
+      "tag": "Perception"
+    },
+    "Sample space": {
+      "description": null,
+      "id": "term-sample-space",
+      "status": "published",
+      "tag": null
+    },
+    "Selection bias": {
+      "description": null,
+      "id": "term-selection-bias",
+      "status": "published",
+      "tag": null
+    },
+    "Selection history": {
+      "description": null,
+      "id": "term-selection-history",
+      "status": "published",
+      "tag": null
+    },
+    "Self-organization": {
+      "description": null,
+      "id": "term-self-organization",
+      "status": "published",
+      "tag": null
+    },
+    "Selfhood": {
+      "description": null,
+      "id": "term-selfhood",
+      "status": "published",
+      "tag": null
+    },
+    "Semi-Markovian": {
+      "description": null,
+      "id": "term-semi-markovian",
+      "status": "published",
+      "tag": null
+    },
+    "Sense State": {
+      "description": "In the Friston Blanket formalism, the Blanket State are the Sense State (incoming Sensory input) and Active States (outgoing influence of Policy selection )",
+      "id": "term-sense-state",
+      "status": "published",
+      "tag": "Markov Partitioning"
+    },
+    "Sense of agency": {
+      "description": null,
+      "id": "term-sense-of-agency",
+      "status": "published",
+      "tag": null
+    },
+    "Sensorimotor": {
+      "description": null,
+      "id": "term-sensorimotor",
+      "status": "published",
+      "tag": null
+    },
+    "Sensory Data": {
+      "description": null,
+      "id": "term-sensory-data",
+      "status": "published",
+      "tag": null
+    },
+    "Sensory State": {
+      "description": null,
+      "id": "term-sensory-state",
+      "status": "published",
+      "tag": null
+    },
+    "Sensory attenuation": {
+      "description": null,
+      "id": "term-sensory-attenuation",
+      "status": "published",
+      "tag": null
+    },
+    "Sensory input": {
+      "description": null,
+      "id": "term-sensory-input",
+      "status": "published",
+      "tag": null
+    },
+    "Sensory observation": {
+      "description": null,
+      "id": "term-sensory-observation",
+      "status": "published",
+      "tag": null
+    },
+    "Sensory outcome": {
+      "description": null,
+      "id": "term-sensory-outcome",
+      "status": "published",
+      "tag": null
+    },
+    "Sensory states": {
+      "description": null,
+      "id": "term-sensory-states",
+      "status": "published",
+      "tag": null
+    },
+    "Sentience": {
+      "description": "being ‘‘responsive to sensory impressions’’ through adaptive internal processes",
+      "id": "term-sentience",
+      "status": "published",
+      "tag": null
+    },
+    "Shared Generative Model": {
+      "description": null,
+      "id": "term-shared-generative-model",
+      "status": "published",
+      "tag": null
+    },
+    "Signal": {
+      "description": null,
+      "id": "term-signal",
+      "status": "published",
+      "tag": null
+    },
+    "Simulation": {
+      "description": null,
+      "id": "term-simulation",
+      "status": "published",
+      "tag": null
+    },
+    "Sophisticated Inference": {
+      "description": null,
+      "id": "term-sophisticated-inference",
+      "status": "published",
+      "tag": null
+    },
+    "State": {
+      "description": "is the statistical, computational, or mathematical value for a parameter within the State space of a Model .",
+      "id": "term-state",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "State space": {
+      "description": "Set of variables/parameters that describe a System .",
+      "id": "term-state-space",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Stationarity": {
+      "description": "Of a Random variable , that it is described by parameters that are drawn from a Gaussian distribution and unchanging over the time horizon of analysis.",
+      "id": "term-stationarity",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Statistical Parametric Mapping": {
+      "description": null,
+      "id": "term-statistical-parametric-mapping",
+      "status": "published",
+      "tag": null
+    },
+    "Statistical manifold": {
+      "description": null,
+      "id": "term-statistical-manifold",
+      "status": "published",
+      "tag": null
+    },
+    "Stigmergy": {
+      "description": null,
+      "id": "term-stigmergy",
+      "status": "published",
+      "tag": null
+    },
+    "Stimulus": {
+      "description": null,
+      "id": "term-stimulus",
+      "status": "published",
+      "tag": null
+    },
+    "Stochastic": {
+      "description": null,
+      "id": "term-stochastic",
+      "status": "published",
+      "tag": null
+    },
+    "Subjective feeling states": {
+      "description": null,
+      "id": "term-subjective-feeling-states",
+      "status": "published",
+      "tag": null
+    },
+    "Surprisal": {
+      "description": null,
+      "id": "term-surprisal",
+      "status": "published",
+      "tag": null
+    },
+    "Surprise": {
+      "description": "In Bayesian Inference, Surprise is the negative log evidence, directly corresponding to the inverse of probability (high probability, low surprisal; low probability, high surprisal). The proxy that bounds surprisal is the difference between Prior and Posterior Distribution — how “surprising” Sensory Data are to the Generative Model of the Agent.",
+      "id": "term-surprise",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Swarm": {
+      "description": null,
+      "id": "term-swarm",
+      "status": "published",
+      "tag": null
+    },
+    "Symbol": {
+      "description": null,
+      "id": "term-symbol",
+      "status": "published",
+      "tag": null
+    },
+    "Synergetics": {
+      "description": null,
+      "id": "term-synergetics",
+      "status": "published",
+      "tag": null
+    },
+    "System": {
+      "description": "Set of relations described by State space of a Model .",
+      "id": "term-system",
+      "status": "published",
+      "tag": "Systems"
+    },
+    "T-Maze": {
+      "description": null,
+      "id": "term-t-maze",
+      "status": "published",
+      "tag": null
+    },
+    "Teams": {
+      "description": null,
+      "id": "term-teams",
+      "status": "published",
+      "tag": null
+    },
+    "Temporal Depth": {
+      "description": "The length of a time window or horizon considered (longer time → deeper / more Temporal Depth )",
+      "id": "term-temporal-depth",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Theory": {
+      "description": null,
+      "id": "term-theory",
+      "status": "published",
+      "tag": null
+    },
+    "Thermodynamic system": {
+      "description": null,
+      "id": "term-thermodynamic-system",
+      "status": "published",
+      "tag": null
+    },
+    "Thermostatistics": {
+      "description": null,
+      "id": "term-thermostatistics",
+      "status": "published",
+      "tag": null
+    },
+    "Thing": {
+      "description": null,
+      "id": "term-thing",
+      "status": "published",
+      "tag": null
+    },
+    "Thinking Through Other Minds": {
+      "description": null,
+      "id": "term-thinking-through-other-minds",
+      "status": "published",
+      "tag": null
+    },
+    "Top-down attentional control": {
+      "description": null,
+      "id": "term-top-down-attentional-control",
+      "status": "published",
+      "tag": null
+    },
+    "Umwelt": {
+      "description": null,
+      "id": "term-umwelt",
+      "status": "published",
+      "tag": null
+    },
+    "Uncertainty": {
+      "description": "In Bayesian Inference , a measure of the Expectation of Surprise (Entropy) of a Random variable (associated with its variance or inverse Precision )",
+      "id": "term-uncertainty",
+      "status": "published",
+      "tag": "Bayesian Statistics"
+    },
+    "Unidirectionality": {
+      "description": null,
+      "id": "term-unidirectionality",
+      "status": "published",
+      "tag": null
+    },
+    "Update": {
+      "description": null,
+      "id": "term-update",
+      "status": "published",
+      "tag": null
+    },
+    "Variance": {
+      "description": null,
+      "id": "term-variance",
+      "status": "published",
+      "tag": null
+    },
+    "Variational": {
+      "description": "Biologically: Said of the behavior of a Neuronal Ensemble that minimizes the error of quantities selected by that ensemble, by implementing an algorithm that approximates calculus of variations.",
+      "id": "term-variational",
+      "status": "published",
+      "tag": "Free Energy"
+    },
+    "Variational Free Energy": {
+      "description": "Measure that performs e.g. Inference on Sensory Data given a Generative Model , F. The two sources that composeVariational Free Energy are Model overfitting and Model accuracy",
+      "id": "term-variational-free-energy",
+      "status": "published",
+      "tag": "Free Energy"
+    },
+    "Variational Niche Construction": {
+      "description": null,
+      "id": "term-variational-niche-construction",
+      "status": "published",
+      "tag": null
+    },
+    "Variational message passing": {
+      "description": null,
+      "id": "term-variational-message-passing",
+      "status": "published",
+      "tag": null
+    },
+    "Variational principle": {
+      "description": null,
+      "id": "term-variational-principle",
+      "status": "published",
+      "tag": null
+    },
+    "Von Economo neurons": {
+      "description": null,
+      "id": "term-von-economo-neurons",
+      "status": "published",
+      "tag": null
+    },
+    "Weak mixing": {
+      "description": null,
+      "id": "term-weak-mixing",
+      "status": "published",
+      "tag": null
+    },
+    "Working memory": {
+      "description": null,
+      "id": "term-working-memory",
+      "status": "published",
+      "tag": null
+    },
+    "World States": {
+      "description": null,
+      "id": "term-world-states",
+      "status": "published",
+      "tag": null
+    },
+    "abstractCounterpart": {
+      "description": "(abstractCounterpart ?AB ?PHYS) relates a Physical entity to an Abstract one which is an idealized model in some dimension of the Physical entity.",
+      "id": "term-abstractcounterpart",
+      "status": "published",
+      "tag": null
+    },
+    "active": {
+      "description": null,
+      "id": "term-active",
+      "status": "published",
+      "tag": null
+    },
+    "active processes": {
+      "description": null,
+      "id": "term-active-processes",
+      "status": "published",
+      "tag": null
+    },
+    "affect": {
+      "description": null,
+      "id": "term-affect",
+      "status": "published",
+      "tag": null
+    },
+    "analogy": {
+      "description": null,
+      "id": "term-analogy",
+      "status": "published",
+      "tag": null
+    },
+    "anticipation": {
+      "description": null,
+      "id": "term-anticipation",
+      "status": "published",
+      "tag": null
+    },
+    "area": {
+      "description": null,
+      "id": "term-area",
+      "status": "published",
+      "tag": null
+    },
+    "backbone": {
+      "description": null,
+      "id": "term-backbone",
+      "status": "published",
+      "tag": null
+    },
+    "brain": {
+      "description": null,
+      "id": "term-brain",
+      "status": "published",
+      "tag": null
+    },
+    "categorical": {
+      "description": null,
+      "id": "term-categorical",
+      "status": "published",
+      "tag": null
+    },
+    "category": {
+      "description": null,
+      "id": "term-category",
+      "status": "published",
+      "tag": null
+    },
+    "causality": {
+      "description": null,
+      "id": "term-causality",
+      "status": "published",
+      "tag": null
+    },
+    "changing mind (cognition)": {
+      "description": null,
+      "id": "term-changing-mind-cognition",
+      "status": "published",
+      "tag": null
+    },
+    "changing the mind": {
+      "description": null,
+      "id": "term-changing-the-mind",
+      "status": "published",
+      "tag": null
+    },
+    "changing the world": {
+      "description": null,
+      "id": "term-changing-the-world",
+      "status": "published",
+      "tag": null
+    },
+    "changing world (action)": {
+      "description": null,
+      "id": "term-changing-world-action",
+      "status": "published",
+      "tag": null
+    },
+    "chaos": {
+      "description": null,
+      "id": "term-chaos",
+      "status": "published",
+      "tag": null
+    },
+    "classical physics": {
+      "description": null,
+      "id": "term-classical-physics",
+      "status": "published",
+      "tag": null
+    },
+    "colimit": {
+      "description": null,
+      "id": "term-colimit",
+      "status": "published",
+      "tag": null
+    },
+    "computer": {
+      "description": null,
+      "id": "term-computer",
+      "status": "published",
+      "tag": null
+    },
+    "concentration": {
+      "description": null,
+      "id": "term-concentration",
+      "status": "published",
+      "tag": null
+    },
+    "concept": {
+      "description": null,
+      "id": "term-concept",
+      "status": "published",
+      "tag": null
+    },
+    "condition": {
+      "description": null,
+      "id": "term-condition",
+      "status": "published",
+      "tag": null
+    },
+    "consensus": {
+      "description": null,
+      "id": "term-consensus",
+      "status": "published",
+      "tag": null
+    },
+    "constraint": {
+      "description": null,
+      "id": "term-constraint",
+      "status": "published",
+      "tag": null
+    },
+    "conversation": {
+      "description": null,
+      "id": "term-conversation",
+      "status": "published",
+      "tag": null
+    },
+    "current": {
+      "description": null,
+      "id": "term-current",
+      "status": "published",
+      "tag": null
+    },
+    "default-mode": {
+      "description": null,
+      "id": "term-default-mode",
+      "status": "published",
+      "tag": null
+    },
+    "divergence": {
+      "description": null,
+      "id": "term-divergence",
+      "status": "published",
+      "tag": null
+    },
+    "dynamics": {
+      "description": null,
+      "id": "term-dynamics",
+      "status": "published",
+      "tag": null
+    },
+    "ecosystem": {
+      "description": null,
+      "id": "term-ecosystem",
+      "status": "published",
+      "tag": null
+    },
+    "ego": {
+      "description": null,
+      "id": "term-ego",
+      "status": "published",
+      "tag": null
+    },
+    "energy": {
+      "description": null,
+      "id": "term-energy",
+      "status": "published",
+      "tag": null
+    },
+    "environment": {
+      "description": null,
+      "id": "term-environment",
+      "status": "published",
+      "tag": null
+    },
+    "error": {
+      "description": null,
+      "id": "term-error",
+      "status": "published",
+      "tag": null
+    },
+    "feedback": {
+      "description": null,
+      "id": "term-feedback",
+      "status": "published",
+      "tag": null
+    },
+    "field": {
+      "description": null,
+      "id": "term-field",
+      "status": "published",
+      "tag": null
+    },
+    "fitness": {
+      "description": null,
+      "id": "term-fitness",
+      "status": "published",
+      "tag": null
+    },
+    "flow": {
+      "description": null,
+      "id": "term-flow",
+      "status": "published",
+      "tag": null
+    },
+    "framework": {
+      "description": null,
+      "id": "term-framework",
+      "status": "published",
+      "tag": null
+    },
+    "free": {
+      "description": "For no cost.",
+      "id": "term-free",
+      "status": "published",
+      "tag": null
+    },
+    "frequentist": {
+      "description": null,
+      "id": "term-frequentist",
+      "status": "published",
+      "tag": null
+    },
+    "functional magnetic resonance imaging (FMRi)": {
+      "description": null,
+      "id": "term-functional-magnetic-resonance-imaging-fmri",
+      "status": "published",
+      "tag": null
+    },
+    "genetic": {
+      "description": null,
+      "id": "term-genetic",
+      "status": "published",
+      "tag": null
+    },
+    "hierarchical": {
+      "description": null,
+      "id": "term-hierarchical",
+      "status": "published",
+      "tag": null
+    },
+    "idea": {
+      "description": null,
+      "id": "term-idea",
+      "status": "published",
+      "tag": null
+    },
+    "increase": {
+      "description": null,
+      "id": "term-increase",
+      "status": "published",
+      "tag": null
+    },
+    "influence": {
+      "description": null,
+      "id": "term-influence",
+      "status": "published",
+      "tag": null
+    },
+    "intelligence": {
+      "description": null,
+      "id": "term-intelligence",
+      "status": "published",
+      "tag": null
+    },
+    "inverse": {
+      "description": null,
+      "id": "term-inverse",
+      "status": "published",
+      "tag": null
+    },
+    "language": {
+      "description": null,
+      "id": "term-language",
+      "status": "published",
+      "tag": null
+    },
+    "link": {
+      "description": null,
+      "id": "term-link",
+      "status": "published",
+      "tag": null
+    },
+    "machine": {
+      "description": null,
+      "id": "term-machine",
+      "status": "published",
+      "tag": null
+    },
+    "matching": {
+      "description": null,
+      "id": "term-matching",
+      "status": "published",
+      "tag": null
+    },
+    "matrix": {
+      "description": null,
+      "id": "term-matrix",
+      "status": "published",
+      "tag": null
+    },
+    "maximum caliber": {
+      "description": null,
+      "id": "term-maximum-caliber",
+      "status": "published",
+      "tag": null
+    },
+    "model evidence": {
+      "description": null,
+      "id": "term-model-evidence",
+      "status": "published",
+      "tag": null
+    },
+    "morphism": {
+      "description": null,
+      "id": "term-morphism",
+      "status": "published",
+      "tag": null
+    },
+    "neuronal": {
+      "description": null,
+      "id": "term-neuronal",
+      "status": "published",
+      "tag": null
+    },
+    "normative": {
+      "description": null,
+      "id": "term-normative",
+      "status": "published",
+      "tag": null
+    },
+    "object": {
+      "description": null,
+      "id": "term-object",
+      "status": "published",
+      "tag": null
+    },
+    "objective": {
+      "description": null,
+      "id": "term-objective",
+      "status": "published",
+      "tag": null
+    },
+    "observer": {
+      "description": null,
+      "id": "term-observer",
+      "status": "published",
+      "tag": null
+    },
+    "opportunity": {
+      "description": null,
+      "id": "term-opportunity",
+      "status": "published",
+      "tag": null
+    },
+    "overfitting": {
+      "description": null,
+      "id": "term-overfitting",
+      "status": "published",
+      "tag": null
+    },
+    "parameter": {
+      "description": null,
+      "id": "term-parameter",
+      "status": "published",
+      "tag": null
+    },
+    "part": {
+      "description": null,
+      "id": "term-part",
+      "status": "published",
+      "tag": null
+    },
+    "path": {
+      "description": null,
+      "id": "term-path",
+      "status": "published",
+      "tag": null
+    },
+    "perceptual inference": {
+      "description": null,
+      "id": "term-perceptual-inference",
+      "status": "published",
+      "tag": null
+    },
+    "perspective": {
+      "description": null,
+      "id": "term-perspective",
+      "status": "published",
+      "tag": null
+    },
+    "phase": {
+      "description": null,
+      "id": "term-phase",
+      "status": "published",
+      "tag": null
+    },
+    "phenotype": {
+      "description": null,
+      "id": "term-phenotype",
+      "status": "published",
+      "tag": null
+    },
+    "physics": {
+      "description": null,
+      "id": "term-physics",
+      "status": "published",
+      "tag": null
+    },
+    "play": {
+      "description": null,
+      "id": "term-play",
+      "status": "published",
+      "tag": null
+    },
+    "population": {
+      "description": null,
+      "id": "term-population",
+      "status": "published",
+      "tag": null
+    },
+    "predictive machine": {
+      "description": null,
+      "id": "term-predictive-machine",
+      "status": "published",
+      "tag": null
+    },
+    "probability": {
+      "description": null,
+      "id": "term-probability",
+      "status": "published",
+      "tag": null
+    },
+    "problem": {
+      "description": null,
+      "id": "term-problem",
+      "status": "published",
+      "tag": null
+    },
+    "propositional": {
+      "description": null,
+      "id": "term-propositional",
+      "status": "published",
+      "tag": null
+    },
+    "purpose": {
+      "description": null,
+      "id": "term-purpose",
+      "status": "published",
+      "tag": null
+    },
+    "question": {
+      "description": null,
+      "id": "term-question",
+      "status": "published",
+      "tag": null
+    },
+    "random": {
+      "description": null,
+      "id": "term-random",
+      "status": "published",
+      "tag": null
+    },
+    "recognition": {
+      "description": null,
+      "id": "term-recognition",
+      "status": "published",
+      "tag": null
+    },
+    "relative entropy": {
+      "description": "Synonym for Kullback-Leibler Divergence",
+      "id": "term-relative-entropy",
+      "status": "published",
+      "tag": null
+    },
+    "represents": {
+      "description": "SUMO relation (represents ?THING ?ENTITY) means that ?THING in some way indicates, expresses, connotes, pictures, describes, etc. ?ENTITY. The Predicates containsInformation and realization are subrelations of represents.",
+      "id": "term-represents",
+      "status": "published",
+      "tag": null
+    },
+    "resource": {
+      "description": null,
+      "id": "term-resource",
+      "status": "published",
+      "tag": null
+    },
+    "role": {
+      "description": null,
+      "id": "term-role",
+      "status": "published",
+      "tag": null
+    },
+    "science": {
+      "description": null,
+      "id": "term-science",
+      "status": "published",
+      "tag": null
+    },
+    "selection": {
+      "description": null,
+      "id": "term-selection",
+      "status": "published",
+      "tag": null
+    },
+    "situation": {
+      "description": null,
+      "id": "term-situation",
+      "status": "published",
+      "tag": null
+    },
+    "social": {
+      "description": null,
+      "id": "term-social",
+      "status": "published",
+      "tag": null
+    },
+    "solenoidal": {
+      "description": null,
+      "id": "term-solenoidal",
+      "status": "published",
+      "tag": null
+    },
+    "spike-timing dependent plasticity": {
+      "description": null,
+      "id": "term-spike-timing-dependent-plasticity",
+      "status": "published",
+      "tag": null
+    },
+    "states": {
+      "description": null,
+      "id": "term-states",
+      "status": "published",
+      "tag": null
+    },
+    "sufficient statistic": {
+      "description": null,
+      "id": "term-sufficient-statistic",
+      "status": "published",
+      "tag": null
+    },
+    "technology": {
+      "description": null,
+      "id": "term-technology",
+      "status": "published",
+      "tag": null
+    },
+    "time": {
+      "description": null,
+      "id": "term-time",
+      "status": "published",
+      "tag": null
+    },
+    "tracking": {
+      "description": null,
+      "id": "term-tracking",
+      "status": "published",
+      "tag": null
+    },
+    "trajectory": {
+      "description": null,
+      "id": "term-trajectory",
+      "status": "published",
+      "tag": null
+    },
+    "transition": {
+      "description": null,
+      "id": "term-transition",
+      "status": "published",
+      "tag": null
+    },
+    "tree": {
+      "description": null,
+      "id": "term-tree",
+      "status": "published",
+      "tag": null
+    },
+    "understanding": {
+      "description": null,
+      "id": "term-understanding",
+      "status": "published",
+      "tag": null
+    },
+    "witness": {
+      "description": null,
+      "id": "term-witness",
+      "status": "published",
+      "tag": null
+    }
+  }
+}

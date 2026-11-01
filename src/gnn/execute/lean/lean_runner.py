@@ -3,7 +3,7 @@
 Resolves the sibling ``fep_formal`` checkout (env ``FEP_FORMAL_ROOT`` overrides
 the ``../fep_formal`` default; legacy root names remain supported), discovers emitted Lean/GNN documents under the
 rendered target directory, and verifies each through the FEP_Formal bridge
-``verify-document`` operation (bridge contract v0.6, Direction 2 S7:
+``verify-document`` operation (bridge contract v0.7, Direction 2 S7:
 well-formedness against the ``FEP.GnnDocument`` typed AST).
 """
 
@@ -195,7 +195,7 @@ def verify_document(
             "ℹ️ FEP_Formal not available - skipping Lean verification (set %s)",
             FEP_FORMAL_ROOT_ENV,
         )
-        return {"success": False, "error": "fep_lean unavailable"}
+        return {"success": False, "error": "FEP_Formal not available"}
 
     document_path = Path(document).resolve()
     gnn_root_path = (

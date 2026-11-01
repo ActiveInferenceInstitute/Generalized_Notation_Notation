@@ -18,7 +18,7 @@ At load time it normalizes A/B/D/E and transforms C with softmax. Its
 not an argument to that action-selection function. Embedded input fidelity
 therefore does not establish fidelity of consumed preferences, policy habits,
 package-agent execution, or EFE equivalence. The exact frozen Boolean artifact
-contract is tracked in the sibling fep_lean Q6 slice.
+contract is tracked in the sibling FEP_Formal Q6 slice.
 
 The canonical parameter path is JSON decoding, not `_matrix_to_julia`. The
 sections below describe the retained package-agent template and are

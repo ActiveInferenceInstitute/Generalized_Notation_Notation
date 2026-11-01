@@ -46,7 +46,7 @@ for the current render/execute split.
 - **NumPyro**: [implementation guide](gnn/implementations/numpyro.md)
 - **Stan**: [implementation guide](gnn/implementations/stan.md); executable in Step 12 via the cmdstanpy driver
 - **bnlearn**: [renderer inventory](../src/gnn/render/AGENTS.md); manually enabled and not in the default lock
-- **Lean**: proof verification via the fep_lean bridge (no render target; see [fep_lean docs](other/fep_lean/README.md))
+- **Lean**: proof verification via the FEP_Formal bridge (no render target; see [FEP bridge docs](other/fep_lean/README.md))
 
 ## Operations network
 

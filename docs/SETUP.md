@@ -39,7 +39,7 @@ The checked-in `input/config.yaml` is loaded automatically by `src/gnn/main.py`;
   [CI workflow](../.github/workflows/ci.yml) for tested interpreter splits;
   a compatible dependency install does not establish every native backend's
   readiness on that interpreter or OS.
-- Exact `uv` 0.13.4, as required by the committed project configuration.
+- Exact `uv` 0.13.6, as required by the committed project configuration.
 - Installed-wheel acceptance covers declared Linux, macOS and Windows lanes; see
   the [platform guide](development/installed_platform_acceptance.md) for exact
   interpreter/OS scope. Optional Julia, GUI, audio and Graphviz paths need their

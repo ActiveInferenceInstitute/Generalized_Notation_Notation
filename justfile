@@ -94,6 +94,14 @@ import-linter:
 thin-orchestrators:
     uv run python scripts/check_thin_orchestrators.py
 
+# Enforce the numbered-script stdlib-shadowing guard (COMP-010)
+shadow-guard:
+    uv run python scripts/check_stdlib_shadow_guard.py
+
+# Verify the pinned Active Inference Ontology vocabulary bridge against its pin
+ontology-pin:
+    uv run python scripts/check_ontology_pin.py
+
 # Check argparse-registered flags against maintained-doc mentions (ratcheted)
 flag-parity:
     uv run python scripts/check_flag_parity.py
@@ -121,6 +129,17 @@ tokens:
 # Fail when committed hydrated prose is stale for the token map (run the SC-22 ritual)
 hydrated-prose:
     uv run python scripts/check_hydrated_prose.py
+
+# Rebuild the manuscript figures and their recorded source digests (SC-22 ritual step 2)
+manuscript-figures:
+    uv run --frozen --extra dev python -m scripts.manuscript_build_figures
+
+# Dry half of the SC-22 ritual: token map, hydrated prose, figure and render freshness
+manuscript-custody: tokens hydrated-prose
+    uv run --frozen --extra dev python -m pytest \
+        tests/test_manuscript_figure_freshness.py \
+        tests/test_manuscript_latex_log.py \
+        -q --no-cov
 
 # Run the POMDP GridWorld pipeline end-to-end, then validate the output contract
 # (regenerates the volatile run tree from input/gnn_files/pomdp_gridworld;
@@ -169,7 +188,7 @@ doc-patterns:
     uv run python scripts/check_gnn_doc_patterns.py --strict
 
 # Run fast quality gates without the full pytest suite
-quality: format-check lint import-linter thin-orchestrators flag-parity dep-hygiene validate-surface terminology doc-terms audit doc-contracts doc-patterns typecheck security capability skills-health tokens hydrated-prose v3-acceptance mcp-count
+quality: format-check lint import-linter thin-orchestrators shadow-guard ontology-pin flag-parity dep-hygiene validate-surface terminology doc-terms audit doc-contracts doc-patterns typecheck security capability skills-health manuscript-custody v3-acceptance mcp-count
 
 # Run focused PyMDP/POMDP behavior checks
 test-pymdp-focused:

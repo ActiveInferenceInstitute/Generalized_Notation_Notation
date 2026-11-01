@@ -1,7 +1,7 @@
 # Specification: Workflows
 
 The local default and primary ordinary test matrix now include Python 3.14,
-with exact uv 0.13.4. The named h5py/HDF5 host exception and removal checks are
+with exact uv 0.13.6. The named h5py/HDF5 host exception and removal checks are
 in root README.md. General docs/local/MCP/security jobs select 3.14; coupled
 3.12 required statuses and native/paired/manuscript/GUI rosters remain explicit
 compatibility or evidence profiles. Existing acceptance receipts retain their
