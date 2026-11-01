@@ -7,7 +7,7 @@
   the [repository TO-DO](../../TO-DO.md) M-03 row: 304+ files carry broad
   handlers; spot-checked sites log and emit structured receipts) plus the
   file:line exemplars below, all re-verified in this tree at authoring time.
-- **Baseline:** 1148 occurrences under `src/gnn/`
+- **Baseline:** 1146 occurrences under `src/gnn/`
   (counted by
   [`scripts/check_gnn_doc_patterns.py`](../../scripts/check_gnn_doc_patterns.py)
   `EXCEPT_EXCEPTION_BASELINE`). Historical: 1183 at the wave-6 base;
@@ -35,6 +35,12 @@
   lowered the measured ceiling to 1151. Subsequent authored-data and native
   consumer repairs reduce the actual AST census to 1148; the gate is tightened
   accordingly. These ceiling differences are not counts of individual repairs.
+
+  2026-11-01: re-measured at 1146 in this tree while re-censusing the
+  composability exceptions; the gate is tightened to the measured count so the
+  reduction cannot be spent by a later change without a decision note. The
+  count remains an occurrence cap over the exact-name handler form, not a claim
+  of complete exception correctness.
 
 ## Purpose
 

@@ -129,21 +129,47 @@ Every integration that does not fit the five seams is a named, tracked
 exception — never hidden, never silently normalized. Tracker refs are the
 COMP ids of the 2026-09-21 census.
 
+Re-censused 2026-11-01 against the tree carrying this revision; every
+file:line below was re-read in that tree. Four of the six exceptions the
+2026-09-21 census recorded have since been remediated and are listed under
+*Remediated exceptions*; two remain open.
+
 | Ref | Severity | Site | Issue | Direction |
 | --- | --- | --- | --- | --- |
-| COMP-003 | HIGH | `src/gnn/sapf/` vs `src/gnn/audio/sapf/` | One module family, two canonical homes: `sapf/__init__.py:5-12` re-exports the audio implementation, while the `sapf/` package also ships its own metadata and an `mcp.py`; tests exercise both paths (`tests/sapf/test_sapf_processor.py:14`, `tests/test_fast_suite.py:221`) | Pick one home; the other stays a pure re-export surface with a golden export test; define metadata once; migrate callers and tests |
-| COMP-004 | MEDIUM | `src/gnn/cli/__init__.py:979-980` | Private cross-module import: the reproduce command reaches into `gnn.main` internals (`_resolve_steps_to_execute`) | Promote to a public API with a contract test |
-| COMP-005 | MEDIUM | `src/gnn/api/parity.py:569,607,670,751,774` | Parity by mirror: the API re-states `gnn.cli._cmd_*` severity and payload checks in five handlers | Extract the mirrored check bodies into shared pure helpers both surfaces consume |
-| COMP-006 | MEDIUM | `src/gnn/utils/__init__.py:280-281` vs `src/gnn/export/core.py:10`, `src/gnn/pipeline/pipeline_step_template.py:46` | Dual canonical path for `get_output_dir_for_script` and `execute_pipeline_step_template` (facade map AND direct `gnn.pipeline` import) | Single path = `gnn.pipeline`; drop the facade re-exports; update the facade golden list (`tests/tests/test_infrastructure_exports.py`) |
-| COMP-009 | LOW | `src/gnn/pipeline/pipeline_step_template.py:46-72,561-565` + `src/gnn/pipeline/pipeline_validation.py` | Pre-registry second convention kept inside the composition package (template body plus an 871-line self-validation module; only consumers `tests/pipeline/test_pipeline_infrastructure.py:74-142`) | Retire both; move the guidance to `src/gnn/pipeline/AGENTS.md`; migrate the tests to `step_executor` and `step_registry` |
-| COMP-010 | LOW | `0_template.py:38` … `4_model_registry.py:39` (25 files) | 25 hand-rolled src-layout bootstrap copies | Hoist into `create_standardized_pipeline_script` |
+| COMP-010 | LOW | `src/gnn/0_template.py:36`, `src/gnn/2_tests.py:20,41`, `src/gnn/3_gnn.py:12`, `src/gnn/24_intelligent_analysis.py:15` — the same 3-line guard in all 25 numbered scripts | Every directly runnable script under `src/gnn/` repeats `if globals().get("__package__") is None and not sys.flags.safe_path: sys.path.pop(0)`. The 2026-09-21 census read this as a src-layout bootstrap; it is now a **stdlib-shadowing guard** — `src/gnn/types/` would shadow the stdlib `types` module whenever a numbered script is executed directly, so the guard must run before the first import | The 2026-09-21 direction (hoist into `create_standardized_pipeline_script`) is not reachable: that function is itself imported after the guard, so a shared helper cannot perform the pop. Either keep the guard as an accepted, gate-enforced pattern (a check that every directly runnable `src/gnn/[0-9]*_*.py` carries it) or rename `src/gnn/types/` to remove the shadowing hazard entirely — the second option retires the exception instead of documenting it |
 | COMP-011 | INFO (folded) | `src/gnn/gui/oxdraw/processor.py:18,87`; `src/gnn/mcp/server_stdio.py:32-33`; `src/gnn/mcp/server_http.py:64-65` | Documented integration notes: the websocket bridge contract note and the direct-script import recovery in the MCP servers | Recorded, not re-reported |
 
-Remediated in the wave that landed this standard (no longer open):
-COMP-007 — the `pipeline_template.py:136` facade import was inverted to the
-leaf path, and `lint-imports` reports 3 contracts kept, 0 broken on this
-branch — and COMP-008 — the import-linter contracts were unwired and are
-now wired (see Enforcement).
+Remediated exceptions (each verified in the tree carrying this revision):
+
+- **COMP-003** — `fba7bf86a` ("comp-003: one home for SAPF — delete
+  `src/gnn/sapf` alias package"). `src/gnn/sapf/` is gone; `git ls-files
+  src/gnn/sapf/` is empty and `src/gnn/audio/sapf/` is the single home.
+- **COMP-004** — `ed3d150c8` ("comp-004: promote
+  `gnn.main._resolve_steps_to_execute` to public `resolve_steps_to_execute`").
+  No `_resolve_steps_to_execute` reference survives in `src/`, `tests/` or
+  `scripts/`.
+- **COMP-005** — `959f5a4fc` ("refactor(api,cli): extract shared command
+  semantics (COMP-005)"). `gnn/cli/commands.py` is the single home for the
+  shared command bodies and exports exactly the helpers the fix direction
+  named (`run_validation_checks`, `build_parse_payload`,
+  `extract_payload_defect`, `find_render_artifact`,
+  `render_processing_succeeded`, `preflight_severities`,
+  `publish_pipeline_report`); both `gnn/cli/handlers_pipeline.py` and
+  `gnn/api/parity.py` call into it. Residual: nine `gnn/api/parity.py`
+  docstrings still open with "Mirror ``gnn.cli._cmd_*``" while their bodies
+  delegate to the shared helpers — stale prose, not a second implementation.
+- **COMP-006** — `6712c63b7` ("comp-006+009: `gnn.pipeline` is the single
+  output-dir path; delete pre-registry template modules"). Neither
+  `get_output_dir_for_script` nor `execute_pipeline_step_template` appears in
+  `src/gnn/utils/__init__.py`; `gnn/pipeline/__init__.py:19` is the sole
+  export path.
+- **COMP-007 / COMP-008** — remediated in the wave that landed the original
+  standard: the `pipeline_template.py` facade import was inverted to the leaf
+  path, and the import-linter contracts moved from unwired to wired (see
+  Enforcement).
+- **COMP-009** — `6712c63b7`, same commit as COMP-006.
+  `src/gnn/pipeline/pipeline_step_template.py` and
+  `src/gnn/pipeline/pipeline_validation.py` no longer exist.
 
 ## Consumer seams: declared cross-repo surfaces
 
