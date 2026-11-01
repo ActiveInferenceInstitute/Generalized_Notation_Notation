@@ -5,10 +5,10 @@
 ### Prerequisites
 
 - **Python `>=3.11,<3.15`** installed (default 3.14.8; see the root README for named compatibility exceptions)
-- **uv 0.13.4** package manager installed (required by `uv.toml`)
+- **uv 0.13.6** package manager installed (required by `uv.toml`)
 
   ```bash
-  curl -LsSf https://astral.sh/uv/0.13.4/install.sh | sh
+  curl -LsSf https://astral.sh/uv/0.13.6/install.sh | sh
   ```
 
 ### Basic Setup (Core Dependencies)

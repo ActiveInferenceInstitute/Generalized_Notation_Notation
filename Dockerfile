@@ -9,16 +9,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 # Install uv — pinned version for reproducible builds (supply-chain hardening).
-# Pin matches exact uv 0.13.4 in CI and uv.toml. The default runtime uses the
+# Pin matches exact uv 0.13.6 in CI and uv.toml. The default runtime uses the
 # documented h5py/HDF5 profile exception; this image needs separate qualification.
-ARG UV_VERSION=0.13.4
-RUN test "$UV_VERSION" = "0.13.4" && \
+ARG UV_VERSION=0.13.6
+RUN test "$UV_VERSION" = "0.13.6" && \
     curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
-      https://github.com/astral-sh/uv/releases/download/0.13.4/uv-installer.sh \
+      https://github.com/astral-sh/uv/releases/download/0.13.6/uv-installer.sh \
       --output /tmp/uv-installer.sh && \
-    echo '1f5390d273b0158bd5eaa3527ae049f3667baa881abb1e7c883dd637d84432f9  /tmp/uv-installer.sh' | sha256sum --check - && \
+    echo 'f7a56e7afaec49a3bcbc3ac3cdbe917e7c6ce30e0d815308a12e531aa5ef23b7  /tmp/uv-installer.sh' | sha256sum --check - && \
     UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 sh /tmp/uv-installer.sh && \
-    /usr/local/bin/uv --version | awk '{print $2}' | grep -Fx 0.13.4 && \
+    /usr/local/bin/uv --version | awk '{print $2}' | grep -Fx 0.13.6 && \
     rm /tmp/uv-installer.sh
 
 # Create non-root user for runtime security

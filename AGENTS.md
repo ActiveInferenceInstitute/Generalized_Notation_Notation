@@ -295,7 +295,7 @@ deliberately broader than this artifact graph.
 
 ### Current verification
 
-Use exact uv 0.13.4 and the frozen development environment. The
+Use exact uv 0.13.6 and the frozen development environment. The
 [README runtime profiles](README.md#runtime-defaults-and-required-profiles) own
 Python defaults and compatibility exceptions. Start with `just release-preflight`;
 [workflow guidance](.github/workflows/README.md) owns hosted selections and
@@ -480,7 +480,7 @@ uv run --frozen --no-sync python -m pytest tests/ --cov=gnn --cov-report=term-mi
 
 Select the latest stable CPython unless a named dependency or evidence profile
 requires an older runtime. The current frozen default uses Python 3.14 with
-exact uv 0.13.4; the h5py/HDF5 host requirement and removal checks are documented
+exact uv 0.13.6; the h5py/HDF5 host requirement and removal checks are documented
 in README.md under Runtime defaults and required profiles. Preserve protected
 producer metadata/locks and existing compatibility/native/paired rosters.
 `uv.toml` mirrors all configurable uv settings from the protected pyproject.

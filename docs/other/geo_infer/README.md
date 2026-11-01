@@ -83,7 +83,7 @@ literal.
 The validation harness lives in the GEO-INFER-TEST module of the sibling
 checkout. First install the separate environments using the
 [paired-runtime procedure](../../development/geo_infer_2026_09.md#independent-uv-toolchains):
-GNN requires uv 0.13.4; the GEO installation alone requires uv 0.13.1.
+GNN requires uv 0.13.6; the GEO installation alone requires uv 0.13.1.
 Then run the installed GEO interpreter from its checkout, pointing it at this repo:
 
 ```

@@ -253,7 +253,7 @@ profile. Runtime completion does not establish scientific answer quality.
 
 ## Quick Start
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) **0.13.4**.
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) **0.13.6**.
 Commands below run from the repository root and reuse the frozen environment.
 
 ### Direct Installation
@@ -295,7 +295,7 @@ admitted backend, and provision its runtime before execution.
 
 ### Runtime defaults and required profiles
 
-GNN-owned environments use exact uv **0.13.4**. The frozen lock was refreshed
+GNN-owned environments use exact uv **0.13.6**. The frozen lock was refreshed
 with all compatible dependency updates on 2026-10-20; the [4.2.0 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.2.0)
 records the accepted source and hosted qualification. Earlier acceptance receipts keep their original
 runtime/source identities and are not renewed by editing metadata.

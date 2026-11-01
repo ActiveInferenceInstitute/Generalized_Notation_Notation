@@ -46,8 +46,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          # Match exact uv 0.13.4 in uv.toml and the Docker bootstrap.
-          version: "0.13.4"
+          # Match exact uv 0.13.6 in uv.toml and the Docker bootstrap.
+          version: "0.13.6"
           enable-cache: true
 
       - name: Install dependencies (dev)
@@ -119,8 +119,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          # Match exact uv 0.13.4 in uv.toml and the Docker bootstrap.
-          version: "0.13.4"
+          # Match exact uv 0.13.6 in uv.toml and the Docker bootstrap.
+          version: "0.13.6"
           enable-cache: true
 
       - name: Install dependencies (dev)
@@ -192,8 +192,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          # Match exact uv 0.13.4 in uv.toml and the Docker bootstrap.
-          version: "0.13.4"
+          # Match exact uv 0.13.6 in uv.toml and the Docker bootstrap.
+          version: "0.13.6"
           enable-cache: true
 
       - name: Install dependencies (dev)
@@ -275,7 +275,7 @@ jobs:
           check-latest: true
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.13.4"
+          version: "0.13.6"
           enable-cache: true
       - name: Install deterministic contract environment
         run: uv sync --frozen --extra dev
@@ -321,8 +321,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          # Match exact uv 0.13.4 in uv.toml and the Docker bootstrap.
-          version: "0.13.4"
+          # Match exact uv 0.13.6 in uv.toml and the Docker bootstrap.
+          version: "0.13.6"
           enable-cache: true
 
       - name: Install dependencies (dev + ml-ai + torch)
@@ -355,8 +355,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          # Match exact uv 0.13.4 in uv.toml and the Docker bootstrap.
-          version: "0.13.4"
+          # Match exact uv 0.13.6 in uv.toml and the Docker bootstrap.
+          version: "0.13.6"
           enable-cache: true
 
       - name: Install dependencies (dev)

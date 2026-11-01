@@ -1,7 +1,7 @@
 # Workflows Agent Guide
 
 The local default and primary ordinary test matrix now include Python 3.14,
-with exact uv 0.13.4. The named h5py/HDF5 host exception and removal checks are
+with exact uv 0.13.6. The named h5py/HDF5 host exception and removal checks are
 in root README.md. General docs/local/MCP/security jobs select 3.14; coupled
 3.12 required statuses and native/paired/manuscript/GUI rosters remain explicit
 compatibility or evidence profiles. Existing acceptance receipts retain their
@@ -37,8 +37,8 @@ Defines behavior and guardrails for workflows in this directory. Human index of 
 ## Standards
 
 - Pin every third-party action to a full commit SHA with the version as a trailing comment (e.g. `uses: actions/checkout@<sha> # v7.0.1`) for supply-chain hardening; Dependabot reads the version comment. Resolve SHAs with `git ls-remote` — never guess.
-- Pin GNN-owned `astral-sh/setup-uv` steps with `version: "0.13.4"` (the exact Dockerfile/uv.toml requirement).
-- The paired GEO installation has a named companion-only exception: exact uv 0.13.1 satisfies GEO_INFER's own `uv.toml`. Use separate pinned setup steps for the two repositories; select GNN's uv 0.13.4 again before GNN installation or `uv run` checks.
+- Pin GNN-owned `astral-sh/setup-uv` steps with `version: "0.13.6"` (the exact Dockerfile/uv.toml requirement).
+- The paired GEO installation has a named companion-only exception: exact uv 0.13.1 satisfies GEO_INFER's own `uv.toml`. Use separate pinned setup steps for the two repositories; select GNN's uv 0.13.6 again before GNN installation or `uv run` checks.
 - Use explicit `timeout-minutes`.
 - Apply least-privilege `permissions` globally and per job.
 - Use deterministic dependency operations (`uv sync --frozen`, `uv export --frozen`).
@@ -62,7 +62,7 @@ non-root Python 3.14 CLI/runtime checks. Keep its narrower container scope
 separate from the five installed-wheel lanes and full native coverage.
 
 The FEP paired job uses uv 0.13.0 to honor its companion project
-requirement; it never installs GNN. GNN-owned installs use uv 0.13.4.
+requirement; it never installs GNN. GNN-owned installs use uv 0.13.6.
 Supply-chain resolution uses core Python 3.14 and the declared all-extras
 Python 3.12 profile.
 
