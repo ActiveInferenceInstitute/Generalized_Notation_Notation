@@ -62,7 +62,9 @@ Consumed `**kwargs`: `strict_validation` (default `False`), `recursive` (default
 #### `parse_gnn_ontology_section(content: str) -> Dict[str, Any]`
 Extracts the ontology annotation section from GNN Markdown content.
 
-Within `## Ontology` or `## ActInfOntologyAnnotation`, the case-insensitive
+Within `## Ontology`, `## ActInfOntologyAnnotation`, or the spaced
+`## ActInf Ontology Annotation` spelling (heading whitespace is not
+significant, and the heading is case-insensitive), the case-insensitive
 `Concept`, `Relation`, `Property` and `Annotation` colon labels (including their
 plural forms) keep their complete value. For example, `Annotation: s=HiddenState`
 produces the mapping `s=HiddenState`, and `Annotation: HiddenState` produces a

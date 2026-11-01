@@ -64,7 +64,7 @@ success = process_ontology(
 )
 ```
 #### `parse_gnn_ontology_section(content: str) -> Dict[str, Any]`
-**Description**: Extract the ontology annotation section (e.g. `## ActInfOntologyAnnotation`) from GNN Markdown content.
+**Description**: Extract the ontology annotation section (e.g. `## ActInfOntologyAnnotation`, also accepted as the spaced `## ActInf Ontology Annotation` or the `## Ontology` alias) from GNN Markdown content.
 
 **Parameters**:
 - `content` (str): Raw GNN Markdown content

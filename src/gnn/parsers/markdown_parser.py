@@ -39,6 +39,11 @@ from .markdown_parser_parameter import ParameterParsingMixin
 logger = logging.getLogger(__name__)
 
 
+def _collapse_heading(heading: str) -> str:
+    """Collapse whitespace so heading spellings compare structurally."""
+    return re.sub(r"\s+", "", heading)
+
+
 class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
     """
     Parser for GNN Markdown format.
@@ -64,6 +69,13 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
             "ModelParameters": self._parse_model_parameters,
             "Footer": self._parse_footer,
             "Signature": self._parse_signature,
+        }
+        # Canonical headings compared with whitespace collapsed: the spaced
+        # spelling "## ActInf Ontology Annotation" reaches the same parser as
+        # "## ActInfOntologyAnnotation" instead of being kept as an extension
+        # with silently empty ontology bindings.
+        self._canonical_sections = {
+            _collapse_heading(name): name for name in self.section_parsers
         }
 
     def get_supported_extensions(self) -> List[str]:
@@ -104,8 +116,14 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
 
             # Parse each section
             for section_name, section_content in sections.items():
+                canonical_name, heading_warning = self._resolve_section_heading(
+                    section_name
+                )
+                if heading_warning:
+                    result.add_warning(heading_warning)
+                    logger.warning(heading_warning)
                 try:
-                    self._parse_section(section_name, section_content, result.model)
+                    self._parse_section(canonical_name, section_content, result.model)
                 except Exception as e:
                     error_msg = f"Error parsing section '{section_name}': {e}"
                     result.add_warning(error_msg)
@@ -161,6 +179,33 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
             sections[current_section] = "\n".join(current_content).strip()
 
         return sections
+
+    def _resolve_section_heading(self, heading: str) -> tuple[str, Optional[str]]:
+        """Map a raw heading to the canonical section name it names.
+
+        Returns the name to parse under and, when the heading is not spelled
+        canonically but still names a known section — or names the ontology
+        annotation area without being recognised — a warning describing what
+        happened to it.
+        """
+        if heading in self.section_parsers:
+            return heading, None
+
+        canonical = self._canonical_sections.get(_collapse_heading(heading))
+        if canonical is not None:
+            return canonical, (
+                f"Section heading '{heading}' normalized to the canonical '{canonical}'"
+            )
+
+        collapsed = _collapse_heading(heading).casefold()
+        if collapsed.startswith("actinf") or "ontology" in collapsed:
+            return heading, (
+                f"Unrecognized ontology section heading '{heading}': ontology "
+                "annotations are parsed from '## ActInfOntologyAnnotation' (the "
+                "spaced spelling is normalized); this heading produced no "
+                "ontology bindings and was stored as a section extension"
+            )
+        return heading, None
 
     def _parse_section(
         self, section_name: str, content: str, model: GNNInternalRepresentation

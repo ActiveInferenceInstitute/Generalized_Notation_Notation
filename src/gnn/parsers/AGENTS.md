@@ -12,6 +12,19 @@ Multi-format I/O for GNN: **23** `GNNFormat` values, **23** parsers, **22** seri
 - **`PARSER_REGISTRY` / `SERIALIZER_REGISTRY`** — maps `GNNFormat` to concrete classes.
 - **`GNNFormat`**, **`GNNParser`** (protocol) — **`common.py`**.
 
+## Section headings
+
+`MarkdownGNNParser` matches `## ` headings against its canonical section names.
+A heading that differs only by whitespace — `## ActInf Ontology Annotation` for
+`## ActInfOntologyAnnotation`, `## Model Name` for `## ModelName` — is
+normalized to the canonical name, parsed under it, and reported through
+`ParseResult.warnings` plus a `logger.warning`. A heading that names no section
+but looks ontological (`ActInf…`, or any `…ontology…` spelling) also warns that
+it produced no ontology bindings, so unrecognized spellings never leave
+bindings silently empty. Raw heading text stays available in
+`model.raw_sections`. The formal `schema_validator.GNNParser` remains
+spelling-exact and reports the missing canonical section instead.
+
 ## Adding a format
 
 1. Extend **`GNNFormat`** in `common.py` if needed.

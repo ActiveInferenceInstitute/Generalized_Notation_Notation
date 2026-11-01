@@ -517,10 +517,11 @@ def parse_gnn_ontology_section(content: str) -> Dict[str, Any]:
             if not line:
                 continue
 
-            # Markdown section names are case-insensitive for GNN processing,
-            # but only an exact level-two ontology heading opens this block.
+            # Markdown section names are case- and spacing-insensitive for GNN
+            # processing: "## ActInf Ontology Annotation" opens the same block
+            # as "## ActInfOntologyAnnotation".
             if line.startswith("##"):
-                heading = line[2:].strip().casefold()
+                heading = re.sub(r"\s+", "", line[2:].strip()).casefold()
                 current_section = (
                     "ontology"
                     if heading in {"ontology", "actinfontologyannotation"}

@@ -18,3 +18,9 @@ Run `uv run --extra dev python -m pytest tests/parsers/ -q`.
 
 `test_parsers_registry.py` checks `PARSER_REGISTRY` / `SERIALIZER_REGISTRY`
 entries and `GNNParsingSystem` format listing plus string parsing.
+
+`test_markdown_section_headings.py` covers section-heading spelling: the spaced
+`## ActInf Ontology Annotation` spelling reaches the ontology parser with a
+visible warning, an unrecognized `ActInf…` heading warns instead of leaving
+silently empty bindings, canonical headings stay warning-free, and whitespace
+normalization applies to the other canonical sections too.

@@ -397,6 +397,15 @@ class TestMcpExtractionVocabulary:
         result = extract_ontology_annotations_mcp("# no annotations\n")
         assert result["annotations"] == {}
 
+    def test_spaced_heading_is_recognized(self) -> None:
+        from gnn.ontology.mcp import extract_ontology_annotations_mcp
+
+        content = "## ActInf Ontology Annotation\ns=HiddenState\n"
+        result = extract_ontology_annotations_mcp(content)
+        assert result["success"] is True
+        assert result["annotations"] == {"s": "HiddenState"}
+        assert result["valid_count"] == 1
+
 
 # ─__init__ public surface ───────────────────────────────────────────────────
 
