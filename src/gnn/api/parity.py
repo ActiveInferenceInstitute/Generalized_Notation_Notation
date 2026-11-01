@@ -586,7 +586,12 @@ def _require_input_dir(path_value: str, *, purpose: str) -> Path:
 
 
 def _validate_gnn(gnn_file: Path, *, strict: bool) -> ValidateResponse:
-    """Mirror ``gnn.cli._cmd_validate`` section/state-space/matrix checks."""
+    """Delegate to the shared validation semantics (``run_validation_checks``).
+
+    The API keeps only the HTTP mapping: a strict run with errors becomes a
+    400 carrying the errors in ``error.details``; otherwise the response
+    reports the CLI exit code.
+    """
     content = gnn_file.read_text(encoding="utf-8")
     file_name = str(gnn_file)
 
@@ -627,7 +632,10 @@ def _validate_gnn(gnn_file: Path, *, strict: bool) -> ValidateResponse:
 def _parse_gnn(
     gnn_file: Path, output_format: ParseOutputFormat
 ) -> "ParseResponse | ParseSummary":
-    """Mirror ``gnn.cli._cmd_parse`` parsing, frontmatter, and POMDP probes."""
+    """Delegate to the shared parse payload builder (``build_parse_payload``).
+
+    The API presents the same payload as JSON, YAML, or a summary envelope.
+    """
     result, parse_errors = build_parse_payload(gnn_file)
     file_name = str(gnn_file)
 
@@ -675,7 +683,12 @@ def _parse_gnn(
 
 
 def _extract_gnn(gnn_file: Path, *, strict: bool, compact: bool) -> ExtractResponse:
-    """Mirror ``gnn.cli._cmd_extract`` payload and empty-skeleton checks."""
+    """Delegate to the shared extraction route and defect classifier.
+
+    ``extract_to_json`` produces the payload and ``extract_payload_defect``
+    classifies error envelopes and lenient empty skeletons, which the API maps
+    to 400 responses.
+    """
     from gnn.extract import extract_to_json
 
     payload = extract_to_json(gnn_file, strict_validation=strict, compact=compact)
@@ -721,7 +734,12 @@ def _render_gnn(
     *,
     options: Optional[Dict[str, Any]] = None,
 ) -> RenderResponse:
-    """Mirror ``gnn.cli._cmd_render`` single-framework render invocation."""
+    """Delegate to the shared render invocation and artifact discovery.
+
+    ``process_render`` runs the render; ``render_processing_succeeded`` and
+    ``find_render_artifact`` classify the outcome and locate the current
+    artifact, which the API maps to a 400 or the response envelope.
+    """
     from gnn.render import process_render
 
     with tempfile.TemporaryDirectory(prefix="gnn-api-render-") as temp_dir:
@@ -758,7 +776,7 @@ def _render_gnn(
 
 
 def _graph_gnn(gnn_file: Path, output_format: GraphOutputFormat) -> GraphResponse:
-    """Mirror ``gnn.cli._cmd_graph`` dependency-graph generation."""
+    """Delegate to the shared dependency-graph generator (``render_graph_from_file``)."""
     from gnn.multimodel.dep_graph import render_graph_from_file
 
     output = render_graph_from_file(str(gnn_file), output_format=output_format)
@@ -771,7 +789,11 @@ def _graph_gnn(gnn_file: Path, output_format: GraphOutputFormat) -> GraphRespons
 
 
 def _preflight(config_path: Optional[Path]) -> PreflightResponse:
-    """Mirror ``gnn.cli._cmd_preflight`` severity classification."""
+    """Delegate to the shared preflight runner and severity classifier.
+
+    ``run_preflight`` produces the report and ``preflight_severities``
+    classifies it; the API maps errors to a 400 and warnings to exit code 2.
+    """
     from gnn.pipeline.preflight import run_preflight
 
     report = run_preflight(config_path=config_path)
@@ -808,7 +830,7 @@ def _preflight(config_path: Optional[Path]) -> PreflightResponse:
 
 
 def _report(output_dir: Path) -> ReportResponse:
-    """Mirror ``gnn.cli._cmd_report`` atomic PIPELINE_REPORT.md publish."""
+    """Delegate to the shared report publisher (``publish_pipeline_report``)."""
     report, report_path = publish_pipeline_report(output_dir)
     return ReportResponse(
         output_dir=str(output_dir),
@@ -819,7 +841,7 @@ def _report(output_dir: Path) -> ReportResponse:
 
 
 def _model_registry(target_path: Path, query_ontology: Optional[str]) -> ModelsResponse:
-    """Mirror ``gnn.cli._cmd_models`` registry processing and filtering."""
+    """Delegate to the shared registry processing (``process_model_registry``)."""
     from gnn.model_registry import process_model_registry
 
     # A registry is a per-request snapshot. Sharing the repository's tracked
@@ -847,7 +869,11 @@ def _pull(
     dry_run: bool,
     overwrite: bool,
 ) -> PullResponse:
-    """Mirror ``gnn.cli.templates.pull_template`` collision-aware copy."""
+    """Delegate to the shared template copy (``gnn.cli.templates.pull_template``).
+
+    The API maps unknown template names to 404 and an existing destination to
+    409.
+    """
     from gnn.cli.templates import pull_template as pull_template_backend
 
     try:
@@ -864,7 +890,12 @@ def _pull(
 
 
 def _reproduce(run_hash: str, history_dir: Path) -> ReproduceResponse:
-    """Mirror ``gnn.cli._cmd_reproduce`` verify-only resolution and checks."""
+    """Delegate to the shared run-index resolution and verification.
+
+    ``lookup_run`` and ``verify_indexed_run`` resolve and verify the indexed
+    run; the API endpoint is verify-only and returns the reconstructed
+    configuration without executing it.
+    """
     from gnn.pipeline.hasher import lookup_run, verify_indexed_run
 
     entry = lookup_run(run_hash, history_dir)
