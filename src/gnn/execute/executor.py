@@ -659,7 +659,7 @@ class GNNExecutor:
         *,
         cancel_token: Optional[CancelToken] = None,
     ) -> Dict[str, Any]:
-        """Verify one document via the fep_lean bridge (contract v0.6).
+        """Verify one document via the fep_lean bridge (contract v0.7).
 
         ``cancel_token`` forwards into the envelope-backed dispatch; a fired
         token cancels the run pre-spawn or mid-flight GNN-side (the fep-lean

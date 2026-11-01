@@ -2,7 +2,7 @@
 
 Lean 4 execution backend for the GNN pipeline: verifies emitted documents
 against the `FEP.GnnDocument` typed surface owned by the sibling `fep_formal`
-checkout (bridge contract v0.5).
+checkout (bridge contract v0.7).
 
 ## What this module does
 
@@ -30,7 +30,7 @@ into the framework output directory.
 
 `verify-document` proves syntax and `WellFormed` only. It does NOT
 auto-prove `DiscreteConforms` / `ContinuousConforms` — that is
-research-grade and out of scope (bridge contract v0.5 §13). When the
+research-grade and out of scope (bridge contract v0.7 §13). When the
 fep_formal checkout is unavailable the backend is reported skipped, never
 silently successful.
 

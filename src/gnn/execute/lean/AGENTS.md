@@ -1,7 +1,7 @@
 # AGENTS.md — `gnn.execute.lean`
 
 Lean 4 execution backend: document verification against the `FEP.GnnDocument`
-typed surface owned by the sibling `fep_formal` checkout (bridge contract v0.5,
+typed surface owned by the sibling `fep_formal` checkout (bridge contract v0.7,
 `docs/design/gnn-bridge/bridge-contract.md` in that repo).
 
 ## Files
@@ -32,7 +32,7 @@ typed surface owned by the sibling `fep_formal` checkout (bridge contract v0.5,
   non-zero bridge exit records the CLI error text in the result record.
 - Scope boundary: `verify-document` proves syntax + `WellFormed` only. It does
   NOT auto-prove `DiscreteConforms` / `ContinuousConforms` (out of scope, see
-  bridge contract v0.5 §13).
+  bridge contract v0.7 §13).
 
 Canonical checkout selection uses `FEP_FORMAL_ROOT` before the deprecated
 `FEP_LEAN_ROOT` alias, then the `fep_formal` sibling before `fep_lean`.
