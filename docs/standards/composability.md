@@ -210,13 +210,13 @@ repositories consume exactly these five declared surfaces:
    `src/gnn/extract/pomdp_extractor.py:1628`, content variant at `:1663`)
    and `gnn.schema.parse_state_space` (`src/gnn/schema/parser.py:164`).
    Consumers inject this checkout onto `sys.path` and import exactly these
-   symbols (fep_lean's `verify-document`).
+   symbols (FEP_Formal's `verify-document`).
 3. **Syntax surface** — `docs/gnn/gnn_syntax.md` and
    `src/gnn/pipeline/step_registry.py`. Exactly these two files form the
    hand-maintained syntax pin that the bridge status check compares against
    the live bytes.
 4. **Mirror contract** — `docs/other/fep_lean/bridge-contract.md`, the
-   mirror of fep_lean's canonical
+   mirror of FEP_Formal's canonical
    `docs/design/gnn-bridge/bridge-contract.md`. The two bodies stay equal
    (only the Canonical/Mirror table rows may differ); substance changes
    bump the contract version and land in both checkouts in the same
@@ -248,19 +248,19 @@ Changes to surfaces 1-5 are announce-and-repin events: follow the closeout
 ordering in
 [docs/development/fep_lean_paired_revision.md](../development/fep_lean_paired_revision.md)
 — all content edits land first (the manuscript/token ritual runs at the
-final content state when manuscript inputs changed), then the fep_lean-side
+final content state when manuscript inputs changed), then the FEP_Formal-side
 bridge re-pin, then the GNN pin bump as the final commit; the GEO_INFER
 direction is the mirror image.
 
 Edits outside surfaces 1-5 must not force sibling re-pinning. Census
 break-class B1 (the bridge's source binding covering a whole-tree owner glob)
-was repaired on the fep_lean side: the GNN owner roster now binds the declared
+was repaired on the FEP_Formal side: the GNN owner roster now binds the declared
 contract surface only — `pyproject.toml`, `uv.lock`, `src/gnn/main.py`,
 `docs/gnn/gnn_syntax.md`, `src/gnn/pipeline/step_registry.py` and the mirrored
 `docs/other/fep_lean/bridge-contract.md` — so ordinary `src/gnn/**/*.py`
 implementation edits no longer re-drift the pair. Emitted-document freshness is
 verified at run time by `emit --check` instead of by pinning the implementation
-tree. Widening or narrowing that roster remains an fep_lean-side design change,
+tree. Widening or narrowing that roster remains a FEP_Formal-side design change,
 never a GNN-side pin edit.
 
 ## Enforcement

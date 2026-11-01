@@ -18,7 +18,7 @@ cue (12 outcomes) and chooses hold, downstream, upstream or turn.
 GEO-INFER renders the model as GNN v1 Markdown, this repository's strict
 exporter turns it into a `gnn-geo-infer/1` artifact, and the artifact is
 consumed twice: by GEO-INFER-ACT's `run_gnn_inference` (pymdp 1.0.4) and by a
-Lean 4 instance in the fep_lean checkout. The canonical documentation is
+Lean 4 instance in the FEP_Formal checkout. The canonical documentation is
 `../GEO_INFER/GEO-INFER-ACT/docs/cascadia_river_homing.md` in the sibling
 checkout (inline path, not a link: each repository validates its own links).
 
@@ -64,7 +64,7 @@ Its export record stores this repository's revision, the interpreter and
   decimal literal such as `0.140625` is exactly 9/64 in binary64. The GNN
   source, the artifact and the Lean tables read identical numbers.
 - **Log-preferences.** `C` is bound to `LogPreferenceVector`, matching this
-  repository's interchange contract and pymdp. fep_lean's normalized-`C`
+  repository's interchange contract and pymdp. FEP_Formal's normalized-`C`
   denotation therefore does not apply; its Cascadia instance carries
   `softmax C` explicitly and proves the exact relation between risk plus
   ambiguity and pymdp's score.

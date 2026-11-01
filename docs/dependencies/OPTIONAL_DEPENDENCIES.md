@@ -14,7 +14,7 @@ This document provides a comprehensive guide to optional dependencies in the GNN
 | RxInfer.jl | Optional (Julia) | Julia probabilistic inference (discrete + continuous LGSSM) | `julia --startup-file=no --project=src/gnn/execute/rxinfer -e 'using Pkg; Pkg.instantiate()'` | 12 (Execute) |
 | ActiveInference.jl | Optional (Julia) | Julia Active Inference (discrete categorical models) | `julia --startup-file=no --project=src/gnn/execute/activeinference_jl -e 'using Pkg; Pkg.instantiate()'` | 12 (Execute) |
 | PyTorch | Optional | Deep learning backend; discrete factorized and continuous LGSSM | `uv sync --extra torch` | 12 (Execute) |
-| Lean | Optional | fep_lean bridge for proof-carrying model verification | sibling fep_lean checkout (see `docs/other/fep_lean/README.md`) | 12 (Execute) |
+| Lean | Optional | FEP_Formal bridge for proof-carrying model verification | sibling FEP_Formal checkout (see `docs/other/fep_lean/README.md`) | 12 (Execute) |
 | bnlearn | Optional | Bayesian network learning (render/execute; runtime optional) | `uv sync --extra bnlearn` | 12 (Execute) |
 | Plotly | Core | Interactive visualizations | `uv sync` | 8-9 (Visualization) |
 | GraphViz | Optional | Advanced graph layouts | `brew install graphviz` / `apt-get install graphviz` | 8-9 (Visualization) |

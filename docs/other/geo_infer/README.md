@@ -97,9 +97,9 @@ The harness re-exports known exemplars with this repo's interpreter and
 checks the produced artifacts against the contract schemas and provenance
 requirements.
 
-## Relationship to fep_lean
+## Relationship to FEP_Formal
 
-fep_lean verifies the well-formedness of GNN **source documents** in Lean 4,
+FEP_Formal verifies the well-formedness of GNN **source documents** in Lean 4,
 upstream of export (see [docs/other/fep_lean/](../fep_lean/README.md));
 explicitly, `fep-lean bridge verify-document` consumes GNN Markdown via
 `gnn.extract.pomdp_extractor` and cannot validate GEO_INFER's interchange
@@ -116,7 +116,7 @@ run Lean, and successful export does not inherit that slice's receipt.
 - [Experiment qualification](experiment_qualification.md) — real producer
   reproduction for each retained Cascadia condition, with failure controls.
 
-- [fep_lean bridge program](../fep_lean/README.md) — upstream document
+- [FEP_Formal bridge program](../fep_lean/README.md) — upstream document
   well-formedness verification
 - [Framework integration guide](../../gnn/integration/framework_integration_guide.md)
 - [docs/other archive](../README.md) — this folder's parent

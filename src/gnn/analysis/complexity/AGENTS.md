@@ -93,7 +93,7 @@ Non-numeric horizon (`"Unbounded"` or symbolic): exact-factorized and LGSSM boun
 Run `uv run --extra dev python -m pytest tests/analysis/complexity/test_complexity_estimator.py -q`.
 
 ## Custody note
-New `src/gnn/**/*.py` files do not drift the fep_lean source-pin: the pinned
+New `src/gnn/**/*.py` files do not drift the FEP_Formal source-pin: the pinned
 GNN roster is the declared notation contract, so implementation-tree additions
 are not owners and need no re-seal. Emitted-document freshness is enforced at
 run time by the bridge's `emit --check`. See the

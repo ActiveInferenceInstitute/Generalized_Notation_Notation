@@ -10,10 +10,10 @@ Headless POMDP extraction from GNN specification files behind a versioned, never
 - `mcp.py` - Single `extract_pomdp` MCP tool (`extract_pomdp_mcp`, `register_tools`): thin wrapper over `extract_to_json` returning the versioned payload or the error envelope with `success: false`
 
 ## Cross-Repo Pin
-The fep_lean bridge `verify-document` operation imports
+The FEP_Formal bridge `verify-document` operation imports
 `gnn.extract.pomdp_extractor.extract_pomdp_from_file` as its render route
 (bridge contract `docs/other/fep_lean/bridge-contract.md`). The pin record
-(`specs/gnn-bridge-w2-source-custody/source-pin.json`) lives in the fep_lean
+(`specs/gnn-bridge-w2-source-custody/source-pin.json`) lives in the FEP_Formal
 checkout, not here: any move or rename of that import path must be coordinated
 across both checkouts. The CLI `gnn extract FILE` subcommand also calls
 `extract_to_json` (wired in `src/gnn/cli/__init__.py`).

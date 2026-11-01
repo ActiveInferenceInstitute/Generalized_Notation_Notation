@@ -27,7 +27,7 @@ typed surface owned by the sibling `fep_formal` checkout (bridge contract v0.7,
   drive it like any other backend (`lean_executions` result key).
 - Unavailable checkout ⇒ skip with an info log and a `False` return from
   `run_lean_scripts`; `verify_document` returns
-  `{"success": False, "error": "fep_lean unavailable"}`.
+  `{"success": False, "error": "FEP_Formal not available"}`.
 - Verification is fail-closed: warnings fail under `--fail-on-warnings`, and a
   non-zero bridge exit records the CLI error text in the result record.
 - Scope boundary: `verify-document` proves syntax + `WellFormed` only. It does

@@ -116,7 +116,7 @@ def test_unavailable_runner_state_seam(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda key: _RunnerState(available=False, runner=None),
     )
     result = GNNExecutor()._execute_lean_verification("model.md")
-    assert result == {"success": False, "error": "fep_lean unavailable"}
+    assert result == {"success": False, "error": "FEP_Formal not available"}
 
 
 def test_hardware_probe_reports_actual_devices_without_parent_import(
