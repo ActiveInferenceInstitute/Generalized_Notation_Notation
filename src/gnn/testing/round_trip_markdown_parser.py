@@ -15,6 +15,8 @@ from typing import (
     List,
 )
 
+from gnn.parsers.common import canonical_section_heading
+
 from .round_trip_availability import GNNInternalRepresentation
 
 logger = logging.getLogger(__name__)
@@ -82,7 +84,7 @@ class _DirectMarkdownParser:
             if line.startswith("## "):
                 if current_section:
                     sections[current_section] = "\n".join(current_content).strip()
-                current_section = line[3:].strip()
+                current_section = canonical_section_heading(line[3:].strip())
                 current_content = []
             elif current_section:
                 current_content.append(line)

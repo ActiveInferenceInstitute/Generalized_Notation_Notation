@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List
 
+from gnn.parsers.common import canonical_section_heading
+
 from ..matrix.compat import parse_matrix_data
 
 logger = logging.getLogger(__name__)
@@ -93,7 +95,9 @@ def parse_gnn_content(content: str) -> Dict[str, Any]:
                     current_param_lines = []
                     in_multiline_param = False
 
-                current_section = stripped_line.lstrip("#").strip()
+                current_section = canonical_section_heading(
+                    stripped_line.lstrip("#").strip()
+                )
                 parsed["sections"][current_section] = []
                 parsed["raw_sections"][current_section] = ""
             elif current_section:

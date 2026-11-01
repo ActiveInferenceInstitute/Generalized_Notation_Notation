@@ -10,6 +10,7 @@ License: MIT
 """
 
 import logging
+import re
 import uuid
 import warnings
 from abc import ABC, abstractmethod
@@ -43,6 +44,59 @@ T = TypeVar("T")
 E = TypeVar("E", bound=Enum)
 K = TypeVar("K")
 V = TypeVar("V")
+
+# ================================
+# MARKDOWN SECTION HEADINGS
+# ================================
+
+#: Canonical ``## `` section names of the GNN markdown format. A heading that
+#: differs from one of these only by whitespace names the same section, so
+#: ``## ActInf Ontology Annotation`` and ``## ActInfOntologyAnnotation`` are one
+#: section in every reader -- not only in :class:`~gnn.parsers.markdown_parser.MarkdownGNNParser`.
+GNN_SECTION_HEADINGS: tuple[str, ...] = (
+    "GNNSection",
+    "GNNVersionAndFlags",
+    "ModelName",
+    "ModelAnnotation",
+    "StateSpaceBlock",
+    "Connections",
+    "InitialParameterization",
+    "Equations",
+    "Time",
+    "ActInfOntologyAnnotation",
+    "ModelParameters",
+    "Footer",
+    "Signature",
+)
+
+
+def collapse_heading_whitespace(heading: str) -> str:
+    """Collapse whitespace so two heading spellings compare structurally."""
+    return re.sub(r"\s+", "", heading)
+
+
+def match_section_heading(heading: str) -> Optional[str]:
+    """Return the canonical section name ``heading`` names, else ``None``.
+
+    Only whitespace differences match. Any other spelling difference returns
+    ``None`` so that an unrecognized heading stays visible as itself instead of
+    being folded into a section it does not name.
+    """
+    collapsed = collapse_heading_whitespace(heading)
+    for name in GNN_SECTION_HEADINGS:
+        if collapse_heading_whitespace(name) == collapsed:
+            return name
+    return None
+
+
+def canonical_section_heading(heading: str) -> str:
+    """Return the canonical name for a known section heading, else ``heading``.
+
+    Readers use this to key sections by the same names the GNN parser uses,
+    whatever whitespace spelling the source document declares.
+    """
+    return match_section_heading(heading) or heading
+
 
 # ================================
 # EXCEPTIONS AND ERRORS
