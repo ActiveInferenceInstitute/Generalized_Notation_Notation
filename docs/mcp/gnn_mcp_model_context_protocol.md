@@ -352,7 +352,6 @@ Citations:
 [35] https://huggingface.co/blog/lynn-mikami/mcp-servers
 [36] https://dev.wix.com/docs/sdk/articles/use-the-wix-mcp/mcp-sample-prompts
 [37] https://hackteam.io/blog/build-your-first-mcp-server-with-typescript-in-under-10-minutes/
-[38] https://github.com/cyanheads/model-context-protocol-resources/blob/main/guides/mcp-server-development-guide.md
 [39] https://www.anthropic.com/news/model-context-protocol
 [40] https://www.reddit.com/r/ClaudeAI/comments/1h3y45q/what_are_you_actually_using_mcp_for/
 [41] https://dev.to/shadid12/how-to-build-mcp-servers-with-typescript-sdk-1c28
