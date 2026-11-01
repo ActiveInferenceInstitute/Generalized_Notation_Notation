@@ -94,6 +94,10 @@ import-linter:
 thin-orchestrators:
     uv run python scripts/check_thin_orchestrators.py
 
+# Enforce the numbered-script stdlib-shadowing guard (COMP-010)
+shadow-guard:
+    uv run python scripts/check_stdlib_shadow_guard.py
+
 # Check argparse-registered flags against maintained-doc mentions (ratcheted)
 flag-parity:
     uv run python scripts/check_flag_parity.py
@@ -169,7 +173,7 @@ doc-patterns:
     uv run python scripts/check_gnn_doc_patterns.py --strict
 
 # Run fast quality gates without the full pytest suite
-quality: format-check lint import-linter thin-orchestrators flag-parity dep-hygiene validate-surface terminology doc-terms audit doc-contracts doc-patterns typecheck security capability skills-health tokens hydrated-prose v3-acceptance mcp-count
+quality: format-check lint import-linter thin-orchestrators shadow-guard flag-parity dep-hygiene validate-surface terminology doc-terms audit doc-contracts doc-patterns typecheck security capability skills-health tokens hydrated-prose v3-acceptance mcp-count
 
 # Run focused PyMDP/POMDP behavior checks
 test-pymdp-focused:

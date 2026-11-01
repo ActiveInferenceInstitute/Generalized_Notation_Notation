@@ -85,6 +85,9 @@ jobs:
       - name: Thin orchestrator line cap
         run: uv run --frozen --no-sync python scripts/check_thin_orchestrators.py
 
+      - name: Stdlib-shadow guard on numbered scripts
+        run: uv run --frozen --no-sync python scripts/check_stdlib_shadow_guard.py
+
       - name: CLI flag parity
         run: uv run --frozen --no-sync python scripts/check_flag_parity.py
 

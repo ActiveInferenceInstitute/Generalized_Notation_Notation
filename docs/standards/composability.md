@@ -34,20 +34,34 @@ five-seam doctrine; ADR 048 records that it is superseded, not adopted.
 ### Seam A — orchestrator → module processor
 
 **Canonical pattern.** A numbered script `src/gnn/N_<name>.py` is a thin
-orchestrator: the src-layout bootstrap, one import of its implementation
+orchestrator: the stdlib-shadowing guard, one import of its implementation
 module, and a single `create_standardized_pipeline_script` call
 (`src/gnn/utils/pipeline_orchestration/pipeline_template.py`). Step logic
 belongs in `src/gnn/<module>/`, never in the numbered file.
 
-**Conformance.** All 25 numbered scripts conform — each carries the
-bootstrap, one module import, and the template call (verified 2026-09-21).
+**Conformance.** All 25 numbered scripts conform — each carries the guard
+before its first import, one module import, and the template call
+(re-verified 2026-11-01).
 
-**Exception.** COMP-010 (tracked, see the exceptions table): the bootstrap
-itself is 25 hand-rolled copies (`0_template.py:38` …
-`4_model_registry.py:39`; `2_tests.py:22`, with a second repository-root
-copy at `2_tests.py:41`). Direction: hoist into
-`create_standardized_pipeline_script`. Growth of the numbered files is
-additionally bounded by the thin-orchestrator gate (see Enforcement).
+**Guard requirement.** The guard is the same three lines in every directly
+runnable script (`0_template.py:35-36` … `24_intelligent_analysis.py:14-15`):
+
+```python
+if globals().get("__package__") is None and not sys.flags.safe_path:
+    sys.path.pop(0)
+```
+
+It must run before the first import that could resolve inside `src/gnn/`:
+`src/gnn/types/` shadows the standard-library `types` module when a numbered
+script is executed directly (`python src/gnn/N_*.py` puts `src/gnn/` first
+on `sys.path`). The 2026-09-21 census read this as a src-layout bootstrap
+and filed it as COMP-010 with a hoist direction; the hoist is unreachable
+because `create_standardized_pipeline_script` is itself imported after the
+guard, so the guard is a required pre-import step, not a removable
+duplicate. It is enforced by `scripts/check_stdlib_shadow_guard.py` (see
+Enforcement). `2_tests.py:41-42` adds a repository-root insertion before
+importing the `tests` package; that edit is unrelated to the guard and
+stays local to the step.
 
 ### Seam B — pipeline.config output-dir / registry
 
@@ -130,16 +144,17 @@ exception — never hidden, never silently normalized. Tracker refs are the
 COMP ids of the 2026-09-21 census.
 
 Re-censused 2026-11-01 against the tree carrying this revision; every
-file:line below was re-read in that tree. Four of the six exceptions the
-2026-09-21 census recorded have since been remediated and are listed under
-*Remediated exceptions*; two remain open.
+file:line below was re-read in that tree. All six exceptions in the
+2026-09-21 census table are resolved — five remediated by their fix
+directions and COMP-010 retired by the gate-enforced guard requirement in
+Seam A — and are listed under *Resolved exceptions*; COMP-011 stays
+recorded as a folded INFO note.
 
 | Ref | Severity | Site | Issue | Direction |
 | --- | --- | --- | --- | --- |
-| COMP-010 | LOW | `src/gnn/0_template.py:36`, `src/gnn/2_tests.py:20,41`, `src/gnn/3_gnn.py:12`, `src/gnn/24_intelligent_analysis.py:15` — the same 3-line guard in all 25 numbered scripts | Every directly runnable script under `src/gnn/` repeats `if globals().get("__package__") is None and not sys.flags.safe_path: sys.path.pop(0)`. The 2026-09-21 census read this as a src-layout bootstrap; it is now a **stdlib-shadowing guard** — `src/gnn/types/` would shadow the stdlib `types` module whenever a numbered script is executed directly, so the guard must run before the first import | The 2026-09-21 direction (hoist into `create_standardized_pipeline_script`) is not reachable: that function is itself imported after the guard, so a shared helper cannot perform the pop. Either keep the guard as an accepted, gate-enforced pattern (a check that every directly runnable `src/gnn/[0-9]*_*.py` carries it) or rename `src/gnn/types/` to remove the shadowing hazard entirely — the second option retires the exception instead of documenting it |
 | COMP-011 | INFO (folded) | `src/gnn/gui/oxdraw/processor.py:18,87`; `src/gnn/mcp/server_stdio.py:32-33`; `src/gnn/mcp/server_http.py:64-65` | Documented integration notes: the websocket bridge contract note and the direct-script import recovery in the MCP servers | Recorded, not re-reported |
 
-Remediated exceptions (each verified in the tree carrying this revision):
+Resolved exceptions (each verified in the tree carrying this revision):
 
 - **COMP-003** — `fba7bf86a` ("comp-003: one home for SAPF — delete
   `src/gnn/sapf` alias package"). `src/gnn/sapf/` is gone; `git ls-files
@@ -155,9 +170,9 @@ Remediated exceptions (each verified in the tree carrying this revision):
   `extract_payload_defect`, `find_render_artifact`,
   `render_processing_succeeded`, `preflight_severities`,
   `publish_pipeline_report`); both `gnn/cli/handlers_pipeline.py` and
-  `gnn/api/parity.py` call into it. Residual: nine `gnn/api/parity.py`
-  docstrings still open with "Mirror ``gnn.cli._cmd_*``" while their bodies
-  delegate to the shared helpers — stale prose, not a second implementation.
+  `gnn/api/parity.py` call into it. The nine `gnn/api/parity.py` docstrings
+  that still described the adapters as mirrors were corrected 2026-11-01 to
+  name the shared helpers; the adapters keep only the HTTP presentation.
 - **COMP-006** — `6712c63b7` ("comp-006+009: `gnn.pipeline` is the single
   output-dir path; delete pre-registry template modules"). Neither
   `get_output_dir_for_script` nor `execute_pipeline_step_template` appears in
@@ -170,6 +185,11 @@ Remediated exceptions (each verified in the tree carrying this revision):
 - **COMP-009** — `6712c63b7`, same commit as COMP-006.
   `src/gnn/pipeline/pipeline_step_template.py` and
   `src/gnn/pipeline/pipeline_validation.py` no longer exist.
+- **COMP-010** — retired by enforcement: the stdlib-shadowing guard is the
+  canonical pattern of Seam A, not a removable duplicate.
+  `scripts/check_stdlib_shadow_guard.py` (test:
+  `tests/scripts/test_stdlib_shadow_guard.py`) fails any directly runnable
+  `src/gnn/[0-9]*_*.py` that drops the guard or imports ahead of it.
 
 ## Consumer seams: declared cross-repo surfaces
 
@@ -251,6 +271,9 @@ standard):
 
 - `scripts/check_thin_orchestrators.py` — numbered orchestrator line cap
   (150 hard, 133 ratchet file).
+- `scripts/check_stdlib_shadow_guard.py` — every directly runnable
+  `src/gnn/[0-9]*_*.py` carries the canonical stdlib-shadowing guard before
+  its first import (test: `tests/scripts/test_stdlib_shadow_guard.py`).
 - `scripts/check_flag_parity.py` — argparse-registered flags vs
   maintained-doc flag mentions (ratcheted).
 - `scripts/check_dep_hygiene.py` — extras and mypy overrides vs actual
