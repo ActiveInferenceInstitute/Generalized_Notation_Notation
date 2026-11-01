@@ -98,6 +98,10 @@ thin-orchestrators:
 shadow-guard:
     uv run python scripts/check_stdlib_shadow_guard.py
 
+# Verify the pinned Active Inference Ontology vocabulary bridge against its pin
+ontology-pin:
+    uv run python scripts/check_ontology_pin.py
+
 # Check argparse-registered flags against maintained-doc mentions (ratcheted)
 flag-parity:
     uv run python scripts/check_flag_parity.py
@@ -173,7 +177,7 @@ doc-patterns:
     uv run python scripts/check_gnn_doc_patterns.py --strict
 
 # Run fast quality gates without the full pytest suite
-quality: format-check lint import-linter thin-orchestrators shadow-guard flag-parity dep-hygiene validate-surface terminology doc-terms audit doc-contracts doc-patterns typecheck security capability skills-health tokens hydrated-prose v3-acceptance mcp-count
+quality: format-check lint import-linter thin-orchestrators shadow-guard ontology-pin flag-parity dep-hygiene validate-surface terminology doc-terms audit doc-contracts doc-patterns typecheck security capability skills-health tokens hydrated-prose v3-acceptance mcp-count
 
 # Run focused PyMDP/POMDP behavior checks
 test-pymdp-focused:

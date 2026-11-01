@@ -1,7 +1,7 @@
 # GNN Ontology Guide
 
 **Version**: v3.2.0 Engine (Bundle v2.0.0)  
-**Last Updated**: 2026-04-15  
+**Last Updated**: 2026-11-01  
 **Modules**: 38+ · **Pipeline steps**: 25 · **Renderers**: registry-defined backends (see [../implementations/README.md](../implementations/README.md)) · **Tests**: see [../../../README.md](../../../README.md)
 
 This document provides comprehensive guidance on ontology processing for Generalized Notation Notation (GNN) models, including Active Inference ontology integration, term mapping, and semantic validation.
@@ -83,7 +83,7 @@ graph TD
 The ontology system automatically extracts terms from GNN models:
 
 ```python
-from ontology.processor import parse_gnn_ontology_section
+from gnn.ontology import parse_gnn_ontology_section
 
 # Parse ontology annotations from GNN file content
 with open("input/gnn_files/model.md") as f:
@@ -102,31 +102,49 @@ result = parse_gnn_ontology_section(content)
 Validate extracted terms against the Active Inference Ontology:
 
 ```python
-from ontology.processor import validate_annotations, load_defined_ontology_terms
+from gnn.ontology import validate_annotations, load_defined_ontology_terms
 
-# Load the Active Inference Ontology terms
+# Load the declared vocabulary (64 labels: descriptions plus declared obo: metadata)
 ontology_terms = load_defined_ontology_terms()
-# Returns: {"HiddenState": {"description": "...", "uri": "obo:ACTO_000001"}, ...}
 
-# Validate annotations against the ontology
+# Validate annotations against the declared vocabulary and resolve the matched
+# labels through the pinned vocabulary bridge
 result = validate_annotations(
     annotations=["A=LikelihoodMatrix", "s=HiddenState", "x=InvalidTerm"],
     ontology_terms=ontology_terms,
 )
 # result includes:
-# - valid_annotations: [str, ...]      (annotations that matched a term)
+# - valid_annotations: [str, ...]      (annotations that matched a declared term)
 # - invalid_annotations: [str, ...]    (annotations with no matching term)
-# - matched_terms: {key: {annotation, term_name, description, uri, key, value, comment}}
+# - matched_terms: {key: {annotation, term_name, description, ontology_id,
+#                         ontology_status, ontology_term, ontology_reason, key,
+#                         value, comment}}
 # - suggestions: [{annotation, suggested_term, description}]
 # - coverage_score: float              (valid / total)
+# - ontology_identifier_counts: {resolved, unresolved, not_declared, bridge_unavailable}
 ```
+
+### Ontology Identifiers
+
+Ontology identifiers for annotations come from the Active Inference Ontology's
+generated vocabulary bridge, pinned into this repository:
+
+- **Copy:** `src/gnn/ontology/active_inference_ontology_terms.json` — schema `active-inference-ontology/gnn-terms/v1`, release v5 (2023-05-25), 429 terms, 64 declared labels.
+- **Pin:** `src/gnn/ontology/ontology-pin.json` — source repository, commit, release, path, the copy SHA-256, and the bridge's embedded source/export digests and counts.
+- **API:** `gnn.ontology.bridge` exposes `load_ontology_bridge`, `load_ontology_pin`, `verify_ontology_pin`, `ontology_bridge_status`, `declared_label_index`, `resolve_declared_label` and `pinned_declared_index`; `resolve_declared_label(label, declared)` returns a `DeclaredResolution` with `status`, `identifier`, `ontology_term` and `reason`.
+- **Freshness gate:** `uv run --frozen --no-sync python scripts/check_ontology_pin.py` re-verifies the copy against the pin and fails when they disagree (`--json` prints the same verdict as JSON).
+
+The `obo:ACTO_*` / `obo:TEMP_*` values in the vocabulary file are declared
+metadata. No `ACTO` ontology is registered in the OBO Foundry, Bioregistry or
+OLS4, and `http://purl.obolibrary.org/obo/ACTO_000001` returns HTTP 404, so they
+are never emitted as identifiers.
 
 ### Term Mapping
 
 Generate mapping between GNN model components and ontology concepts:
 
 ```python
-from ontology.processor import process_gnn_ontology
+from gnn.ontology import process_gnn_ontology
 
 # Process ontology for a single GNN file (parse + validate + report)
 result = process_gnn_ontology("input/gnn_files/model.md")
@@ -219,5 +237,5 @@ Ontology processing integrates throughout the pipeline:
 
 ---
 
-**Last Updated**: 2026-04-15  
+**Last Updated**: 2026-11-01  
 **Version**: v3.2.0 Engine (Bundle v2.0.0)

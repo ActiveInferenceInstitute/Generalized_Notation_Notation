@@ -6,7 +6,7 @@ This folder hosts the explicit, stateless developer workflow validation agents r
 
 ## Components
 
-### Audit & Compliance (14 scripts)
+### Audit & Compliance (15 scripts)
 
 | Script | Purpose | Strict CI Gate |
 |--------|---------|:--------------:|
@@ -22,6 +22,7 @@ This folder hosts the explicit, stateless developer workflow validation agents r
 | `check_pomdp_gridworld_outputs.py` | End-to-end GridWorld output validity check for the canonical POMDP test case | ✅ exit 1 on mismatch |
 | `check_thin_orchestrators.py` | Enforces numbered thin-orchestrator line caps: 150 hard cap plus the registered ratchet in `thin_orchestrator_caps.json` | ✅ exit 1 on cap breach |
 | `check_stdlib_shadow_guard.py` | Requires the canonical stdlib-shadowing guard ahead of the first import in every directly runnable `src/gnn/[0-9]*_*.py` (composability COMP-010) | ✅ exit 1 on any breach |
+| `check_ontology_pin.py` | Verifies the pinned Active Inference Ontology vocabulary bridge copy in `src/gnn/ontology/` against `ontology-pin.json` (copy SHA-256, schema, embedded source/export digests, counts, resolved/unresolved invariants) | ✅ exit 1 on mismatch |
 | `check_flag_parity.py` | Ratchets argparse-registered CLI flags against maintained-doc `--flag` mentions (phantom tokens + undocumented flags) | ✅ exit 1 over ratchet cap |
 | `check_dep_hygiene.py` | Flags zero-consumer optional-dependency groups and ratchets stale `[tool.mypy.overrides]` entries | ✅ exit 1 on orphan extra or cap breach |
 

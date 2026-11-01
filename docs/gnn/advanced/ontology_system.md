@@ -1,7 +1,7 @@
 # GNN Ontology System Documentation
 
 **Version**: v3.2.0 Engine (Bundle v2.0.0)  
-**Last Updated**: 2026-04-15  
+**Last Updated**: 2026-11-01  
 **Status**: Maintained
 **Scope**: Ontology annotations and processing. See [framework implementations](../implementations/README.md) for current backend coverage.
 
@@ -20,7 +20,7 @@ The core of the ontology system is a JSON file that defines recognized ontologic
 - **Location:** `src/gnn/ontology/act_inf_ontology_terms.json`
 - **Structure:** The file is a JSON object where each key is an ontological term (e.g., `HiddenState`, `TransitionMatrix`). The value for each term is another JSON object containing:
   - `description`: A human-readable explanation of the term.
-  - `uri`: A Uniform Resource Identifier, often linking to a formal ontology definition (e.g., an OBO Foundry URI like `obo:ACTO_000001`).
+  - `uri`: A **declared** value from the GNN vocabulary (`obo:ACTO_*` / `obo:TEMP_*`). These are declared metadata, not resolvable identifiers: no `ACTO` ontology is registered in the OBO Foundry, Bioregistry or OLS4, and `http://purl.obolibrary.org/obo/ACTO_000001` returns HTTP 404. Resolvable identifiers come from the pinned vocabulary bridge below.
 
 **Example Entry from `act_inf_ontology_terms.json`:**
 
@@ -33,6 +33,16 @@ The core of the ontology system is a JSON file that defines recognized ontologic
     // ... other terms
 }
 ```
+
+### Resolvable identifiers: the pinned vocabulary bridge
+
+Annotation identifiers come from the Active Inference Ontology's generated
+vocabulary bridge, not from the declared `uri` values above:
+
+- **Copy:** `src/gnn/ontology/active_inference_ontology_terms.json` — schema `active-inference-ontology/gnn-terms/v1`, release v5 (2023-05-25), 429 terms, 64 declared labels.
+- **Pin:** `src/gnn/ontology/ontology-pin.json` — source repository, commit, release, path, the copy SHA-256, and the bridge's embedded source/export digests and counts.
+- **Resolution:** `validate_annotations` matches each annotation value against the vocabulary file and then resolves that label through the bridge. Resolved labels (12 of the 64 today) report their stable `term-*` identifier; labels with no counterpart in release v5 (52 today) stay unresolved and are reported as `not in ontology release v5` instead of being guessed.
+- **Freshness gate:** `uv run --frozen --no-sync python scripts/check_ontology_pin.py` re-verifies the copy against the pin and fails when they disagree.
 
 ## 2. Usage in GNN Files
 
@@ -66,7 +76,8 @@ For detailed implementation, see **[src/gnn/ontology/AGENTS.md](../../../src/gnn
 - **Validation:** Each `OntologyTerm` used in the GNN file is checked for its existence as a key in the loaded `act_inf_ontology_terms.json` file.
   - If the term is found, the annotation is considered **valid**.
   - If the term is not found, the annotation is considered **invalid**.
-- **Reporting:** A report is generated (usually `output/10_ontology_output/ontology_processing_report.md`) that summarizes the validation results, including:
+- **Identifier resolution:** Every matched term is resolved through the pinned vocabulary bridge, which records `ontology_id` (the release-v5 `term-*` identifier, or `null`), `ontology_status` (`resolved`, `unresolved`, `not_declared` or `bridge_unavailable`), `ontology_term` and `ontology_reason` per term. Each run also carries an `ontology_bridge` verification record and an `ontology_identifier_counts` summary, so a run whose pinned copy no longer matches the pin is visible in its own artifacts.
+- **Reporting:** A run writes `output/10_ontology_output/ontology_results.json` plus a `*_ontology_report.json` per processed model, summarizing the validation results, including:
   - A list of all processed GNN files.
   - For each file, the parsed annotations and a summary of valid/invalid terms.
   - Overall statistics on the number of annotations found, passed, and failed.

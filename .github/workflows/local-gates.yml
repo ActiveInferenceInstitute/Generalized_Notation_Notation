@@ -88,6 +88,9 @@ jobs:
       - name: Stdlib-shadow guard on numbered scripts
         run: uv run --frozen --no-sync python scripts/check_stdlib_shadow_guard.py
 
+      - name: Pinned ontology vocabulary bridge
+        run: uv run --frozen --no-sync python scripts/check_ontology_pin.py
+
       - name: CLI flag parity
         run: uv run --frozen --no-sync python scripts/check_flag_parity.py
 

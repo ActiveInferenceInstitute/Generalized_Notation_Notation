@@ -15,6 +15,27 @@ from gnn.utils.observability.structured_logging import (
     log_step_warning,
 )
 
+# Pinned Active Inference Ontology vocabulary bridge (release v5)
+from .bridge import (
+    DECLARED_STATUS_BRIDGE_UNAVAILABLE,
+    DECLARED_STATUS_NOT_DECLARED,
+    DECLARED_STATUS_RESOLVED,
+    DECLARED_STATUS_UNRESOLVED,
+    DECLARED_STATUSES,
+    ONTOLOGY_BRIDGE_SCHEMA,
+    DeclaredResolution,
+    declared_label_index,
+    load_ontology_bridge,
+    load_ontology_pin,
+    ontology_bridge_path,
+    ontology_bridge_status,
+    ontology_pin_path,
+    pinned_declared_index,
+    resolve_declared_label,
+    sha256_file,
+    verify_ontology_pin,
+)
+
 # Import core processing functions from processor module
 from .processor import (
     SUGGESTION_MAX_DISTANCE,
@@ -158,6 +179,24 @@ __all__: list[Any] = [
     "get_ontology_processing_options",
     "get_mcp_interface",
     "validate_ontology_terms",
+    # Pinned Active Inference Ontology vocabulary bridge (release v5)
+    "ONTOLOGY_BRIDGE_SCHEMA",
+    "DECLARED_STATUSES",
+    "DECLARED_STATUS_BRIDGE_UNAVAILABLE",
+    "DECLARED_STATUS_NOT_DECLARED",
+    "DECLARED_STATUS_RESOLVED",
+    "DECLARED_STATUS_UNRESOLVED",
+    "DeclaredResolution",
+    "declared_label_index",
+    "load_ontology_bridge",
+    "load_ontology_pin",
+    "ontology_bridge_path",
+    "ontology_bridge_status",
+    "ontology_pin_path",
+    "pinned_declared_index",
+    "resolve_declared_label",
+    "sha256_file",
+    "verify_ontology_pin",
     # Classes expected by tests
     "OntologyProcessor",
     "OntologyValidator",
