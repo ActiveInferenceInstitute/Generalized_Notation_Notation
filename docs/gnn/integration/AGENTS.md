@@ -12,6 +12,7 @@
 - [GNN Framework Integration Guide](framework_integration_guide.md)
 - [GNN Export Guide](gnn_export.md)
 - [GNN Visualization Guide](gnn_visualization.md)
+- [Downstream Adoption Guide](downstream_adoption.md)
 
 
 ## Implementation Details
