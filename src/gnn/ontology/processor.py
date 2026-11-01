@@ -23,6 +23,7 @@ from gnn.utils.observability.structured_logging import (
 
 from .bridge import (
     DECLARED_STATUS_BRIDGE_UNAVAILABLE,
+    DeclaredIndex,
     declared_label_index,
     ontology_bridge_status,
     pinned_declared_index,
@@ -861,6 +862,8 @@ def validate_annotations(
         if ontology_terms is None:
             ontology_terms = load_defined_ontology_terms()
 
+        declared: Optional[DeclaredIndex]
+        bridge_error: Optional[str]
         if ontology_bridge is not None:
             declared, bridge_error = declared_label_index(ontology_bridge), None
         else:

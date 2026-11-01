@@ -30,7 +30,7 @@ import hashlib
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, NamedTuple, Optional, Tuple
+from typing import Any, Dict, NamedTuple, Optional, Tuple, cast
 
 ONTOLOGY_BRIDGE_SCHEMA = "active-inference-ontology/gnn-terms/v1"
 ONTOLOGY_BRIDGE_FILENAME = "active_inference_ontology_terms.json"
@@ -91,6 +91,11 @@ def sha256_file(path: Path) -> str:
 
 def _is_nonempty_str(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
+
+
+def _mapping(value: Any) -> Dict[str, Any]:
+    """Return ``value`` when it is a JSON object, else an empty mapping."""
+    return cast(Dict[str, Any], value) if isinstance(value, dict) else {}
 
 
 @lru_cache(maxsize=4)
@@ -239,8 +244,8 @@ def verify_ontology_pin(
             f"bridge schema {bridge.get('schema')!r} does not match the pin {pin['schema']!r}"
         )
 
-    source = bridge.get("source") if isinstance(bridge.get("source"), dict) else {}
-    export = bridge.get("export") if isinstance(bridge.get("export"), dict) else {}
+    source = _mapping(bridge.get("source"))
+    export = _mapping(bridge.get("export"))
     for label, pin_key, embedded in (
         ("source", "sourceSha256", source.get("sha256")),
         ("export", "exportSha256", export.get("sha256")),
@@ -252,7 +257,7 @@ def verify_ontology_pin(
 
     declared = bridge["declared"]
     terms = bridge["terms"]
-    counts = bridge.get("counts") if isinstance(bridge.get("counts"), dict) else {}
+    counts = _mapping(bridge.get("counts"))
     for label, expected in (
         ("declaredLabels", len(declared)),
         ("terms", len(terms)),
