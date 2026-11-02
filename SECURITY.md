@@ -32,6 +32,11 @@ GUI complexity alerts fixed, without dismissals. GitHub reports zero open
 Dependabot and CodeQL alerts at the receipt epoch. Secret scanning is disabled.
 This does not establish universal deployed-service security.
 
+As of 2026-11-02 the `virtualenv` floor has moved to `>=21.14.13` for
+GHSA-cx6f-vjhg-g3cc / CVE-2026-115586 (see [CHANGELOG.md](CHANGELOG.md)
+§Unreleased → Security floors); that advisory's re-evaluation is still pending,
+so the twelve-finding statement above remains the 2026-10-07 record.
+
 ## Supported Versions
 
 We are committed to ensuring the security of the GeneralizedNotationNotation (GNN) project.
