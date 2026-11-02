@@ -433,16 +433,27 @@ class WebsiteGenerator:
         performance = summary.get("performance_summary")
         if not isinstance(performance, dict):
             performance = {}
+        is_preliminary = bool(summary.get("preliminary")) or summary.get(
+            "evidence_phase"
+        ) == "current_run_snapshot"
+        finished_label = "Snapshot" if is_preliminary else "Finished"
+        preliminary_note = (
+            '<p class="subtitle">Preliminary snapshot — the pipeline had not '
+            "finished when this page was generated.</p>"
+            if is_preliminary
+            else ""
+        )
         run_header = f"""
 <div class="section">
   <div class="section-title">Pipeline Run</div>
+  {preliminary_note}
   <div class="dash-meta">
     <div class="dash-meta__item">
       <span class="dash-meta__label">Overall status</span>
       {_overall_badge(summary.get("overall_status"))}
     </div>
     <div class="dash-meta__item">
-      <span class="dash-meta__label">Finished</span>
+      <span class="dash-meta__label">{finished_label}</span>
       <span class="dash-meta__value">{_esc(summary.get("end_time") or "—")}</span>
     </div>
     <div class="dash-meta__item">
@@ -515,13 +526,22 @@ class WebsiteGenerator:
                 f'<div class="dash-meta">{resource_rows}</div>{tier_table}</div>'
             )
 
-        # Memory receipts — rows joined to the step grid by step number.
+        # Memory receipts — rows joined to the step grid by registry step
+        # number. The summary's ``step_number`` is the execution position, so
+        # prefer the canonical registry number derived from ``script_name``.
+        script_to_number = {step.script_name: step.number for step in PIPELINE_STEPS}
         summary_steps: dict[int, dict[str, Any]] = {}
         raw_steps = summary.get("steps")
         if isinstance(raw_steps, list):
             for raw in raw_steps:
-                if isinstance(raw, dict) and isinstance(raw.get("step_number"), int):
-                    summary_steps[raw["step_number"]] = raw
+                if not isinstance(raw, dict):
+                    continue
+                key = raw.get("step_number")
+                script = raw.get("script_name")
+                if isinstance(script, str) and script in script_to_number:
+                    key = script_to_number[script]
+                if isinstance(key, int):
+                    summary_steps[key] = raw
         if summary_steps:
             registry_names = {step.number: step.name for step in PIPELINE_STEPS}
             mem_rows = ""
