@@ -27,6 +27,12 @@ default branch.
 | `cerebrum.md` | Case-conditioned active inference |
 | `biofirm.md` | Ecological control model |
 | `active-inferants.md` | Multi-language framework |
+| `actinf-rxinfer.md` | RxInfer.jl coin-flip example |
+| `active-skillference.md` | Micro-learning prerequisite graph |
+| `active-inference-implementations.md` | Educational RxInfer.jl notebooks |
+| `active-inference-power.md` | Statistical-power simulations |
+| `ants.md` | Ant-colony foraging simulation |
+| `on-policy-distillation.md` | On-policy distillation models |
 
 ## Verification rules
 
