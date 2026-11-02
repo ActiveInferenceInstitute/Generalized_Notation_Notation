@@ -11,7 +11,7 @@ narrow roles:
 
 The code and the live CLI are authoritative for behavior. Documentation examples are
 kept intentionally small and are validated by the repository documentation checks.
-The current software release is **v5.0.3**; the [version map](VERSION_MAP.md) owns
+The current software version is **v5.0.3**; the [version map](VERSION_MAP.md) owns
 release history and the publication records.
 
 ## Choose a path
