@@ -66,16 +66,16 @@ def test_ngclearn_reports_target_python_gate() -> None:
 def test_actual_wrong_cpomdp_version_is_diagnosed(
     tmp_path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    (tmp_path / "cpomdp.py").write_text('VERSION = "0.4.3"\n')
-    info = tmp_path / "cpomdp-0.4.3.dist-info"
+    (tmp_path / "cpomdp.py").write_text('VERSION = "0.4.4"\n')
+    info = tmp_path / "cpomdp-0.4.4.dist-info"
     info.mkdir()
     (info / "METADATA").write_text(
-        "Metadata-Version: 2.1\nName: cpomdp\nVersion: 0.4.3\n"
+        "Metadata-Version: 2.1\nName: cpomdp\nVersion: 0.4.4\n"
     )
     monkeypatch.setenv("PYTHONPATH", str(tmp_path))
     status = availability.check_framework("cpomdp")
     assert status.reason_code == "unsupported_version"
-    assert "0.4.4" in status.reason and "0.4.3" in status.reason
+    assert "0.5.0" in status.reason and "0.4.4" in status.reason
     assert status.missing_module is None
 
 

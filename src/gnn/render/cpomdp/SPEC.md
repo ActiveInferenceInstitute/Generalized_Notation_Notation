@@ -16,13 +16,13 @@
 
 When run, the script writes `simulation_results.json` under `CPOMDP_OUTPUT_DIR` (default `.`). It holds the shared continuous schema: `model_name`, `framework` (`"cpomdp"`), `model_kind` (`"continuous"`), `num_timesteps`, `num_states`, `num_observations`, `beliefs`, `posterior_cov`, `true_states_continuous`, `observations_continuous`, `controls`, `control_mode`, `rmse_vs_true`, `observations` (`[]`), `actions` (`[]`), `validation` and `execution_time_seconds`.
 
-cpomdp adds `efe_history` (one row of `|A|^H` values per step, empty when passive), `epistemic_term`, `pragmatic_term`, `selected_policy_index`, `horizon`, `action_scale`, `n_policies`, `cost_per_cycle`, `search_certificate`, `jax_version` and `cpomdp_version`.
+cpomdp adds `efe_history` (one row of `|A|^H` values per step, empty when passive), `epistemic_term`, `pragmatic_term`, `selected_policy_index`, `horizon`, `action_scale`, `n_policies`, `cost_per_cycle`, `search_certificate`, `jax_version` and `cpomdp_version`. `search_certificate` carries the library's own completeness fields: `expected`, `visited`, `warrant`, `action_set_size`, `horizon`, `action_set_version` and GNN's `claim`.
 
 `validation` holds `means_finite`, `posterior_cov_psd`, `rmse_finite`, `controls_finite`, `efe_finite` and `all_valid`. The script exits 1 when `all_valid` is false.
 
 ## Admission and identity
 
-The versioned action set has nine actions for two control dimensions, otherwise `2p+1`. Passive models perform no search. Requested searches are never silently reduced. The exact conservative estimate is recorded under `admission`, together with policy and step counts. `measured_resources` records peak process RSS and elapsed time.
+The versioned action set has nine actions for two control dimensions, otherwise `2p+1`. Passive models perform no search. Requested searches are never silently reduced. The exact conservative estimate is recorded under `admission`, together with policy and step counts. A controlled run admits `num_timesteps + 1` planning cycles, because one construction-time `evaluate` pass returns the completeness certificate before the first plan; a passive tracker admits exactly `num_timesteps`. `measured_resources` records peak process RSS and elapsed time.
 
 `source_identity` binds the validated numeric contract; pipeline runs additionally bind the original relative path, source SHA and model ID. `generated_script_sha256`, `cpomdp_version`, `jax_version`, `action_set` and `selected_policy` retain execution identity and decisions. These hashes establish identity, not extraction correctness or universal equivalence.
 

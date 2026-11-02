@@ -7,6 +7,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### cpomdp 0.5.0 adoption
+
+- Move the cpomdp render adapter to the released `cpomdp==0.5.0` wheel:
+  `EnumeratedEFESearch` replaces `EnumeratedEfeSearch`, `LinearGaussianModel`
+  takes role-named keyword fields (`dynamics_matrix`, `observation_matrix`,
+  `dynamics_noise`, `observation_noise`, `prior`, `control_matrix`),
+  `policy_efe` returns an `EFEResult` whose `g`, `pragmatic` and `epistemic`
+  fields are read by name, and the reported per-cycle cost is the library's
+  `cost_per_plan`.
+- Record the library's completeness certificate (`expected`, `visited`,
+  `warrant`, `action_set_size`, `horizon`, `action_set_version`) from one
+  construction-time `evaluate` pass, so a controlled run admits
+  `num_timesteps + 1` planning cycles.
+
 ### Maintained execution utilities
 
 - Replace simulated testing passes and invented MCP-shaped category results with

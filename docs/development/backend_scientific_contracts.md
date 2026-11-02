@@ -104,7 +104,7 @@ describes observed descendants, not containment of arbitrary detached children.
 `probe_failed`, and `executor_unavailable`. Timeout, import failure, or interpreter
 failure does not establish package absence. Doctor, execution planning, and
 Step 12 receipts retain these reasons; install hints apply to established
-installation or version gaps. cpomdp requires the released `0.4.4` distribution. Named Julia backends probe
+installation or version gaps. cpomdp requires the released `0.5.0` distribution. Named Julia backends probe
 all required packages in the committed project (Julia >= 1.10) with startup files
 disabled and Pkg offline mode. Doctor separates launcher PATH evidence from
 `kind: julia_project` package readiness and reports runtime/backend versions.

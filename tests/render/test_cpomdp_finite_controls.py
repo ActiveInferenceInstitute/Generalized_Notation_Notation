@@ -174,7 +174,7 @@ def test_native_asymmetric_controls_every_policy_and_authored_tie_order(tmp_path
     assert envelope["success"], envelope
     result = json.loads((out / "simulation_results.json").read_text())
     assert result["validation"]["all_valid"]
-    assert result["cpomdp_version"] == "0.4.4"
+    assert result["cpomdp_version"] == "0.5.0"
     declared = spec["initialparameterization"]["cpomdp_control"]
     assert result["finite_control_contract"] == declared
     assert result["action_set"] == declared["actions"]

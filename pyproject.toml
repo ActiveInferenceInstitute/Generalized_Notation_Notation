@@ -147,7 +147,7 @@ stan = [
 
 # Experimental continuous active-inference backend; explicitly selected.
 # Use the released wheel on both supported JAX lock splits.
-cpomdp = ["cpomdp==0.4.4"]
+cpomdp = ["cpomdp==0.5.0"]
 # Experimental CPU/JAX Gibbs implementation; no hardware execution claim.
 thrml = ["thrml==0.1.4"]
 
@@ -245,7 +245,7 @@ all = [
     "ray>=2.0.0",
 
     # Explicit experimental inference runtimes
-    "cpomdp==0.4.4",
+    "cpomdp==0.5.0",
     "thrml==0.1.4",
 
     # Categorical Bayesian-network exports

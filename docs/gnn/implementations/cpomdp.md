@@ -19,7 +19,7 @@ A model with `goal_mean` and `control_gain` becomes an agent that acts. A model 
 
 ## Installation
 
-The optional extra pins the ordinary released wheel `cpomdp==0.4.4`:
+The optional extra pins the ordinary released wheel `cpomdp==0.5.0`:
 
 ```bash
 uv sync --extra cpomdp
@@ -48,7 +48,7 @@ python src/gnn/main.py --only-steps "3,11,12,16" --frameworks cpomdp \
 | Execute | `output/12_execute_output/<model>/cpomdp/simulation_data/simulation_results.json` | Results |
 | Analysis | `output/16_analysis_output/cpomdp/` | Posterior means with covariance uncertainty, G per policy over time, `cpomdp_analysis.json` per model |
 
-The results file holds GNN's shared continuous fields (`beliefs`, `posterior_cov`, `true_states_continuous`, `controls`, `rmse_vs_true` and others). It adds `efe_history`, one row of G per step with one value per policy, plus `epistemic_term`, `pragmatic_term`, `selected_policy_index`, `n_policies`, `cost_per_cycle` and `search_certificate`. The full list is in [`src/gnn/render/cpomdp/SPEC.md`](../../../src/gnn/render/cpomdp/SPEC.md).
+The results file holds GNN's shared continuous fields (`beliefs`, `posterior_cov`, `true_states_continuous`, `controls`, `rmse_vs_true` and others). It adds `efe_history`, one row of G per step with one value per policy, plus `epistemic_term`, `pragmatic_term`, `selected_policy_index`, `n_policies`, `cost_per_cycle` and `search_certificate`, which carries the library's `expected`, `visited`, `warrant`, `action_set_size`, `horizon` and `action_set_version`. The full list is in [`src/gnn/render/cpomdp/SPEC.md`](../../../src/gnn/render/cpomdp/SPEC.md).
 
 ## Options
 
@@ -68,7 +68,7 @@ The pipeline renders with the defaults below. Other values need the Python API, 
 - Admission is capped at 4,096 policies, 32,768 step evaluations and 128 MiB estimated allocation per cycle. The estimate excludes interpreter/JIT overhead; a process deadline remains authoritative. Over-budget requests fail before allocation.
 - Continuous uncertainty comes from posterior covariance. Categorical entropy and confidence remain absent with explicit reasons.
 - Two-dimensional control uses nine actions; other dimensions use `2p+1`. Passive models perform no enumeration. Boolean/fractional horizons, nonfinite options and all-invalid scores fail explicitly.
-- The released constructor adapter uses `dynamics`, `sensor_model`, `dynamics_noise`, `sensor_noise`, `prior`, and `control`. Source, script, dependency, policy and measured-resource receipts accompany results.
+- The released constructor adapter uses `dynamics_matrix`, `observation_matrix`, `dynamics_noise`, `observation_noise`, `prior`, and `control_matrix`. Source, script, dependency, policy and measured-resource receipts accompany results.
 
 ## Source code
 
@@ -105,7 +105,7 @@ All seven keys are mandatory. The contract version is fixed above; `version`
 identifies the author's action set. IDs must be unique nonempty strings and
 retain source order. Equal vectors with different IDs remain distinct choices;
 ties select the first authored policy in Cartesian-product order. At least two
-actions are required by released cpomdp 0.4.4. Values must be finite nonboolean
+actions are required by released cpomdp 0.5.0. Values must be finite nonboolean
 numbers, with no string conversion, normalization or deduplication. Invalid
 declarations refuse before replacing an existing artifact. Unknown keys and
 versions refuse. These controls require `efe`; `parity` and explicit
