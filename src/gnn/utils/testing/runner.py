@@ -6,6 +6,7 @@ An installed distribution without the repository harness reports unavailable.
 
 import logging
 import math
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,23 @@ from gnn.utils.testing.environment import (
 
 _HARNESS_DIR = TEST_DIR / "infrastructure"
 
+# Failures this adapter converts into a structured "unavailable" result
+# instead of a traceback. It drives the separate repository harness through
+# lazy imports: an absent harness raises ImportError, process and receipt I/O
+# raise OSError or SubprocessError, deliberate selection validation and report
+# parsing raise ValueError or KeyError, and monitor/cleanup paths raise
+# RuntimeError. Anything outside this set is a defect in this adapter and
+# belongs to the caller.
+_HARNESS_FAILURES = (
+    OSError,
+    ImportError,
+    KeyError,
+    TypeError,
+    ValueError,
+    RuntimeError,
+    subprocess.SubprocessError,
+)
+
 
 class TestRunner:
     """Adapter preserving the public dictionary result and lazy imports."""
@@ -27,7 +45,12 @@ class TestRunner:
         self.logger = logging.getLogger("test_runner")
 
     def run_tests(self, test_paths: Any, output_dir: Any) -> dict[str, Any]:
-        """Run real pytest subprocesses through the canonical monitored runner."""
+        """Run real pytest subprocesses through the canonical monitored runner.
+
+        An absent or foreign harness, an invalid selection, or a failing
+        harness run returns ``{"success": False, ...}`` with the failure text
+        instead of raising.
+        """
         try:
             from importlib import import_module
 
@@ -99,7 +122,7 @@ class TestRunner:
                     "No tests passed; empty or fully skipped selections are unverified"
                 )
             return result
-        except Exception as error:
+        except _HARNESS_FAILURES as error:
             self.logger.error("Test execution unavailable or failed: %s", error)
             return {"success": False, "tests_run": 0, "error": str(error)}
 
@@ -281,7 +304,11 @@ def run_test_stage(
 def _run_all_test_results(
     target_dir: Path, output_dir: Path, verbose: bool = False
 ) -> dict[str, Any]:
-    """Return only current execution results, shared by Python and MCP callers."""
+    """Return only current execution results, shared by Python and MCP callers.
+
+    An unavailable harness or an unverified cleanup updates ``success`` plus
+    ``error`` or ``cleanup_error`` in the returned report instead of raising.
+    """
     from gnn.utils.testing.reports import generate_test_report
 
     results: dict[str, bool] = {}
@@ -313,12 +340,12 @@ def _run_all_test_results(
             results[category] = category_results[category]["success"] is True
         report["success"] = bool(results) and all(results.values())
         report["test_categories"] = list(results)
-    except Exception as error:
+    except _HARNESS_FAILURES as error:
         report.update(success=False, error=str(error))
     finally:
         try:
             cleanup_test_environment()
-        except Exception as error:
+        except _HARNESS_FAILURES as error:
             report.update(success=False, cleanup_error=str(error))
     if test_output.is_dir() and not generate_test_report(report, test_output):
         report.update(success=False, error="Could not write current test report")
