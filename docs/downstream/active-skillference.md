@@ -25,8 +25,8 @@ active inference agent that anchors the course material.
   release, with `src/gnn_conformance.py` as the shared implementation and
   `scripts/validate_gnn_spec.py` as the command-line entry point.
 - `.github/workflows/gates.yml` has no GNN-specific job; the step "Tests with the
-  coverage floor" runs `uv run pytest --cov=src --cov-fail-under=90 -q`, which
-  includes the conformance test.
+  coverage floor" runs `uv run pytest -q` with source coverage and a 90%
+  fail-under floor enabled, which includes the conformance test.
 
 ## Verification limits
 

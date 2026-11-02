@@ -28,8 +28,8 @@ repository is the project home; `gnn-cards` is the installable distribution and
 
 - `.github/workflows/ci.yml` job `test (py3.12)` provisions the pinned GNN parser
   runtime into `$RUNNER_TEMP/gnn-runtime` and runs
-  `scripts/validate_gnn_spec.py --gnn-runtime ... --json` in the step "Validate
-  the GNN specification against the pinned parser".
+  `scripts/validate_gnn_spec.py` against that runtime with JSON output in the
+  step "Validate the GNN specification against the pinned parser".
 - `scripts/gnn_parser_probe.py` is the local probe.
 - The README describes the validator as dependency-free with exit codes 0/1/2 and
   a conformance test in CI.

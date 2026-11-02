@@ -26,7 +26,8 @@ run.
 - `tests/test_gnn_specs.py` validates the declarations against the pinned
   release.
 - `.github/workflows/ci.yml` has no separate GNN job; its validation step runs
-  `uv run --extra dev python scripts/validate_gnn_specs.py`.
+  `python scripts/validate_gnn_specs.py` through `uv` with the development
+  extra.
 
 ## Verification limits
 

@@ -30,8 +30,9 @@ specifications carry the small models the argument depends on.
 - A local `src/gnn` package (parser, upstream, concordance and model modules)
   carries the bridge code the tests exercise.
 - `.github/workflows/ci.yml` has no GNN-specific job; the documented release gate
-  runs `uv run --extra dev python -m pytest tests/ --cov=src --cov-fail-under=90 -q`,
-  which includes both GNN test modules.
+  runs `python -m pytest tests/ -q` through `uv` with the development extra,
+  source coverage and a 90% fail-under floor enabled, which includes both GNN
+  test modules.
 
 ## Verification limits
 

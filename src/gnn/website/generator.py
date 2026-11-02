@@ -433,9 +433,9 @@ class WebsiteGenerator:
         performance = summary.get("performance_summary")
         if not isinstance(performance, dict):
             performance = {}
-        is_preliminary = bool(summary.get("preliminary")) or summary.get(
-            "evidence_phase"
-        ) == "current_run_snapshot"
+        preliminary = summary.get("preliminary")
+        phase = summary.get("evidence_phase")
+        is_preliminary = bool(preliminary) or phase == "current_run_snapshot"
         finished_label = "Snapshot" if is_preliminary else "Finished"
         preliminary_note = (
             '<p class="subtitle">Preliminary snapshot — the pipeline had not '
@@ -536,12 +536,12 @@ class WebsiteGenerator:
             for raw in raw_steps:
                 if not isinstance(raw, dict):
                     continue
-                key = raw.get("step_number")
+                receipt_step = raw.get("step_number")
                 script = raw.get("script_name")
                 if isinstance(script, str) and script in script_to_number:
-                    key = script_to_number[script]
-                if isinstance(key, int):
-                    summary_steps[key] = raw
+                    receipt_step = script_to_number[script]
+                if isinstance(receipt_step, int):
+                    summary_steps[receipt_step] = raw
         if summary_steps:
             registry_names = {step.number: step.name for step in PIPELINE_STEPS}
             mem_rows = ""
