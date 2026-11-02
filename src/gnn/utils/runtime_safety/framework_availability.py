@@ -26,7 +26,7 @@ FRAMEWORK_IMPORT_CHECK: Dict[str, Tuple[str, str]] = {
     "thrml": ("thrml", "uv sync --extra thrml"),
 }
 FRAMEWORK_PROBE_STATEMENT = {"stan": "import cmdstanpy; cmdstanpy.cmdstan_path()"}
-FRAMEWORK_REQUIRED_VERSIONS = {"cpomdp": "0.4.4", "thrml": "0.1.4"}
+FRAMEWORK_REQUIRED_VERSIONS = {"cpomdp": "0.5.0", "thrml": "0.1.4"}
 FRAMEWORK_JULIA_PACKAGES = {
     "rxinfer": (
         "RxInfer",

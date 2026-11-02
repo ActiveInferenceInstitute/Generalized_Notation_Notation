@@ -140,7 +140,7 @@ with `uv sync --extra <group>` or together with `uv sync --all-extras`):
 
 ### 12. **cpomdp** - Experimental Continuous POMDP
 
-- **Packages**: `cpomdp==0.4.4`.
+- **Packages**: `cpomdp==0.5.0`.
 - **Installation**: `uv sync --extra cpomdp`; installing the extra is separate
   from qualifying a particular continuous model.
 

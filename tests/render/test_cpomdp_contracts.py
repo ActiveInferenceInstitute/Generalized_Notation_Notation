@@ -139,7 +139,7 @@ def test_released_wheel_native_filter_and_policy_scores(
     )
     assert envelope["success"], envelope
     results = json.loads((output / "simulation_results.json").read_text())
-    assert results["cpomdp_version"] == "0.4.4"
+    assert results["cpomdp_version"] == "0.5.0"
     assert results["validation"]["all_valid"]
     assert results["source_identity"]["model_contract_sha256"]
     assert results["measured_resources"]["process_peak_rss_bytes"] > 0
@@ -188,8 +188,8 @@ def test_all_invalid_scores_fail_before_policy_selection(tmp_path: Path) -> None
     script = tmp_path / "all_invalid_cpomdp.py"
     assert render_gnn_to_cpomdp(_spec(), script)[0]
     source = script.read_text().replace(
-        "g, parts = score(belief)",
-        "g, parts = score(belief)\n            g = jnp.full_like(g, jnp.nan)",
+        "g = scored.g",
+        "g = jnp.full_like(scored.g, jnp.nan)",
     )
     script.write_text(source)
     envelope = run_subprocess_envelope(

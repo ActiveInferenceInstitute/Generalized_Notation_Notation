@@ -21,6 +21,12 @@ lowest expected free energy. ``parity`` applies GNN's
 ``u_t = control_gain * (goal_mean - mu_t)`` on cpomdp's filter, which
 reproduces the ``jax`` backend on the same seed. Both score every policy each
 step. Specs without a goal render as passive trackers.
+
+The completeness certificate is the library's own object, so a controlled run
+reads it from one construction-time ``evaluate`` pass over the same policies
+before its first plan. That pass is a planning cycle too: a controlled run
+admits ``num_timesteps + 1`` cycles, and only a passive tracker admits exactly
+``num_timesteps``.
 """
 
 from __future__ import annotations
@@ -116,11 +122,11 @@ except ImportError:
 
 try:
     import cpomdp
-    if cpomdp.__version__ != "0.4.4":
-        raise RuntimeError("Unsupported cpomdp version; install the declared cpomdp==0.4.4 wheel")
+    if cpomdp.__version__ != "0.5.0":
+        raise RuntimeError("Unsupported cpomdp version; install the declared cpomdp==0.5.0 wheel")
     from cpomdp import Belief, KalmanBackend, LinearGaussianModel, Preference
     from cpomdp.efe import policy_efe
-    from cpomdp.enumeration import EnumeratedEfeSearch, FiniteActionSet
+    from cpomdp.enumeration import EnumeratedEFESearch, FiniteActionSet
 except ImportError:
     print("ERROR: cpomdp not installed. Install with: uv sync --extra cpomdp")
     sys.exit(1)
@@ -205,12 +211,12 @@ def build_model(controlled):
     dynamics = arr(F_RAW)  # F
     n_states = dynamics.shape[0]
     return LinearGaussianModel(
-        dynamics,
-        sensor_model=arr(H_RAW),  # H
+        dynamics_matrix=dynamics,
+        observation_matrix=arr(H_RAW),  # H
         dynamics_noise=arr(Q_RAW),  # Q
-        sensor_noise=arr(R_RAW),  # R
+        observation_noise=arr(R_RAW),  # R
         prior=Belief(arr(PRIOR_MEAN_RAW), arr(PRIOR_COV_RAW)),
-        control=arr(CONTROL_MATRIX_RAW) if controlled else None,
+        control_matrix=arr(CONTROL_MATRIX_RAW) if controlled else None,
     )
 
 
@@ -219,10 +225,10 @@ def first_step_backend(model):
     n_states = model.n_states
     return KalmanBackend(
         LinearGaussianModel(
-            jnp.eye(n_states),
-            sensor_model=model.sensor_model,
+            dynamics_matrix=jnp.eye(n_states),
+            observation_matrix=model.observation_matrix,
             dynamics_noise=jnp.zeros((n_states, n_states)),
-            sensor_noise=model.sensor_noise,
+            observation_noise=model.observation_noise,
             prior=model.prior,
         )
     )
@@ -230,21 +236,39 @@ def first_step_backend(model):
 
 def sample_observation(model, state):
     """Draw a reading of ``state`` from the fixed sensor."""
-    noise = mvn_sample(jnp.zeros(model.n_observations), model.sensor_noise)
-    return model.sensor_model @ state + noise
+    noise = mvn_sample(jnp.zeros(model.n_observations), model.observation_noise)
+    return model.observation_matrix @ state + noise
+
+
+def certificate_payload(certificate):
+    """The library's completeness certificate as JSON-ready fields.
+
+    ``warrant``, ``action_set_size``, ``horizon`` and ``action_set_version``
+    are the library's own, so the count ``expected`` is never a bare number
+    whose set has to be guessed from the surrounding prose.
+    """
+    return {
+        "expected": certificate.expected,
+        "visited": certificate.visited,
+        "warrant": certificate.warrant.value,
+        "action_set_size": certificate.action_set_size,
+        "horizon": certificate.horizon,
+        "action_set_version": certificate.action_set_version,
+        "claim": "exhaustive enumeration of the declared finite action sequences",
+    }
 
 
 def build_planner(model, goal):
-    """Return the policy search and a scorer covering every policy in one pass.
+    """Return the policy search, its preference, and a scorer over every policy.
 
-    The scorer returns each policy's G and its pragmatic and epistemic parts, so
-    the chosen policy is never rolled out a second time.
+    The scorer returns each policy's G with its pragmatic and epistemic parts,
+    so the chosen policy is never rolled out a second time.
     """
     action_set = (FiniteActionSet(FINITE_CONTROLS["actions"], version=ACTION_SET_VERSION)
                   if FINITE_CONTROLS else compass_rose(model.n_controls, ACTION_SCALE))
-    search = EnumeratedEfeSearch(model, action_set, horizon=HORIZON)
+    search = EnumeratedEFESearch(model, action_set, horizon=HORIZON)
     preference = Preference(
-        model.sensor_model @ goal,
+        model.observation_matrix @ goal,
         GOAL_PRECISION * jnp.eye(model.n_observations),
     )
     policies = search.policies
@@ -255,7 +279,7 @@ def build_planner(model, goal):
             policies
         )
 
-    return search, score
+    return search, preference, score
 '''
 
 _RUN = '''
@@ -264,7 +288,11 @@ def run_simulation():
     """Simulate the GNN process, filter it with cpomdp and write the results."""
     start = time.time()
     passive = GOAL_MEAN_RAW is None or CONTROL_GAIN is None
-    admission = admit_search(len(F_RAW), len(H_RAW), CONTROL_DIM, NUM_TIMESTEPS, HORIZON, not passive, MAX_POLICIES, MAX_STEP_EVALUATIONS, MAX_ESTIMATED_BYTES, len(FINITE_CONTROLS["actions"]) if FINITE_CONTROLS else None)
+    # Planning cycles, not timesteps: a controlled run spends one extra cycle
+    # reading the library's completeness certificate before its first plan.
+    admitted_cycles = NUM_TIMESTEPS + (0 if passive else 1)
+    admission = admit_search(len(F_RAW), len(H_RAW), CONTROL_DIM, admitted_cycles, HORIZON, not passive, MAX_POLICIES, MAX_STEP_EVALUATIONS, MAX_ESTIMATED_BYTES, len(FINITE_CONTROLS["actions"]) if FINITE_CONTROLS else None)
+    search_certificate = None
     model = build_model(controlled=not passive)
     backend = KalmanBackend(model)
     n_states, n_steps = model.n_states, NUM_TIMESTEPS
@@ -286,27 +314,33 @@ def run_simulation():
         control_mode = CONTROL_MODE
         goal = arr(GOAL_MEAN_RAW)
         gain = CONTROL_GAIN
-        search, score = build_planner(model, goal)
+        search, preference, score = build_planner(model, goal)
         policies = search.policies
         search_stats = {
             "n_policies": search.n_policies,
-            "cost_per_cycle": search.cost_per_cycle,
-            "search_certificate": {"expected": search.certificate.expected, "visited": search.certificate.visited, "claim": "exhaustive enumeration of the declared finite action sequences"},
+            "cost_per_cycle": search.cost_per_plan,
+            "search_certificate": None,
             "action_set": (FINITE_CONTROLS["actions"] if FINITE_CONTROLS else to_list(compass_rose(model.n_controls, ACTION_SCALE).actions)),
         }
 
         def choose(belief):
-            g, parts = score(belief)
+            nonlocal search_certificate
+            scored = score(belief)
+            g = scored.g
             finite = np.isfinite(np.asarray(g))
             if not np.any(finite):
                 raise ValueError("All enumerated cpomdp policy scores are invalid")
             best = int(jnp.argmin(jnp.where(jnp.isfinite(g), g, jnp.inf)))
+            if search_certificate is None:
+                search_certificate = certificate_payload(
+                    search.evaluate(belief, preference).certificate
+                )
             efe_history.append(to_list(g))
-            all_epistemic.append(to_list(parts["epistemic"]))
-            all_pragmatic.append(to_list(parts["pragmatic"]))
+            all_epistemic.append(to_list(scored.epistemic))
+            all_pragmatic.append(to_list(scored.pragmatic))
             selected.append(best)
-            epistemic.append(float(parts["epistemic"][best]))
-            pragmatic.append(float(parts["pragmatic"][best]))
+            epistemic.append(float(scored.epistemic[best]))
+            pragmatic.append(float(scored.pragmatic[best]))
             if control_mode == "parity":
                 return gain * (goal - belief.mean)
             return policies[best][0]
@@ -330,11 +364,13 @@ def run_simulation():
 
     for _step in range(1, n_steps):
         process_noise = mvn_sample(jnp.zeros(n_states), model.dynamics_noise)
-        state = model.dynamics @ state + control_matrix @ action + process_noise
+        state = model.dynamics_matrix @ state + control_matrix @ action + process_noise
         reading = sample_observation(model, state)
         belief = backend.infer_states(reading, belief, None if passive else action)
         action = choose(belief)
         record(state, reading, belief, action)
+
+    search_stats["search_certificate"] = search_certificate
 
     beliefs_np = np.asarray(beliefs)
     rmse = float(np.sqrt(np.mean((beliefs_np - np.asarray(true_states)) ** 2)))
@@ -481,7 +517,9 @@ CONTROL_GAIN = {lits["control_gain"]}
         spec.n,
         spec.m,
         p,
-        spec.num_timesteps,
+        # Planning cycles: a controlled run also reads its completeness
+        # certificate from one construction-time pass over the same policies.
+        spec.num_timesteps + (1 if spec.has_control else 0),
         opts["horizon"],
         spec.has_control,
         opts["max_policies"],

@@ -1187,7 +1187,7 @@ toml = [
 
 [[package]]
 name = "cpomdp"
-version = "0.4.4"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jax", version = "0.10.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -1195,10 +1195,11 @@ dependencies = [
     { name = "jaxtyping" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "warrantlib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d0/37/d39993230f46d3d1035353e588906a83d74904794d541325fd3aec707b7e/cpomdp-0.4.4.tar.gz", hash = "sha256:74bafdd21cdeb0c2a1986c06fed6530c9ae0a736177d6b3c5fa0d09708cb25f8", size = 10514156, upload-time = "2026-08-04T21:32:28.039Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/58/38/b66a3117ea4ae3c274ceac6df0ac87140f1f24997d78abef8837e7f6b39d/cpomdp-0.5.0.tar.gz", hash = "sha256:aed2655c9eb1afa09da7858d32e6bba28432937c8bb493d43839d18d997e8275", size = 17958307, upload-time = "2026-10-17T07:08:59.763Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/58/bd/057da169d88a1609e018a0fc943ae1a01edd74b377eafcdffae1316ce0b3/cpomdp-0.4.4-py3-none-any.whl", hash = "sha256:8a6e48b2e3e38d321967aeabef4874b3c317a1870449bf3773d0904697174536", size = 105606, upload-time = "2026-08-04T21:32:26.247Z" },
+    { url = "https://files.pythonhosted.org/packages/52/81/0443bcdc640b9253bb42d3b7a9fa4f407e97c7a7205ddbfbf1bff6179151/cpomdp-0.5.0-py3-none-any.whl", hash = "sha256:62eb731d1721c52afd5ef2f0f7c9e7245da8db49789a0f6b025b70a8dba21f22", size = 205046, upload-time = "2026-10-16T23:40:45.013Z" },
 ]
 
 [[package]]
@@ -2008,8 +2009,8 @@ requires-dist = [
     { name = "cmdstanpy", marker = "extra == 'all'", specifier = ">=1.2" },
     { name = "cmdstanpy", marker = "extra == 'dev'", specifier = ">=1.2" },
     { name = "cmdstanpy", marker = "extra == 'stan'", specifier = ">=1.2" },
-    { name = "cpomdp", marker = "extra == 'all'", specifier = "==0.4.4" },
-    { name = "cpomdp", marker = "extra == 'cpomdp'", specifier = "==0.4.4" },
+    { name = "cpomdp", marker = "extra == 'all'", specifier = "==0.5.0" },
+    { name = "cpomdp", marker = "extra == 'cpomdp'", specifier = "==0.5.0" },
     { name = "cython", marker = "extra == 'all'", specifier = ">=3.0.0" },
     { name = "cython", marker = "extra == 'research'", specifier = ">=3.0.0" },
     { name = "dask", marker = "extra == 'all'", specifier = ">=2023.0.0" },
@@ -7805,6 +7806,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/1e/67/cbae4bf7683a64755c2c1778c418fea96d00e34395bb91743f08bd951571/wadler_lindig-0.1.7.tar.gz", hash = "sha256:81d14d3fe77d441acf3ebd7f4aefac20c74128bf460e84b512806dccf7b2cd55", size = 15842, upload-time = "2025-06-18T07:00:42.843Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl", hash = "sha256:e3ec83835570fd0a9509f969162aeb9c65618f998b1f42918cfc8d45122fe953", size = 20516, upload-time = "2025-06-18T07:00:41.684Z" },
+]
+
+[[package]]
+name = "warrantlib"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d2/09/c423b0d3affa7aa539fb7040acedc171bc203239f126b3a4c7a7165935c3/warrantlib-0.3.0.tar.gz", hash = "sha256:6b73166a4dcc6f25959c0b49a5d4b4aefaa35d7eb8a98ac7e188efca84750a78", size = 35518, upload-time = "2026-08-26T11:08:25.625Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/54/0d/b41b677225afc4ad65f92effc31a0c8cb58a3dc0548716e6038b891f7a75/warrantlib-0.3.0-py3-none-any.whl", hash = "sha256:af1b60169cbe94c9534cfe8433807fd4c8db6f0f0a26f1b969b8e1ab9f1a3596", size = 39836, upload-time = "2026-08-26T11:08:24.299Z" },
 ]
 
 [[package]]
