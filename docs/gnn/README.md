@@ -1,7 +1,7 @@
 # GNN Documentation Index
 
-**Version**: v4.1.0 Engine (Bundle v2.0.0)
-**Last Updated**: 2026-10-07
+**Version**: Documentation bundle v2.0.0 (engine release: [pyproject.toml](../../pyproject.toml))
+**Last Updated**: 2026-11-02
 **Status**: Maintained
 **Pipeline Steps**: 25
 
@@ -261,10 +261,10 @@ All GNN documentation follows these principles:
 
 ---
 
-**GNN documentation bundle**: v4.1.0 Engine (Bundle v2.0.0) (this tree and front matter on major pages)
+**GNN documentation bundle**: v2.0.0 (this tree and front matter on major pages); engine release: [pyproject.toml](../../pyproject.toml)
 **GNN syntax standard**: v1.1 (see [gnn_syntax.md](gnn_syntax.md))
-**Python package** (`generalized-notation-notation`): **4.1.0** ([pyproject.toml](../../pyproject.toml))
+**Python package** (`generalized-notation-notation`): [pyproject.toml](../../pyproject.toml) (canonical)
 **Total Pipeline Steps**: 25 (0–24)
-**Last Updated**: 2026-10-07
+**Last Updated**: 2026-11-02
 
 **Status**: Maintained (re-run `uv run --extra dev python docs/development/docs_audit.py` after link or tree changes)

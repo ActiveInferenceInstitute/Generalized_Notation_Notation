@@ -28,6 +28,7 @@ kept intentionally small and are validated by the repository documentation check
 3. [Pipeline guide](pipeline/README.md)
 4. [Troubleshooting](troubleshooting/README.md)
 5. [Framework availability](execution/FRAMEWORK_AVAILABILITY.md)
+6. [Dashboard](gnn/modules/20_website.md) — the run's Step 20 website at `output/20_website_output/index.html`
 
 ### Developing or integrating
 

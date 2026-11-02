@@ -1,6 +1,6 @@
 # GNN Implementations Documentation
 
-**Version**: 4.0.0 (canonical: [pyproject.toml](../../../pyproject.toml))
+**Version**: canonical in [pyproject.toml](../../../pyproject.toml)
 
 **Last Updated**: 2026-10-02
 

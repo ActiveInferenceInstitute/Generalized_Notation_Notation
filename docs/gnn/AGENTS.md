@@ -9,7 +9,7 @@
 **Category**: Documentation / Specification
 
 
-**Documentation hub version**: v2.0.0 (aligns with [README.md](README.md) front matter; **GNN language** syntax is v1.1 per [gnn_syntax.md](gnn_syntax.md); **Python package** version is `4.1.0` in [pyproject.toml](../../pyproject.toml)).
+**Documentation hub version**: v2.0.0 (aligns with [README.md](README.md) front matter; **GNN language** syntax is v1.1 per [gnn_syntax.md](gnn_syntax.md); the **Python package** version is canonical in [pyproject.toml](../../pyproject.toml)).
 
 ---
 

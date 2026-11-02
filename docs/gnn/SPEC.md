@@ -4,7 +4,7 @@
 
 - **GNN language / syntax** is versioned in [gnn_syntax.md](gnn_syntax.md) (v1.1).
 - **This documentation tree** uses bundle version **v2.0.0** on index pages (human-oriented hub; not the same field as the language version).
-- **Installable package** version is **3.2.0** from the repo root [pyproject.toml](../../pyproject.toml).
+- **Installable package** version is canonical in the repo root [pyproject.toml](../../pyproject.toml).
 
 ## Design Requirements
 The `docs/gnn` module does not contain execution logic mapping directly to the runtime graph. Instead, it serves as the **Static Source of Truth** for format specifications.
