@@ -17,6 +17,8 @@ from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
+from gnn.parsers.common import canonical_section_heading
+
 logger = logging.getLogger(__name__)
 
 
@@ -70,7 +72,8 @@ class OntologyVisualizer:
 
                     # Extract ontology section
                     ontology_match = re.search(
-                        r"## ActInfOntologyAnnotation\n(.*?)(?=\n##|\Z)",
+                        r"##[ \t]+ActInf[ \t]*Ontology[ \t]*Annotation[ \t]*\n"
+                        r"(.*?)(?=\n##|\Z)",
                         content,
                         re.DOTALL,
                     )
@@ -111,10 +114,16 @@ class OntologyVisualizer:
         Returns:
             Path to saved visualization file, or None if failed
         """
-        if "ActInfOntologyAnnotation" not in parsed_data:
+        ontology = next(
+            (
+                value
+                for key, value in parsed_data.items()
+                if canonical_section_heading(str(key)) == "ActInfOntologyAnnotation"
+            ),
+            None,
+        )
+        if ontology is None:
             return None
-
-        ontology = parsed_data["ActInfOntologyAnnotation"]
 
         # Extract ontology mappings
         mappings = self._extract_ontology_mappings(ontology)

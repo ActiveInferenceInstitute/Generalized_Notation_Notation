@@ -32,6 +32,8 @@ import math
 import re
 from typing import Any, Final
 
+from gnn.parsers.common import canonical_section_heading
+
 __all__ = ["NotationMetadataError", "derive_geo_metadata"]
 
 
@@ -84,12 +86,22 @@ _NUMBER_UNIT_PATTERN: Final[re.Pattern[str]] = re.compile(
 
 
 def _section_bodies(content: str, name: str) -> list[str]:
-    """Return the bodies of every ``## <name>`` section in the source."""
-    pattern = re.compile(
-        r"^##[ \t]+" + re.escape(name) + r"[ \t]*$\n(?P<body>.*?)(?=^##[ \t]|\Z)",
-        re.M | re.S,
+    """Return the bodies of every ``## <name>`` section in the source.
+
+    A heading that names the section with different whitespace (for example
+    ``## Model Parameters`` for ``## ModelParameters``) is the same section.
+    """
+    headings = list(
+        re.compile(r"^##[ \t]+(?P<heading>.+?)[ \t]*$", re.M).finditer(content)
     )
-    return [match.group("body") for match in pattern.finditer(content)]
+    bodies: list[str] = []
+    for index, match in enumerate(headings):
+        if canonical_section_heading(match.group("heading")) != name:
+            continue
+        end = headings[index + 1].start() if index + 1 < len(headings) else len(content)
+        body = content[match.end() : end]
+        bodies.append(body[1:] if body.startswith("\n") else body)
+    return bodies
 
 
 def _time_entries(body: str) -> list[tuple[str, str | None, str]]:

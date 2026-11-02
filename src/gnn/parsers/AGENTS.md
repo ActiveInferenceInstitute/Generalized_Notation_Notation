@@ -25,6 +25,11 @@ bindings silently empty. Raw heading text stays available in
 `model.raw_sections`. The formal `schema_validator.GNNParser` remains
 spelling-exact and reports the missing canonical section instead.
 
+Readers that split markdown themselves — the visualization fallback parser,
+the export metadata reader, the round-trip direct parser and the renderers —
+key sections through **`common.canonical_section_heading`** (`GNN_SECTION_HEADINGS`),
+so one heading names one section in every path.
+
 ## Adding a format
 
 1. Extend **`GNNFormat`** in `common.py` if needed.
