@@ -58,6 +58,7 @@ short audience map, use [START_HERE.md](START_HERE.md). For curricula, use
 - [Audio](audio/README.md)
 - [FEP_Formal (Lean 4)](other/fep_lean/README.md) — Lean ↔ GNN bridge program (contract v0.7); [reviewed companion and custody rules](development/fep_lean_paired_revision.md)
 - [GEO_INFER (spatial active inference)](other/geo_infer/README.md) — JSON artifact interchange (categorical, Gaussian, factored); consumer boundary in GEO-INFER-ACT, validation harness in GEO-INFER-TEST
+- [Downstream registry](downstream/README.md) — repositories that apply GNN: specs, pins and conformance evidence
 
 ## Theory and applications
 

@@ -292,3 +292,62 @@ class TestIndexDashboardFold:
         )
         assert "http://" not in fetched_surface
         assert "https://" not in fetched_surface
+
+    def test_memory_receipts_join_by_script_name_to_registry_step(
+        self, tmp_path: Any
+    ) -> None:
+        """A real summary numbers steps by execution position, not by registry
+        step; the receipts table must join them by ``script_name``."""
+        from gnn.website import WebsiteGenerator
+
+        summary = {
+            "overall_status": "SUCCESS_WITH_WARNINGS",
+            "steps": [
+                {
+                    "step_number": 1,
+                    "script_name": "3_gnn.py",
+                    "description": "GNN file processing",
+                    "status": "SUCCESS",
+                    "memory_usage_mb": 111.0,
+                    "peak_memory_mb": 222.0,
+                    "memory_delta_mb": 1.0,
+                },
+            ],
+        }
+        result = WebsiteGenerator().generate_website(
+            {"output_dir": tmp_path / "site", "pipeline_summary": summary},
+            filesystem=False,
+        )
+        assert result["success"]
+        html = (tmp_path / "site/index.html").read_text(encoding="utf-8")
+        assert re.search(
+            r"<td><code>03</code></td>\s*<td>GNN file processing</td>\s*"
+            r"<td>111\.0 MB</td>",
+            html,
+        )
+        assert not re.search(
+            r"<td><code>01</code></td>\s*<td>GNN file processing</td>", html
+        )
+
+    def test_preliminary_summary_labels_snapshot_not_finished(
+        self, tmp_path: Any
+    ) -> None:
+        """A preliminary summary is a live snapshot, not a finished run."""
+        from gnn.website import WebsiteGenerator
+
+        summary = {
+            "overall_status": "RUNNING",
+            "preliminary": True,
+            "evidence_phase": "current_run_snapshot",
+            "end_time": "2026-11-02T12:09:54",
+            "steps": [],
+        }
+        result = WebsiteGenerator().generate_website(
+            {"output_dir": tmp_path / "site", "pipeline_summary": summary},
+            filesystem=False,
+        )
+        assert result["success"]
+        html = (tmp_path / "site/index.html").read_text(encoding="utf-8")
+        assert ">Snapshot<" in html
+        assert "Preliminary snapshot" in html
+        assert ">Finished<" not in html
