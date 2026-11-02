@@ -170,11 +170,6 @@ _REVIEWED_FEP_MIGRATION_TERMS = frozenset(
             "canonical resolver. The deprecated `resolve_fep_lean_root` calls that function.",
         ),
         (
-            "src/gnn/execute/lean/AGENTS.md",
-            "stale-version wording",
-            "selects `fep-formal` for a canonical package and `fep-lean` for a legacy-only",
-        ),
-        (
             "src/gnn/execute/lean/README.md",
             "stale-version wording",
             "Canonical checkout selection uses `FEP_FORMAL_ROOT` before the deprecated",
@@ -183,11 +178,6 @@ _REVIEWED_FEP_MIGRATION_TERMS = frozenset(
             "src/gnn/execute/lean/README.md",
             "stale-version wording",
             "canonical resolver. The deprecated `resolve_fep_lean_root` calls that function.",
-        ),
-        (
-            "src/gnn/execute/lean/README.md",
-            "stale-version wording",
-            "selects `fep-formal` for a canonical package and `fep-lean` for a legacy-only",
         ),
         (
             "src/gnn/execute/lean/lean_runner.py",
@@ -203,11 +193,6 @@ _REVIEWED_FEP_MIGRATION_TERMS = frozenset(
             "src/gnn/execute/lean/lean_runner.py",
             "stale-version wording",
             '"""Resolve the canonical checkout, retaining legacy environment/layout support.',
-        ),
-        (
-            "src/gnn/execute/lean/lean_runner.py",
-            "stale-version wording",
-            '"""Select the canonical CLI, retaining support for legacy-only checkouts."""',
         ),
         (
             "src/gnn/execute/lean/lean_runner.py",

@@ -34,7 +34,14 @@ from gnn.execute.subprocess_envelope import NEVER_STARTED, CancelToken
 def _pin_fake_root(monkeypatch: pytest.MonkeyPatch, root: Path) -> None:
     """Resolve FEP_Formal to a stub checkout so the envelope call is reached."""
     root.mkdir(parents=True, exist_ok=True)
-    (root / "pyproject.toml").write_text('[tool.uv]\nrequired-version = "==0.13.0"\n')
+    package = root / "src/fep_formal"
+    package.mkdir(parents=True)
+    (package / "cli.py").write_text("def main(argv):\n    return 0\n")
+    (root / "pyproject.toml").write_text(
+        '[project]\nname = "fep-formal"\n\n'
+        '[project.scripts]\nfep-formal = "fep_formal.cli:main"\n\n'
+        '[tool.uv]\nrequired-version = "==0.13.0"\n'
+    )
     (root / ".python-version").write_text("3.14\n")
     (root / ".venv").mkdir()
     (root / ".venv/pyvenv.cfg").write_text("version_info = 3.14.0\n")

@@ -272,8 +272,7 @@ def accepted(path: Path, stage: str, baseline: dict[str, Any]) -> dict[str, Any]
     if stage in ("status", "finite", "continuous"):
         if (
             result.get("exit_code") != 0
-            or result.get("cli_source")
-            != str(fep_module_path(fep_root, "cli"))
+            or result.get("cli_source") != str(fep_module_path(fep_root, "cli"))
             or result.get("command")
             != bridge_command(baseline["fep"]["root"], baseline["gnn"]["root"], stage)
         ):
