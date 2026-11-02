@@ -70,15 +70,16 @@ record the revision outside a pin file are in the section below.
 These repositories carry GNN files or GNN bridge code on the default branch and
 record the upstream revision in their own contract rather than in a pin file.
 Each row names the contract; every path and revision below was verified from
-origin on 2026-11-02.
+origin on 2026-11-02. The contract file links to that file on the repository's
+default branch, so a reader can reach it in one step.
 
 | Repository | GNN content | Where the revision is recorded |
 | --- | --- | --- |
-| `ActiveInferenceCategoryTheory` | `gnn/learner_perception_model.md`, `gnn/map_the_model.template.md` | Verification run in `gnn/README.md` at commit `8f293d9b` (v5.0.3) |
-| `act_inf_metaanalysis` | `gnn/h1_fep_universality.md`, `gnn/h4_predictive_coding.md`, `gnn/h8_language_aif.md` | `gnn/README.md`: revision `v5.0.3`/`8f293d9b`, an archive extract recipe, and recorded model SHA-256 digests |
-| `courses` | `course_development/gnn/01_gnn_syntax/` (syntax module, lab, model exemplars) | `course_development/gnn/01_gnn_syntax/models/README.md` provenance table (release `v5.0.3`, commit `8f293d9b`) with a `git show` and `diff` recipe against the pinned corpus |
-| `pymdp` | Bridge code `pymdp/gnn.py`, `examples/gnn/publish_gnn_spec.py`, `test/test_gnn_bridge.py`, `docs-mkdocs/guides/gnn-interoperability.md` | `GNN_PINNED_RELEASE` and `GNN_PINNED_REVISION` constants in `pymdp/gnn.py` |
-| `Active_Inference_Ontology` | Term export `GNN/act_inf_ontology_terms.json`, `GNN/README.md` | `GNN/declared-labels.json`: release, commit and SHA-256 of the audited file; this repository pins *it* at `4450e8dd` in `src/gnn/ontology/ontology-pin.json` |
+| [ActiveInferenceCategoryTheory](https://github.com/ActiveInferenceInstitute/ActiveInferenceCategoryTheory) | `gnn/learner_perception_model.md`, `gnn/map_the_model.template.md` | Verification run in [`gnn/README.md`](https://github.com/ActiveInferenceInstitute/ActiveInferenceCategoryTheory/blob/main/gnn/README.md) at commit `8f293d9b` (v5.0.3) |
+| [act_inf_metaanalysis](https://github.com/ActiveInferenceInstitute/act_inf_metaanalysis) | `gnn/h1_fep_universality.md`, `gnn/h4_predictive_coding.md`, `gnn/h8_language_aif.md` | [`gnn/README.md`](https://github.com/ActiveInferenceInstitute/act_inf_metaanalysis/blob/main/gnn/README.md): revision `v5.0.3`/`8f293d9b`, an archive extract recipe, and recorded model SHA-256 digests |
+| [courses](https://github.com/ActiveInferenceInstitute/courses) | `course_development/gnn/01_gnn_syntax/` (syntax module, lab, model exemplars) | [`course_development/gnn/01_gnn_syntax/models/README.md`](https://github.com/ActiveInferenceInstitute/courses/blob/main/course_development/gnn/01_gnn_syntax/models/README.md) provenance table (release `v5.0.3`, commit `8f293d9b`) with a `git show` and `diff` recipe against the pinned corpus |
+| [pymdp](https://github.com/ActiveInferenceInstitute/pymdp) | Bridge code `pymdp/gnn.py`, `examples/gnn/publish_gnn_spec.py`, `test/test_gnn_bridge.py`, `docs-mkdocs/guides/gnn-interoperability.md` | `GNN_PINNED_RELEASE` and `GNN_PINNED_REVISION` constants in [`pymdp/gnn.py`](https://github.com/ActiveInferenceInstitute/pymdp/blob/master/pymdp/gnn.py) (default branch `master`) |
+| [Active_Inference_Ontology](https://github.com/ActiveInferenceInstitute/Active_Inference_Ontology) | Term export `GNN/act_inf_ontology_terms.json`, `GNN/README.md` | [`GNN/declared-labels.json`](https://github.com/ActiveInferenceInstitute/Active_Inference_Ontology/blob/main/GNN/declared-labels.json): release, commit and SHA-256 of the audited file; this repository pins *it* at `4450e8dd` in `src/gnn/ontology/ontology-pin.json` |
 
 ## Exclusions
 
