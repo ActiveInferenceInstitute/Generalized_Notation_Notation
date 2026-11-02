@@ -4,6 +4,11 @@ Who already uses Generalized Notation Notation (GNN), what they model, which GNN
 revision they pin, and where their conformance evidence lives. One row per
 repository; each row links to a page with the full evidence.
 
+At a glance: twenty-one repositories carry a committed GNN specification and
+record an upstream revision (nineteen of them `v5.0.3` at commit `8f293d9b`;
+GEO_INFER records the same commit without a tag; `fep_formal` pins by content
+hash), and five more carry GNN files or bridge code without a pin.
+
 | Repository | What it models | GNN specification | Pinned GNN revision | Conformance / validation evidence |
 | --- | --- | --- | --- | --- |
 | [active_inference_language_model](active-inference-language-model.md) | Explicit discrete language stack in pymdp, letters through document position | `gnn/models/L1_letter.gnn.md` … `L6_narrative.gnn.md`; AILM-side contract `gnn/SPEC.md` | `v5.0.3` · `8f293d9b` in `gnn/upstream.json` | CI job `gnn-interop`; `scripts/verify_gnn_release.py` |
