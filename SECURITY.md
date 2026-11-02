@@ -34,8 +34,9 @@ This does not establish universal deployed-service security.
 
 As of 2026-11-02 the `virtualenv` floor has moved to `>=21.14.13` for
 GHSA-cx6f-vjhg-g3cc / CVE-2026-115586 (see [CHANGELOG.md](CHANGELOG.md)
-§Unreleased → Security floors); that advisory's re-evaluation is still pending,
-so the twelve-finding statement above remains the 2026-10-07 record.
+§Unreleased → Security floors). GitHub re-evaluated the advisory the same day
+and marks it fixed; the repository reports zero open Dependabot alerts. The
+twelve-finding statement above remains the 2026-10-07 record.
 
 ## Supported Versions
 
