@@ -93,6 +93,24 @@ A sibling that consumes GNN records exactly one pin, in a committed file, with:
 - the upstream version string from that revision's `pyproject.toml`,
 - the date the pin was recorded.
 
+One concrete shape for that file:
+
+```json
+{
+  "repository": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+  "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+  "version": "5.0.3",
+  "date_recorded": "2026-11-01",
+  "tag": "v5.0.3",
+  "parser_module": "gnn.parsers.system",
+  "parser_class": "GNNParsingSystem"
+}
+```
+
+The four core keys are what a consumer's check reads; extra keys below them
+(`tag`, `parser_module` and `parser_class` here are optional convenience keys)
+are allowed, and divergent-but-visible pins between siblings are expected.
+
 Rules that follow from the custody contract:
 
 - A pin names a revision that **resolves in the upstream repository**. A pin

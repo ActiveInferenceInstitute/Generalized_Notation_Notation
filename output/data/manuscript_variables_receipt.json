@@ -1,6 +1,6 @@
 {
-  "counts_describe_commit": "63804500e",
-  "dirty_path_count": 11,
+  "counts_describe_commit": "97564fd36",
+  "dirty_path_count": 10,
   "dirty_paths": [
     "output/.pipeline/",
     "output/data/manuscript_variables.json",
@@ -11,8 +11,7 @@
     "output/manuscript/02_system_context.md",
     "output/manuscript/03_methods.md",
     "output/manuscript/04_artifacts_and_evidence.md",
-    "output/manuscript/05_reproducibility.md",
-    "output/manuscript/S01_source_surface.md"
+    "output/manuscript/05_reproducibility.md"
   ],
   "generator": "scripts/z_generate_manuscript_variables.py",
   "git_available": true,

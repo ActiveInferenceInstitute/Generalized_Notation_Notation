@@ -62,8 +62,7 @@ def test_checkout_namespace_compatibility(
         resolve_fep_lean_root,
     )
 
-    (tmp_path / "src" / package).mkdir(parents=True)
-    (tmp_path / "pyproject.toml").write_text("[project]\nname='fixture'\n")
+    _runtime_checkout(tmp_path, package)
     monkeypatch.delenv("FEP_FORMAL_ROOT", raising=False)
     monkeypatch.delenv("FEP_LEAN_ROOT", raising=False)
     monkeypatch.setenv(variable, str(tmp_path))
@@ -78,8 +77,7 @@ def test_canonical_override_does_not_fall_back_when_invalid(
 ) -> None:
     from gnn.execute.lean import resolve_fep_formal_root
 
-    (tmp_path / "src" / "fep_lean").mkdir(parents=True)
-    (tmp_path / "pyproject.toml").write_text("[project]\nname='fixture'\n")
+    _runtime_checkout(tmp_path, "fep_lean")
     monkeypatch.setenv("FEP_LEAN_ROOT", str(tmp_path))
     monkeypatch.setenv("FEP_FORMAL_ROOT", str(tmp_path / "missing"))
     assert resolve_fep_formal_root() is None
@@ -92,15 +90,86 @@ def test_checkout_requires_package_and_project(
 
     monkeypatch.setenv("FEP_FORMAL_ROOT", str(tmp_path))
     assert resolve_fep_formal_root() is None
-    (tmp_path / "pyproject.toml").write_text("[project]\nname='fixture'\n")
-    assert resolve_fep_formal_root() is None
     (tmp_path / "src" / "fep_formal").mkdir(parents=True)
+    assert resolve_fep_formal_root() is None
+    (tmp_path / "src" / "fep_formal" / "cli.py").write_text(
+        "def main(argv):\n    return 0\n"
+    )
+    assert resolve_fep_formal_root() is None
+    _checkout_metadata(tmp_path, uv_pin=None)
     assert resolve_fep_formal_root() == tmp_path
 
 
+def test_unreviewed_project_identity_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from gnn.execute.lean import resolve_fep_formal_root
+
+    _runtime_checkout(tmp_path)
+    monkeypatch.setenv("FEP_FORMAL_ROOT", str(tmp_path))
+    assert resolve_fep_formal_root() == tmp_path
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "fep_bridge"\n\n'
+        '[project.scripts]\nfep-bridge = "fep_formal.cli:main"\n'
+    )
+    assert resolve_fep_formal_root() is None
+
+
+def test_aliased_console_script_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from gnn.execute.lean import resolve_fep_formal_root
+
+    _runtime_checkout(tmp_path)
+    monkeypatch.setenv("FEP_FORMAL_ROOT", str(tmp_path))
+    assert resolve_fep_formal_root() == tmp_path
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "fep-formal"\n\n'
+        '[project.scripts]\nfep-formal = "fep_lean.cli:main"\n'
+    )
+    assert resolve_fep_formal_root() is None
+
+
+def test_declared_origin_selects_console_script_not_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from gnn.execute.lean import fep_bridge_executable, resolve_fep_formal_root
+
+    _runtime_checkout(tmp_path, "fep_lean")
+    decoy = tmp_path / "src" / "fep_formal"
+    decoy.mkdir(parents=True)
+    (decoy / "cli.py").write_text("def main(argv):\n    return 9\n")
+    monkeypatch.setenv("FEP_FORMAL_ROOT", str(tmp_path))
+    assert resolve_fep_formal_root() == tmp_path
+    assert fep_bridge_executable(tmp_path) == "fep-lean"
+
+
+#: Reviewed companion identities: project name, console script, entry point.
+_FEP_IDENTITIES = {
+    "fep_formal": ("fep-formal", "fep-formal", "fep_formal.cli:main"),
+    "fep_lean": ("fep_lean", "fep-lean", "fep_lean.cli:main"),
+}
+
+
+def _checkout_metadata(
+    root: Path, package: str = "fep_formal", uv_pin: str | None = "==0.12.34"
+) -> None:
+    """Write the declared project identity, console script and reviewed uv pin."""
+    name, script, target = _FEP_IDENTITIES[package]
+    metadata = (
+        f'[project]\nname = "{name}"\n\n[project.scripts]\n{script} = "{target}"\n'
+    )
+    if uv_pin is not None:
+        metadata += f'\n[tool.uv]\nrequired-version = "{uv_pin}"\n'
+    (root / "pyproject.toml").write_text(metadata)
+
+
 def _runtime_checkout(root: Path, package: str = "fep_formal") -> None:
-    (root / "src" / package).mkdir(parents=True)
-    (root / "pyproject.toml").write_text('[tool.uv]\nrequired-version = "==0.12.34"\n')
+    package_dir = root / "src" / package
+    package_dir.mkdir(parents=True)
+    (package_dir / "__init__.py").write_text("")
+    (package_dir / "cli.py").write_text("def main(argv):\n    return 0\n")
+    _checkout_metadata(root, package)
     (root / ".python-version").write_text("3.14\n")
     (root / ".venv").mkdir()
     (root / ".venv/pyvenv.cfg").write_text("version_info = 3.14.0\n")
@@ -155,7 +224,7 @@ def test_invalid_runtime_pin_is_explicit_and_not_disclosed(
     )
 
     _runtime_checkout(tmp_path)
-    (tmp_path / "pyproject.toml").write_text(f'[tool.uv]\nrequired-version = "{pin}"\n')
+    _checkout_metadata(tmp_path, uv_pin=pin)
     with pytest.raises(FepRuntimeConfigurationError, match="exact stable uv") as error:
         fep_runtime_invocation(tmp_path, ["--help"])
     assert "synthetic-secret" not in str(error.value)
@@ -192,7 +261,7 @@ def test_standalone_uv_pin_is_supported(tmp_path: Path) -> None:
     from gnn.execute.lean.lean_runner import fep_runtime_invocation
 
     _runtime_checkout(tmp_path)
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "fixture"\n')
+    _checkout_metadata(tmp_path, uv_pin=None)
     (tmp_path / "uv.toml").write_text('required-version = "==0.12.35"\n')
     assert "uv==0.12.35" in fep_runtime_invocation(tmp_path, ["--help"]).command
 
@@ -217,9 +286,7 @@ def test_invalid_metadata_returns_failure_without_secret_values(
     from gnn.execute.lean.lean_runner import verify_document
 
     _runtime_checkout(tmp_path)
-    (tmp_path / "pyproject.toml").write_text(
-        '[tool.uv]\nrequired-version = "synthetic-secret"\n'
-    )
+    _checkout_metadata(tmp_path, uv_pin="synthetic-secret")
     monkeypatch.setenv("FEP_FORMAL_ROOT", str(tmp_path))
     monkeypatch.setenv("OPENAI_API_KEY", "synthetic-caller-secret")
     result = verify_document(tmp_path / "model.md", tmp_path / "receipt.json")

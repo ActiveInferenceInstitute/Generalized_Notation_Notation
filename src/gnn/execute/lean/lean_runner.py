@@ -36,12 +36,24 @@ FEP_LEAN_ROOT_ENV: Final = "FEP_LEAN_ROOT"
 #: Default ceiling for one verify-document invocation (Lean + Mathlib).
 _VERIFY_TIMEOUT_SECONDS = 1800
 
+#: Reviewed companion project identities: namespace, console script, entry point.
+#: `fep-formal` is the canonical project; `fep_lean` is the released project name
+#: of checkouts that predate the rename. Each identity binds its own namespace and
+#: declared script, so an importable alias or a same-named directory cannot choose
+#: the origin.
+_FEP_CLI_CONTRACTS: Final = {
+    "fep-formal": ("fep_formal", "fep-formal", "fep_formal.cli:main"),
+    "fep_lean": ("fep_lean", "fep-lean", "fep_lean.cli:main"),
+}
+
 
 def resolve_fep_formal_root() -> Path | None:
     """Resolve the canonical checkout, retaining legacy environment/layout support.
 
     An explicit canonical override wins over the deprecated override, even
     when invalid. Without overrides, prefer the canonical sibling checkout.
+    A candidate is admitted only when its declared project identity and console
+    script select one physical CLI, so an importable alias cannot resolve it.
     """
     env = os.environ.get(FEP_FORMAL_ROOT_ENV)
     if env is None:
@@ -56,10 +68,11 @@ def resolve_fep_formal_root() -> Path | None:
     )
     for candidate in candidates:
         root = candidate.resolve()
-        if (root / "pyproject.toml").is_file() and any(
-            (root / "src" / package).is_dir() for package in ("fep_formal", "fep_lean")
-        ):
-            return root
+        try:
+            _fep_cli_contract(root)
+        except FepRuntimeConfigurationError:
+            continue
+        return root
     return None
 
 
@@ -69,12 +82,39 @@ def resolve_fep_lean_root() -> Path | None:
 
 
 def fep_bridge_executable(root: Path) -> str:
-    """Select the canonical CLI, retaining support for legacy-only checkouts."""
-    return "fep-formal" if (root / "src" / "fep_formal").is_dir() else "fep-lean"
+    """Select the console script declared by the checkout's project identity."""
+    return _fep_cli_contract(root.resolve())[1]
 
 
 class FepRuntimeConfigurationError(ValueError):
     """The companion's declared runtime cannot be safely selected."""
+
+
+def _fep_cli_contract(root: Path) -> tuple[str, str]:
+    """Select one physical CLI from the checkout's declared project metadata."""
+    try:
+        metadata = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+        project = metadata.get("project")
+        if not isinstance(project, dict):
+            raise FepRuntimeConfigurationError("Unsupported FEP project identity")
+        name = project.get("name")
+        contract = _FEP_CLI_CONTRACTS.get(name) if isinstance(name, str) else None
+        if contract is None:
+            raise FepRuntimeConfigurationError("Unsupported FEP project identity")
+        namespace, script, target = contract
+        scripts = project.get("scripts")
+        if not isinstance(scripts, dict) or scripts.get(script) != target:
+            raise FepRuntimeConfigurationError(
+                "FEP CLI entry point differs from project identity"
+            )
+        cli = root / "src" / namespace / "cli.py"
+        if not cli.is_file() or cli.resolve() != cli:
+            raise FepRuntimeConfigurationError("FEP physical CLI source is unavailable")
+    except (OSError, tomllib.TOMLDecodeError, UnicodeError):
+        raise FepRuntimeConfigurationError(
+            "FEP project metadata is missing or malformed"
+        ) from None
+    return namespace, script
 
 
 @dataclass(frozen=True, slots=True)

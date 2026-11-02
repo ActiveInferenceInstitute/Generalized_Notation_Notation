@@ -12,7 +12,7 @@ Dense matrix text for B is O(n^3) in output size; use ``max_n`` and ``max_file_s
 config to avoid multi-gigabyte files and OSError: [Errno 28] when the volume is full.
 Preflight messages align with Pipeline Step 5 (type checker) storage/resource estimation
 (``src/gnn/type_checker/resource_estimator.py``); for per-file reports after generation, use
-``src/5_type_checker.py --estimate-resources``.
+``src/gnn/5_type_checker.py --estimate-resources``.
 
 Usage:
     uv run python scripts/experiments/run_pymdp_gnn_scaling_analysis.py
@@ -36,8 +36,8 @@ from typing import Any, NamedTuple
 import yaml
 
 # Repository root (parent of `scripts/`) for path hints and optional imports.
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.append(str(PROJECT_ROOT))
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(PROJECT_ROOT / "scripts"))
 
 from pymdp_spec_generator import (  # type: ignore[import-not-found]
     estimate_gnn_file_bytes,

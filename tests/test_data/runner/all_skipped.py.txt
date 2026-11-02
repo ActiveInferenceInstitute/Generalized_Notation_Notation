@@ -1,0 +1,6 @@
+# Child-suite input copied into a temporary pytest selection by the runner test.
+import pytest
+
+@pytest.mark.skip(reason='unavailable')
+def test_skipped():
+    pass

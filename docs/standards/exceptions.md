@@ -7,7 +7,7 @@
   the [repository TO-DO](../../TO-DO.md) M-03 row: 304+ files carry broad
   handlers; spot-checked sites log and emit structured receipts) plus the
   file:line exemplars below, all re-verified in this tree at authoring time.
-- **Baseline:** 1146 occurrences under `src/gnn/`
+- **Baseline:** 1144 occurrences under `src/gnn/`
   (counted by
   [`scripts/check_gnn_doc_patterns.py`](../../scripts/check_gnn_doc_patterns.py)
   `EXCEPT_EXCEPTION_BASELINE`). Historical: 1183 at the wave-6 base;
@@ -41,6 +41,15 @@
   reduction cannot be spent by a later change without a decision note. The
   count remains an occurrence cap over the exact-name handler form, not a claim
   of complete exception correctness.
+
+  2026-11-02: tightened to 1144 after the Step-2 harness adapter's three
+  guarded seams were narrowed to the set the lazily imported repository
+  harness can actually raise (`src/gnn/utils/testing/runner.py` ->
+  `(OSError, ImportError, KeyError, TypeError, ValueError, RuntimeError,
+  subprocess.SubprocessError)`). The absent-harness `ImportError` and the
+  forced cleanup `RuntimeError` are exercised by the adapter's own test file,
+  so the set is measured, not guessed; logging and the structured result are
+  unchanged.
 
 ## Purpose
 

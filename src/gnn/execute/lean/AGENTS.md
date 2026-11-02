@@ -39,9 +39,10 @@ Canonical checkout selection uses `FEP_FORMAL_ROOT` before the deprecated
 An invalid explicit override fails closed. `resolve_fep_formal_root` is the
 canonical resolver. The deprecated `resolve_fep_lean_root` calls that function.
 `FEP_FORMAL_ROOT_ENV` names the canonical variable. `fep_bridge_executable`
-selects `fep-formal` for a canonical package and `fep-lean` for a legacy-only
-checkout. Frozen pair pins and proof receipts keep their original identities;
-source changes require fresh paired qualification.
+selects the console script declared by the checkout's project identity, and
+`resolve_fep_formal_root` admits a candidate only when that identity and script
+select one physical CLI. Frozen pair pins and proof receipts keep their original
+identities; source changes require fresh paired qualification.
 
 Bridge dispatch and toolchain probes derive the exact uv pin from the FEP
 checkout metadata and Python from its .python-version. They invoke a
