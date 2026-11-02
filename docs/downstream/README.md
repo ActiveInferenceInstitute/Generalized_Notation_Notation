@@ -71,7 +71,10 @@ These repositories carry GNN files or GNN bridge code on the default branch and
 record the upstream revision in their own contract rather than in a pin file.
 Each row names the contract; every path and revision below was verified from
 origin on 2026-11-02. The contract file links to that file on the repository's
-default branch, so a reader can reach it in one step.
+default branch, so a reader can reach it in one step. These five are rows rather
+than their own pages on purpose: a page would add files under `docs/**`, which
+moves the manuscript documentation file count, so pages for them are a scheduled
+count-changing change rather than an oversight.
 
 | Repository | GNN content | Where the revision is recorded |
 | --- | --- | --- |
