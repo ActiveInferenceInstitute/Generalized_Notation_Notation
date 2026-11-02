@@ -62,6 +62,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   distribution supplement, whose upload still requires actual archive-owner
   controls and public-download acceptance.
 
+### Security floors
+
+- Raise the transitive `virtualenv` constraint to `>=21.14.13` and re-lock to
+  21.15.2, so the advisory-affected 21.14.12 (GHSA-cx6f-vjhg-g3cc,
+  CVE-2026-115586) is no longer resolved. The floor stays a resolver constraint
+  rather than a runtime dependency.
+
 ## [5.0.3] - 2026-10-31
 
 ### Release qualification repair

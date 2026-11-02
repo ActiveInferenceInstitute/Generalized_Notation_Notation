@@ -344,7 +344,7 @@ constraint-dependencies = [
     "soupsieve>=2.8.4",
     "starlette>=1.0.1",
     "tornado>=6.5.9",  # GHSA-c2m8-h5v5-343r, GHSA-chx6-46f5-w4vp, GHSA-3hv7-mjh2-fv65
-    "virtualenv>=21.7.13",  # Latest of four activation/seeding fixes
+    "virtualenv>=21.14.13",  # GHSA-cx6f-vjhg-g3cc: unescaped --prompt in the bash activator
     "urllib3>=2.8.0",  # GHSA-gh4c-6fx4-qh6g: chunked Deflate streaming loop
 ]
 
