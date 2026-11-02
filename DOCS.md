@@ -1,6 +1,6 @@
 # Generalized Notation Notation (GNN) — Comprehensive Documentation
 
-**Last Updated**: 2026-09-07 · **Version**: v3.3.0 ("One Corpus")
+**Last Updated**: 2026-11-02 · **Current release**: v5.0.3 ([version map](docs/VERSION_MAP.md))
 
 This document provides a complete, machine-parsable and human-accessible overview of GNN: the what, why, and how. It consolidates architecture, pipeline, data flows, artifacts, and integration points with multiple Mermaid diagrams.
 
@@ -210,6 +210,13 @@ flowchart LR
 - Execution backends in `src/gnn/execute/` (including the `stan/` cmdstanpy runner)
 - Model-kind and composition admission are backend-specific. The [renderer registry](src/gnn/render/framework_registry.py) owns current support and default/experimental selection; [pipeline boundaries](docs/pipeline/README.md#step-boundaries) distinguish generator registration from native execution. See [Model Kinds and Framework Support](README.md#model-kinds-and-framework-support) for admitted scopes and limits.
 - MCP tools in `src/gnn/mcp/`
+
+## Who already uses GNN
+
+The [downstream registry](docs/downstream/README.md) lists the repositories that
+apply GNN, each with its specification path, pinned GNN revision and conformance
+evidence. Every row is verified from the repository it describes on that
+repository's origin default branch.
 
 ## References
 

@@ -1,7 +1,7 @@
 # Preserve the configurable settings of protected pyproject.toml; uv.toml overrides configurable tool.uv options.
 # Runtime exception/removal checks: README.md, Runtime defaults and required profiles.
 required-version = "==0.13.6"
-constraint-dependencies = ["fsspec>=2026.6.0", "gitpython>=3.1.58", "idna>=3.15", "jupyterlab>=4.6.4", "mistune>=3.3.0", "multidict>=6.9.1", "pillow>=13.0.0", "python-multipart>=0.0.27", "ray>=2.56.0", "setuptools>=83.0.0", "soupsieve>=2.8.4", "starlette>=1.0.1", "tornado>=6.5.9", "virtualenv>=21.7.13", "urllib3>=2.8.0"]
+constraint-dependencies = ["fsspec>=2026.6.0", "gitpython>=3.1.58", "idna>=3.15", "jupyterlab>=4.6.4", "mistune>=3.3.0", "multidict>=6.9.1", "pillow>=13.0.0", "python-multipart>=0.0.27", "ray>=2.56.0", "setuptools>=83.0.0", "soupsieve>=2.8.4", "starlette>=1.0.1", "tornado>=6.5.9", "virtualenv>=21.14.13", "urllib3>=2.8.0"]
 
 # Mirror pyproject.toml: supported GUI installs use uv, with the documented
 # Gradio 6.30.0 / Pillow 13 metadata-cap exception and native GUI checks.

@@ -1,6 +1,6 @@
 # TO-DO — GNN next steps
 
-Updated 2026-10-26.
+Updated 2026-11-02.
 Current software version is owned by [pyproject.toml](pyproject.toml).
 [GitHub release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases)
 own exact tags, accepted sources, checks and public artifacts. Version metadata
@@ -178,6 +178,10 @@ The lists below own outstanding work; this table owns target-version sequencing.
   Progress: E3-FA1 adds source-declared ordered finite actions, explicit control
   matrices and units, complete policy/component receipts and a total evaluation
   cap; its independent numerical witnesses retain a separate bounded scope.
+  The adapter now runs on the released `cpomdp==0.5.0` wheel and the FEP
+  companion is re-pinned to the reviewed merge
+  `9d77cd47fd170e1e4071c0944d3c5ee3cb7a4886` (#296); further control/search
+  behavior remains open.
   Remaining scope: specify further control/search behavior through the
   [cpomdp adapter](docs/gnn/implementations/cpomdp.md), preserving passive
   no-search behavior, explicit EFE defaults and complete policy/source identity.

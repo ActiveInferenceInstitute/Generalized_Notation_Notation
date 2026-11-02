@@ -20,6 +20,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   `warrant`, `action_set_size`, `horizon`, `action_set_version`) from one
   construction-time `evaluate` pass, so a controlled run admits
   `num_timesteps + 1` planning cycles.
+- Re-pin `.github/fep-lean-pair.json` to the FEP_Formal merge
+  `9d77cd47fd170e1e4071c0944d3c5ee3cb7a4886`, the companion revision this
+  adoption was reviewed against.
+
+### Reader section-heading alignment
+
+- Key every markdown section reader by the canonical heading name. A shared
+  `gnn.parsers.common` normalizer maps headings that differ only by whitespace
+  to the canonical GNN section names, so the parser, notation-metadata export,
+  renderers, testing round-trip parser and ontology/visualization readers
+  resolve the same section; a dedicated alignment test covers the spellings.
 
 ### Maintained execution utilities
 
@@ -31,6 +42,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   retire the unreachable test-tool registration file, consolidate matrix parsing
   behind the existing public surfaces and link troubleshooting to current runtime
   profiles. Historical releases, receipts and negative fixtures retain their roles.
+- Select the FEP companion CLI from the companion's declared project identity
+  (canonical `fep-formal` or released `fep_lean`), so an importable alias or a
+  same-named directory cannot choose the runtime; narrow the harness adapter
+  guards to their measured failure set.
 
 ### Independent Gaussian composition and evidence views
 
@@ -61,6 +76,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 - Distinguish the current software source DOI from the historical GNN 4.1.0
   distribution supplement, whose upload still requires actual archive-owner
   controls and public-download acceptance.
+
+### Security floors
+
+- Raise the transitive `virtualenv` constraint to `>=21.14.13` and re-lock to
+  21.15.2, so the advisory-affected 21.14.12 (GHSA-cx6f-vjhg-g3cc,
+  CVE-2026-115586) is no longer resolved. The floor stays a resolver constraint
+  rather than a runtime dependency.
 
 ## [5.0.3] - 2026-10-31
 

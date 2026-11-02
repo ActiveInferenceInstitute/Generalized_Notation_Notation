@@ -607,6 +607,29 @@ class TestResilientPageWrites:
         assert 'src="assets/09_advanced_viz_output__graph.png"' in page
 
     @pytest.mark.unit
+    def test_gallery_collects_model_assets_from_real_step8_layout(
+        self, tmp_path: Any
+    ) -> None:
+        # Step 8 writes per-model assets directly under its output directory;
+        # there is no ``visualization_results`` subdirectory on a real run.
+        from gnn.website import collect_website_data
+
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+        v8 = tmp_path / "8_visualization_output" / "static_perception"
+        v8.mkdir(parents=True)
+        (v8 / "static_perception_network_graph.png").write_bytes(b"png")
+        assets = tmp_path / "site" / "assets"
+        assets.mkdir(parents=True)
+
+        data = collect_website_data(tmp_path, input_dir, assets)
+
+        assert [v["title"] for v in data["visualizations"]] == [
+            "static_perception_network_graph"
+        ]
+        assert (assets / "static_perception_network_graph.png").read_bytes() == b"png"
+
+    @pytest.mark.unit
     def test_null_tools_registered_falls_back_to_zero(self, tmp_path: Any) -> None:
         _write_mcp_artifacts(
             tmp_path, summary={**_SUCCESS_SUMMARY, "tools_registered": None}

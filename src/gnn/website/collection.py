@@ -572,8 +572,8 @@ def collect_website_data(
     data["analysis"].extend(_collect_analysis_results(p_root))
     viz_entries, viz_warnings = _collect_visualizations(
         [
-            p_root / "08_visualization_output" / "visualization_results",
-            p_root / "8_visualization_output" / "visualization_results",
+            p_root / "08_visualization_output",
+            p_root / "8_visualization_output",
             p_root / "09_advanced_viz_output",
             p_root / "9_advanced_viz_output",
         ],
