@@ -29,6 +29,7 @@ from .common import (
     ParseResult,
     TimeSpecification,
     Variable,
+    collapse_heading_whitespace,
     infer_variable_type,
     normalize_variable_name,
     parse_connection_operator,
@@ -41,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 def _collapse_heading(heading: str) -> str:
     """Collapse whitespace so heading spellings compare structurally."""
-    return re.sub(r"\s+", "", heading)
+    return collapse_heading_whitespace(heading)
 
 
 class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):

@@ -10,6 +10,8 @@ import re
 from pathlib import Path
 from typing import Any, Dict
 
+from gnn.parsers.common import canonical_section_heading
+
 logger = logging.getLogger(__name__)
 
 
@@ -112,9 +114,11 @@ class GNNParser:
         """Parse GNN file in Markdown format."""
         sections: Dict[str, Any] = {}
 
-        # Regex to find all section headers (## SectionName)
+        # Regex to find all section headers (## SectionName). The whole heading
+        # text is captured so a spaced spelling still names its canonical
+        # section instead of truncating at the first space.
         section_headers = list(
-            re.finditer(r"^##\s+([a-zA-Z0-9_]+)", content, re.MULTILINE)
+            re.finditer(r"^##[ \t]+(.+?)[ \t]*$", content, re.MULTILINE)
         )
 
         # Preserve header comments (lines before the first section header)
@@ -130,7 +134,7 @@ class GNNParser:
                 sections["_HeaderComments"] = header_comments_content
 
         for i, header_match in enumerate(section_headers):
-            section_name = header_match.group(1).strip()
+            section_name = canonical_section_heading(header_match.group(1).strip())
             start_pos = header_match.end()
 
             # The end of the section is the start of the next section, or the end of the file

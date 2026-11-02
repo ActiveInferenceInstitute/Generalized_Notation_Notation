@@ -22,6 +22,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from gnn.parsers.common import canonical_section_heading
 from gnn.render.pomdp_contract import (
     ModelKind,
     build_canonical_pomdp_spec,
@@ -103,7 +104,7 @@ class RxInferRenderer:
         for line in lines:
             line = line.strip()
             if line.startswith("## "):
-                current_section = line[3:].strip()
+                current_section = canonical_section_heading(line[3:].strip())
             elif current_section == "ModelParameters" and ":" in line:
                 key, value = line.split(":", 1)
                 key = key.strip()

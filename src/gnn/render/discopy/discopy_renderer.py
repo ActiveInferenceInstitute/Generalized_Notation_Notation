@@ -20,6 +20,8 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from gnn.parsers.common import canonical_section_heading
+
 from .symmetry import build_matrix_permutation_metadata
 
 
@@ -95,7 +97,7 @@ class DisCoPyRenderer:
         for line in lines:
             line = line.strip()
             if line.startswith("## "):
-                current_section = line[3:].strip()
+                current_section = canonical_section_heading(line[3:].strip())
                 sections_found.append(current_section)
                 self.logger.debug(f"Found section: {current_section}")
             elif current_section == "ModelParameters" and ":" in line:

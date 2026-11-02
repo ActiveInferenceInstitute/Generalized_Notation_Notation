@@ -154,6 +154,32 @@ Keep these planes separate in reports, exactly as the
 [evidence-plane discipline](../../standards/composability.md#evidence-plane-discipline)
 requires inside this repository.
 
+## 6  Downstream testing patterns
+
+Two failures from a sibling adoption (Skillference) generalize to any consumer
+that pins a GNN checkout. Both stayed invisible in that consumer's own green
+summary and surfaced only under a fresh, fully provisioned run.
+
+1. **Exercise the real path; a guarded skip hides what it cannot prove.** A
+   pinned-parser test that skips when the GNN checkout is absent still reports
+   as passing, but it runs no parsing at all. Re-measured with the checkout
+   absent, that module read 62.64% while the suite summary still reported ~91%
+   for the package: a guarded test can fall below a repository's coverage floor
+   with no red signal anywhere. Build the pinned-parser test's own scratch
+   checkout under `tmp_path` and read it through the real archive, git and
+   subprocess path, so it exercises the pinned parser on every run of the suite.
+   Keep an explicit, printed skip only for genuinely unavailable external
+   toolchains.
+2. **Gate tools must live in the dependency group CI actually syncs.** A sibling
+   whose workflow runs `uv sync --frozen` with the default groups kept `mypy` in
+   a `dev` *extra*. Every push failed with "Failed to spawn: mypy" from
+   2026-08-10 onward, while local runs — where the extra was installed — stayed
+   green. Install a gate tool in the group the workflow synchronizes, or make
+   the workflow synchronize the group that holds it.
+
+Both patterns cost nothing to adopt and separate a green suite that proves
+something from one that does not.
+
 ## Related
 
 - [Composability standard: declared cross-repo consumer surfaces](../../standards/composability.md#consumer-seams-declared-cross-repo-surfaces)
