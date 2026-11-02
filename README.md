@@ -25,7 +25,7 @@ It targets coordinated FEP_Formal qualification against the current scientific
 sources; see the
 [paired release procedure](docs/development/fep_lean_paired_revision.md).
 Version metadata does not establish publication or completed pairing.
-**Page updated:** 2026-10-31. [Package metadata](pyproject.toml) owns the version
+**Page updated:** 2026-11-02. [Package metadata](pyproject.toml) owns the version
 and dependency requirements; [CHANGELOG.md](CHANGELOG.md) owns release history.
 
 ## Overview
@@ -194,6 +194,9 @@ take a model file. Configuration loads from `input/config.yaml`. Use dedicated
 output directories and inspect `00_pipeline_summary/pipeline_execution_summary.json`.
 The main-script parser also exposes `--llm-tasks` (comma-separated task names)
 and `--pipeline-summary-file` (summary path); consult its help for parser defaults.
+The finalization step renders the self-contained performance dashboard at
+`<output-dir>/00_pipeline_summary/performance_dashboard.html` from
+`src/gnn/pipeline/performance_dashboard.template.html`.
 The tracked `output/` tree retains publication evidence from its recorded source;
 directory presence cannot establish completion of a new run.
 
@@ -314,8 +317,12 @@ JAX 0.12.0.1, PyMDP 1.0.3 and Flax 0.12.10. ActiveInference.jl retains its
 Distributions ceiling because DistributionsAD's extension fails with the newer
 `@check_args` API; its committed Project documents that exception. RxInfer
 resolves 6.1.0 on Julia 1.13.2. The separate FEP companion still requires its
-own exact uv 0.13.0. These explicit compatibility profiles take precedence over
-unqualified upgrades.
+own exact uv 0.13.0; Lean execution selects the FEP_Formal companion pinned in
+`.github/fep-lean-pair.json` at
+`9d77cd47fd170e1e4071c0944d3c5ee3cb7a4886`, and the companion's declared
+project identity selects its CLI (`fep-formal` for the canonical project,
+`fep_lean` for pre-rename checkouts). These explicit compatibility profiles
+take precedence over unqualified upgrades.
 
 Pillow **13.0.0** is the minimum image decoder: 12.3.0 has nine October 2026
 advisories. The locked Gradio **6.30.0** release declares Pillow `<13`.
@@ -421,6 +428,10 @@ their documented producer and re-pin procedures.
 
 [Release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases)
 provide accepted version tags and downloadable source-bound artifacts. The
+current software version is 5.0.3 (tag `v5.0.3`, commit
+`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`); that tag has no GitHub release
+object, and downstream consumers pin that commit. The latest published release
+remains 5.0.1. The
 [GNN 5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
 carries the ordinary wheel and sdist, the manuscript PDF, a source archive, the
 source binding and verification records, and `SHA256SUMS`. The
