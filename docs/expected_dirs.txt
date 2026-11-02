@@ -12,6 +12,7 @@ deployment
 dev
 development
 discopy
+downstream
 execution
 export
 gnn

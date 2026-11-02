@@ -19,11 +19,12 @@ Top-level documentation tree for GNN. **Human onboarding**: [README.md](README.m
 | [api/](api/) | REST / API docs |
 | [configuration/](configuration/) | Config reference |
 | [templates/](templates/) | GNN templates |
+| [downstream/](downstream/) | Repositories that apply GNN: specifications, pins and conformance evidence |
 | [INDEX.md](INDEX.md), [START_HERE.md](START_HERE.md) | Doc navigation entry points |
 | [SPEC.md](SPEC.md) | Versioning policy and doc-tree design requirements |
 | Other top-level folders (`pymdp/`, `rxinfer/`, `bnlearn/`, …) | Framework and topic docs; see [INDEX.md](INDEX.md) |
 
-**Last reviewed**: 2026-10-21
+**Last reviewed**: 2026-11-02
 
 ## Pipeline
 

@@ -11,6 +11,8 @@ narrow roles:
 
 The code and the live CLI are authoritative for behavior. Documentation examples are
 kept intentionally small and are validated by the repository documentation checks.
+The current software release is **v5.0.3**; the [version map](VERSION_MAP.md) owns
+release history and the publication records.
 
 ## Choose a path
 
@@ -60,6 +62,12 @@ and [framework implementations](gnn/implementations/README.md). For the Lean 4 f
 contract in the sibling checkout).
 For spatial active inference, see the [GEO_INFER interchange](other/geo_infer/README.md)
 (contracts `gnn-geo-infer/1|2|factored/1`; canonical interchange docs in the sibling checkout).
+
+## Who already uses GNN
+
+The [downstream registry](downstream/README.md) lists the repositories that apply
+GNN, each with its specification path, pinned GNN revision and conformance
+evidence, verified from each repository's origin default branch.
 
 ## Current implementation map
 
