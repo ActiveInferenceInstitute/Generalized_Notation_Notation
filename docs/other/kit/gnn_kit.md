@@ -150,7 +150,7 @@ The GNN project, as seen in the file structure, has its own Python codebase in `
 **Example `kit` Usage:**
 ```python
 gnn_toolkit_repo = Repository(
-    "~/Documents/GitHub/GeneralizedNotationNotation/src"
+    "<GNN checkout>/src"
 )
 
 # Extract symbols from the GNN main processing script
