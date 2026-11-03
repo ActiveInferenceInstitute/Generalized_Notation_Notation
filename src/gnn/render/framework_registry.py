@@ -309,7 +309,7 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
 #: :data:`RENDER_CAPABILITY_DECLARATIONS`.  A dimension's tuple lists every
 #: value a frame may declare; a frame declares the subset it supports and the
 #: renderer refuses a model that requires an undeclared value (absence is
-#: refusal — fail closed, never a silent default or placeholder artifact).
+#: refusal — fail closed: an undeclared value is refused, never rendered).
 #:
 #: Dimension meanings:
 #:   ``continuous_composition`` -- which continuous families the frame renders
