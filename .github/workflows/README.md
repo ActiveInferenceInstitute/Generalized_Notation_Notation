@@ -70,7 +70,12 @@ legs — still fails, because the prerequisite's own result is `cancelled`, not
 `success`. A branch push to `main` skips the aggregate outright, because the
 lanes it couples are deliberately not run there; the weekly schedule re-runs the
 full matrix on the current tip, and commit-keyed concurrency keeps each non-PR
-run independent instead of superseding an earlier tip's verdict.
+run independent instead of superseding an earlier tip's verdict. Five
+workflows carry that shape — `ci.yml`, `local-gates.yml`,
+`installed-platforms.yml`, `geo-infer-interchange.yml` and
+`comprehensive-native-coverage.yml` key non-PR runs by commit and cancel only a
+superseded pull-request head — so a merge no longer destroys their in-flight
+verdict.
 Each runner installs locked dependencies once; CI commands then
 use `uv run --frozen --no-sync`. This changes scheduling and repeated setup,
 while preserving test, security and custody coverage.
