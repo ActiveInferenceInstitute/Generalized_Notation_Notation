@@ -48,6 +48,12 @@ for the current render/execute split.
 - **bnlearn**: [renderer inventory](../src/gnn/render/AGENTS.md); manually enabled and not in the default lock
 - **Lean**: proof verification via the FEP_Formal bridge (no render target; see [FEP bridge docs](other/fep_lean/README.md))
 
+## Downstream consumers
+
+Repositories that apply GNN in their own work are catalogued in the
+[downstream registry](downstream/README.md), each with its specification path, pinned
+GNN revision and conformance evidence.
+
 ## Operations network
 
 - [Setup](SETUP.md) → [Configuration](configuration/README.md) → [Pipeline](pipeline/README.md)

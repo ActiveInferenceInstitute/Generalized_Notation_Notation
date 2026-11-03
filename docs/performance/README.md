@@ -90,6 +90,18 @@ Use `python -m json.tool` or `jq` to inspect generated JSON. Compare runs only w
 input models, selected steps, framework availability, and output scope are held
 constant.
 
+## Open the dashboards
+
+- `output/<run>/00_pipeline_summary/performance_dashboard.html` — a self-contained D3
+  performance dashboard written beside the final summary by
+  `gnn.pipeline.summary_wiring._write_performance_dashboard`, from
+  `src/gnn/pipeline/performance_dashboard.template.html`.
+- `output/<run>/20_website_output/index.html` — the run's Step 20 website dashboard
+  (execution summary, artifact browser, per-step memory receipts); see the
+  [20_website module guide](../gnn/modules/20_website.md).
+
+Both open directly from disk (`file://`) with no server or network access.
+
 ## Related references
 
 - [Resource metrics](../gnn/operations/resource_metrics.md)

@@ -38,9 +38,10 @@ default branch.
 
 - Verify from the repository itself on its origin default branch; never copy a
   claim from internal notes or from another row.
-- Cite the pin file and the workflow job, test file or command that carries the
-  evidence. If evidence is absent, write "not verified" or "no GNN-specific CI
-  job" instead of implying more.
+- Cite the pin file, or the contract that records the revision (each row names
+  it), and the workflow job, test file or command that carries the evidence. If
+  evidence is absent, write "not verified" or "no GNN-specific CI job" instead of
+  implying more.
 - Re-verify a row when its repository changes its pin file or GNN specification.
 
 ## Related

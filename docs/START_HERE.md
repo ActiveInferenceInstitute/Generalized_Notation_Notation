@@ -10,7 +10,8 @@ Read [GNN Overview](gnn/gnn_overview.md), then complete the [Quickstart Tutorial
 ## I need to run the project
 
 Read [Setup](SETUP.md), [Configuration](configuration/README.md), and
-[Troubleshooting](troubleshooting/README.md).
+[Troubleshooting](troubleshooting/README.md). A completed run's results site is the
+[Step 20 website](gnn/modules/20_website.md) at `output/20_website_output/index.html`.
 
 ## I am writing a model
 
@@ -22,7 +23,9 @@ Use the [GNN Syntax Reference](gnn/reference/gnn_syntax.md),
 
 Start with the [Framework Integration Guide](gnn/integration/framework_integration_guide.md)
 and then open the target-specific guide from
-[Framework Implementations](gnn/implementations/README.md).
+[Framework Implementations](gnn/implementations/README.md). The
+[downstream registry](downstream/README.md) lists repositories that already apply GNN,
+with their specification paths, pinned revisions and conformance evidence.
 
 ## I am developing the pipeline
 

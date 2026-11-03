@@ -831,5 +831,5 @@ The combination of GNN's formal model specifications with D2's professional diag
 ---
 
 **D2 Version**: 0.6.0  
-**GNN Pipeline Version**: 3.5.0  
+**GNN Pipeline Version**: [pyproject.toml](../../pyproject.toml) (canonical)  
 **Integration Status**: ✅ Implemented (`d2` CLI required on `PATH`)
