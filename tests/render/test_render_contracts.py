@@ -725,7 +725,7 @@ class TestTargetLanguageSyntaxAcceptance:
         from gnn.render.emitted_artifact_checks import julia_syntax_findings
 
         source = (
-            "# ok\nx = 1\ny = \"a $x b\"\nz = 1.0e-5\nα = 3\n"
+            '# ok\nx = 1\ny = "a $x b"\nz = 1.0e-5\nα = 3\n'
             "function g(a)\n  return a * 2\nend\n"
         )
         findings, available = julia_syntax_findings(source)
@@ -735,7 +735,7 @@ class TestTargetLanguageSyntaxAcceptance:
     def test_missing_toolchains_report_unavailable_not_valid(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """"Not checked" must never be reported as "valid"."""
+        """ "Not checked" must never be reported as "valid"."""
         from gnn.render.emitted_artifact_checks import (
             julia_syntax_findings,
             stan_syntax_findings,
@@ -760,11 +760,11 @@ class TestTargetLanguageSyntaxAcceptance:
         assert available
         assert findings == []
 
+    @pytest.mark.needs_stanc
     def test_emitted_stan_artifact_parses(self, tmp_path: Path) -> None:
         from gnn.render.emitted_artifact_checks import stan_syntax_findings
 
         _name, code = _render_corpus_file(CORPUS_BASICS, "stan", tmp_path)
         findings, available = stan_syntax_findings(code)
-        if not available:
-            pytest.skip("stanc is not on PATH; the program is unchecked")
+        assert available, "stanc must be on PATH for this case"
         assert findings == []
