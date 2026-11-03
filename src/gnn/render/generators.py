@@ -258,7 +258,7 @@ def generate_activeinference_jl_code(
 def generate_discopy_code(
     model_data: Dict, output_path: Optional[Union[str, Path]] = None
 ) -> str:
-    """Generate the legacy DisCoPy categorical analysis template.
+    """Generate the compatibility DisCoPy categorical analysis template.
 
     Retained for compatibility callers and direct regression tests only.
     Target dispatch (``render_gnn_spec``, CLI, MCP and Step 11) uses

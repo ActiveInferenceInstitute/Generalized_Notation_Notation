@@ -137,8 +137,8 @@ Any exception raised during code generation is caught and returned as `(False, "
 - `render/processor/rendering.py::render_gnn_spec` (CLI and MCP single-spec
   routes) dispatches both `discopy` and `discopy_combined` to the same
   `render_gnn_to_discopy`, so every door emits the same artifact contract.
-- The legacy `generators.generate_discopy_code` template remains importable for
-  compatibility tests but is no longer part of target dispatch.
+- The compatibility `generators.generate_discopy_code` template remains
+  importable for its direct tests but is no longer part of target dispatch.
 
 ### Consumed by
 - `execute/discopy/` — runs the emitted script in Step 12.
