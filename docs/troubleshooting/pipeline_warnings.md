@@ -15,6 +15,44 @@ cat output/00_pipeline_summary/pipeline_execution_summary.json | uv run python -
 The exact output root may be a custom `--output-dir`; use that run directory when it
 is not `output/`.
 
+## Why a step warned
+
+Each entry in `steps` carries `warning_reason_source`, written even when no reason
+exists, so an empty reason list is never ambiguous:
+
+| `warning_reason_source` | Meaning |
+|---|---|
+| `step_output_scan` | An actionable warning line was found in the step's captured stdout/stderr; `warning_reasons` lists the distinct lines. |
+| `step_declaration` | The step reported its own warnings through `warnings` or `dependency_warnings`. |
+| `exit_code_only` | The step returned `SUCCESS_WITH_WARNINGS` and the summary captured no warning text, so no reason can be quoted. Read the step's own log. |
+| `none` | No warning was recorded or attributed. |
+
+`warning_reasons` holds the first 8 distinct reasons in first-seen order, each capped
+at 200 characters, with ANSI escapes and leading log timestamps stripped and
+whitespace collapsed, so the same warning compares equal across runs.
+`warning_reason_count` is the number of distinct reasons found before truncation and
+`warning_reasons_truncated` says whether the list was cut. That bound is the honest
+limit of the summary: `exit_code_only` means the reason is unavailable there, not
+that there was none.
+
+```bash
+uv run python - <<'PY'
+import json
+import pathlib
+
+summary = json.loads(
+    pathlib.Path(
+        "output/00_pipeline_summary/pipeline_execution_summary.json"
+    ).read_text()
+)
+for step in summary.get("steps", []):
+    if step.get("warning_reason_source") not in (None, "none"):
+        print(step.get("script_name"), step["warning_reason_source"])
+        for reason in step.get("warning_reasons", []):
+            print("   ", reason)
+PY
+```
+
 ## Missing framework warnings
 
 Step 12 can skip an unavailable Python or Julia runtime. Check the executor status:

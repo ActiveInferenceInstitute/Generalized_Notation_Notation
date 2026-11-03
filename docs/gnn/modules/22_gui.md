@@ -84,9 +84,9 @@ in `step_registry.STEPS` must declare a budget in that table, and an undeclared
 step or dictionary variant fails closed with `StepTimeoutNotDeclared` instead of
 inheriting a silent default — a registered step with no entry fails at import of
 `step_timeouts`, and `get_step_timeout()` fails at the call for an unknown script
-name or a missing `default`/`comprehensive` variant. That contract is carried by
-the step-timeout hardening PR #307; until it merges, an entry-less step still
-receives the old implicit 180-second default.
+name or a missing `default`/`comprehensive` variant. That contract landed with
+the step-timeout hardening in #307 (merge `355b1b0fe`), so an entry-less step is
+refused rather than receiving the old implicit 180-second default.
 
 The budget is enforced in both execution tiers — the subprocess step runner
 (`gnn.pipeline.summary_wiring.execute_pipeline_step`, re-exported by `gnn.main`)
