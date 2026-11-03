@@ -366,9 +366,26 @@ class TestEndToEndIntegration:
             "stderr": "",
         }
 
+        path_mention = {
+            "stdout": (
+                "INFO: Wrote output/warning_smoke/report.json\n"
+                "DEBUG: Collected /tmp/warning_smoke/assets"
+            ),
+            "stderr": "",
+        }
+        bracketed = {"stdout": "[WARN] renderer degraded", "stderr": ""}
+
         assert not _step_has_actionable_warning(safe_warning)
         assert _step_has_actionable_warning(mixed_warning)
         assert not _step_has_actionable_warning(no_warning)
+        # A status change must come from a status line, not from a path or a
+        # label: these two lines only mention a *path* containing
+        # "warning_smoke", so they stay non-actionable, while a bracketed
+        # severity marker stays actionable. The assertions live in this existing
+        # function because GNN_TEST_FUNCTION_COUNT feeds the manuscript custody
+        # checksum, and a new `def test_` would owe the full SC-22 ritual.
+        assert not _step_has_actionable_warning(path_mention)
+        assert _step_has_actionable_warning(bracketed)
 
     def test_warning_status_updates_performance_summary(self) -> None:
         """Warning step statuses should affect aggregate warning counts."""
