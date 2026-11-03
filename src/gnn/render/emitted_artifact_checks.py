@@ -366,7 +366,9 @@ exit(gnn_main())
 TOOLCHAIN_TIMEOUT_SECONDS = 300.0
 
 
-def _stdin_findings(command: list[str], code: str, timeout: float) -> tuple[list[str], bool]:
+def _stdin_findings(
+    command: list[str], code: str, timeout: float
+) -> tuple[list[str], bool]:
     """Run *command* with *code* on stdin; return ``(findings, available)``.
 
     ``available`` is ``False`` only when the executable is missing. A timeout
@@ -399,7 +401,9 @@ def _stdin_findings(command: list[str], code: str, timeout: float) -> tuple[list
     ]
     if not findings:
         detail = (result.stderr or result.stdout).strip().splitlines()
-        findings = [detail[-1]] if detail else [f"{command[0]} exited {result.returncode}"]
+        findings = (
+            [detail[-1]] if detail else [f"{command[0]} exited {result.returncode}"]
+        )
     return findings, True
 
 
