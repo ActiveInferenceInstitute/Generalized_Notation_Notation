@@ -305,6 +305,155 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
 )
 
 
+#: Closed vocabulary for the render dimensions every frame declares in
+#: :data:`RENDER_CAPABILITY_DECLARATIONS`.  A dimension's tuple lists every
+#: value a frame may declare; a frame declares the subset it supports and the
+#: renderer refuses a model that requires an undeclared value (absence is
+#: refusal — fail closed, never a silent default or placeholder artifact).
+#:
+#: Dimension meanings:
+#:   ``continuous_composition`` -- which continuous families the frame renders
+#:     whole: ``flat`` (one linear-Gaussian F/H/Q/R block), ``factored``
+#:     (per-factor ``*_fN`` blocks), ``independent_agents`` (per-agent
+#:     ``*_agentN`` blocks with declared independent coupling).
+#:   ``dynamics`` -- ``stationary``/``nonstationary`` (time-indexed ``B_t`` or
+#:     regime-switched ``B_regime`` transitions with a step schedule).
+#:   ``planning`` -- ``none`` (no planning semantics; authored horizons are not
+#:     gated) or ``one_step_only`` (admits one-step declarations and refuses
+#:     deeper or conflicting authored horizons rather than reducing them).
+#:   ``mixed_family_composition`` -- ``whole`` when the frame renders a spec
+#:     that declares more than one render family (e.g. continuous x hybrid)
+#:     as one model; empty means the spec is refused instead of silently
+#:     rendering one family with the others dropped.
+#:
+#: ``execution_contracts`` remains a separate top-level registry key consumed
+#: by :func:`gnn.render.execution_contracts.unsupported_contract`; the
+#: discrete/continuous split is declared by ``supports_continuous`` and
+#: ``continuous_only``.  Together these are the machine-checked render
+#: capabilities; prose ``supported_features`` is documentation, not a gate.
+RENDER_DIMENSION_VALUES: Mapping[str, Tuple[str, ...]] = MappingProxyType(
+    {
+        "continuous_composition": ("flat", "factored", "independent_agents"),
+        "dynamics": ("stationary", "nonstationary"),
+        "planning": ("none", "one_step_only"),
+        "mixed_family_composition": ("whole",),
+    }
+)
+
+#: Per-frame render-capability declarations.  Values reproduce the enforced
+#: render behaviour exactly; ``tests/render/`` conformance checks fail when a
+#: declaration and the renderer's decisions drift.  A frame absent from this
+#: table declares nothing and therefore supports nothing here (fail closed).
+RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
+    MappingProxyType(
+        {
+            "pymdp": {
+                "continuous_composition": (),
+                "dynamics": ("stationary", "nonstationary"),
+                "planning": ("one_step_only",),
+                "mixed_family_composition": (),
+            },
+            "rxinfer": {
+                "continuous_composition": ("flat", "independent_agents"),
+                "dynamics": ("stationary",),
+                "planning": ("one_step_only",),
+                "mixed_family_composition": (),
+            },
+            "activeinference_jl": {
+                "continuous_composition": (),
+                "dynamics": ("stationary",),
+                "planning": ("one_step_only",),
+                "mixed_family_composition": (),
+            },
+            "jax": {
+                "continuous_composition": (
+                    "flat",
+                    "factored",
+                    "independent_agents",
+                ),
+                "dynamics": ("stationary",),
+                "planning": ("one_step_only",),
+                "mixed_family_composition": (),
+            },
+            "discopy": {
+                "continuous_composition": (),
+                "dynamics": ("stationary",),
+                "planning": ("none",),
+                "mixed_family_composition": (),
+            },
+            "pytorch": {
+                "continuous_composition": ("flat",),
+                "dynamics": ("stationary",),
+                "planning": ("one_step_only",),
+                "mixed_family_composition": (),
+            },
+            "numpyro": {
+                "continuous_composition": ("flat",),
+                "dynamics": ("stationary",),
+                "planning": ("one_step_only",),
+                "mixed_family_composition": (),
+            },
+            "stan": {
+                "continuous_composition": ("flat",),
+                "dynamics": ("stationary",),
+                "planning": ("none",),
+                "mixed_family_composition": (),
+            },
+            "bnlearn": {
+                "continuous_composition": (),
+                "dynamics": ("stationary",),
+                "planning": ("none",),
+                "mixed_family_composition": (),
+            },
+            "cpomdp": {
+                "continuous_composition": ("flat",),
+                "dynamics": ("stationary",),
+                "planning": ("none",),
+                "mixed_family_composition": (),
+            },
+            "thrml": {
+                "continuous_composition": (),
+                "dynamics": ("stationary",),
+                "planning": ("none",),
+                "mixed_family_composition": (),
+            },
+            "ngclearn": {
+                "continuous_composition": ("flat",),
+                "dynamics": ("stationary",),
+                "planning": ("none",),
+                "mixed_family_composition": (),
+            },
+        }
+    )
+)
+
+
+def get_render_capabilities(framework: str) -> Mapping[str, Tuple[str, ...]]:
+    """Return the frame's declared render capabilities.
+
+    An undeclared frame returns an empty mapping: unknown frames support
+    nothing by declaration (fail closed).
+    """
+    return RENDER_CAPABILITY_DECLARATIONS.get(framework, {})
+
+
+def supports_render_dimension(framework: str, dimension: str, value: str) -> bool:
+    """Return whether *framework* declares support for (*dimension*, *value*).
+
+    Fail closed: an undeclared frame, dimension or value is not supported.
+    """
+    return value in get_render_capabilities(framework).get(dimension, ())
+
+
+def get_planning_admission_frameworks() -> list[str]:
+    """Return frames whose declared planning semantics gate authored horizons."""
+    return [
+        name
+        for name in FRAMEWORK_REGISTRY
+        if supports_render_dimension(name, "planning", "one_step_only")
+    ]
+
+
 def get_supported_frameworks() -> list[str]:
     """Return canonical supported framework names in render order."""
     return list(FRAMEWORK_REGISTRY.keys())
@@ -335,9 +484,14 @@ def get_available_renderers() -> Dict[str, Dict[str, Any]]:
     }
     return {
         name: {
-            key: deepcopy(value)
-            for key, value in spec.items()
-            if key in renderer_fields
+            **{
+                key: deepcopy(value)
+                for key, value in spec.items()
+                if key in renderer_fields
+            },
+            "render_capabilities": deepcopy(
+                RENDER_CAPABILITY_DECLARATIONS.get(name, {})
+            ),
         }
         for name, spec in FRAMEWORK_REGISTRY.items()
     }
@@ -357,6 +511,9 @@ def get_pomdp_framework_configs() -> Dict[str, Dict[str, Any]]:
             "supports_continuous": bool(spec.get("supports_continuous", False)),
             "continuous_only": bool(spec.get("continuous_only", False)),
             "experimental": bool(spec.get("experimental", False)),
+            "render_capabilities": deepcopy(
+                RENDER_CAPABILITY_DECLARATIONS.get(name, {})
+            ),
             "name": spec["name"],
         }
         for name, spec in FRAMEWORK_REGISTRY.items()

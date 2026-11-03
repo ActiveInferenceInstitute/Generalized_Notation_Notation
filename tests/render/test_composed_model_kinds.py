@@ -223,6 +223,118 @@ class TestHybridDetection:
         assert detect_model_kind(spec) is ModelKind.CONTINUOUS
 
 
+#: Exemplars whose render requirement is a declared capability dimension.
+_CAPABILITY_CONFORMANCE_SPECS: tuple[str, ...] = (
+    "basics/dynamic_perception.md",
+    "continuous/stochastic_dynamics.md",
+    "continuous/factored_continuous_lgssm.md",
+    "continuous/independent_gaussian_agents.md",
+    "continuous/hybrid_discrete_continuous.md",
+    "discrete/time_varying_dynamics.md",
+    "discrete/regime_switched_dynamics.md",
+)
+
+#: Single-frame admission contracts, declared as typed refusal prefixes.
+_FRAME_CONTRACT_REFUSALS: tuple[tuple[str, str, str], ...] = (
+    ("discrete/simple_mdp.md", "thrml", "unsupported-thrml:"),
+    (
+        "learning/dirichlet_likelihood_learning.md",
+        "bnlearn",
+        "unsupported-bnlearn:",
+    ),
+)
+
+
+def _capability_requirement(kinds: frozenset[ModelKind]) -> tuple[str, str] | None:
+    """Return the declared (dimension, value) a kind set requires, or None.
+
+    Mirrors the gate order in ``_validate_pomdp_framework_compatibility``:
+    independent-agent composition, per-factor continuous composition,
+    mixed-family composition, then nonstationary dynamics.
+    """
+    if kinds == frozenset({ModelKind.MULTI_AGENT, ModelKind.CONTINUOUS}):
+        return ("continuous_composition", "independent_agents")
+    if kinds == frozenset({ModelKind.FACTORED, ModelKind.CONTINUOUS}):
+        return ("continuous_composition", "factored")
+    if ModelKind.CONTINUOUS in kinds and len(kinds) > 1:
+        return ("mixed_family_composition", "whole")
+    if ModelKind.NONSTATIONARY in kinds:
+        return ("dynamics", "nonstationary")
+    return None
+
+
+def _assert_capability_declaration_conformance(base_dir: Path) -> None:
+    """Fail when a frame's declared capability and its real gate disagree.
+
+    ``framework_registry.RENDER_CAPABILITY_DECLARATIONS`` is the single source
+    for these refusals; this drives the compatibility gate and the single-spec
+    renderer over the exemplars that exercise each declared dimension and
+    asserts the decision matches the declaration for every registry frame.
+    """
+    from gnn.render.framework_registry import (
+        FRAMEWORK_REGISTRY,
+        get_pomdp_framework_configs,
+        supports_render_dimension,
+    )
+
+    configs = get_pomdp_framework_configs()
+    processor = POMDPRenderProcessor(base_dir)
+
+    def declared_compatible(frame: str, kinds: frozenset[ModelKind]) -> bool:
+        requirement = _capability_requirement(kinds)
+        if requirement is not None and not supports_render_dimension(
+            frame, *requirement
+        ):
+            return False
+        if ModelKind.CONTINUOUS in kinds:
+            return bool(configs[frame].get("supports_continuous", False))
+        return not bool(configs[frame].get("continuous_only", False))
+
+    for relative in _CAPABILITY_CONFORMANCE_SPECS:
+        pomdp = extract_pomdp_from_file(GNN_FILES / relative, strict_validation=True)
+        assert pomdp is not None, relative
+        kinds = detect_pomdp_space_model_kinds(pomdp)
+        for frame in FRAMEWORK_REGISTRY:
+            result = processor._validate_pomdp_framework_compatibility(pomdp, frame)
+            assert result["compatible"] == declared_compatible(frame, kinds), (
+                relative,
+                frame,
+                sorted(kind.value for kind in kinds),
+                result,
+            )
+            if not declared_compatible(frame, kinds):
+                assert result["unsupported"] is True, (relative, frame)
+                assert result["reason"], (relative, frame)
+
+    # Planning admission: a frame declaring one-step-only semantics refuses the
+    # authored deeper horizon; a frame declaring none renders the model with no
+    # planning credit (and a continuous-only frame refuses it as a discrete
+    # model).  The admission set itself derives from the declaration.
+    planning = extract_pomdp_from_file(
+        GNN_FILES / "discrete/deep_planning_horizon.md", strict_validation=True
+    )
+    assert planning is not None
+    for frame in FRAMEWORK_REGISTRY:
+        expected = not supports_render_dimension(
+            frame, "planning", "one_step_only"
+        ) and not bool(configs[frame].get("continuous_only", False))
+        result = processor._validate_pomdp_framework_compatibility(planning, frame)
+        assert result["compatible"] == expected, (frame, result)
+
+    # Single-frame admission contracts: the declared prefix is the one the
+    # frame emits for the exemplar that exercises it.
+    for relative, frame, prefix in _FRAME_CONTRACT_REFUSALS:
+        spec = pomdp_to_gnn_spec(
+            extract_pomdp_from_file(GNN_FILES / relative, strict_validation=True)
+        )
+        success, message, files = render_gnn_spec(
+            spec, frame, base_dir / f"contract_{frame}_{Path(relative).stem}"
+        )
+        assert success is False, (relative, frame)
+        assert files == [], (relative, frame)
+        assert prefix in message, (relative, frame, message)
+
+
 class TestComposedExemplar:
     """The composed exemplar classifies as {CONTINUOUS, MULTI_AGENT}."""
 
@@ -307,6 +419,9 @@ class TestDispatchHonesty:
             assert framework_result["unsupported"] is True, framework
             assert framework_result["status"] == "unsupported"
             assert "unsupported-composition" in framework_result["message"], framework
+        # The refusal is declaration-driven: the same gate must agree with the
+        # declared capability of every frame on every dimension exemplar.
+        _assert_capability_declaration_conformance(tmp_path / "conformance")
 
     @pytest.mark.parametrize("target", ["pymdp", "rxinfer", "jax", "stan", "discopy"])
     def test_render_gnn_spec_refuses_composed_spec(

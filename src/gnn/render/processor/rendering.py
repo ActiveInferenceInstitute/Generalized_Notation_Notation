@@ -48,10 +48,13 @@ def _render_continuous_target(
             [str(output_file)],
         )
     if kinds == frozenset({ModelKind.FACTORED, ModelKind.CONTINUOUS}):
-        # Per-factor LGSSM path: JAX renders the factored family through the
-        # per-factor generator; every other target is refused rather than
-        # silently flattened to one flat LGSSM.
-        if target != "jax":
+        # Per-factor LGSSM path: frames declaring the factored-continuous
+        # composition (JAX, through the per-factor generator) render it; every
+        # other target is refused rather than silently flattened to one flat
+        # LGSSM.
+        from gnn.render.framework_registry import supports_render_dimension
+
+        if not supports_render_dimension(target, "continuous_composition", "factored"):
             return (
                 False,
                 f"unsupported-factored-continuous: {target} renders the flat "
@@ -200,6 +203,7 @@ def render_gnn_spec(
                 gnn_spec_mapping, output_dir / f"{output_stem}_jax.py", options
             )
 
+        from gnn.render.framework_registry import supports_render_dimension
         from gnn.render.pomdp_contract import (
             ModelKind,
             detect_model_kinds,
@@ -228,14 +232,20 @@ def render_gnn_spec(
             and len(kinds) > 1
             and not factored_continuous
             and not agent_continuous
+            and not supports_render_dimension(
+                target_lower, "mixed_family_composition", "whole"
+            )
         ):
             return (False, unsupported_composition_reason(kinds), [])
         # A nonstationary spec declares time-indexed (B_t) or regime-switched
-        # (B_regime + schedule) transitions. Only the pymdp backend executes
-        # the switching semantics; every other target renders one static
-        # transition tensor, so it is refused with an explicit receipt
-        # instead of silently rendering static dynamics.
-        if ModelKind.NONSTATIONARY in kinds and target_lower != "pymdp":
+        # (B_regime + schedule) transitions. Only frames declaring the
+        # nonstationary dynamic (pymdp executes the switching semantics) can
+        # express it; every other target renders one static transition tensor,
+        # so it is refused with an explicit receipt instead of silently
+        # rendering static dynamics.
+        if ModelKind.NONSTATIONARY in kinds and not supports_render_dimension(
+            target_lower, "dynamics", "nonstationary"
+        ):
             return (False, unsupported_nonstationary_reason(kinds), [])
 
         if target_lower == "thrml":

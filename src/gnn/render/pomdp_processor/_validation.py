@@ -37,6 +37,7 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
             execution_contract,
             unsupported_contract,
         )
+        from gnn.render.framework_registry import supports_render_dimension
 
         semantic_spec = {
             "model_parameters": pomdp_space.model_parameters or {},
@@ -85,7 +86,9 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
                     "reason": str(exc),
                     "warnings": warnings,
                 }
-            if framework in {"jax", "rxinfer"}:
+            if supports_render_dimension(
+                framework, "continuous_composition", "independent_agents"
+            ):
                 return {"compatible": True, "reason": None, "warnings": warnings}
             return {
                 "compatible": False,
@@ -93,7 +96,14 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
                 "reason": f"unsupported-composition: {framework} does not render independent continuous agents",
                 "warnings": warnings,
             }
-        if ModelKind.CONTINUOUS in kinds and len(kinds) > 1 and not factored_continuous:
+        if (
+            ModelKind.CONTINUOUS in kinds
+            and len(kinds) > 1
+            and not factored_continuous
+            and not supports_render_dimension(
+                framework, "mixed_family_composition", "whole"
+            )
+        ):
             return {
                 "compatible": False,
                 "unsupported": True,
@@ -101,10 +111,13 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
                 "warnings": warnings,
             }
         if factored_continuous:
-            # Per-factor LGSSM composition: JAX renders it through the
-            # factored per-factor path; every other framework is refused
-            # rather than silently rendered as one flat LGSSM.
-            if framework != "jax":
+            # Per-factor LGSSM composition: frames declaring the
+            # factored-continuous composition (JAX's per-factor path) render
+            # it; every other framework is refused rather than silently
+            # rendered as one flat LGSSM.
+            if not supports_render_dimension(
+                framework, "continuous_composition", "factored"
+            ):
                 return {
                     "compatible": False,
                     "unsupported": True,
@@ -119,12 +132,14 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
             return {"compatible": True, "reason": None, "warnings": warnings}
 
         # A nonstationary spec declares time-indexed (B_t) or regime-switched
-        # (B_regime + b_regime_schedule) transitions. Only pymdp executes
-        # the switching semantics (per-step Agent rebuild); every other
-        # framework renders one static transition tensor and is refused
-        # with an explicit receipt instead of silently rendering static
-        # dynamics.
-        if ModelKind.NONSTATIONARY in kinds and framework != "pymdp":
+        # (B_regime + b_regime_schedule) transitions. Only frames declaring
+        # the nonstationary dynamic execute the switching semantics (pymdp,
+        # per-step Agent rebuild); every other framework renders one static
+        # transition tensor and is refused with an explicit receipt instead
+        # of silently rendering static dynamics.
+        if ModelKind.NONSTATIONARY in kinds and not supports_render_dimension(
+            framework, "dynamics", "nonstationary"
+        ):
             return {
                 "compatible": False,
                 "unsupported": True,

@@ -313,6 +313,44 @@ class TestPomdpConfigTruthfulness:
         # must not contradict the registry spec.
         assert configs["bnlearn"]["supports_execution"] is True
 
+        # Render-capability declarations: every frame declares every
+        # closed-vocabulary dimension, the values stay inside the vocabulary,
+        # and the config view carries the registry declaration unchanged.
+        from gnn.render.framework_registry import (
+            RENDER_DIMENSION_VALUES,
+            get_planning_admission_frameworks,
+            get_render_capabilities,
+            supports_render_dimension,
+        )
+
+        for name in FRAMEWORK_REGISTRY:
+            capabilities = get_render_capabilities(name)
+            assert set(capabilities) == set(RENDER_DIMENSION_VALUES), name
+            for dimension, values in capabilities.items():
+                assert len(set(values)) == len(values), (name, dimension)
+                undeclared = [
+                    value
+                    for value in values
+                    if value not in RENDER_DIMENSION_VALUES[dimension]
+                ]
+                assert not undeclared, (name, dimension, undeclared)
+            assert configs[name]["render_capabilities"] == dict(capabilities), name
+        # The planning admission roster is derived from the declaration and
+        # pinned here: a declaration change that moves a frame in or out of the
+        # one-step admission set must fail loudly.
+        assert set(get_planning_admission_frameworks()) == {
+            "pymdp",
+            "rxinfer",
+            "activeinference_jl",
+            "jax",
+            "pytorch",
+            "numpyro",
+        }
+        # Fail closed: an undeclared frame, dimension or value supports nothing.
+        assert not supports_render_dimension("not-a-frame", "dynamics", "nonstationary")
+        assert not supports_render_dimension("jax", "not-a-dimension", "x")
+        assert not supports_render_dimension("jax", "dynamics", "not-a-value")
+
 
 class TestCanonicalConsistency:
     """The registry stays in lockstep with ``gnn.frameworks.ALL_FRAMEWORKS``."""
