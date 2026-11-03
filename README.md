@@ -429,9 +429,10 @@ their documented producer and re-pin procedures.
 [Release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases)
 provide accepted version tags and downloadable source-bound artifacts. The
 current software version is 5.0.3 (tag `v5.0.3`, commit
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`); that tag has no GitHub release
-object, and downstream consumers pin that commit. The latest published release
-remains 5.0.1. The
+`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`); the release record for that tag was
+created retroactively on 2026-11-03, and downstream consumers pin that commit.
+5.0.1 remains the most recent release whose record carries uploaded source-bound
+assets. The
 [GNN 5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
 carries the ordinary wheel and sdist, the manuscript PDF, a source archive, the
 source binding and verification records, and `SHA256SUMS`. The
