@@ -7,11 +7,20 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [main]
+  schedule:
+    # Weekly full ordinary matrix on the current main tip. Pull requests run
+    # the full matrix at their own head; branch pushes to main run the
+    # deterministic post-merge subset defined on the individual jobs below.
+    - cron: "17 6 * * 6"
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # A superseded PR head is not evidence about the new head, so PR runs cancel
+  # in progress. A merged tree's verdict is evidence, so main, tag and
+  # scheduled runs never cancel; keying those by commit keeps each tip's run
+  # independent instead of queueing it behind an earlier tip's run.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -22,6 +31,9 @@ defaults:
 
 jobs:
   test:
+    # Full matrix on pull requests, schedules, manual dispatch and version
+    # tags. A branch push to main runs only the deterministic subset below.
+    if: github.event_name != 'push' || github.ref_type == 'tag'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     permissions:
@@ -99,6 +111,10 @@ jobs:
 
   pytest312:
     name: pytest (3.12)
+    # The full 3.12 unit suite runs with the rest of the full matrix; branch
+    # pushes to main keep only the deterministic subset (quality + contracts +
+    # security) and defer the unit suite to the weekly schedule.
+    if: github.event_name != 'push' || github.ref_type == 'tag'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     permissions:
@@ -251,9 +267,12 @@ jobs:
     # Do NOT relax the assertions to accept `cancelled`: a prerequisite can be
     # cancelled inside a non-cancelled run when matrix `fail-fast` cancels
     # sibling legs, and accepting that would turn a failed matrix green.
+    # The event clause skips this guard on a branch push to main, where the
+    # unit-matrix lanes it aggregates are deliberately not run; without it the
+    # guard would see `skipped` lane results and fail the merged tree.
     name: test (3.12)
     needs: [pytest312, quality]
-    if: always() && !cancelled()
+    if: always() && !cancelled() && (github.event_name != 'push' || github.ref_type == 'tag')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -266,8 +285,10 @@ jobs:
           test "$QUALITY_RESULT" = success
 
   pipeline-contracts:
-    # Deterministic orchestration contracts run on every PR. Native inference,
-    # public network and toolchain acceptance have separate explicit lanes.
+    # Deterministic orchestration contracts run on every PR and in the weekly
+    # full matrix. A branch push to main keeps this lane as part of the
+    # deterministic post-merge subset. Native inference, public network and
+    # toolchain acceptance have separate explicit lanes.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -308,6 +329,8 @@ jobs:
     # test_ml_integration_inference.py + 1 torch execution case in
     # test_continuous_renderers.py). Without this job they only run in the
     # weekly scheduled full-extras workflow. The optional-dependency lane remains mandatory.
+    # Full matrix only: a branch push to main defers this lane to the weekly run.
+    if: github.event_name != 'push' || github.ref_type == 'tag'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
