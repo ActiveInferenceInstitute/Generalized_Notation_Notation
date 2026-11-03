@@ -7,9 +7,13 @@ Versioned execution contracts and cpomdp own their separate planning semantics.
 
 from typing import Any
 
-ONE_STEP_PLANNERS = frozenset(
-    {"pymdp", "jax", "rxinfer", "activeinference_jl", "pytorch", "numpyro"}
-)
+from gnn.render.framework_registry import get_planning_admission_frameworks
+
+#: Frames whose declared planning semantics admit one-step declarations
+#: (``render_capabilities["planning"] == ("one_step_only",)``).  Derived from
+#: the canonical registry so the admission set and the declaration cannot
+#: drift; a deeper authored horizon is refused here, not reduced to one step.
+ONE_STEP_PLANNERS = frozenset(get_planning_admission_frameworks())
 ALTERNATIVE_JAX_TARGETS = frozenset({"jax_pomdp", "jax_combined"})
 HORIZON_KEYS = ("planning_horizon", "policy_len", "policy_horizon")
 PLANNING_KEYS = (*HORIZON_KEYS, "num_policies", "policies", "policy_sequences")

@@ -316,6 +316,13 @@ def process_render(
             logger.info(
                 f"Framework renderings: {total_framework_successes}/{total_framework_attempts} successful ({summary['framework_success_rate']:.1f}%)"
             )
+            logger.info(
+                f"Corpus coverage: {summary['successful_framework_renderings']}"
+                f"/{summary['total_framework_renderings']} rendered "
+                f"({summary['framework_coverage_rate']:.1f}%), "
+                f"{summary['unsupported_framework_count']} unsupported, "
+                f"{len(failed_framework_renderings)} failed"
+            )
             if failed_framework_renderings:
                 logger.warning(
                     "Framework render failures: %s",
@@ -445,6 +452,7 @@ Processing Type: **{summary["processing_type"]}**
 
         if summary["total_framework_attempts"] > 0:
             doc_content += f"""- **Framework Renderings**: {summary["successful_framework_renderings"]}/{summary["total_framework_attempts"]} ({summary["framework_success_rate"]:.1f}% success rate)
+- **Corpus Coverage**: {summary["successful_framework_renderings"]}/{summary.get("total_framework_renderings", summary["total_framework_attempts"])} rendered ({summary.get("framework_coverage_rate", summary["framework_success_rate"]):.1f}%), {summary.get("unsupported_framework_count", 0)} unsupported refusals
 """
 
         doc_content += f"""

@@ -101,6 +101,18 @@ def cmdstan_ready() -> bool:
 
 
 @functools.lru_cache(maxsize=1)
+def stanc_ready() -> bool:
+    """The ``stanc`` front-end is on PATH (CmdStan install).
+
+    The probe mirrors ``gnn.render.emitted_artifact_checks.stan_syntax_findings``
+    exactly - that check reports ``available=True`` iff ``shutil.which("stanc")``
+    resolves - so a skipped Stan acceptance test can never disagree with the
+    check it gates.
+    """
+    return shutil.which("stanc") is not None
+
+
+@functools.lru_cache(maxsize=1)
 def pkl_ready() -> bool:
     """The ``pkl`` CLI is on PATH (native-eval parser path)."""
     return shutil.which("pkl") is not None
@@ -234,6 +246,10 @@ TOOLCHAIN_MARKERS: dict[str, tuple[Callable[[], bool], str]] = {
     "needs_cmdstan": (
         cmdstan_ready,
         "cmdstanpy/CmdStan toolchain is not installed (uv sync --extra stan)",
+    ),
+    "needs_stanc": (
+        stanc_ready,
+        "stanc front-end is not on PATH; the emitted Stan program is unchecked",
     ),
     "needs_pkl": (pkl_ready, "pkl CLI not on PATH; native eval path not exercised"),
     "needs_torch": (torch_ready, "torch is not installed (uv sync --extra torch)"),

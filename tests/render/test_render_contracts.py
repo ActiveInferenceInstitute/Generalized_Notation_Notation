@@ -682,3 +682,89 @@ class TestMatrixShapeParity:
         assert julia_render_factorization(code) == "hierarchical"
         assert julia_render_factorization('const MODEL_KIND = "flat"\n') == "flat"
         assert julia_render_factorization("no marker") is None
+
+
+class TestTargetLanguageSyntaxAcceptance:
+    """An emitted artifact is accepted only if its front-end accepts it.
+
+    Regression pin for the vacuous-parse class: ``Meta.parseall(source)`` does
+    not raise on malformed input, it returns a tree that may hold
+    ``Expr(:error, ...)`` / ``Expr(:incomplete, ...)`` nodes. A probe built
+    from the bare call - ``Meta.parseall(read(f, String)); println("parsed")``,
+    which exits 0 for every case below - therefore proves only that a Julia
+    process started. The shared probe parses incrementally and walks each
+    returned expression, so these malformed sources are rejected.
+    """
+
+    MALFORMED_JULIA = {
+        "unbalanced_bracket": "x = [1, 2\n",
+        "unbalanced_call": "model = Dict(\n",
+        "truncated_binary": "function f(x)\n    return x +\nend\n",
+        "stray_end": "A = 1\nend\n",
+    }
+
+    def test_probe_walks_error_and_incomplete_nodes(self) -> None:
+        """The probe must inspect the parsed tree, not just call the parser."""
+        from gnn.render.emitted_artifact_checks import JULIA_SYNTAX_PROBE
+
+        assert "Meta.parseall" not in JULIA_SYNTAX_PROBE
+        assert ":error" in JULIA_SYNTAX_PROBE
+        assert ":incomplete" in JULIA_SYNTAX_PROBE
+
+    @pytest.mark.needs_julia
+    @pytest.mark.parametrize("case", sorted(MALFORMED_JULIA))
+    def test_malformed_julia_is_rejected(self, case: str) -> None:
+        from gnn.render.emitted_artifact_checks import julia_syntax_findings
+
+        findings, available = julia_syntax_findings(self.MALFORMED_JULIA[case])
+        assert available, "julia must be on PATH for this case"
+        assert findings, f"{case} reported no findings; the probe is not gating"
+
+    @pytest.mark.needs_julia
+    def test_valid_julia_is_accepted(self) -> None:
+        from gnn.render.emitted_artifact_checks import julia_syntax_findings
+
+        source = (
+            '# ok\nx = 1\ny = "a $x b"\nz = 1.0e-5\nα = 3\n'
+            "function g(a)\n  return a * 2\nend\n"
+        )
+        findings, available = julia_syntax_findings(source)
+        assert available
+        assert findings == []
+
+    def test_missing_toolchains_report_unavailable_not_valid(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """ "Not checked" must never be reported as "valid"."""
+        from gnn.render.emitted_artifact_checks import (
+            julia_syntax_findings,
+            stan_syntax_findings,
+        )
+
+        monkeypatch.setenv("PATH", "")
+        assert julia_syntax_findings(self.MALFORMED_JULIA["unbalanced_bracket"]) == (
+            [],
+            False,
+        )
+        assert stan_syntax_findings("data {\n") == ([], False)
+
+    @pytest.mark.needs_julia
+    @pytest.mark.parametrize("framework", ["rxinfer", "activeinference_jl"])
+    def test_emitted_julia_artifacts_parse(
+        self, framework: str, tmp_path: Path
+    ) -> None:
+        from gnn.render.emitted_artifact_checks import julia_syntax_findings
+
+        _name, code = _render_corpus_file(CORPUS_BASICS, framework, tmp_path)
+        findings, available = julia_syntax_findings(code)
+        assert available
+        assert findings == []
+
+    @pytest.mark.needs_stanc
+    def test_emitted_stan_artifact_parses(self, tmp_path: Path) -> None:
+        from gnn.render.emitted_artifact_checks import stan_syntax_findings
+
+        _name, code = _render_corpus_file(CORPUS_BASICS, "stan", tmp_path)
+        findings, available = stan_syntax_findings(code)
+        assert available, "stanc must be on PATH for this case"
+        assert findings == []

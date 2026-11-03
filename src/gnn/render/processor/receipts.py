@@ -195,7 +195,16 @@ def _write_render_receipt(
         "failed_files": len(merged) - successful,
         "total_framework_attempts": attempts,
         "successful_framework_renderings": rendered,
+        # Refusals are counted separately and stay in the denominator, so
+        # corpus coverage can never read as full coverage of the corpus.
+        "total_framework_renderings": attempts + len(unsupported),
+        "unsupported_framework_count": len(unsupported),
         "framework_success_rate": rendered / attempts * 100 if attempts else 0,
+        "framework_coverage_rate": (
+            rendered / (attempts + len(unsupported)) * 100
+            if attempts + len(unsupported)
+            else 0
+        ),
         "failed_framework_renderings": failed,
         "unsupported_framework_renderings": unsupported,
     }
