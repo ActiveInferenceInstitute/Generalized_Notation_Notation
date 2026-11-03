@@ -52,6 +52,7 @@ Saved to `output/00_pipeline_summary/pipeline_execution_summary.json` with:
 
 - Per-step timing, exit codes, memory usage, and status
 - Overall status: `SUCCESS`, `SUCCESS_WITH_WARNINGS`, `PARTIAL_SUCCESS`, or `FAILED`
+- Per-step warning evidence: `warning_reason_source` (`step_output_scan`, `step_declaration`, `exit_code_only`, or `none`) with bounded `warning_reasons`, `warning_reason_count`, and `warning_reasons_truncated` — see [pipeline_warnings.md](../../troubleshooting/pipeline_warnings.md)
 - Environment info (Python version, platform, CPU count)
 - Safe warning pattern filtering (matplotlib backend, optional dependencies)
 
