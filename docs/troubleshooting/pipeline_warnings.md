@@ -27,6 +27,14 @@ exists, so an empty reason list is never ambiguous:
 | `exit_code_only` | The step returned `SUCCESS_WITH_WARNINGS` and the summary captured no warning text, so no reason can be quoted. Read the step's own log. |
 | `none` | No warning was recorded or attributed. |
 
+A line counts as a warning line only when it carries a severity marker: `warning`,
+`warn`, `warns` or `warnings` in any case, or `⚠️`, followed by `:`, a space, a tab, `]`,
+`)` or the end of the line. A path or identifier that merely contains the word —
+`output/warning_smoke/report.json`, for example — is not a warning line, while a
+bracketed `[WARN]` is (`WARNING_PATTERN` and `_warning_lines` in
+`src/gnn/pipeline/summary_wiring.py`). Safe-noise lines are excluded separately by
+`_step_has_actionable_warning`.
+
 `warning_reasons` holds the first 8 distinct reasons in first-seen order, each capped
 at 200 characters, with ANSI escapes and leading log timestamps stripped and
 whitespace collapsed, so the same warning compares equal across runs.
