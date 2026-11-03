@@ -151,6 +151,9 @@ presence and file counts do not establish current-run completion. Step-21
 `mcp_processing_summary.json` and `registered_tools.json` supply MCP data;
 absent artifacts produce an explicit empty state. Interactive bundles preserve
 relative dependencies even when the site destination is outside the output root.
+A repeated interactive document from one producer reuses the bundle already
+materialized while its owned-artifact inventory and selected-model set are
+unchanged.
 
 #### `get_pipeline_steps() -> tuple[StepInfo, ...]`
 **Description**: Returns the immutable 25-step catalogue derived from `gnn.pipeline.step_registry.STEPS` (`StepInfo(number, name, description)` with a `script_name` display property that matches the real orchestrator scripts) used to render the index and pipeline pages.
