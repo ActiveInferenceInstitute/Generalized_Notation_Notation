@@ -41,6 +41,12 @@ Defines behavior and guardrails for workflows in this directory. Human index of 
 - The paired GEO installation has a named companion-only exception: exact uv 0.13.1 satisfies GEO_INFER's own `uv.toml`. Use separate pinned setup steps for the two repositories; select GNN's uv 0.13.6 again before GNN installation or `uv run` checks.
 - Use explicit `timeout-minutes`.
 - Apply least-privilege `permissions` globally and per job.
+- Key non-PR runs by commit and cancel only superseded pull-request heads
+  (`group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}`,
+  `cancel-in-progress: ${{ github.event_name == 'pull_request' }}`). A merged
+  tip's verdict must survive the next push; the shape is carried by `ci.yml`,
+  `local-gates.yml`, `installed-platforms.yml`, `geo-infer-interchange.yml`
+  and `comprehensive-native-coverage.yml`.
 - Use deterministic dependency operations (`uv sync --frozen`, `uv export --frozen`).
 
 Install each CI environment once with `uv sync --frozen`; subsequent commands
