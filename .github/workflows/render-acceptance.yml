@@ -1,0 +1,286 @@
+# Weekly render acceptance for the Julia and probabilistic-programming backends.
+#
+# The deterministic PR/main gates cover the render acceptance cases in
+# `tests/render/test_render_contracts.py::TestTargetLanguageSyntaxAcceptance`,
+# which render one corpus file per backend. This workflow is the scheduled
+# full-corpus sweep: it renders every model source under `input/gnn_files/` to
+# the four declared backends (ActiveInference.jl, RxInfer.jl, Stan, bnlearn) and
+# then hands every emitted artifact to the real front-end of its target
+# language:
+#
+#   - `.jl`   -> `julia` incremental `Meta.parse` + tree traversal
+#                (`gnn.render.emitted_artifact_checks.julia_syntax_findings`)
+#   - `.stan` -> the stanc3 front-end, i.e. the compiler CmdStan itself installs
+#                (`gnn.render.emitted_artifact_checks.stan_syntax_findings`)
+#   - `.py`   -> `compile()` of the emitted driver/script
+#
+# Contract notes:
+#
+# - The four backends are pinned explicitly, which Step 11 treats as a strict
+#   all-requested-frameworks policy: a framework render that *fails* fails the
+#   job. Model kinds a backend cannot represent (hierarchical, nonstationary,
+#   continuous-only, composed multi-agent, unsupported execution contract) are
+#   reported as `unsupported` with a typed reason and excluded from that
+#   denominator — the acceptance step requires every refusal to carry a reason.
+# - A scheduled acceptance job has no honest skip. A toolchain that cannot be
+#   provisioned is a failure that names the missing toolchain; "not checked"
+#   must never read as "valid".
+# - stanc3 is a pinned release asset verified against the SHA-256 recorded in
+#   this file. That digest was measured from the downloaded binary and
+#   independently matches the publisher's asset digest for the release.
+# - Report-only in the sense that nothing is committed back: the render tree
+#   lives on the runner, and the summary plus both logs are retained as the run
+#   receipt. A red run means the committed corpus and committed renderers no
+#   longer produce artifacts their own front-ends accept.
+
+name: Render acceptance (Julia, Stan, bnlearn)
+
+on:
+  schedule:
+    # Weekly Saturday 08:37 UTC. The Saturday full test matrix runs at 06:17;
+    # this slot stays clear of every other scheduled cron in this directory.
+    - cron: "37 8 * * 6"
+  workflow_dispatch:
+
+concurrency:
+  group: render-acceptance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  render-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      UV_PYTHON: "3.14"
+      PYTHONPATH: src
+      # Pinned stanc3 release asset: stan-dev/stanc3 v2.39.0, `linux-stanc`
+      # (9,297,272 bytes, static ELF x86-64). The digest below was measured from
+      # the downloaded binary and matches the publisher's asset digest.
+      STANC_URL: "https://github.com/stan-dev/stanc3/releases/download/v2.39.0/linux-stanc"
+      STANC_SHA256: "7a6652d03bb0e4a9f0e9ff75d3bd57981fdcf9eceeb19af893515ddb0b61fa36"
+      STANC_VERSION: "v2.39.0"
+      # Explicit selection => strict all-requested-frameworks policy in Step 11.
+      RENDER_FRAMEWORKS: "activeinference_jl,rxinfer,stan,bnlearn"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select latest Python 3.14 patch
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+          check-latest: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          # Match exact uv 0.13.6 in uv.toml and the Docker bootstrap.
+          version: "0.13.6"
+          enable-cache: true
+
+      - name: Install dependencies (dev)
+        run: uv sync --frozen --extra dev
+
+      # A real Julia front-end for the emitted `.jl` artifacts. The syntax probe
+      # is base Julia (`Meta.parse`), so no package environment is instantiated
+      # here; the committed execute environments are not part of this check.
+      - name: Install Julia
+        uses: julia-actions/setup-julia@da908477b5db94c10ffce8cfea9f2b3b9d5db687 # v3.0.3
+        with:
+          version: "1.13.2"
+
+      - name: Record the Julia front-end
+        run: |
+          set -euo pipefail
+          julia --startup-file=no --version 2>&1 | tee "$RUNNER_TEMP/toolchains.txt"
+
+      - name: Provision the pinned stanc3 front-end
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/stanc"
+          curl --fail --location --retry 3 --silent --show-error \
+            "$STANC_URL" --output "$RUNNER_TEMP/stanc/stanc"
+          echo "$STANC_SHA256  $RUNNER_TEMP/stanc/stanc" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/stanc/stanc"
+          {
+            echo "stanc ($STANC_VERSION) $STANC_URL"
+            echo "sha256 $STANC_SHA256"
+            "$RUNNER_TEMP/stanc/stanc" --version
+          } 2>&1 | tee -a "$RUNNER_TEMP/toolchains.txt"
+          echo "$RUNNER_TEMP/stanc" >> "$GITHUB_PATH"
+
+      - name: Render the full corpus to the declared backends
+        env:
+          RENDER_OUTPUT: ${{ runner.temp }}/render-acceptance
+        run: |
+          set -euo pipefail
+          uv run --frozen --no-sync python src/gnn/11_render.py \
+            --target-dir input/gnn_files \
+            --output-dir "$RENDER_OUTPUT" \
+            --frameworks "$RENDER_FRAMEWORKS" \
+            --verbose 2>&1 | tee "$RUNNER_TEMP/render.log"
+          test -s "$RENDER_OUTPUT/11_render_output/render_processing_summary.json"
+
+      - name: Accept every emitted artifact with its target-language front-end
+        env:
+          RENDER_OUTPUT: ${{ runner.temp }}/render-acceptance
+        run: |
+          set -euo pipefail
+          uv run --frozen --no-sync python - 2>&1 <<'PYACCEPT' | tee "$RUNNER_TEMP/render-acceptance.log"
+          """Weekly full-corpus render acceptance.
+
+          Typed refusals are allowed: a backend that cannot represent a model
+          kind records an `unsupported` reason and is excluded from its success
+          denominator. An untyped render failure, an unchecked artifact, a
+          refusal without a reason, or a front-end finding is not.
+          """
+          import collections
+          import json
+          import os
+          import shutil
+          import sys
+          from pathlib import Path
+
+          from gnn.render.emitted_artifact_checks import (
+              julia_syntax_findings,
+              stan_syntax_findings,
+          )
+
+          # Floors, not equalities: the corpus and a backend's coverage grow.
+          # Recorded 2026-11-03 on the 38-source corpus (100 successful
+          # renderings across the four backends, 52 typed refusals). Raise them
+          # when the corpus grows.
+          CORPUS_FLOOR = 38
+          BACKEND_FLOORS = {
+              "activeinference_jl": 23,
+              "rxinfer": 29,
+              "stan": 29,
+              "bnlearn": 19,
+          }
+
+          render_dir = Path(os.environ["RENDER_OUTPUT"]) / "11_render_output"
+          summary_path = render_dir / "render_processing_summary.json"
+          failures: list[str] = []
+
+
+          def fail(message: str) -> None:
+              failures.append(message)
+              print(f"FAIL {message}")
+
+
+          if not summary_path.is_file():
+              sys.exit(f"missing render summary: {summary_path}")
+          summary = json.loads(summary_path.read_text(encoding="utf-8"))
+
+          total_files = int(summary.get("total_files", 0))
+          if total_files < CORPUS_FLOOR:
+              fail(
+                  f"corpus floor: discovered {total_files} model sources, "
+                  f"floor {CORPUS_FLOOR}"
+              )
+          if summary.get("successful_files") != total_files:
+              fail(f"file success: {summary.get('successful_files')}/{total_files}")
+          untyped = summary.get("failed_framework_renderings") or []
+          if untyped:
+              fail(f"untyped render failures ({len(untyped)}): {untyped}")
+
+          refusals = summary.get("unsupported_framework_renderings") or []
+          for entry in refusals:
+              if not str(entry.get("message", "")).strip():
+                  fail(f"refusal without a reason: {entry}")
+
+          successes = {name: 0 for name in BACKEND_FLOORS}
+          for result in (summary.get("file_results") or {}).values():
+              for name, framework in (result.get("framework_results") or {}).items():
+                  if name in successes and framework.get("success") and not framework.get(
+                      "unsupported"
+                  ):
+                      successes[name] += 1
+          for name, floor in sorted(BACKEND_FLOORS.items()):
+              if successes[name] < floor:
+                  fail(f"{name}: {successes[name]} successful renderings, floor {floor}")
+
+          julia_available = shutil.which("julia") is not None
+          stanc_available = shutil.which("stanc") is not None
+          for name, present in (("julia", julia_available), ("stanc", stanc_available)):
+              if not present:
+                  fail(
+                      f"missing toolchain: {name} - a scheduled acceptance job "
+                      "has no honest skip"
+                  )
+
+          checked = {"julia": 0, "stan": 0, "python": 0}
+          for path in sorted(render_dir.rglob("*")):
+              if not path.is_file() or "__pycache__" in path.parts:
+                  continue
+              if path.suffix == ".jl":
+                  checked["julia"] += 1
+                  if julia_available:
+                      findings, _available = julia_syntax_findings(
+                          path.read_text(encoding="utf-8")
+                      )
+                      for finding in findings:
+                          fail(f"julia syntax: {path.relative_to(render_dir)}: {finding}")
+              elif path.suffix == ".stan":
+                  checked["stan"] += 1
+                  if stanc_available:
+                      findings, _available = stan_syntax_findings(
+                          path.read_text(encoding="utf-8")
+                      )
+                      for finding in findings:
+                          fail(f"stan syntax: {path.relative_to(render_dir)}: {finding}")
+              elif path.suffix == ".py":
+                  checked["python"] += 1
+                  try:
+                      compile(path.read_text(encoding="utf-8"), str(path), "exec")
+                  except SyntaxError as error:
+                      fail(f"python syntax: {path.relative_to(render_dir)}: {error}")
+
+          # Tie-out: every successful Julia/Stan rendering has exactly one
+          # primary artifact in the tree, and every artifact was handed to its
+          # front-end above.
+          expected_julia = successes["rxinfer"] + successes["activeinference_jl"]
+          if checked["julia"] != expected_julia:
+              fail(f"julia artifacts: checked {checked['julia']}, expected {expected_julia}")
+          if checked["stan"] != successes["stan"]:
+              fail(f"stan artifacts: checked {checked['stan']}, expected {successes['stan']}")
+          expected_python = successes["stan"] + successes["bnlearn"]
+          if checked["python"] < expected_python:
+              fail(f"python artifacts: checked {checked['python']}, expected >= {expected_python}")
+          for language, count in sorted(checked.items()):
+              if count == 0:
+                  fail(f"no {language} artifacts were checked")
+
+          by_backend = collections.Counter(
+              str(entry.get("framework", "?")) for entry in refusals
+          )
+          print(f"model sources: {total_files}")
+          print(f"successful renderings: {dict(sorted(successes.items()))}")
+          print(f"typed refusals: {len(refusals)} {dict(sorted(by_backend.items()))}")
+          print(f"artifacts checked: {checked}")
+          print(f"toolchains: julia={julia_available} stanc={stanc_available}")
+          if failures:
+              print(f"RENDER ACCEPTANCE FAILED: {len(failures)} finding(s)")
+              sys.exit(1)
+          print("RENDER ACCEPTANCE OK")
+          PYACCEPT
+
+      - name: Retain render and acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: render-acceptance
+          path: |
+            ${{ runner.temp }}/render.log
+            ${{ runner.temp }}/render-acceptance.log
+            ${{ runner.temp }}/toolchains.txt
+            ${{ runner.temp }}/render-acceptance/11_render_output/render_processing_summary.json
+          if-no-files-found: warn
+          retention-days: 14
