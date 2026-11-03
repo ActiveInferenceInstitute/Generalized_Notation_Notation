@@ -402,6 +402,122 @@ class TestEndToEndIntegration:
         assert summary["performance_summary"]["warnings"] == 1
         assert summary["performance_summary"]["total_steps"] == 1
 
+    def test_warning_reasons_are_bounded_normalized_and_sourced(self) -> None:
+        """Warning lines become a bounded, stable reason list with provenance."""
+        from gnn.pipeline.summary_wiring import (
+            _record_warning_reasons,
+            _step_has_actionable_warning,
+        )
+
+        long_tail = "x" * 300
+        step_result: dict[str, Any] = {
+            "status": "SUCCESS",
+            "stdout": "\n".join(
+                f"2026-11-03 04:05:06,789 WARNING: reason {index} {long_tail}"
+                for index in range(10)
+            )
+            + f"\n2026-11-03 04:05:07,000 WARNING: reason 0 {long_tail}",
+            "stderr": "",
+        }
+
+        has_warning = _step_has_actionable_warning(step_result)
+        assert has_warning
+        if step_result["status"] == "SUCCESS" and has_warning:
+            step_result["status"] = "SUCCESS_WITH_WARNINGS"
+        _record_warning_reasons(step_result, has_warning)
+
+        assert step_result["warning_reason_source"] == "step_output_scan"
+        assert step_result["warning_reason_count"] == 10
+        assert step_result["warning_reasons_truncated"] is True
+        reasons = step_result["warning_reasons"]
+        assert len(reasons) == 8
+        assert reasons[0] == f"WARNING: reason 0 {long_tail}"[:200]
+        assert all(len(reason) <= 200 for reason in reasons)
+        assert all(not reason.startswith("2026-") for reason in reasons)
+
+    def test_warning_reason_source_distinguishes_absence_from_attribution(self) -> None:
+        """A missing reason list is explicit, and unattributed warnings name a route."""
+        from gnn.pipeline.summary_wiring import (
+            _record_warning_reasons,
+            _step_has_actionable_warning,
+        )
+
+        clean: dict[str, Any] = {
+            "status": "SUCCESS",
+            "stdout": "all good",
+            "stderr": "",
+        }
+        _record_warning_reasons(clean, _step_has_actionable_warning(clean))
+        assert clean["warning_reason_source"] == "none"
+        assert "warning_reasons" not in clean
+
+        exit_only: dict[str, Any] = {
+            "status": "SUCCESS_WITH_WARNINGS",
+            "stdout": "",
+            "stderr": "",
+        }
+        _record_warning_reasons(exit_only, _step_has_actionable_warning(exit_only))
+        assert exit_only["warning_reason_source"] == "exit_code_only"
+        assert "warning_reasons" not in exit_only
+
+        declared: dict[str, Any] = {
+            "status": "SUCCESS_WITH_WARNINGS",
+            "stdout": "",
+            "stderr": "",
+            "warnings": ["renderer degraded", "renderer degraded"],
+        }
+        _record_warning_reasons(declared, _step_has_actionable_warning(declared))
+        assert declared["warning_reason_source"] == "step_declaration"
+        assert declared["warning_reasons"] == ["renderer degraded"]
+        assert declared["warning_reason_count"] == 1
+        assert declared["warning_reasons_truncated"] is False
+
+    def test_record_step_result_appends_reason_provenance(self) -> None:
+        """The recorded summary entry carries the reason fields next to its status."""
+        from datetime import datetime
+
+        from gnn.main import _record_step_result
+
+        pipeline_summary: dict[str, Any] = {
+            "steps": [],
+            "performance_summary": {
+                "peak_memory_mb": 0.0,
+                "total_steps": 0,
+                "failed_steps": 0,
+                "critical_failures": 0,
+                "successful_steps": 0,
+                "warnings": 0,
+            },
+        }
+        step_result: dict[str, Any] = {
+            "status": "SUCCESS",
+            "stdout": "WARNING: Budget exhausted",
+            "stderr": "",
+            "exit_code": 0,
+        }
+        now = datetime.now()
+        _record_step_result(
+            step_result,
+            summary_step_number=13,
+            script_name="13_llm.py",
+            description="LLM analysis",
+            step_start_datetime=now,
+            step_end_datetime=now,
+            step_duration=1.0,
+            pipeline_summary=pipeline_summary,
+            total_steps=1,
+            progress_tracker=None,
+            logger=logging.getLogger(__name__),
+        )
+
+        entry = pipeline_summary["steps"][0]
+        assert entry["status"] == "SUCCESS_WITH_WARNINGS"
+        assert entry["warning_reason_source"] == "step_output_scan"
+        assert entry["warning_reasons"] == ["WARNING: Budget exhausted"]
+        assert entry["warning_reason_count"] == 1
+        assert entry["warning_reasons_truncated"] is False
+        assert pipeline_summary["performance_summary"]["warnings"] == 1
+
     def test_finalize_pipeline_summary_preserves_warning_status(self) -> None:
         """Warning-only pipelines should finish SUCCESS_WITH_WARNINGS."""
         from datetime import datetime
