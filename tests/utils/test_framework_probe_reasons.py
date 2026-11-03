@@ -2,6 +2,7 @@
 
 import json
 import logging
+import subprocess
 import sys
 import time
 
@@ -9,6 +10,20 @@ import psutil
 import pytest
 
 from gnn.utils.runtime_safety import framework_availability as availability
+
+
+def _child_is_gone_or_zombie(pid: int) -> bool:
+    """True when *pid* no longer exists or is a not-yet-reaped zombie.
+
+    ``psutil.pid_exists`` still reports a zombie as present, and the child can be
+    reaped between that call and the status read, so ``NoSuchProcess`` here is
+    the condition under test - the child is gone - rather than an error.
+    """
+    try:
+        process_status = psutil.Process(pid).status()
+    except psutil.NoSuchProcess:
+        return True
+    return bool(process_status == psutil.STATUS_ZOMBIE)
 
 
 @pytest.mark.parametrize(
@@ -147,10 +162,19 @@ def test_import_spawned_child_cannot_hold_probe_pipes_open(
         assert status.reason_code == "probe_timeout"
         assert status.execution_error_type == "TimeoutExpired"
         assert status.cleanup_verified is True and status.streams_drained is True
-        assert (
-            not psutil.pid_exists(pid)
-            or psutil.Process(pid).status() == psutil.STATUS_ZOMBIE
+        assert _child_is_gone_or_zombie(pid), (
+            "the spawned child must not survive the probe"
         )
+
+        # The reap can land between the existence check and the status read, so the
+        # vanished-pid path is asserted directly: the raw read raises NoSuchProcess
+        # and the helper treats that as "gone" instead of letting the race decide
+        # the outcome. A sleep here would only make the same race slower.
+        reaped = subprocess.Popen([sys.executable, "-c", "pass"])
+        reaped.wait()
+        with pytest.raises(psutil.NoSuchProcess):
+            psutil.Process(reaped.pid).status()
+        assert _child_is_gone_or_zombie(reaped.pid)
     finally:
         if pid_file.exists():
             try:
