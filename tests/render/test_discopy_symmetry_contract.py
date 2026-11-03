@@ -71,9 +71,9 @@ def test_discopy_generated_script_does_not_install_dependencies() -> None:
     assert "MATRIX_PERMUTATION_METADATA" in code
     assert "MATRIX_PERMUTATION_APPLIED_TO_DIAGRAM = False" in code
     assert "validate_matrix_permutation_metadata(MATRIX_PERMUTATION_METADATA)" in code
-    assert "'matrix_permutation_metadata': MATRIX_PERMUTATION_METADATA" in code
+    assert '"matrix_permutation_metadata": MATRIX_PERMUTATION_METADATA' in code
     assert (
-        "'matrix_permutation_applied_to_diagram': MATRIX_PERMUTATION_APPLIED_TO_DIAGRAM"
+        '"matrix_permutation_applied_to_diagram": MATRIX_PERMUTATION_APPLIED_TO_DIAGRAM'
         in code
     )
 

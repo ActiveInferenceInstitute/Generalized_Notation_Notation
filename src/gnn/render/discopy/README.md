@@ -7,12 +7,10 @@ numerical equivalence to a generative model.
 
 ## Generate a program
 
-```bash
-uv run --frozen --no-sync python -m gnn.cli render input/gnn_files/discrete/actinf_pomdp_agent.md --framework discopy --output /tmp/gnn-discopy-example.py
-```
-
 Python callers pass a parsed specification to
 `gnn.render.discopy.render_gnn_to_discopy(spec, output_path, options=None)`.
+Step 11 uses this entrypoint. The CLI/MCP single-spec route still reaches the
+legacy generator and is being unified with this one separately.
 The result is `(success, message, warnings)`. Missing optional sections produce
 warnings; generation failures return `False` with the original diagnosis.
 See [AGENTS.md](AGENTS.md#api-reference) for the signature and example.

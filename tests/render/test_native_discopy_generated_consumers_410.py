@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 import pytest
-from discopy.monoidal import Box, Ty
+from discopy.monoidal import Ty
 
 from gnn.render.discopy import render_gnn_to_discopy
 
@@ -54,49 +54,29 @@ def test_generated_discopy_native_types_composition_and_json_preserve_identity(
     assert ok and str(path) in message
     py_compile.compile(str(path), cfile=str(tmp_path / "compiled.pyc"), doraise=True)
     module = load_saved_module(path)
-    state, observation, action, probability = module.define_types()
-    assert (state, observation, action, probability) == (
-        Ty("S"),
-        Ty("O"),
-        Ty("A"),
-        Ty("P"),
-    )
-    components = module.define_model_components(state, observation, action, probability)
-    expected = {
-        "A_matrix": ("A", Ty("S"), Ty("O", "P")),
-        "B_matrix": ("B", Ty("S", "A"), Ty("S", "P")),
-        "C_vector": ("C", Ty(), Ty("O", "P")),
-        "D_vector": ("D", Ty(), Ty("S", "P")),
-        "E_vector": ("E", Ty(), Ty("A", "P")),
-        "state_inference": ("StateInf", Ty("O"), Ty("S", "P")),
-        "policy_inference": ("PolicyInf", Ty("S", "P"), Ty("A", "P")),
-        "action_selection": ("ActionSel", Ty("A", "P"), Ty("A")),
-    }
-    assert set(components) == set(expected)
-    for name, (label, domain, codomain) in expected.items():
-        component = components[name]
-        assert isinstance(component, Box)
-        assert (component.name, component.dom, component.cod) == (
-            label,
-            domain,
-            codomain,
-        )
-    circuit = module.create_active_inference_circuit(
-        state, observation, action, probability, components
-    )
-    loop = circuit["perception_action_loop"]
-    assert (loop.dom, loop.cod) == (Ty("O"), Ty("A"))
-    assert [box.name for box in loop.boxes] == ["StateInf", "PolicyInf", "ActionSel"]
-    analysis = module.analyze_circuit_structure(circuit)
-    assert analysis == {
-        "num_components": 8,
-        "loop_domain": "O",
-        "loop_codomain": "A",
-        "model_domain": "O",
-        "model_codomain": "A",
-    }
+    diagram, boxes, signatures = module.build_diagram()
+    assert len(boxes) == 1
+    box = boxes[0]
+    assert box.name == "A__generates__B"
+    assert (box.dom, box.cod) == (Ty("A"), Ty("B"))
+    assert signatures == [
+        {
+            "index": 0,
+            "name": "A__generates__B",
+            "source": ["A"],
+            "relation": ">",
+            "target": ["B"],
+            "dom": "A",
+            "cod": "B",
+        }
+    ]
+    analysis = module.analyze_diagram(diagram, boxes, signatures)
+    assert analysis["num_connections"] == 1
+    assert analysis["num_boxes"] == 1
+    assert analysis["box_names"] == ["A__generates__B"]
+    assert (analysis["diagram_domain"], analysis["diagram_codomain"]) == ("A", "B")
     output = tmp_path / "actual_json"
-    module.export_circuit_data(circuit, analysis, str(output))
+    module.export_circuit_data(analysis, str(output))
     assert json.loads((output / "circuit_analysis.json").read_text()) == analysis
     info = json.loads((output / "circuit_info.json").read_text())
     assert info["model_name"] == "Categorical observations Ω"
@@ -105,7 +85,9 @@ def test_generated_discopy_native_types_composition_and_json_preserve_identity(
         "num_observations": 3,
         "num_actions": 4,
     }
-    assert info["components"] == list(expected) and info["analysis"] == analysis
+    assert info["components"] == ["A__generates__B"]
+    assert info["connections"] == [{"source": "A", "relation": ">", "target": "B"}]
+    assert info["analysis"] == analysis
     expected_metadata = (
         {"A": {"axis": "rows", "shape": [3, 2], "permutation": [2, 0, 1]}}
         if permutation
@@ -156,7 +138,7 @@ def test_generated_discopy_actual_entrypoint_exports_authored_model_name(
         "num_observations": 3,
         "num_actions": 4,
     }
-    assert info["analysis"]["num_components"] == 8
+    assert info["analysis"]["num_boxes"] == 1
     assert pickle.dumps(spec, protocol=5) == before
 
 

@@ -126,10 +126,11 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
             "supports_multi_modality": True,
             "supports_multi_factor": True,
             "available": True,
-            # The DisCoPy translator draws categorical POMDP string diagrams
-            # (A/B/C/D/E boxes over discrete state counts); it has no
-            # linear-Gaussian diagram semantics, so continuous models are
-            # reported unsupported rather than drawn as a discrete stand-in.
+            # The DisCoPy renderer draws the specification's declared
+            # categorical connection graph as one box per Connections entry.
+            # It refuses a spec without explicit wiring rather than
+            # synthesizing a discrete circuit, and it has no linear-Gaussian
+            # diagram semantics, so continuous models are reported unsupported.
             "supports_execution": True,
             "supports_continuous": False,
             "continuous_only": False,
@@ -325,6 +326,11 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
 #:     that declares more than one render family (e.g. continuous x hybrid)
 #:     as one model; empty means the spec is refused instead of silently
 #:     rendering one family with the others dropped.
+#:   ``connection_graph`` -- ``explicit`` when the frame builds its artifact
+#:     from the specification's declared ``Connections`` and refuses a spec
+#:     with no wiring; empty when the frame does not consume the connection
+#:     graph. DisCoPy is the explicit-wiring frame: its boxes are the declared
+#:     connections, not a fixed circuit.
 #:
 #: ``execution_contracts`` remains a separate top-level registry key consumed
 #: by :func:`gnn.render.execution_contracts.unsupported_contract`; the
@@ -337,6 +343,7 @@ RENDER_DIMENSION_VALUES: Mapping[str, Tuple[str, ...]] = MappingProxyType(
         "dynamics": ("stationary", "nonstationary"),
         "planning": ("none", "one_step_only"),
         "mixed_family_composition": ("whole",),
+        "connection_graph": ("explicit",),
     }
 )
 
@@ -352,18 +359,21 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "dynamics": ("stationary", "nonstationary"),
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
+                "connection_graph": (),
             },
             "rxinfer": {
                 "continuous_composition": ("flat", "independent_agents"),
                 "dynamics": ("stationary",),
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
+                "connection_graph": (),
             },
             "activeinference_jl": {
                 "continuous_composition": (),
                 "dynamics": ("stationary",),
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
+                "connection_graph": (),
             },
             "jax": {
                 "continuous_composition": (
@@ -374,54 +384,63 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "dynamics": ("stationary",),
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
+                "connection_graph": (),
             },
             "discopy": {
                 "continuous_composition": (),
                 "dynamics": ("stationary",),
                 "planning": ("none",),
                 "mixed_family_composition": (),
+                "connection_graph": ("explicit",),
             },
             "pytorch": {
                 "continuous_composition": ("flat",),
                 "dynamics": ("stationary",),
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
+                "connection_graph": (),
             },
             "numpyro": {
                 "continuous_composition": ("flat",),
                 "dynamics": ("stationary",),
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
+                "connection_graph": (),
             },
             "stan": {
                 "continuous_composition": ("flat",),
                 "dynamics": ("stationary",),
                 "planning": ("none",),
                 "mixed_family_composition": (),
+                "connection_graph": (),
             },
             "bnlearn": {
                 "continuous_composition": (),
                 "dynamics": ("stationary",),
                 "planning": ("none",),
                 "mixed_family_composition": (),
+                "connection_graph": (),
             },
             "cpomdp": {
                 "continuous_composition": ("flat",),
                 "dynamics": ("stationary",),
                 "planning": ("none",),
                 "mixed_family_composition": (),
+                "connection_graph": (),
             },
             "thrml": {
                 "continuous_composition": (),
                 "dynamics": ("stationary",),
                 "planning": ("none",),
                 "mixed_family_composition": (),
+                "connection_graph": (),
             },
             "ngclearn": {
                 "continuous_composition": ("flat",),
                 "dynamics": ("stationary",),
                 "planning": ("none",),
                 "mixed_family_composition": (),
+                "connection_graph": (),
             },
         }
     )
