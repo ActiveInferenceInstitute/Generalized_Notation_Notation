@@ -145,6 +145,32 @@ combined flags, shell wrappers and embedded interpreters are outside that
 classification. A startup bypass is unobserved execution, never evidence that
 the child executed zero original-source lines.
 
+Only a file whose bytes are still changing is re-read, stopping as soon as two
+consecutive SHA-256 hashes agree, the writing process recorded in the file name is
+no longer alive, or the settle window set by `RAW_OBSERVATION_WINDOW_SECONDS`
+(five seconds) expires; a file whose bytes are already stable but cannot be parsed
+is returned unreadable at once, without re-reading. Each
+attempt is recorded in the receipt (`size`, `sha256`, `observations`,
+`elapsed_seconds`, `observation_trail`, `settled`, `writer_alive_at_decision`), so
+an admitted file's settling cost is auditable, and a file that never settles is
+rejected with "Native coverage raw data changed while being read" and keeps its
+source contribution marked unknown.
+
+Read the decision from `settled`: `true` means that file's line set joined the
+union, with `measured_files` and `admitted_source_executed_lines` populated;
+`false` means the file was retained for inspection and contributed nothing, with
+its error, `qualification` and a `null` line count recorded instead. The
+`observations` count and `elapsed_seconds` say how many reads the decision took
+and what the settling cost, so a writer that was still finishing is visible in the
+receipt. `observation_trail` lists the first four observations' sizes and hashes
+(`observation_trail_omitted` counts the rest) — the sequence a reader would
+otherwise have to trust — and `writer_alive_at_decision` reports whether the
+process named in the file was still running when the decision was taken: `true` at
+a rejection means the bytes may still be written and the file is worth
+re-observing on a later run, `false` means the writer was gone, and `null` means
+liveness could not be observed (no process identifier in the file name, or a
+non-POSIX host).
+
 Each lane and the comprehensive data must equal the exact admitted raw line-set
 union. Their reports must preserve the same per-file statement/exclusion census,
 and the comprehensive executed statement sets must equal the lane report union.
