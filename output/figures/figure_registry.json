@@ -43,7 +43,7 @@
       "png_sha256": "5f5a87bcc8f8293951120042f0b9f87f6e799fd709109e7010c8c3fdda996caa",
       "source_sha256": {
         "input/model_family_manifest.json": "41adbb30ab861d094823b69669656081bbcb603c7203bd30335555e2f60b9e3c",
-        "src/gnn/render/framework_registry.py": "b934336e544ca069da84223368fec6129f0abe30dede3144ba5bb7c4bfd7d9ec"
+        "src/gnn/render/framework_registry.py": "ef6f28684dffe802a53203430e94b2132c6b68e593027a2ca060876326909718"
       }
     },
     {
@@ -57,7 +57,7 @@
         "input/model_family_manifest.json": "41adbb30ab861d094823b69669656081bbcb603c7203bd30335555e2f60b9e3c",
         "src/gnn/manuscript/variables.py": "f0770f854a60ccabb86ac034b87646044200974ac0940426a3667851b3827a1d",
         "src/gnn/pipeline/cross_framework_reliability.py": "f541016765f8c2b843226c9127f011cc77a0e66cbad694e89853db59c6cd8101",
-        "src/gnn/render/framework_registry.py": "b934336e544ca069da84223368fec6129f0abe30dede3144ba5bb7c4bfd7d9ec"
+        "src/gnn/render/framework_registry.py": "ef6f28684dffe802a53203430e94b2132c6b68e593027a2ca060876326909718"
       }
     },
     {
