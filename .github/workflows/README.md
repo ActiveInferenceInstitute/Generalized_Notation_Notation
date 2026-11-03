@@ -31,7 +31,7 @@ YAML workflows for CI, MCP tool-count audit, weekly all-extras suite, documentat
 | File | Triggers | Jobs / behavior |
 |------|----------|-----------------|
 | [comprehensive-native-coverage.yml](comprehensive-native-coverage.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Separate Python 3.11/3.12/3.13 reports from the exact source revision. The five frozen core, MCP, pipeline, THRML and Gradio native selections retain process/source identities, unchanged statement/exclusion scope, actual raw line-set unions, JUnit and hook-restoration receipts. The original core 60% gate remains; comprehensive acceptance enforces an 80% floor and the strict integer >80% comparison separately in each environment. |
-| [ci.yml](ci.yml) | `push` / `pull_request` → `main` (no path filter); `workflow_dispatch` | Full Python 3.11/3.12/3.13/3.14 unit/integration selections with JUnit and coverage. Independent 3.12 quality checks run in parallel; `test (3.12)` accepts only successful `pytest (3.12)` and `quality (3.12)` lanes. Quality retains Ruff, types, documentation/contracts, collection and MCP tests, and v3 orchestration acceptance. Pipeline contracts and extras retain separate mandatory lanes. Security retains Bandit SARIF, artifacts and failure on findings. |
+| [ci.yml](ci.yml) | `push` → `main` (deterministic post-merge subset) and `v[0-9]*` tags (full matrix); `pull_request` → `main` (full matrix at the PR head); weekly Saturday 06:17 UTC (`17 6 * * 6`) full matrix on the current main tip; `workflow_dispatch` | Full Python 3.11/3.12/3.13/3.14 unit/integration selections with JUnit and coverage on pull requests, tags, schedules and manual dispatch; a branch push to `main` runs only `quality (3.12)`, `pipeline-contracts` and `security`, deferring the unit lanes to the weekly run. Independent 3.12 quality checks run in parallel; `test (3.12)` accepts only successful `pytest (3.12)` and `quality (3.12)` lanes and is skipped where those lanes deliberately do not run. Quality retains Ruff, types, documentation/contracts, collection and MCP tests, and v3 orchestration acceptance. Pipeline contracts and extras retain separate mandatory lanes. Security retains Bandit SARIF, artifacts and failure on findings. Non-PR runs are keyed by commit and never cancel in progress, so a merged tip's verdict survives the next push; pull-request runs cancel their superseded head. |
 | [installed-platforms.yml](installed-platforms.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Five native installed-wheel lanes: Linux/Python 3.11, 3.12, 3.14; macOS/3.14; Windows/3.14. Frozen hashed binary runtime installation outside the checkout, native JAX/THRML, CLI/templates, API scratch concurrency, owned worker cancellation/RSS and platform boundary tests. Selected skips prevent acceptance; receipts retain exact source, wheel, lock and platform identities. |
 | [local-gates.yml](local-gates.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Repository gates for manuscript tokens, hydrated prose, figure freshness, MCP/skills, import boundaries, numbered orchestrators, flags, dependency consumers, validation surfaces and documentation paths/patterns. |
 | [fep-lean-paired-revision.yml](fep-lean-paired-revision.yml) | tags; `workflow_dispatch` (release-time only) | Strict current-source bridge and Q7 checks on Python 3.11/3.12/3.14 against the exact pinned FEP companion, retaining both revisions and runtime/source bookends. GNN owns its implementation source; the bridge binds only the declared notation contract, so ordinary PR/main development is not gated on the pair. Historical fixed-baseline receipts cannot admit GNN 5.0; native proof and release acceptance remain separate. [Policy](../../docs/development/fep_lean_paired_revision.md#current-source-qualification-for-gnn-50x). |
@@ -63,10 +63,14 @@ The aggregate `test (3.12)` job uses `always() && !cancelled()` and requires
 both lane results to be `success`; failure, cancellation, skipping or a missing
 result prevents acceptance. `always()` keeps a genuinely failed prerequisite
 failing the gate; `!cancelled()` only skips the guard when the run itself was
-cancelled (a superseded push), so a late-scheduled guard does not record a
-permanent "cancelled != success" failure on the merge commit. Cancellation
-inside a non-cancelled run — matrix `fail-fast` cancelling sibling legs — still
-fails, because the prerequisite's own result is `cancelled`, not `success`.
+cancelled (a superseded pull-request head), so a late-scheduled guard does not
+record a permanent "cancelled != success" failure on the merge commit.
+Cancellation inside a non-cancelled run — matrix `fail-fast` cancelling sibling
+legs — still fails, because the prerequisite's own result is `cancelled`, not
+`success`. A branch push to `main` skips the aggregate outright, because the
+lanes it couples are deliberately not run there; the weekly schedule re-runs the
+full matrix on the current tip, and commit-keyed concurrency keeps each non-PR
+run independent instead of superseding an earlier tip's verdict.
 Each runner installs locked dependencies once; CI commands then
 use `uv run --frozen --no-sync`. This changes scheduling and repeated setup,
 while preserving test, security and custody coverage.

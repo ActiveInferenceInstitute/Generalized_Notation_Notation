@@ -17,7 +17,7 @@ Defines behavior and guardrails for workflows in this directory. Human index of 
 | File | Role |
 |------|------|
 | `comprehensive-native-coverage.yml` | Separate exact-source Python 3.11/3.12/3.13 full-source coverage with native child provenance and exact raw/lane/combined unions. The original core selectors, reports and 60% floor remain intact. All five declared native lanes, clean identities, successful JUnit, raw integrity and hook restoration are required. Comprehensive acceptance separately enforces an 80% floor and `5 * covered_lines > 4 * num_statements` in each environment. |
-| `ci.yml` | Python 3.11/3.12/3.13/3.14 tests with JUnit, coverage, artifacts and summaries. Independent 3.12 quality checks run in parallel; the existing `test (3.12)` status requires both the native test lane and the quality lane to succeed. Quality includes Ruff/mypy/public contracts, functional MCP/capability evidence, v3 orchestration acceptance. MCP tool count ≥ `MCP_TOOL_FLOOR` (140, defined in `tests/mcp/test_mcp_audit.py`). Bandit retains SARIF upload and failure on findings. No path filter — runs on doc-only changes too. |
+| `ci.yml` | Triggers: `push` → `main` (deterministic post-merge subset: `quality (3.12)`, `pipeline-contracts`, `security`), `v[0-9]*` tags, pull requests, weekly Saturday 06:17 UTC, `workflow_dispatch`; tags, pull requests, schedules and manual dispatch run the full Python 3.11/3.12/3.13/3.14 matrix at their own head. Independent 3.12 quality checks run in parallel; the existing `test (3.12)` status requires both the native test lane and the quality lane to succeed, and is skipped where those lanes deliberately do not run. Quality includes Ruff/mypy/public contracts, functional MCP/capability evidence, v3 orchestration acceptance. MCP tool count ≥ `MCP_TOOL_FLOOR` (140, defined in `tests/mcp/test_mcp_audit.py`). Bandit retains SARIF upload and failure on findings. No path filter — runs on doc-only changes too. Non-PR runs are commit-keyed and never cancel in progress; PR runs cancel their superseded head. |
 | `installed-platforms.yml` | Frozen ordinary installed-wheel acceptance outside the checkout in five native lanes: Linux/Python 3.11, 3.12, 3.14; macOS/3.14; Windows/3.14. CLI/API/resources, JAX/THRML numerical witnesses and native filesystem/worker boundaries retain source/lock/wheel identities. Selected skips fail acceptance; platform support is limited to accepted native guarantees. |
 | `local-gates.yml` | Repository gates bind manuscript tokens, hydrated prose and figures, then check MCP/skills, imports, thin orchestrators, flags, dependencies, public validation and maintained documentation. PR inherited-drift qualification is limited to byte-identical base evidence; main/manual checks remain strict. |
 | `mcp-audit.yml` | MCP tool count ≥ `MCP_TOOL_FLOOR` audit on push/PR to `main`. |
@@ -49,9 +49,12 @@ Keep test marker selections, per-Python coverage/JUnit artifacts and source-boun
 pipeline receipts intact when changing scheduling. The `test (3.12)` aggregate
 runs with `always() && !cancelled()` and rejects failed, cancelled, skipped or
 missing lane results. `!cancelled()` only skips the guard when the run itself
-was cancelled (a superseded push), so cancellation inside a non-cancelled run —
-matrix `fail-fast` cancelling sibling legs — still fails. Moving validation
-into parallel jobs must preserve this coupling.
+was cancelled (a superseded pull-request head), so cancellation inside a
+non-cancelled run — matrix `fail-fast` cancelling sibling legs — still fails.
+A branch push to `main` skips the aggregate outright, because the lanes it
+couples are deliberately not run there; keep that coupling intact for the
+full-matrix triggers. Moving validation into parallel jobs must preserve this
+coupling.
 
 CI sets `UV_PYTHON` to the test matrix version (and 3.14 for security and
 documentation jobs), overriding the local `.python-version` pin. XML export
