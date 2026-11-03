@@ -29,8 +29,14 @@ Composed specs classify under BOTH families — `detect_model_kinds` returns
 {CONTINUOUS, MULTI_AGENT} — and no framework renders the composition whole:
 the render step reports every framework as `unsupported-composition` rather
 than silently rendering the single-winner family with the other dropped.
-Per-agent continuous parameterization (per-agent F/H/Q/R blocks) is future
-work on the continuous renderer side.
+Per-agent continuous parameterization exists for the independent-coupling
+shape: `continuous/independent_gaussian_agents.md` declares
+`agent_coupling: independent` with complete per-agent F/H/Q/R and prior
+blocks and renders on JAX and RxInfer.jl. This exemplar deliberately keeps
+the shared-block form, because the absence of a composer is itself the
+boundary it documents: the mixed-family composition dimension is declared
+by no frame, so every frame refuses the composed kind set instead of
+guessing a per-agent decomposition.
 
 ## StateSpaceBlock
 # Continuous latent state x = (x, y) position
