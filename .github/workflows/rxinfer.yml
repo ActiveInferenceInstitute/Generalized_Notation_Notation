@@ -19,8 +19,12 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: rxinfer-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # A superseded PR head is not evidence about the new head, so PR runs cancel
+  # in progress. A merged tree's verdict is evidence, so main and manual runs
+  # never cancel; keying those by commit keeps each tip's run independent
+  # instead of queueing it behind an earlier tip's run.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read

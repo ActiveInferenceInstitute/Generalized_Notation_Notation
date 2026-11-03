@@ -44,9 +44,9 @@ Defines behavior and guardrails for workflows in this directory. Human index of 
 - Key non-PR runs by commit and cancel only superseded pull-request heads
   (`group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}`,
   `cancel-in-progress: ${{ github.event_name == 'pull_request' }}`). A merged
-  tip's verdict must survive the next push; the shape is carried by `ci.yml`,
-  `local-gates.yml`, `installed-platforms.yml`, `geo-infer-interchange.yml`
-  and `comprehensive-native-coverage.yml`.
+  tip's verdict must survive the next push; every workflow triggered by a push
+  to `main` carries the shape, copied whole — one mechanism, not a per-workflow
+  variant.
 - Use deterministic dependency operations (`uv sync --frozen`, `uv export --frozen`).
 
 Install each CI environment once with `uv sync --frozen`; subsequent commands
