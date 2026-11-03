@@ -14,6 +14,13 @@ Two conservative, dependency-free checks:
   referencing a renamed module compiles clean and passes every name-based
   check, yet ImportErrors the moment the emitted script runs.
 
+- ``julia_syntax_findings`` and ``stan_syntax_findings`` accept an emitted
+  ``.jl`` / ``.stan`` artifact only when the real target-language front-end
+  accepts it. A regex or AST check on the artifact text cannot establish that;
+  a renderer that returns success has only established that it returned.
+  When no front-end is installed the checks report ``available=False`` instead
+  of guessing, so a caller can never mistake "not checked" for "valid".
+
 Consumers: ``scripts/bench_render_backends.py`` (corpus x framework
 conformance benchmark) and ``tests/render/test_render_contracts.py``.
 """
@@ -300,3 +307,137 @@ def julia_render_factorization(code: str) -> "str | None":
 
     match = re.search(r'const\s+MODEL_KIND\s*=\s*"([^"]+)"', code)
     return match.group(1) if match else None
+
+
+# --- Target-language syntax acceptance ---------------------------------------
+#
+# ``Meta.parseall(source)`` alone is NOT a syntax check: it does not raise and
+# returns an expression tree that may contain ``Expr(:error, ...)`` and
+# ``Expr(:incomplete, ...)`` nodes. A probe that only calls it - as
+# ``Meta.parseall(read(f, String)); println("parsed")`` does - exits 0 for a
+# file with unbalanced delimiters, a stray ``end``, or a truncated binary
+# expression. The probe below parses incrementally and walks every returned
+# expression, which catches those classes (verified against those fixtures).
+
+JULIA_SYNTAX_PROBE = r"""
+function gnn_walk_errors!(expr, path, findings)
+    if expr isa Expr
+        if expr.head === :error || expr.head === :incomplete
+            detail = replace(sprint(showerror, expr.args[1]), "\n" => " ")
+            push!(findings, string(expr.head, " @ ", path, ": ", detail))
+        end
+        for (index, arg) in enumerate(expr.args)
+            gnn_walk_errors!(arg, string(path, "/", index), findings)
+        end
+    end
+    return findings
+end
+
+function gnn_main()
+    source = read(stdin, String)
+    findings = String[]
+    position = firstindex(source)
+    count = 0
+    while position <= lastindex(source)
+        parsed = try
+            Meta.parse(source, position)
+        catch err
+            println("PARSE_FAIL raised: ",
+                    replace(sprint(showerror, err), "\n" => " "))
+            return 1
+        end
+        expression, nextpos = parsed
+        expression === nothing && break
+        count += 1
+        gnn_walk_errors!(expression, string("expr", count), findings)
+        nextpos > position || break
+        position = nextpos
+    end
+    for finding in findings
+        println("PARSE_FAIL ", finding)
+    end
+    return isempty(findings) ? 0 : 1
+end
+
+exit(gnn_main())
+"""
+
+#: Wall-clock bound for one front-end invocation.
+TOOLCHAIN_TIMEOUT_SECONDS = 300.0
+
+
+def _stdin_findings(command: list[str], code: str, timeout: float) -> tuple[list[str], bool]:
+    """Run *command* with *code* on stdin; return ``(findings, available)``.
+
+    ``available`` is ``False`` only when the executable is missing. A timeout
+    or a crash is reported as a finding: an unchecked artifact must not read
+    as a valid one.
+    """
+    import subprocess
+
+    try:
+        # Fixed argv from shutil.which(), never a shell; the source travels on
+        # stdin so no path or quoting is interpolated into a command line.
+        result = subprocess.run(  # nosec B603
+            command,
+            input=code,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except FileNotFoundError:
+        return [], False
+    except subprocess.TimeoutExpired:
+        return [f"{command[0]} timed out after {timeout:g}s"], True
+    if result.returncode == 0:
+        return [], True
+    findings = [
+        line[len("PARSE_FAIL ") :]
+        for line in result.stdout.splitlines()
+        if line.startswith("PARSE_FAIL ")
+    ]
+    if not findings:
+        detail = (result.stderr or result.stdout).strip().splitlines()
+        findings = [detail[-1]] if detail else [f"{command[0]} exited {result.returncode}"]
+    return findings, True
+
+
+def julia_syntax_findings(
+    code: str, *, timeout: float = TOOLCHAIN_TIMEOUT_SECONDS
+) -> tuple[list[str], bool]:
+    """Check Julia source with the real parser; return ``(findings, available)``.
+
+    Findings are empty exactly when every top-level expression parses into a
+    tree with no ``:error`` / ``:incomplete`` node. ``available`` is ``False``
+    when no ``julia`` executable is on ``PATH`` - callers must treat that as
+    "not checked", never as "valid".
+    """
+    import shutil
+
+    executable = shutil.which("julia")
+    if executable is None:
+        return [], False
+    return _stdin_findings(
+        [executable, "--startup-file=no", "--color=no", "-e", JULIA_SYNTAX_PROBE],
+        code,
+        timeout,
+    )
+
+
+def stan_syntax_findings(
+    code: str, *, timeout: float = TOOLCHAIN_TIMEOUT_SECONDS
+) -> tuple[list[str], bool]:
+    """Check a Stan program with ``stanc``; return ``(findings, available)``.
+
+    ``stanc`` is the compiler front-end CmdStan itself installs, so a clean
+    result is the language-level acceptance Step 12's CmdStan compile would
+    also demand. ``available`` is ``False`` when ``stanc`` is not on ``PATH``.
+    """
+    import os
+    import shutil
+
+    executable = shutil.which("stanc")
+    if executable is None:
+        return [], False
+    return _stdin_findings([executable, f"--o={os.devnull}", "-"], code, timeout)

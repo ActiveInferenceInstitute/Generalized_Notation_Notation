@@ -249,7 +249,20 @@ class TestActiveInferenceJlStigmergicScript:
 
 @pytest.mark.needs_julia
 class TestJuliaParse:
-    """Both generated scripts must parse with Meta.parseall."""
+    """Both generated scripts must be accepted by the Julia parser.
+
+    The probe is the shared ``render.emitted_artifact_checks`` one: a bare
+    ``Meta.parseall`` probe reports success for unbalanced delimiters, a stray
+    ``end`` and truncated expressions, so it gated nothing.
+    """
+
+    @staticmethod
+    def _assert_parses(script: Path) -> None:
+        from gnn.render.emitted_artifact_checks import julia_syntax_findings
+
+        findings, available = julia_syntax_findings(script.read_text(encoding="utf-8"))
+        assert available, "julia must be on PATH for this case"
+        assert findings == [], f"Julia rejected {script.name}: {findings}"
 
     @pytest.mark.parametrize(
         ("renderer", "suffix"),
@@ -264,24 +277,7 @@ class TestJuliaParse:
         suffix: str,
         tmp_path: Path,
     ) -> None:
-        script = renderer(SWARM_FILE, tmp_path)
-        result = subprocess.run(  # nosec B603 B607
-            [
-                "julia",
-                f"--project={RXINFER_JULIA_PROJECT}",
-                "--startup-file=no",
-                "-e",
-                f'Meta.parseall(read("{script}", String)); println("parsed")',
-            ],
-            cwd=PROJECT_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        assert result.returncode == 0, (
-            f"Julia parse failed for {script.name}:\n"
-            f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
-        )
+        self._assert_parses(renderer(SWARM_FILE, tmp_path))
 
     @pytest.mark.parametrize(
         "renderer",
@@ -292,24 +288,7 @@ class TestJuliaParse:
         renderer: Callable[[Path, Path], Path],
         tmp_path: Path,
     ) -> None:
-        script = renderer(COORDINATION_FILE, tmp_path)
-        result = subprocess.run(  # nosec B603 B607
-            [
-                "julia",
-                f"--project={RXINFER_JULIA_PROJECT}",
-                "--startup-file=no",
-                "-e",
-                f'Meta.parseall(read("{script}", String)); println("parsed")',
-            ],
-            cwd=PROJECT_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        assert result.returncode == 0, (
-            f"Julia parse failed for {script.name}:\n"
-            f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
-        )
+        self._assert_parses(renderer(COORDINATION_FILE, tmp_path))
 
 
 @pytest.mark.integration
