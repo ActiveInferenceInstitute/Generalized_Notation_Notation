@@ -258,7 +258,13 @@ def generate_activeinference_jl_code(
 def generate_discopy_code(
     model_data: Dict, output_path: Optional[Union[str, Path]] = None
 ) -> str:
-    """Generate DisCoPy categorical analysis code with enhanced features."""
+    """Generate the legacy DisCoPy categorical analysis template.
+
+    Retained for compatibility callers and direct regression tests only.
+    Target dispatch (``render_gnn_spec``, CLI, MCP and Step 11) uses
+    ``gnn.render.discopy.render_gnn_to_discopy``, which builds boxes from the
+    spec's declared connections. New code should call that entrypoint instead.
+    """
     from gnn.render.execution_contracts import unsupported_contract
 
     reason = unsupported_contract(model_data, "discopy")
@@ -268,7 +274,12 @@ def generate_discopy_code(
         return ""
     try:
         model_name = model_data.get("model_name", "GNN Model")
-        gnn_file = model_data.get("source_file", "unknown.md")
+        gnn_file = (
+            model_data.get("source_file")
+            or model_data.get("file_name")
+            or model_data.get("file_path")
+            or "unknown.md"
+        )
         module_docstring = f"""
 Enhanced DisCoPy categorical analysis for {model_name}
 Generated from GNN specification: {gnn_file}

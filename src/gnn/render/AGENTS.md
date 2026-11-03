@@ -87,8 +87,9 @@ processor/
 
 #### DisCoPy (Python)
 - **Purpose**: Categorical diagrams for compositional models
-- **Features**: String diagram generation
-- **Output**: Python DisCoPy diagrams
+- **Features**: One box per declared connection; source/target endpoints become the box domain/codomain
+- **Output**: Python DisCoPy diagrams plus `circuit_info.json` / `circuit_analysis.json`
+- **Refusal**: `unsupported-discopy-connections:` when `Connections` is absent or malformed
 - **Optimization**: Categorical composition, type checking
 - **Continuous models**: `unsupported` (no linear-Gaussian diagram semantics)
 

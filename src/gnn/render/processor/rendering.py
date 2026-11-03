@@ -154,10 +154,6 @@ def render_gnn_spec(
         options = validate_render_options(option_target, supplied)
         if target_lower == "jax_pomdp" and options:
             raise ValueError("JAX POMDP generator does not consume render options")
-        if option_target == "discopy" and options:
-            raise ValueError(
-                "DisCoPy matrix_permutations require the Step 11 render interface"
-            )
         if filename is not None:
             if not isinstance(filename, str) or not filename:
                 raise ValueError("output_filename must be a nonempty string")
@@ -166,16 +162,29 @@ def render_gnn_spec(
 
         # Generator-based renderers: target → (module, generator_name, file_suffix)
         _GENERATOR_TARGETS: dict[str, Any] = {
-            "discopy": (".generators", "generate_discopy_code", "_discopy.py"),
             "bnlearn": (".bnlearn", "generate_bnlearn_code", "_bnlearn.py"),
         }
 
         if isinstance(gnn_spec, dict):
+            # Keep the source identity the caller already knows. The public
+            # parser summary carries file_name/file_path, while the rehydrated
+            # renderer spec otherwise loses it and generated headers fall back
+            # to "unknown".
+            source_file = (
+                gnn_spec.get("source_file")
+                or gnn_spec.get("file_name")
+                or gnn_spec.get("file_path")
+            )
             gnn_spec_mapping = _rehydrate_file_backed_parse_summary(
                 gnn_spec,
                 native_agents=target_lower == "rxinfer",
                 preserve_discrete_structure=target_lower == "thrml",
             )
+            if source_file and not gnn_spec_mapping.get("source_file"):
+                gnn_spec_mapping = {
+                    **gnn_spec_mapping,
+                    "source_file": Path(str(source_file)).name,
+                }
             model_name = str(
                 gnn_spec_mapping.get("model_name")
                 or gnn_spec_mapping.get("name")
@@ -355,6 +364,15 @@ def render_gnn_spec(
             )
             return (True, msg, artifacts) if success else (False, msg, [])
 
+        if target_lower in {"discopy", "discopy_combined"}:
+            from gnn.render.discopy import render_gnn_to_discopy
+
+            output_file = output_dir / f"{output_stem}_discopy.py"
+            success, msg, _warnings = render_gnn_to_discopy(
+                gnn_spec_mapping, output_file, options
+            )
+            return (True, msg, [str(output_file)]) if success else (False, msg, [])
+
         if target_lower in _GENERATOR_TARGETS:
             gen_module_name, gen_name, suffix = _GENERATOR_TARGETS[target_lower]
             from importlib import import_module
@@ -391,26 +409,6 @@ def render_gnn_spec(
                 ),
                 [],
             )
-
-        elif target_lower == "discopy_combined":
-            try:
-                from gnn.render.discopy import render_gnn_to_discopy
-
-                output_file = output_dir / f"{output_stem}_discopy.py"
-                success, msg, _warnings = render_gnn_to_discopy(
-                    gnn_spec_mapping, output_file
-                )
-                return (True, msg, [str(output_file)]) if success else (False, msg, [])
-            except ImportError:
-                from gnn.render.health import get_remediation
-
-                remediation = get_remediation("discopy")
-                return (
-                    False,
-                    "DisCoPy renderer not available"
-                    + (f". {remediation}" if remediation else ""),
-                    [],
-                )
 
         elif target_lower in ("jax", "jax_pomdp"):
             try:

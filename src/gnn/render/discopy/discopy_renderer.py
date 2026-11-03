@@ -180,6 +180,7 @@ class DisCoPyRenderer:
 
             # Parse GNN content (simplified for now)
             gnn_spec = self._parse_gnn_content(content, gnn_file_path.stem)
+            gnn_spec["source_file"] = gnn_file_path.name
 
             # Generate DisCoPy categorical diagram code
             discopy_code = self._generate_discopy_diagram_code(
@@ -278,6 +279,13 @@ class DisCoPyRenderer:
         """
         # Extract key information from GNN spec
         model_display_name = gnn_spec.get("model_name", model_name)
+        source_file = (
+            gnn_spec.get("source_file")
+            or gnn_spec.get("file_name")
+            or gnn_spec.get("file_path")
+            or "unknown"
+        )
+        source_file = Path(str(source_file)).name
 
         # Extract dimensions from model parameters
         model_params = gnn_spec.get("model_parameters", {})
@@ -310,6 +318,7 @@ class DisCoPyRenderer:
         )
         module_docstring = f"""
 DisCoPy Categorical Diagram Generation
+Generated from GNN specification: {source_file}
 Generated from GNN Model: {model_display_name}
 
 This script creates categorical diagrams representing the Active Inference model

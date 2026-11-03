@@ -17,6 +17,7 @@ from gnn.render.discopy import render_gnn_to_discopy
 def authored_model(name="Categorical observations Ω"):
     return {
         "model_name": name,
+        "source_file": "authored_model.md",
         "variables": [
             {"name": "A", "dimensions": [3, 2]},
             {"name": "B", "dimensions": [2, 2, 4]},
@@ -119,6 +120,7 @@ def test_generated_discopy_actual_entrypoint_exports_authored_model_name(
     py_compile.compile(str(path), cfile=str(tmp_path / "compiled.pyc"), doraise=True)
     assert ast.get_docstring(ast.parse(path.read_text()), clean=False) == (
         "\nDisCoPy Categorical Diagram Generation\n"
+        "Generated from GNN specification: authored_model.md\n"
         f"Generated from GNN Model: {name}\n\n"
         "This script creates categorical diagrams representing the Active Inference model\n"
         "structure using DisCoPy's compositional framework.\n"

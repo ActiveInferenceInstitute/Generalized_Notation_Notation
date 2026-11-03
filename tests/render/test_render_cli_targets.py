@@ -10,6 +10,11 @@ parametrises over every CLI target and asserts each one either:
     ``Unsupported target: <name>`` rejection.
 
 Runs against the committed sample GNN ``input/gnn_files/discrete/actinf_pomdp_agent.md``.
+
+``discopy`` and ``discopy_combined`` deliberately share the Step 11
+connection-driven renderer. The legacy ``generate_discopy_code`` template is
+retained only for its direct compatibility tests; it is no longer a target
+dispatch path, so this guard pins the shared artifact shape instead.
 """
 
 from __future__ import annotations
@@ -76,6 +81,10 @@ def test_every_cli_target_dispatches(target: str, tmp_path: Path) -> None:
     )
     if success:
         assert artifacts, f"Target {target} reported success but produced no artifacts"
+        if target in {"discopy", "discopy_combined"}:
+            code = Path(artifacts[0]).read_text(encoding="utf-8")
+            assert "def build_diagram" in code
+            assert "discopy.rigid" not in code
 
 
 def test_cli_choices_are_dispatched_subset() -> None:

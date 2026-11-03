@@ -134,10 +134,11 @@ Any exception raised during code generation is caught and returned as `(False, "
 
 ### Orchestrated by
 - `11_render.py` via `POMDPRenderProcessor`, which calls `render_gnn_to_discopy`.
-- `render/processor/rendering.py::render_gnn_spec` still uses the legacy
-  `generators.generate_discopy_code` template on the CLI/MCP path. Unifying the
-  two entry points is a separate change; until then, compare artifacts by
-  content rather than by the fact that both commands report success.
+- `render/processor/rendering.py::render_gnn_spec` (CLI and MCP single-spec
+  routes) dispatches both `discopy` and `discopy_combined` to the same
+  `render_gnn_to_discopy`, so every door emits the same artifact contract.
+- The legacy `generators.generate_discopy_code` template remains importable for
+  compatibility tests but is no longer part of target dispatch.
 
 ### Consumed by
 - `execute/discopy/` — runs the emitted script in Step 12.
