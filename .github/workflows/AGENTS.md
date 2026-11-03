@@ -47,8 +47,11 @@ Install each CI environment once with `uv sync --frozen`; subsequent commands
 in `ci.yml` use `uv run --frozen --no-sync` against that installed environment.
 Keep test marker selections, per-Python coverage/JUnit artifacts and source-bound
 pipeline receipts intact when changing scheduling. The `test (3.12)` aggregate
-runs with `always()` and rejects failed, cancelled, skipped or missing lane
-results; moving validation into parallel jobs must preserve this coupling.
+runs with `always() && !cancelled()` and rejects failed, cancelled, skipped or
+missing lane results. `!cancelled()` only skips the guard when the run itself
+was cancelled (a superseded push), so cancellation inside a non-cancelled run —
+matrix `fail-fast` cancelling sibling legs — still fails. Moving validation
+into parallel jobs must preserve this coupling.
 
 CI sets `UV_PYTHON` to the test matrix version (and 3.14 for security and
 documentation jobs), overriding the local `.python-version` pin. XML export
