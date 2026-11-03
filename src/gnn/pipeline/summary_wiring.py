@@ -94,7 +94,7 @@ SAFE_WARNING_PATTERNS: tuple[str, ...] = (
     r"optional test tooling not installed",
 )
 
-WARNING_PATTERN = re.compile(r"(WARNING|⚠️|warn)", re.IGNORECASE)
+WARNING_PATTERN = re.compile(r"(WARNING|⚠️|warn(?:ing)?s?)(?=[: \t\]\)]|$)", re.I)
 SAFE_WARNING_PATTERN = re.compile(
     "|".join(f"({pattern})" for pattern in SAFE_WARNING_PATTERNS),
     re.IGNORECASE,
