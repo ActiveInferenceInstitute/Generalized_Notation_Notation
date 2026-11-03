@@ -14,7 +14,7 @@ in a pin file.
 | --- | --- | --- | --- | --- |
 | [active_inference_language_model](active-inference-language-model.md) | Explicit discrete language stack in pymdp, letters through document position | `gnn/models/L1_letter.gnn.md` … `L6_narrative.gnn.md`; AILM-side contract `gnn/SPEC.md` | `v5.0.3` · `8f293d9b` in `gnn/upstream.json` | CI job `gnn-interop`; `scripts/verify_gnn_release.py` |
 | [GEO_INFER](geo-infer.md) | Geospatial active inference monorepo (H3 topology, place and risk models) | Interchange contract `GEO-INFER-ACT/docs/gnn_interchange.md`; example `GEO-INFER-ACT/examples/cascadia/data/smith_river_homing.gnn.md` | `8f293d9b` in `.github/gnn-pair.json` (no tag field) | Workflow `gnn-interchange.yml` job "Paired GNN interchange"; `GEO-INFER-TEST/validate_gnn_interchange.py` |
-| [COGANT](cogant.md) | Translates Python, JavaScript and TypeScript codebases into GNN state-space models; reverse synthesizer | Format docs `cogant/docs/theory/gnn_format.md`; emitted models `cogant/examples/zoo/*/model.gnn.md` | `v5.0.3` · `8f293d9b` in `cogant/docs/evaluation/gnn_v5_0_3_compatibility.json` | Manual CI job "Optional upstream GNN smoke"; `tests/unit/test_gnn_upstream_bridge.py` |
+| [COGANT](cogant.md) | Translates Python, JavaScript and TypeScript codebases into GNN state-space models; reverse synthesizer | Format docs `cogant/docs/theory/gnn_format.md`; emitted models `cogant/examples/zoo/*/model.gnn.md` | `v5.0.3` · `8f293d9b` declared in the `upstream` extra of `cogant/pyproject.toml`, resolved in `cogant/uv.lock` | Receipt `cogant/docs/evaluation/gnn_v5_0_3_compatibility.json` (20/20 upstream steps); manual CI job "Optional upstream GNN smoke"; `tests/unit/test_gnn_upstream_bridge.py` |
 | [active_inference_battleship](active-inference-battleship.md) | GNN-based active inference for Battleship with a playable dashboard | `models/battleship.gnn.md`; contract table `docs/GNN_SPECIFICATION.md` | `v5.0.3` · `8f293d9b` in `models/gnn.pin.json` | `bun run model:check`; `scripts/contract.ts`, `scripts/parse_gnn.py` (no CI workflows) |
 | [policy_entanglement](policy-entanglement.md) | Mean-field deformation framework for multi-stream policy ensembles | `gnn/bernoulli_toy.gnn.md`, `gnn/k_stream_ensemble.gnn.md`, `gnn/production_ensemble.gnn.md` | `v5.0.3` · `8f293d9b` in `gnn/upstream.json` | `tests/test_gnn_validation.py`, `tests/test_gnn_upstream_conformance.py` (no CI workflows) |
 | [active_fractal_rabbit](active-fractal-rabbit.md) | Closed-loop active inference over synthetic waypoint data (claim boundary: synthetic-only) | `models/single_factor_reference.gnn.md`, `models/factorial_latent_mode.gnn.md` | `v5.0.3` · `8f293d9b` in `.github/gnn-pin.json` | CI step "Verify the recorded GNN pin against the fetched checkout"; `tests/test_gnn_spec.py` |
@@ -37,8 +37,8 @@ in a pin file.
 ## How to read this registry
 
 - **Pinned GNN revision** names the GNN release tag and commit recorded in the
-  repository's own pin file, or in the contract named in the row. Nineteen of
-  the twenty-one repositories pin GNN
+  repository's own pin file or dependency declaration, or in the contract named
+  in the row. Nineteen of the twenty-one repositories pin GNN
   `v5.0.3` at commit `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`; `GEO_INFER`
   records the same commit without a tag field, and `fep_formal` pins by content
   hash instead of a release tag. A pin records what a repository declares, not

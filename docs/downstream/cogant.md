@@ -21,12 +21,19 @@ the validation target.
 
 ## Pinned GNN revision
 
-`cogant/docs/evaluation/gnn_v5_0_3_compatibility.json` records `locked_version`
-5.0.3 with `locked_commit`, `expected_commit` and `origin_head` all
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, plus a 20-step upstream run with 20
-successes. Two adjacent records are historical or internal and are not the
-current upstream pin: `cogant/evaluation/gnn_upstream_audit_surface.json` audits
-release 4.1.0 (commit `46459949944e3217f8a6a804d4ff8c52829ef275`), and
+The nested COGANT project declares the pin as the optional `upstream`
+dependency in `cogant/pyproject.toml`:
+`generalized-notation-notation @ git+https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git@8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`,
+whose comment records the commit as peeled from the published `v5.0.3` annotated
+release tag. `cogant/uv.lock` resolves that revision to
+`generalized-notation-notation` 5.0.3. The compatibility receipt
+`cogant/docs/evaluation/gnn_v5_0_3_compatibility.json` records the resulting
+evidence: `locked_version` 5.0.3 with `locked_commit`, `expected_commit` and
+`origin_head` all `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, plus a 20-step
+upstream run with 20 successes. Two adjacent records are historical or internal
+and are not the current upstream pin:
+`cogant/evaluation/gnn_upstream_audit_surface.json` audits release 4.1.0 (commit
+`46459949944e3217f8a6a804d4ff8c52829ef275`), and
 `cogant/py/cogant/schema/versions.py` declares an internal schema constant that
 is independent of the upstream release pin.
 
