@@ -455,12 +455,60 @@ def junit_receipt(path: Path) -> dict:
     }
 
 
-def read_raw_coverage(path: Path, checkout: Path) -> tuple[CoverageData | None, dict]:
-    """Retain unreadable native data as unknown, never as zero contribution."""
-    match = re.search(r"(?:\.pid|\.)(\d+)\.", path.name)
-    detail = {"data_file": path.name, "pid": int(match.group(1)) if match else None}
+# A coverage data file is written when its process exits, in several SQLite transactions, so a
+# concurrent reader can see it before the writer has finished. The settle window re-observes such a
+# file until two consecutive hashes agree; it never admits a file whose bytes keep changing, and it
+# never admits a file that settles unreadable.
+RAW_OBSERVATION_WINDOW_SECONDS = 5.0
+RAW_OBSERVATION_POLL_SECONDS = 0.05
+RAW_OBSERVATION_TRAIL_LIMIT = 4
+RAW_DATA_CHANGED = "Native coverage raw data changed while being read"
+RAW_DATA_UNQUALIFIED = (
+    "Unreadable raw data retained; original-source execution is unknown; never admitted"
+)
+
+
+def raw_data_pid(name: str) -> int | None:
+    """Writer pid recorded in a native coverage data file's name, or None."""
+    match = re.search(r"(?:\.pid|\.)(\d+)\.", name)
+    return int(match.group(1)) if match else None
+
+
+def raw_data_writer_alive(pid: int | None) -> bool | None:
+    """Liveness of a data file's writer; None where it cannot be observed (non-POSIX, no pid)."""
+    if pid is None or os.name != "posix":
+        return None
     try:
-        detail["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def observe_raw_coverage(
+    path: Path, checkout: Path
+) -> tuple[CoverageData | None, dict]:
+    """Read one native coverage data file once: hash, parse, re-hash.
+
+    ``changed`` marks bytes that differed between the two hashes. Only that condition is retried by
+    the settle window: a writer finishing its database is benign, while a stable file that cannot be
+    parsed is corruption and is returned unreadable at once.
+    """
+    observation: dict = {
+        "size": None,
+        "sha256": None,
+        "readable": False,
+        "changed": False,
+        "error_class": None,
+        "error": None,
+    }
+    data: CoverageData | None = None
+    try:
+        first = path.read_bytes()
+        observation["size"] = len(first)
+        observation["sha256"] = hashlib.sha256(first).hexdigest()
         data = CoverageData(basename=str(path))
         data.read()
         executed_original = {
@@ -469,21 +517,121 @@ def read_raw_coverage(path: Path, checkout: Path) -> tuple[CoverageData | None, 
             if Path(filename).resolve().is_relative_to(checkout / "src/gnn")
             and data.lines(filename)
         }
-        detail.update(
+        observation.update(
+            readable=True,
             measured_files=len(data.measured_files()),
             admitted_source_executed_lines=sum(executed_original.values()),
         )
-        if hashlib.sha256(path.read_bytes()).hexdigest() != detail["sha256"]:
-            raise DataError("Native coverage raw data changed while being read")
-        return data, detail
     except (DataError, OSError) as error:
+        observation.update(error_class=type(error).__name__, error=str(error))
+        data = None
+    if observation["sha256"] is not None:
+        try:
+            unchanged = (
+                hashlib.sha256(path.read_bytes()).hexdigest() == observation["sha256"]
+            )
+        except OSError as error:
+            unchanged = False
+            observation.update(error_class=type(error).__name__, error=str(error))
+        if not unchanged:
+            observation.update(
+                changed=True, error_class="DataError", error=RAW_DATA_CHANGED
+            )
+            return None, observation
+    return data, observation
+
+
+def raw_coverage_detail(
+    path: Path,
+    pid: int | None,
+    trail: list[dict],
+    started: float,
+    *,
+    admitted: bool,
+    error_class: str | None = None,
+    error: str | None = None,
+    writer_alive: bool | None = None,
+) -> dict:
+    """Receipt detail for one data file: what was observed, and what settling cost."""
+    last = trail[-1]
+    detail: dict = {
+        "data_file": path.name,
+        "pid": pid,
+        "sha256": last["sha256"],
+        "size": last["size"],
+        "settle_window_seconds": RAW_OBSERVATION_WINDOW_SECONDS,
+        "poll_seconds": RAW_OBSERVATION_POLL_SECONDS,
+        "observations": len(trail),
+        "elapsed_seconds": round(time.monotonic() - started, 6),
+        "observation_trail": trail[:RAW_OBSERVATION_TRAIL_LIMIT],
+        "writer_alive_at_decision": writer_alive,
+        "settled": admitted,
+        "measured_files": last.get("measured_files"),
+        "admitted_source_executed_lines": last.get("admitted_source_executed_lines"),
+    }
+    if len(trail) > RAW_OBSERVATION_TRAIL_LIMIT:
+        detail["observation_trail_omitted"] = len(trail) - RAW_OBSERVATION_TRAIL_LIMIT
+    if not admitted:
         detail.update(
-            error_class=type(error).__name__,
-            error=str(error),
+            error_class=error_class,
+            error=error,
             admitted_source_executed_lines=None,
-            qualification="Unreadable raw data retained; original-source execution is unknown; never admitted",
+            qualification=RAW_DATA_UNQUALIFIED,
         )
-        return None, detail
+    return detail
+
+
+def read_raw_coverage(path: Path, checkout: Path) -> tuple[CoverageData | None, dict]:
+    """Read a native coverage data file, re-observing it while its writer is still finalizing it.
+
+    The file is observed until two consecutive hashes agree (the writer has stopped) or until
+    ``RAW_OBSERVATION_WINDOW_SECONDS`` elapses. A file that settles and parses is admitted, with
+    every observation recorded in the receipt so the admission is auditable; a file that never
+    settles is rejected with the original change error, and a file that settles unreadable is
+    rejected with the error it produced. Retain unreadable native data as unknown, never as zero
+    contribution.
+    """
+    pid = raw_data_pid(path.name)
+    started = time.monotonic()
+    deadline = started + RAW_OBSERVATION_WINDOW_SECONDS
+    trail: list[dict] = []
+    while True:
+        data, observation = observe_raw_coverage(path, checkout)
+        trail.append(observation)
+        if observation["changed"]:
+            writer_alive = raw_data_writer_alive(pid)
+            if writer_alive is False or time.monotonic() >= deadline:
+                return None, raw_coverage_detail(
+                    path,
+                    pid,
+                    trail,
+                    started,
+                    admitted=False,
+                    error_class="DataError",
+                    error=RAW_DATA_CHANGED,
+                    writer_alive=writer_alive,
+                )
+            time.sleep(RAW_OBSERVATION_POLL_SECONDS)
+            continue
+        if data is None:
+            return None, raw_coverage_detail(
+                path,
+                pid,
+                trail,
+                started,
+                admitted=False,
+                error_class=observation["error_class"],
+                error=observation["error"],
+                writer_alive=raw_data_writer_alive(pid),
+            )
+        return data, raw_coverage_detail(
+            path,
+            pid,
+            trail,
+            started,
+            admitted=True,
+            writer_alive=raw_data_writer_alive(pid),
+        )
 
 
 def installed_inventory() -> list[dict]:
