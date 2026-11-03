@@ -77,15 +77,32 @@ HTTP probe.
 
 ### Timeout interaction
 
-Step-22 runs under a **600-second cap** pinned in
-`src/gnn/pipeline/step_timeouts.py` (`STEP_TIMEOUTS["22_gui.py"] = 600`, line 26;
-`DEFAULT_TIMEOUT = 180` applies to steps without a pin). The cap is enforced in both
-execution tiers — subprocess (src/gnn/main.py:1712-1726) and in-process
-(src/gnn/pipeline/step_executor.py:507-513) — through `get_step_timeout()`
-(step_timeouts.py:34-62). `GNN_STEP_TIMEOUT_22` (absolute) and
-`GNN_STEP_TIMEOUT_SCALE` (multiplier) are the documented overrides
-(step_timeouts.py:1-8); see [pipeline/README.md](../../../src/gnn/pipeline/README.md)
-for the knob documentation. Interactive GUI servers never exit on their own, and the
+Step 22 runs under a **600-second declared budget** in
+`gnn.pipeline.step_timeouts.STEP_TIMEOUTS` (`"22_gui.py": 600`; measured 2.9 seconds
+for the headless default in the 2026-11-02 full-corpus run). Every step registered
+in `step_registry.STEPS` must declare a budget in that table, and an undeclared
+step or dictionary variant fails closed with `StepTimeoutNotDeclared` instead of
+inheriting a silent default — a registered step with no entry fails at import of
+`step_timeouts`, and `get_step_timeout()` fails at the call for an unknown script
+name or a missing `default`/`comprehensive` variant. That contract is carried by
+the step-timeout hardening PR #307; until it merges, an entry-less step still
+receives the old implicit 180-second default.
+
+The budget is enforced in both execution tiers — the subprocess step runner
+(`gnn.pipeline.summary_wiring.execute_pipeline_step`, re-exported by `gnn.main`)
+and consolidated in-process execution (`gnn.pipeline.step_executor`) — through
+`get_step_timeout()`. `GNN_STEP_TIMEOUT_22` (absolute) and
+`GNN_STEP_TIMEOUT_SCALE` (multiplier) are the documented overrides; see
+[pipeline/README.md](../../../src/gnn/pipeline/README.md) for the knob
+documentation.
+
+Step 13 (LLM) resolves its budget from the run when one is present:
+`llm.timeout_seconds` when configured, else 600 seconds per selected model
+(22,800 seconds for a 38-model corpus), intersected with the invocation deadline
+(`RunContext.bounded_timeout()`). The declared `13_llm.py` value (900 seconds)
+applies only to a run with no run context. See [13_llm.md](13_llm.md).
+
+Interactive GUI servers never exit on their own, and the
 keep-alive loop (processor.py:303-316) holds the process while any server is live, so
 an `--interactive` run inside a pipeline consumes the whole step budget and is killed
 at the wall. The headless default (PR #142: `headless = not interactive`,
