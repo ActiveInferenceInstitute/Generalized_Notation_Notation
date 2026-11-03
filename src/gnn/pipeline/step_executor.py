@@ -682,7 +682,7 @@ def execute_step_in_process(
         call_kwargs[_CANCEL_TOKEN_PARAM] = cancel_token
 
     if timeout_seconds is None:
-        # Same budget knob as the subprocess tier (main.py): the per-step
+        # Same budget knob as the subprocess tier (summary_wiring): the per-step
         # STEP_TIMEOUTS value with the GNN_STEP_TIMEOUT_{N} /
         # GNN_STEP_TIMEOUT_SCALE env overrides.
         comprehensive_requested = any("--comprehensive" in str(arg) for arg in sys.argv)

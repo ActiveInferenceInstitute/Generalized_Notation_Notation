@@ -2,10 +2,14 @@
 
 Timeout configuration decides whether a legitimate long-running step (e.g.
 Step 12 executing every model across all frameworks) is killed mid-run, so
-the resolution order — env override, explicit per-step config, default — is
-product behavior, not administrative metadata. The in-process tier is held
-to the same knobs (BC-13): its budget resolves through ``get_step_timeout``
-with the ``GNN_STEP_TIMEOUT_{N}`` / ``GNN_STEP_TIMEOUT_SCALE`` env overrides.
+the resolution order — env override, explicit per-step config, and *no*
+silent default — is product behavior, not administrative metadata. A step
+whose budget is not declared fails closed with ``StepTimeoutNotDeclared``:
+the old silent 180-second fallback killed a legitimate 202.6-second
+``20_website.py`` build during the 2026-11-02 full-corpus run. The
+in-process tier is held to the same knobs (BC-13): its budget resolves
+through ``get_step_timeout`` with the ``GNN_STEP_TIMEOUT_{N}`` /
+``GNN_STEP_TIMEOUT_SCALE`` env overrides.
 """
 
 from __future__ import annotations
@@ -20,9 +24,10 @@ import pytest
 
 from gnn.pipeline import step_executor, step_timeouts
 from gnn.pipeline.step_executor import execute_step_in_process
+from gnn.pipeline.step_registry import STEPS
 from gnn.pipeline.step_timeouts import (
-    DEFAULT_TIMEOUT,
     STEP_TIMEOUTS,
+    StepTimeoutNotDeclared,
     get_step_timeout,
 )
 from gnn.utils.arguments.pipeline_arguments import PipelineArguments
@@ -40,6 +45,9 @@ def _pipeline_args(output_dir: Path) -> PipelineArguments:
 def test_known_step_returns_configured_timeout() -> None:
     assert get_step_timeout("3_gnn.py") == 300
     assert get_step_timeout("12_execute.py") == 7200
+    # 20_website.py declares a budget well above its measured full-corpus cost
+    # (271.0 s); the previous 180 s implicit default killed it mid-build.
+    assert get_step_timeout("20_website.py") == 900
 
 
 def test_comprehensive_flag_selects_dict_variant(
@@ -50,16 +58,33 @@ def test_comprehensive_flag_selects_dict_variant(
     assert get_step_timeout("2_tests.py", comprehensive=True) == 1200
 
 
-def test_unknown_step_returns_default() -> None:
-    assert get_step_timeout("99_unknown.py") == DEFAULT_TIMEOUT
+def test_undeclared_step_fails_closed() -> None:
+    with pytest.raises(StepTimeoutNotDeclared):
+        get_step_timeout("99_unknown.py")
+
+
+def test_missing_dict_variant_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(STEP_TIMEOUTS, "1_setup.py", {"default": 5})
+    assert get_step_timeout("1_setup.py") == 5
+    with pytest.raises(StepTimeoutNotDeclared):
+        get_step_timeout("1_setup.py", comprehensive=True)
 
 
 def test_env_override_wins(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GNN_STEP_TIMEOUT_3", "42")
     assert get_step_timeout("3_gnn.py") == 42
-    # Override applies even to steps without explicit config
+
+
+def test_env_override_cannot_invent_a_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # An operator override is an absolute value for a declared step; it is
+    # not a way to run a step the pipeline never sized.
     monkeypatch.setenv("GNN_STEP_TIMEOUT_99", "77")
-    assert get_step_timeout("99_unknown.py") == 77
+    with pytest.raises(StepTimeoutNotDeclared):
+        get_step_timeout("99_unknown.py")
 
 
 def test_invalid_env_value_falls_back_to_config(
@@ -69,7 +94,16 @@ def test_invalid_env_value_falls_back_to_config(
     assert get_step_timeout("3_gnn.py") == 300
 
 
-def test_every_registered_step_has_positive_timeout() -> None:
+def test_every_registered_step_declares_a_timeout() -> None:
+    # The guard that makes "no entry" a failure rather than a default: a step
+    # added to the registry without a measured budget cannot ship silently.
+    missing = [
+        step.script_name for step in STEPS if step.script_name not in STEP_TIMEOUTS
+    ]
+    assert missing == []
+
+
+def test_every_declared_budget_is_positive() -> None:
     # Guard against a typo introducing a zero/negative timeout that would
     # kill a step instantly.
     for name, cfg in STEP_TIMEOUTS.items():
@@ -82,7 +116,10 @@ def test_scale_multiplier_applies(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("GNN_STEP_TIMEOUT_3", raising=False)
     monkeypatch.setenv("GNN_STEP_TIMEOUT_SCALE", "3")
     assert get_step_timeout("3_gnn.py") == 900  # 300 * 3
-    assert get_step_timeout("99_unknown.py") == DEFAULT_TIMEOUT * 3
+    assert get_step_timeout("4_model_registry.py") == 540  # 180 * 3
+    # Scaling multiplies declared budgets; it does not manufacture one.
+    with pytest.raises(StepTimeoutNotDeclared):
+        get_step_timeout("99_unknown.py")
 
 
 def test_scale_multiplier_invalid_or_nonpositive_ignored(
