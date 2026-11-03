@@ -59,9 +59,15 @@ source-bound count receipt. The required statuses `test (3.11)`, `test (3.12)`
 and `test (3.13)` retain their names.
 
 Python 3.12 quality checks and its main test suite run on separate runners.
-The aggregate `test (3.12)` job uses `always()` and requires both lane results
-to be `success`; failure, cancellation, skipping or a missing result prevents
-acceptance. Each runner installs locked dependencies once; CI commands then
+The aggregate `test (3.12)` job uses `always() && !cancelled()` and requires
+both lane results to be `success`; failure, cancellation, skipping or a missing
+result prevents acceptance. `always()` keeps a genuinely failed prerequisite
+failing the gate; `!cancelled()` only skips the guard when the run itself was
+cancelled (a superseded push), so a late-scheduled guard does not record a
+permanent "cancelled != success" failure on the merge commit. Cancellation
+inside a non-cancelled run — matrix `fail-fast` cancelling sibling legs — still
+fails, because the prerequisite's own result is `cancelled`, not `success`.
+Each runner installs locked dependencies once; CI commands then
 use `uv run --frozen --no-sync`. This changes scheduling and repeated setup,
 while preserving test, security and custody coverage.
 

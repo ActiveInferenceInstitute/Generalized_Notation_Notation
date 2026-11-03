@@ -244,9 +244,16 @@ jobs:
 
   test312:
     # Preserve the required status while independent checks run in parallel.
+    # `always()` keeps a genuinely failed prerequisite failing this gate. The
+    # added `!cancelled()` skips the guard only when the run itself was
+    # cancelled — a superseded push — so the late-scheduled guard no longer
+    # records a permanent "cancelled != success" failure on the merge commit.
+    # Do NOT relax the assertions to accept `cancelled`: a prerequisite can be
+    # cancelled inside a non-cancelled run when matrix `fail-fast` cancels
+    # sibling legs, and accepting that would turn a failed matrix green.
     name: test (3.12)
     needs: [pytest312, quality]
-    if: always()
+    if: always() && !cancelled()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
