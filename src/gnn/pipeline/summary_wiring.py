@@ -100,6 +100,59 @@ SAFE_WARNING_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Bounded warning-reason capture. A step's status alone cannot distinguish "no
+# warnings" from "a warning we could not attribute": both used to share one empty
+# representation. These limits keep the recorded evidence small next to the step
+# output already persisted in the same entry (tens to hundreds of KB per step).
+WARNING_REASON_LIMIT = 8
+WARNING_REASON_MAX_CHARS = 200
+_ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+_TIMESTAMP_PREFIX_PATTERN = re.compile(
+    r"^\s*(?:\[?\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:[.,]\d+)?\]?[\s:,-]*)+"
+)
+
+
+def _warning_lines(step_result: dict[str, Any]) -> list[str]:
+    """Return every line of a step's captured output that mentions a warning."""
+    combined_output = (
+        f"{step_result.get('stdout', '')}\n{step_result.get('stderr', '')}"
+    )
+    return [
+        line for line in combined_output.splitlines() if WARNING_PATTERN.search(line)
+    ]
+
+
+def _normalize_warning_reason(line: str) -> str:
+    """Normalize one warning line into a stable, bounded reason string.
+
+    Drops ANSI escapes and a leading log timestamp, collapses whitespace, and
+    caps the result at ``WARNING_REASON_MAX_CHARS`` so two runs of the same
+    warning compare equal and one entry stays small.
+    """
+    text = _TIMESTAMP_PREFIX_PATTERN.sub("", _ANSI_ESCAPE_PATTERN.sub("", line))
+    return re.sub(r"\s+", " ", text).strip()[:WARNING_REASON_MAX_CHARS]
+
+
+def _bounded_warning_reasons(lines: list[str]) -> tuple[list[str], int, bool]:
+    """Return the bounded, deduplicated reasons for one step entry.
+
+    Returns the first ``WARNING_REASON_LIMIT`` distinct reasons in first-seen
+    order, the number of distinct reasons found, and whether that list was
+    truncated.
+    """
+    reasons: list[str] = []
+    seen: set[str] = set()
+    for line in lines:
+        reason = _normalize_warning_reason(line)
+        if reason and reason not in seen:
+            seen.add(reason)
+            reasons.append(reason)
+    return (
+        reasons[:WARNING_REASON_LIMIT],
+        len(reasons),
+        len(reasons) > WARNING_REASON_LIMIT,
+    )
+
 
 def step_number_from_script_name(script_name: str) -> int:
     """Return the numeric step encoded in an ``N_*.py`` script filename.
@@ -194,16 +247,53 @@ def _annotate_step_result(
 
 def _step_has_actionable_warning(step_result: dict[str, Any]) -> bool:
     """Return true when step output contains warnings not on the safe-noise list."""
-    combined_output = (
-        f"{step_result.get('stdout', '')}\n{step_result.get('stderr', '')}"
+    return any(
+        not SAFE_WARNING_PATTERN.search(line) for line in _warning_lines(step_result)
     )
-    warning_lines = [
-        line for line in combined_output.splitlines() if WARNING_PATTERN.search(line)
-    ]
-    if not warning_lines:
-        return False
 
-    return any(not SAFE_WARNING_PATTERN.search(line) for line in warning_lines)
+
+def _record_warning_reasons(step_result: dict[str, Any], has_warning: bool) -> None:
+    """Record bounded warning reasons and where they came from.
+
+    ``warning_reason_source`` is written on every step, so an absent reason list
+    is never ambiguous: ``step_output_scan`` (actionable lines found in
+    stdout/stderr), ``step_declaration`` (the step reported its own warnings),
+    ``exit_code_only`` (a ``SUCCESS_WITH_WARNINGS`` status with no captured
+    text, i.e. the exit-code route), or ``none``. ``warning_reasons`` and its
+    count/truncation flags are written only when reasons exist.
+    """
+    reasons: list[str] = []
+    count = 0
+    truncated = False
+    source = "none"
+    if has_warning:
+        actionable = [
+            line
+            for line in _warning_lines(step_result)
+            if not SAFE_WARNING_PATTERN.search(line)
+        ]
+        reasons, count, truncated = _bounded_warning_reasons(actionable)
+        if reasons:
+            source = "step_output_scan"
+    if not reasons:
+        declared = (
+            step_result.get("warnings") or step_result.get("dependency_warnings") or []
+        )
+        declared_lines = (
+            [str(item) for item in declared]
+            if isinstance(declared, (list, tuple))
+            else [str(declared)]
+        )
+        reasons, count, truncated = _bounded_warning_reasons(declared_lines)
+        if reasons:
+            source = "step_declaration"
+        elif step_result.get("status") == "SUCCESS_WITH_WARNINGS":
+            source = "exit_code_only"
+    step_result["warning_reason_source"] = source
+    if reasons:
+        step_result["warning_reasons"] = reasons
+        step_result["warning_reason_count"] = count
+        step_result["warning_reasons_truncated"] = truncated
 
 
 def _update_performance_summary(
@@ -355,6 +445,7 @@ def _record_step_result(
     has_warning = _step_has_actionable_warning(step_result)
     if step_result["status"] == "SUCCESS" and has_warning:
         step_result["status"] = "SUCCESS_WITH_WARNINGS"
+    _record_warning_reasons(step_result, has_warning)
 
     # Receipt: record which execution mode produced this step entry. The
     # consolidated executor stamps "consolidated" on its own receipts.
