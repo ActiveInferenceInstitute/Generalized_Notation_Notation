@@ -133,9 +133,7 @@ def test_actinf_pomdp_agent_has_one_box_per_declared_connection(tmp_path: Path) 
     from gnn.render.pomdp_processor import pomdp_to_gnn_spec
 
     spec = pomdp_to_gnn_spec(
-        extract_pomdp_from_file(
-            Path("input/gnn_files/discrete/actinf_pomdp_agent.md")
-        )
+        extract_pomdp_from_file(Path("input/gnn_files/discrete/actinf_pomdp_agent.md"))
     )
     assert len(spec["connections"]) == 11
     path = tmp_path / "actinf_discopy.py"
@@ -145,6 +143,7 @@ def test_actinf_pomdp_agent_has_one_box_per_declared_connection(tmp_path: Path) 
     module = _load_module(path)
     _, boxes, signatures = module.build_diagram()
     assert len(boxes) == len(spec["connections"]) == 11
+
     # Every declared connection is represented exactly once, with its endpoints.
     def _wires(value: Any) -> list[str]:
         if isinstance(value, list):

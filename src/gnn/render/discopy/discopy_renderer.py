@@ -56,7 +56,9 @@ def _split_endpoint(value: Any) -> List[str]:
     return [part.strip() for part in parts if part.strip()]
 
 
-def _parse_connection_entry(entry: Any, index: int) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+def _parse_connection_entry(
+    entry: Any, index: int
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Return the literal metadata record and the normalised wiring record."""
     if isinstance(entry, dict):
         if "source" not in entry or "target" not in entry:
