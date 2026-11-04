@@ -11,6 +11,27 @@ import numpy as np
 
 CONTRACTS = ("block_reset_v1", "timed_soft_controller_v1", "episodic_contingent_v1")
 
+#: Frame capability markers for source-declared finite controls.  These sit
+#: deliberately outside ``CONTRACTS``: a specification cannot opt into one by
+#: declaring ``execution_contract``.  They record that a frame's adapter
+#: executes the finite controls the source already carries in
+#: ``initialparameterization["cpomdp_control"]``.
+CONTROL_CONTRACTS = ("cpomdp_control_v1",)
+
+#: Every capability refusal starts with this prefix (``unsupported-<class>:``).
+UNSUPPORTED_PREFIX = "unsupported-"
+
+
+def is_unsupported_message(message: object) -> bool:
+    """Whether a renderer message is a typed capability refusal.
+
+    Refusals are classified by their ``unsupported-<class>:`` prefix, the same
+    convention every registry-declared gap uses, so a new typed refusal is
+    classified without touching the dispatch table.  An untagged failure
+    message stays a failure.
+    """
+    return str(message).startswith(UNSUPPORTED_PREFIX)
+
 
 def execution_contract(spec: object) -> str | None:
     """Return an explicitly declared execution contract, including unknown versions."""
@@ -36,10 +57,13 @@ def unsupported_contract(spec: object, framework: str) -> str | None:
             spec.get("initial_parameterization"),
         )
     )
-    if declared_controls and framework != "cpomdp":
+    # The frame's own declared contracts answer the control question: a frame
+    # that declares a control contract executes source-declared finite
+    # controls, every other frame refuses them rather than dropping them.
+    supported = FRAMEWORK_REGISTRY.get(framework, {}).get("execution_contracts", ())
+    if declared_controls and not set(supported).intersection(CONTROL_CONTRACTS):
         return f"unsupported-cpomdp-control: {framework} cannot execute source-declared finite controls"
     contract = execution_contract(spec)
-    supported = FRAMEWORK_REGISTRY.get(framework, {}).get("execution_contracts", ())
     if contract is not None and (
         contract not in CONTRACTS or contract not in supported
     ):

@@ -140,6 +140,16 @@ def test_missing_connections_refuses_through_single_spec_door(
     assert artifacts == []
     assert not list(tmp_path.glob("*_discopy.py"))
 
+    # The same refusal through the processor's dispatch is classified as an
+    # unsupported cell (typed prefix), not as a render failure.
+    from gnn.render.pomdp_processor import POMDPRenderProcessor
+
+    dispatch_dir = tmp_path / "dispatch"
+    receipt = POMDPRenderProcessor(tmp_path)._call_discopy_renderer(spec, dispatch_dir)
+    assert receipt["success"] is False
+    assert receipt["unsupported"] is True and receipt["status"] == "unsupported"
+    assert receipt["artifacts"] == []
+
 
 def test_legacy_generator_is_not_in_target_dispatch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch

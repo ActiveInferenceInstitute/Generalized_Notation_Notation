@@ -245,6 +245,7 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
             "supports_continuous": True,
             "continuous_only": True,
             "experimental": True,
+            "execution_contracts": ["cpomdp_control_v1"],
             "unavailable_reason": None,
         },
         "thrml": {
@@ -341,7 +342,14 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
 #:     ``unsupported-discrete-state:`` refusals against this declaration.
 #:
 #: ``execution_contracts`` remains a separate top-level registry key consumed
-#: by :func:`gnn.render.execution_contracts.unsupported_contract`.  The
+#: by :func:`gnn.render.execution_contracts.unsupported_contract`; it also
+#: carries the control-contract marker that answers whether a frame executes
+#: source-declared finite controls, and it is what admits a spec whose
+#: per-factor action counts cannot be flattened (``temporal_hierarchy``), so
+#: action structure is answered per spec by the declared contract rather than
+#: by a second capability dimension.  Falsifier: if a Kronecker-factorized
+#: corpus spec (``B_fN`` keys and no ``control_factors``) arrives,
+#: ``action_composition`` is the dimension this decision defers to.  The
 #: registry-level ``supports_continuous``/``continuous_only`` flags remain the
 #: summary the manuscript tables read; a conformance test pins them equal to
 #: the ``state_space`` declaration for every frame so the two surfaces cannot
