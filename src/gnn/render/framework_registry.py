@@ -331,12 +331,22 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
 #:     with no wiring; empty when the frame does not consume the connection
 #:     graph. DisCoPy is the explicit-wiring frame: its boxes are the declared
 #:     connections, not a fixed circuit.
+#:   ``state_space`` -- which state-space kinds the frame *consumes*:
+#:     ``discrete`` (categorical ``A/B/C/D[/E]`` POMDPs) and/or ``continuous``
+#:     (linear-Gaussian ``F/H/Q/R`` blocks).  ``("continuous",)`` marks a
+#:     continuous-only backend that refuses discrete models;
+#:     ``("discrete",)`` marks a frame that refuses continuous state; both
+#:     values mark a frame that renders either kind.  The compatibility gate
+#:     types its ``unsupported-continuous-state:`` and
+#:     ``unsupported-discrete-state:`` refusals against this declaration.
 #:
 #: ``execution_contracts`` remains a separate top-level registry key consumed
-#: by :func:`gnn.render.execution_contracts.unsupported_contract`; the
-#: discrete/continuous split is declared by ``supports_continuous`` and
-#: ``continuous_only``.  Together these are the machine-checked render
-#: capabilities; prose ``supported_features`` is documentation, not a gate.
+#: by :func:`gnn.render.execution_contracts.unsupported_contract`.  The
+#: registry-level ``supports_continuous``/``continuous_only`` flags remain the
+#: summary the manuscript tables read; a conformance test pins them equal to
+#: the ``state_space`` declaration for every frame so the two surfaces cannot
+#: drift.  Together these are the machine-checked render capabilities; prose
+#: ``supported_features`` is documentation, not a gate.
 RENDER_DIMENSION_VALUES: Mapping[str, Tuple[str, ...]] = MappingProxyType(
     {
         "continuous_composition": ("flat", "factored", "independent_agents"),
@@ -344,6 +354,7 @@ RENDER_DIMENSION_VALUES: Mapping[str, Tuple[str, ...]] = MappingProxyType(
         "planning": ("none", "one_step_only"),
         "mixed_family_composition": ("whole",),
         "connection_graph": ("explicit",),
+        "state_space": ("discrete", "continuous"),
     }
 )
 
@@ -360,6 +371,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
                 "connection_graph": (),
+                "state_space": ("discrete",),
             },
             "rxinfer": {
                 "continuous_composition": ("flat", "independent_agents"),
@@ -367,6 +379,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
                 "connection_graph": (),
+                "state_space": ("discrete", "continuous"),
             },
             "activeinference_jl": {
                 "continuous_composition": (),
@@ -374,6 +387,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
                 "connection_graph": (),
+                "state_space": ("discrete",),
             },
             "jax": {
                 "continuous_composition": (
@@ -385,6 +399,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
                 "connection_graph": (),
+                "state_space": ("discrete", "continuous"),
             },
             "discopy": {
                 "continuous_composition": (),
@@ -392,6 +407,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("none",),
                 "mixed_family_composition": (),
                 "connection_graph": ("explicit",),
+                "state_space": ("discrete",),
             },
             "pytorch": {
                 "continuous_composition": ("flat",),
@@ -399,6 +415,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
                 "connection_graph": (),
+                "state_space": ("discrete", "continuous"),
             },
             "numpyro": {
                 "continuous_composition": ("flat",),
@@ -406,6 +423,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("one_step_only",),
                 "mixed_family_composition": (),
                 "connection_graph": (),
+                "state_space": ("discrete", "continuous"),
             },
             "stan": {
                 "continuous_composition": ("flat",),
@@ -413,6 +431,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("none",),
                 "mixed_family_composition": (),
                 "connection_graph": (),
+                "state_space": ("discrete", "continuous"),
             },
             "bnlearn": {
                 "continuous_composition": (),
@@ -420,6 +439,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("none",),
                 "mixed_family_composition": (),
                 "connection_graph": (),
+                "state_space": ("discrete",),
             },
             "cpomdp": {
                 "continuous_composition": ("flat",),
@@ -427,6 +447,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("none",),
                 "mixed_family_composition": (),
                 "connection_graph": (),
+                "state_space": ("continuous",),
             },
             "thrml": {
                 "continuous_composition": (),
@@ -434,6 +455,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("none",),
                 "mixed_family_composition": (),
                 "connection_graph": (),
+                "state_space": ("discrete",),
             },
             "ngclearn": {
                 "continuous_composition": ("flat",),
@@ -441,6 +463,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                 "planning": ("none",),
                 "mixed_family_composition": (),
                 "connection_graph": (),
+                "state_space": ("continuous",),
             },
         }
     )

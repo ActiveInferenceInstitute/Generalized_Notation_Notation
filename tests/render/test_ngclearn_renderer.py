@@ -56,11 +56,13 @@ _REGISTRY_FIELDS = {
 }
 
 _POMDP_UNSUPPORTED_MESSAGE = (
-    "discrete POMDP: ngc-learn supports continuous linear-Gaussian models only"
+    "unsupported-discrete-state: discrete POMDP: ngc-learn supports continuous "
+    "linear-Gaussian models only"
 )
 
 _DISCRETE_MESSAGE = (
-    "discrete POMDP: ngclearn supports continuous linear-Gaussian models only"
+    "unsupported-discrete-state: discrete POMDP: ngclearn supports continuous "
+    "linear-Gaussian models only"
 )
 
 

@@ -148,13 +148,18 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
             }
 
         if getattr(pomdp_space, "model_kind", "discrete") == "continuous":
-            if not config.get("supports_continuous", False):
+            # The declaration is the gate, not the registry-level flag: a
+            # frame's ``state_space`` omitting ``continuous`` is what makes a
+            # continuous model first-class unsupported.  The flag and the
+            # declaration are pinned equal by a conformance test.
+            if not supports_render_dimension(framework, "state_space", "continuous"):
                 return {
                     "compatible": False,
                     "unsupported": True,
                     "reason": (
-                        f"continuous-state model: {config.get('name', framework)} "
-                        "supports discrete POMDPs only"
+                        "unsupported-continuous-state: continuous-state model: "
+                        f"{config.get('name', framework)} supports discrete "
+                        "POMDPs only"
                     ),
                     "warnings": warnings,
                 }
@@ -190,17 +195,18 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
                 "warnings": warnings,
             }
 
-        # Continuous-only backends (registry ``continuous_only``) declare no
-        # discrete A/B/C/D[/E] machinery: a discrete POMDP is first-class
-        # unsupported for them — never recorded as a failed render, and never
-        # forced through a renderer that would refuse it anyway.
-        if config.get("continuous_only", False):
+        # Frames whose ``state_space`` declaration omits ``discrete`` carry no
+        # A/B/C/D[/E] machinery: a discrete POMDP is first-class unsupported
+        # for them — never recorded as a failed render, and never forced
+        # through a renderer that would refuse it anyway.
+        if not supports_render_dimension(framework, "state_space", "discrete"):
             return {
                 "compatible": False,
                 "unsupported": True,
                 "reason": (
-                    f"discrete POMDP: {config.get('name', framework)} "
-                    "supports continuous linear-Gaussian models only"
+                    "unsupported-discrete-state: discrete POMDP: "
+                    f"{config.get('name', framework)} supports continuous "
+                    "linear-Gaussian models only"
                 ),
                 "warnings": warnings,
             }
