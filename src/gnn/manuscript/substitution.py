@@ -15,7 +15,7 @@ import re
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import cast
+from typing import Callable, cast
 
 _FALLBACK_TOKEN_RE = re.compile(r"\{\{([A-Z][A-Z0-9_]*)\}\}")
 _FALLBACK_EXCLUDED = frozenset(
@@ -88,7 +88,7 @@ def rebase_output_links_for_destination(text: str) -> str:
     if _INJECTOR is not None:
         rebase = getattr(_INJECTOR, "_rebase_output_links_for_destination", None)
         if rebase is not None:
-            return cast("Callable[[str], str]", rebase)(text)
+            return cast(Callable[[str], str], rebase)(text)
     return _fallback_rebase_output_links(text)
 
 
