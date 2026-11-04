@@ -31,3 +31,15 @@ repos:
       - id: check-merge-conflict
       - id: debug-statements
         types: [python]
+
+  # ── Repository terminology ──
+  # The same command the `markdown-audit` job runs first, so a prohibited word
+  # fails on the commit instead of after the push.
+  - repo: local
+    hooks:
+      - id: repo-terminology
+        name: repository terminology (strict)
+        entry: python scripts/check_repo_terminology.py --strict
+        language: python
+        pass_filenames: false
+        files: '^(src|docs|input|scripts|tests)/.*\.(py|md)$'

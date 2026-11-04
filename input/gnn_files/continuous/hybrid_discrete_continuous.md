@@ -36,7 +36,9 @@ Hybrid specs classify under BOTH families — `detect_model_kinds` returns
 step reports every framework as `unsupported-composition` (continuous x
 hybrid) rather than silently rendering the spec as discrete-only or
 continuous-only. Per-framework hybrid rendering is future work on the
-renderer side.
+renderer side: the mixed-family composition dimension is declared by no
+frame today, so this refusal is a known backend gap, not a missing
+declaration.
 
 ## StateSpaceBlock
 

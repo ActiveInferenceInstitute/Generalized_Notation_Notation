@@ -1,47 +1,47 @@
 {
-  "counts_describe_commit": "95e6db773",
+  "counts_describe_commit": "bd5c35d65",
   "manifest_version": "gnn_render_manifest_v1",
-  "receipt_counts_describe_commit": "95e6db773",
+  "receipt_counts_describe_commit": "bd5c35d65",
   "recorded_by": "uv run python scripts/z_record_manuscript_render_manifest.py",
   "render_artifacts_normalized_sha256": {
     "output/pdf/_combined_manuscript.log": "6b105327c38569e3739ef11613b58da90fff7204585374801711ec3b0e1e27c0",
-    "output/pdf/_combined_manuscript.md": "fb716e06fbdec4ac0f24f4baa0655fb6e6222fe5e75fe1003f4aea219fac7e16",
-    "output/pdf/_combined_manuscript.tex": "292f38f0d37aca3b62346bc43b8a02a31b465cb87fa99b58103fd312376bbba8"
+    "output/pdf/_combined_manuscript.md": "e705cd1213ff2dc49b075a9be55788eacb3d9ea98c2f30881bd3e797b8169d7e",
+    "output/pdf/_combined_manuscript.tex": "170140d448a9f1877189228d9962ed45b791c2c598eb984145b50cff6f7279c6"
   },
   "render_artifacts_sha256": {
-    "output/pdf/_combined_manuscript.log": "048c547c28c5a3be2487c6dad0effc1471f22419b468b968ac3ff55a9880da07",
-    "output/pdf/_combined_manuscript.md": "141f797c05869358fdb80b7514616d8394bb7b0d95d17cc79b371a1c3120332a",
-    "output/pdf/_combined_manuscript.tex": "61987c9d5b24c5a00afa615bbb56b930462f606b07109aca7c1bee847537f998"
+    "output/pdf/_combined_manuscript.log": "d127bba6e908fb585833994cb9c2f4eefbec29c8571108b3353819c819684752",
+    "output/pdf/_combined_manuscript.md": "6d503ef8d12aefc08a6556dda14c6d9d7af616c0813f347f26c31c36050627a2",
+    "output/pdf/_combined_manuscript.tex": "a147eaab118c17d606ee941d99c996434fdd1a990f050e081921f23f0ebb1afc"
   },
   "render_inputs_normalized_sha256": {
     "output/manuscript/00_abstract.md": "a66f146435f8300a5bfa2b3fbbc60373dec0e2e3c3fa4de9856f71e8b7eef27e",
     "output/manuscript/01_introduction.md": "5d0d444605725927d88c415bbd7b2b6d27dfe62d33130cddc3cdbc4669ccb771",
     "output/manuscript/02_system_context.md": "1527c6d45273cc67837dc04cab9ff8c56be53a4ac1929eb469a746a5e8c542b0",
     "output/manuscript/03_methods.md": "5cd5af03ec86b130f0b3ad067e31e35f6466c18094168facce81e8cd0c52ac6f",
-    "output/manuscript/04_artifacts_and_evidence.md": "38a85a1a63a25b7e5db44a6b4d64df08d665849594ad944804fb41a269d77843",
-    "output/manuscript/05_reproducibility.md": "da6d492723189acedfa5e9f12dc40bc804db154f4ce1861d58e3fe6086c96ff4",
-    "output/manuscript/06_limitations_and_next_steps.md": "ef1a338388ed0da7ce12d76be1b32e570f6956aee9aa07debf4243ccc693888e",
+    "output/manuscript/04_artifacts_and_evidence.md": "89beeda59579fb0bc67b1708876f21221097c714458fd4250673774cb1745e45",
+    "output/manuscript/05_reproducibility.md": "9f42b7039814b398a7334f0879374412cb9e7f9bca6ced1edbd772d4ff043bf1",
+    "output/manuscript/06_limitations_and_next_steps.md": "661342ebdc02da12fbc325fb7c9e63b46cdd0d19b78c278aae91af1f52076b7a",
     "output/manuscript/98_symbols_glossary.md": "4342b4bac17e063cd34f0e0805afe4769048efb22beced4887080ff198577c60",
     "output/manuscript/99_references.md": "5e80feaa0ff39228501260f8e18f34debc071e1431de9c81a48016cb428aeef2",
-    "output/manuscript/S01_source_surface.md": "94934c6af286d9d0af424c181e9eff03564181e3278474a3e576f047a4da7726",
+    "output/manuscript/S01_source_surface.md": "10f92d6443e5ec59dd05f00c574de6b3fe16c798a72db6b2d827cc1e772baf79",
     "output/manuscript/config.yaml": "9cf779fd02b796104899e2c24fb2223b465643a04b9355284ad4c3758a399e41",
     "output/manuscript/preamble.md": "ebdb657038ccf007dffefe5e3d5834145b956e6580628356975d741bcd6fb01e",
     "output/manuscript/references.bib": "ed44f4594867a193123aaf03334e12c2f12e167584d42ac5bc6074c4bfec9f0d"
   },
   "render_inputs_sha256": {
-    "output/manuscript/00_abstract.md": "39c578446fef4eab7fe87bbd91cb90dc6629c8a9dc2f9e37c435d4d8a2b081d7",
+    "output/manuscript/00_abstract.md": "ced601942f2b47064a6eb4d16e1e8872790cf719e2b46b64c9e21f653220ab7f",
     "output/manuscript/01_introduction.md": "5d0d444605725927d88c415bbd7b2b6d27dfe62d33130cddc3cdbc4669ccb771",
-    "output/manuscript/02_system_context.md": "f9e7b87cda404b00c0ee047f6b05440394d716f2c2d4c15b4f07f81765bf5113",
-    "output/manuscript/03_methods.md": "87208bd54769e12d800dfdaa983971bfcd7e972cfcff3b4c793a4f85d639a28a",
-    "output/manuscript/04_artifacts_and_evidence.md": "b7db76609b2390c3e1a9f9007f0de4ff20ad51ab46ccc147bd00fd8702c49ac7",
-    "output/manuscript/05_reproducibility.md": "66b9211962a59695495f13d1b4ae1ef40d21f9e2a7f41f24323d1f89ab51da87",
-    "output/manuscript/06_limitations_and_next_steps.md": "ef1a338388ed0da7ce12d76be1b32e570f6956aee9aa07debf4243ccc693888e",
+    "output/manuscript/02_system_context.md": "a6bf22d589ca8b1527b8973c49b6f7aa39bd6608e165400e6ef1e965e9aa7579",
+    "output/manuscript/03_methods.md": "bbc7a064b4f8eb86cf4747da5ca25db1ad28f47809000efdd1fcc89dd5ffa761",
+    "output/manuscript/04_artifacts_and_evidence.md": "415f7de5721c50c52764403e6ee0990f5fdcc0d90e547e8214117af42ce1ccd3",
+    "output/manuscript/05_reproducibility.md": "821e6fd506dc889d49950ffcc55e5ee0366a2f6e0e862f3293d0ccf77c422808",
+    "output/manuscript/06_limitations_and_next_steps.md": "661342ebdc02da12fbc325fb7c9e63b46cdd0d19b78c278aae91af1f52076b7a",
     "output/manuscript/98_symbols_glossary.md": "4342b4bac17e063cd34f0e0805afe4769048efb22beced4887080ff198577c60",
     "output/manuscript/99_references.md": "5e80feaa0ff39228501260f8e18f34debc071e1431de9c81a48016cb428aeef2",
-    "output/manuscript/S01_source_surface.md": "94934c6af286d9d0af424c181e9eff03564181e3278474a3e576f047a4da7726",
+    "output/manuscript/S01_source_surface.md": "10f92d6443e5ec59dd05f00c574de6b3fe16c798a72db6b2d827cc1e772baf79",
     "output/manuscript/config.yaml": "9cf779fd02b796104899e2c24fb2223b465643a04b9355284ad4c3758a399e41",
     "output/manuscript/preamble.md": "ebdb657038ccf007dffefe5e3d5834145b956e6580628356975d741bcd6fb01e",
     "output/manuscript/references.bib": "ed44f4594867a193123aaf03334e12c2f12e167584d42ac5bc6074c4bfec9f0d"
   },
-  "variables_sha256": "44d5f501d76ed38a6365f8f8ca1ff49bf319d45f6c480bc165e0de3b7c2f3b4f"
+  "variables_sha256": "549fabcab81a0dd33d7624b1e5f591cf5e88f4a4eb60f2256fc322c1220a8493"
 }

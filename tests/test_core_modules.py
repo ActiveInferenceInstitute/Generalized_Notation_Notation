@@ -162,7 +162,8 @@ class TestRenderModuleComprehensive:
             "variables": [{"name": "A", "dimensions": [2, 2]}],
             "model_parameters": {},
             "initial_parameterization": {},
-            "connections": [],
+            # DisCoPy renders declared wiring; a self-loop is a valid minimal graph.
+            "connections": [{"source": "A", "relation": ">", "target": "A"}],
         }
         import tempfile
 
