@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.13" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>02_system_context.md.web</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      color: light-dark(#1a1a1a, #fdfdfd);
+      background-color: #fdfdfd;
+      background-color: light-dark(#fdfdfd, #1a1a1a);
+      color-scheme: light dark;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        color-scheme: light only;
+      }
+      html, body, pre, code {
+        background-color: transparent;
+      }
+      body, a, a:visited, blockquote {
+        color: black;
+      }
+      pre, code {
+        padding: 0;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a, a:visited {
+      color: inherit;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid;
+      border-color: #e6e6e6;
+      border-color: light-dark(#e6e6e6, #4c4c4c);
+      color: #606060;
+      color: light-dark(#606060, #b6b6b6);
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid currentColor;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+    }
+    th {
+      border-top: 1px solid currentColor;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <script data-template-mathjax-config>
+window.MathJax = window.MathJax || {};
+window.MathJax.chtml = Object.assign({}, window.MathJax.chtml, {
+  fontURL: "https://cdn.jsdelivr.net/npm/@mathjax/mathjax-newcm-font@4.0.0/chtml/woff2",
+  dynamicPrefix: "https://cdn.jsdelivr.net/npm/@mathjax/mathjax-newcm-font@4.0.0/chtml/dynamic"
+});
+var templateMathOutput = window.MathJax.output || {};
+window.MathJax.output = Object.assign({}, templateMathOutput, {
+  displayOverflow: "linebreak",
+  linebreaks: Object.assign({}, templateMathOutput.linebreaks, {
+    inline: true,
+    width: "100%",
+    lineleading: 0.5
+  })
+});
+window.normalizeTemplateMathJaxAria = function () {
+  document.querySelectorAll("mjx-speech[aria-roledescription]").forEach(function (node) {
+    var roleDescription = node.getAttribute("aria-roledescription") || "";
+    if (/[-]/.test(roleDescription)) {
+      node.setAttribute("aria-roledescription", "mathematical expression");
+    }
+  });
+};
+window.MathJax.startup = Object.assign({}, window.MathJax.startup, {
+  ready: function () {
+    var measuredWidth = document.documentElement.clientWidth;
+    var reflowQueued = false;
+    window.MathJax.startup.defaultReady();
+    window.templateMathJaxReflowPromise = window.MathJax.startup.promise.then(
+      window.normalizeTemplateMathJaxAria
+    );
+    function reflowDisplayMath() {
+      if (reflowQueued || document.documentElement.clientWidth === measuredWidth) return;
+      reflowQueued = true;
+      window.templateMathJaxReflowPromise = window.templateMathJaxReflowPromise
+        .catch(function () { /* A later resize may retry a failed render. */ })
+        .then(async function () {
+          var width = document.documentElement.clientWidth;
+          try {
+            // MathJax 4 MathItem.STATE.METRICS = 110. The default RERENDER
+            // state retains old container metrics and cannot reflow on zoom.
+            await window.MathJax.startup.document.rerenderPromise(110);
+            window.normalizeTemplateMathJaxAria();
+            window.templateMathJaxReflowError = null;
+          } catch (error) {
+            window.templateMathJaxReflowError = String(error);
+            console.error("MathJax viewport reflow failed", error);
+            throw error;
+          } finally {
+            measuredWidth = width;
+            reflowQueued = false;
+          }
+        })
+        .then(reflowDisplayMath);
+      // Keep failure observable to callers without an unhandled rejection.
+      window.templateMathJaxReflowPromise.catch(function () {});
+    }
+    window.addEventListener("resize", reflowDisplayMath);
+    // Also cover a resize that happened during the initial asynchronous render.
+    window.templateMathJaxReflowPromise.then(reflowDisplayMath);
+  }
+});
+</script>
+<script defer=""
+  type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-chtml.js" integrity="sha384-2BWc4dVaHADUocwKrUrK9u3iDwHxVMKXWEcoRmUkXYSFKhAsgVAYClu9ydNuo5Oz" crossorigin="anonymous"></script>
+
+<link data-template-favicon rel="icon" href="favicon.ico">
+
+<style>
+:root {
+  --brand-1: #5b6ee0;
+  --web-bg: #f8f8f8;
+  --web-surface: #ffffff;
+  --web-text: #2c3e50;
+  --web-border: #bdc3c7;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand-1: #7e8ce8;
+    --web-bg: #0f1420;
+    --web-surface: #161c2b;
+    --web-text: #e6eaf2;
+    --web-border: #2a3447;
+  }
+}
+.theorem-box {
+  border-left: 4px solid var(--brand-1);
+  background: var(--web-surface);
+  padding: 0.6em 1em;
+  margin: 1.1em 0;
+  border-radius: 0 4px 4px 0;
+}
+.theorem-box.definition { border-left-style: dashed; }
+.theorem-box > p:first-child { margin-top: 0; }
+.theorem-box > p:last-child { margin-bottom: 0; }
+.figure-long-description {
+  border: 1px solid var(--web-border);
+  border-radius: 4px;
+  margin-block: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+.figure-long-description > summary { cursor: pointer; font-weight: 700; }
+.figure-long-description > p { max-width: 80ch; overflow-wrap: anywhere; }
+.figure-exact-values { max-width: 80ch; overflow-wrap: anywhere; }
+code { overflow-wrap: anywhere; word-break: break-word; }
+pre {
+  max-width: 100%;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+pre code { overflow-wrap: inherit; white-space: inherit; word-break: inherit; }
+div.sourceCode { max-width: 100%; overflow: visible; }
+pre.sourceCode { background: #2c3e50; color: #ecf0f1; }
+pre.sourceCode code,
+pre.sourceCode code span { color: inherit; }
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+mjx-container[display="true"] { max-width: 100%; overflow: visible; }
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+.table-scroll:focus-visible {
+  outline: 3px solid var(--brand-1);
+  outline-offset: 3px;
+}
+.table-scroll > table { margin-block: 0; min-width: 100%; width: max-content; }
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+body {
+  font-family: 'Liberation Serif', 'Times New Roman', serif;
+  line-height: 1.6;
+  width: min(100%, 800px);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f8f8;
+  color: #1a1a1a;
+  overflow-wrap: break-word;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+main,
+nav,
+section,
+article,
+figure,
+figcaption {
+  min-width: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  padding: 0.65rem 0.9rem;
+  transform: translateY(-120%);
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-family: sans-serif;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.skip-link:visited {
+  color: #ffffff;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  body {
+    width: 100%;
+    max-width: 100%;
+    padding: 16px;
+  }
+
+  figure img {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 800px) {
+  body {
+    width: 100%;
+    max-width: 100vw;
+    margin: 0 auto;
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 5px;
+  overflow-wrap: anywhere;
+}
+
+code {
+  background-color: #ecf0f1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Liberation Mono', 'Courier New', monospace;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+pre {
+  background-color: #2c3e50;
+  color: #ecf0f1;
+  padding: 15px;
+  border-radius: 5px;
+  max-width: 100%;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  overflow-wrap: inherit;
+  white-space: inherit;
+  word-break: inherit;
+}
+
+div.sourceCode {
+  max-width: 100%;
+  overflow: visible;
+}
+
+pre.sourceCode {
+  background: #2c3e50;
+  color: #ecf0f1;
+}
+
+pre.sourceCode code,
+pre.sourceCode code span {
+  color: inherit;
+}
+
+pre > code.sourceCode {
+  white-space: pre-wrap;
+}
+
+pre > code.sourceCode > span {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 20px 0;
+}
+
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+.table-scroll:focus-visible {
+  outline: 3px solid #1f6f8b;
+  outline-offset: 3px;
+}
+
+.table-scroll > table {
+  margin-block: 0;
+  min-width: 100%;
+  width: max-content;
+}
+
+figure {
+  max-width: 100%;
+  margin: 1.5rem 0;
+}
+
+th, td {
+  border: 1px solid #bdc3c7;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #1f6f8b;
+  color: white;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #bdc3c7;
+  border-radius: 5px;
+  margin: 20px 0;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+a {
+  color: #b91c1c;
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.14em;
+  overflow-wrap: anywhere;
+}
+
+a:visited {
+  color: #8f1d1d;
+}
+
+a:hover {
+  text-decoration-thickness: 0.14em;
+}
+
+a:focus-visible {
+  outline: 3px solid #1f6f8b;
+  outline-offset: 3px;
+}
+
+.toc {
+  background-color: #ecf0f1;
+  padding: 20px;
+  border-radius: 5px;
+  margin-bottom: 30px;
+}
+
+.toc a,
+#TOC a {
+  color: #b91c1c;
+  display: inline-block;
+  min-height: 28px;
+  line-height: 1.5;
+  padding-block: 2px;
+}
+
+.toc li,
+#TOC li {
+  margin-block: 1px;
+}
+
+.math {
+  text-align: center;
+  margin: 20px 0;
+  font-size: 1.1em;
+}
+
+mjx-container[display="true"] {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+  padding-bottom: 0.25rem;
+}
+
+.figure {
+  text-align: center;
+  margin: 30px 0;
+}
+
+.figure img {
+  max-width: 100%;
+  height: auto;
+  border: 2px solid #3498db;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* A reading column keeps prose comfortable, but dense scientific figures need
+   a larger inspection surface.  The rendered image remains responsive and the
+   explicit link opens its source-resolution asset without changing the PDF. */
+.figure-full-size-link {
+  color: inherit;
+  display: block;
+  max-width: 100%;
+  text-align: center;
+}
+
+.figure-full-size-link img {
+  cursor: zoom-in;
+  margin-bottom: 0.45rem;
+}
+
+.figure-full-size-label {
+  color: #1f6f8b;
+  display: inline-block;
+  font-family: sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+}
+
+.figure-full-size-link:focus-visible {
+  outline: 3px solid #1f6f8b;
+  outline-offset: 4px;
+}
+
+@media (min-width: 1000px) {
+  /* Wide figure links stay within the viewport but extend beyond the prose
+     column. Do not clip their labels at the narrower body boundary. */
+  body {
+    overflow-x: visible;
+  }
+
+  .figure-full-size-link {
+    left: 50%;
+    max-width: none;
+    position: relative;
+    transform: translateX(-50%);
+    width: min(1080px, calc(100vw - 3rem));
+  }
+}
+
+.figure-caption {
+  font-style: italic;
+  color: #4b5563;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.figure-long-description,
+.figure-exact-values {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+</style>
+<script data-template-source-font-loader src="assets/source-web-fonts.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<main id="main-content" tabindex="-1">
+<h1 id="sec:system_context">System Context</h1>
+<p>Generalized Notation Notation (GNN) couples a small, declarative text
+language for generative models in the Active Inference lineage to a
+pipeline of source-processing transformations and bounded execution that
+produces validation, visualization, simulation, and analysis artifacts
+[gnn2023]. The language gives a model one canonical written form; the
+pipeline gives that form many executable and graphical realizations.
+This section describes both halves of the architecture and the way they
+meet, and it states the mathematical objects the language is obliged to
+carry — per model kind, because the language is not tied to a single
+shape of generative model.</p>
+<h2 id="the-gnn-language">The GNN Language</h2>
+<p>A GNN model is a plain-text document organized into named sections
+that together pin down the generative model its author intends. The
+<code>StateSpaceBlock</code> declares the variables of the model and
+their dimensions — hidden states, observations, control factors,
+policies, or the system matrices of a continuous model — establishing
+the shape of every tensor that follows. The <code>Connections</code>
+section records the directed and undirected dependencies among those
+variables, the edges of the underlying factor graph that downstream
+tools read to lay out diagrams and wire up inference. Which family of
+generative model a file declares is decided by the notation the file
+carries, not by its filename or its directory: the declared matrix
+vocabulary is what the pipeline reads to classify the model, as <span
+class="citation" data-cites="sec:model_kinds">[@sec:model_kinds]</span>
+specifies. The full construct vocabulary is catalogued in <span
+class="citation"
+data-cites="tbl:gnn_constructs">[@tbl:gnn_constructs]</span>.</p>
+<h2 id="sec:model_kinds">Model Kinds</h2>
+<p>Every GNN file denotes one generative model, and the language lets
+that model take several distinct mathematical shapes. A file whose
+<code>StateSpaceBlock</code> declares the categorical tensors
+<code>A</code>, <code>B</code>, <code>C</code>, <code>D</code> —
+optionally <code>E</code> — denotes a discrete state-space generative
+model. A file that declares the system matrices <code>F</code>,
+<code>H</code>, <code>Q</code>, <code>R</code> together with a Gaussian
+prior over the initial state (<code>prior_mean</code>,
+<code>prior_cov</code>) denotes a continuous linear-Gaussian state-space
+model. Per-agent and per-level declarations (<code>A_agent1</code>,
+<code>A_level1</code>, …) compose the categorical vocabulary into
+multi-agent and hierarchical structures. A file that declares boundary
+structure only — neither a categorical nor a continuous parameterization
+— is a structural wrapper: it names the model’s interfaces but carries
+no renderable form.</p>
+<p>The pipeline classifies each parsed specification structurally, and
+it does so from typed fields alone: the raw <code>## GNNSection</code>
+value, the declared matrix-key patterns, explicit agent counts, and
+explicit <code>## ModelParameters</code> keys. The classifier
+(<code>detect_model_kind</code> in
+<code>src/gnn/render/pomdp_contract.py</code>) resolves kinds in a fixed
+precedence order — multi-agent, then hybrid, then hierarchical, then
+continuous, then nonstationary, then learning, then factored, then
+structural, then the flat single-factor case. This single-winner
+interface identifies the most specific kind; composition-aware dispatch
+consults the complete <code>detect_model_kinds</code> set to admit or
+refuse the whole declared composition. Two properties of this
+classification matter for everything downstream. First, it is
+structural, not textual: prose in a model name or annotation never
+changes how a model renders, so a passing mention of “Dirichlet” in free
+text cannot reroute a specification into the parameter-learning kind.
+Second, it is computed from the parsed specification, not asserted by
+the author: the same file classifies the same way on every machine,
+which is what lets rendering and execution behavior be stated per kind
+rather than per file. The taxonomy, its notation blocks, exemplar
+folder, and rendering and execution reach per kind are enumerated in
+<span class="citation"
+data-cites="tbl:model_kinds">[@tbl:model_kinds]</span>. Registry flags
+do not establish runtime availability; execution receipts do.</p>
+<div class="table-scroll" role="region" tabindex="0" aria-label="Scrollable table: The model kinds the pipeline represents and executes, one row per kind. Notation blocks are the parameterization each…"><table id="tbl:model_kinds" data-responsive-table="true">
+<caption>The model kinds the pipeline represents and executes, one row
+per kind. Notation blocks are the parameterization each kind declares;
+exemplar folders are the committed corpus under
+<code>input/gnn_files/</code>. Renderer(s)/Executor(s) cells are
+generated from the registry flags (see <span class="citation"
+data-cites="tbl:framework_capability">[@tbl:framework_capability]</span>):
+the two parameterization rows carry their own flag sets, excluding
+continuous-only targets from categorical coverage. These flags do not
+establish universal multi-agent support: THRML accepts independent
+categorical components, and coupled models require a backend-specific
+representation and acceptance evidence. Native independent
+linear-Gaussian agent exemplars are verified on JAX and RxInfer in the
+v4 acceptance ledger; <code>recursive/</code> is reserved for bounded
+<code>--autonomous</code> proposal-loop runs and holds no committed
+models.</caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Model kind</th>
+<th>Notation block</th>
+<th>Exemplar folder</th>
+<th>Renderer(s)</th>
+<th>Executor(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Discrete categorical</td>
+<td><code>A</code>/<code>B</code>/<code>C</code>/<code>D</code>[/<code>E</code>]
+(column-stochastic <code>B</code> slices)</td>
+<td><code>input/gnn_files/discrete/</code></td>
+<td>PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch,
+NumPyro, Stan, bnlearn, THRML</td>
+<td>PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch,
+NumPyro, Stan, bnlearn, THRML</td>
+</tr>
+<tr>
+<td>Continuous linear-Gaussian</td>
+<td><code>F</code>/<code>H</code>/<code>Q</code>/<code>R</code> + priors
+(optional closed-loop pair)</td>
+<td><code>input/gnn_files/continuous/</code></td>
+<td>RxInfer.jl, JAX, PyTorch, NumPyro, Stan, cpomdp, ngc-learn</td>
+<td>RxInfer.jl, JAX, PyTorch, NumPyro, Stan, cpomdp, ngc-learn</td>
+</tr>
+<tr>
+<td>Multi-agent</td>
+<td><code>nr_agents</code> + per-agent categorical or linear-Gaussian
+parameters</td>
+<td><code>input/gnn_files/multiagent/</code></td>
+<td>Model/backend dependent composition</td>
+<td>Model/backend dependent; explicit acceptance required</td>
+</tr>
+<tr>
+<td>Recursive</td>
+<td>—</td>
+<td><code>input/gnn_files/recursive/</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="the-discrete-categorical-kind">The Discrete Categorical
+Kind</h3>
+<p>A discrete specification denotes a partially observable Markov
+decision process over a horizon <span class="math inline">\(T\)</span>,
+factorized as in <span class="citation"
+data-cites="eq:generative_model">[@eq:generative_model]</span> following
+the standard formulation [dacosta2020; smith2022].</p>
+<p><span class="math display">\[P(o_{1:T},\, s_{1:T},\, \pi) \;=\;
+P(\pi)\; P(s_1) \prod_{t=1}^{T} P(o_t \mid s_t) \prod_{t=2}^{T} P(s_t
+\mid s_{t-1},\, \pi)\]</span> {#eq:generative_model}</p>
+<p>The four matrices named in the <code>StateSpaceBlock</code> are
+exactly the factors of <span class="citation"
+data-cites="eq:generative_model">[@eq:generative_model]</span>, and this
+correspondence is what makes the notation translatable rather than
+merely descriptive. The <code>A</code> matrix is the likelihood, a
+column-stochastic map from hidden states to observation outcomes, given
+in <span class="citation"
+data-cites="eq:likelihood">[@eq:likelihood]</span>.</p>
+<p><span class="math display">\[P(o_t = i \mid s_t = j) \;=\; A_{ij},
+\qquad \sum_i A_{ij} = 1\]</span> {#eq:likelihood}</p>
+<p>The <code>B</code> matrix is the controlled transition dynamics: one
+column-stochastic slice per action, as in <span class="citation"
+data-cites="eq:transition">[@eq:transition]</span>. The canonical
+reading of the tensor is column-stochastic,
+<code>B[next_state][previous_state][action]</code>, matching the
+convention of the discrete message-passing libraries the pipeline
+targets [heins2022]; validation records every declared tensor’s detected
+orientation and can transpose row-stochastic textbook literals on
+request, as described in <span class="citation"
+data-cites="sec:methods">[@sec:methods]</span>.</p>
+<p><span class="math display">\[P(s_{t+1} = i \mid s_t = j,\, u_t = k)
+\;=\; B^{(k)}_{ij}, \qquad \sum_i B^{(k)}_{ij} = 1\]</span>
+{#eq:transition}</p>
+<p>The <code>C</code> vector holds log-preferences over observations,
+which enter inference as the biased outcome distribution of <span
+class="citation" data-cites="eq:preference">[@eq:preference]</span>; the
+<code>D</code> vector is the prior over initial hidden states, <span
+class="citation" data-cites="eq:prior">[@eq:prior]</span>.</p>
+<p><span class="math display">\[\tilde{P}(o_t = i) \;=\; \sigma(C)_i
+\;=\; \frac{\exp C_i}{\sum_j \exp C_j}\]</span> {#eq:preference}</p>
+<p><span class="math display">\[P(s_1 = i) \;=\; D_i, \qquad \sum_i D_i
+= 1\]</span> {#eq:prior}</p>
+<p>Given those factors, perception is approximate Bayesian inference: a
+variational posterior <span class="math inline">\(Q(s)\)</span> is
+fitted by minimizing the variational free energy of <span
+class="citation" data-cites="eq:vfe">[@eq:vfe]</span>, which decomposes
+into a complexity term and an accuracy term [friston2010].</p>
+<p><span class="math display">\[F[Q] \;=\;
+\underbrace{D_{\mathrm{KL}}\!\left[\,Q(s) \,\|\,
+P(s)\,\right]}_{\text{complexity}} \;-\;
+\underbrace{\mathbb{E}_{Q(s)}\!\left[\ln P(o \mid
+s)\right]}_{\text{accuracy}}\]</span> {#eq:vfe}</p>
+<p>Action is expected-free-energy minimization: each policy <span
+class="math inline">\(\pi\)</span> is scored over future steps <span
+class="math inline">\(\tau\)</span> by <span class="citation"
+data-cites="eq:efe">[@eq:efe]</span>, whose two terms are the
+information gain a policy is expected to yield and the extent to which
+its predicted outcomes match <code>C</code> [dacosta2020].</p>
+<p><span class="math display">\[G(\pi) \;=\;
+-\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid \pi)}\!\left[\ln
+Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid
+\pi)\right]}_{\text{epistemic value}} \;-\;
+\underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln
+\tilde{P}(o_\tau)\right]}_{\text{pragmatic value}}\]</span>
+{#eq:efe}</p>
+<p>The policy posterior then combines those scores with the habit prior
+<code>E</code> declared in the specification, as in <span
+class="citation" data-cites="eq:policy">[@eq:policy]</span>, and the
+selected action <span class="math inline">\(u\)</span> is sampled from
+it.</p>
+<p><span class="math display">\[Q(\pi) \;=\; \sigma\!\left(\ln E -
+G\right)\]</span> {#eq:policy}</p>
+<p>The discrete categorical kind is the language’s original and most
+densely exercised target: 29 of the 38 exemplar specifications in the
+corpus are discrete-state. The discrete family folder holds the kind’s
+core set — from minimal <code>markov_chain.md</code> and
+<code>hmm_baseline.md</code> fixtures through epistemic planning
+(<code>tmaze_epistemic.md</code>) and deep planning horizons
+(<code>deep_planning_horizon.md</code>) to the canonical full agent
+(<code>actinf_pomdp_agent.md</code>) — and further categorical fixtures
+populate the basics, precision, structured, gridworld, and scaling-study
+corpora. The kind composes upward as well: multiple independent state
+factors (a factored model), per-level and per-agent matrix declarations
+(<span class="citation"
+data-cites="sec:structural_variants">[@sec:structural_variants]</span>),
+and Dirichlet priors that turn a declared matrix into a learned latent
+(<span class="citation"
+data-cites="sec:limitations_next_steps">[@sec:limitations_next_steps]</span>)
+are all extensions of this same categorical substrate.</p>
+<p>Recent work continues to refine how expected-free-energy objectives
+relate to variational inference and to alternative but equivalent
+formulations, which is why GNN keeps the objects of <span
+class="citation"
+data-cites="eq:generative_model">[@eq:generative_model]</span> through
+<span class="citation" data-cites="eq:policy">[@eq:policy]</span>
+explicit in the notation rather than burying them in backend-specific
+code [champion2024reframingEfe; nuijten2026typeInference;
+nuijten2026efePlanningVariational]. A <code>ModelParameters</code>
+section fixes the scalars those objects depend on — factor cardinalities
+and precision terms — while a <code>Time</code> section declares whether
+the model is static or dynamic and, if dynamic, how the horizon <span
+class="math inline">\(T\)</span> and its discretization are organized.
+Because every one of these sections is explicit text, a GNN file is at
+once human-readable, diffable under version control, and unambiguous to
+a parser — the property that makes the declared source contract
+inspectable; numerical replay also depends on the chosen inference and
+runtime configuration.</p>
+<h3 id="the-continuous-linear-gaussian-kind">The Continuous
+Linear-Gaussian Kind</h3>
+<p>A file whose <code>StateSpaceBlock</code> declares <code>F</code>,
+<code>H</code>, <code>Q</code>, <code>R</code> together with
+<code>prior_mean</code> and <code>prior_cov</code> denotes a
+continuous-state linear-Gaussian state-space model stepped in discrete
+time: a Gaussian latent state <span class="math inline">\(x_t \in
+\mathbb{R}^n\)</span> evolves linearly, and a Gaussian observation <span
+class="math inline">\(y_t \in \mathbb{R}^m\)</span> reads it out
+linearly.</p>
+<p><span class="math display">\[x_1 \sim \mathcal{N}(\mu_0,\, \Sigma_0),
+\qquad x_t = F\, x_{t-1} + u_{t-1} + w_t, \qquad w_t \sim
+\mathcal{N}(0,\, Q)\]</span> {#eq:lgssm_state}</p>
+<p><span class="math display">\[y_t = H\, x_t + v_t, \qquad v_t \sim
+\mathcal{N}(0,\, R)\]</span> {#eq:lgssm_obs}</p>
+<p>Here <code>F</code> is the state-transition matrix, <code>H</code>
+the observation matrix, <code>Q</code> the process-noise covariance, and
+<code>R</code> the observation-noise covariance; <code>prior_mean</code>
+(<span class="math inline">\(\mu_0\)</span>) and <code>prior_cov</code>
+(<span class="math inline">\(\Sigma_0\)</span>) fix the Gaussian prior
+over the initial state, so the model’s randomness is declared entirely
+in its parameterization rather than in categorical tables. The shape
+contract mirrors the semantics: <code>prior_mean</code> must carry
+exactly <span class="math inline">\(n\)</span> entries, and
+<code>Q</code>, <code>R</code>, and <code>prior_cov</code> must be <span
+class="math inline">\(n \times n\)</span>, <span class="math inline">\(m
+\times m\)</span>, and <span class="math inline">\(n \times n\)</span>
+respectively — a mismatch is a validation-time diagnostic in the
+notation, not a runtime surprise inside a numerical backend.</p>
+<p>The kind also carries an optional closed-loop control structure. When
+a specification declares <code>goal_mean</code> (<span
+class="math inline">\(\mu^\star\)</span>, the preferred state) and
+<code>control_gain</code> (<span class="math inline">\(k\)</span>, a
+scalar proportional gain) alongside a control input <span
+class="math inline">\(u_t\)</span>, the rendered model closes the loop
+on beliefs: the controller steers the filtered posterior mean toward the
+preferred state.</p>
+<p><span class="math display">\[u_t \;=\; k \,\bigl(\mu^\star -
+\mu_t\bigr), \qquad \mu_t = \mathbb{E}\!\left[x_t \,\middle|\,
+y_{1:t}\right]\]</span> {#eq:closed_loop}</p>
+<p>This is how
+<code>input/gnn_files/continuous/continuous_navigation.md</code> is
+built: a two-dimensional navigator whose position persists between steps
+(<span class="math inline">\(F = I\)</span>), whose observation is a
+noisy identity readout of that position, and whose control input pushes
+the believed position toward <code>goal_mean</code> with gain
+<code>control_gain</code>. The other continuous exemplars are passive:
+<code>predictive_coding_agent.md</code> and
+<code>stochastic_dynamics.md</code> filter without steering. In total
+the corpus ships 9 continuous linear-Gaussian exemplars in the
+continuous family folder. Symbolically the kind reuses letters the
+discrete vocabulary already claims — most prominently <code>F</code>,
+which names the state-transition matrix here and the variational free
+energy in <span class="citation" data-cites="eq:vfe">[@eq:vfe]</span> —
+and <span class="citation"
+data-cites="sec:symbols_glossary">[@sec:symbols_glossary]</span>
+resolves that collision by scoping each symbol table to its kind.</p>
+<h3 id="sec:structural_variants">Multi-Agent, Hierarchical, and
+Structural Kinds</h3>
+<p>The remaining kinds are structural compositions of the two
+parameterization vocabularies above, and the classifier recognizes each
+by its declared key pattern rather than by convention.</p>
+<p><strong>Multi-agent.</strong> A specification with an explicit agent
+count greater than one, or with per-agent matrix keys
+(<code>A_agent1</code>, <code>B_agent1</code>, <code>C_agent1</code>,
+…), declares a multi-agent model: each agent carries its own categorical
+vocabulary, and coordination is expressed in the
+<code>Connections</code> section rather than by merging the agents into
+one joint table.
+<code>input/gnn_files/multiagent/stigmergic_swarm.md</code> is the
+worked exemplar — three agents coordinating through environmental traces
+(stigmergy) on a shared grid, with no direct communication between them
+— alongside <code>multi_agent_coordination.md</code> and a compact
+clustered mean-field acceptance fixture.</p>
+<p><strong>Hierarchical.</strong> Per-level matrix keys
+(<code>A_level1</code>, <code>B_level1</code>, <code>A_level2</code>, …)
+declare a multi-level model in which one level’s beliefs supply another
+level’s context —
+<code>input/gnn_files/hierarchical/hierarchical_pomdp.md</code> couples
+a fast lower level to a slow higher level that switches its context, and
+<code>temporal_hierarchy.md</code> develops the same structure over
+time. These fixtures explicitly declare <code>block_reset_v1</code> and
+<code>timed_soft_controller_v1</code>. JAX preserves their block resets
+and approximate 10/100-clock controller semantics; other backends report
+these contracts unsupported. Generic hierarchical strategies without
+these contracts retain their separate capability boundaries.</p>
+<p><strong>Learning and factored.</strong> A specification that declares
+a Dirichlet prior over one of its matrices (<code>dirichlet_A</code>, …)
+— or declares a learning <code>## GNNSection</code> value — is the
+parameter-learning kind: a matrix becomes a latent variable inferred
+from observations rather than a fixed table.
+<code>input/gnn_files/learning/dirichlet_likelihood_learning.md</code>
+is the worked exemplar: its <code>StateSpaceBlock</code> still declares
+<code>A[3,3]</code> in the categorical vocabulary, but <code>A</code> is
+a latent variable with prior pseudo-counts declared in
+<code>dirichlet_A[3,3]</code>, and hidden-state inference and likelihood
+learning run jointly by variational message passing with a mean-field
+factorization. The file is explicit about what its
+<code>InitialParameterization</code> means — the numeric <code>A</code>
+there is the environment’s ground-truth likelihood that the agent never
+observes and must recover, not the agent’s belief — and its annotation
+records why the Dirichlet prior is identity-biased rather than uniform:
+a fully uniform prior leaves the column-permutation symmetry unbroken
+and inference converges to a label-switched optimum. A specification
+whose <code>## ModelParameters</code> declare more than one independent
+state factor without per-level or per-agent keys is the factored kind,
+the standard multi-factor categorical POMDP.</p>
+<p><strong>Structural.</strong> A file that declares boundary structure
+only — a Markov-blanket-style wrapper with neither a categorical
+<code>A</code>/<code>B</code>/<code>C</code>/<code>D</code>[/<code>E</code>]
+parameterization nor a continuous
+<code>F</code>/<code>H</code>/<code>Q</code>/<code>R</code> one — is
+classified structural and is informational, with no renderable model
+body: it names interfaces the surrounding system can reason about, and
+every framework reports it <code>unsupported</code> with the reason that
+it has no renderable form, rather than being forced through a discrete
+render path that would fail on missing matrices.</p>
+<p><strong>The recursive corpus.</strong> The
+<code>input/gnn_files/recursive/</code> directory is reserved for
+bounded <code>--autonomous</code> proposal-loop runs and holds no
+committed models; recursion today enters the taxonomy as structure — a
+level referencing its own kind, as in the hierarchical compositions
+above — rather than as a separately renderable kind. The corpus
+directory is part of the tree so that autonomous runs have a bounded,
+inspectable home, and its emptiness is a fact of the current release
+rather than an omission of the documentation.</p>
+<h3 id="reading-exemplars-by-kind">Reading Exemplars by Kind</h3>
+<p>Each kind is best understood through a specification that exercises
+it, and the corpus pairs every kind with at least one canonical
+exemplar. Reading one file per kind side by side makes the
+notation-block difference — the entire content of the taxonomy —
+concrete.</p>
+<p>The discrete canonical is
+<code>input/gnn_files/discrete/actinf_pomdp_agent.md</code>, a fully
+controllable one-factor POMDP. Its <code>StateSpaceBlock</code> declares
+<code>A[3,3]</code>, <code>B[3,3,3]</code>, <code>C[3]</code>,
+<code>D[3]</code>, and <code>E[3]</code> — one observation modality, one
+hidden-state factor, and three actions — and every tensor of <span
+class="citation"
+data-cites="eq:generative_model">[@eq:generative_model]</span> through
+<span class="citation" data-cites="eq:policy">[@eq:policy]</span> is
+present by name: <code>A</code> carries the likelihood mapping,
+<code>B</code> carries the controlled transitions in the canonical
+column-stochastic slice order, <code>C</code> holds log-preferences,
+<code>D</code> the initial-state prior, and <code>E</code> the habit
+prior. The <code>Connections</code> section then wires the inference
+cycle explicitly — <code>D&gt;s</code> conditions the initial belief,
+<code>s-A</code> ties states to observations, <code>C&gt;G</code> and
+<code>E&gt;π</code> feed preference and habit into policy scoring, and
+<code>π&gt;u</code> closes the loop from policy to action — so the file
+reads as a literal transcription of <span class="citation"
+data-cites="eq:vfe">[@eq:vfe]</span> and <span class="citation"
+data-cites="eq:efe">[@eq:efe]</span> into declared variables and
+edges.</p>
+<p>The continuous canonical is
+<code>input/gnn_files/continuous/continuous_navigation.md</code> (<span
+class="citation" data-cites="eq:lgssm_state">[@eq:lgssm_state]</span>
+through <span class="citation"
+data-cites="eq:closed_loop">[@eq:closed_loop]</span>). Its
+<code>StateSpaceBlock</code> declares no categorical tensors at all:
+<code>x[2,1]</code> and <code>y[2,1]</code> are the Gaussian state and
+observation, <code>F[2,2]</code>, <code>H[2,2]</code>,
+<code>Q[2,2]</code>, and <code>R[2,2]</code> carry the linear dynamics
+and noise, <code>prior_mean[2]</code> and <code>prior_cov[2,2]</code>
+fix the initial belief, and <code>goal_mean[2]</code> and
+<code>control_gain[1]</code> add the closed-loop control structure. The
+<code>InitialParameterization</code> gives the matrices numerically —
+identity dynamics and identity readout, diagonal process and observation
+noise, a prior centered on the origin, a preferred position, and the
+proportional gain — and the <code>Equations</code> section restates
+<span class="citation"
+data-cites="eq:lgssm_state">[@eq:lgssm_state]</span>, <span
+class="citation" data-cites="eq:lgssm_obs">[@eq:lgssm_obs]</span>, and
+<span class="citation"
+data-cites="eq:closed_loop">[@eq:closed_loop]</span> as the model’s
+declared dynamics. Nothing about the file is a discretized stand-in for
+a POMDP; it is a linear-Gaussian model by declaration, which is what
+lets the classifier label it <code>CONTINUOUS</code> and the
+continuous-capable backends render it natively.</p>
+<p>The composed kinds show their structure in their key names.
+<code>input/gnn_files/multiagent/stigmergic_swarm.md</code> declares
+<code>A_agent1[4,9]</code>, <code>B_agent1[9,9,4]</code>,
+<code>C_agent1[4]</code>, and <code>D_agent1[9]</code>, then repeats the
+block for each further agent, so the per-agent pattern that the
+classifier keys on is visible directly in the
+<code>StateSpaceBlock</code>; coordination between the agents is
+expressed through shared environment variables in
+<code>Connections</code>, not by merging the agents into one joint
+table. <code>input/gnn_files/hierarchical/hierarchical_pomdp.md</code>
+declares <code>A_level1[4,4]</code> and <code>A_level2[4,2]</code> with
+matching per-level transitions and priors — the
+<code>block_reset_v1</code> execution contract preserves those levels
+and resets through JAX rather than flattening this fixture or routing it
+through RxInfer.jl. In every case the classification is a mechanical
+reading of the declared names, which is the property that keeps the
+taxonomy honest: a file is its kind because of what it declares, not
+because of where it sits.</p>
+<h3 id="what-the-kind-classification-governs">What the Kind
+Classification Governs</h3>
+<p>The classification is not an annotation a report displays and
+forgets; it governs observable pipeline behavior at each stage that
+touches a model. At the render step, the per-framework receipts group
+outcomes into three disjoint sets — frameworks processed, frameworks
+failed, and frameworks unsupported — and the unsupported set is excluded
+from the success denominator rather than counted against it: a
+categorical backend facing a continuous model, or any backend facing a
+structural wrapper, reports a status with a reason and drops out of the
+rate, so a pipeline run over a mixed-kind corpus neither inflates its
+failures nor hides its gaps. At the execute step the same discipline
+applies, with skipped and degraded lanes recorded as explicit statuses.
+At the analysis and reporting steps, the receipts keep the distinctions
+legible: a continuous model whose categorical-only lanes report
+<code>unsupported</code> by capability reads differently from a discrete
+model whose continuous attempt failed, and the per-family acceptance
+ledger that the model-family gate writes carries those statuses per
+family, per backend, per step.</p>
+<p>The governance runs in the direction the taxonomy promises:
+classification is computed from the parsed specification’s declared
+fields, and composition-aware adapters must preserve the whole kind set.
+Source-bound render receipts, execution traces, and acceptance ledgers
+make their handling of those kinds auditable. A reader auditing any of
+those artifacts can recompute the classification from the file’s
+declared vocabulary alone — <span class="citation"
+data-cites="tbl:model_kinds">[@tbl:model_kinds]</span> is the key — and
+expect to match what the pipeline recorded, which is what makes the kind
+taxonomy a checkable claim rather than a documentation convention.</p>
+<h2 id="the-processing-pipeline">The Processing Pipeline</h2>
+<p>The pipeline is a fixed sequence of 25 numbered steps, 0–24, each a
+self-contained stage that consumes the artifacts of its predecessors and
+writes typed outputs for those that follow. Early steps parse and
+type-check the GNN text and validate it against the language schema;
+middle steps render visualizations, export the model to executable
+backends, and run simulations; later steps perform analysis, reporting,
+and downstream integration. The declared orchestration prerequisites
+among the steps form the directed acyclic graph shown in <span
+class="citation" data-cites="fig:pipeline">[@fig:pipeline]</span>. The
+graph records which steps must precede others; artifact receipts
+separately identify source inputs and produced files, including optional
+enrichments.</p>
+<figure id="fig:pipeline">
+<a class="figure-full-size-link" href="../figures/gnn_pipeline_dag.png" target="_blank" rel="noopener" aria-label="Open full-size figure, The 25-step GNN processing pipeline as a directed acyclic graph, arranged in rowwise…"><img src="../figures/gnn_pipeline_dag.png" style="width:90.0%"
+alt="Directed acyclic graph of the numbered GNN pipeline steps. Nodes are the step modules under src/gnn/, arranged in rowwise topological order across five columns. Each node shows the complete step number and module name; the legend above the nodes identifies execution phases by color. Arrows show the required orchestration prerequisites declared in src/gnn/STEP_INDEX.md, linking each prerequisite step to its consumers. Optional artifact enrichments are documented separately." /><span class="figure-full-size-label" aria-hidden="true">Open full-size figure</span></a>
+<figcaption>The 25-step GNN processing pipeline as a
+directed acyclic graph, arranged in rowwise topological order and
+colored by execution phase (legend above the nodes). Each node is the
+thin step orchestrator under <code>src/gnn/</code> named in <span
+class="citation"
+data-cites="tbl:pipeline_steps">[@tbl:pipeline_steps]</span>; each arrow
+is a required orchestration prerequisite parsed from the Data Dependency
+Graph block of <code>src/gnn/STEP_INDEX.md</code>, which mirrors the
+live step registry. Parsing (Step 3) precedes many later steps. Optional
+artifact enrichments are documented separately and are not shown as
+required edges. The figure is generated from
+<code>src/gnn/STEP_INDEX.md</code> at commit 027f0de18; its footer
+restates the step count, the number of required prerequisites, and the
+layout rule.</figcaption>
+</figure>
+<p>The per-step responsibilities are enumerated in <span
+class="citation"
+data-cites="tbl:pipeline_steps">[@tbl:pipeline_steps]</span>; each row
+names a step and the transformation it owns within the 0–24 range.</p>
+<div class="table-scroll" role="region" tabindex="0" aria-label="Scrollable table: The pipeline steps with the thin orchestrator module that owns each and the one-line purpose parsed from the master t…"><table id="tbl:pipeline_steps" data-responsive-table="true">
+<caption>The pipeline steps with the thin orchestrator module that owns
+each and the one-line purpose parsed from the master table in
+<code>src/gnn/STEP_INDEX.md</code>. Read the Step column against the
+arrows of <span class="citation"
+data-cites="fig:pipeline">[@fig:pipeline]</span>: each row’s purpose is
+the transformation that module owns, and the table is regenerated from
+the index at every build, so it cannot drift from the code it
+describes.</caption>
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: right;">Step</th>
+<th>Module</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">0</td>
+<td><code>0_template.py</code></td>
+<td>Pipeline template &amp; initialization</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td><code>1_setup.py</code></td>
+<td>Environment setup &amp; UV dependency install</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td><code>2_tests.py</code></td>
+<td>Test suite execution (pytest)</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td><code>3_gnn.py</code></td>
+<td>GNN file discovery &amp; multi-format parsing</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td><code>4_model_registry.py</code></td>
+<td>Model versioning &amp; registry management</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td><code>5_type_checker.py</code></td>
+<td>GNN type validation &amp; resource estimation</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td><code>6_validation.py</code></td>
+<td>Consistency &amp; semantic quality checking</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td><code>7_export.py</code></td>
+<td>Multi-format export (JSON, XML, GraphML, GEXF, Pickle)</td>
+</tr>
+<tr>
+<td style="text-align: right;">8</td>
+<td><code>8_visualization.py</code></td>
+<td>Graph &amp; matrix visualization generation</td>
+</tr>
+<tr>
+<td style="text-align: right;">9</td>
+<td><code>9_advanced_viz.py</code></td>
+<td>Interactive / advanced visualization (Plotly, D3)</td>
+</tr>
+<tr>
+<td style="text-align: right;">10</td>
+<td><code>10_ontology.py</code></td>
+<td>Active Inference ontology processing &amp; validation</td>
+</tr>
+<tr>
+<td style="text-align: right;">11</td>
+<td><code>11_render.py</code></td>
+<td>Code generation for simulation frameworks</td>
+</tr>
+<tr>
+<td style="text-align: right;">12</td>
+<td><code>12_execute.py</code></td>
+<td>Execute rendered simulation scripts</td>
+</tr>
+<tr>
+<td style="text-align: right;">13</td>
+<td><code>13_llm.py</code></td>
+<td>LLM-enhanced analysis &amp; model interpretation</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td><code>14_ml_integration.py</code></td>
+<td>Machine learning integration &amp; model training</td>
+</tr>
+<tr>
+<td style="text-align: right;">15</td>
+<td><code>15_audio.py</code></td>
+<td>Audio sonification generation (SAPF)</td>
+</tr>
+<tr>
+<td style="text-align: right;">16</td>
+<td><code>16_analysis.py</code></td>
+<td>Statistical analysis &amp; cross-simulation aggregation</td>
+</tr>
+<tr>
+<td style="text-align: right;">17</td>
+<td><code>17_integration.py</code></td>
+<td>System integration &amp; cross-module coordination</td>
+</tr>
+<tr>
+<td style="text-align: right;">18</td>
+<td><code>18_security.py</code></td>
+<td>Security validation &amp; generated code scanning</td>
+</tr>
+<tr>
+<td style="text-align: right;">19</td>
+<td><code>19_research.py</code></td>
+<td>Research tools &amp; literature references</td>
+</tr>
+<tr>
+<td style="text-align: right;">20</td>
+<td><code>20_website.py</code></td>
+<td>Static HTML website generation</td>
+</tr>
+<tr>
+<td style="text-align: right;">21</td>
+<td><code>21_mcp.py</code></td>
+<td>Model Context Protocol processing &amp; tool registration</td>
+</tr>
+<tr>
+<td style="text-align: right;">22</td>
+<td><code>22_gui.py</code></td>
+<td>Interactive GNN constructor GUI</td>
+</tr>
+<tr>
+<td style="text-align: right;">23</td>
+<td><code>23_report.py</code></td>
+<td>Comprehensive analysis report generation</td>
+</tr>
+<tr>
+<td style="text-align: right;">24</td>
+<td><code>24_intelligent_analysis.py</code></td>
+<td>AI-powered pipeline analysis &amp; executive reports</td>
+</tr>
+</tbody>
+</table></div>
+<p>This staged design keeps the architecture modular. The implementation
+is organized into 44 source packages, one cluster of responsibilities
+per concern, and is documented across 672 documentation files so that
+each step’s contract, inputs, and outputs are specified independently of
+the others. New backends or analyses attach to the graph by declaring
+their dependencies rather than by editing a monolith, and deterministic
+step ordering makes the processing sequence reproducible. Artifact
+receipts bind each run to its selected model sources and resolved
+configuration; numerical replay also depends on the backend, dependency
+versions, dtype, and random seed, while run identifiers and timestamps
+may differ. The pipeline is kind-agnostic in its plumbing and kind-aware
+at its edges: parsing, validation, and export operate on whatever the
+file declares, while the rendering and execution steps consult the
+classification of <span class="citation"
+data-cites="sec:model_kinds">[@sec:model_kinds]</span> to decide which
+backends a given model can reach and record, explicitly, the ones it
+cannot.</p>
+<h2 id="the-triple-play">The Triple Play</h2>
+<p>The reason for separating a single written language from a
+multi-stage pipeline is the design goal GNN calls the Triple Play: one
+model specification, three coordinated modes of existence. The same GNN
+text supplies a human-readable model description, the declared
+state-space and factor structure for graphical visualization, and input
+to supported executable renderers. Source identity and validation
+receipts connect these representations to the authored model; runtime
+readiness and model-kind admission govern which simulations can execute.
+<span class="citation"
+data-cites="fig:triple_play">@fig:triple_play</span> depicts these three
+faces and the shared specification at their center.</p>
+<figure id="fig:triple_play">
+<a class="figure-full-size-link" href="../figures/gnn_triple_play.png" target="_blank" rel="noopener" aria-label="Open full-size figure, The Triple Play: one GNN text specification"><img src="../figures/gnn_triple_play.png" style="width:70.0%"
+alt="The Triple Play as one central GNN specification with three projections radiating from it: the readable text form, graphical visualizations of state-space and factor structure, and executable model code. All three point back to the single specification at the center." /><span class="figure-full-size-label" aria-hidden="true">Open full-size figure</span></a>
+<figcaption>The Triple Play: one GNN text
+specification (left) and its three coordinated projections (right) — the
+human-readable text form, graphical model visualizations, and executable
+simulation code. All three arrows originate at the same source box to
+show their shared parsed input. Source binding, parameter validation,
+and semantic-fidelity checks provide evidence of agreement among the
+projections. The executable node summarizes 12 of 12 registered render
+targets with implemented Step 12 execution adapters and previews three
+by name; execution depends on runtime readiness, admitted model kind,
+and a successful source-bound run receipt. Counts are producer tokens at
+commit 027f0de18, and the panel is generated by
+<code>scripts/manuscript_fig_triple_play.py</code>. Take-away: a model
+is authored once and then read, seen, and run from that single
+source.</figcaption>
+</figure>
+<p>Each face derives from a shared authored source. The text is the
+contract a researcher reads and reviews; the visualizations expose the
+declared factor-graph structure for inspection and communication; and
+the executable rendering targets inference frameworks, connecting the
+written specification to the discrete message-passing libraries for
+categorical Active Inference [heins2022], to the reactive
+message-passing and probabilistic-programming engines that carry the
+linear-Gaussian kind, and to the broader tooling ecosystem for
+compositional model representation [defelice2021]. Common source
+identity makes the projections traceable, while parameter values, tensor
+orientation, model-kind semantics, and source-bound numerical results
+still require validation to establish agreement. A supported model can
+therefore be read, seen, and run without authoring a separate
+specification for each purpose [smith2022]. The Triple Play is governed
+per kind: renderers and executors apply the computed classification and
+their declared capability boundaries, and receipts distinguish
+successful, unsupported, skipped, partial, and failed outcomes for the
+selected model.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.13" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>98_symbols_glossary.md.web</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      color: light-dark(#1a1a1a, #fdfdfd);
+      background-color: #fdfdfd;
+      background-color: light-dark(#fdfdfd, #1a1a1a);
+      color-scheme: light dark;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        color-scheme: light only;
+      }
+      html, body, pre, code {
+        background-color: transparent;
+      }
+      body, a, a:visited, blockquote {
+        color: black;
+      }
+      pre, code {
+        padding: 0;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a, a:visited {
+      color: inherit;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid;
+      border-color: #e6e6e6;
+      border-color: light-dark(#e6e6e6, #4c4c4c);
+      color: #606060;
+      color: light-dark(#606060, #b6b6b6);
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid currentColor;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+    }
+    th {
+      border-top: 1px solid currentColor;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <script data-template-mathjax-config>
+window.MathJax = window.MathJax || {};
+window.MathJax.chtml = Object.assign({}, window.MathJax.chtml, {
+  fontURL: "https://cdn.jsdelivr.net/npm/@mathjax/mathjax-newcm-font@4.0.0/chtml/woff2",
+  dynamicPrefix: "https://cdn.jsdelivr.net/npm/@mathjax/mathjax-newcm-font@4.0.0/chtml/dynamic"
+});
+var templateMathOutput = window.MathJax.output || {};
+window.MathJax.output = Object.assign({}, templateMathOutput, {
+  displayOverflow: "linebreak",
+  linebreaks: Object.assign({}, templateMathOutput.linebreaks, {
+    inline: true,
+    width: "100%",
+    lineleading: 0.5
+  })
+});
+window.normalizeTemplateMathJaxAria = function () {
+  document.querySelectorAll("mjx-speech[aria-roledescription]").forEach(function (node) {
+    var roleDescription = node.getAttribute("aria-roledescription") || "";
+    if (/[-]/.test(roleDescription)) {
+      node.setAttribute("aria-roledescription", "mathematical expression");
+    }
+  });
+};
+window.MathJax.startup = Object.assign({}, window.MathJax.startup, {
+  ready: function () {
+    var measuredWidth = document.documentElement.clientWidth;
+    var reflowQueued = false;
+    window.MathJax.startup.defaultReady();
+    window.templateMathJaxReflowPromise = window.MathJax.startup.promise.then(
+      window.normalizeTemplateMathJaxAria
+    );
+    function reflowDisplayMath() {
+      if (reflowQueued || document.documentElement.clientWidth === measuredWidth) return;
+      reflowQueued = true;
+      window.templateMathJaxReflowPromise = window.templateMathJaxReflowPromise
+        .catch(function () { /* A later resize may retry a failed render. */ })
+        .then(async function () {
+          var width = document.documentElement.clientWidth;
+          try {
+            // MathJax 4 MathItem.STATE.METRICS = 110. The default RERENDER
+            // state retains old container metrics and cannot reflow on zoom.
+            await window.MathJax.startup.document.rerenderPromise(110);
+            window.normalizeTemplateMathJaxAria();
+            window.templateMathJaxReflowError = null;
+          } catch (error) {
+            window.templateMathJaxReflowError = String(error);
+            console.error("MathJax viewport reflow failed", error);
+            throw error;
+          } finally {
+            measuredWidth = width;
+            reflowQueued = false;
+          }
+        })
+        .then(reflowDisplayMath);
+      // Keep failure observable to callers without an unhandled rejection.
+      window.templateMathJaxReflowPromise.catch(function () {});
+    }
+    window.addEventListener("resize", reflowDisplayMath);
+    // Also cover a resize that happened during the initial asynchronous render.
+    window.templateMathJaxReflowPromise.then(reflowDisplayMath);
+  }
+});
+</script>
+<script defer=""
+  type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-chtml.js" integrity="sha384-2BWc4dVaHADUocwKrUrK9u3iDwHxVMKXWEcoRmUkXYSFKhAsgVAYClu9ydNuo5Oz" crossorigin="anonymous"></script>
+
+<link data-template-favicon rel="icon" href="favicon.ico">
+
+<style>
+:root {
+  --brand-1: #5b6ee0;
+  --web-bg: #f8f8f8;
+  --web-surface: #ffffff;
+  --web-text: #2c3e50;
+  --web-border: #bdc3c7;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand-1: #7e8ce8;
+    --web-bg: #0f1420;
+    --web-surface: #161c2b;
+    --web-text: #e6eaf2;
+    --web-border: #2a3447;
+  }
+}
+.theorem-box {
+  border-left: 4px solid var(--brand-1);
+  background: var(--web-surface);
+  padding: 0.6em 1em;
+  margin: 1.1em 0;
+  border-radius: 0 4px 4px 0;
+}
+.theorem-box.definition { border-left-style: dashed; }
+.theorem-box > p:first-child { margin-top: 0; }
+.theorem-box > p:last-child { margin-bottom: 0; }
+.figure-long-description {
+  border: 1px solid var(--web-border);
+  border-radius: 4px;
+  margin-block: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+.figure-long-description > summary { cursor: pointer; font-weight: 700; }
+.figure-long-description > p { max-width: 80ch; overflow-wrap: anywhere; }
+.figure-exact-values { max-width: 80ch; overflow-wrap: anywhere; }
+code { overflow-wrap: anywhere; word-break: break-word; }
+pre {
+  max-width: 100%;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+pre code { overflow-wrap: inherit; white-space: inherit; word-break: inherit; }
+div.sourceCode { max-width: 100%; overflow: visible; }
+pre.sourceCode { background: #2c3e50; color: #ecf0f1; }
+pre.sourceCode code,
+pre.sourceCode code span { color: inherit; }
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+mjx-container[display="true"] { max-width: 100%; overflow: visible; }
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+.table-scroll:focus-visible {
+  outline: 3px solid var(--brand-1);
+  outline-offset: 3px;
+}
+.table-scroll > table { margin-block: 0; min-width: 100%; width: max-content; }
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+body {
+  font-family: 'Liberation Serif', 'Times New Roman', serif;
+  line-height: 1.6;
+  width: min(100%, 800px);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f8f8;
+  color: #1a1a1a;
+  overflow-wrap: break-word;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+main,
+nav,
+section,
+article,
+figure,
+figcaption {
+  min-width: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  padding: 0.65rem 0.9rem;
+  transform: translateY(-120%);
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-family: sans-serif;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.skip-link:visited {
+  color: #ffffff;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  body {
+    width: 100%;
+    max-width: 100%;
+    padding: 16px;
+  }
+
+  figure img {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 800px) {
+  body {
+    width: 100%;
+    max-width: 100vw;
+    margin: 0 auto;
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 5px;
+  overflow-wrap: anywhere;
+}
+
+code {
+  background-color: #ecf0f1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Liberation Mono', 'Courier New', monospace;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+pre {
+  background-color: #2c3e50;
+  color: #ecf0f1;
+  padding: 15px;
+  border-radius: 5px;
+  max-width: 100%;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  overflow-wrap: inherit;
+  white-space: inherit;
+  word-break: inherit;
+}
+
+div.sourceCode {
+  max-width: 100%;
+  overflow: visible;
+}
+
+pre.sourceCode {
+  background: #2c3e50;
+  color: #ecf0f1;
+}
+
+pre.sourceCode code,
+pre.sourceCode code span {
+  color: inherit;
+}
+
+pre > code.sourceCode {
+  white-space: pre-wrap;
+}
+
+pre > code.sourceCode > span {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 20px 0;
+}
+
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+.table-scroll:focus-visible {
+  outline: 3px solid #1f6f8b;
+  outline-offset: 3px;
+}
+
+.table-scroll > table {
+  margin-block: 0;
+  min-width: 100%;
+  width: max-content;
+}
+
+figure {
+  max-width: 100%;
+  margin: 1.5rem 0;
+}
+
+th, td {
+  border: 1px solid #bdc3c7;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #1f6f8b;
+  color: white;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #bdc3c7;
+  border-radius: 5px;
+  margin: 20px 0;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+a {
+  color: #b91c1c;
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.14em;
+  overflow-wrap: anywhere;
+}
+
+a:visited {
+  color: #8f1d1d;
+}
+
+a:hover {
+  text-decoration-thickness: 0.14em;
+}
+
+a:focus-visible {
+  outline: 3px solid #1f6f8b;
+  outline-offset: 3px;
+}
+
+.toc {
+  background-color: #ecf0f1;
+  padding: 20px;
+  border-radius: 5px;
+  margin-bottom: 30px;
+}
+
+.toc a,
+#TOC a {
+  color: #b91c1c;
+  display: inline-block;
+  min-height: 28px;
+  line-height: 1.5;
+  padding-block: 2px;
+}
+
+.toc li,
+#TOC li {
+  margin-block: 1px;
+}
+
+.math {
+  text-align: center;
+  margin: 20px 0;
+  font-size: 1.1em;
+}
+
+mjx-container[display="true"] {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+  padding-bottom: 0.25rem;
+}
+
+.figure {
+  text-align: center;
+  margin: 30px 0;
+}
+
+.figure img {
+  max-width: 100%;
+  height: auto;
+  border: 2px solid #3498db;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* A reading column keeps prose comfortable, but dense scientific figures need
+   a larger inspection surface.  The rendered image remains responsive and the
+   explicit link opens its source-resolution asset without changing the PDF. */
+.figure-full-size-link {
+  color: inherit;
+  display: block;
+  max-width: 100%;
+  text-align: center;
+}
+
+.figure-full-size-link img {
+  cursor: zoom-in;
+  margin-bottom: 0.45rem;
+}
+
+.figure-full-size-label {
+  color: #1f6f8b;
+  display: inline-block;
+  font-family: sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+}
+
+.figure-full-size-link:focus-visible {
+  outline: 3px solid #1f6f8b;
+  outline-offset: 4px;
+}
+
+@media (min-width: 1000px) {
+  /* Wide figure links stay within the viewport but extend beyond the prose
+     column. Do not clip their labels at the narrower body boundary. */
+  body {
+    overflow-x: visible;
+  }
+
+  .figure-full-size-link {
+    left: 50%;
+    max-width: none;
+    position: relative;
+    transform: translateX(-50%);
+    width: min(1080px, calc(100vw - 3rem));
+  }
+}
+
+.figure-caption {
+  font-style: italic;
+  color: #4b5563;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.figure-long-description,
+.figure-exact-values {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+</style>
+<script data-template-source-font-loader src="assets/source-web-fonts.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<main id="main-content" tabindex="-1">
+<h1 id="sec:symbols_glossary">Symbols and Glossary</h1>
+<p>This glossary defines the Generalized Notation Notation (GNN)
+language constructs used to specify generative models, together with the
+Active Inference symbols those constructs carry across the model kinds
+of <span class="citation"
+data-cites="sec:model_kinds">[@sec:model_kinds]</span>. Definitions
+follow the GNN syntax specification and the exemplar specifications
+distributed with the repository — the discrete POMDP exemplars and the
+continuous linear-Gaussian exemplars alike — and they align with the
+standard formulations of both kinds [gnn2023; dacosta2020;
+parr2022].</p>
+<h2 id="language-constructs">Language Constructs</h2>
+<p>A GNN file is an ordered, UTF-8 Markdown document whose level-2
+headers name required and optional sections. The strict schema validator
+enforces section order, declaration grammar, and connection syntax; the
+constructs below are the load-bearing sections a parser must recognize;
+they are catalogued in <span class="citation"
+data-cites="tbl:gnn_constructs">[@tbl:gnn_constructs]</span>.</p>
+<div class="table-scroll" role="region" tabindex="0" aria-label="Scrollable table: The GNN language constructs a conforming parser must recognize, with the meaning each carries. The first rows are the…"><table id="tbl:gnn_constructs" data-responsive-table="true">
+<caption>The GNN language constructs a conforming parser must recognize,
+with the meaning each carries. The first rows are the required sections
+that pin a model’s identity, variables, and factor graph; the optional
+sections that follow carry parameterization, ontology bindings, timing,
+equations, and provenance. The operator rows are the connection
+vocabulary the <code>Connections</code> section is written in — directed
+<code>A&gt;B</code>, undirected <code>A-B</code>, and their labeled v1.1
+forms — and <code>default=…</code> supplies initialization hints.
+Definitions follow the GNN syntax specification and the exemplar
+specifications under <code>input/gnn_files</code>, and the strict schema
+validator enforces section order and declaration grammar before any
+downstream step runs. The construct vocabulary is deliberately
+kind-agnostic: the same <code>StateSpaceBlock</code>,
+<code>Connections</code>, and operator syntax declare a discrete
+categorical model, a continuous linear-Gaussian model, or a composed
+multi-agent or hierarchical one — what differs between kinds is which
+matrix names the block declares, as <span class="citation"
+data-cites="tbl:actinf_symbols">[@tbl:actinf_symbols]</span>
+details.</caption>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Construct</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>## GNNSection</code></td>
+<td>Required short identifier for the model block (no spaces,
+e.g. <code>ActInfPOMDP</code>).</td>
+</tr>
+<tr>
+<td><code>## GNNVersionAndFlags</code></td>
+<td>Required version declaration (<code>GNN v1</code> or
+<code>GNN v1.1</code>) with optional flags.</td>
+</tr>
+<tr>
+<td><code>## ModelName</code></td>
+<td>Required human-readable title of the generative model.</td>
+</tr>
+<tr>
+<td><code>## StateSpaceBlock</code></td>
+<td>Required block declaring every variable and matrix as
+<code>NAME[dim, …, type=…]</code>, one per line — the block whose
+declared vocabulary fixes the model’s kind.</td>
+</tr>
+<tr>
+<td><code>## Connections</code></td>
+<td>Required edge list relating state-space variables, expressing the
+model’s factor graph.</td>
+</tr>
+<tr>
+<td><code>## ModelAnnotation</code></td>
+<td>Optional free-text description of the model’s modalities, factors,
+and assumptions.</td>
+</tr>
+<tr>
+<td><code>## InitialParameterization</code></td>
+<td>Optional concrete numeric values for declared matrices and
+vectors.</td>
+</tr>
+<tr>
+<td><code>## ActInfOntologyAnnotation</code></td>
+<td>Optional bindings from each variable to a CamelCase Active Inference
+ontology term.</td>
+</tr>
+<tr>
+<td><code>## ModelParameters</code></td>
+<td>Optional key-value dimensions (e.g. <code>num_hidden_states</code>,
+<code>num_obs</code>, <code>num_actions</code>) consumed by code
+generators.</td>
+</tr>
+<tr>
+<td><code>## Time</code></td>
+<td>Optional dynamics declaration: a time variable plus
+<code>Dynamic</code>/<code>Static</code>,
+<code>Discrete</code>/<code>Continuous</code>, and
+<code>ModelTimeHorizon</code>.</td>
+</tr>
+<tr>
+<td><code>## Equations</code></td>
+<td>Optional LaTeX-rendered formulas defining model dynamics and the
+relationships between declared variables; round-tripped by the
+semantic-fidelity gate.</td>
+</tr>
+<tr>
+<td><code>## Footer</code></td>
+<td>Optional closing section that terminates the file and lets a reader
+or parser enter it from either end.</td>
+</tr>
+<tr>
+<td><code>## Signature</code></td>
+<td>Optional provenance block carrying a cryptographic signature over
+the specification.</td>
+</tr>
+<tr>
+<td><code>NAME[d₁,d₂,…,type=…]</code></td>
+<td>A variable or tensor declaration; dimensions are positive integers
+or named references, and a <code>type</code> (<code>float</code>,
+<code>int</code>, <code>bool</code>) is required.</td>
+</tr>
+<tr>
+<td><code>A&gt;B</code></td>
+<td>Directed (causal) connection operator: edge from <code>A</code> to
+<code>B</code>, e.g. <code>D&gt;s</code> (a prior conditions a hidden
+state) or <code>F&gt;x</code> (a transition matrix drives a continuous
+state).</td>
+</tr>
+<tr>
+<td><code>A-B</code></td>
+<td>Undirected (bidirectional) connection operator,
+e.g. <code>s-A</code> (a hidden state participates in the likelihood
+mapping).</td>
+</tr>
+<tr>
+<td><code>A&gt;B:label</code> / <code>A-B:label</code></td>
+<td>A v1.1 annotated edge; the trailing label documents the relation and
+is preserved but may be ignored for structural validation.</td>
+</tr>
+<tr>
+<td><code>default=…</code></td>
+<td>A v1.1 declaration hint (<code>uniform</code>, <code>zeros</code>,
+<code>ones</code>, <code>eye</code>, <code>random</code>) supplying an
+initialization for a matrix or vector.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="symbols-by-model-kind">Symbols by Model Kind</h2>
+<p>The exemplar specifications declare the generative-model components
+of Active Inference, mapping each GNN variable to its probabilistic
+meaning [dacosta2020; smith2022; parr2022]. Because the notation spans
+model kinds, the same letter can name different objects in different
+kinds — most prominently <code>F</code>, which is the variational free
+energy of <span class="citation" data-cites="eq:vfe">[@eq:vfe]</span> in
+the discrete kind and the state-transition matrix of <span
+class="citation" data-cites="eq:lgssm_state">[@eq:lgssm_state]</span> in
+the continuous kind — so each row of <span class="citation"
+data-cites="tbl:actinf_symbols">[@tbl:actinf_symbols]</span> names the
+kind its reading belongs to and the equation in <span class="citation"
+data-cites="sec:system_context">[@sec:system_context]</span> that fixes
+it. These authored cross-references support review of agreement between
+the glossary and formal statement; their consistency still requires
+validation when either changes.</p>
+<div class="table-scroll" role="region" tabindex="0" aria-label="Scrollable table: The Active Inference symbols a GNN specification carries, scoped by model kind and bound to the equation of [@sec:sys…"><table id="tbl:actinf_symbols" data-responsive-table="true">
+<caption>The Active Inference symbols a GNN specification carries,
+scoped by model kind and bound to the equation of <span class="citation"
+data-cites="sec:system_context">[@sec:system_context]</span> that fixes
+each role. Read the discrete-kind rows as the categorical
+generative-model tensors (likelihood, controlled transitions,
+log-preferences, prior over initial states, habit prior) with
+<code>s</code>, <code>o</code>, <code>π</code>, and <code>u</code> as
+the inference variables and <code>F</code> and <code>G</code> as the two
+free-energy functionals minimized at <span class="citation"
+data-cites="eq:vfe">[@eq:vfe]</span> and <span class="citation"
+data-cites="eq:efe">[@eq:efe]</span>; read the continuous-kind rows as
+the linear-Gaussian parameterization — system matrices, covariances,
+Gaussian prior, and the optional closed-loop declarations of <span
+class="citation" data-cites="eq:closed_loop">[@eq:closed_loop]</span>.
+The rows where one letter carries two kind-scoped readings
+(<code>F</code>, <code>u</code>, <code>t</code>) are deliberate: the
+notation reuses a compact alphabet across kinds, and the declared matrix
+vocabulary of the <code>StateSpaceBlock</code> — not the letter alone —
+is what fixes the reading, which is exactly what the kind classification
+of <span class="citation"
+data-cites="sec:model_kinds">[@sec:model_kinds]</span> computes. Use the
+table as a decoding key when reading a <code>StateSpaceBlock</code>:
+every declared matrix name should map to exactly one kind-scoped row
+here, and the <code>## ActInfOntologyAnnotation</code> bindings
+described below are what make that mapping machine-checkable
+downstream.</caption>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>A</code></td>
+<td>Discrete kind: likelihood (observation) matrix encoding <span
+class="math inline">\(P(o \mid s)\)</span>, a column-stochastic map from
+hidden states to observation outcomes (<span class="citation"
+data-cites="eq:likelihood">[@eq:likelihood]</span>).</td>
+</tr>
+<tr>
+<td><code>B</code></td>
+<td>Discrete kind: transition tensor encoding <span
+class="math inline">\(P(s&#39; \mid s, u)\)</span>, one
+column-stochastic slice per action in the canonical
+<code>B[next_state][previous_state][action]</code> order (<span
+class="citation"
+data-cites="eq:transition">[@eq:transition]</span>).</td>
+</tr>
+<tr>
+<td><code>C</code></td>
+<td>Discrete kind: preference vector — log-preferences over observation
+outcomes that bias the agent toward preferred outcomes (<span
+class="citation"
+data-cites="eq:preference">[@eq:preference]</span>).</td>
+</tr>
+<tr>
+<td><code>D</code></td>
+<td>Discrete kind: prior vector over initial hidden states (<span
+class="citation" data-cites="eq:prior">[@eq:prior]</span>).</td>
+</tr>
+<tr>
+<td><code>E</code></td>
+<td>Discrete kind: habit vector — an initial policy prior over actions,
+entering the policy posterior (<span class="citation"
+data-cites="eq:policy">[@eq:policy]</span>).</td>
+</tr>
+<tr>
+<td><code>s</code></td>
+<td>Discrete kind: current hidden-state distribution;
+<code>s_prime</code> (<code>s'</code>) is the next hidden-state
+distribution.</td>
+</tr>
+<tr>
+<td><code>o</code></td>
+<td>Discrete kind: current observation, an integer index over outcome
+modalities.</td>
+</tr>
+<tr>
+<td><code>π</code></td>
+<td>Discrete kind: policy — a distribution over actions inferred from
+expected free energy (<span class="citation"
+data-cites="eq:policy">[@eq:policy]</span>).</td>
+</tr>
+<tr>
+<td><code>u</code></td>
+<td>Discrete kind: the selected (sampled) action, sampled from the
+policy posterior. Continuous kind: the control input added to the state
+each step (<span class="citation"
+data-cites="eq:lgssm_state">[@eq:lgssm_state]</span>).</td>
+</tr>
+<tr>
+<td><code>F</code></td>
+<td>Discrete kind: variational free energy, minimized during state
+inference (<span class="citation" data-cites="eq:vfe">[@eq:vfe]</span>)
+[friston2010]. Continuous kind: the state-transition matrix of the
+linear-Gaussian model (<span class="citation"
+data-cites="eq:lgssm_state">[@eq:lgssm_state]</span>).</td>
+</tr>
+<tr>
+<td><code>G</code></td>
+<td>Discrete kind: expected free energy per policy, minimized during
+policy inference to score candidate actions (<span class="citation"
+data-cites="eq:efe">[@eq:efe]</span>) [dacosta2020].</td>
+</tr>
+<tr>
+<td><code>t</code></td>
+<td>Discrete time step; the horizon <span
+class="math inline">\(T\)</span> bounds the product in <span
+class="citation"
+data-cites="eq:generative_model">[@eq:generative_model]</span>.
+Continuous kind: the time index of the state-space model.</td>
+</tr>
+<tr>
+<td><code>H</code></td>
+<td>Continuous kind: observation matrix mapping the latent state to the
+observation (<span class="citation"
+data-cites="eq:lgssm_obs">[@eq:lgssm_obs]</span>).</td>
+</tr>
+<tr>
+<td><code>Q</code></td>
+<td>Continuous kind: process-noise covariance of the state evolution
+(<span class="citation"
+data-cites="eq:lgssm_state">[@eq:lgssm_state]</span>).</td>
+</tr>
+<tr>
+<td><code>R</code></td>
+<td>Continuous kind: observation-noise covariance of the readout (<span
+class="citation" data-cites="eq:lgssm_obs">[@eq:lgssm_obs]</span>).</td>
+</tr>
+<tr>
+<td><code>x</code></td>
+<td>Continuous kind: the Gaussian latent state <span
+class="math inline">\(x_t\)</span>; <code>x[2,1,type=float]</code> in
+the navigation exemplar declares a two-dimensional position.</td>
+</tr>
+<tr>
+<td><code>y</code></td>
+<td>Continuous kind: the continuous observation read out linearly from
+the state (<span class="citation"
+data-cites="eq:lgssm_obs">[@eq:lgssm_obs]</span>).</td>
+</tr>
+<tr>
+<td><code>prior_mean</code></td>
+<td>Continuous kind: prior mean <span
+class="math inline">\(\mu_0\)</span> over the initial latent state
+(<span class="citation"
+data-cites="eq:lgssm_state">[@eq:lgssm_state]</span>).</td>
+</tr>
+<tr>
+<td><code>prior_cov</code></td>
+<td>Continuous kind: prior covariance <span
+class="math inline">\(\Sigma_0\)</span> over the initial latent state
+(<span class="citation"
+data-cites="eq:lgssm_state">[@eq:lgssm_state]</span>).</td>
+</tr>
+<tr>
+<td><code>goal_mean</code></td>
+<td>Continuous kind: preferred state <span
+class="math inline">\(\mu^\star\)</span> the closed-loop controller
+steers toward (<span class="citation"
+data-cites="eq:closed_loop">[@eq:closed_loop]</span>).</td>
+</tr>
+<tr>
+<td><code>control_gain</code></td>
+<td>Continuous kind: scalar proportional gain <span
+class="math inline">\(k\)</span> on the belief error in the closed loop
+(<span class="citation"
+data-cites="eq:closed_loop">[@eq:closed_loop]</span>).</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="ontology-bindings-and-implementations">Ontology Bindings and
+Implementations</h2>
+<p>The <code>## ActInfOntologyAnnotation</code> section binds each
+variable to a canonical term — <code>A=LikelihoodMatrix</code>,
+<code>B=TransitionMatrix</code>, <code>C=LogPreferenceVector</code>,
+<code>D=PriorOverHiddenStates</code>, <code>s=HiddenState</code>,
+<code>o=Observation</code>, <code>π=PolicyVector</code> in the discrete
+exemplars; <code>F=StateTransitionMatrix</code>,
+<code>H=ObservationMatrix</code>, <code>Q=ProcessNoiseCovariance</code>,
+<code>R=ObservationNoiseCovariance</code>,
+<code>prior_mean=PriorMean</code>,
+<code>prior_cov=PriorCovariance</code>,
+<code>goal_mean=PreferredState</code>,
+<code>control_gain=ControlGain</code>,
+<code>x=ContinuousHiddenState</code>,
+<code>y=ContinuousObservation</code>, <code>u=ControlInput</code> in the
+continuous exemplars — which downstream pipeline steps use for semantic
+analysis and validation. The bindings are per-kind by construction: a
+continuous exemplar binds <code>F</code> to
+<code>StateTransitionMatrix</code>, never to a free-energy term, so the
+ontology layer carries the same kind-scoped reading <span
+class="citation"
+data-cites="tbl:actinf_symbols">[@tbl:actinf_symbols]</span> fixes by
+hand. The same GNN specification feeds the project’s rendering backends
+— including the 12 registered targets (PyMDP, RxInfer.jl,
+ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, bnlearn,
+cpomdp, THRML, ngc-learn), of which the 12 render targets with execution
+adapters (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch,
+NumPyro, Stan, bnlearn, cpomdp, THRML, ngc-learn) can be selected at
+Step 12 subject to model-kind admission and runtime readiness — with
+per-kind reach recorded as explicit statuses (<span class="citation"
+data-cites="tbl:framework_capability">[@tbl:framework_capability]</span>)
+— so that a model written once in this notation can be parsed,
+visualized, and executed across the 25-step pipeline (0–24) without
+restating its mathematics [gnn2023; heins2022; defelice2021].</p>
+</main>
+</body>
+</html>
