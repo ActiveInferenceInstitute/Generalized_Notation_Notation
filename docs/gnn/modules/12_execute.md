@@ -27,7 +27,7 @@ JAX, NumPyro and DisCoPy are **core** dependencies (`uv sync`); PyTorch needs th
 
 Two behaviours introduced in v3.2.0: `_merge_prior_execution_summary` (`src/gnn/execute/metadata.py`, re-exported through the `src/gnn/execute/processor/` facade) folds a previously written `execution_summary.json` into the current results so the durable summary covers every input folder rather than the last one processed; and script discovery only considers `.py`/`.jl` files, so companion artifacts such as `<stem>_stan.stan` and `<stem>_stan_data.json` are never treated as executables.
 
-Continuous (linear-Gaussian) models reach Step 12 only for the backends that render them (JAX, NumPyro, PyTorch, Stan, RxInfer.jl); the categorical backends report render status `unsupported` in Step 11 and emit nothing to execute.
+Continuous (linear-Gaussian) models reach Step 12 only for the backends that render them (JAX, NumPyro, PyTorch, Stan, RxInfer.jl, ngc-learn); the categorical backends report render status `unsupported` in Step 11 and emit nothing to execute.
 
 ## Agent Identity & Capabilities
 

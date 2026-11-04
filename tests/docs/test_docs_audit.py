@@ -547,3 +547,334 @@ def test_link_audit_keeps_actual_line_numbers_after_fences(
     )
     issues = audit_mod.audit_broken_links([doc])
     assert [(i[1], i[2]) for i in issues] == [(4, "missing.md")]
+
+
+# ---------------------------------------------------------------------------
+# Registry-bound model-kind coverage and render-doc frame coverage. Each test
+# seeds synthetic registry declarations and proves the check FAILS on a
+# violation (never vacuous) plus the canonical-form pass case.
+# ---------------------------------------------------------------------------
+
+
+def _seed_render_registry(
+    tmp_path: Path,
+    frames: dict[str, tuple[bool, tuple[str, ...]]],
+) -> None:
+    """Seed ``FRAMEWORK_REGISTRY`` / ``RENDER_CAPABILITY_DECLARATIONS``."""
+    registry = tmp_path / "src" / "gnn" / "render" / "framework_registry.py"
+    registry.parent.mkdir(parents=True, exist_ok=True)
+    entries = "\n".join(
+        f'    "{name}": {{"name": "{name}", "experimental": {experimental!r}}},'
+        for name, (experimental, _spaces) in frames.items()
+    )
+    declarations = "\n".join(
+        f'            "{name}": {{"state_space": {spaces!r}}},'
+        for name, (_experimental, spaces) in frames.items()
+    )
+    registry.write_text(
+        "FRAMEWORK_REGISTRY = {\n"
+        + entries
+        + "\n}\n\nRENDER_CAPABILITY_DECLARATIONS = MappingProxyType(\n"
+        + "    {\n"
+        + declarations
+        + "\n    }\n)\n",
+        encoding="utf-8",
+    )
+
+
+def _seed_model_kind_table(
+    tmp_path: Path,
+    directory: str,
+    rows: list[tuple[str, str, str]],
+) -> Path:
+    """Seed a model-kind table; *rows* are (kind, renders on, unsupported on)."""
+    table = tmp_path / directory / "AGENTS.md"
+    table.parent.mkdir(parents=True, exist_ok=True)
+    lines = [
+        "| Model kind | Folders | Renders + executes on "
+        "| Render status `unsupported` on |",
+        "|---|---|---|---|",
+    ]
+    for row_kind, renders, unsupported in rows:
+        lines.append(
+            f"| {row_kind}-state models | `{row_kind}/` | {renders} "
+            f"| {unsupported} |"
+        )
+    table.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return table
+
+
+_REFERENCE_FRAMES: dict[str, tuple[bool, tuple[str, ...]]] = {
+    "pymdp": (False, ("discrete",)),
+    "jax": (False, ("discrete", "continuous")),
+    "ngclearn": (False, ("continuous",)),
+    "cpomdp": (True, ("continuous",)),
+}
+
+
+def test_model_kind_scan_files_includes_input_contract_docs(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
+
+    files = audit_mod.model_kind_scan_files()
+
+    assert tmp_path / "input" / "AGENTS.md" in files
+    assert tmp_path / "input" / "README.md" in files
+    assert tmp_path / "input" / "SPEC.md" in files
+
+
+def test_model_kind_table_flags_omitted_declaring_frame(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
+    table = _seed_model_kind_table(
+        tmp_path,
+        "input",
+        [
+            ("Discrete", "PyMDP, JAX", "ngc-learn"),
+            ("Continuous", "JAX", "PyMDP"),
+        ],
+    )
+
+    issues = audit_mod.audit_model_kind_coverage([table])
+
+    assert len(issues) == 1
+    assert issues[0][0] == Path("input/AGENTS.md")
+    assert issues[0][2] == "ngclearn"
+    assert "omits ngclearn from the continuous render row" in issues[0][3]
+
+
+def test_model_kind_table_passes_canonical_rows(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
+    table = _seed_model_kind_table(
+        tmp_path,
+        "input",
+        [
+            ("Discrete", "PyMDP, JAX", "ngc-learn"),
+            ("Continuous", "JAX, ngc-learn", "PyMDP"),
+        ],
+    )
+
+    assert audit_mod.audit_model_kind_coverage([table]) == []
+
+
+def test_model_kind_table_flags_wrong_role_frame(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
+    table = _seed_model_kind_table(
+        tmp_path,
+        "input",
+        [
+            ("Discrete", "PyMDP, JAX", "ngc-learn"),
+            ("Continuous", "JAX, ngc-learn, PyMDP", "PyMDP"),
+        ],
+    )
+
+    issues = audit_mod.audit_model_kind_coverage([table])
+
+    assert len(issues) == 1
+    assert issues[0][2] == "pymdp"
+    assert "declares discrete state space, not continuous" in issues[0][3]
+
+
+def test_model_kind_table_flags_experimental_frame_as_default(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
+    table = _seed_model_kind_table(
+        tmp_path,
+        "input",
+        [
+            ("Discrete", "PyMDP, JAX", "ngc-learn"),
+            ("Continuous", "JAX, ngc-learn", "PyMDP, cpomdp"),
+        ],
+    )
+
+    issues = audit_mod.audit_model_kind_coverage([table])
+
+    assert len(issues) == 1
+    assert issues[0][2] == "cpomdp"
+    assert "experimental and requires explicit selection" in issues[0][3]
+
+
+def test_model_kind_table_missing_fails_closed(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
+    doc = tmp_path / "input" / "README.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text("# Input\n", encoding="utf-8")
+
+    issues = audit_mod.audit_model_kind_coverage([doc])
+
+    assert len(issues) == 1
+    assert issues[0][3] == "cannot locate the model-kind table with a render column"
+
+
+def test_model_kind_prose_flags_omitted_declaring_frame(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    _seed_render_registry(
+        tmp_path,
+        {
+            "pymdp": (False, ("discrete",)),
+            "jax": (False, ("discrete", "continuous")),
+            "numpyro": (False, ("discrete", "continuous")),
+            "ngclearn": (False, ("continuous",)),
+        },
+    )
+    doc = tmp_path / "docs" / "note.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text(
+        "Continuous (linear-Gaussian) models render and execute on JAX and\nNumPyro.\n",
+        encoding="utf-8",
+    )
+
+    issues = audit_mod.audit_model_kind_coverage([doc])
+
+    assert len(issues) == 1
+    assert issues[0][2] == "ngclearn"
+    assert "registry-bound continuous renderer list omits ngclearn" in issues[0][3]
+
+
+def test_model_kind_prose_accepts_declaration_bound_sentence(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
+    doc = tmp_path / "docs" / "note.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text(
+        "Renders and executes on the frameworks whose registry entry declares "
+        "the continuous state space; a frame whose entry declares only the "
+        "discrete state space reports the `unsupported` render status.\n",
+        encoding="utf-8",
+    )
+
+    assert audit_mod.audit_model_kind_coverage([doc]) == []
+
+
+def test_model_kind_prose_inherits_kind_for_anaphoric_list(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
+    doc = tmp_path / "docs" / "note.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text(
+        "Continuous linear-Gaussian models are first-class.\n"
+        "They render and execute on JAX and PyMDP.\n",
+        encoding="utf-8",
+    )
+
+    issues = audit_mod.audit_model_kind_coverage([doc])
+
+    assert sorted(issue[2] for issue in issues) == ["ngclearn", "pymdp"]
+
+
+def test_model_kind_coverage_reports_unreadable_registry(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    doc = tmp_path / "input" / "AGENTS.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text("# Input\n", encoding="utf-8")
+
+    issues = audit_mod.audit_model_kind_coverage([doc])
+
+    assert len(issues) == 1
+    assert issues[0][3] == (
+        "cannot parse FRAMEWORK_REGISTRY / RENDER_CAPABILITY_DECLARATIONS"
+    )
+
+
+def test_render_doc_frame_coverage_flags_undocumented_frame(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
+    module = tmp_path / "docs" / "gnn" / "modules" / "11_render.md"
+    module.parent.mkdir(parents=True)
+    module.write_text("Step 11 renders simulation code.\n", encoding="utf-8")
+
+    issues = audit_mod.audit_render_doc_frame_coverage()
+
+    assert [(issue[0], issue[2], issue[3]) for issue in issues] == [
+        (
+            Path("docs/gnn/implementations/cpomdp.md"),
+            "cpomdp",
+            "experimental frame has no implementation page",
+        ),
+        (
+            Path("docs/gnn/modules/11_render.md"),
+            "jax",
+            "frame is not named in docs/gnn/modules/11_render.md",
+        ),
+        (
+            Path("docs/gnn/modules/11_render.md"),
+            "ngclearn",
+            "frame is not named in docs/gnn/modules/11_render.md",
+        ),
+        (
+            Path("docs/gnn/modules/11_render.md"),
+            "pymdp",
+            "frame is not named in docs/gnn/modules/11_render.md",
+        ),
+    ]
+
+
+def test_render_doc_frame_coverage_passes_documented_frames(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
+    module = tmp_path / "docs" / "gnn" / "modules" / "11_render.md"
+    module.parent.mkdir(parents=True)
+    module.write_text(
+        "PyMDP, JAX and ngc-learn render; cpomdp requires selection.\n",
+        encoding="utf-8",
+    )
+    page = tmp_path / "docs" / "gnn" / "implementations" / "cpomdp.md"
+    page.parent.mkdir(parents=True)
+    page.write_text("# cpomdp\n", encoding="utf-8")
+
+    assert audit_mod.audit_render_doc_frame_coverage() == []
+
+
+def test_format_strict_issue_detail_lists_model_kind_and_render_doc_issues() -> None:
+    detail = _load_docs_audit().format_strict_issue_detail(
+        link_issues=[],
+        anchor_issues=[],
+        anchor_checked=True,
+        spec_issues=[],
+        coverage=[],
+        doc_missing_agents=[],
+        doc_missing_readme=[],
+        agents_no_readme=[],
+        readme_no_agents=[],
+        doc_agents_structure=[],
+        security_version_issues=[],
+        spec_coverage_issues=[],
+        prose_src_issues=[],
+        version_claim_issues=[],
+        model_kind_issues=[
+            (
+                Path("input/AGENTS.md"),
+                26,
+                "ngclearn",
+                "model-kind table omits ngclearn from the continuous render row",
+            )
+        ],
+        render_doc_issues=[
+            (
+                Path("docs/gnn/implementations/cpomdp.md"),
+                0,
+                "cpomdp",
+                "experimental frame has no implementation page",
+            )
+        ],
+    )
+
+    assert "Model-kind coverage claims (1)" in detail
+    assert "Render-doc frame coverage (1)" in detail
+    assert "input/AGENTS.md:26" in detail
+    assert "docs/gnn/implementations/cpomdp.md:0" in detail

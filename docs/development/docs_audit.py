@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Markdown documentation audit: relative links, AGENTS→SPEC footers, src/doc coverage,
-AGENTS↔README pairing, SPEC coverage, prose layout drift, stale version claims.
+AGENTS↔README pairing, SPEC coverage, prose layout drift, stale version claims,
+registry-bound engine counts and model-kind coverage.
 
 Run from repository root:
   uv run --extra dev python docs/development/docs_audit.py
@@ -444,29 +445,10 @@ def _framework_registry_count() -> int | None:
     assignment cannot be located (the audit then reports that directly
     instead of silently skipping the check).
     """
-    path = REPO_ROOT / "src" / "gnn" / "render" / "framework_registry.py"
-    try:
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-    except (OSError, SyntaxError, ValueError):
+    literal = _registry_literal("FRAMEWORK_REGISTRY")
+    if literal is None:
         return None
-    for node in ast.walk(tree):
-        value = None
-        if (
-            isinstance(node, ast.AnnAssign)
-            and getattr(node.target, "id", None) == "FRAMEWORK_REGISTRY"
-        ):
-            value = node.value
-        elif isinstance(node, ast.Assign) and any(
-            getattr(t, "id", None) == "FRAMEWORK_REGISTRY" for t in node.targets
-        ):
-            value = node.value
-        if value is None:
-            continue
-        if isinstance(value, ast.Call) and value.args:
-            value = value.args[0]
-        if isinstance(value, ast.Dict):
-            return len(value.keys)
-    return None
+    return len(literal.keys)
 
 
 def audit_engine_count_claims(
@@ -543,6 +525,551 @@ def audit_engine_count_claims(
                             _reason(count_text),
                         )
                     )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Registry-bound model-kind coverage and frame documentation.
+#
+# The exemplar docs state which render frames consume which state-space kind.
+# Those statements are judged against each frame's ``state_space`` declaration
+# in ``src/gnn/render/framework_registry.py`` -- the same declaration the render
+# compatibility gate types its ``unsupported-<kind>-state:`` refusals against --
+# so a frame that declares a kind and is missing from the docs fails the audit
+# instead of disappearing silently.
+# ---------------------------------------------------------------------------
+
+#: Registry dimension that binds the model-kind claims.
+MODEL_KIND_DIMENSION = "state_space"
+
+#: The state-space values the docs describe.
+MODEL_KIND_VALUES = ("discrete", "continuous")
+
+#: Documentation outside ``maintained_doc_files()`` that carries the exemplar
+#: corpus's model-kind contract (the input tables and the data contract).
+MODEL_KIND_EXTRA_DOC_FILES = (
+    "input/AGENTS.md",
+    "input/README.md",
+    "input/SPEC.md",
+)
+
+#: Files that must carry the model-kind table (kind rows -> renderers ->
+#: refusals) the coverage check judges.
+MODEL_KIND_TABLE_FILES = ("input/AGENTS.md", "input/README.md")
+
+#: Registry key -> the spellings the docs use for that frame. The
+#: ``activeinference_jl`` pattern requires the ``jl`` suffix so the research
+#: field name ("Active Inference") is never read as the frame.
+MODEL_KIND_FRAME_PATTERNS: dict[str, str] = {
+    "pymdp": r"pymdp",
+    "rxinfer": r"rx[\s._-]?infer(?:[\s._-]*jl)?",
+    "activeinference_jl": r"active[\s_-]?inference[\s._-]*jl",
+    "jax": r"jax",
+    "discopy": r"discopy",
+    "pytorch": r"pytorch",
+    "numpyro": r"numpyro",
+    "stan": r"stan",
+    "bnlearn": r"bnlearn",
+    "cpomdp": r"cpomdp",
+    "thrml": r"thrml",
+    "ngclearn": r"ngc[\s-]?learn",
+}
+
+#: Phrases that bind an enumerated frame list to a state-space kind
+#: ("Continuous models render and execute on JAX, ...", "Renders + executes on
+#: ...", "reach Step 12 only for the backends that render them ...").
+MODEL_KIND_LIST_BINDING_RE = re.compile(
+    r"(?i)\brenders?\s+(?:and\s+)?executes?\s+on\b"
+    r"|\brenders?\s*\+\s*executes?\s+on\b"
+    r"|\brenders?\s+on\b"
+    r"|\bexecutes?\s+on\b"
+    r"|\brun(?:s|ned)?\s+natively\s+on\b"
+    r"|\breach\s+step\s+12\s+only\s+for\b"
+)
+
+#: Sentence/clause boundary inside one markdown block unit.
+MODEL_KIND_CLAUSE_SPLIT_RE = re.compile(r"(?<=[.;])\s+")
+
+#: Markdown block starter: a new paragraph unit begins at a blank line or at a
+#: heading, list item, block quote or table row, so a claim wrapped over two
+#: lines is judged whole without merging neighbouring list items.
+MODEL_KIND_BLOCK_START_RE = re.compile(r"^\s*(?:[#>|*+-]|\d+[.)])\s")
+
+#: Model-kind table wiring (both tables carry the same three columns).
+MODEL_KIND_TABLE_KIND_HEADER_RE = re.compile(r"(?i)\bmodel\s+kind\b")
+MODEL_KIND_TABLE_RENDER_HEADER_RE = re.compile(r"(?i)\brenders?\b[^|]*\bexecutes?\b")
+MODEL_KIND_TABLE_UNSUPPORTED_HEADER_RE = re.compile(r"(?i)unsupported")
+MODEL_KIND_TABLE_ROW_RE = re.compile(r"(?i)^\s*\**\s*(discrete|continuous)\b")
+MODEL_KIND_TABLE_SEPARATOR_RE = re.compile(
+    r"^\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$"
+)
+
+
+def model_kind_scan_files() -> list[Path]:
+    """Files scanned for model-kind frame claims: the maintained-doc set plus
+    the three ``input/`` contract documents. The exemplar table and the data
+    contract live outside ``maintained_doc_files()`` (like the root
+    ``SPEC.md`` in the engine-count check), so they are added explicitly."""
+    return maintained_doc_files() + [
+        REPO_ROOT / rel for rel in MODEL_KIND_EXTRA_DOC_FILES
+    ]
+
+
+def _registry_literal(name: str) -> ast.Dict | None:
+    """The ``ast.Dict`` literal assigned to *name* in the render registry.
+
+    Parsed with :mod:`ast` so the audit stays dependency-free; unwraps the
+    ``MappingProxyType({...})`` call the registry uses for immutable mappings.
+    ``None`` when the source cannot be read or the assignment is not a dict.
+    """
+    path = REPO_ROOT / "src" / "gnn" / "render" / "framework_registry.py"
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError, ValueError):
+        return None
+    for node in ast.walk(tree):
+        value = None
+        if (
+            isinstance(node, ast.AnnAssign)
+            and getattr(node.target, "id", None) == name
+        ):
+            value = node.value
+        elif isinstance(node, ast.Assign) and any(
+            getattr(target, "id", None) == name for target in node.targets
+        ):
+            value = node.value
+        if value is None:
+            continue
+        if isinstance(value, ast.Call) and value.args:
+            value = value.args[0]
+        if isinstance(value, ast.Dict):
+            return value
+    return None
+
+
+def _dict_string_keys(literal: ast.Dict) -> dict[str, ast.expr] | None:
+    """``{string key: value node}`` for a registry dict literal."""
+    out: dict[str, ast.expr] = {}
+    for key, value in zip(literal.keys, literal.values):
+        name = getattr(key, "value", None)
+        if not isinstance(name, str):
+            return None
+        out[name] = value
+    return out
+
+
+def _render_registry_facts() -> (
+    tuple[dict[str, bool], dict[str, tuple[str, ...]]] | None
+):
+    """``(frame -> experimental, frame -> declared state spaces)``.
+
+    ``None`` when the registry cannot be read or either declaration is
+    missing; the audit reports that directly rather than skipping the check.
+    """
+    frames_literal = _registry_literal("FRAMEWORK_REGISTRY")
+    declarations_literal = _registry_literal("RENDER_CAPABILITY_DECLARATIONS")
+    if frames_literal is None or declarations_literal is None:
+        return None
+    frame_entries = _dict_string_keys(frames_literal)
+    declaration_entries = _dict_string_keys(declarations_literal)
+    if frame_entries is None or declaration_entries is None:
+        return None
+    frames: dict[str, bool] = {}
+    for name, value in frame_entries.items():
+        experimental = False
+        if isinstance(value, ast.Dict):
+            fields = _dict_string_keys(value) or {}
+            flag = fields.get("experimental")
+            experimental = bool(getattr(flag, "value", False))
+        frames[name] = experimental
+    declarations: dict[str, tuple[str, ...]] = {}
+    for name, value in declaration_entries.items():
+        values: tuple[str, ...] = ()
+        if isinstance(value, ast.Dict):
+            fields = _dict_string_keys(value) or {}
+            dimension = fields.get(MODEL_KIND_DIMENSION)
+            if dimension is None:
+                values = ()
+            elif isinstance(dimension, ast.Tuple):
+                values = tuple(
+                    element.value
+                    for element in dimension.elts
+                    if isinstance(element, ast.Constant)
+                    and isinstance(element.value, str)
+                )
+            else:
+                return None
+        declarations[name] = values
+    return frames, declarations
+
+
+def _model_kind_expectations(
+    frames: dict[str, bool], declarations: dict[str, tuple[str, ...]]
+) -> dict[str, tuple[frozenset[str], frozenset[str]]]:
+    """Default render set per model kind: ``kind -> (renders_on, refused_on)``.
+
+    Only non-experimental frames are judged: experimental frames require
+    explicit selection and are documented on their own implementation pages.
+    """
+    default = [name for name, experimental in frames.items() if not experimental]
+    expectations: dict[str, tuple[frozenset[str], frozenset[str]]] = {}
+    for kind in MODEL_KIND_VALUES:
+        renders_on = frozenset(
+            name for name in default if kind in declarations.get(name, ())
+        )
+        expectations[kind] = (renders_on, frozenset(default) - renders_on)
+    return expectations
+
+
+def _frames_named_in(text: str) -> set[str]:
+    """Registry keys whose documented spelling appears in *text*."""
+    return {
+        name
+        for name, pattern in MODEL_KIND_FRAME_PATTERNS.items()
+        if re.search(rf"(?i)\b(?:{pattern})\b", text)
+    }
+
+
+def _model_kind_mentions(text: str) -> set[str]:
+    """State-space values named in *text*."""
+    return {
+        kind
+        for kind in MODEL_KIND_VALUES
+        if re.search(rf"(?i)\b{kind}\b", text)
+    }
+
+
+def _model_kind_contradiction(
+    frame: str,
+    kind: str,
+    frames: dict[str, bool],
+    declarations: dict[str, tuple[str, ...]],
+) -> str:
+    """Why *frame* cannot sit in the *kind* render position."""
+    if frame not in frames:
+        return f"{frame} is not declared in FRAMEWORK_REGISTRY"
+    if frames[frame]:
+        return f"{frame} is experimental and requires explicit selection"
+    declared = declarations.get(frame, ())
+    if kind in declared:
+        return f"{frame} declares the {kind} state space"
+    if declared:
+        return f"{frame} declares {', '.join(declared)} state space, not {kind}"
+    return f"{frame} declares no state space"
+
+
+def _table_cells(line: str) -> list[str]:
+    """Cell text of one markdown table row."""
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def _model_kind_table_issues(
+    rel: Path,
+    text: str,
+    frames: dict[str, bool],
+    declarations: dict[str, tuple[str, ...]],
+    expectations: dict[str, tuple[frozenset[str], frozenset[str]]],
+) -> tuple[list[tuple[Path, int, str, str]], bool]:
+    """Judge every model-kind table in *text*; returns ``(issues, found)``."""
+    issues: list[tuple[Path, int, str, str]] = []
+    lines = text.splitlines()
+    found = False
+    index = 0
+    while index < len(lines):
+        cells = _table_cells(lines[index]) if lines[index].startswith("|") else []
+        kind_col = next(
+            (
+                col
+                for col, cell in enumerate(cells)
+                if MODEL_KIND_TABLE_KIND_HEADER_RE.search(cell)
+            ),
+            None,
+        )
+        render_col = next(
+            (
+                col
+                for col, cell in enumerate(cells)
+                if MODEL_KIND_TABLE_RENDER_HEADER_RE.search(cell)
+            ),
+            None,
+        )
+        unsupported_col = next(
+            (
+                col
+                for col, cell in enumerate(cells)
+                if MODEL_KIND_TABLE_UNSUPPORTED_HEADER_RE.search(cell)
+            ),
+            None,
+        )
+        if kind_col is None or render_col is None or unsupported_col is None:
+            index += 1
+            continue
+        found = True
+        row = index + 1
+        while row < len(lines) and lines[row].startswith("|"):
+            row_cells = _table_cells(lines[row])
+            row_kind = None
+            if kind_col < len(row_cells):
+                match = MODEL_KIND_TABLE_ROW_RE.match(row_cells[kind_col])
+                row_kind = match.group(1).lower() if match else None
+            if row_kind is not None and not MODEL_KIND_TABLE_SEPARATOR_RE.match(
+                lines[row]
+            ):
+                renders_on, refused_on = expectations[row_kind]
+                rendered = _frames_named_in(row_cells[render_col])
+                for frame in sorted(renders_on - rendered):
+                    issues.append(
+                        (
+                            rel,
+                            row + 1,
+                            frame,
+                            f"model-kind table omits {frame} from the "
+                            f"{row_kind} render row, but its registry entry "
+                            f"declares the {row_kind} state space",
+                        )
+                    )
+                for frame in sorted(rendered - renders_on):
+                    issues.append(
+                        (
+                            rel,
+                            row + 1,
+                            frame,
+                            f"model-kind table lists {frame} in the "
+                            f"{row_kind} render row: "
+                            + _model_kind_contradiction(
+                                frame, row_kind, frames, declarations
+                            ),
+                        )
+                    )
+                refused = _frames_named_in(row_cells[unsupported_col])
+                for frame in sorted(refused_on - refused):
+                    issues.append(
+                        (
+                            rel,
+                            row + 1,
+                            frame,
+                            f"model-kind table does not report {frame} as "
+                            f"unsupported for {row_kind} models, but its "
+                            f"registry entry does not declare the {row_kind} "
+                            f"state space",
+                        )
+                    )
+                for frame in sorted(refused - refused_on):
+                    issues.append(
+                        (
+                            rel,
+                            row + 1,
+                            frame,
+                            f"model-kind table reports {frame} as unsupported "
+                            f"for {row_kind} models: "
+                            + _model_kind_contradiction(
+                                frame, row_kind, frames, declarations
+                            ),
+                        )
+                    )
+            row += 1
+        index = row
+    return issues, found
+
+
+def _model_kind_units(text: str) -> list[tuple[int, str]]:
+    """Markdown lines grouped into block units (paragraph, list item, table
+    row), so a claim wrapped over two lines is judged as one statement."""
+    units: list[tuple[int, str]] = []
+    start: int | None = None
+    parts: list[str] = []
+    for lineno, raw in enumerate(text.splitlines(), start=1):
+        line = raw.strip()
+        new_block = not line or bool(MODEL_KIND_BLOCK_START_RE.match(raw))
+        if start is None:
+            if line:
+                start, parts = lineno, [line]
+            continue
+        if new_block:
+            units.append((start, " ".join(parts)))
+            start, parts = (lineno, [line]) if line else (None, [])
+        else:
+            parts.append(line)
+    if start is not None:
+        units.append((start, " ".join(parts)))
+    return units
+
+
+def _model_kind_prose_issues(
+    rel: Path,
+    text: str,
+    frames: dict[str, bool],
+    declarations: dict[str, tuple[str, ...]],
+    expectations: dict[str, tuple[frozenset[str], frozenset[str]]],
+) -> list[tuple[Path, int, str, str]]:
+    """Judge registry-bound frame lists in prose against the declarations.
+
+    A clause that binds a frame list to a state space ("Continuous models
+    render and execute on JAX, ...") must name every default frame declaring
+    that kind and must not name a frame that does not. A clause with no kind
+    word of its own ("They render and execute on ...") inherits the nearest
+    preceding kind mention in the same block, and a declaration-bound sentence
+    that enumerates nothing is accepted unchanged.
+    """
+    issues: list[tuple[Path, int, str, str]] = []
+    for lineno, unit in _model_kind_units(text):
+        current_kinds: set[str] = set()
+        for clause in MODEL_KIND_CLAUSE_SPLIT_RE.split(unit):
+            clause_kinds = _model_kind_mentions(clause)
+            if clause_kinds:
+                current_kinds = clause_kinds
+            if not MODEL_KIND_LIST_BINDING_RE.search(clause):
+                continue
+            named = _frames_named_in(clause)
+            if len(named) < 2:
+                continue
+            kinds = clause_kinds or current_kinds
+            for kind in MODEL_KIND_VALUES:
+                if kind not in kinds:
+                    continue
+                renders_on, _refused_on = expectations[kind]
+                for frame in sorted(named):
+                    if kind not in declarations.get(frame, ()):
+                        issues.append(
+                            (
+                                rel,
+                                lineno,
+                                frame,
+                                f"registry-bound {kind} renderer list names "
+                                f"{frame}: "
+                                + _model_kind_contradiction(
+                                    frame, kind, frames, declarations
+                                ),
+                            )
+                        )
+                for frame in sorted(renders_on - named):
+                    issues.append(
+                        (
+                            rel,
+                            lineno,
+                            frame,
+                            f"registry-bound {kind} renderer list omits "
+                            f"{frame}, whose registry entry declares the "
+                            f"{kind} state space",
+                        )
+                    )
+    return issues
+
+
+def audit_model_kind_coverage(
+    files: list[Path],
+) -> list[tuple[Path, int, str, str]]:
+    """Flag model-kind frame claims that contradict the registry declarations.
+
+    Two surfaces are enforced against ``RENDER_CAPABILITY_DECLARATIONS``:
+
+    - **The model-kind tables** (``input/AGENTS.md``, ``input/README.md``):
+      the render cell must name exactly the default (non-experimental) frames
+      whose ``state_space`` declaration includes that kind, and the
+      ``unsupported`` cell exactly the default frames whose declaration does
+      not. A frame in the wrong role, an experimental frame offered as a
+      default target, or a missing table is an issue.
+    - **Registry-bound prose lists**: a clause that binds a frame list to a
+      state-space kind must be complete for that kind. This is the recurrence
+      gate: a frame that declares a kind and is missing from a maintained-doc
+      list fails here instead of being silently omitted.
+    """
+    facts = _render_registry_facts()
+    if facts is None:
+        return [
+            (
+                Path("src/gnn/render/framework_registry.py"),
+                0,
+                "",
+                "cannot parse FRAMEWORK_REGISTRY / "
+                "RENDER_CAPABILITY_DECLARATIONS",
+            )
+        ]
+    frames, declarations = facts
+    expectations = _model_kind_expectations(frames, declarations)
+    issues: list[tuple[Path, int, str, str]] = []
+    for path in files:
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        rel = path.relative_to(REPO_ROOT)
+        stripped = _strip_fenced_code(text)
+        table_issues, table_found = _model_kind_table_issues(
+            rel, stripped, frames, declarations, expectations
+        )
+        if str(rel) in MODEL_KIND_TABLE_FILES and not table_found:
+            issues.append(
+                (
+                    rel,
+                    0,
+                    "",
+                    "cannot locate the model-kind table with a render column",
+                )
+            )
+        issues.extend(table_issues)
+        issues.extend(
+            _model_kind_prose_issues(
+                rel, stripped, frames, declarations, expectations
+            )
+        )
+    return issues
+
+
+def audit_render_doc_frame_coverage() -> list[tuple[Path, int, str, str]]:
+    """Every registry frame must be visible in the maintained render docs.
+
+    A default (non-experimental) frame is named in the Step 11 module page; an
+    experimental frame carries its own implementation page, because its
+    contract is not part of the default render path. A registry frame that is
+    documented nowhere fails here instead of shipping undocumented.
+    """
+    facts = _render_registry_facts()
+    if facts is None:
+        return [
+            (
+                Path("src/gnn/render/framework_registry.py"),
+                0,
+                "",
+                "cannot parse FRAMEWORK_REGISTRY",
+            )
+        ]
+    frames, _declarations = facts
+    module_rel = Path("docs/gnn/modules/11_render.md")
+    try:
+        module_text = (REPO_ROOT / module_rel).read_text(encoding="utf-8")
+    except OSError:
+        return [
+            (
+                module_rel,
+                0,
+                "",
+                f"missing: {module_rel}",
+            )
+        ]
+    named = _frames_named_in(module_text)
+    issues: list[tuple[Path, int, str, str]] = []
+    for frame in sorted(frames):
+        if frames[frame]:
+            page_rel = Path("docs/gnn/implementations") / f"{frame}.md"
+            if not (REPO_ROOT / page_rel).is_file():
+                issues.append(
+                    (
+                        page_rel,
+                        0,
+                        frame,
+                        "experimental frame has no implementation page",
+                    )
+                )
+        elif frame not in named:
+            issues.append(
+                (
+                    module_rel,
+                    0,
+                    frame,
+                    f"frame is not named in {module_rel}",
+                )
+            )
     return issues
 
 
@@ -998,6 +1525,8 @@ def format_strict_issue_detail(
     prose_src_issues: list[tuple[Path, int, str]],
     version_claim_issues: list[tuple[Path, int, str, str]],
     engine_count_issues: Sequence[tuple[Path, int, str, str]] = (),
+    model_kind_issues: Sequence[tuple[Path, int, str, str]] = (),
+    render_doc_issues: Sequence[tuple[Path, int, str, str]] = (),
 ) -> str:
     """Human-readable listing for terminal fix loops (stderr)."""
     chunks: list[str] = []
@@ -1093,6 +1622,24 @@ def format_strict_issue_detail(
         ):
             chunks.append(f"  {rel}:{lineno}  `{claimed}`  → {reason}\n")
 
+    if model_kind_issues:
+        chunks.append(
+            f"## Model-kind coverage claims ({len(model_kind_issues)})\n"
+        )
+        for rel, lineno, claimed, reason in sorted(
+            model_kind_issues, key=lambda x: (str(x[0]), x[1])
+        ):
+            chunks.append(f"  {rel}:{lineno}  `{claimed}`  → {reason}\n")
+
+    if render_doc_issues:
+        chunks.append(
+            f"## Render-doc frame coverage ({len(render_doc_issues)})\n"
+        )
+        for rel, lineno, claimed, reason in sorted(
+            render_doc_issues, key=lambda x: (str(x[0]), x[1])
+        ):
+            chunks.append(f"  {rel}:{lineno}  `{claimed}`  → {reason}\n")
+
     chunks.append("\nTip: full tables also in docs/development/docs_audit_report.md\n")
     return "".join(chunks)
 
@@ -1166,6 +1713,8 @@ def main() -> int:
     prose_src_issues = audit_prose_src_patterns(maintained_files)
     version_claim_issues = audit_version_claims(maintained_files)
     engine_count_issues = audit_engine_count_claims(engine_count_scan_files())
+    model_kind_issues = audit_model_kind_coverage(model_kind_scan_files())
+    render_doc_issues = audit_render_doc_frame_coverage()
 
     report_path = args.report_path
     if not report_path.is_absolute():
@@ -1354,6 +1903,38 @@ def main() -> int:
     lines.extend(
         [
             "",
+            "## Model-kind coverage claims contradicting framework_registry",
+            "",
+        ]
+    )
+    if not model_kind_issues:
+        lines.append("None found.")
+    else:
+        lines.append("| Source | Line | Frame | Issue |")
+        lines.append("|--------|------|-------|-------|")
+        for rel, lineno, frame, reason in sorted(
+            model_kind_issues, key=lambda x: (str(x[0]), x[1])
+        ):
+            lines.append(f"| `{rel}` | {lineno} | {frame} | {reason} |")
+    lines.extend(
+        [
+            "",
+            "## Registry frames missing from the maintained render docs",
+            "",
+        ]
+    )
+    if not render_doc_issues:
+        lines.append("None found.")
+    else:
+        lines.append("| Source | Line | Frame | Issue |")
+        lines.append("|--------|------|-------|-------|")
+        for rel, lineno, frame, reason in sorted(
+            render_doc_issues, key=lambda x: (str(x[0]), x[1])
+        ):
+            lines.append(f"| `{rel}` | {lineno} | {frame} | {reason} |")
+    lines.extend(
+        [
+            "",
             "## docs/**/AGENTS.md structure (Overview/Purpose)",
             "",
         ]
@@ -1388,6 +1969,8 @@ def main() -> int:
     print(f"prose src/<module> pattern: {len(prose_src_issues)}")
     print(f"stale version claims: {len(version_claim_issues)}")
     print(f"engine count claims: {len(engine_count_issues)}")
+    print(f"model-kind coverage claims: {len(model_kind_issues)}")
+    print(f"render-doc frame coverage: {len(render_doc_issues)}")
     total_issues = (
         len(link_issues)
         + len(spec_issues)
@@ -1402,6 +1985,8 @@ def main() -> int:
         + len(prose_src_issues)
         + len(version_claim_issues)
         + len(engine_count_issues)
+        + len(model_kind_issues)
+        + len(render_doc_issues)
         + (len(anchor_issues) if args.check_anchors else 0)
     )
     if args.strict and total_issues > 0:
@@ -1424,6 +2009,8 @@ def main() -> int:
                     prose_src_issues=prose_src_issues,
                     version_claim_issues=version_claim_issues,
                     engine_count_issues=engine_count_issues,
+                    model_kind_issues=model_kind_issues,
+                    render_doc_issues=render_doc_issues,
                 ),
                 file=sys.stderr,
                 end="",

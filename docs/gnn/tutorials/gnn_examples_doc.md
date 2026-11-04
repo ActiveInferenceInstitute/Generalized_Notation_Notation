@@ -15,7 +15,7 @@ notation. The models the pipeline actually ships and exercises live in
 |---|---|
 | `basics/` | Static and dynamic perception — the smallest complete models |
 | `discrete/` | Discrete POMDPs: MDPs, HMMs, bandits, T-maze, planning horizon |
-| `continuous/` | Pure linear-Gaussian state-space models (`F`/`H`/`Q`/`R`, `prior_mean`/`prior_cov`, optional `u`, `goal_mean`/`control_gain`) run natively on JAX, NumPyro, PyTorch, Stan and RxInfer.jl; categorical backends report them `unsupported` |
+| `continuous/` | Pure linear-Gaussian state-space models (`F`/`H`/`Q`/`R`, `prior_mean`/`prior_cov`, optional `u`, `goal_mean`/`control_gain`) run natively on JAX, NumPyro, PyTorch, Stan, RxInfer.jl and ngc-learn; categorical backends report them `unsupported` |
 | `hierarchical/` | Multi-level state hierarchies |
 | `learning/` | Dirichlet likelihood learning |
 | `multiagent/` | Multi-agent coordination and stigmergic swarms |

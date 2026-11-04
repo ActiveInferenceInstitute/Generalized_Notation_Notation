@@ -13,8 +13,8 @@
 
 Each spec is one of two kinds, classified by `render.pomdp_contract.detect_model_kind`:
 
-- **Discrete** — categorical `A/B/C/D[/E]` matrices (flat, factored, hierarchical, multi-agent or learning variants). Renders and executes on the frameworks whose registry entry declares the discrete state space; `cpomdp` and `ngclearn` are continuous-only and report the `unsupported` render status.
-- **Continuous** — a linear-Gaussian state-space block only: `F` (dynamics), `H` (observation), `Q`/`R` (noise covariances), `prior_mean`/`prior_cov`, and optionally `goal_mean`/`control_gain` for closed-loop control. Renders and executes on the frameworks whose registry entry has `supports_continuous: True` (JAX, NumPyro, PyTorch, Stan, RxInfer.jl); the others report the `unsupported` render status, which is excluded from success rates and never executed by Step 12.
+- **Discrete** — categorical `A/B/C/D[/E]` matrices (flat, factored, hierarchical, multi-agent or learning variants). Renders and executes on the frameworks whose registry entry declares the discrete state space; a frame whose entry declares only the continuous state space reports the `unsupported` render status.
+- **Continuous** — a linear-Gaussian state-space block only: `F` (dynamics), `H` (observation), `Q`/`R` (noise covariances), `prior_mean`/`prior_cov`, and optionally `goal_mean`/`control_gain` for closed-loop control. Renders and executes on the frameworks whose registry entry declares the continuous state space; a frame whose entry declares only the discrete state space reports the `unsupported` render status, which is excluded from success rates and never executed by Step 12.
 
 ## Components
 
