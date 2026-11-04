@@ -199,7 +199,8 @@ Framework support follows from the state space: JAX, NumPyro, PyTorch, Stan
 and RxInfer.jl render and execute continuous models natively (Kalman filter;
 NumPyro and Stan additionally run NUTS over the same model). PyMDP,
 ActiveInference.jl, DisCoPy and bnlearn are categorical and report the model as
-**unsupported** ("continuous-state model: … supports discrete POMDPs only") —
+**unsupported** ("unsupported-continuous-state: continuous-state model: …
+supports discrete POMDPs only") —
 a distinct status from a failure, excluded from render success rates and from
 Step 12 execution.
 
