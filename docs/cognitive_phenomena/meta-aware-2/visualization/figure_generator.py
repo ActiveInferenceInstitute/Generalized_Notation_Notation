@@ -12,13 +12,13 @@ Part of the meta-aware-2 "golden spike" GNN-specified executable implementation.
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap
 
 # Set style for publication-quality figures
 plt.style.use("seaborn-v0_8-whitegrid")

@@ -14,7 +14,6 @@ Single entry point to generate all paper figures and verify implementation accur
 """
 
 import os
-from typing import Any, Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -34,7 +33,6 @@ from visualizations import (
     plot_figure_11,
     plot_free_energy_dynamics,
     plot_precision_dynamics,
-    save_all_figures,
 )
 
 

@@ -18,14 +18,14 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import psutil
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from config.gnn_parser import LevelConfig, ModelConfig, load_gnn_config
+from config.gnn_parser import ModelConfig, load_gnn_config
 from utils.math_utils import MathUtils
 
 logger = logging.getLogger(__name__)

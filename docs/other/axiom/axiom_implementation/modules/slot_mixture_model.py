@@ -7,7 +7,7 @@ decomposition of pixel observations into K competing object slots.
 """
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 import numpy as np
 from scipy.special import logsumexp

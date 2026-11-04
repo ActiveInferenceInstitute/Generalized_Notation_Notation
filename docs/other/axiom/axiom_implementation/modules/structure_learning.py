@@ -7,7 +7,7 @@ Bayesian Model Reduction (BMR) for AXIOM mixture models.
 """
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict
 
 import numpy as np
 

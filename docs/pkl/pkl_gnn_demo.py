@@ -19,13 +19,10 @@ Based on research from:
 - Active Inference literature and GNN specifications
 """
 
-import json
-import os
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 
 
 class PklGNNDemo:

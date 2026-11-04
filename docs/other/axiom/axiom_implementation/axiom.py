@@ -18,9 +18,8 @@ import pickle
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 from modules.identity_mixture_model import IdentityMixtureModel
 from modules.planning import ActiveInferencePlanning
@@ -30,24 +29,8 @@ from modules.recurrent_mixture_model import RecurrentMixtureModel
 from modules.slot_mixture_model import SlotMixtureModel
 from modules.structure_learning import StructureLearning
 from modules.transition_mixture_model import TransitionMixtureModel
-from utils.math_utils import (
-    dirichlet_entropy,
-    dirichlet_expectation,
-    entropy,
-    expected_free_energy,
-    kl_divergence,
-    log_categorical,
-    log_multivariate_normal,
-    log_sum_exp,
-    normalize_log_probabilities,
-    softmax_policy,
-    stick_breaking_weights,
-)
 from utils.performance_utils import (
     PerformanceTracker,
-    get_memory_stats,
-    record_metric,
-    track_operation,
 )
 from utils.visualization_utils import (
     plot_model_complexity,

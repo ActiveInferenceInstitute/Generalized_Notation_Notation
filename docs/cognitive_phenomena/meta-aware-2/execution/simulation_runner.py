@@ -23,7 +23,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from config.gnn_parser import ModelConfig, load_gnn_config
 from core.meta_awareness_model import MetaAwarenessModel
-from simulation_logging.simulation_logger import SimulationLogger, create_logger
+from simulation_logging.simulation_logger import create_logger
 from utils.math_utils import MathUtils
 from visualization.figure_generator import FigureGenerator
 

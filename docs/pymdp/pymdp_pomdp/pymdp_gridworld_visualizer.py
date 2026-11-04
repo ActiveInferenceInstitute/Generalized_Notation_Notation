@@ -19,7 +19,7 @@ Date: 2024
 
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
