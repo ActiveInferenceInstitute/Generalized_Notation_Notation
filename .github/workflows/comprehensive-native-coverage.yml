@@ -28,7 +28,9 @@ jobs:
   comprehensive-native:
     name: Comprehensive native (${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # A budget on a hang, not on the job: the longest measured cell is 44.6 min
+    # (window to 2026-11-04) and two waves of lane budgets fit inside this.
+    timeout-minutes: 90
     permissions:
       contents: read
     strategy:
