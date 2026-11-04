@@ -23,6 +23,7 @@ shipped PDF.
 from __future__ import annotations
 
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -61,6 +62,38 @@ _MANIFEST_FAMILIES = [
     {"name": "multiagent", "target_dir": "input/gnn_files/multiagent"},
     {"name": "basics", "target_dir": "input/gnn_files/basics"},
 ]
+
+
+_FIXTURE_GIT = (
+    "git",
+    "-c",
+    "user.email=fixture@example.invalid",
+    "-c",
+    "user.name=fixture",
+    "-c",
+    "commit.gpgsign=false",
+)
+
+
+def _commit_fixture(root: Path, message: str = "fixture") -> None:
+    """Make ``root`` its own committed repository.
+
+    ``RepositorySnapshot`` resolves the **enclosing** repository's commit when there is
+    one, so a fixture that is only a temporary directory inherits whatever repository
+    contains ``TMPDIR``. On this machine ``TMPDIR`` is ``/Volumes/GitVault/Local/tmp/...``
+    — inside the vault repository — so the snapshot read the vault's HEAD, saw none of
+    the fixture's files, and this test failed; on the hosted runner ``TMPDIR`` is inside
+    no repository, the working-tree fallback ran, and the same test passed (measured
+    2026-11-04). Committing the fixture makes the snapshot's source the fixture itself,
+    on either host.
+    """
+    for argv in (("init", "-q"), ("add", "-A"), ("commit", "-qm", message)):
+        subprocess.run(
+            [*_FIXTURE_GIT, *argv],
+            cwd=root,
+            check=True,
+            capture_output=True,
+        )
 
 
 # --- the generated sentences ------------------------------------------------
@@ -351,8 +384,18 @@ def test_a_doc_that_only_names_the_header_is_not_counted_as_a_model(
         encoding="utf-8",
     )
     (fixtures / "real_model.md").write_text("## GNNSection\nReal\n", encoding="utf-8")
+    _commit_fixture(tmp_path)
     snapshot = RepositorySnapshot(tmp_path)
     assert dict(_outside_corpus_dirs(snapshot)) == {"input/fixtures": 1}
+
+    # The snapshot's source is the fixture's own commit, not the disk and not an
+    # enclosing repository: with the model rewritten so it is no longer a model on
+    # disk, the committed view must still count it. Without this direction the
+    # assertion above would also pass if the source were ignored entirely.
+    (fixtures / "real_model.md").write_text("Prose only now.\n", encoding="utf-8")
+    assert dict(_outside_corpus_dirs(RepositorySnapshot(tmp_path))) == {
+        "input/fixtures": 1
+    }
 
 
 if __name__ == "__main__":  # pragma: no cover - convenience
