@@ -120,7 +120,7 @@ The full obligation table is in
 ### 1. Parse: GNN → JSON
 
 **Entry Point:** `src/gnn/3_gnn.py:process_gnn_multi_format()`
-**Core Method:** `src/gnn/multi_format_processor.py`
+**Core Method:** `src/gnn/processing/multi_format_processor.py`
 
 Input: `actinf_pomdp_agent.md`
 
@@ -192,7 +192,7 @@ Framework targets:
 
 ```text
 src/gnn/3_gnn.py (thin orchestrator)
-├── src/gnn/multi_format_processor.py (main processor)
+├── src/gnn/processing/multi_format_processor.py (main processor)
 ├── src/gnn/schema_validator/syntax.py
 │   └── GNNParser (line 54-89)
 │       ├── SECTION_PATTERN (line 58)

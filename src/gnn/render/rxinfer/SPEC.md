@@ -49,6 +49,6 @@ rxinfer/
 
 ## Dependencies
 
-Target: `julia >= 1.8`, RxInfer 5.5.0 (pinned by the committed `Project.toml` +
+Target: `julia >= 1.8`, RxInfer 6.1.0 (pinned by the committed `Project.toml` +
 `Manifest.toml` under `src/gnn/execute/rxinfer/`; execution via
 `julia --startup-file=no --project=src/gnn/execute/rxinfer <script>`).

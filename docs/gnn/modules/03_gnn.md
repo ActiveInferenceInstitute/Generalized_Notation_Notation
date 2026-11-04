@@ -78,7 +78,7 @@ For the reference model used in tests, those **21** formats achieve **100%** rou
 
 **Returns**: `bool` - True on success, False otherwise
 
-**Location**: `src/gnn/multi_format_processor.py`
+**Location**: `src/gnn/processing/multi_format_processor.py`
 
 **Example**:
 
@@ -552,7 +552,7 @@ See **`mcp.py`** `register_tools` for the authoritative list. Examples include:
 
 ### MCP File Location
 
-- `src/gnn/mcp.py` — MCP tool registrations
+- `src/gnn/mcp/gnn_root.py` — GNN root MCP tool registrations
 
 ---
 

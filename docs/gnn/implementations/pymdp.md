@@ -26,7 +26,7 @@ and `D_ctx` before composing a PyMDP joint contract for execution.
 
 The implementation is split across three current surfaces:
 
-1. **POMDP extraction**: `src/gnn/pomdp_extractor.py` builds a structured model
+1. **POMDP extraction**: `src/gnn/extract/pomdp_extractor.py` builds a structured model
    spec with modality maps, state-factor maps, control-factor maps, matrix
    shapes, and `matrix_provenance`.
 2. **Rendering**: `src/gnn/render/pymdp/pymdp_renderer.py` exposes

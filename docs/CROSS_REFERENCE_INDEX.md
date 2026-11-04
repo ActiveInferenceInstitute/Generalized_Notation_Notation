@@ -68,7 +68,7 @@ GNN revision and conformance evidence.
 - Automatic YAML path: `input/config.yaml` and `src/gnn/utils/config_io/config_loader.py`
 - Required GNN sections: `src/gnn/schema/parser.py`
 - Render inventory: `src/gnn/render/framework_registry.py`
-- Execute inventory: `src/gnn/execute/processor.py::parse_frameworks_parameter`
+- Execute inventory: `src/gnn/execute/processor/` (package); framework-parameter parsing lives in `src/gnn/execute/detection.py::parse_frameworks_parameter`
 
 ## Inbound topic anchors
 

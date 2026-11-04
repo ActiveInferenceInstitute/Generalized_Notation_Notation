@@ -10,8 +10,9 @@ Multi-model GNN file handling: splitting a file that contains several models on 
 - `__init__.py` - Curated public surface (`__all__`, seven names)
 
 ## Consumers
-- `gnn graph` CLI subcommand renders the dependency graph through `render_graph_from_file` (`src/gnn/cli/__init__.py`)
-- Website dashboard dependency-graph panel (`src/gnn/website/dashboard.py` imports `render_graph_from_file` from `gnn.multimodel.dep_graph`)
+- `gnn graph` CLI subcommand renders the dependency graph through `render_graph_from_file` (`src/gnn/cli/handlers_pipeline.py`)
+- HTTP API parity endpoint delegates to `render_graph_from_file` (`src/gnn/api/parity.py`)
+- MCP tool `generate_dependency_graph` wraps it (`src/gnn/multimodel/mcp.py`)
 
 ## Invariants
 - `parse_multimodel` does not raise on parse problems: per-model errors are collected into the returned `errors` list.

@@ -34,6 +34,15 @@ stems, and focused regression tests.
 
 ## Changed Surfaces
 
+> **Path note (2026-11-04).** The module paths below are the ones the remediation
+> touched at commit `5e77e657`. Three of them have since been split in place and no
+> longer resolve as single files:
+> `src/gnn/execute/processor.py` → `src/gnn/execute/processor/`,
+> `src/gnn/render/processor.py` → `src/gnn/render/processor/`, and
+> `src/gnn/render/pomdp_processor.py` → `src/gnn/render/pomdp_processor/`.
+> The commands further down are retained exactly as recorded and are a historical
+> receipt, not a runnable recipe against current `main`.
+
 - `src/gnn/execute/mcp.py`
 - `src/gnn/execute/processor.py`
 - `src/gnn/llm/mcp.py`

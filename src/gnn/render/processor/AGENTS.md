@@ -72,7 +72,7 @@ aliases.
 ## Provenance
 
 This package was extracted in place from the former monolithic
-`src/gnn/render/processor.py`; the facade surface was preserved exactly so
+`processor.py`; the facade surface was preserved exactly so
 existing import sites continue to work unchanged. Cross-module wiring after the
 split:
 

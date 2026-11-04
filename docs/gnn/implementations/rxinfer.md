@@ -37,8 +37,11 @@ never free-text scanning of the source.
 
 The table is maintained next to the code in
 [`src/gnn/render/rxinfer/README.md`](../../../src/gnn/render/rxinfer/README.md). The TOML-emitting
-`toml_generator.py` is retired and kept only as a warning surface —
-`render_gnn_to_rxinfer_toml()` raises a `DeprecationWarning`.
+`toml_generator.py` and its `render_gnn_to_rxinfer_toml()` entry point are **deleted**, not
+deprecated: neither the module nor the function exists. The `rxinfer_toml` render target is a
+typed refusal inside `render_gnn_spec` (`src/gnn/render/processor/rendering.py`), and the
+parsing/formatting helpers that contract tests still pin live on in
+`src/gnn/render/rxinfer/model_contracts.py`.
 
 This document details the full data flow from GNN specification through Julia factor
 graph construction, genuine variational message-passing inference, real variational free

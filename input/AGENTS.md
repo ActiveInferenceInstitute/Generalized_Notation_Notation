@@ -18,7 +18,7 @@
 
 ## Model kinds and framework support
 
-`render.pomdp_contract.detect_model_kind` classifies each spec; `src/gnn/render/framework_registry.py` declares the twelve frameworks and the `state_space` values each frame consumes. Both table columns are read from that declaration over the default render set — every frame whose entry is not `experimental`; the experimental `cpomdp` and `thrml` require explicit selection.
+`render.pomdp_contract.detect_model_kind` classifies each spec; `src/gnn/render/framework_registry.py` is the single declaration of the twelve frameworks and the `state_space` values each frame consumes. Both table columns are read from that declaration over the default render set — every frame whose entry is not `experimental`; the experimental `cpomdp` and `thrml` require explicit selection.
 
 | Model kind | Folders | Renders + executes on | Render status `unsupported` on |
 |---|---|---|---|
@@ -29,7 +29,7 @@
 
 ## Rules for agents
 
-- Only spec files are discovered: `gnn.discovery.is_model_source_path` excludes the `INDEX.md`, `AGENTS.md` and `README.md` scaffolds (plus `*.example.md` / `*.template.md`) from model discovery. Adding a new exemplar means adding a `.md` spec under an existing or new task folder and a row in `gnn_files/INDEX.md`.
+- Only spec files are discovered: `gnn.processing.discovery.is_model_source_path` excludes the `INDEX.md`, `AGENTS.md` and `README.md` scaffolds (plus `*.example.md` / `*.template.md`) from model discovery. Adding a new exemplar means adding a `.md` spec under an existing or new task folder and a row in `gnn_files/INDEX.md`.
 - `--target-dir` must be a directory (a folder under `gnn_files/` or `gnn_files/` itself); single-file paths are not discovered.
 - Do not write counts of exemplars, renders or executions into prose here. Live counts come from `output/11_render_output/render_processing_summary.json` and `output/12_execute_output/summaries/execution_summary.json`.
 - A continuous exemplar declares only the linear-Gaussian block; do not add categorical `A/B/C/D` matrices to it, or the extractor will stop classifying it as `continuous`.

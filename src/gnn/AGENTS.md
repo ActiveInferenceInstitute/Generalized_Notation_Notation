@@ -588,7 +588,7 @@ See **`mcp.py`** `register_tools` for the authoritative list. Examples include:
 
 ### MCP File Location
 
-- `src/gnn/mcp.py` — MCP tool registrations
+- `src/gnn/mcp/gnn_root.py` — GNN root MCP tool registrations
 
 ---
 

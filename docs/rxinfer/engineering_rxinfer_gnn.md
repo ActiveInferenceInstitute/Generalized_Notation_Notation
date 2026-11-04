@@ -77,9 +77,11 @@ Earlier versions of the pipeline rendered a `config.toml` and used the
 `multiagent_trajectory_planning/` example with a GNN-generated `config.toml` as a
 drop-in replacement for a hand-written one. That path is retired:
 
-- `src/gnn/render/rxinfer/toml_generator.py` (`render_gnn_to_rxinfer_toml`) emits a
-  `DeprecationWarning` and is absent from processor wiring and public exports.
-  Its parsing helpers remain because topology contract tests use them.
+- `toml_generator.py` and `render_gnn_to_rxinfer_toml` are gone — deleted, not deprecated.
+  Nothing emits a `DeprecationWarning` because there is no callable left to emit one; the
+  `rxinfer_toml` target is refused inside `render_gnn_spec`. What survives is the helper
+  layer, migrated to `src/gnn/render/rxinfer/model_contracts.py` because topology contract
+  tests pin it.
 - The `Multiagent_GNN_RxInfer.jl` validation script and the TOML-based workflow it
   described are no longer the supported path.
 
