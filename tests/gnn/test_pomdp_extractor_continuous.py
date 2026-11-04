@@ -80,6 +80,7 @@ def test_unsupported_frameworks_are_flagged_not_failed(tmp_path: Path) -> None:
     for fw in sorted(UNSUPPORTED):
         result = proc._process_single_framework(pomdp, fw)
         assert result["unsupported"] is True and result["status"] == "unsupported"
+        assert "unsupported-continuous-state:" in result["message"]
         assert "supports discrete POMDPs only" in result["message"]
         assert result["output_files"] == []
     factored = extract_pomdp_from_file(

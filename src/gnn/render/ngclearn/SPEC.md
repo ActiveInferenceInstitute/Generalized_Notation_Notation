@@ -27,7 +27,7 @@ ngclearn/
 
 - Continuous specs route through `processor._render_continuous_target` and are
   written via `render.continuous_script.generate_continuous_script(backend="ngclearn")`
-- Discrete refusal message: `discrete POMDP: ngclearn supports continuous linear-Gaussian models only`
+- Discrete refusal message: `unsupported-discrete-state: discrete POMDP: ngclearn supports continuous linear-Gaussian models only`
 - Generated scripts write `simulation_results.json` under `NGCLEARN_OUTPUT_DIR`
   (default: current directory)
 - Render-time dependencies: none beyond the core pipeline (codegen-only —

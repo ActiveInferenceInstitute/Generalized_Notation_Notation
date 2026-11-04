@@ -18,7 +18,7 @@ From `src/gnn/render/ngclearn/__init__.py`:
 
 **Contract**:
 - continuous (linear-Gaussian) specs write exactly one Python file to `output_path` and return `(success, message, [output_path])`
-- discrete POMDPs are first-class unsupported: `(False, "discrete POMDP: ngclearn supports continuous linear-Gaussian models only", [])`
+- discrete POMDPs are first-class unsupported: `(False, "unsupported-discrete-state: discrete POMDP: ngclearn supports continuous linear-Gaussian models only", [])`
 
 ---
 

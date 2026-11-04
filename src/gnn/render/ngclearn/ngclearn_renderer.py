@@ -21,9 +21,13 @@ from gnn.render.naming import atomic_write_text
 
 logger = logging.getLogger(__name__)
 
-#: First-class unsupported refusal for every non-continuous model kind.
+#: First-class unsupported refusal for every non-continuous model kind.  The
+#: ``unsupported-discrete-state:`` prefix types the refusal against the
+#: registry's ``state_space`` declaration (ngc-learn consumes continuous
+#: state only), matching the compatibility gate's prefix for the same gap.
 _DISCRETE_MESSAGE = (
-    "discrete POMDP: ngclearn supports continuous linear-Gaussian models only"
+    "unsupported-discrete-state: discrete POMDP: ngclearn supports continuous "
+    "linear-Gaussian models only"
 )
 
 

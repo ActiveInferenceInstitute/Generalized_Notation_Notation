@@ -351,6 +351,23 @@ class TestPomdpConfigTruthfulness:
         assert not supports_render_dimension("jax", "not-a-dimension", "x")
         assert not supports_render_dimension("jax", "dynamics", "not-a-value")
 
+    def test_state_space_declaration_matches_registry_flags(self) -> None:
+        """The ``state_space`` declaration and the registry flags cannot drift.
+
+        ``supports_continuous``/``continuous_only`` remain the summary the
+        manuscript tables read; ``state_space`` is the declaration the
+        compatibility gate reads.  Pin them equal for every frame so the two
+        surfaces cannot diverge.
+        """
+        from gnn.render.framework_registry import get_render_capabilities
+
+        for name, spec in FRAMEWORK_REGISTRY.items():
+            declared = get_render_capabilities(name)["state_space"]
+            assert spec["supports_continuous"] == ("continuous" in declared), name
+            assert spec["continuous_only"] == (tuple(declared) == ("continuous",)), (
+                name
+            )
+
 
 class TestCanonicalConsistency:
     """The registry stays in lockstep with ``gnn.frameworks.ALL_FRAMEWORKS``."""
