@@ -364,9 +364,7 @@ class TestPomdpConfigTruthfulness:
         for name, spec in FRAMEWORK_REGISTRY.items():
             declared = get_render_capabilities(name)["state_space"]
             assert spec["supports_continuous"] == ("continuous" in declared), name
-            assert spec["continuous_only"] == (tuple(declared) == ("continuous",)), (
-                name
-            )
+            assert spec["continuous_only"] == (tuple(declared) == ("continuous",)), name
 
 
 class TestCanonicalConsistency:

@@ -34,11 +34,19 @@ REFUSALS = [
     # Capability: pymdp declares supports_continuous=false.
     ("continuous/stochastic_dynamics.md", "pymdp", "supports discrete POMDPs only"),
     # Capability: ngclearn declares continuous_only=true.
-    ("discrete/actinf_pomdp_agent.md", "ngclearn", "supports continuous linear-Gaussian models only"),
+    (
+        "discrete/actinf_pomdp_agent.md",
+        "ngclearn",
+        "supports continuous linear-Gaussian models only",
+    ),
     # Composition: independent continuous agents need the declared composition.
     ("continuous/multi_agent_lgssm.md", "pymdp", "unsupported-composition"),
     # Factored continuous LGSSM is rendered by the per-factor JAX path only.
-    ("continuous/factored_continuous_lgssm.md", "numpyro", "unsupported-factored-continuous"),
+    (
+        "continuous/factored_continuous_lgssm.md",
+        "numpyro",
+        "unsupported-factored-continuous",
+    ),
     # Nonstationary dynamics need per-step transition switching (pymdp only).
     ("discrete/time_varying_dynamics.md", "jax", "unsupported-nonstationary"),
     ("discrete/regime_switched_dynamics.md", "numpyro", "unsupported-nonstationary"),
@@ -112,7 +120,9 @@ def test_declared_supported_cells_render_with_matrices(
         "discrete/multi_armed_bandit.md",
     ],
 )
-def test_canonical_b_containers_agree_on_the_transition_tensor(source: str, tmp_path: Path) -> None:
+def test_canonical_b_containers_agree_on_the_transition_tensor(
+    source: str, tmp_path: Path
+) -> None:
     """The declared-order container and the action-major container hold the same slices."""
     pomdp = extract_pomdp_from_file(MODELS / source, strict_validation=True)
     assert pomdp is not None

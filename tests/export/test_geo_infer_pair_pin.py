@@ -167,9 +167,7 @@ def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None
     )
     job = workflow["jobs"]["geo-infer-interchange"]
     assert job["strategy"]["matrix"]["python"] == ["3.11", "3.12"]
-    uv_requirement = tomllib.loads((ROOT / "uv.toml").read_text())[
-        "required-version"
-    ]
+    uv_requirement = tomllib.loads((ROOT / "uv.toml").read_text())["required-version"]
     # uv.toml declares a floor with a minor ceiling (>=0.13.6,<0.14); the hosted
     # pin stays exact and must satisfy it.
     expected_versions = {"geo-infer": "0.13.1", "gnn": "0.13.6"}

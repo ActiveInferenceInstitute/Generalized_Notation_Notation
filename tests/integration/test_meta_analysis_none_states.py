@@ -41,11 +41,7 @@ def test_resource_efficiency_survives_none_num_states(tmp_path: Path) -> None:
     section = reporter._resource_efficiency()
     assert "Recorded Source Sizes by State-Space Size" in section
     assert (
-        "| N | pymdp LOC |\n"
-        "|---|---|\n"
-        "| 0 | 120 |\n"
-        "| 3 | 120 |\n"
-        "| 9 | 120 |"
+        "| N | pymdp LOC |\n|---|---|\n| 0 | 120 |\n| 3 | 120 |\n| 9 | 120 |"
     ) in section
     # The authored inputs declare 100 steps in 1.5 seconds: 66.67 steps/sec.
     assert (
