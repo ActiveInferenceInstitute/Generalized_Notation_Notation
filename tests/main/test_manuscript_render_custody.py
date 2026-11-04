@@ -158,11 +158,11 @@ def test_template_gate_is_inert_without_a_declared_revision(
     )
 
 
-def test_environment_report_calls_a_legacy_manifest_unmeasured(tmp_path: Path) -> None:
+def test_environment_report_calls_a_v1_manifest_unmeasured(tmp_path: Path) -> None:
     """A v1 chain declares nothing, and that is reported, never normalized."""
     _write_manifest(tmp_path)
     report = " ".join(environment_report(tmp_path, load_render_manifest(tmp_path)))
-    assert "declares no environment (legacy v1)" in report
+    assert "declares no environment (v1 manifest)" in report
     assert "UNAVAILABLE" in report
 
 

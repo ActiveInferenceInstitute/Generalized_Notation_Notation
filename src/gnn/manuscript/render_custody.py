@@ -492,7 +492,7 @@ def _profile_axes(
 ) -> tuple[str, dict[str, object], dict[str, dict[str, object]]]:
     """``(recording_name, recording_values, permitted_profiles)``.
 
-    Empty name and values when the chain declares no usable profile — a legacy
+    Empty name and values when the chain declares no usable profile — a bare
     v1 manifest, or a declared name that is not one of its own permitted
     profiles. A chain whose name and values disagree cannot be asked about a
     fresh render, and :func:`verify_fresh_render` reports that as unmeasured
@@ -591,7 +591,7 @@ def environment_report(project_root: Path, manifest: dict) -> list[str]:
     is *reported* as unmeasured, never silently normalized into agreement, and
     a permitted-but-different profile is *reported* as a narrowed comparison,
     so a green run is never read as a fuller verification than it was. A
-    legacy v1 manifest hits the first branch, which is why the declaration is
+    v1 manifest hits the first branch, which is why the declaration is
     additive rather than a new manifest version.
     """
 
@@ -611,7 +611,7 @@ def environment_report(project_root: Path, manifest: dict) -> list[str]:
     ]
     if not recorded:
         lines.append(
-            "the chain declares no environment (legacy v1): the "
+            "the chain declares no environment (v1 manifest): the "
             "template-revision gate and the profile comparison are "
             f"UNAVAILABLE here — re-record ({RECORD_COMMAND}) declares them"
         )
@@ -890,7 +890,7 @@ def verify_fresh_render(project_root: Path) -> list[str]:
       warning level. With the inputs drifted too, the committed chain is
       stale for HEAD.
     * ``[UNMEASURED]`` — the chain declares no usable render profile (a
-      legacy v1 manifest), or the environment does not supply the template
+      v1 manifest), or the environment does not supply the template
       revision this render used, so the gate cannot fire. Exit code 4: a
       switch that is off must not report success.
 
@@ -978,7 +978,7 @@ def verify_fresh_render(project_root: Path) -> list[str]:
     if not recorded:
         issues.append(
             f"{UNMEASURED} the committed chain declares no usable render profile "
-            "(legacy v1 manifest, or its recording profile missing from its own "
+            "(v1 manifest, or its recording profile missing from its own "
             "permitted set): the template-revision gate and the profile "
             "comparison are unavailable, and a chain that cannot describe its "
             f"environment cannot be asked whether a render matched it — "
