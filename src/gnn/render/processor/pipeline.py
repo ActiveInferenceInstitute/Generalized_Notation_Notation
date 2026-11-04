@@ -369,7 +369,7 @@ def _process_single_gnn_file_basic(
     try:
         # Import basic generators
         from gnn.render.bnlearn import generate_bnlearn_code
-        from gnn.render.generators import generate_discopy_code, generate_pymdp_code
+        from gnn.render.generators import generate_pymdp_code
 
         # Create basic model data from filename
         model_data: dict[str, Any] = {
@@ -387,7 +387,6 @@ def _process_single_gnn_file_basic(
         # Generate code for each framework
         frameworks: dict[str, Any] = {
             "pymdp": (generate_pymdp_code, ".py"),
-            "discopy": (generate_discopy_code, ".py"),
             "bnlearn": (generate_bnlearn_code, ".py"),
         }
 
@@ -411,6 +410,24 @@ def _process_single_gnn_file_basic(
                 logger.warning(
                     f"Failed to generate {framework_name} code for {gnn_file}: {e}"
                 )
+
+        # DisCoPy uses the same connection-driven renderer as Step 11. Parse the
+        # source file for its declared Connections instead of emitting a
+        # synthetic circuit; a spec without wiring is a typed refusal.
+        from gnn.render.discopy.discopy_renderer import DisCoPyRenderer
+
+        discopy_dir = file_output_dir / "discopy"
+        discopy_dir.mkdir(parents=True, exist_ok=True)
+        discopy_file = discopy_dir / f"{gnn_file.stem}_discopy.py"
+        discopy_ok, discopy_message = DisCoPyRenderer().render_file(
+            gnn_file, discopy_file
+        )
+        if discopy_ok:
+            generated_files.append(str(discopy_file))
+        else:
+            logger.warning(
+                f"Failed to generate discopy code for {gnn_file}: {discopy_message}"
+            )
 
         return {
             "success": len(generated_files) > 0,

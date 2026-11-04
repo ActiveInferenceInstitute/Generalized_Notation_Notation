@@ -206,6 +206,8 @@ class _ProcessFlowMixin(_POMDPProcessorSupportMixin):
             "preserve_discrete_structure": framework == "thrml",
         }
         gnn_spec = self._pomdp_to_gnn_spec(pomdp_space, **spec_options)
+        if gnn_file_path and not gnn_spec.get("source_file"):
+            gnn_spec["source_file"] = Path(gnn_file_path).name
 
         # Get framework-specific renderer
         try:

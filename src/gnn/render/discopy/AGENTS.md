@@ -17,9 +17,9 @@
 ### Primary Responsibilities
 
 1. Convert a parsed GNN spec into a runnable DisCoPy script.
-2. Map GNN variables to DisCoPy `Box`es and connections to wires.
-3. Emit a `main()` in the generated script that assembles and (when `discopy.drawing` is present) renders the diagram.
-4. Surface warnings for missing `InitialParameterization`, `ModelParameters`, and `Connections` sections rather than hard-failing.
+2. Build one `discopy.monoidal.Box` per declared connection: the source endpoint list becomes the box domain, the target endpoint list becomes its codomain, and the connection label becomes the box name. Diagrams are composed sequentially when domains and codomains match, and in parallel otherwise; no synthetic Active Inference circuit is added.
+3. Emit a `main()` in the generated script that builds the diagram and exports analysis JSON.
+4. Surface warnings for missing `InitialParameterization` and `ModelParameters` sections. Missing or malformed `Connections` is a typed refusal (`unsupported-discopy-connections:`) because a diagram without declared wiring would be an invented artifact.
 5. Validate and emit matrix permutation metadata when supplied by parsed GNN data; current permutation support is metadata-only and does not reorder generated diagram wires or boxes.
 
 ### What this module is **not**
@@ -53,10 +53,16 @@ def render_gnn_to_discopy(
 
 **Returns**: `(success, message, warnings)` where `warnings` is a list of human-readable strings describing missing optional sections in the spec.
 
-**Behavior on missing sections** (non-fatal warnings only):
-- Missing `initial_parameterization` → `"No initial parameterization found - using defaults"`
-- Missing `model_parameters` → `"No model parameters found - using inferred dimensions"`
-- Missing `connections` → `"No explicit connections found - using default Active Inference structure"`
+**Behavior on missing sections**:
+- Missing `initial_parameterization` → warning `"No initial parameterization found - using defaults"`
+- Missing `model_parameters` → warning `"No model parameters found - using inferred dimensions"`
+- Missing, empty, or malformed `connections` → refusal with message prefix `unsupported-discopy-connections:`; no file is written and any prior artifact is preserved.
+
+**Connection contract**: each entry is a mapping with `source` and `target`
+endpoints and an optional `relation`. Endpoints may be one name (`s`), a
+parenthesized multi-wire group (`(s_f0, u)`), or a list. `->`/`→` normalize to
+`>`, and `—` normalizes to `-`. Box names use
+`<sources>__<label>__<targets>` so two connections never collapse into one box.
 
 ### `DisCoPyRenderer(options=None)`
 
@@ -92,11 +98,12 @@ uv run --frozen --no-sync python -m gnn.cli render input/gnn_files/discrete/acti
 ## Output
 
 A single Python file (`<output_path>`) containing:
-- Imports (`discopy`, `discopy.drawing`, `numpy`).
-- Box and type declarations derived from `gnn_spec.variables`.
+- Imports (`discopy`, `discopy.monoidal`, `numpy`).
+- Literal exports: `MODEL_NAME`, `NUM_STATES`, `NUM_OBSERVATIONS`, `NUM_ACTIONS`, `CONNECTIONS`, `VARIABLES`.
 - `MATRIX_PERMUTATION_METADATA` and `MATRIX_PERMUTATION_APPLIED_TO_DIAGRAM = False` when valid matrix permutation records are present.
-- A `main()` that composes the diagram and calls `diagram.draw(...)` when DisCoPy drawing backends are available.
-- A `__main__` guard so the script is runnable standalone.
+- `build_diagram()` returning `(diagram, boxes, signatures)`; `analyze_diagram()` returning connection/box counts, box names, diagram domain/codomain, connections, and per-box signatures.
+- `export_circuit_data()` writing `circuit_info.json` and `circuit_analysis.json`.
+- A `main()` that builds and exports the diagram, plus a `__main__` guard so the script is runnable standalone.
 
 No additional visualization artifacts are produced by the renderer — rendered images come from running the generated script in Step 12.
 
@@ -126,8 +133,12 @@ Any exception raised during code generation is caught and returned as `(False, "
 ## Integration
 
 ### Orchestrated by
-- `render/processor/rendering.py::render_gnn_spec` — dispatches when `target == "discopy"`.
-- `11_render.py` — the numbered pipeline script.
+- `11_render.py` via `POMDPRenderProcessor`, which calls `render_gnn_to_discopy`.
+- `render/processor/rendering.py::render_gnn_spec` (CLI and MCP single-spec
+  routes) dispatches both `discopy` and `discopy_combined` to the same
+  `render_gnn_to_discopy`, so every door emits the same artifact contract.
+- The compatibility `generators.generate_discopy_code` template remains
+  importable for its direct tests but is no longer part of target dispatch.
 
 ### Consumed by
 - `execute/discopy/` — runs the emitted script in Step 12.

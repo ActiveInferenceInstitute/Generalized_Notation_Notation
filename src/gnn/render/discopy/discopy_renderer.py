@@ -5,9 +5,15 @@ DisCoPy Renderer
 Renders GNN specifications to DisCoPy categorical diagram code for compositional models.
 This renderer creates executable DisCoPy visualizations configured from parsed GNN POMDP specifications.
 
+The supported generator encodes the specification's declared ``Connections``
+section: each connection becomes one monoidal box whose domain is the tensor of
+its source wires and whose codomain is the tensor of its target wires. The
+exact connection record is exported beside the diagram so a consumer can
+compare the diagram to the source without reverse-engineering the drawing.
+
 Features:
-- GNN-to-DisCoPy parameter extraction
-- Categorical diagram generation
+- GNN-to-DisCoPy connection extraction
+- One box per declared connection with source/target wiring
 - String diagram visualization
 - Pipeline integration support
 
@@ -17,12 +23,130 @@ Date: 2024
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from gnn.parsers.common import canonical_section_heading
+from gnn.render.naming import atomic_write_text
 
+from .gnn_parsing import parse_gnn_content
 from .symmetry import build_matrix_permutation_metadata
+
+_RELATION_ALIASES = {
+    "->": ">",
+    ">": ">",
+    "→": ">",
+    "-": "-",
+    "—": "-",
+    "=": "=",
+}
+_RELATION_LABELS = {">": "generates", "-": "couples", "=": "defines"}
+
+
+def _split_endpoint(value: Any) -> List[str]:
+    """Split a declared connection endpoint into individual wire names."""
+    if isinstance(value, (list, tuple)):
+        parts = [str(item) for item in value]
+    else:
+        text = str(value).strip()
+        if text.startswith("(") and text.endswith(")"):
+            text = text[1:-1]
+        parts = text.split(",")
+    return [part.strip() for part in parts if part.strip()]
+
+
+def _parse_connection_entry(
+    entry: Any, index: int
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Return the literal metadata record and the normalised wiring record."""
+    if isinstance(entry, dict):
+        if "source" not in entry or "target" not in entry:
+            raise ValueError(f"connection #{index} is missing a source or target")
+        source_value = entry["source"]
+        target_value = entry["target"]
+        relation_value = entry.get("relation", ">")
+        metadata = {
+            "source": source_value,
+            "relation": relation_value,
+            "target": target_value,
+        }
+    elif isinstance(entry, str):
+        text = entry.strip()
+        match = re.match(r"^(.*?)\s*(->|>|→|-|—|=)\s*(.*?)$", text)
+        if not match:
+            raise ValueError(
+                f"connection #{index} {text!r} is not a 'source > target' declaration"
+            )
+        source_value, relation_value, target_value = match.groups()
+        metadata = {
+            "source": source_value.strip(),
+            "relation": relation_value.strip(),
+            "target": target_value.strip(),
+        }
+    else:
+        raise ValueError(f"connection #{index} is not a mapping or declaration string")
+
+    relation = _RELATION_ALIASES.get(str(relation_value).strip())
+    if relation is None:
+        raise ValueError(
+            f"connection #{index} declares unsupported relation "
+            f"{relation_value!r}; expected '>', '-', '->' or '='"
+        )
+    sources = _split_endpoint(source_value)
+    targets = _split_endpoint(target_value)
+    if not sources:
+        raise ValueError(f"connection #{index} has no source wire")
+    if not targets:
+        raise ValueError(f"connection #{index} has no target wire")
+    wiring = {
+        "source": sources,
+        "relation": relation,
+        "target": targets,
+    }
+    return metadata, wiring
+
+
+def _normalise_connections(
+    connections: Any,
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Validate declared connections and return literal and wiring records."""
+    if connections is None:
+        return [], []
+    if not isinstance(connections, (list, tuple)):
+        raise ValueError("connections must be a sequence of declarations")
+    metadata: List[Dict[str, Any]] = []
+    wiring: List[Dict[str, Any]] = []
+    for index, entry in enumerate(connections):
+        literal, edge = _parse_connection_entry(entry, index)
+        metadata.append(literal)
+        wiring.append(edge)
+    return metadata, wiring
+
+
+def _variable_dimensions(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
+    """Return declared wire dimensions where the specification provides them."""
+    dimensions: Dict[str, Any] = {}
+    for variable in gnn_spec.get("variables", []) or []:
+        if not isinstance(variable, dict):
+            continue
+        name = variable.get("name")
+        if name:
+            dimensions[str(name)] = variable.get("dimensions", [])
+    model_parameters = gnn_spec.get("model_parameters") or {}
+    if isinstance(model_parameters, dict):
+        for key in (
+            "state_factors",
+            "observation_modalities",
+            "control_factors",
+        ):
+            for factor in model_parameters.get(key, []) or []:
+                if not isinstance(factor, dict):
+                    continue
+                name = factor.get("name")
+                if name and str(name) not in dimensions:
+                    dimensions[str(name)] = factor.get("dimensions", [])
+    return dimensions
 
 
 class DisCoPyRenderer:
@@ -58,6 +182,7 @@ class DisCoPyRenderer:
 
             # Parse GNN content (simplified for now)
             gnn_spec = self._parse_gnn_content(content, gnn_file_path.stem)
+            gnn_spec["source_file"] = gnn_file_path.name
 
             # Generate DisCoPy categorical diagram code
             discopy_code = self._generate_discopy_diagram_code(
@@ -66,8 +191,7 @@ class DisCoPyRenderer:
 
             # Write output file
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(discopy_code)
+            atomic_write_text(output_path, discopy_code)
 
             self.logger.info(f"Generated DisCoPy diagram: {output_path}")
             return True, "Successfully generated DisCoPy categorical diagram code"
@@ -116,8 +240,29 @@ class DisCoPyRenderer:
                     gnn_spec["model_parameters"][key] = value
                     self.logger.debug(f"Extracted parameter (string): {key}={value}")
 
+        parsed_sections = parse_gnn_content(content)
+        for raw in parsed_sections.get("StateSpaceBlock", []) or []:
+            match = re.match(r"^([^\s\[#]+)\s*(?:\[([^\]]*)\])?", str(raw))
+            if not match:
+                continue
+            name, dims = match.groups()
+            dimensions = [
+                int(part.strip())
+                for part in (dims or "").split(",")
+                if part.strip().isdigit()
+            ]
+            gnn_spec["variables"].append(
+                {"name": name, "dimensions": dimensions or [1]}
+            )
+        for raw in parsed_sections.get("Connections", []) or []:
+            declaration = str(raw).strip()
+            if declaration and not declaration.startswith("#"):
+                gnn_spec["connections"].append(declaration)
+
         self.logger.info(
-            f"Parsed {len(sections_found)} sections, {len(gnn_spec['model_parameters'])} model parameters"
+            f"Parsed {len(sections_found)} sections, "
+            f"{len(gnn_spec['model_parameters'])} model parameters, "
+            f"{len(gnn_spec['connections'])} connections"
         )
         return gnn_spec
 
@@ -136,6 +281,13 @@ class DisCoPyRenderer:
         """
         # Extract key information from GNN spec
         model_display_name = gnn_spec.get("model_name", model_name)
+        source_file = (
+            gnn_spec.get("source_file")
+            or gnn_spec.get("file_name")
+            or gnn_spec.get("file_path")
+            or "unknown"
+        )
+        source_file = Path(str(source_file)).name
 
         # Extract dimensions from model parameters
         model_params = gnn_spec.get("model_parameters", {})
@@ -145,12 +297,7 @@ class DisCoPyRenderer:
 
         # Try to extract from variables if available
         variables = gnn_spec.get("variables", [])
-        variable_names: list[Any] = []
         for var in variables:
-            var_name = var.get("name", "")
-            if var_name:
-                variable_names.append(var_name)
-
             if var.get("name") == "A" and "dimensions" in var:
                 dims = var["dimensions"]
                 if len(dims) >= 2:
@@ -161,17 +308,19 @@ class DisCoPyRenderer:
                 if len(dims) >= 3:
                     num_actions = dims[2]
 
-        # Get initial parameterization if available
-        gnn_spec.get("initial_parameterization", {})
-
-        # Extract connections if available
-        gnn_spec.get("connections", [])
+        connections, _wiring = _normalise_connections(gnn_spec.get("connections"))
+        variable_dimensions = _variable_dimensions(gnn_spec)
         symmetry_metadata = build_matrix_permutation_metadata(
             gnn_spec, self.options.get("matrix_permutations")
         )
         symmetry_metadata_json = json.dumps(symmetry_metadata, indent=2)
+        connections_json = json.dumps(connections, ensure_ascii=False, indent=4)
+        variables_json = json.dumps(
+            variable_dimensions, ensure_ascii=False, indent=4, sort_keys=True
+        )
         module_docstring = f"""
 DisCoPy Categorical Diagram Generation
+Generated from GNN specification: {source_file}
 Generated from GNN Model: {model_display_name}
 
 This script creates categorical diagrams representing the Active Inference model
@@ -202,9 +351,12 @@ import logging
 from datetime import datetime
 
 # Model parameters extracted from GNN specification
+MODEL_NAME = {model_display_name!r}
 NUM_STATES = {num_states}
 NUM_OBSERVATIONS = {num_observations}
 NUM_ACTIONS = {num_actions}
+CONNECTIONS = {connections_json}
+VARIABLES = {variables_json}
 MATRIX_PERMUTATION_METADATA = {symmetry_metadata_json}
 MATRIX_PERMUTATION_APPLIED_TO_DIAGRAM = False
 
@@ -230,201 +382,127 @@ validate_matrix_permutation_metadata(MATRIX_PERMUTATION_METADATA)
 
 _logger = logging.getLogger(__name__)
 
-# Define basic types for Active Inference
-def define_types():
-    """Define the basic types for our Active Inference model."""
-    
-    # Basic types
-    S = Ty('S')  # Hidden states
-    O = Ty('O')  # Observations  
-    A = Ty('A')  # Actions
-    P = Ty('P')  # Probabilities
-    
-    print("✓ Defined basic types: S (states), O (observations), A (actions), P (probabilities)")
-    return S, O, A, P
+_RELATION_LABELS = {{
+    ">": "generates",
+    "-": "couples",
+    "=": "defines",
+}}
 
-# Define morphisms (boxes) for model components
-def define_model_components(S, O, A, P):
-    """Define the morphisms representing Active Inference model components."""
-    
-    components = {{}}
-    
-    # A matrix: Observation model P(o|s)
-    components['A_matrix'] = Box('A', S, O @ P)
+def split_endpoint(value):
+    """Split a declared connection endpoint into individual wire names."""
+    if isinstance(value, (list, tuple)):
+        parts = [str(item) for item in value]
+    else:
+        text = str(value).strip()
+        if text.startswith("(") and text.endswith(")"):
+            text = text[1:-1]
+        parts = text.split(",")
+    return [part.strip() for part in parts if part.strip()]
 
-    # B matrix: Transition model P(s'|s,a)
-    components['B_matrix'] = Box('B', S @ A, S @ P)
+def endpoint_type(names):
+    """Build a DisCoPy type from a list of wire names."""
+    return Ty(*names) if names else Ty()
 
-    # C vector: Preference vector over observations
-    components['C_vector'] = Box('C', Ty(), O @ P)
+def build_diagram():
+    """Build one box per declared connection, wired by its endpoints.
 
-    # D vector: Prior beliefs over states
-    components['D_vector'] = Box('D', Ty(), S @ P)
+    Sequential composition is used only when the previous codomain exactly
+    matches the next domain; otherwise boxes are juxtaposed. No implicit
+    copying, merging, or invented components are introduced.
+    """
+    boxes = []
+    signatures = []
+    for index, connection in enumerate(CONNECTIONS):
+        sources = split_endpoint(connection.get("source", ""))
+        targets = split_endpoint(connection.get("target", ""))
+        if not sources or not targets:
+            raise ValueError(f"connection {{index}} has an empty source or target")
+        relation = str(connection.get("relation", ">")).strip()
+        label = _RELATION_LABELS.get(relation)
+        if label is None:
+            raise ValueError(f"connection {{index}} has unsupported relation {{relation!r}}")
+        name = f"{{'+'.join(sources)}}__{{label}}__{{'+'.join(targets)}}"
+        box = Box(name, endpoint_type(sources), endpoint_type(targets))
+        boxes.append(box)
+        signatures.append({{
+            "index": index,
+            "name": name,
+            "source": sources,
+            "relation": relation,
+            "target": targets,
+            "dom": str(box.dom),
+            "cod": str(box.cod),
+        }})
+    if not boxes:
+        return Id(), [], []
+    diagram = boxes[0]
+    for box in boxes[1:]:
+        if diagram.cod == box.dom:
+            diagram = diagram >> box
+        else:
+            diagram = diagram @ box
+    print(f"Built {{len(boxes)}} boxes from {{len(CONNECTIONS)}} declared connections")
+    return diagram, boxes, signatures
 
-    # E vector: Policy priors (if applicable)
-    components['E_vector'] = Box('E', Ty(), A @ P)
-
-    # Inference processes
-    components['state_inference'] = Box('StateInf', O, S @ P)
-    components['policy_inference'] = Box('PolicyInf', S @ P, A @ P)
-    components['action_selection'] = Box('ActionSel', A @ P, A)
-    
-    print(f"✓ Defined {{len(components)}} model components as morphisms")
-    return components
-
-# Create Active Inference circuit
-def create_active_inference_circuit(S, O, A, P, components):
-    """Create the full Active Inference circuit as a categorical diagram."""
-    
-    print("\\n🏗️  Building Active Inference circuit...")
-    
-    # Extract components
-    A_matrix = components['A_matrix']
-    B_matrix = components['B_matrix'] 
-    C_vector = components['C_vector']
-    D_vector = components['D_vector']
-    state_inf = components['state_inference']
-    policy_inf = components['policy_inference']
-    action_sel = components['action_selection']
-    
-    # Basic perception-action loop
-    # Observation -> State Inference -> Policy Inference -> Action Selection
-    perception_action_loop = (
-        state_inf 
-        >> policy_inf 
-        >> action_sel
-    )
-    
-    # Full generative model - compose priors alongside the inference loop (D-3 fix)
-    # D_vector and C_vector enter as parallel tensor products
-    try:
-        # Compose: (D_vector @ C_vector) provides initial state and preference priors
-        prior_block = D_vector @ C_vector
-        generative_model = prior_block >> (state_inf @ Id(P)) >> policy_inf >> action_sel
-        print("\u2713 Created generative model with composed priors")
-    except Exception as e:
-        # Recovery: type mismatch means priors cannot directly compose
-        print(f"\u26a0\ufe0f  Prior composition type mismatch ({{e}}), using perception-action loop")
-        generative_model = perception_action_loop
-    
-    print("\u2713 Created perception-action loop")
-    
+def analyze_diagram(diagram, boxes, signatures):
+    """Describe the constructed diagram and its declared wiring."""
     return {{
-        'perception_action_loop': perception_action_loop,
-        'generative_model': generative_model,
-        'components': components
+        "num_connections": len(CONNECTIONS),
+        "num_boxes": len(boxes),
+        "box_names": [box.name for box in boxes],
+        "diagram_domain": str(diagram.dom),
+        "diagram_codomain": str(diagram.cod),
+        "connections": CONNECTIONS,
+        "box_signatures": signatures,
     }}
 
-
-
-# Analysis functions
-def analyze_circuit_structure(circuit_dict):
-    """Analyze the structure of the categorical diagrams."""
-    
-    print("\\n🔍 Analyzing circuit structure...")
-    
-    components = circuit_dict['components']
-    loop = circuit_dict['perception_action_loop']
-    model = circuit_dict['generative_model']
-    
-    # Basic structural analysis
-    print(f"📊 Circuit Analysis:")
-    print(f"  - Number of components: {{len(components)}}")
-    print(f"  - Perception-action loop domain: {{loop.dom}}")
-    print(f"  - Perception-action loop codomain: {{loop.cod}}")
-    print(f"  - Generative model domain: {{model.dom}}")
-    print(f"  - Generative model codomain: {{model.cod}}")
-    
-    # Component analysis
-    print(f"\\n🧩 Component Details:")
-    for name, component in components.items():
-        print(f"  - {{name}}: {{component.dom}} → {{component.cod}}")
-    
-    # Compositional structure
-    print(f"\\n🔗 Compositional Structure:")
-    print(f"  - Loop composition depth: {{len(str(loop).split('>>'))}}")
-    print(f"  - Model composition depth: {{len(str(model).split('>>'))}}")
-    
-    return {{
-        'num_components': len(components),
-        'loop_domain': str(loop.dom),
-        'loop_codomain': str(loop.cod),
-        'model_domain': str(model.dom),
-        'model_codomain': str(model.cod)
-    }}
-
-# Export functions
-def export_circuit_data(circuit_dict, analysis_results, output_dir="discopy_diagrams"):
+def export_circuit_data(analysis, output_dir="discopy_diagrams"):
     """Export circuit data and analysis results."""
-    
-    print(f"\\n💾 Exporting circuit data to {{output_dir}}/...")
-    
+    print(f"Exporting circuit data to {{output_dir}}/...")
     Path(output_dir).mkdir(exist_ok=True)
-    
-    # Export analysis results
-    analysis_file = Path(output_dir) / "circuit_analysis.json"
-    with open(analysis_file, 'w') as f:
-        json.dump(analysis_results, f, indent=2)
-    
-    print(f"✓ Exported analysis: {{analysis_file}}")
-    
-    # Export circuit information
-    circuit_info = {{
-        'model_name': {model_display_name!r},
-        'timestamp': datetime.now().isoformat(),
-        'parameters': {{
-            'num_states': NUM_STATES,
-            'num_observations': NUM_OBSERVATIONS, 
-            'num_actions': NUM_ACTIONS
-        }},
-        'components': list(circuit_dict['components'].keys()),
-        'matrix_permutation_metadata': MATRIX_PERMUTATION_METADATA,
-        'matrix_permutation_applied_to_diagram': MATRIX_PERMUTATION_APPLIED_TO_DIAGRAM,
-        'analysis': analysis_results
-    }}
-    
-    circuit_file = Path(output_dir) / "circuit_info.json"
-    with open(circuit_file, 'w') as f:
-        json.dump(circuit_info, f, indent=2)
-    
-    print(f"✓ Exported circuit info: {{circuit_file}}")
 
-# Main execution
+    analysis_file = Path(output_dir) / "circuit_analysis.json"
+    with open(analysis_file, "w", encoding="utf-8") as handle:
+        json.dump(analysis, handle, indent=2)
+    print(f"Exported analysis: {{analysis_file}}")
+
+    circuit_info = {{
+        "model_name": MODEL_NAME,
+        "timestamp": datetime.now().isoformat(),
+        "parameters": {{
+            "num_states": NUM_STATES,
+            "num_observations": NUM_OBSERVATIONS,
+            "num_actions": NUM_ACTIONS,
+        }},
+        "connections": CONNECTIONS,
+        "variables": VARIABLES,
+        "components": analysis["box_names"],
+        "box_signatures": analysis["box_signatures"],
+        "analysis": analysis,
+        "matrix_permutation_metadata": MATRIX_PERMUTATION_METADATA,
+        "matrix_permutation_applied_to_diagram": MATRIX_PERMUTATION_APPLIED_TO_DIAGRAM,
+    }}
+    circuit_file = Path(output_dir) / "circuit_info.json"
+    with open(circuit_file, "w", encoding="utf-8") as handle:
+        json.dump(circuit_info, handle, indent=2)
+    print(f"Exported circuit info: {{circuit_file}}")
+
 def main():
     """Main execution function."""
-    
-    print("="*60)
+    print("=" * 60)
     print("DisCoPy Categorical Diagrams - GNN Generated")
-    print("Model:", {model_display_name!r})
-    print("="*60)
-    
+    print("Model:", MODEL_NAME)
+    print("=" * 60)
     try:
-        # Define types
-        S, O, A, P = define_types()
-        
-        # Define model components
-        components = define_model_components(S, O, A, P)
-        
-        # Create Active Inference circuit
-        circuit_dict = create_active_inference_circuit(S, O, A, P, components)
-        
-        # Analyze circuit structure
-        analysis_results = analyze_circuit_structure(circuit_dict)
-        
-        # Export data
-        export_circuit_data(circuit_dict, analysis_results)
-        
-        print("\\n✅ DisCoPy categorical diagram generation completed successfully!")
-        print("📊 Circuit analysis and data export successful")
-        
-        print("\\n🎉 Categorical representation of Active Inference model complete!")
-        
+        diagram, boxes, signatures = build_diagram()
+        analysis_results = analyze_diagram(diagram, boxes, signatures)
+        export_circuit_data(analysis_results)
+        print("DisCoPy categorical diagram generation completed successfully!")
         return 0
-        
-    except Exception as e:
-        print(f"❌ Diagram generation failed: {{e}}")
-        print("🔍 Stack trace:")
+    except Exception as error:
+        print(f"Diagram generation failed: {{error}}")
         import traceback
+
         traceback.print_exc()
         return 1
 
@@ -443,6 +521,10 @@ def render_gnn_to_discopy(
     """
     Render GNN specification to DisCoPy categorical diagram script.
 
+    The supported generator requires the specification's declared
+    ``Connections`` section. A specification without connections is refused
+    rather than drawn as a generic Active Inference circuit.
+
     Args:
         gnn_spec: Parsed GNN specification dictionary
         output_path: Path for output DisCoPy script
@@ -458,31 +540,41 @@ def render_gnn_to_discopy(
         return False, refusal, []
 
     try:
+        connections, _wiring = _normalise_connections(gnn_spec.get("connections"))
+    except ValueError as error:
+        return False, f"unsupported-discopy-connections: {error}", []
+    if not connections:
+        return (
+            False,
+            "unsupported-discopy-connections: the spec declares no Connections "
+            "entries; DisCoPy renders the declared GNN connection graph and will "
+            "not substitute a generic Active Inference circuit",
+            [],
+        )
+
+    try:
         renderer = DisCoPyRenderer(options)
 
         # Generate simulation code directly from spec
         model_name = gnn_spec.get("model_name", "GNN_Model")
         discopy_code = renderer._generate_discopy_diagram_code(gnn_spec, model_name)
 
-        # Write output file
+        # Write output file only after successful generation.
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(discopy_code)
+        atomic_write_text(output_path, discopy_code)
 
         message = f"Generated DisCoPy categorical diagram script: {output_path}"
         warnings: list[Any] = []
 
         # Check for potential issues
-        if not gnn_spec.get("initial_parameterization"):
+        initial_parameterization = gnn_spec.get(
+            "initial_parameterization"
+        ) or gnn_spec.get("initialparameterization")
+        if not initial_parameterization:
             warnings.append("No initial parameterization found - using defaults")
 
         if not gnn_spec.get("model_parameters"):
             warnings.append("No model parameters found - using inferred dimensions")
-
-        if not gnn_spec.get("connections"):
-            warnings.append(
-                "No explicit connections found - using default Active Inference structure"
-            )
 
         return True, message, warnings
 

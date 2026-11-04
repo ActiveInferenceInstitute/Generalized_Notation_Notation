@@ -2,7 +2,7 @@
 
 ## Module Overview
 
-**Purpose**: Specialized processing that injects POMDP state spaces into framework-specific renderers (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, ngc-learn) with per-framework compatibility validation, canonical spec generation, and per-framework documentation.
+**Purpose**: Specialized processing that injects POMDP state spaces into framework-specific renderers (PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan, cpomdp, THRML, ngc-learn) with per-framework compatibility validation, canonical spec generation, and per-framework documentation.
 
 **Pipeline Step**: Step 11: Code rendering (11_render.py), via the POMDP-aware path of [../README.md](../README.md)
 
@@ -19,7 +19,7 @@
 ```
 pomdp_processor/
 ├── __init__.py            # Package facade: module docstring, shared-helper re-exports, POMDPRenderProcessor assembly, public pomdp_to_gnn_spec / process_pomdp_for_frameworks
-├── _routes.py             # RendererRoute dataclass and RENDERER_ROUTES dispatch table for nine framework renderers
+├── _routes.py             # RendererRoute dataclass and RENDERER_ROUTES dispatch table for eleven framework renderers
 ├── _flow.py               # _ProcessFlowMixin: __init__ shared state and per-framework processing flow
 ├── _validation.py         # _CompatibilityValidationMixin: POMDP-renderer compatibility and state-space validation
 ├── _canonical.py          # _CanonicalSpecMixin: canonical POMDP spec composition helpers (strict A/B/C/D/E contract, B canonicalization)
@@ -34,7 +34,7 @@ pomdp_processor/
 | Module | Owns |
 | --- | --- |
 | `__init__.py` | Facade: `POMDPRenderProcessor` assembly (`__init__.py:54`), `pomdp_to_gnn_spec` (`__init__.py:73`), `process_pomdp_for_frameworks` (`__init__.py:84`) |
-| `_routes.py` | `RendererRoute` frozen dataclass (`_routes.py:27`) and `RENDERER_ROUTES` dispatch table for `pymdp`, `rxinfer`, `activeinference_jl`, `jax`, `discopy`, `pytorch`, `numpyro`, `stan`, `ngclearn` (`_routes.py:40-131`) |
+| `_routes.py` | `RendererRoute` frozen dataclass (`_routes.py:27`) and `RENDERER_ROUTES` dispatch table for `pymdp`, `rxinfer`, `activeinference_jl`, `jax`, `discopy`, `pytorch`, `numpyro`, `stan`, `cpomdp`, `thrml`, `ngclearn` (`_routes.py:40-151`) |
 | `_flow.py` | `_ProcessFlowMixin`: `__init__` shared state (`_flow.py:20`), `process_pomdp_for_all_frameworks` (`_flow.py:32`), `_process_single_framework` (`_flow.py:144`) |
 | `_validation.py` | `_CompatibilityValidationMixin`: `_validate_pomdp_framework_compatibility` (`_validation.py:23`), spec/script state-space validation (`_validation.py:224`, `_validation.py:280`) |
 | `_canonical.py` | `_CanonicalSpecMixin`: `_build_canonical_initialparameterization` (`_canonical.py:25`), factored composition (`_canonical.py:134`), B canonicalization (`_canonical.py:297`, `_canonical.py:317`) |

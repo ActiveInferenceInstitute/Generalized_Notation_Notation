@@ -8,8 +8,11 @@ Generates Python code using DisCoPy for categorical diagram construction.
 
 ## Code Generation
 
-- Maps GNN model structure to categorical diagrams
-- Generates morphism compositions and functorial mappings
+- Builds one `discopy.monoidal.Box` per declared `Connections` entry; source and
+  target endpoints become the box domain and codomain
+- Composes boxes sequentially or in parallel from their actual wire signatures
+- Refuses with `unsupported-discopy-connections:` when wiring is absent or
+  malformed, rather than emitting a synthetic default circuit
 - Produces executable DisCoPy Python scripts
 
 ## Output

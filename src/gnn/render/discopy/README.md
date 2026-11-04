@@ -13,6 +13,8 @@ uv run --frozen --no-sync python -m gnn.cli render input/gnn_files/discrete/acti
 
 Python callers pass a parsed specification to
 `gnn.render.discopy.render_gnn_to_discopy(spec, output_path, options=None)`.
+Step 11 and the CLI/MCP single-spec `discopy` and `discopy_combined` routes all
+use this entrypoint.
 The result is `(success, message, warnings)`. Missing optional sections produce
 warnings; generation failures return `False` with the original diagnosis.
 See [AGENTS.md](AGENTS.md#api-reference) for the signature and example.

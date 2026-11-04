@@ -127,8 +127,16 @@ class TestRenderPOMDP:
         assert len(py_files) > 0, "No .py files generated"
 
     def test_render_to_discopy(self, pomdp_gnn_spec: Any, tmp_path: Any) -> Any:
-        """Rendering a POMDP spec to DisCoPy should succeed."""
-        success, msg, artifacts = render_gnn_spec(pomdp_gnn_spec, "discopy", tmp_path)
+        """Rendering a POMDP spec with declared wiring to DisCoPy should succeed."""
+        spec = dict(pomdp_gnn_spec)
+        spec["variables"] = [
+            {"name": "s0", "dimensions": [3]},
+            {"name": "o0", "dimensions": [3]},
+        ]
+        spec["connections"] = [
+            {"source": "s0", "relation": ">", "target": "o0"},
+        ]
+        success, msg, artifacts = render_gnn_spec(spec, "discopy", tmp_path)
         assert success is True, f"DisCoPy rendering failed: {msg}"
 
     def test_render_to_rxinfer(self, pomdp_gnn_spec: Any, tmp_path: Any) -> Any:
