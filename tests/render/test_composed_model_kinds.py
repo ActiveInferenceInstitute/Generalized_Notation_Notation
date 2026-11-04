@@ -306,6 +306,18 @@ def _assert_capability_declaration_conformance(base_dir: Path) -> None:
                 assert result["unsupported"] is True, (relative, frame)
                 assert result["reason"], (relative, frame)
 
+    # Declared-empty dimension: no frame declares mixed-family composition, so
+    # the hybrid and shared-block multi-agent exemplars are refused by
+    # declaration on every frame.  This is a known backend gap, not an
+    # undeclared behaviour; implementing a composer must move the declaration
+    # and this pin together.
+    mixed_family_frames = [
+        frame
+        for frame in FRAMEWORK_REGISTRY
+        if supports_render_dimension(frame, "mixed_family_composition", "whole")
+    ]
+    assert mixed_family_frames == [], mixed_family_frames
+
     # Planning admission: a frame declaring one-step-only semantics refuses the
     # authored deeper horizon; a frame declaring none renders the model with no
     # planning credit (and a continuous-only frame refuses it as a discrete

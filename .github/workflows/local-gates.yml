@@ -40,13 +40,26 @@ permissions:
 jobs:
   repo-gates:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # The gates below run in about a minute; the variable is setup. A 10-minute
+    # budget made a slow runner's checkout consume the whole job, and GitHub
+    # reports a timed-out job as `cancelled`, so the gate produced no verdict at
+    # all (run 41717410211: 10m11s in actions/checkout, steps 10-18 skipped,
+    # reported cancelled). Budget the setup instead of the gate: the checkout is
+    # bounded on its own step so a hung one fails as a named step timeout rather
+    # than masking the gate, and the job leaves room for a slow-but-real checkout
+    # plus every gate.
+    timeout-minutes: 25
     env:
       UV_PYTHON: "3.14"
       # Only PRs may inherit byte-identical drift. Main/manual runs stay strict.
       GNN_MANUSCRIPT_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # Bound the step that actually varies. A full-history checkout of this
+        # repository has taken 1.5 min typically and 10m11s at its worst; this
+        # cap leaves headroom over the worst observed run while still failing as
+        # "checkout timed out" if the runner stalls.
+        timeout-minutes: 15
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
