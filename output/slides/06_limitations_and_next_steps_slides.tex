@@ -127,48 +127,6 @@
 \usepackage{listings}
 \lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible}
 
-\usepackage{fvextra}
-\fvset{breaklines=true,breakanywhere=true,breaknonspaceingroup=true,breaksymbolleft={},breaksymbolright={},breakanywheresymbolpre={},breakanywheresymbolpost={}}
-\RecustomVerbatimEnvironment{verbatim}{Verbatim}{}
-
-\makeatletter
-\newbox\archive@titlebox
-\newdimen\archive@available
-\newcommand*\archivefigurebounded[1]{%
-  \sbox\pandoc@box{#1}%
-  \archive@available=\textheight%
-  \ifx\beamer@frametitle\@empty\else%
-    \setbox\archive@titlebox=\vbox{\vbox{}{\parskip0pt\usebeamertemplate***{frametitle}\vskip0.25em}}%
-    \advance\archive@available by-\ht\archive@titlebox%
-    \advance\archive@available by-\dp\archive@titlebox%
-  \fi%
-  \advance\archive@available by-\beamer@frametopskip%
-  \advance\archive@available by-2\baselineskip%
-  \ifdim\archive@available<1pt%
-    \PackageError{template}{Archive image frame has no title-safe image area}{}%
-  \fi%
-  \Gscale@div\@tempa{\archive@available}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
-  \Gscale@div\@tempb{0.98\linewidth}{\wd\pandoc@box}%
-  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi%
-  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
-  \else\usebox{\pandoc@box}\fi%
-}
-\newcommand*\archivefigurecaptionnumber[2]{#2}
-\newenvironment{archivecaptionframe}{\par\begingroup}{\par\endgroup}
-\newenvironment{archiveimageframe}{\par\begingroup\centering\let\pandocbounded\archivefigurebounded}{\par\endgroup}
-\ifdefined\pandocbounded
-\renewcommand*\pandocbounded[1]{%
-  \sbox\pandoc@box{#1}%
-  \Gscale@div\@tempa{0.40\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
-  \Gscale@div\@tempb{0.98\linewidth}{\wd\pandoc@box}%
-  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi%
-  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
-  \else\usebox{\pandoc@box}%
-  \fi%
-}
-\fi
-\makeatother
-
 % Slide layout defaults for warning-clean scientific decks.
 \usepackage{etoolbox}
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{}
@@ -266,10 +224,10 @@ the optional Ollama integration paths are exercised, so we retain the
 reproducing command together with its source, environment,
 selected-input, and artifact bindings, leaving run-specific tallies in
 the ledgers and execution traces. A fresh run supplies new evidence for
-its own environment; it does not replace a preserved historical receipt.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Current Limitations}
+its own environment; it does not replace a preserved historical receipt.
 
 A second limitation lives at the boundary between the model families and
 the rendering backends. GNN registers 12 simulation backends, but
@@ -284,10 +242,10 @@ realize their continuous-state or temporal-depth structure. This is
 honest bookkeeping, not a defect to be hidden: an unsupported status
 with a recorded reason is more trustworthy than a forced translation
 that quietly misrepresents the model. It also reflects the state of the
-surrounding literature, where expected-free-energy formulations,
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Current Limitations}
+surrounding literature, where expected-free-energy formulations,
 variational-inference reductions, and hierarchical active-inference
 methods are still being actively refined rather than collapsed into one
 settled executable recipe (Champion et al. 2024; Nuijten et al. 2026;
@@ -301,10 +259,10 @@ per-kind shape of that matrix matters as much as its gaps: the
 categorical-only backends report the continuous linear-Gaussian kind
 \texttt{unsupported} by declared capability rather than by accident,
 structural wrappers have no renderable model body and are reported
-\texttt{unsupported}, and the recursive corpus is reserved for bounded
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Current Limitations}
+\texttt{unsupported}, and the recursive corpus is reserved for bounded
 proposal-only \texttt{-\/-autonomous} runs and holds no committed models
 yet --- boundaries recorded where the kinds are defined
 (sec.~3.2) rather than discovered mid-run.
@@ -320,11 +278,11 @@ kind (eq.~6, eq.~7) and fixed-parameter filtering
 and control for the continuous kind. GNN can also express
 \emph{parameter} learning: a matrix may be declared as a latent variable
 with a Dirichlet prior, and the repository ships both a corpus model
-that does so
-(\breaktt{input/gnn\_files/learning/dirichlet\_likelihood\_learning.md},
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Current Limitations}
+that does so
+(\breaktt{input/gnn\_files/learning/dirichlet\_likelihood\_learning.md},
 which learns its likelihood matrix \texttt{A} from observations by joint
 variational message passing) and the renderer strategy that emits code
 for it (\breaktt{src/gnn/render/rxinfer/\_strategies\_learning.py}). That
@@ -382,10 +340,10 @@ checkpoint/resume, status inspection, and cancellation-safe cleanup so
 that extended model-family acceptance runs can be interrupted and
 resumed without corrupting partial state. The third is \emph{auditable
 container plans}: generating hardened container plans with an explicit
-static security-review and rollback descriptor, deliberately stopping
 \end{frame}
 
 \begin{frame}[allowframebreaks]{Next Steps}
+static security-review and rollback descriptor, deliberately stopping
 short of mutating any real cluster. Each contract is covered by tests
 over real objects with negative controls and a strict acceptance gate,
 additive live wiring connects them to the session-acceptance and
@@ -393,6 +351,9 @@ run-manifest paths, and three new Model Context Protocol tools expose
 them. The unifying discipline across all three is that orchestration
 becomes more capable only as fast as it becomes more inspectable.
 
+\end{frame}
+
+\begin{frame}[allowframebreaks]{Next Steps}
 The next major release pushes toward bounded autonomy, and it is gated
 behind the 3.0.0 orchestration work for good reason. The intent is to
 promote today's proposal-only candidate-scoring machinery --- which
@@ -401,15 +362,15 @@ model-family ledgers, and interpretability reports --- toward
 \emph{reviewed self-editing of GNN files}. Crucially, the design keeps a
 human in the loop: edits are proposed and applied only after explicit
 user approval, with no automatic source mutation, and the autonomy is
-\end{frame}
-
-\begin{frame}[allowframebreaks]{Next Steps}
 wrapped in policy, rollback, and audit controls before any
 self-modifying or distributed action is permitted. This continues the
 same principle that governs the rest of the system, in the lineage of
 active-inference accounts of self-organizing systems that act to
 minimize free energy under explicit generative models (Friston 2010;
 Parr et al. 2022): an agent should expand its license to act only in
+\end{frame}
+
+\begin{frame}[allowframebreaks]{Next Steps}
 proportion to the reviewability of what it does. The next-release items
 are not claimed as complete here; they are the recorded direction of
 travel, and each will be evidenced by its own gates when it lands, just
@@ -418,9 +379,6 @@ axis the same staging applies: extending native hierarchical rendering
 beyond the two-level strategies, broadening continuous reach across the
 remaining registered backends, and populating the reserved recursive
 corpus each arrive with their own gate evidence rather than by prose
-\end{frame}
-
-\begin{frame}[allowframebreaks]{Next Steps}
 assertion.
 \end{frame}
 

@@ -123,6 +123,41 @@ def test_runner_rejects_malformed_pins(tmp_path: Path, broken: dict[str, str]) -
     assert completed.returncode == 2
 
 
+def _satisfies(version: str, requirement: str) -> bool:
+    """Whether ``version`` satisfies the comma-joined specifier ``uv.toml`` declares.
+
+    The repository declares a floor with a minor ceiling (``>=0.13.6,<0.14``) so a
+    host package-manager update cannot make the checkout unusable; each hosted pin
+    stays exact and is checked against that requirement here.
+    """
+    parts = tuple(int(part) for part in version.split("."))
+    for clause in requirement.split(","):
+        clause = clause.strip()
+        operator = next(
+            (
+                candidate
+                for candidate in (">=", "<=", "==", "!=", ">", "<")
+                if clause.startswith(candidate)
+            ),
+            None,
+        )
+        assert operator is not None, f"unsupported uv requirement: {clause!r}"
+        bound = tuple(int(part) for part in clause[len(operator) :].split("."))
+        width = max(len(parts), len(bound))
+        left = parts + (0,) * (width - len(parts))
+        right = bound + (0,) * (width - len(bound))
+        if (
+            (operator == ">=" and left < right)
+            or (operator == "<=" and left > right)
+            or (operator == "==" and left != right)
+            or (operator == "!=" and left == right)
+            or (operator == ">" and left <= right)
+            or (operator == "<" and left >= right)
+        ):
+            return False
+    return True
+
+
 def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None:
     """Track the active tool through both installs and the later GNN check."""
     workflow = yaml.safe_load(
@@ -132,10 +167,12 @@ def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None
     )
     job = workflow["jobs"]["geo-infer-interchange"]
     assert job["strategy"]["matrix"]["python"] == ["3.11", "3.12"]
-    gnn_version = tomllib.loads((ROOT / "uv.toml").read_text())[
+    uv_requirement = tomllib.loads((ROOT / "uv.toml").read_text())[
         "required-version"
-    ].removeprefix("==")
-    expected_versions = {"geo-infer": "0.13.1", "gnn": gnn_version}
+    ]
+    # uv.toml declares a floor with a minor ceiling (>=0.13.6,<0.14); the hosted
+    # pin stays exact and must satisfy it.
+    expected_versions = {"geo-infer": "0.13.1", "gnn": "0.13.6"}
     active_uv = None
     installs = {}
     setup_versions = []
@@ -155,10 +192,11 @@ def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None
                 installs[project] = command
             if command[:2] == ["uv", "run"]:
                 assert step["working-directory"] == "gnn"
-                assert active_uv == gnn_version
+                assert active_uv == expected_versions["gnn"]
+                assert _satisfies(active_uv, uv_requirement)
                 assert command[2:5] == ["--frozen", "--no-sync", "--python"]
                 qualification_checked = True
-    assert setup_versions == ["0.13.1", gnn_version]
+    assert setup_versions == ["0.13.1", expected_versions["gnn"]]
     assert list(installs) == ["geo-infer", "gnn"]
     assert installs["gnn"] == [
         "uv",

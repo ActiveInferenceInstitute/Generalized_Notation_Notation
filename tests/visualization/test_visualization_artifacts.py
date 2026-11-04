@@ -35,6 +35,7 @@ from gnn.analysis.viz_plots import generate_action_analysis
 from gnn.integration.meta_analysis.collector import SweepRecord
 from gnn.integration.meta_analysis.visualizer import SweepVisualizer
 from gnn.utils.errors.error_handling import coerce_step_exit_code
+from gnn.visualization.core import process as process_module
 from gnn.visualization.core.process import (
     discover_visualization_files,
     process_single_gnn_file,
@@ -512,6 +513,101 @@ def test_step8_clean_file_and_rank4_tensor_exit_zero(
     assert summary["errors"] == []
     assert result is True
     assert _step_exit_code(result) == 0
+
+
+@pytest.mark.unit
+def test_network_interactive_html_is_listed_by_its_path(tmp_path: Path) -> None:
+    """A written Plotly export is listed as its path, never as ``str(True)``.
+
+    ``_generate_interactive_network`` returned a bool, so the caller appended
+    ``str(True)`` and the interactive HTML was absent from the artifact list of
+    the run that wrote it.
+    """
+    out = tmp_path / "viz"
+    out.mkdir()
+    parsed: dict[str, Any] = {
+        "variables": [
+            {"name": "a", "var_type": "hidden_state"},
+            {"name": "b", "var_type": "observation"},
+        ],
+        "connections": [
+            {
+                "source_variables": ["a"],
+                "target_variables": ["b"],
+                "connection_type": "directed",
+            },
+        ],
+    }
+
+    paths = generate_network_visualizations(parsed, out, "mini")
+
+    assert paths, "networkx/matplotlib not available for graph generation"
+    assert "True" not in paths, paths
+    for entry in paths:
+        assert isinstance(entry, str) and not isinstance(entry, bool), entry
+        assert Path(entry).is_file(), f"listed artifact does not exist: {entry}"
+
+    html = out / "mini_network_interactive.html"
+    assert html.is_file(), "plotly is a runtime dependency; the export must land"
+    assert str(html) in paths
+
+
+@pytest.mark.unit
+def test_step8_summary_file_list_holds_only_existing_paths(tmp_path: Path) -> None:
+    target = tmp_path / "in"
+    _write_gnn_input(target)
+    out = tmp_path / "8_visualization_output"
+
+    assert process_visualization(target, out) is True
+
+    summary = json.loads((out / "visualization_summary.json").read_text("utf-8"))
+    entries = summary["visualization_files"]
+    assert entries
+    assert summary["total_visualizations"] == len(entries)
+    assert summary["errors"] == []
+    assert "True" not in entries, entries
+    for entry in entries:
+        assert isinstance(entry, str) and not isinstance(entry, bool), entry
+        assert Path(entry).is_file(), f"summary lists a non-artifact: {entry!r}"
+
+    # The interactive network HTML this run wrote is an artifact of the run.
+    html = out / "simple_mdp" / "simple_mdp_network_interactive.html"
+    assert html.is_file()
+    assert str(html) in entries
+
+
+@pytest.mark.unit
+def test_step8_summary_drops_non_path_entries_and_reports_them(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A boolean or an unwritten path never enters the summary's file list."""
+    target = tmp_path / "in"
+    _write_gnn_input(target)
+    out = tmp_path / "8_visualization_output"
+    missing = out / "simple_mdp" / "never_written.png"
+
+    monkeypatch.setattr(
+        process_module,
+        "generate_variable_parameter_bipartite",
+        lambda *args, **kwargs: ["True", str(missing)],
+    )
+
+    with caplog.at_level(logging.WARNING):
+        result = process_visualization(target, out)
+
+    summary = json.loads((out / "visualization_summary.json").read_text("utf-8"))
+    entries = summary["visualization_files"]
+    assert "True" not in entries
+    assert str(missing) not in entries
+    assert all(Path(entry).is_file() for entry in entries), entries
+    assert summary["total_visualizations"] == len(entries)
+    assert result == 2
+
+    reported = [e for e in summary["errors"] if "not an existing file" in e]
+    assert len(reported) == 2, summary["errors"]
+    assert any(
+        "not an existing file" in r.getMessage() for r in caplog.records
+    ), "a dropped summary entry must be reported"
 
 
 @pytest.mark.pipeline

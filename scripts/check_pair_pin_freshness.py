@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pair-pin freshness gate: companion pins must stay ancestors of companion main.
+"""Pair-pin freshness gate: pins and bound owner content must stay current.
 
 GNN-side freshness gate for the two committed pair pins
 (``.github/fep-lean-pair.json`` pinning fep_lean and ``.github/gnn-pair.json``
@@ -9,9 +9,15 @@ section 5.3. The paired-revision workflows
 the companions at their *pinned* revisions and prove that the bridge and
 interchange surfaces still agree with this repository; they cannot notice
 that a companion default branch has moved ahead of its pin. This gate
-closes exactly that gap: for every checked pair it asserts the pinned
-revision is ancestor-or-equal of the companion checkout's ``HEAD`` (the
-companion default branch, as checked out by the nightly workflow).
+closes exactly that gap.
+
+The FEP bridge pair is content-checked, not just ancestry-checked. The FEP
+source pin (``specs/gnn-bridge-w2-source-custody/source-pin.json`` in the
+FEP companion checkout) records SHA-256 digests for GNN's declared
+notation-contract owners. The gate recomputes those digests at the GNN
+checkout and exits 2 when any owner differs. Ancestry remains a cheap
+pre-check for every pair; it cannot produce a green verdict over stale
+owner content.
 
 Contract:
 
@@ -19,28 +25,36 @@ Contract:
    with a ``owner/repo`` slug and a 40-hex revision,
 2. the companion checkout must resolve a ``HEAD`` (the caller provides the
    checkout; this script performs no network access and no fetching),
-3. ``git merge-base --is-ancestor <pin> <head>`` decides freshness -- the
-   pin may trail the companion default branch by any number of commits
+3. ``git merge-base --is-ancestor <pin> <head>`` is the ancestry pre-check:
+   the pin may trail the companion default branch by any number of commits
    (the measured lag is reported, not enforced), but it must never leave
    the companion default branch's history,
-4. receipts are written even on failure, and the exit code is faithful:
+4. for the FEP bridge pair, every ``gnn.owners`` digest in the FEP source
+   pin must match the GNN checkout byte-for-byte; a mismatch names the
+   owner, the recorded digest and the actual digest,
+5. receipts are written even on failure, and the exit code is faithful:
    no retries, no fallbacks, no silent downgrades.
 
-Exit codes: 0 every checked pin is fresh; 1 operational failure (companion
-checkout missing or not a git work tree, receipts directory not writable);
-2 at least one stale pin -- "re-pin required", naming the stale pair file,
-the pinned revision and the companion tip -- or a pair-file/usage defect.
+Exit codes: 0 every checked pin is fresh and every bound owner matches;
+1 operational failure (companion checkout missing or not a git work tree,
+receipts directory not writable); 2 at least one stale pin or owner-content
+drift -- "re-pin required", naming the stale pair file, the pinned
+revision, the companion tip, and every drifting owner -- or a pair-file or
+source-pin usage defect.
 
 Usage:
     python scripts/check_pair_pin_freshness.py \
         --check gnn/.github/fep-lean-pair.json fep-lean \
         --check gnn/.github/gnn-pair.json geo-infer \
+        --source-pin fep-lean/specs/gnn-bridge-w2-source-custody/source-pin.json \
+        --gnn-root gnn \
         --receipts-dir receipts
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -56,6 +70,7 @@ _REPOSITORY_SLUG = re.compile(
     r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$"
 )
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
+_DIGEST = re.compile(r"^[0-9a-f]{64}$")
 
 
 def _git(companion_dir: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
@@ -90,8 +105,71 @@ def _load_pair(pair_file: Path) -> dict[str, str]:
     return dict(repository=pair["repository"], revision=pair["revision"])
 
 
-def _check_pair(pair_file: Path, companion_dir: Path) -> dict[str, Any]:
-    """Evaluate one pin against its companion checkout HEAD."""
+def _sha256(path: Path) -> str:
+    """Return the SHA-256 of one file's bytes."""
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _check_owner_content(
+    gnn_root: Path, source_pin_path: Path
+) -> tuple[dict[str, Any], str | None]:
+    """Compare the FEP source pin's GNN owners with the GNN checkout bytes."""
+    try:
+        payload = json.loads(source_pin_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        return {}, f"source pin unreadable ({source_pin_path}): {error}"
+    if not isinstance(payload, dict) or payload.get("schema_version") != 1:
+        return {}, f"source pin has an unsupported schema ({source_pin_path})"
+    gnn = payload.get("gnn")
+    if not isinstance(gnn, dict):
+        return {}, f"source pin has no gnn binding ({source_pin_path})"
+    owners = gnn.get("owners")
+    if not isinstance(owners, dict) or not owners:
+        return {}, f"source pin has no gnn.owners mapping ({source_pin_path})"
+
+    mismatches: list[dict[str, str]] = []
+    matched = 0
+    for owner, recorded in sorted(owners.items()):
+        if (
+            not isinstance(owner, str)
+            or not isinstance(recorded, str)
+            or _DIGEST.fullmatch(recorded) is None
+        ):
+            return {}, f"source pin has a malformed owner entry ({owner!r})"
+        try:
+            actual = _sha256(gnn_root / owner)
+        except OSError as error:
+            mismatches.append(
+                {
+                    "owner": owner,
+                    "recorded": recorded,
+                    "actual": f"unreadable ({error})",
+                }
+            )
+            continue
+        if actual == recorded:
+            matched += 1
+        else:
+            mismatches.append({"owner": owner, "recorded": recorded, "actual": actual})
+    return (
+        {
+            "source_pin": str(source_pin_path),
+            "checked": len(owners),
+            "matched": matched,
+            "mismatches": mismatches,
+        },
+        None,
+    )
+
+
+def _check_pair(
+    pair_file: Path,
+    companion_dir: Path,
+    *,
+    source_pin_path: Path | None = None,
+    gnn_root: Path | None = None,
+) -> dict[str, Any]:
+    """Evaluate one pin against its companion checkout HEAD and bound owners."""
     entry: dict[str, Any] = {
         "pair_file": str(pair_file),
         "companion_dir": str(companion_dir),
@@ -101,6 +179,7 @@ def _check_pair(pair_file: Path, companion_dir: Path) -> dict[str, Any]:
         "behind": None,
         "status": "operational",
         "note": None,
+        "content": None,
     }
     try:
         pair = _load_pair(pair_file)
@@ -139,6 +218,30 @@ def _check_pair(pair_file: Path, companion_dir: Path) -> dict[str, Any]:
         count = _git(companion_dir, "rev-list", "--count", f"{pair['revision']}..HEAD")
         if count.returncode == 0:
             entry["behind"] = int(count.stdout.strip())
+
+    if (
+        pair["repository"] == "ActiveInferenceInstitute/fep_formal"
+        and source_pin_path is not None
+        and gnn_root is not None
+    ):
+        content, error = _check_owner_content(gnn_root, source_pin_path)
+        if error is not None:
+            entry["status"] = "usage"
+            entry["note"] = error
+        else:
+            entry["content"] = content
+            if content["mismatches"]:
+                entry["status"] = "stale"
+                entry["note"] = (
+                    f"owner content drift: {len(content['mismatches'])} of "
+                    f"{content['checked']} GNN owners differ from the FEP "
+                    f"source pin"
+                )
+            elif entry["status"] == "stale":
+                entry["note"] = (
+                    "pinned revision is not an ancestor of companion HEAD; "
+                    "bound owner content matches"
+                )
     return entry
 
 
@@ -166,6 +269,17 @@ def _print_entry(entry: dict[str, Any]) -> None:
     )
     if entry["note"]:
         print(f"             note: {entry['note']}")
+    content = entry.get("content")
+    if content:
+        print(
+            f"             content: {content['matched']}/{content['checked']} "
+            f"bound owners match"
+        )
+        for mismatch in content["mismatches"]:
+            print(
+                f"             owner drift: {mismatch['owner']} "
+                f"recorded={mismatch['recorded']} actual={mismatch['actual']}"
+            )
 
 
 def _parse_args() -> argparse.Namespace:
@@ -189,6 +303,24 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--source-pin",
+        type=Path,
+        default=None,
+        help=(
+            "FEP source-pin JSON whose gnn.owners digests are compared with "
+            "the GNN checkout; applies to the fep_formal pair"
+        ),
+    )
+    parser.add_argument(
+        "--gnn-root",
+        type=Path,
+        default=None,
+        help=(
+            "GNN checkout root used for owner digest comparison "
+            "(default: current directory)"
+        ),
+    )
+    parser.add_argument(
         "--receipts-dir",
         type=Path,
         default=None,
@@ -204,7 +336,15 @@ def main() -> int:
         (Path(pair_file), Path(companion)) for pair_file, companion in options.checks
     ]
 
-    entries = [_check_pair(pair_file, companion) for pair_file, companion in checks]
+    entries = [
+        _check_pair(
+            pair_file,
+            companion,
+            source_pin_path=options.source_pin,
+            gnn_root=options.gnn_root or Path.cwd(),
+        )
+        for pair_file, companion in checks
+    ]
 
     stale = [entry for entry in entries if entry["status"] == "stale"]
     usage = [entry for entry in entries if entry["status"] == "usage"]
@@ -226,6 +366,16 @@ def main() -> int:
 
     if stale:
         for entry in stale:
+            content = entry.get("content")
+            if content and content["mismatches"]:
+                print(
+                    f"RE-FREEZE REQUIRED: {entry['pair_file']} owner content "
+                    f"disagrees with the FEP source pin "
+                    f"({len(content['mismatches'])} of {content['checked']} "
+                    f"GNN owners)",
+                    file=sys.stderr,
+                )
+                continue
             behind = entry["behind"]
             lag = (
                 f"{behind} commits ahead of the pin"
@@ -256,8 +406,8 @@ def main() -> int:
     if receipt_error is not None:
         return EXIT_OPERATIONAL
     print(
-        f"exit 0: all {len(entries)} checked pair pin(s) are ancestor-or-equal "
-        f"of their companion default-branch HEAD"
+        f"exit 0: all {len(entries)} checked pair pin(s) are fresh and every "
+        f"bound owner matches"
     )
     return EXIT_FRESH
 

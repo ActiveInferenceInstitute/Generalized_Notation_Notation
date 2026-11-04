@@ -2,7 +2,6 @@
 \providecommand\hyper@newdestlabel[2]{}
 \providecommand*\HyPL@Entry[1]{}
 \HyPL@Entry{0<</P(\376\377\0001)>>}
-\def\@LN@column{1}
 \@writefile{toc}{\beamer@sectionintoc {1}{Symbols and Glossary}{1}{0}{1}}
 \@writefile{nav}{\headcommand {\beamer@sectionpages {1}{0}}}
 \@writefile{nav}{\headcommand {\beamer@subsectionpages {1}{0}}}
@@ -10,11 +9,9 @@
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{1}{1/1}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {1}{1}}}
 \HyPL@Entry{1<</P(\376\377\0002)>>}
-\def\@LN@column{1}
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{2}{2/2}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {2}{2}}}
 \HyPL@Entry{2<</P(\376\377\0003)>>}
-\def\@LN@column{1}
 \newlabel{language-constructs}{{3}{3}{Symbols and Glossary}{language-constructs}{}}
 \@writefile{snm}{\beamer@slide {language-constructs}{3}}
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{3}{3/3}{}{0}}}
@@ -23,53 +20,39 @@
     {1}{153.64493pt}\LT@entry
     {1}{153.64493pt}}
 \HyPL@Entry{3<</P(\376\377\0004)>>}
-\def\@LN@column{1}
 \newlabel{tbl:gnn_constructs}{{1}{4}{The GNN language constructs a conforming parser must recognize, with the meaning each carries. The first rows are the required sections that pin a model's identity, variables, and factor graph; the optional sections that follow carry parameterization, ontology bindings, timing, equations, and provenance. The operator rows are the connection vocabulary the \protect \texttt {Connections} section is written in --- directed \protect \texttt {A\textgreater {}B}, undirected \protect \texttt {A-B}, and their labeled v1.1 forms --- and \protect \texttt {default=…} supplies initialization hints. Definitions follow the GNN syntax specification and the exemplar specifications under \protect \texttt {input/gnn\_files}, and the strict schema validator enforces section order and declaration grammar before any downstream step runs. The construct vocabulary is deliberately kind-agnostic: the same \protect \texttt {StateSpaceBlock}, \protect \texttt {Connections}, and operator syntax declare a discrete categorical model, a continuous linear-Gaussian model, or a composed multi-agent or hierarchical one --- what differs between kinds is which matrix names the block declares, as tbl.~\ref {tbl:actinf_symbols} details}{tbl:gnn_constructs}{}}
 \@writefile{snm}{\beamer@slide {tbl:gnn_constructs}{4}}
 \@writefile{nav}{\headcommand {\slideentry {1}{0}{4}{4/4}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {4}{4}}}
+\HyPL@Entry{4<</P(\376\377\0005)>>}
+\@writefile{nav}{\headcommand {\slideentry {1}{0}{4}{4/5}{}{0}}}
+\@writefile{nav}{\headcommand {\beamer@framepages {4}{5}}}
+\HyPL@Entry{5<</P(\376\377\0006)>>}
+\newlabel{symbols-by-model-kind}{{6}{6}{Symbols and Glossary}{symbols-by-model-kind}{}}
+\@writefile{snm}{\beamer@slide {symbols-by-model-kind}{6}}
+\@writefile{nav}{\headcommand {\slideentry {1}{0}{5}{6/6}{}{0}}}
+\@writefile{nav}{\headcommand {\beamer@framepages {6}{6}}}
 \gdef \LT@ii {\LT@entry
     {1}{153.64493pt}\LT@entry
     {1}{153.64493pt}}
-\HyPL@Entry{4<</P(\376\377\0005)>>}
-\def\@LN@column{1}
-\@writefile{nav}{\headcommand {\slideentry {1}{0}{5}{5/5}{}{0}}}
-\@writefile{nav}{\headcommand {\beamer@framepages {5}{5}}}
-\gdef \LT@iii {\LT@entry
-    {1}{153.64493pt}\LT@entry
-    {1}{153.64493pt}}
-\HyPL@Entry{5<</P(\376\377\0006)>>}
-\def\@LN@column{1}
-\@writefile{nav}{\headcommand {\slideentry {1}{0}{6}{6/6}{}{0}}}
-\@writefile{nav}{\headcommand {\beamer@framepages {6}{6}}}
 \HyPL@Entry{6<</P(\376\377\0007)>>}
-\def\@LN@column{1}
-\newlabel{symbols-by-model-kind}{{7}{7}{Symbols and Glossary}{symbols-by-model-kind}{}}
-\@writefile{snm}{\beamer@slide {symbols-by-model-kind}{7}}
-\@writefile{nav}{\headcommand {\slideentry {1}{0}{7}{7/7}{}{0}}}
+\newlabel{tbl:actinf_symbols}{{2}{7}{The Active Inference symbols a GNN specification carries, scoped by model kind and bound to the equation of sec.~3 that fixes each role. Read the discrete-kind rows as the categorical generative-model tensors (likelihood, controlled transitions, log-preferences, prior over initial states, habit prior) with \protect \texttt {s}, \protect \texttt {o}, \protect \texttt {\texorpdfstring {\ensuremath {\pi }}{pi}}, and \protect \texttt {u} as the inference variables and \protect \texttt {F} and \protect \texttt {G} as the two free-energy functionals minimized at eq.~6 and eq.~7; read the continuous-kind rows as the linear-Gaussian parameterization --- system matrices, covariances, Gaussian prior, and the optional closed-loop declarations of eq.~11. The rows where one letter carries two kind-scoped readings (\protect \texttt {F}, \protect \texttt {u}, \protect \texttt {t}) are deliberate: the notation reuses a compact alphabet across kinds, and the declared matrix vocabulary of the \protect \texttt {StateSpaceBlock} --- not the letter alone --- is what fixes the reading, which is exactly what the kind classification of sec.~3.2 computes. Use the table as a decoding key when reading a \protect \texttt {StateSpaceBlock}: every declared matrix name should map to exactly one kind-scoped row here, and the \protect \breaktt {\#\#\ ActInfOntologyAnnotation} bindings described below are what make that mapping machine-checkable downstream}{tbl:actinf_symbols}{}}
+\@writefile{snm}{\beamer@slide {tbl:actinf_symbols}{7}}
+\@writefile{nav}{\headcommand {\slideentry {1}{0}{6}{7/7}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {7}{7}}}
-\gdef \LT@iv {\LT@entry
-    {1}{153.64493pt}\LT@entry
-    {1}{153.64493pt}}
 \HyPL@Entry{7<</P(\376\377\0008)>>}
-\def\@LN@column{1}
-\newlabel{tbl:actinf_symbols}{{2}{8}{The Active Inference symbols a GNN specification carries, scoped by model kind and bound to the equation of sec.~3 that fixes each role. Read the discrete-kind rows as the categorical generative-model tensors (likelihood, controlled transitions, log-preferences, prior over initial states, habit prior) with \protect \texttt {s}, \protect \texttt {o}, \protect \texttt {\texorpdfstring {\ensuremath {\pi }}{pi}}, and \protect \texttt {u} as the inference variables and \protect \texttt {F} and \protect \texttt {G} as the two free-energy functionals minimized at eq.~6 and eq.~7; read the continuous-kind rows as the linear-Gaussian parameterization --- system matrices, covariances, Gaussian prior, and the optional closed-loop declarations of eq.~11. The rows where one letter carries two kind-scoped readings (\protect \texttt {F}, \protect \texttt {u}, \protect \texttt {t}) are deliberate: the notation reuses a compact alphabet across kinds, and the declared matrix vocabulary of the \protect \texttt {StateSpaceBlock} --- not the letter alone --- is what fixes the reading, which is exactly what the kind classification of sec.~3.2 computes. Use the table as a decoding key when reading a \protect \texttt {StateSpaceBlock}: every declared matrix name should map to exactly one kind-scoped row here, and the \protect \breaktt {\#\#\ ActInfOntologyAnnotation} bindings described below are what make that mapping machine-checkable downstream}{tbl:actinf_symbols}{}}
-\@writefile{snm}{\beamer@slide {tbl:actinf_symbols}{8}}
-\@writefile{nav}{\headcommand {\slideentry {1}{0}{8}{8/8}{}{0}}}
-\@writefile{nav}{\headcommand {\beamer@framepages {8}{8}}}
+\@writefile{nav}{\headcommand {\slideentry {1}{0}{6}{7/8}{}{0}}}
+\@writefile{nav}{\headcommand {\beamer@framepages {7}{8}}}
 \HyPL@Entry{8<</P(\376\377\0009)>>}
-\def\@LN@column{1}
-\@writefile{nav}{\headcommand {\slideentry {1}{0}{8}{8/9}{}{0}}}
-\@writefile{nav}{\headcommand {\beamer@framepages {8}{9}}}
+\newlabel{ontology-bindings-and-implementations}{{9}{9}{Symbols and Glossary}{ontology-bindings-and-implementations}{}}
+\@writefile{snm}{\beamer@slide {ontology-bindings-and-implementations}{9}}
+\@writefile{nav}{\headcommand {\slideentry {1}{0}{7}{9/9}{}{0}}}
+\@writefile{nav}{\headcommand {\beamer@framepages {9}{9}}}
 \HyPL@Entry{9<</P(\376\377\0001\0000)>>}
-\def\@LN@column{1}
-\newlabel{ontology-bindings-and-implementations}{{10}{10}{Symbols and Glossary}{ontology-bindings-and-implementations}{}}
-\@writefile{snm}{\beamer@slide {ontology-bindings-and-implementations}{10}}
-\@writefile{nav}{\headcommand {\slideentry {1}{0}{9}{10/10}{}{0}}}
+\@writefile{nav}{\headcommand {\slideentry {1}{0}{8}{10/10}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {10}{10}}}
 \HyPL@Entry{10<</P(\376\377\0001\0001)>>}
-\def\@LN@column{1}
-\@writefile{nav}{\headcommand {\slideentry {1}{0}{10}{11/11}{}{0}}}
+\@writefile{nav}{\headcommand {\slideentry {1}{0}{9}{11/11}{}{0}}}
 \@writefile{nav}{\headcommand {\beamer@framepages {11}{11}}}
 \@writefile{nav}{\headcommand {\beamer@partpages {1}{11}}}
 \@writefile{nav}{\headcommand {\beamer@subsectionpages {1}{11}}}

@@ -213,6 +213,72 @@ _REVIEWED_FEP_MIGRATION_TERMS = frozenset(
 )
 
 
+# The checker bans vocabulary (``legacy``, ``deprecated``, ``shim``), so on its own it
+# cannot tell "this surface is deprecated" from "this surface is not deprecated". A
+# sentence that denies the claim or records the retirement is the opposite of a stale
+# claim: it is the statement the repository wants to keep, and rewording it to satisfy
+# the scanner would delete the true statement rather than fix anything.
+#
+# Scope: a marker must sit in the same sentence as the matched word, so one retired
+# subject cannot launder a stale claim elsewhere on the line. Everything outside these
+# sentences still fails, and a live deprecation ("is deprecated; pass --legacy to keep
+# using it") carries no marker and still fails.
+RETIREMENT_MARKERS: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(marker, re.IGNORECASE)
+    for marker in (
+        r"\bnot\s+deprecated\b",
+        r"\bnever\s+deprecated\b",
+        r"\bdoes\s+not\s+exist\b",
+        r"\bdo\s+not\s+exist\b",
+        r"\bneither\b.{0,140}?\bnor\b.{0,140}?\bexists?\b",
+        r"\bno\s+longer\s+(?:exists?|present|available|supported|shipped|wired)\b",
+        r"\bnever\s+(?:existed|created|shipped|added)\b",
+        r"\b(?:is|are|was|were)\s+(?:gone|removed|deleted|retired|dropped)\b",
+        r"\b(?:has|have|had)\s+been\s+(?:removed|deleted|retired|dropped)\b",
+        r"\bnot\s+in\s+the\s+tree\b",
+    )
+)
+
+# Clause boundaries for the scope test above. The em dash counts because the
+# retirement statement it separates is a separate claim ("… are gone — deleted, not
+# deprecated"), and the second half carries the negation. A colon is *not* a boundary:
+# "deprecated: neither the module nor the function exists" is one claim, and splitting
+# there would strand the word from the explanation that retires it. A coordinating
+# conjunction is a boundary because "the shim was removed, but the legacy mode still
+# works" retires one subject and asserts the other, and only the first is exempt.
+_SENTENCE_BOUNDARY = re.compile(
+    r"(?<=[.!?;])\s+|\s+[—–-]{1,2}\s+|,\s+(?:but|yet|whereas|while)\s+"
+)
+
+
+def _sentence_spans(line: str) -> list[tuple[int, int]]:
+    spans: list[tuple[int, int]] = []
+    start = 0
+    for boundary in _SENTENCE_BOUNDARY.finditer(line):
+        spans.append((start, boundary.start()))
+        start = boundary.end()
+    spans.append((start, len(line)))
+    return spans
+
+
+def classify_line(line: str, pattern: re.Pattern[str]) -> str:
+    """Classify a matched line as ``"retirement"`` or ``"stale"``.
+
+    ``"retirement"`` requires *every* match of ``pattern`` on the line to sit in a
+    sentence carrying a :data:`RETIREMENT_MARKERS` phrase. A line that mixes a
+    retirement with an unrelated stale claim stays ``"stale"``.
+    """
+    verdicts: list[str] = []
+    spans = _sentence_spans(line)
+    for match in pattern.finditer(line):
+        sentence = next(
+            (line[lo:hi] for lo, hi in spans if lo <= match.start() <= hi), line
+        )
+        retired = any(marker.search(sentence) for marker in RETIREMENT_MARKERS)
+        verdicts.append("retirement" if retired else "stale")
+    return "stale" if not verdicts or "stale" in verdicts else "retirement"
+
+
 def _is_generated_path(path: Path) -> bool:
     try:
         rel = path.relative_to(ROOT)
@@ -250,7 +316,14 @@ def _iter_files() -> list[Path]:
     return sorted(files)
 
 
-def scan() -> list[tuple[Path, int, str, str]]:
+def scan(
+    retired: list[tuple[Path, int, str, str]] | None = None,
+) -> list[tuple[Path, int, str, str]]:
+    """Return violations, appending recognised retirement statements to ``retired``.
+
+    ``retired`` is a reporting sink, not a suppression list: a caller that passes
+    nothing still gets exactly the same violations back.
+    """
     violations: list[tuple[Path, int, str, str]] = []
     for path in _iter_files():
         try:
@@ -267,9 +340,17 @@ def scan() -> list[tuple[Path, int, str, str]]:
                     )
                     if identity in _REVIEWED_FEP_MIGRATION_TERMS:
                         continue
-                    violations.append(
-                        (path.relative_to(ROOT), line_no, description, line.strip())
+                    finding = (
+                        path.relative_to(ROOT),
+                        line_no,
+                        description,
+                        line.strip(),
                     )
+                    if classify_line(line, pattern) == "retirement":
+                        if retired is not None:
+                            retired.append(finding)
+                        continue
+                    violations.append(finding)
     return violations
 
 
@@ -280,7 +361,13 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    violations = scan()
+    retired: list[tuple[Path, int, str, str]] = []
+    violations = scan(retired)
+    if retired:
+        print(
+            f"check_repo_terminology: {len(retired)} retirement statement(s) recognised "
+            "as denying or recording the retired claim."
+        )
     if not violations:
         print("check_repo_terminology: maintained tree clean.")
         return 0

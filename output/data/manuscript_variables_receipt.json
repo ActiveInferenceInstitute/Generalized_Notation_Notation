@@ -1,17 +1,10 @@
 {
-  "counts_describe_commit": "92f285b5b",
-  "dirty_path_count": 10,
+  "counts_describe_commit": "1def0ac30",
+  "dirty_path_count": 3,
   "dirty_paths": [
-    "output/.pipeline/",
+    "output/.pipeline/analysis-data/d51e4560c1d85aa192dc4b1d9724becfad73727a6981176d1c598759e874187b/",
     "output/data/manuscript_variables.json",
-    "output/data/manuscript_variables_receipt.json",
-    "output/figures/figure_registry.json",
-    "output/figures/gnn_repo_metrics.png",
-    "output/manuscript/00_abstract.md",
-    "output/manuscript/02_system_context.md",
-    "output/manuscript/03_methods.md",
-    "output/manuscript/04_artifacts_and_evidence.md",
-    "output/manuscript/05_reproducibility.md"
+    "output/data/manuscript_variables_receipt.json"
   ],
   "generator": "scripts/z_generate_manuscript_variables.py",
   "git_available": true,

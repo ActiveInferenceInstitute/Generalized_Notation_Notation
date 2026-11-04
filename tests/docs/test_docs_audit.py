@@ -907,3 +907,110 @@ def test_format_strict_issue_detail_lists_model_kind_and_render_doc_issues() -> 
     assert "Render-doc frame coverage (1)" in detail
     assert "input/AGENTS.md:26" in detail
     assert "docs/gnn/implementations/cpomdp.md:0" in detail
+
+
+# --- check_repo_terminology: retirement statements are not stale claims -----------
+#
+# The scanner bans vocabulary, so on its own it cannot tell "this is deprecated" from
+# "this is not deprecated". These two statements are the corrected prose from the
+# docs PR; each denies the claim or records the retirement, and both must pass.
+
+_RETIREMENT_STATEMENTS = (
+    # docs/gnn/implementations/rxinfer.md:41
+    "deprecated: neither the module nor the function exists. The `rxinfer_toml` render target is a",
+    # docs/rxinfer/engineering_rxinfer_gnn.md:80
+    "- `toml_generator.py` and `render_gnn_to_rxinfer_toml` are gone — deleted, not deprecated.",
+)
+
+
+def _terminology_module(tmp_path: Path) -> tuple[Any, Path]:
+    mod = load_module_from_path(
+        "check_repo_terminology_retirement",
+        REPO_ROOT / "scripts/check_repo_terminology.py",
+    )
+    isolated = tmp_path / "terminology"
+    isolated.mkdir()
+    mod.ROOT = isolated
+    mod.MAINTAINED_ROOTS = [isolated]
+    return mod, isolated
+
+
+def _pattern_for(mod: Any, word: str) -> Any:
+    return next(pattern for pattern, _ in mod.PATTERNS if pattern.search(word))
+
+
+@pytest.mark.parametrize("statement", _RETIREMENT_STATEMENTS)
+def test_retirement_statement_is_classified_as_retirement(
+    tmp_path: Path, statement: str
+) -> None:
+    mod, _ = _terminology_module(tmp_path)
+    pattern = _pattern_for(mod, "deprecated")
+
+    assert pattern.search(statement), "the fixture must exercise the real pattern"
+    assert mod.classify_line(statement, pattern) == "retirement"
+
+
+def test_scan_accepts_both_corrected_statements_and_reports_them(tmp_path: Path) -> None:
+    mod, isolated = _terminology_module(tmp_path)
+    for relative, statement in zip(
+        (
+            "docs/gnn/implementations/rxinfer.md",
+            "docs/rxinfer/engineering_rxinfer_gnn.md",
+        ),
+        _RETIREMENT_STATEMENTS,
+        strict=True,
+    ):
+        target = isolated / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(statement + "\n", encoding="utf-8")
+
+    retired: list[tuple[Path, int, str, str]] = []
+
+    assert mod.scan(retired) == []
+    assert len(retired) == 2, "recognised retirements are reported, not silently dropped"
+
+
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "`render_gnn_to_rxinfer_toml` is deprecated and still exported.",
+        "The legacy generator remains the supported path.",
+        "The shim was removed in 3.0.",
+    ],
+)
+def test_stale_statement_of_the_same_shape_still_fails(
+    tmp_path: Path, statement: str
+) -> None:
+    mod, isolated = _terminology_module(tmp_path)
+    target = isolated / "docs/stale.md"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(statement + "\n", encoding="utf-8")
+    retired: list[tuple[Path, int, str, str]] = []
+
+    findings = mod.scan(retired)
+
+    if statement.startswith("The shim was removed"):
+        # A correct retirement of the shim is exempt; the test pins the boundary only.
+        assert findings == []
+        assert len(retired) == 1
+    else:
+        assert len(findings) == 1
+        assert retired == []
+
+
+def test_a_retired_clause_does_not_launder_a_stale_clause(tmp_path: Path) -> None:
+    mod, isolated = _terminology_module(tmp_path)
+    target = isolated / "docs/mixed.md"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "The shim was removed in 3.0, but the legacy mode still works.\n",
+        encoding="utf-8",
+    )
+    retired: list[tuple[Path, int, str, str]] = []
+
+    findings = mod.scan(retired)
+
+    assert len(findings) == 1
+    assert findings[0][2] == "stale-version wording"
+    assert "legacy" in findings[0][3]
+    assert len(retired) == 1
