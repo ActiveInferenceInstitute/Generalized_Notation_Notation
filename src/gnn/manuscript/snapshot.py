@@ -72,7 +72,13 @@ class RepositorySnapshot:
             return None
 
     def _resolve_commit(self, revision: str) -> str:
-        result = self._git("rev-parse", "--short", revision)
+        # Fixed width on purpose: the renderer LAYS THE PAGE OUT with this
+        # stamp, so a 7-character abbreviation in a shallow clone and a
+        # 9-character one locally reflow the committed .md/.tex into
+        # byte-different artifacts that no later mask can reunite. Git's
+        # default abbreviation varies with repository size; this argument is
+        # the difference between comparable renders and forgiven ones.
+        result = self._git("rev-parse", "--short=9", revision)
         if result is None or result.returncode != 0:
             return "unknown"
         return result.stdout.decode("utf-8", "replace").strip() or "unknown"

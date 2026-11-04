@@ -10,17 +10,21 @@ committed chain rather than just render success. ``[STALE-CHAIN]`` means the com
 revision than the fresh render observed — that finding is returned alone,
 no artifact comparison is attempted, and the exit code is **3** (a distinct
 status, not a generic failure: the chain is out of date, not the render);
-``[FAIL]`` means the committed chain is stale for HEAD (an artifact is
-missing, or artifacts and inputs both drifted — rerun the whole ritual);
-``[WARN]`` means artifact-only drift with the recorded inputs fully
-matching, i.e. toolchain variance the manifest cannot pin down.
+``[FAIL]`` means an artifact the comparison covers disagrees with the
+committed chain (the manifest names the profile it compared under, and a
+permitted-but-different profile narrows what is covered — see the
+``[ENV]`` scope line); ``[UNMEASURED]`` means the gate cannot say: the chain
+declares no usable render profile, or the template revision this render used
+is unknown. There is no warning level for an artifact comparison: bytes that
+disagree with a chain from a permitted profile are drift.
 
 Thin orchestrator, same shape as ``z_record_manuscript_render_manifest.py``:
-all logic lives in :mod:`gnn.manuscript.render_custody`. Exits 1 iff any
-``[FAIL]``, 3 iff any ``[STALE-CHAIN]``, and prints the environment report
-(``[ENV]`` lines) before the verdict on every run, so what the comparison
-could and could not see is always on the record; a ``[WARN]``-only run
-passes with the warnings on stderr.
+all logic lives in :mod:`gnn.manuscript.render_custody`. Exits 3 iff any
+``[STALE-CHAIN]``, 4 iff any ``[UNMEASURED]``, 1 iff any ``[FAIL]``, and
+prints the environment report (``[ENV]`` lines, including the comparison's
+scope) before the verdict on every run, so what the comparison could and
+could not see is always on the record — and a green run is never read as
+having compared an artifact it did not.
 
 Usage:
     uv run python scripts/z_verify_fresh_render.py
@@ -37,6 +41,7 @@ if str(_PROJECT_ROOT / "src") not in sys.path:
 
 from gnn.manuscript.render_custody import (  # noqa: E402
     STALE_CHAIN,
+    UNMEASURED,
     environment_report,
     load_render_manifest,
     manifest_path,
@@ -62,6 +67,8 @@ def main() -> int:
         print(f"[render-custody] {issue}", file=sys.stderr)
     if any(issue.startswith(STALE_CHAIN) for issue in issues):
         return 3
+    if any(issue.startswith(UNMEASURED) for issue in issues):
+        return 4
     if any(issue.startswith("[FAIL]") for issue in issues):
         return 1
     if not issues:

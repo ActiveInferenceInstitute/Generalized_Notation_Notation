@@ -32,11 +32,20 @@ token checker).
    — render custody (`render_custody.py`): digest the committed render
    artifacts + hydrated inputs into `output/data/manuscript_render_manifest.json`
    after a render, audit the committed chain against it, and classify a
-   fresh render against the committed manifest (`[FAIL]` = artifact missing
-   or artifact+input joint drift → chain stale for HEAD; `[WARN]` =
-   artifact-only drift with inputs matching → toolchain variance). The
-   fresh comparison masks commit stamps and the TeX log banner's start
-   timestamp (`mask_log_timestamp()`), so an identical re-render is clean.
+   fresh render against the committed manifest: `[FAIL]` = a compared
+   artifact disagrees with the chain (stale for HEAD, or the same prose
+   rendered to different bytes); `[UNMEASURED]` = the chain declares no
+   usable render profile or `GNN_TEMPLATE_REVISION` is unset, so the gate
+   cannot fire; `[STALE-CHAIN]` = the chain describes another template
+   revision (exit 3). The declared environment holds the recording profile
+   and the profiles this chain permits — fully named, every value, matched
+   by exact equality — and a permitted profile that is not the recording one
+   narrows the comparison to the artifacts TeX Live did not write
+   (`comparison_scope()` names and counts what was and was not compared).
+   The fresh comparison masks commit stamps and the TeX log banner's start
+   timestamp (`mask_log_timestamp()`), so an identical re-render is clean,
+   and the producer stamps a fixed-width abbreviation (`snapshot.py`) so no
+   host reflows the artifacts it laid out.
 8. `hydration_issues()` / `hydrate_text()` — the PR-time custody drift
    guard (`scripts/check_hydrated_prose.py`, `local-gates.yml` repo-gates):
    re-substitute `manuscript/*.md` from the committed token map, mirroring

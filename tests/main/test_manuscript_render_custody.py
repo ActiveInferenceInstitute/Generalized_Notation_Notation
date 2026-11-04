@@ -16,10 +16,17 @@ from pathlib import Path
 
 import pytest
 
+import gnn.manuscript.render_custody as render_custody
 from gnn.manuscript.render_custody import (
     DECLARED_ENVIRONMENT_KEY,
+    PERMITTED_PROFILES_KEY,
+    PERMITTED_RENDER_PROFILES,
+    PROFILE_KEYS,
+    RECORDING_PROFILE_KEY,
     STALE_CHAIN,
     TEMPLATE_REVISION_ENV,
+    UNMEASURED,
+    comparison_scope,
     environment_report,
     load_render_manifest,
     manifest_path,
@@ -159,10 +166,10 @@ def test_environment_report_calls_a_legacy_manifest_unmeasured(tmp_path: Path) -
     assert "UNAVAILABLE" in report
 
 
-def test_environment_report_reads_the_engine_banner_and_names_the_gap(
+def test_environment_report_reads_the_engine_banner_and_the_profile(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The engine axis is read from the real log shape, and named when it moves."""
+    """The engine axis is read from the real log shape, and the set is named."""
     log = tmp_path.joinpath("output", "pdf", "_combined_manuscript.log")
     log.parent.mkdir(parents=True, exist_ok=True)
     log.write_text(
@@ -175,10 +182,25 @@ def test_environment_report_reads_the_engine_banner_and_names_the_gap(
         **{
             DECLARED_ENVIRONMENT_KEY: {
                 "template_revision": "",
-                "tex_engine": "This is XeTeX, Version 3.141592653-2.6-0.999995",
-                "tex_roots": ["/usr/share/texlive"],
+                RECORDING_PROFILE_KEY: "recording",
+                PERMITTED_PROFILES_KEY: {
+                    "recording": {
+                        "pandoc": "3.13",
+                        "pandoc_crossref": "0.3.26",
+                        "tex_engine": (
+                            "This is XeTeX, Version 3.141592653-2.6-0.999998 "
+                            "(TeX Live 2026)"
+                        ),
+                        "tex_roots": ["/usr/local/texlive/2026"],
+                    }
+                },
             }
         },
+    )
+    monkeypatch.setattr(
+        render_custody,
+        "_probe_toolchain",
+        lambda: {"pandoc": "3.13", "pandoc_crossref": "0.3.26"},
     )
     monkeypatch.delenv(TEMPLATE_REVISION_ENV, raising=False)
     report = " ".join(environment_report(tmp_path, load_render_manifest(tmp_path)))
@@ -188,4 +210,182 @@ def test_environment_report_reads_the_engine_banner_and_names_the_gap(
     )
     assert "tex_roots=/usr/local/texlive/2026" in report
     assert "is unset: the template revision this render used is unmeasured" in report
-    assert "NOT bounded yet" in report
+    assert "recording profile 'recording'" in report
+    assert "permitted profiles (1): recording" in report
+    assert "comparing 3 rendered artifacts" in report
+
+
+_PROBE = {"pandoc": "3.13", "pandoc_crossref": "0.3.26"}
+_LOCAL_ENGINE = "This is XeTeX, Version 3.141592653-2.6-0.999998 (TeX Live 2026)"
+_CI_PROFILE_NAME, _CI_PROFILE = next(iter(PERMITTED_RENDER_PROFILES.items()))
+_LOCAL_PROFILE: dict[str, object] = {
+    "pandoc": "3.13",
+    "pandoc_crossref": "0.3.26",
+    "tex_engine": _LOCAL_ENGINE,
+    "tex_roots": ["/usr/local/texlive/2026"],
+}
+_LOCAL_LOG = (
+    f"{_LOCAL_ENGINE} (preloaded format=xelatex 2026.9.18)  4 NOV 2026 12:32\n"
+    "(/usr/local/texlive/2026/texmf-dist/tex/latex/base/article.cls)\n"
+)
+_CI_LOG = (
+    "This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) "
+    "(preloaded format=xelatex 2026.11.4)  4 NOV 2026 15:37\n"
+    "(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls)\n"
+)
+
+
+def _profile_tree(tmp_path: Path, log_text: str) -> dict[str, Path]:
+    """A render tree whose comparison the profile decision can be asked about."""
+    pdf = tmp_path / "output" / "pdf"
+    pdf.mkdir(parents=True, exist_ok=True)
+    paths = {
+        "log": pdf / "_combined_manuscript.log",
+        "md": pdf / "_combined_manuscript.md",
+        "tex": pdf / "_combined_manuscript.tex",
+    }
+    paths["log"].write_text(log_text, encoding="utf-8")
+    paths["md"].write_text("prose\n", encoding="utf-8")
+    paths["tex"].write_text("\\begin{document}\n\n\\end{document}\n", encoding="utf-8")
+    return paths
+
+
+def _digests(paths: dict[str, Path]) -> dict[str, str]:
+    """The digests a record step would write for this tree, normalized.
+
+    Built through the module's own digest function so the fixture agrees with
+    the comparison: the ``.log``'s banner timestamp is masked by the
+    comparison and must be masked here too, or the fixture would be testing
+    the recorder's normalization rather than the profile decision.
+    """
+    stamps = ("abc1234",)
+    return {
+        rel: render_custody._artifact_digest_from_bytes(rel, path.read_bytes(), stamps)
+        for rel, path in ((f"output/pdf/{path.name}", path) for path in paths.values())
+    }
+
+
+def _profile_manifest(
+    tmp_path: Path,
+    *,
+    digests: dict[str, str],
+    recording: dict[str, object] | None = None,
+    template_revision: str = "abc1234",
+) -> None:
+    """A manifest that declares one recording profile and permits the CI one."""
+    recorded = dict(recording if recording is not None else _LOCAL_PROFILE)
+    _write_manifest(
+        tmp_path,
+        **{
+            "render_artifacts_sha256": digests,
+            "render_artifacts_normalized_sha256": digests,
+            "render_inputs_sha256": {},
+            DECLARED_ENVIRONMENT_KEY: {
+                "template_revision": template_revision,
+                RECORDING_PROFILE_KEY: "recording",
+                PERMITTED_PROFILES_KEY: {
+                    "recording": recorded,
+                    _CI_PROFILE_NAME: dict(_CI_PROFILE),
+                },
+            },
+        },
+    )
+
+
+def test_a_permitted_non_recording_profile_narrows_the_comparison(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Engine-dependent bytes are excluded, named and counted; the rest is not.
+
+    The `.log` is TeX Live's own output and TeX Live is the one axis a
+    permitted profile may differ in, so its bytes are not compared on a host
+    that is not the recording one — and the `.md`/`.tex` under it still are,
+    which the second half proves by drifting the `.tex` and getting a failure.
+    """
+    monkeypatch.setattr(render_custody, "_probe_toolchain", lambda: dict(_PROBE))
+    monkeypatch.setenv(TEMPLATE_REVISION_ENV, "abc1234")
+    paths = _profile_tree(tmp_path, _CI_LOG)
+    digests = _digests(paths)
+    digests["output/pdf/_combined_manuscript.log"] = "0" * 64  # never compared here
+    _profile_manifest(tmp_path, digests=digests)
+    assert verify_fresh_render(tmp_path) == []
+    scope = comparison_scope(tmp_path, load_render_manifest(tmp_path))
+    assert "2 of 3 rendered artifacts" in scope
+    assert "_combined_manuscript.log not compared on this host" in scope
+
+    paths["tex"].write_text(
+        "\\begin{document}\n% drifted\n\\end{document}\n", encoding="utf-8"
+    )
+    issues = verify_fresh_render(tmp_path)
+    assert len(issues) == 1, issues
+    assert issues[0].startswith("[FAIL] output/pdf/_combined_manuscript.tex"), issues
+
+
+def test_a_profile_outside_the_permitted_set_fails_without_comparing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """pandoc and pandoc-crossref are pinned; a third version is a drifted pin.
+
+    The recorded digests are deliberately wrong, so a `.tex` finding would
+    prove the comparison ran: bytes from an undeclared toolchain are not
+    evidence about this chain and must not be reported as if they were.
+    """
+    monkeypatch.setattr(
+        render_custody,
+        "_probe_toolchain",
+        lambda: {"pandoc": "3.14", "pandoc_crossref": "0.3.26"},
+    )
+    monkeypatch.setenv(TEMPLATE_REVISION_ENV, "abc1234")
+    paths = _profile_tree(tmp_path, _CI_LOG)
+    _profile_manifest(tmp_path, digests=_digests(paths))
+    issues = verify_fresh_render(tmp_path)
+    assert len(issues) == 1, issues
+    assert issues[0].startswith("[FAIL] render profile"), issues
+    assert "pandoc='3.14'" in issues[0]
+    assert "artifact comparison is skipped" in issues[0]
+    assert _CI_PROFILE_NAME in issues[0]
+
+
+def test_an_unmeasured_template_revision_is_not_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The switch is off: unmeasured is its own status, never a pass (exit 4)."""
+    monkeypatch.setattr(render_custody, "_probe_toolchain", lambda: dict(_PROBE))
+    paths = _profile_tree(tmp_path, _LOCAL_LOG)
+    _profile_manifest(tmp_path, digests=_digests(paths))
+    monkeypatch.delenv(TEMPLATE_REVISION_ENV, raising=False)
+    issues = verify_fresh_render(tmp_path)
+    assert len(issues) == 1, issues
+    assert issues[0].startswith(UNMEASURED), issues
+    assert "abc1234" in issues[0]
+
+
+def test_artifact_drift_with_matching_inputs_fails_not_warns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Same prose, different bytes, permitted profile: drift has no warning level."""
+    monkeypatch.setattr(render_custody, "_probe_toolchain", lambda: dict(_PROBE))
+    monkeypatch.setenv(TEMPLATE_REVISION_ENV, "abc1234")
+    paths = _profile_tree(tmp_path, _LOCAL_LOG)
+    _profile_manifest(tmp_path, digests=_digests(paths))
+    paths["tex"].write_text(
+        "\\begin{document}\n% drifted\n\\end{document}\n", encoding="utf-8"
+    )
+    issues = verify_fresh_render(tmp_path)
+    assert len(issues) == 1, issues
+    assert issues[0].startswith("[FAIL] output/pdf/_combined_manuscript.tex"), issues
+    assert "the render inputs match this chain" in issues[0]
+    assert not any("[WARN]" in issue for issue in issues)
+
+
+def test_no_artifact_comparison_warning_level_remains() -> None:
+    """A normalized-vs-normalized mismatch is drift; the level must not exist."""
+    source = Path(render_custody.__file__).read_text(encoding="utf-8")
+    assert "[WARN]" not in source
+
+
+def test_every_profile_key_is_one_of_the_declared_ones() -> None:
+    """The compared axes are exactly the declared ones — no axis creeps in."""
+    assert set(PROFILE_KEYS) == {"pandoc", "pandoc_crossref", "tex_engine", "tex_roots"}
+    for name, values in PERMITTED_RENDER_PROFILES.items():
+        assert set(values) == set(PROFILE_KEYS), name
