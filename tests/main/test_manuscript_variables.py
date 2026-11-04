@@ -235,6 +235,48 @@ def test_manifest_does_not_hand_type_capability_claims() -> None:
     assert axes, "no family declares a capability_axis; the split would vanish"
 
 
+def test_manifest_capability_axis_lists_every_registry_frame(
+    snapshot: RepositorySnapshot,
+) -> None:
+    """A capability-axis family declares exactly the registry frames that have the axis.
+
+    The continuous family declares ``"capability_axis": "supports_continuous"``, so
+    its authored ``frameworks`` string must follow that registry flag (experimental
+    frames stay out; they require explicit selection). The string had drifted from
+    the flag: ``pytorch`` renders the continuous family and the registry declares
+    ``supports_continuous`` for it, but the family list omitted it, so the
+    manuscript's generated split and the authored list disagreed about the same
+    capability. Read from the working tree because this is a lint on the authored
+    file, not a count.
+    """
+    manifest = json.loads(
+        (_PROJECT_ROOT / "input" / "model_family_manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    experimental = set(_registry_flags(snapshot, "experimental"))
+    declaring = [f for f in manifest["families"] if f.get("capability_axis")]
+    assert declaring, "no family declares a capability_axis"
+    for family in declaring:
+        axis = str(family["capability_axis"])
+        capable = set(_registry_flags(snapshot, axis))
+        assert capable, f"{family['name']}: registry declares no frame for {axis}"
+        expected = capable - experimental
+        declared = {
+            item.strip()
+            for item in str(family.get("frameworks", "")).split(",")
+            if item.strip()
+        }
+        assert declared == expected, (
+            f"{family['name']} declares {sorted(declared)} but the registry's "
+            f"{axis} names {sorted(expected)}"
+        )
+    continuous = next(f for f in declaring if f["name"] == "continuous")
+    assert "pytorch" in {
+        item.strip() for item in str(continuous["frameworks"]).split(",")
+    }
+
+
 def test_capability_clause_is_generated_from_the_registry(
     snapshot: RepositorySnapshot,
 ) -> None:

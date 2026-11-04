@@ -43,7 +43,7 @@
       "description": "Continuous-state linear-Gaussian fixtures (F/H/Q/R + Gaussian prior; continuous_navigation closes the loop on beliefs; ngc-learn LGSSM exemplar for the ngclearn backend).",
       "capability_axis": "supports_continuous",
       "target_dir": "input/gnn_files/continuous",
-      "frameworks": "jax,numpyro,stan,rxinfer,ngclearn",
+      "frameworks": "rxinfer,jax,pytorch,numpyro,stan,ngclearn",
       "representative_files": [
         "continuous_navigation.md",
         "stochastic_dynamics.md",

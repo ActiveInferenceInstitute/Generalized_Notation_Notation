@@ -276,14 +276,14 @@ the rendering backends. GNN registers 12 simulation backends, but
 coverage across the family-by-backend matrix is intentionally uneven,
 and the gaps are recorded as explicit \emph{profiled-unsupported}
 statuses rather than silently omitted. The cross-framework acceptance
-check is anchored on the continuous family, where JAX, NumPyro,
-RxInfer.jl are compared directly; selected continuous and hierarchical
-lanes carry profiled-unsupported markers at the render and execute steps
-(Steps 11 and 12) for backends that cannot yet faithfully realize their
-continuous-state or temporal-depth structure. This is honest
-bookkeeping, not a defect to be hidden: an unsupported status with a
-recorded reason is more trustworthy than a forced translation that
-quietly misrepresents the model. It also reflects the state of the
+check is anchored on the continuous family, where RxInfer.jl, JAX,
+PyTorch, NumPyro are compared directly; selected continuous and
+hierarchical lanes carry profiled-unsupported markers at the render and
+execute steps (Steps 11 and 12) for backends that cannot yet faithfully
+realize their continuous-state or temporal-depth structure. This is
+honest bookkeeping, not a defect to be hidden: an unsupported status
+with a recorded reason is more trustworthy than a forced translation
+that quietly misrepresents the model. It also reflects the state of the
 surrounding literature, where expected-free-energy formulations,
 \end{frame}
 
