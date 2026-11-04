@@ -73,24 +73,32 @@ def _coverage_data_file(path: Path, measured: Path) -> None:
 
 
 def _raw_data_admission_expectations(tmp_path: Path) -> None:
-    """Both directions of the bounded re-observation, plus the settled-but-empty refusal.
+    """Both directions of the bounded re-observation, plus the refusal of a file that stays empty.
 
     A data file is written when its process exits, in several SQLite transactions, so a reader can
     observe it before the writer has finished. The guard must admit such a file once it settles,
-    and must still refuse one that never settles or that settles unreadable.
+    and must still refuse one that never settles or that settles unreadable. Every observation
+    parses a private copy under ``observed``: coverage's own SQLite backend creates a missing schema
+    when it opens a data file, so an in-place read would write to the subject, and the re-hash would
+    then report the observer's own write as a change by the writer.
     """
     driver = load_module_from_path("run_comprehensive_native_coverage", DRIVER)
     source = tmp_path / "src" / "gnn"
     source.mkdir(parents=True)
     measured = source / "settle_case.py"
     measured.write_text("def f():\n    return 1\n", encoding="utf-8")
+    observed = tmp_path / "observed"
     driver.RAW_OBSERVATION_WINDOW_SECONDS = 0.2
     driver.RAW_OBSERVATION_POLL_SECONDS = 0.01
+
+    def subject_sha256(path: Path) -> str:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
 
     # A settled file is admitted, and the receipt shows what settling cost and what it saw.
     settled = tmp_path / ".coverage.host.pid10001.abcde"
     _coverage_data_file(settled, measured)
-    data, detail = driver.read_raw_coverage(settled, tmp_path)
+    settled_sha256 = subject_sha256(settled)
+    data, detail = driver.read_raw_coverage(settled, tmp_path, observed)
     assert data is not None
     assert data.measured_files()
     assert detail["settled"] is True
@@ -102,6 +110,11 @@ def _raw_data_admission_expectations(tmp_path: Path) -> None:
     assert observation["changed"] is False
     assert observation["size"] == settled.stat().st_size
     assert observation["sha256"] == hashlib.sha256(settled.read_bytes()).hexdigest()
+    # The subject is read, never written, and the parse ran from a private copy elsewhere.
+    assert subject_sha256(settled) == settled_sha256
+    (copy,) = observed.iterdir()
+    assert copy.name.startswith(settled.name)
+    assert {path.name for path in tmp_path.glob(".coverage.*")} == {settled.name}
 
     original_read_bytes = Path.read_bytes
     churn_target = {"path": settled}
@@ -119,11 +132,12 @@ def _raw_data_admission_expectations(tmp_path: Path) -> None:
         state["reads"] = 0
         with pytest.MonkeyPatch.context() as monkeypatched:
             monkeypatched.setattr(Path, "read_bytes", rewriting_read_bytes)
-            return driver.read_raw_coverage(path, tmp_path)
+            return driver.read_raw_coverage(path, tmp_path, observed)
 
     # A live writer that never settles is refused once the bounded window closes.
     churning = tmp_path / f".coverage.host.pid{os.getpid()}.abcde"
     _coverage_data_file(churning, measured)
+    settled_on_disk = original_read_bytes(churning)
     churned, churned_detail = read_while_rewriting(churning)
     assert churned is None
     assert churned_detail["settled"] is False
@@ -134,28 +148,34 @@ def _raw_data_admission_expectations(tmp_path: Path) -> None:
     assert churned_detail["admitted_source_executed_lines"] is None
     assert churned_detail["observations"] > 1
     assert churned_detail["writer_alive_at_decision"] is True
+    assert original_read_bytes(churning) == settled_on_disk
 
-    # A writer that has exited cannot be finalizing anything, so a file that still changes is
-    # refused on the first observation instead of waiting out the window.
+    # A writer that has exited cannot be finalizing anything, but a name is not a writer: the file
+    # is still re-observed until the bounded window closes, and then refused for the change.
     reaped = subprocess.Popen([sys.executable, "-c", "pass"])
     reaped.wait()
     orphan = tmp_path / f".coverage.host.pid{reaped.pid}.abcde"
     _coverage_data_file(orphan, measured)
     orphan_data, orphan_detail = read_while_rewriting(orphan)
     assert orphan_data is None
-    assert orphan_detail["observations"] == 1
+    assert orphan_detail["observations"] > 1
     assert orphan_detail["writer_alive_at_decision"] is False
     assert orphan_detail["error"] == "Native coverage raw data changed while being read"
 
-    # A file that settles empty is real corruption: still refused, never admitted by the new path.
+    # A file that stays empty is refused for being empty -- explicitly and at once -- instead of
+    # growing under the reader's own schema initialisation and being refused for a change nobody
+    # made. It is never admitted as a zero contribution.
     empty = tmp_path / ".coverage.host.pid10003.abcde"
     empty.write_bytes(b"")
-    empty_data, empty_detail = driver.read_raw_coverage(empty, tmp_path)
+    empty_data, empty_detail = driver.read_raw_coverage(empty, tmp_path, observed)
     assert empty_data is None
     assert empty_detail["settled"] is False
     assert empty_detail["error_class"] == "DataError"
+    assert empty_detail["error"] == driver.RAW_DATA_EMPTY
     assert empty_detail["admitted_source_executed_lines"] is None
     assert empty_detail["observations"] == 1
+    assert empty.stat().st_size == 0
+    assert subject_sha256(empty) == hashlib.sha256(b"").hexdigest()
 
 
 def test_concurrent_native_launches_publish_complete_owned_receipts(
