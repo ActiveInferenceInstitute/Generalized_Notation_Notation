@@ -122,9 +122,24 @@ jobs:
           uv run --frozen python scripts/pipeline/stage_03_render.py \
             --project GeneralizedNotationNotation
 
+      # The template revision is the axis the custody gate compares first,
+      # and the committed artifacts carry no copy of it: neither the
+      # manifest, the .tex, the .log nor the .md names docxology/template or
+      # any of its revisions (measured 2026-11-04). The clone above is the
+      # drift detector, so the run has to hand its revision to the gate
+      # explicitly — otherwise that axis reads as unmeasured and the drift
+      # signal is lost.
+      - name: Export the template revision for the custody gate
+        working-directory: ${{ github.workspace }}
+        run: echo "GNN_TEMPLATE_REVISION=$(git -C template rev-parse HEAD)" >> "$GITHUB_ENV"
+
       # Fresh-vs-committed custody gate: compare the render this checkout
       # just produced against the manifest as committed, BEFORE the record
-      # step overwrites it — the red run is the drift signal. [FAIL] means
+      # step overwrites it — the red run is the drift signal. [STALE-CHAIN]
+      # (exit 3) means the chain describes a different template revision than
+      # this run rendered with: that finding is returned alone, no artifact
+      # comparison is attempted, the later record step is skipped, and a
+      # person re-records the chain against the new revision. [FAIL] means
       # the committed chain is stale for HEAD (an artifact is missing, or
       # artifacts and inputs both drifted — rerun the whole SC-22 ritual
       # locally and commit); [WARN] is artifact-only drift with the

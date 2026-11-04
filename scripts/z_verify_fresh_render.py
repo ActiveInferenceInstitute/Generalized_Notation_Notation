@@ -6,15 +6,21 @@ The step before recording in the scheduled re-render ritual (SC-22 — see
 template's ``stage_03_render`` has produced fresh PDF evidence and hydrated
 prose, compare them to ``output/data/manuscript_render_manifest.json`` as
 committed, BEFORE the record step overwrites it — so a red run certifies the
-committed chain rather than just render success. ``[FAIL]`` means the
-committed chain is stale for HEAD (an artifact is missing, or artifacts and
-inputs both drifted — rerun the whole ritual); ``[WARN]`` means artifact-only
-drift with the recorded inputs fully matching, i.e. toolchain variance the
-v1 manifest cannot pin down (it records no tool versions).
+committed chain rather than just render success. ``[STALE-CHAIN]`` means the committed chain describes a different template
+revision than the fresh render observed — that finding is returned alone,
+no artifact comparison is attempted, and the exit code is **3** (a distinct
+status, not a generic failure: the chain is out of date, not the render);
+``[FAIL]`` means the committed chain is stale for HEAD (an artifact is
+missing, or artifacts and inputs both drifted — rerun the whole ritual);
+``[WARN]`` means artifact-only drift with the recorded inputs fully
+matching, i.e. toolchain variance the manifest cannot pin down.
 
 Thin orchestrator, same shape as ``z_record_manuscript_render_manifest.py``:
 all logic lives in :mod:`gnn.manuscript.render_custody`. Exits 1 iff any
-``[FAIL]``; a ``[WARN]``-only run passes with the warnings on stderr.
+``[FAIL]``, 3 iff any ``[STALE-CHAIN]``, and prints the environment report
+(``[ENV]`` lines) before the verdict on every run, so what the comparison
+could and could not see is always on the record; a ``[WARN]``-only run
+passes with the warnings on stderr.
 
 Usage:
     uv run python scripts/z_verify_fresh_render.py
@@ -30,15 +36,32 @@ if str(_PROJECT_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
 from gnn.manuscript.render_custody import (  # noqa: E402
+    STALE_CHAIN,
+    environment_report,
+    load_render_manifest,
     manifest_path,
     verify_fresh_render,
 )
 
 
+def _report_environment() -> None:
+    """Print what the comparison can see, before it reports a verdict."""
+    try:
+        manifest = load_render_manifest(_PROJECT_ROOT)
+    except RuntimeError as exc:
+        print(f"[render-custody] [ENV] unavailable: {exc}", file=sys.stderr)
+        return
+    for line in environment_report(_PROJECT_ROOT, manifest):
+        print(f"[render-custody] [ENV] {line}", file=sys.stderr)
+
+
 def main() -> int:
+    _report_environment()
     issues = verify_fresh_render(_PROJECT_ROOT)
     for issue in issues:
         print(f"[render-custody] {issue}", file=sys.stderr)
+    if any(issue.startswith(STALE_CHAIN) for issue in issues):
+        return 3
     if any(issue.startswith("[FAIL]") for issue in issues):
         return 1
     if not issues:

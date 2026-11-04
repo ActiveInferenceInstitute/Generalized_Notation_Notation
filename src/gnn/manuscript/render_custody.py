@@ -25,6 +25,10 @@ The custody point is a small digest manifest,
 * ``counts_describe_commit`` / ``receipt_counts_describe_commit`` — the
   commit short-hash the token map describes and the one the producer's
   receipt (written by the pre-render producer run) describes.
+* ``declared_environment`` — the environment the chain describes: the
+  template revision the render cloned, the TeX engine banner and its
+  package roots. Declared so a fresh render can be asked about the
+  *environment* before it is asked about bytes.
 
 Ordering honesty: the manifest is recorded after the render, from the files
 on disk, so it cannot by itself prove a render ran. That ordering — regen,
@@ -38,6 +42,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -51,17 +56,22 @@ from gnn.manuscript.substitution import hydrate_text  # noqa: E402
 from gnn.manuscript.variables import token_checksum  # noqa: E402
 
 __all__ = [
+    "DECLARED_ENVIRONMENT_KEY",
     "HYDRATION_FIX",
     "MANIFEST_VERSION",
     "RECORD_COMMAND",
     "RENDER_INPUT_ROOT",
     "RENDERED_ARTIFACTS",
+    "STALE_CHAIN",
+    "TEMPLATE_REVISION_ENV",
     "custody_issues",
+    "environment_report",
     "hydrate_text",
     "hydration_issues",
     "load_render_manifest",
     "manifest_path",
     "mask_log_timestamp",
+    "observed_render_environment",
     "record_render_manifest",
     "strip_volatile_tokens",
     "verify_fresh_render",
@@ -69,6 +79,18 @@ __all__ = [
 
 MANIFEST_VERSION = "gnn_render_manifest_v1"
 RECORD_COMMAND = "uv run python scripts/z_record_manuscript_render_manifest.py"
+#: A chain that describes a different render environment than the fresh
+#: one gets its own status, not a generic failure: the render is not
+#: necessarily wrong, the *chain* is out of date. Exit code 3 in
+#: ``scripts/z_verify_fresh_render.py``.
+STALE_CHAIN = "[STALE-CHAIN]"
+#: Where a recording or verifying run reports the template checkout it
+#: rendered with. The committed artifacts carry no template identity, so
+#: this is the only carrier of that axis (rules §36: declare it, or the
+#: comparison measures the host).
+TEMPLATE_REVISION_ENV = "GNN_TEMPLATE_REVISION"
+#: Manifest key holding the environment the chain describes.
+DECLARED_ENVIRONMENT_KEY = "declared_environment"
 
 _MANIFEST_REL = Path("output") / "data" / "manuscript_render_manifest.json"
 _VARIABLES_REL = Path("output") / "data" / "manuscript_variables.json"
@@ -234,6 +256,10 @@ def record_render_manifest(project_root: Path) -> dict:
         "recorded_by": RECORD_COMMAND,
         "counts_describe_commit": counts_describe_commit,
         "receipt_counts_describe_commit": receipt_commit,
+        # The axes this chain declares. Recorded rather than inferred at
+        # compare time: a comparison that normalized an undeclared axis
+        # would measure the render host, not the chain (rules §36).
+        DECLARED_ENVIRONMENT_KEY: observed_render_environment(project_root),
         "variables_sha256": token_checksum(strip_volatile_tokens(variables)),
         "render_artifacts_sha256": {
             rel.as_posix(): _sha256(project_root / rel) for rel in RENDERED_ARTIFACTS
@@ -260,6 +286,129 @@ def record_render_manifest(project_root: Path) -> dict:
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     return manifest
+
+
+_TEX_ENGINE_RE = re.compile(r"^This is (?:XeTeX|LuaTeX|pdfTeX)\b[^\n]*", re.MULTILINE)
+_TEX_ROOT_RE = re.compile(r"/(?:usr/(?:local/)?texlive|Library/TeX)/[0-9A-Za-z._-]+")
+
+
+def _commit_equal(a: str, b: str) -> bool:
+    """Whether two revisions name the same commit at any abbreviation."""
+    return bool(a) and bool(b) and (a == b or a.startswith(b) or b.startswith(a))
+
+
+def observed_render_environment(project_root: Path) -> dict[str, object]:
+    """The environment axes the render ran in, as far as they are observable.
+
+    Measured against the committed log rather than assumed: the engine
+    banner is TeX's own ``This is XeTeX, Version ...`` line, and a
+    banner this parser does not recognize stays empty and is reported,
+    never guessed.
+
+    ``template_revision`` comes from ``$GNN_TEMPLATE_REVISION`` because the
+    committed artifacts carry no template identity: nothing in the manifest,
+    the ``.tex``, the ``.log`` or the ``.md`` names ``docxology/template`` or
+    any of its revisions (measured 2026-11-04), while the render stage clones
+    the template at its **default-branch head** on purpose — that clone is
+    the drift detector. ``tex_engine``/``tex_roots`` come from the committed
+    log's engine banner, which the render host wrote.
+
+    An unobservable axis stays empty here and is *reported* by
+    :func:`environment_report`; it is never assumed equal.
+    """
+    log = project_root / RENDERED_ARTIFACTS[0]
+    text = log.read_text(encoding="utf-8", errors="replace") if log.is_file() else ""
+    engine = _TEX_ENGINE_RE.search(text)
+    return {
+        "template_revision": os.environ.get(TEMPLATE_REVISION_ENV, "").strip(),
+        "tex_engine": engine.group(0).strip() if engine else "",
+        "tex_roots": sorted(set(_TEX_ROOT_RE.findall(text))),
+    }
+
+
+def _template_gate(manifest: dict, project_root: Path) -> str | None:
+    """The ``[STALE-CHAIN]`` finding when the chain describes another template.
+
+    Runs BEFORE any byte comparison, and its finding replaces the comparison:
+    once the template has moved, every figure link in the hydrated prose is
+    expected to move with it, so a byte-level verdict would report the
+    artifact and bury the cause — the 2026-11-03 red run said only "your chain
+    is stale for HEAD" and named no axis. The template revision is the signal,
+    so it is never normalized (rules §36, second clause); when either side
+    cannot observe it, the gate reports that through
+    :func:`environment_report` and leaves the verdict to the byte comparison.
+    """
+    declared = manifest.get(DECLARED_ENVIRONMENT_KEY)
+    if not isinstance(declared, dict):
+        return None
+    recorded = str(declared.get("template_revision") or "")
+    observed = str(observed_render_environment(project_root)["template_revision"])
+    if not recorded or not observed or _commit_equal(recorded, observed):
+        return None
+    return (
+        f"{STALE_CHAIN} template moved {recorded} to {observed}; the chain "
+        f"describes {recorded}; re-record is required. The figure links in "
+        "the hydrated prose are expected to differ, so the artifact "
+        f"comparison is skipped: rerun the SC-22 ritual, then {RECORD_COMMAND}"
+    )
+
+
+def environment_report(project_root: Path, manifest: dict) -> list[str]:
+    """What this comparison can and cannot say about the render environment.
+
+    Printed on every run, pass or fail — a chain that declares no environment
+    is *reported* as unmeasured, never silently normalized into agreement. A
+    legacy v1 manifest hits that branch, which is why the declaration is
+    additive rather than a new manifest version.
+    """
+
+    def _show(value: object) -> str:
+        if isinstance(value, list):
+            return ",".join(str(item) for item in value) or "none"
+        return str(value) if value else "unavailable"
+
+    observed = observed_render_environment(project_root)
+    keys = ("template_revision", "tex_engine", "tex_roots")
+    lines = [
+        "observed: " + ", ".join(f"{key}={_show(observed[key])}" for key in keys),
+        "normalized on both sides by the byte comparison: commit stamps "
+        "(abbreviation length only) and the TeX banner's run-time timestamp",
+    ]
+    declared = manifest.get(DECLARED_ENVIRONMENT_KEY)
+    if not isinstance(declared, dict):
+        lines.append(
+            "the chain declares no environment (legacy v1): the "
+            "template-revision gate is UNAVAILABLE and every other toolchain "
+            f"difference stays a warning; re-record ({RECORD_COMMAND}) declares it"
+        )
+        return lines
+    for key in keys:
+        if declared.get(key) in (None, "", []):
+            lines.append(f"declared {key} is unavailable - that axis is unmeasured")
+    if not observed["template_revision"]:
+        lines.append(
+            f"{TEMPLATE_REVISION_ENV} is unset: the template revision this "
+            "render used is unmeasured, so the gate cannot fire"
+        )
+    elif not _commit_equal(
+        str(declared.get("template_revision") or ""),
+        str(observed["template_revision"]),
+    ):
+        lines.append(
+            "declared and observed template_revision differ - see the "
+            "gate's [STALE-CHAIN] finding"
+        )
+    if (
+        declared.get("tex_engine")
+        and observed["tex_engine"]
+        and declared["tex_engine"] != observed["tex_engine"]
+    ):
+        lines.append(
+            "the engine banner differs from the declared one and is NOT "
+            "bounded yet: tolerated as a warning, named here so the "
+            "tolerance is visible (design item 3)"
+        )
+    return lines
 
 
 def _input_tree_issues(
@@ -492,6 +641,10 @@ def verify_fresh_render(project_root: Path) -> list[str]:
     certifies the committed chain, not just render success. Per rendered
     artifact:
 
+    * ``[STALE-CHAIN]`` — the chain declares a different template
+      revision than this render observed; the finding is returned alone
+      and the artifact comparison is skipped, because the template *is*
+      the signal and every figure link is expected to move with it.
     * ``[FAIL]`` — the artifact is missing, or it drifted from the manifest
       AND the recorded render inputs drifted too: the fresh render
       disagrees with the committed chain in prose as well as bytes, so the
@@ -521,6 +674,10 @@ def verify_fresh_render(project_root: Path) -> list[str]:
         manifest = load_render_manifest(project_root)
     except RuntimeError as exc:
         return [f"[FAIL] {exc}"]
+
+    gate = _template_gate(manifest, project_root)
+    if gate is not None:
+        return [gate]
 
     stamp = manifest.get("counts_describe_commit") or ""
     stamps = tuple(dict.fromkeys(s for s in (stamp, _head_stamp(project_root)) if s))
