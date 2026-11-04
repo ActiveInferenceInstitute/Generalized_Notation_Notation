@@ -57,7 +57,7 @@ All pipeline steps follow the thin orchestrator pattern. Each step is documented
 
 ### Stage 1: GNN → Parsed JSON (Step 3)
 
-**Entry Point:** `src/gnn/3_gnn.py:main()` → `src/gnn/multi_format_processor.py:process_gnn_multi_format()`
+**Entry Point:** `src/gnn/3_gnn.py:main()` → `src/gnn/processing/multi_format_processor.py:process_gnn_multi_format()`
 
 **Key Parsing Patterns:**
 
@@ -293,7 +293,7 @@ Steps 5, 10, 11, 13, and 14 re-parse the target-dir GNN files directly (no Step 
 
 #### Parsing System
 
-- **Main Interface:** `src/gnn/multi_format_processor.py`
+- **Main Interface:** `src/gnn/processing/multi_format_processor.py`
 - **Schema Validation:** `src/gnn/schema_validator/syntax.py:GNNParser` (line 54)
 - **Multi-format Support:** `src/gnn/parsers/` directory
   - `markdown_parser.py`: Standard GNN markdown format

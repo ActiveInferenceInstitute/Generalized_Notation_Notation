@@ -35,8 +35,9 @@ file through `render_graph_from_file` (`src/gnn/cli/__init__.py`).
 
 ## Consumers
 
-- `src/gnn/cli/__init__.py` — `graph` subcommand
-- `src/gnn/website/dashboard.py` — dashboard dependency-graph panel
+- `src/gnn/cli/handlers_pipeline.py` — `graph` subcommand
+- `src/gnn/api/parity.py` — HTTP API parity endpoint
+- `src/gnn/multimodel/mcp.py` — `generate_dependency_graph` MCP tool
 
 ## See Also
 

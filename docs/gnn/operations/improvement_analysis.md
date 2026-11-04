@@ -7,6 +7,14 @@
 
 Historical analysis of identified areas for improvement, streamlining, and ensuring robust functionality within and across modules. This page is not a current pass-rate, runtime, or release-readiness certificate.
 
+> **Path note (2026-11-04).** Module paths here are the ones in use when this
+> analysis was written. Availability checking now lives in the
+> `gnn.utils.runtime_safety` family rather than
+> `src/gnn/utils/dependency_manager.py`. `src/gnn/utils/import_manager.py` was
+> never created, so the proposal that named it stands unimplemented; the current
+> import surface is the lazy `gnn/__init__.py` name map plus per-package `sys.path`
+> bootstraps, which is a different design, not a refactor of that proposal.
+
 ## Pipeline Architecture References
 
 For current pipeline implementation and standards:

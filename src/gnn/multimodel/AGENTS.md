@@ -7,9 +7,10 @@
 model block independently, and build/render the inter-model dependency graph
 implied by shared variables.
 
-**Pipeline Step**: None — infrastructure module consumed by the `gnn graph` CLI
-subcommand (`src/gnn/cli/__init__.py`) and the website dashboard
-(`src/gnn/website/dashboard.py`).
+**Pipeline Step**: None — library module consumed by the `gnn graph` subcommand
+(`src/gnn/cli/handlers_pipeline.py`), the HTTP API parity endpoint
+(`src/gnn/api/parity.py`) and this package's own MCP tool
+(`src/gnn/multimodel/mcp.py`). No website module imports it.
 
 **Category**: Infrastructure module
 

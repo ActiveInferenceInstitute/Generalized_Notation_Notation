@@ -75,7 +75,7 @@ processor/
 - **Purpose**: Genuine `@model` + `infer()` variational message-passing inference
 - **Features**: Real `@model` with `Categorical` / `DiscreteTransition` nodes, `infer()` with `free_energy=true`, real VFE traces
 - **Output**: Julia scripts with embedded `@model` definitions (the former TOML target is not supported)
-- **Optimization**: Committed `Project.toml` (RxInfer 5.5.0), `--project=` for reproducible execution, EFE/policy via custom Active Inference logic
+- **Optimization**: Committed `Project.toml` (RxInfer 6.1.0), `--project=` for reproducible execution, EFE/policy via custom Active Inference logic
 - **Continuous models**: native (LGSSM programs)
 
 #### ActiveInference.jl (Julia)

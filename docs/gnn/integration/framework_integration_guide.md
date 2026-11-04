@@ -138,8 +138,9 @@ result serialization.
 
 The strategy table is maintained alongside the code in
 [`src/gnn/render/rxinfer/README.md`](../../../src/gnn/render/rxinfer/README.md). The
-TOML-emitting `toml_generator.py` is retired and retained only as a warning surface —
-`render_gnn_to_rxinfer_toml` raises a `DeprecationWarning`; do not build on it.
+TOML-emitting `toml_generator.py` and `render_gnn_to_rxinfer_toml` are **deleted** — there is
+no module and no function to call, so nothing raises a `DeprecationWarning`. The `rxinfer_toml`
+target survives only as a typed refusal in `render_gnn_spec`; do not build on it.
 
 **Online mode:** `FLAT` models may run genuine online active inference instead of batch
 smoothing. Select it with `inference_mode: online` in the GNN file's `ModelParameters`

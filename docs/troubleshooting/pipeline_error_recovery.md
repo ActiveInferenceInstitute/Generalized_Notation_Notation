@@ -99,7 +99,8 @@ and check `uv run gnn health` before debugging further.
 
 #### Resolution
 ```python
-# The executor sets the JAX platform per run (see src/gnn/execute/processor.py);
+# The executor sets the JAX platform per run (see src/gnn/execute/processor/single.py,
+# which maps GNN_JAX_PLATFORM onto JAX_PLATFORM_NAME);
 # for ad-hoc work, fall back to CPU explicitly:
 def initialize_jax_devices():
     """Initialize JAX with graceful fallback."""

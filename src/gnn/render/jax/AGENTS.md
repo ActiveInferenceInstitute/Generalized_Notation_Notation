@@ -145,7 +145,10 @@ The generators attempt to make the produced files self-contained; installation o
 ## Integration Points
 
 - **Orchestrated by**:
-  - `src/gnn/render/processor/rendering.py` via the `"jax"` target in `AVAILABLE_RENDERERS`.
+  - `src/gnn/render/processor/rendering.py` via the `"jax"` target in `render_gnn_spec`
+    (dispatch table `src/gnn/render/pomdp_processor/_routes.py`). There is no
+    `AVAILABLE_RENDERERS` snapshot to consult; registry membership comes from
+    `src/gnn/render/framework_registry.py`.
   - `src/gnn/11_render.py` (Step 11) through `render.process_render`.
 
 - **Imported from**:

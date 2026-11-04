@@ -18,7 +18,7 @@ The GNN Processing Pipeline follows a **thin orchestrator pattern** to ensure ma
 
 2. **Module `__init__.py`**: Imports and exposes functions from modular files within the module folder
 
-3. **Modular Files** (e.g., `src/gnn/render/renderer.py`, `src/gnn/ontology/processor.py`): Contain the actual implementation of core methods
+3. **Modular Files** (e.g., `src/gnn/render/processor/rendering.py`, `src/gnn/ontology/processor.py`): Contain the actual implementation of core methods
 
 4. **Tests**: All methods are tested in `tests/` with comprehensive test coverage
 
@@ -63,11 +63,11 @@ from pathlib import Path
 import logging
 
 # Import core functionality from module
-from render import (
-    generate_pymdp_code,
-    generate_rxinfer_code,
-    generate_activeinference_jl_code,
-    generate_discopy_code,
+from gnn.render import (
+    render_gnn_to_pymdp,
+    render_gnn_to_rxinfer,
+    render_gnn_to_activeinference_jl,
+    render_gnn_to_discopy,
 )
 
 
@@ -77,13 +77,12 @@ def main():
     # ...
 
     # Delegate core functionality to module
-    pymdp_code = generate_pymdp_code(model_data)
-    rxinfer_code = generate_rxinfer_code(model_data)
-    # ...
-
-    # Handle results and reporting
+    ok, message, files = render_gnn_to_pymdp(model_data, output_dir / "model_pymdp.py")
     # ...
 ```
+
+The snippets in this document illustrate the *split*, not literal signatures. Canonical
+signatures live in [src/gnn/render/AGENTS.md](../../src/gnn/render/AGENTS.md).
 
 ### Module `__init__.py` (`src/gnn/render/__init__.py`)
 
@@ -93,22 +92,27 @@ Render module for GNN Processing Pipeline.
 """
 
 # Import core functions from modular files
-from .renderer import (
-    generate_pymdp_code,
-    generate_rxinfer_code,
-    generate_activeinference_jl_code,
-    generate_discopy_code,
-)
+from .processor.rendering import render_gnn_spec
+from .pymdp.pymdp_renderer import render_gnn_to_pymdp
+from .rxinfer.rxinfer_renderer import render_gnn_to_rxinfer
+from .activeinference_jl.activeinference_renderer import render_gnn_to_activeinference_jl
+from .discopy.discopy_renderer import render_gnn_to_discopy
 
 __all__ = [
-    "generate_pymdp_code",
-    "generate_rxinfer_code",
-    "generate_activeinference_jl_code",
-    "generate_discopy_code",
+    "render_gnn_spec",
+    "render_gnn_to_pymdp",
+    "render_gnn_to_rxinfer",
+    "render_gnn_to_activeinference_jl",
+    "render_gnn_to_discopy",
 ]
 ```
 
-### Modular File (`src/gnn/render/renderer.py`)
+### Modular File (`src/gnn/render/processor/rendering.py`)
+
+This leaf owns single-spec dispatch. The per-framework generators live in their own
+subpackages (`pymdp/pymdp_renderer.py`, `rxinfer/rxinfer_renderer.py`,
+`activeinference_jl/activeinference_renderer.py`, `discopy/discopy_renderer.py`), and the
+facade re-exports all of them.
 
 ```python
 #!/usr/bin/env python3
@@ -117,14 +121,8 @@ Renderer Module - Core rendering functionality.
 """
 
 
-def generate_pymdp_code(model_data: Dict) -> str:
-    """Generate PyMDP simulation code."""
-    # Actual implementation here
-    # ...
-
-
-def generate_rxinfer_code(model_data: Dict) -> str:
-    """Generate RxInfer.jl simulation code."""
+def render_gnn_spec(gnn_spec: Dict, target: str, output_directory: Path, options: Dict | None = None):
+    """Route one parsed spec to the target framework's canonical renderer."""
     # Actual implementation here
     # ...
 ```
@@ -135,9 +133,9 @@ def generate_rxinfer_code(model_data: Dict) -> str:
 
 ```python
 # WRONG: 11_render.py should NOT contain this
-def generate_pymdp_code(model_data: Dict) -> str:
-    """Generate PyMDP simulation code."""
-    # This should be in src/gnn/render/renderer.py
+def render_gnn_spec(gnn_spec: Dict, target: str, output_directory: Path):
+    """Route one parsed spec to the target framework's canonical renderer."""
+    # This should be in src/gnn/render/processor/rendering.py
     # ...
 ```
 
@@ -148,7 +146,7 @@ def generate_pymdp_code(model_data: Dict) -> str:
 def process_complex_rendering_logic():
     """This is too long for a numbered script."""
     # 50+ lines of implementation
-    # Should be moved to src/gnn/render/renderer.py
+    # Should be moved to src/gnn/render/processor/rendering.py
 ```
 
 ## 🧪 Testing Pattern
@@ -162,25 +160,25 @@ Test render integration functionality.
 """
 
 import pytest
-from render import generate_pymdp_code, generate_rxinfer_code
+from gnn.render import render_gnn_to_pymdp, render_gnn_to_rxinfer
 
 
 class TestRenderIntegration:
     """Test render integration functionality."""
 
-    def test_generate_pymdp_code(self):
+    def test_render_gnn_to_pymdp(self, tmp_path):
         """Test PyMDP code generation."""
-        model_data = {"model_name": "test_model"}
-        code = generate_pymdp_code(model_data)
-        assert "import pymdp" in code
-        assert "test_model" in code
+        gnn_spec = {"model_name": "test_model"}
+        ok, message, files = render_gnn_to_pymdp(gnn_spec, tmp_path / "test_model_pymdp.py")
+        assert ok, message
+        assert files
 
-    def test_generate_rxinfer_code(self):
+    def test_render_gnn_to_rxinfer(self, tmp_path):
         """Test RxInfer.jl code generation."""
-        model_data = {"model_name": "test_model"}
-        code = generate_rxinfer_code(model_data)
-        assert "using RxInfer" in code
-        assert "test_model" in code
+        gnn_spec = {"model_name": "test_model"}
+        ok, message, files = render_gnn_to_rxinfer(gnn_spec, tmp_path / "test_model.jl")
+        assert ok, message
+        assert files
 ```
 
 ## 🎯 Benefits of This Pattern
