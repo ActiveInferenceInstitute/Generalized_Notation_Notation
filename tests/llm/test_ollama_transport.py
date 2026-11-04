@@ -160,7 +160,7 @@ def daemon() -> Iterator[
 
 
 def _provider(host: str, **kwargs: Any) -> OllamaProvider:
-    provider = OllamaProvider(base_url=host, timeout=1, **kwargs)
+    provider = OllamaProvider(base_url=host, **{"timeout": 1, **kwargs})
     assert provider.initialize()
     return provider
 
@@ -384,24 +384,73 @@ def test_redirect_is_not_followed(daemon: Callable[..., Any]) -> None:
 
 
 @pytest.mark.parametrize("mode", ["headers", "slow_body"])
+@pytest.mark.parametrize("budget", [0.1, 30.0], ids=["tight", "generous"])
 def test_one_request_budget_includes_headers_and_slow_drip(
-    daemon: Callable[..., Any], mode: str
+    daemon: Callable[..., Any],
+    monkeypatch: pytest.MonkeyPatch,
+    mode: str,
+    budget: float,
 ) -> None:
     body = json.dumps(_response()).encode()
+    step = max(1, len(body) // 20)
     options = (
         {"header_delay": 0.3}
         if mode == "headers"
-        else {"chunks": [body[:1]] * 20, "delay": 0.025}
+        else {
+            "chunks": [
+                body[start : start + step] for start in range(0, len(body), step)
+            ],
+            "delay": 0.025,
+        }
     )
     host, _, _ = daemon(**options)
-    started = time.monotonic()
-    with pytest.raises((TimeoutError, socket.timeout)):
-        asyncio.run(
-            _provider(host).generate_response(
-                [LLMMessage("user", "hello")], LLMConfig(model=MODEL, timeout=0.1)
-            )
+    requests: list[tuple[module._ChatRequest, float]] = []
+    body_baselines: list[int] = []
+    original_init = module._ChatRequest.__init__
+    original_exchange = module._ChatRequest._exchange
+
+    def track(request: module._ChatRequest, *args: Any) -> None:
+        original_init(request, *args)
+        requests.append((request, request.deadline))
+
+    def exchange(
+        request: module._ChatRequest,
+        method: str,
+        path: str,
+        payload: bytes | None = None,
+    ) -> None:
+        if method == "POST" and path.endswith("/api/chat"):
+            body_baselines.append(request.bytes_read)
+        original_exchange(request, method, path, payload)
+
+    monkeypatch.setattr(module._ChatRequest, "__init__", track)
+    monkeypatch.setattr(module._ChatRequest, "_exchange", exchange)
+
+    async def generate() -> Any:
+        return await _provider(host, timeout=budget).generate_response(
+            [LLMMessage("user", "hello")], LLMConfig(model=MODEL, timeout=budget)
         )
-    assert time.monotonic() - started < 0.25
+
+    if budget < 1:
+        with pytest.raises((TimeoutError, socket.timeout)):
+            asyncio.run(generate())
+        assert body_baselines  # The generation request reached its chat POST.
+        request, original_deadline = requests[0]
+        body_read = request.bytes_read - body_baselines[0]
+        # One budget for the whole request: it was never renewed, and it was
+        # spent inside the slow phase instead of waiting for the server.
+        assert request.deadline == original_deadline
+        assert 0 <= body_read < len(body)
+    else:
+        response = asyncio.run(generate())
+        assert body_baselines  # The generation request reached its chat POST.
+        request, original_deadline = requests[0]
+        body_read = request.bytes_read - body_baselines[0]
+        # The same slow phase completes once the budget covers it: the refusal
+        # above is the budget's, not an unconditional failure.
+        assert response.content == "complete answer"
+        assert request.deadline == original_deadline
+        assert body_read == len(body)
 
 
 def test_stream_preserves_roles_options_and_does_not_mutate_config(
@@ -509,33 +558,73 @@ def test_response_and_stream_line_memory_limits_are_explicit(
         asyncio.run(collect())
 
 
+@pytest.mark.parametrize("cancel", [True, False], ids=["during-body", "body-delivered"])
 def test_cancel_during_body_read_closes_request(
-    daemon: Callable[..., Any], monkeypatch: pytest.MonkeyPatch
+    daemon: Callable[..., Any], monkeypatch: pytest.MonkeyPatch, cancel: bool
 ) -> None:
-    host, _, opened = daemon(chunks=[b"{"] * 20, delay=0.025)
-    closes: list[bool] = []
-    original = module._ChatRequest.close
+    body = json.dumps(_response()).encode()
+    # A quarter of a second between single bytes: the cancellation cannot race
+    # delivery, and the body cannot arrive before the request is closed.
+    drip_chunks = 200
+    options = (
+        {"chunks": [b"{"] * drip_chunks, "delay": 0.25}
+        if cancel
+        else {"chunks": [body]}
+    )
+    host, _, opened = daemon(**options)
+    chat_requests: list[module._ChatRequest] = []
+    body_baselines: list[int] = []
+    chat_closed_after: list[int] = []
+    original_exchange = module._ChatRequest._exchange
+    original_close = module._ChatRequest.close
 
-    def close(request: module._ChatRequest) -> None:
-        closes.append(True)
-        original(request)
+    def exchange(
+        request: module._ChatRequest,
+        method: str,
+        path: str,
+        payload: bytes | None = None,
+    ) -> None:
+        if method == "POST" and path.endswith("/api/chat"):
+            chat_requests.append(request)
+            body_baselines.append(request.bytes_read)
+        original_exchange(request, method, path, payload)
 
-    monkeypatch.setattr(module._ChatRequest, "close", close)
+    def close_chat(request: module._ChatRequest) -> None:
+        if chat_requests and request is chat_requests[0]:
+            # Body bytes only: the version probe precedes the chat exchange.
+            chat_closed_after.append(request.bytes_read - body_baselines[0])
+        original_close(request)
 
-    async def cancel() -> None:
+    monkeypatch.setattr(module._ChatRequest, "_exchange", exchange)
+    monkeypatch.setattr(module._ChatRequest, "close", close_chat)
+
+    async def chat() -> Any:
         task = asyncio.create_task(
             _provider(host).generate_response(
                 [LLMMessage("user", "hello")], LLMConfig(model=MODEL)
             )
         )
-        assert await asyncio.to_thread(opened.wait, 0.5)
+        if not cancel:
+            return await task
+        assert await asyncio.to_thread(opened.wait, 10)
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
+        return None
 
-    started = time.monotonic()
-    asyncio.run(cancel())
-    assert closes and time.monotonic() - started < 0.3
+    if cancel:
+        asyncio.run(chat())
+        # The cancellation closed the chat request while its body was still on
+        # the wire: it had read some (here: none) of the dripped chunks and not
+        # all of them. Delivering the rest costs tens of seconds of real sleeps
+        # in the daemon, so delivery decides this comparison, not runner speed.
+        assert chat_closed_after and 0 <= chat_closed_after[0] < drip_chunks
+    else:
+        response = asyncio.run(chat())
+        # The same close after a completed read reports every body byte, so the
+        # assertion above discriminates a partial read instead of always holding.
+        assert response.content == "complete answer"
+        assert chat_closed_after and chat_closed_after[0] == len(body)
 
 
 @pytest.mark.parametrize(
@@ -643,27 +732,75 @@ def test_postflight_cannot_renew_generation_deadline(
     assert timeouts[1] < 0.75 < timeouts[0] <= 1
 
 
+@pytest.mark.parametrize("mode", ["real-deadline", "exhausted", "within-budget"])
 def test_real_header_byte_drip_is_interrupted_and_deadline_guard_is_reaped(
-    daemon: Callable[..., Any], monkeypatch: pytest.MonkeyPatch
+    daemon: Callable[..., Any], monkeypatch: pytest.MonkeyPatch, mode: str
 ) -> None:
-    host, _, _ = daemon(header_drip=0.007)
+    from types import SimpleNamespace
+
+    body = json.dumps(_response()).encode()
+    budget = 0.2 if mode == "real-deadline" else 30.0
+    offset = [0.0]
+
+    def expire_at_chat_post() -> None:
+        # The chat POST is on the wire. Exhaust the whole-request budget on the
+        # provider's own clock, whatever the runner's real clock has done.
+        if mode == "exhausted":
+            offset[0] = 3600.0
+
+    # A byte every 20ms: the header block alone takes longer than the 0.2s
+    # budget, while no individual read waits anywhere near that long.
+    host, _, _ = daemon(header_drip=0.02, after_chat=expire_at_chat_post)
+    # Advance only the provider clock; asyncio and the real HTTP server retain
+    # their real clocks. Runner scheduling cannot stand in for deadline expiry.
+    monkeypatch.setattr(
+        module, "time", SimpleNamespace(monotonic=lambda: time.monotonic() + offset[0])
+    )
     requests: list[module._ChatRequest] = []
-    original = module._ChatRequest.__init__
+    body_baselines: list[int] = []
+    original_init = module._ChatRequest.__init__
+    original_exchange = module._ChatRequest._exchange
 
     def track(request: module._ChatRequest, *args: Any) -> None:
-        original(request, *args)
+        original_init(request, *args)
         requests.append(request)
 
+    def exchange(
+        request: module._ChatRequest,
+        method: str,
+        path: str,
+        payload: bytes | None = None,
+    ) -> None:
+        if method == "POST" and path.endswith("/api/chat"):
+            body_baselines.append(request.bytes_read)
+        original_exchange(request, method, path, payload)
+
     monkeypatch.setattr(module._ChatRequest, "__init__", track)
-    start = time.monotonic()
-    with pytest.raises(TimeoutError):
-        asyncio.run(
-            _provider(host).generate_response(
-                [LLMMessage("user", "hello")], LLMConfig(model=MODEL, timeout=0.08)
-            )
+    monkeypatch.setattr(module._ChatRequest, "_exchange", exchange)
+
+    async def generate() -> Any:
+        return await _provider(host, timeout=budget).generate_response(
+            [LLMMessage("user", "hello")], LLMConfig(model=MODEL, timeout=budget)
         )
-    assert time.monotonic() - start < 0.2
-    assert len(requests) == 2  # Original deadline owner and bounded preflight.
+
+    if mode == "within-budget":
+        response = asyncio.run(generate())
+        assert response.content == "complete answer"
+    else:
+        with pytest.raises(TimeoutError):
+            asyncio.run(generate())
+
+    assert body_baselines  # The generation request reached its chat POST.
+    if mode == "within-budget":
+        # The drip completes once the budget covers it, so the refusals above
+        # are the budget's doing and not an unconditional failure.
+        assert requests[0].bytes_read - body_baselines[0] == len(body)
+        assert len(requests) == 3  # Plus the postflight identity check.
+    else:
+        # Not one byte of the dripped response body was read: the deadline was
+        # enforced while the header block was still arriving.
+        assert requests[0].bytes_read == body_baselines[0]
+        assert len(requests) == 2  # Original deadline owner and bounded preflight.
     assert all(not request._guard.is_alive() for request in requests)
 
 
@@ -1028,16 +1165,47 @@ def test_http_preflight_rejects_wrong_runtime_before_tags(
     assert not received
 
 
+@pytest.mark.parametrize("budget", [0.12, 30.0], ids=["tight", "generous"])
 def test_http_preflight_version_and_inventory_share_one_budget(
-    daemon: Callable[..., Any],
+    daemon: Callable[..., Any], monkeypatch: pytest.MonkeyPatch, budget: float
 ) -> None:
-    host, received, _ = daemon(version_delay=0.08, tags_delay=0.08)
-    started = time.monotonic()
-    with pytest.raises(TimeoutError):
-        asyncio.run(_provider(host).preflight_model(MODEL, timeout=0.12))
-    # The exception proves the combined 0.16s work did not get a fresh budget
-    # for tags; allow scheduling/worker cleanup slack under concurrent CI load.
-    assert time.monotonic() - started < 0.8
+    version_delay = 0.08
+    tags_delay = 0.08
+    exchanges: list[tuple[module._ChatRequest, str]] = []
+    tags_allowances: list[float] = []
+    original_exchange = module._ChatRequest._exchange
+
+    def exchange(
+        request: module._ChatRequest,
+        method: str,
+        path: str,
+        payload: bytes | None = None,
+    ) -> None:
+        exchanges.append((request, path))
+        if path.endswith("/api/tags"):
+            # What the request had left: zero if the version phase spent it all,
+            # never a renewed allowance.
+            tags_allowances.append(max(0.0, request.deadline - time.monotonic()))
+        original_exchange(request, method, path, payload)
+
+    monkeypatch.setattr(module._ChatRequest, "_exchange", exchange)
+    host, received, _ = daemon(version_delay=version_delay, tags_delay=tags_delay)
+    provider = _provider(host, timeout=budget)
+    if budget < 1:
+        with pytest.raises(TimeoutError):
+            asyncio.run(provider.preflight_model(MODEL, timeout=budget))
+    else:
+        identity = asyncio.run(provider.preflight_model(MODEL, timeout=budget))
+        assert identity["status"] == "ready"
+    # One transport served both phases on one clock: the inventory phase was
+    # offered the configured budget minus at least the version server's own
+    # 0.08s sleep, where a renewed budget would have offered the full amount.
+    # Waiting can only shrink the leftover, so a busy runner cannot make the
+    # tight case pass, and a renewed budget cannot either.
+    assert [path for _, path in exchanges] == ["/api/version", "/api/tags"]
+    assert all(request is exchanges[0][0] for request, _ in exchanges)
+    assert tags_allowances and tags_allowances[0] <= budget - version_delay
+    assert received.get_paths == ["/api/version", "/api/tags"]
     assert not received
 
 
