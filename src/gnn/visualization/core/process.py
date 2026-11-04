@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from gnn.processing.discovery import is_model_source_path
 from gnn.utils.logging_utils import (
@@ -67,25 +67,60 @@ def discover_visualization_files(
     return sorted(set(files), key=lambda path: path.relative_to(target_dir).as_posix())
 
 
+def _existing_artifact_paths(
+    visualizations: List[str],
+) -> Tuple[List[str], List[str]]:
+    """Split summary entries into artifact paths and rejected values.
+
+    A summary entry has to be a string naming a file that exists: a renderer
+    that returns a boolean (``str(True)``), a number, or a path it never wrote
+    is not a visualization. Rejected entries are returned as ready-made
+    messages rather than counted, so ``total_visualizations`` can only describe
+    entries that are actually artifacts.
+    """
+    listed: List[str] = []
+    rejected: List[str] = []
+    for entry in visualizations:
+        if isinstance(entry, str):
+            try:
+                if Path(entry).is_file():
+                    listed.append(entry)
+                    continue
+            except (OSError, ValueError):
+                pass
+        rejected.append(
+            f"Step 8 visualization summary entry is not an existing file: {entry!r}"
+        )
+    return listed, rejected
+
+
 def _write_visualization_summary(
     results_dir: Path,
     gnn_files: List[Path],
     visualizations: List[str],
     warnings: List[str],
     errors: List[str],
-) -> None:
-    """Write the Step 8 run summary even for warning-only outcomes."""
+) -> List[str]:
+    """Write the Step 8 run summary even for warning-only outcomes.
+
+    ``visualization_files`` is validated here, so a non-path entry never
+    reaches the file list or the count. Messages for entries that were dropped
+    are recorded under ``errors`` and returned, letting the caller raise the
+    step's exit code instead of reporting a clean run.
+    """
+    listed, rejected = _existing_artifact_paths(visualizations)
     summary: Dict[str, Any] = {
         "processed_files": len(gnn_files),
-        "total_visualizations": len(visualizations),
-        "visualization_files": visualizations,
-        "warnings": warnings,
-        "errors": errors,
-        "success": len(visualizations) > 0,
+        "total_visualizations": len(listed),
+        "visualization_files": listed,
+        "warnings": list(warnings),
+        "errors": [*errors, *rejected],
+        "success": len(listed) > 0,
     }
     summary_file = results_dir / "visualization_summary.json"
     with open(summary_file, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
+    return rejected
 
 
 def process_visualization(
@@ -169,9 +204,12 @@ def process_visualization(
                 log.warning(message)
 
         all_visualizations = sorted(set(all_visualizations))
-        _write_visualization_summary(
+        rejected = _write_visualization_summary(
             results_dir, gnn_files, all_visualizations, [], processing_errors
         )
+        for message in rejected:
+            log.warning(message)
+        processing_errors.extend(rejected)
 
         if all_visualizations:
             log_step_success(log, f"Generated {len(all_visualizations)} visualizations")
