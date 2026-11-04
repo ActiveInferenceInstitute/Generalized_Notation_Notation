@@ -40,9 +40,9 @@
       "filename": "gnn_family_framework_matrix.png",
       "generated_by": "scripts/manuscript_fig_family_framework.py",
       "label": "fig:family_matrix",
-      "png_sha256": "5f5a87bcc8f8293951120042f0b9f87f6e799fd709109e7010c8c3fdda996caa",
+      "png_sha256": "dccd1333e5d44a0cb103d98811118f4b32b6c5475a91235f655b758e21974647",
       "source_sha256": {
-        "input/model_family_manifest.json": "41adbb30ab861d094823b69669656081bbcb603c7203bd30335555e2f60b9e3c",
+        "input/model_family_manifest.json": "33fce4343a3713e622fa140e1c6e17064378046ba219192ed6448d8ed1deb6e8",
         "src/gnn/render/framework_registry.py": "cdbcac06fbd13d17ca30d5613068575a868d37953580165fc33384749787f157"
       }
     },
@@ -52,9 +52,9 @@
       "filename": "gnn_backend_capability_matrix.png",
       "generated_by": "scripts/manuscript_fig_backend_matrix.py",
       "label": "fig:backend_matrix",
-      "png_sha256": "e0813ffc2a58af9dfd95bbcce9ecc0e57feffc3240b24d74baeadbe80ad0c55a",
+      "png_sha256": "6ba9f31349019f3d337c5d1e9539bb551711eb70b7048965f1674ef89d7e9a2b",
       "source_sha256": {
-        "input/model_family_manifest.json": "41adbb30ab861d094823b69669656081bbcb603c7203bd30335555e2f60b9e3c",
+        "input/model_family_manifest.json": "33fce4343a3713e622fa140e1c6e17064378046ba219192ed6448d8ed1deb6e8",
         "src/gnn/manuscript/variables.py": "f0770f854a60ccabb86ac034b87646044200974ac0940426a3667851b3827a1d",
         "src/gnn/pipeline/cross_framework_reliability.py": "f541016765f8c2b843226c9127f011cc77a0e66cbad694e89853db59c6cd8101",
         "src/gnn/render/framework_registry.py": "cdbcac06fbd13d17ca30d5613068575a868d37953580165fc33384749787f157"
@@ -71,13 +71,13 @@
         "GNN_MCP_TOOL_COUNT": "164",
         "GNN_SRC_PACKAGE_COUNT": "44",
         "GNN_STEP_COUNT": "25",
-        "GNN_TEST_FILE_COUNT": "677",
+        "GNN_TEST_FILE_COUNT": "678",
         "GNN_VERSION": "5.0.3"
       },
       "filename": "gnn_repo_metrics.png",
       "generated_by": "scripts/manuscript_fig_repo_metrics.py",
       "label": "fig:repo_metrics",
-      "png_sha256": "8d1ea7d77305a3c857be7e9e6ff59de56f37f3dc4dedbfc49365081807e83805",
+      "png_sha256": "38d8ae68bb6c60243205780450a6ce5391d2b222a7332707d5a2ba0ed75d7aa5",
       "source_sha256": {}
     },
     {
