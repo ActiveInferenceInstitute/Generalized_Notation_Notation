@@ -245,3 +245,24 @@ def test_declared_readings_match_the_repository_contract() -> None:
         encoding="utf-8"
     )
     assert audit_declared_reading.DECLARED_B_ORDER in contracts
+
+
+def test_non_square_likelihood_reports_the_column_reading_unavailable() -> None:
+    """2 observations x 3 states: the column reading is unavailable, not a crash.
+
+    Found on the real audit run: a non-square ``A`` has no column reading over
+    the declared states, so the alternative must be reported unavailable
+    instead of raising a broadcast error.
+    """
+    a = [[0.7, 0.2, 0.1], [0.1, 0.3, 0.6]]
+    b = [[0.7, 0.1, 0.2], [0.2, 0.8, 0.1], [0.1, 0.1, 0.7]]
+    d = [0.5, 0.3, 0.2]
+    beliefs = _reference_beliefs(
+        a, b, d, ACTIONS, OBSERVATIONS, a_row=True, b_as_declared=True
+    )
+    record = _judge("jax/non-square", beliefs, a=a, b=b, d=d)
+    assert record["outcome"] == "declared-reading-reproduced"
+    assert "A[o,:]" in record["first_belief"]
+    assert "A[:,o]" not in record["first_belief"]
+    assert record["alternative_errors"]["a-column"] is None
+    assert record["alternative_readings_reproduced"] == []

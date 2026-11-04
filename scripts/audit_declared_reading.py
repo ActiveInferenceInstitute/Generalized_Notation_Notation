@@ -260,11 +260,14 @@ def judge_cell(
     first_options: dict[str, float] = {}
     for label, reading in (("A[o,:]", "row"), ("A[:,o]", "col")):
         try:
-            expected = normalize(
-                likelihood(a, int(observation_list[0]), reading=reading) * normalize(d)
-            )
+            likelihood_vector = likelihood(a, int(observation_list[0]), reading=reading)
         except IndexError:
             continue
+        # A non-square A has no column reading over the declared states; the
+        # alternative reading is reported as unavailable rather than fitted.
+        if likelihood_vector.shape != d.shape:
+            continue
+        expected = normalize(likelihood_vector * normalize(d))
         if expected.shape == history[0].shape:
             first_options[label] = float(
                 np.max(np.abs(normalize(expected) - normalize(history[0])))
