@@ -1,0 +1,19 @@
+{
+  "counts_describe_commit": "0c715289e",
+  "dirty_path_count": 9,
+  "dirty_paths": [
+    "output/.pipeline/analysis-data/b8e0bfb4dc705f759d1da3b556fe8f359e37e376eb8efbdd8d54b2ecd5e883ad/",
+    "output/data/manuscript_variables.json",
+    "output/data/manuscript_variables_receipt.json",
+    "output/manuscript/00_abstract.md",
+    "output/manuscript/02_system_context.md",
+    "output/manuscript/03_methods.md",
+    "output/manuscript/04_artifacts_and_evidence.md",
+    "output/manuscript/05_reproducibility.md",
+    "output/manuscript/S01_source_surface.md"
+  ],
+  "generator": "scripts/z_generate_manuscript_variables.py",
+  "git_available": true,
+  "receipt_version": "gnn_manuscript_variables_receipt_v1",
+  "working_tree_clean": false
+}

@@ -237,7 +237,9 @@ def _generated_commit_mismatch(variables_json: Path) -> str:
     reproduce.
     """
     head = subprocess.run(
-        ["git", "rev-parse", "--short", "HEAD"],
+        # Same fixed width as gnn.manuscript.snapshot: the manuscript prints
+        # this stamp and is laid out with it, so the width is pinned.
+        ["git", "rev-parse", "--short=9", "HEAD"],
         cwd=str(_PROJECT_ROOT),
         capture_output=True,
         text=True,

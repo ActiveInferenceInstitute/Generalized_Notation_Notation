@@ -21,6 +21,21 @@ name: Custody re-render
 #
 # The template checkout is taken at its default branch head, matching a
 # developer's sibling checkout; this run is what detects template drift.
+#
+# What a green run here does and does not certify (2026-11-04): this runner
+# cannot install the recording host's TeX Live 2026, so its render profile is
+# a permitted profile that is not the recording one. The custody gate then
+# compares the profile-independent artifacts — the markdown, the .tex, the
+# hydrated prose and the figures — and names the .log as not compared,
+# because the TeX Live engine is the one axis a permitted profile may differ
+# in and the .log is what that engine writes. A green here therefore means
+# "these inputs and this prose still produce this manuscript"; it is not the
+# same statement as the local green, which also reproduces the .log. pandoc
+# and pandoc-crossref are pinned below to the recording versions precisely so
+# the .tex stays inside the compared set — a different pandoc is a different
+# .tex, and a tolerance wide enough to admit two toolchains is wide enough to
+# hide a change. Verifying the .log on CI too would need a container carrying
+# the recording toolchain: a priced alternative, deliberately not a blocker.
 
 on:
   push:
@@ -75,12 +90,18 @@ jobs:
           version: "0.13.6"
           enable-cache: true
 
-      # Toolchain parity with the local ritual: pandoc 3.11 + crossref
-      # v0.3.25 (the committed PDF evidence was rendered WITH pandoc-crossref
-      # — its absence in CI degraded the reproduction silently). texlive-
-      # bibtex-extra supplies bibtex/xelatex helpers texlive-latex-extra omits.
-      - name: Install pandoc (pinned via pandoc/actions)
+      # Toolchain parity with the local ritual, pinned to the versions the
+      # committed chain is recorded with. These two are pinned rather than
+      # tolerated because pandoc writes the .tex the custody gate compares on
+      # this host. Without a version input the action installs the latest
+      # release, which is how this job drifted to an unrecorded pandoc.
+      # texlive-bibtex-extra supplies bibtex/xelatex helpers texlive-latex-extra
+      # omits; the TeX Live version itself (2023 via apt) is the one axis the
+      # gate declares and excludes, as the header explains.
+      - name: Install pandoc 3.13 (pinned via pandoc/actions)
         uses: pandoc/actions/setup@86321b6dd4675f5014c611e05088e10d4939e09e # v1.1.1
+        with:
+          version: "3.13"
 
       - name: Install LaTeX (xelatex, bibtex) and fonts
         run: |
@@ -89,13 +110,14 @@ jobs:
             texlive-xetex texlive-latex-extra texlive-bibtex-extra \
             texlive-fonts-recommended lmodern
 
-      - name: Install pandoc-crossref v0.3.25 (pinned)
+      - name: Install pandoc-crossref v0.3.26 (pinned)
         run: |
-          # v0.3.25 matches the local ritual's pandoc-crossref; official
-          # Linux release asset is a tar.xz (no crossref package in apt).
+          # v0.3.26 matches the local ritual's pandoc-crossref, which the
+          # committed chain is recorded with; the official Linux release asset
+          # is a tar.xz (no crossref package in apt).
           curl -fsSL -o /tmp/cr.tar.xz \
-            https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.25/pandoc-crossref-Linux-X64.tar.xz
-          echo "2319816e3545ee78e44e4a97c2174c72eedf4b51d436b32721b48f43458eb0f6  /tmp/cr.tar.xz" | sha256sum --check -
+            https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.26/pandoc-crossref-Linux-X64.tar.xz
+          echo "83d09646629234dfcd3d267e28184f46b9d468e98508efb3542b014634bfe999  /tmp/cr.tar.xz" | sha256sum --check -
           mkdir -p /tmp/cr && tar -xJf /tmp/cr.tar.xz -C /tmp/cr
           sudo install -m 0755 "$(find /tmp/cr -type f -name pandoc-crossref | head -1)" /usr/local/bin/pandoc-crossref
           pandoc-crossref --version
@@ -122,13 +144,34 @@ jobs:
           uv run --frozen python scripts/pipeline/stage_03_render.py \
             --project GeneralizedNotationNotation
 
+      # The template revision is the axis the custody gate compares first,
+      # and the committed artifacts carry no copy of it: neither the
+      # manifest, the .tex, the .log nor the .md names docxology/template or
+      # any of its revisions (measured 2026-11-04). The clone above is the
+      # drift detector, so the run has to hand its revision to the gate
+      # explicitly — otherwise that axis reads as unmeasured and the drift
+      # signal is lost.
+      - name: Export the template revision for the custody gate
+        working-directory: ${{ github.workspace }}
+        run: echo "GNN_TEMPLATE_REVISION=$(git -C template rev-parse HEAD)" >> "$GITHUB_ENV"
+
       # Fresh-vs-committed custody gate: compare the render this checkout
       # just produced against the manifest as committed, BEFORE the record
-      # step overwrites it — the red run is the drift signal. [FAIL] means
-      # the committed chain is stale for HEAD (an artifact is missing, or
-      # artifacts and inputs both drifted — rerun the whole SC-22 ritual
-      # locally and commit); [WARN] is artifact-only drift with the
-      # recorded inputs fully matching, i.e. toolchain variance.
+      # step overwrites it — the red run is the drift signal. [STALE-CHAIN]
+      # (exit 3) means the chain describes a different template revision than
+      # this run rendered with: that finding is returned alone and no artifact
+      # comparison is attempted; the record step below still writes the fresh
+      # manifest, because it is uploaded as a receipt and nothing is committed
+      # back, and a person re-records the chain against the new revision.
+      # [UNMEASURED] (exit 4) means the gate could not run at all — the
+      # template revision is not exported above, or the committed chain
+      # declares no render profile — and a gate that cannot fire must not
+      # report success. [FAIL] (exit 1) means a compared artifact disagrees
+      # with the chain, or the render profile is not one the chain permits
+      # (the pins above are exactly what that finding names). There is no
+      # warning level for an artifact comparison. The [ENV] lines before the
+      # verdict name the profile and the scope, and on this runner that scope
+      # excludes the .log by name: the header says what a green means here.
       - name: Verify fresh render against committed custody manifest
         run: uv run --extra dev python scripts/z_verify_fresh_render.py
 
