@@ -58,7 +58,10 @@ def test_explicit_api_workspace_is_operator_owned(
     monkeypatch.setenv("GNN_API_ROOT", str(tmp_path))
     (tmp_path / "models").mkdir()
     assert get_repo_root() == tmp_path
-    assert resolve_repo_path("models", purpose="Target", must_exist=True) == tmp_path / "models"
+    assert (
+        resolve_repo_path("models", purpose="Target", must_exist=True)
+        == tmp_path / "models"
+    )
     assert resolve_repo_path("runs/new", purpose="Output", create=True).is_dir()
     with pytest.raises(PathValidationError):
         resolve_repo_path(str(tmp_path.parent), purpose="Output", create=True)
@@ -92,13 +95,18 @@ def test_delete_run_retains_workspace_and_ancestors(
     assert sentinel.read_text() == "retain source" and not store
 
 
-def test_delete_run_with_unverified_cleanup_retains_record_and_artifacts(tmp_path: Path) -> None:
+def test_delete_run_with_unverified_cleanup_retains_record_and_artifacts(
+    tmp_path: Path,
+) -> None:
     sentinel = tmp_path / "artifact"
     sentinel.write_text("worker may still be using this")
-    store = {"run": {
-        "status": "failed", "request": {"output_dir": str(tmp_path)},
-        "process_cleanup": {"cleanup_verified": False},
-    }}
+    store = {
+        "run": {
+            "status": "failed",
+            "request": {"output_dir": str(tmp_path)},
+            "process_cleanup": {"cleanup_verified": False},
+        }
+    }
     with pytest.raises(RuntimeError, match="cleanup could not be verified"):
         delete_run("run", runs_store=store)
     assert "run" in store and sentinel.read_text() == "worker may still be using this"
@@ -116,7 +124,8 @@ def test_native_link_or_junction_is_refused_without_touching_its_target(
     if os.name == "nt":
         created = subprocess.run(
             ["cmd", "/c", "mklink", "/J", str(linked), str(outside)],
-            capture_output=True, timeout=10,
+            capture_output=True,
+            timeout=10,
         )
         assert created.returncode == 0, created.stderr.decode(errors="replace")
     else:
@@ -136,7 +145,9 @@ def test_native_link_or_junction_is_refused_without_touching_its_target(
         assert result["artifacts_removed"] is False
         assert "reparse point" in result["artifacts_note"]
         assert sentinel.read_text() == "external"
-        assert not (outside / "new").exists() and not (outside / ".gnn_run.lock").exists()
+        assert (
+            not (outside / "new").exists() and not (outside / ".gnn_run.lock").exists()
+        )
     finally:
         if os.name == "nt":
             linked.rmdir()  # remove the junction, never its target
@@ -155,7 +166,9 @@ def test_api_workspace_configuration_refuses_linked_root(
         get_repo_root()
 
 
-def _replacement_thread(action: Callable[[], None]) -> tuple[threading.Event, threading.Event, threading.Thread, list[BaseException]]:
+def _replacement_thread(
+    action: Callable[[], None],
+) -> tuple[threading.Event, threading.Event, threading.Thread, list[BaseException]]:
     ready, replaced = threading.Event(), threading.Event()
     errors: list[BaseException] = []
 
@@ -275,16 +288,36 @@ def test_native_cli_output_parent_alias_preserves_run_identity(tmp_path: Path) -
             environment["GNN_RUN_ID"] = invocation
             environment.pop("GNN_RUN_CONTEXT_FILE", None)
             result = subprocess.run(
-                [sys.executable, "-m", "gnn.main", "--only-steps", "3",
-                 "--target-dir", str(source), "--output-dir", str(selected_output)],
-                cwd=project, env=environment, capture_output=True, text=True,
+                [
+                    sys.executable,
+                    "-m",
+                    "gnn.main",
+                    "--only-steps",
+                    "3",
+                    "--target-dir",
+                    str(source),
+                    "--output-dir",
+                    str(selected_output),
+                ],
+                cwd=project,
+                env=environment,
+                capture_output=True,
+                text=True,
                 timeout=60,
             )
             assert result.returncode == 0, result.stderr
-            receipt = json.loads((canonical_output / "00_pipeline_summary" /
-                                  "pipeline_execution_summary.json").read_text())
-            context = json.loads((canonical_output / "00_pipeline_summary" /
-                                  "run_context.json").read_text())
+            receipt = json.loads(
+                (
+                    canonical_output
+                    / "00_pipeline_summary"
+                    / "pipeline_execution_summary.json"
+                ).read_text()
+            )
+            context = json.loads(
+                (
+                    canonical_output / "00_pipeline_summary" / "run_context.json"
+                ).read_text()
+            )
             assert receipt["run_id"] == invocation == context["run_id"]
             assert context["output_root"] == str(canonical_output)
             assert receipt["steps"] and all(
@@ -293,7 +326,9 @@ def test_native_cli_output_parent_alias_preserves_run_identity(tmp_path: Path) -
             selected = receipt["model_selection"]
             assert len(selected) == 1
             assert selected[0]["source_path"] == str(source / model.name)
-            assert selected[0]["sha256"] == hashlib.sha256(model.read_bytes()).hexdigest()
+            assert (
+                selected[0]["sha256"] == hashlib.sha256(model.read_bytes()).hexdigest()
+            )
             assert receipt["steps"][0]["artifacts"]
             for artifact in receipt["steps"][0]["artifacts"]:
                 assert (canonical_output / artifact["path"]).is_file()
@@ -329,10 +364,21 @@ def test_native_cli_trusted_parent_alias_still_refuses_redirected_leaf(
         output.mkdir()
         (output / ".gnn_run.lock").symlink_to(sentinel)
     result = subprocess.run(
-        [sys.executable, "-m", "gnn.main", "--only-steps", "3",
-         "--target-dir", str(project / "input/gnn_files/discrete"),
-         "--output-dir", str(output)],
-        cwd=project, capture_output=True, text=True, timeout=30,
+        [
+            sys.executable,
+            "-m",
+            "gnn.main",
+            "--only-steps",
+            "3",
+            "--target-dir",
+            str(project / "input/gnn_files/discrete"),
+            "--output-dir",
+            str(output),
+        ],
+        cwd=project,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     assert result.returncode == 1 and "Pipeline ownership failure" in result.stderr
     assert sentinel.read_text() == "external owner"
@@ -444,7 +490,9 @@ def test_delete_run_parent_replacement_cannot_remove_external_directory(
 
     pause_rmtree.avoids_symlink_attacks = True  # retain the native capability
     monkeypatch.setattr("gnn.api.processor.shutil.rmtree", pause_rmtree)
-    store = {"run": {"status": "completed", "request": {"output_dir": str(parent / "run")}}}
+    store = {
+        "run": {"status": "completed", "request": {"output_dir": str(parent / "run")}}
+    }
     try:
         result = delete_run("run", runs_store=store)
     finally:
@@ -457,12 +505,17 @@ def test_delete_run_parent_replacement_cannot_remove_external_directory(
 
 
 def test_output_lease_is_exclusive_in_another_native_process(tmp_path: Path) -> None:
-    command = [sys.executable, "-c", (
-        "import sys; from pathlib import Path; "
-        "from gnn.pipeline.output_lease import OutputLease,OutputLeaseError; "
-        "\ntry:\n with OutputLease(Path(sys.argv[1]), 'contender'): pass"
-        "\nexcept OutputLeaseError: sys.exit(23)"
-    ), str(tmp_path)]
+    command = [
+        sys.executable,
+        "-c",
+        (
+            "import sys; from pathlib import Path; "
+            "from gnn.pipeline.output_lease import OutputLease,OutputLeaseError; "
+            "\ntry:\n with OutputLease(Path(sys.argv[1]), 'contender'): pass"
+            "\nexcept OutputLeaseError: sys.exit(23)"
+        ),
+        str(tmp_path),
+    ]
     with OutputLease(tmp_path, "owner") as owner:
         held = subprocess.run(command, capture_output=True, timeout=10)
         assert held.returncode == 23, held.stderr.decode()
@@ -479,17 +532,27 @@ def test_native_process_cleanup_reports_its_actual_boundary(tmp_path: Path) -> N
     from gnn.execute.subprocess_envelope import run_subprocess_envelope
 
     result = run_subprocess_envelope(
-        [sys.executable, "-c", "import time; print('native-worker',flush=True); time.sleep(.3)"],
-        timeout=3, sandbox=False,
+        [
+            sys.executable,
+            "-c",
+            "import time; print('native-worker',flush=True); time.sleep(.3)",
+        ],
+        timeout=3,
+        sandbox=False,
     )
-    assert result["success"] and result["cleanup_verified"] and result["streams_drained"]
+    assert (
+        result["success"] and result["cleanup_verified"] and result["streams_drained"]
+    )
     assert result["stdout"].strip() == "native-worker"
     assert result["containment"] == (
         "direct_worker_only" if os.name == "nt" else "observed_descendants"
     )
 
 
-@pytest.mark.parametrize("requirement", ["require_descendant_containment", "require_descendant_resource_accounting"])
+@pytest.mark.parametrize(
+    "requirement",
+    ["require_descendant_containment", "require_descendant_resource_accounting"],
+)
 def test_native_descendant_requirements_are_supported_or_refused_before_launch(
     tmp_path: Path, requirement: str
 ) -> None:
@@ -497,12 +560,23 @@ def test_native_descendant_requirements_are_supported_or_refused_before_launch(
 
     marker = tmp_path / "launched"
     result = run_subprocess_envelope(
-        [sys.executable, "-c", f"from pathlib import Path; import time; Path({str(marker)!r}).write_text('started'); time.sleep(.3)"],
-        timeout=3, sandbox=False, **{requirement: True},
+        [
+            sys.executable,
+            "-c",
+            f"from pathlib import Path; import time; Path({str(marker)!r}).write_text('started'); time.sleep(.3)",
+        ],
+        timeout=3,
+        sandbox=False,
+        **{requirement: True},
     )
     if os.name == "nt":
-        assert not result["success"] and result["error_type"] == "UnsupportedContainment"
-        assert result["containment"] == "not_started" and result["cleanup_verified"] is None
+        assert (
+            not result["success"] and result["error_type"] == "UnsupportedContainment"
+        )
+        assert (
+            result["containment"] == "not_started"
+            and result["cleanup_verified"] is None
+        )
         assert not marker.exists()
     else:
         assert result["success"] and result["containment"] == "observed_descendants"
@@ -539,11 +613,18 @@ def test_native_cancellation_stops_direct_worker_within_budget(
         # This fixture measures the promised direct worker, using only stdlib.
         worker_executable = sys._base_executable
         assert worker_executable and Path(worker_executable).is_file()
-        minor = json.loads(subprocess.check_output(
-            [worker_executable, "-I", "-c",
-             "import json,sys; print(json.dumps(list(sys.version_info[:2])))"],
-            text=True, timeout=4,
-        ))
+        minor = json.loads(
+            subprocess.check_output(
+                [
+                    worker_executable,
+                    "-I",
+                    "-c",
+                    "import json,sys; print(json.dumps(list(sys.version_info[:2])))",
+                ],
+                text=True,
+                timeout=4,
+            )
+        )
         assert minor == list(sys.version_info[:2])
         diagnostic["worker_python_minor"] = minor
 
@@ -608,7 +689,9 @@ def test_native_cancellation_stops_direct_worker_within_budget(
                 supervised_handle = kernel32.OpenProcess(0x00101000, False, process.pid)
                 if not supervised_handle:
                     raise ctypes.WinError(ctypes.get_last_error())
-                diagnostic["supervised_before_return"] = native_snapshot(supervised_handle)
+                diagnostic["supervised_before_return"] = native_snapshot(
+                    supervised_handle
+                )
             except OSError as error:
                 # Return the actual object even if observation fails, so the
                 # envelope still owns cleanup of its newly launched worker.
@@ -622,14 +705,14 @@ def test_native_cancellation_stops_direct_worker_within_budget(
         try:
             deadline = time.monotonic() + 3
             while not marker.exists() and time.monotonic() < deadline:
-                time.sleep(.01)
+                time.sleep(0.01)
             assert marker.exists()
             if os.name == "nt":
                 # The writer opens before publishing bytes; stay inside the same
                 # original readiness budget until its authored PID is available.
                 payload = marker.read_text()
                 while not payload and time.monotonic() < deadline:
-                    time.sleep(.01)
+                    time.sleep(0.01)
                     payload = marker.read_text()
                 payload_pid = int(payload)
                 diagnostic["payload_pid"] = payload_pid
@@ -653,8 +736,14 @@ def test_native_cancellation_stops_direct_worker_within_budget(
     try:
         try:
             result = run_subprocess_envelope(
-                [worker_executable, "-c", f"import os,time; from pathlib import Path; Path({str(marker)!r}).write_text(str(os.getpid())); time.sleep(30)"],
-                timeout=4, sandbox=False, cancel_token=token,
+                [
+                    worker_executable,
+                    "-c",
+                    f"import os,time; from pathlib import Path; Path({str(marker)!r}).write_text(str(os.getpid())); time.sleep(30)",
+                ],
+                timeout=4,
+                sandbox=False,
+                cancel_token=token,
             )
         finally:
             worker.join(4)
@@ -663,7 +752,9 @@ def test_native_cancellation_stops_direct_worker_within_budget(
         diagnostic["cancellation_errors"] = [repr(error) for error in errors]
         try:
             if os.name == "nt" and supervised_handle:
-                diagnostic["supervised_after_return"] = native_snapshot(supervised_handle)
+                diagnostic["supervised_after_return"] = native_snapshot(
+                    supervised_handle
+                )
                 handle_to_close, supervised_handle = supervised_handle, None
                 if not kernel32.CloseHandle(handle_to_close):
                     raise ctypes.WinError(ctypes.get_last_error())
@@ -682,14 +773,23 @@ def test_native_cancellation_stops_direct_worker_within_budget(
             raise
         finally:
             detail = json.dumps(diagnostic, sort_keys=True)
-            request.node.user_properties.append(("native_cancellation_diagnostic", detail))
+            request.node.user_properties.append(
+                ("native_cancellation_diagnostic", detail)
+            )
         assert not worker.is_alive() and not errors, detail
         assert time.monotonic() - started < 5, detail
-        assert result["cancelled"] and not result["success"] and result["error_type"] == "Cancelled", detail
+        assert (
+            result["cancelled"]
+            and not result["success"]
+            and result["error_type"] == "Cancelled"
+        ), detail
         assert result["cleanup_verified"] and result["streams_drained"], detail
         assert diagnostic["supervised_pid"] == int(marker.read_text()), detail
         if os.name == "nt":
-            assert diagnostic["supervised_before_return"]["creation_filetime"] == diagnostic["before_cancel"]["creation_filetime"], detail
+            assert (
+                diagnostic["supervised_before_return"]["creation_filetime"]
+                == diagnostic["before_cancel"]["creation_filetime"]
+            ), detail
             assert diagnostic["supervised_after_return"]["wait_state"] == 0, detail
             assert diagnostic["after_return"]["wait_state"] == 0, detail
         assert not psutil.pid_exists(int(marker.read_text())), detail
@@ -721,31 +821,43 @@ async def test_api_job_cancel_kills_a_real_worker_ignoring_sigterm(
         "signal.signal(signal.SIGTERM,signal.SIG_IGN); "
         f"Path({str(child_pid)!r}).write_text(str(os.getpid())); time.sleep(30)"
     )
-    command = [sys.executable, "-c", (
-        "import subprocess,signal,time; from pathlib import Path; "
-        "signal.signal(signal.SIGTERM,signal.SIG_IGN); "
-        f"subprocess.Popen([{sys.executable!r},'-c',{child!r}]); "
-        f"Path({str(ready)!r}).write_text('ready'); time.sleep(30)"
-    )]
-    monkeypatch.setattr(processor, "build_pipeline_command", lambda *args, **kwargs: command)
+    command = [
+        sys.executable,
+        "-c",
+        (
+            "import subprocess,signal,time; from pathlib import Path; "
+            "signal.signal(signal.SIGTERM,signal.SIG_IGN); "
+            f"subprocess.Popen([{sys.executable!r},'-c',{child!r}]); "
+            f"Path({str(ready)!r}).write_text('ready'); time.sleep(30)"
+        ),
+    ]
+    monkeypatch.setattr(
+        processor, "build_pipeline_command", lambda *args, **kwargs: command
+    )
     job_id = processor.create_job("models", "job-output")
     task = asyncio.create_task(processor.execute_job_async(job_id))
     try:
         deadline = time.monotonic() + 5
         while not child_pid.exists() and time.monotonic() < deadline:
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.01)
         assert child_pid.exists() and ready.exists()
         child_identity = psutil.Process(int(child_pid.read_text()))
         child_identity.create_time()
-        await asyncio.sleep(.15)  # allow the live observer to retain the child
+        await asyncio.sleep(0.15)  # allow the live observer to retain the child
         started = time.monotonic()
         assert processor.cancel_job(job_id)
         await asyncio.wait_for(task, timeout=2)
         assert time.monotonic() - started < 2
         job = processor.get_job(job_id)
         assert job is not None and job["status"] == "cancelled"
-        assert job["process_cleanup"]["cleanup_verified"] and job["process_cleanup"]["streams_drained"]
-        assert not child_identity.is_running() or child_identity.status() == psutil.STATUS_ZOMBIE
+        assert (
+            job["process_cleanup"]["cleanup_verified"]
+            and job["process_cleanup"]["streams_drained"]
+        )
+        assert (
+            not child_identity.is_running()
+            or child_identity.status() == psutil.STATUS_ZOMBIE
+        )
     finally:
         if not task.done():
             processor.cancel_job(job_id)
@@ -768,11 +880,17 @@ async def test_api_normal_leader_exit_has_bounded_native_cleanup(
     monkeypatch.setenv("GNN_API_ROOT", str(tmp_path))
     child_pid = tmp_path / "child.pid"
     child = f"import os,time; from pathlib import Path; Path({str(child_pid)!r}).write_text(str(os.getpid())); time.sleep(30)"
-    command = [sys.executable, "-c", (
-        "import subprocess,time; "
-        f"subprocess.Popen([{sys.executable!r},'-c',{child!r}]); time.sleep(.3)"
-    )]
-    monkeypatch.setattr(processor, "build_pipeline_command", lambda *args, **kwargs: command)
+    command = [
+        sys.executable,
+        "-c",
+        (
+            "import subprocess,time; "
+            f"subprocess.Popen([{sys.executable!r},'-c',{child!r}]); time.sleep(.3)"
+        ),
+    ]
+    monkeypatch.setattr(
+        processor, "build_pipeline_command", lambda *args, **kwargs: command
+    )
     job_id = processor.create_job("models", "job-output")
     started = time.monotonic()
     child_identity = None
@@ -790,11 +908,18 @@ async def test_api_normal_leader_exit_has_bounded_native_cleanup(
         cleanup = job["process_cleanup"]
         if os.name == "nt":
             assert job["status"] == "failed" and cleanup["cleanup_verified"] is False
-            assert cleanup["containment"] == "direct_worker_only" and cleanup["streams_drained"] is False
+            assert (
+                cleanup["containment"] == "direct_worker_only"
+                and cleanup["streams_drained"] is False
+            )
         else:
             assert job["status"] == "completed" and cleanup["cleanup_verified"]
             assert cleanup["streams_drained"]
-            assert child_identity is None or not child_identity.is_running() or child_identity.status() == psutil.STATUS_ZOMBIE
+            assert (
+                child_identity is None
+                or not child_identity.is_running()
+                or child_identity.status() == psutil.STATUS_ZOMBIE
+            )
     finally:
         # Windows's deliberately unsupported child remains caller-owned; stop
         # only that published birth-time-bound identity, never a host PID scan.

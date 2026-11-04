@@ -63,20 +63,20 @@ test-extras:
 
 # Run ruff linter
 lint:
-    uv run ruff check src/gnn scripts
+    uv run ruff check src/gnn scripts tests
 
 # Run ruff linter with auto-fix
 lint-fix:
-    uv run ruff check src/gnn scripts --fix
+    uv run ruff check src/gnn scripts tests --fix
 
 # Format code with ruff
 format:
-    uv run ruff format src scripts
-    uv run ruff check src scripts --select I --fix
+    uv run ruff format src scripts tests
+    uv run ruff check src scripts tests --select I --fix
 
 # Check formatting without modifying files
 format-check:
-    uv run ruff format --check src scripts
+    uv run ruff format --check src scripts tests
 
 # Run mypy type checking
 typecheck:

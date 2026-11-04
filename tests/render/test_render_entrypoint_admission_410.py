@@ -18,8 +18,8 @@ from gnn.api.app import create_app
 from gnn.frameworks import RENDER_FRAMEWORKS
 from gnn.mcp.mcp import MCP
 from gnn.render import process_render
-from gnn.render.mcp import register_tools
 from gnn.render.admission import render_options_inventory
+from gnn.render.mcp import register_tools
 
 ROOT = Path(__file__).resolve().parents[2]
 MODEL = ROOT / "input/gnn_files/discrete/two_state_bistable.md"

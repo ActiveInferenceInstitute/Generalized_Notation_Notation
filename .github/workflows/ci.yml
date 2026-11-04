@@ -216,10 +216,10 @@ jobs:
         run: uv sync --frozen --extra dev
 
       - name: Ruff format check
-        run: uv run --frozen --no-sync ruff format --check src scripts
+        run: uv run --frozen --no-sync ruff format --check src scripts tests
 
       - name: Ruff check
-        run: uv run --frozen --no-sync ruff check src/gnn scripts
+        run: uv run --frozen --no-sync ruff check src/gnn scripts tests
 
       - name: Documentation contract audit
         run: uv run --frozen --no-sync python scripts/check_doc_contracts.py --strict

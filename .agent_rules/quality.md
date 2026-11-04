@@ -10,8 +10,8 @@ Use repository tool configuration and actual CI command scopes;
 After a frozen development install, use actual gates:
 
 ```bash
-uv run --frozen --no-sync ruff format --check src scripts
-uv run --frozen --no-sync ruff check src/gnn scripts
+uv run --frozen --no-sync ruff format --check src scripts tests
+uv run --frozen --no-sync ruff check src/gnn scripts tests
 uv run --frozen --no-sync mypy src/gnn --show-error-codes
 uv run --frozen --no-sync lint-imports
 uv run --frozen --no-sync python scripts/check_thin_orchestrators.py

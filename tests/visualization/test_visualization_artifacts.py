@@ -605,9 +605,9 @@ def test_step8_summary_drops_non_path_entries_and_reports_them(
 
     reported = [e for e in summary["errors"] if "not an existing file" in e]
     assert len(reported) == 2, summary["errors"]
-    assert any(
-        "not an existing file" in r.getMessage() for r in caplog.records
-    ), "a dropped summary entry must be reported"
+    assert any("not an existing file" in r.getMessage() for r in caplog.records), (
+        "a dropped summary entry must be reported"
+    )
 
 
 @pytest.mark.pipeline

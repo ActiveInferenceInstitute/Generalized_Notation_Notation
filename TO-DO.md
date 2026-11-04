@@ -227,8 +227,8 @@ Representative repository commands are:
 
 ```bash
 uv lock --check
-uv run --frozen --no-sync ruff check src/gnn scripts
-uv run --frozen --no-sync ruff format --check src scripts
+uv run --frozen --no-sync ruff check src/gnn scripts tests
+uv run --frozen --no-sync ruff format --check src scripts tests
 uv run --frozen --no-sync mypy src --config-file pyproject.toml
 uv run --frozen --no-sync python docs/development/docs_audit.py --strict --check-anchors --no-write
 uv run --frozen --no-sync python scripts/check_repo_terminology.py --strict

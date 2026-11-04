@@ -597,8 +597,7 @@ def _seed_model_kind_table(
     ]
     for row_kind, renders, unsupported in rows:
         lines.append(
-            f"| {row_kind}-state models | `{row_kind}/` | {renders} "
-            f"| {unsupported} |"
+            f"| {row_kind}-state models | `{row_kind}/` | {renders} | {unsupported} |"
         )
     table.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return table
@@ -645,9 +644,7 @@ def test_model_kind_table_flags_omitted_declaring_frame(
     assert "omits ngclearn from the continuous render row" in issues[0][3]
 
 
-def test_model_kind_table_passes_canonical_rows(
-    audit_mod: Any, tmp_path: Path
-) -> None:
+def test_model_kind_table_passes_canonical_rows(audit_mod: Any, tmp_path: Path) -> None:
     _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
     table = _seed_model_kind_table(
         tmp_path,
@@ -701,9 +698,7 @@ def test_model_kind_table_flags_experimental_frame_as_default(
     assert "experimental and requires explicit selection" in issues[0][3]
 
 
-def test_model_kind_table_missing_fails_closed(
-    audit_mod: Any, tmp_path: Path
-) -> None:
+def test_model_kind_table_missing_fails_closed(audit_mod: Any, tmp_path: Path) -> None:
     _seed_render_registry(tmp_path, _REFERENCE_FRAMES)
     doc = tmp_path / "input" / "README.md"
     doc.parent.mkdir(parents=True)
@@ -950,7 +945,9 @@ def test_retirement_statement_is_classified_as_retirement(
     assert mod.classify_line(statement, pattern) == "retirement"
 
 
-def test_scan_accepts_both_corrected_statements_and_reports_them(tmp_path: Path) -> None:
+def test_scan_accepts_both_corrected_statements_and_reports_them(
+    tmp_path: Path,
+) -> None:
     mod, isolated = _terminology_module(tmp_path)
     for relative, statement in zip(
         (
@@ -967,7 +964,9 @@ def test_scan_accepts_both_corrected_statements_and_reports_them(tmp_path: Path)
     retired: list[tuple[Path, int, str, str]] = []
 
     assert mod.scan(retired) == []
-    assert len(retired) == 2, "recognised retirements are reported, not silently dropped"
+    assert len(retired) == 2, (
+        "recognised retirements are reported, not silently dropped"
+    )
 
 
 @pytest.mark.parametrize(
