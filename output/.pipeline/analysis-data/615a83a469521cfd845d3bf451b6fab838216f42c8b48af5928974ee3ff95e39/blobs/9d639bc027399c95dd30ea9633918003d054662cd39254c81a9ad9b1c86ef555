@@ -1,0 +1,47 @@
+{
+  "counts_describe_commit": "92f285b5b",
+  "manifest_version": "gnn_render_manifest_v1",
+  "receipt_counts_describe_commit": "92f285b5b",
+  "recorded_by": "uv run python scripts/z_record_manuscript_render_manifest.py",
+  "render_artifacts_normalized_sha256": {
+    "output/pdf/_combined_manuscript.log": "6b105327c38569e3739ef11613b58da90fff7204585374801711ec3b0e1e27c0",
+    "output/pdf/_combined_manuscript.md": "dc4de29803f2117582086da62c06df98a928c788785b902760f09edbb3134c4e",
+    "output/pdf/_combined_manuscript.tex": "c3604944f8ab1077efdec222fa640a82acf88350795291cb00b4bf7ac4663034"
+  },
+  "render_artifacts_sha256": {
+    "output/pdf/_combined_manuscript.log": "e1410b6466d9f98ba8138293c00479e6ffafa3e750b85f377e493ced9bae4877",
+    "output/pdf/_combined_manuscript.md": "16f97041116dc3fe431a5ecf8ed2eb35ed4b61438ae2831d9735d20b42e3d612",
+    "output/pdf/_combined_manuscript.tex": "a4a43978ccd11bd02d652583f98defaf3955b910e3fcb2238e031427c1ede957"
+  },
+  "render_inputs_normalized_sha256": {
+    "output/manuscript/00_abstract.md": "a66f146435f8300a5bfa2b3fbbc60373dec0e2e3c3fa4de9856f71e8b7eef27e",
+    "output/manuscript/01_introduction.md": "5d0d444605725927d88c415bbd7b2b6d27dfe62d33130cddc3cdbc4669ccb771",
+    "output/manuscript/02_system_context.md": "1527c6d45273cc67837dc04cab9ff8c56be53a4ac1929eb469a746a5e8c542b0",
+    "output/manuscript/03_methods.md": "5cd5af03ec86b130f0b3ad067e31e35f6466c18094168facce81e8cd0c52ac6f",
+    "output/manuscript/04_artifacts_and_evidence.md": "c46c6c7a5bbde91f30a54ee350148114d1a6a897fab7d5ec9bfa293dff1bd767",
+    "output/manuscript/05_reproducibility.md": "36be074e43a2478944afa7c3fc7b742a9bbd85275c250c7a4e81f30b784a8e23",
+    "output/manuscript/06_limitations_and_next_steps.md": "661342ebdc02da12fbc325fb7c9e63b46cdd0d19b78c278aae91af1f52076b7a",
+    "output/manuscript/98_symbols_glossary.md": "4342b4bac17e063cd34f0e0805afe4769048efb22beced4887080ff198577c60",
+    "output/manuscript/99_references.md": "5e80feaa0ff39228501260f8e18f34debc071e1431de9c81a48016cb428aeef2",
+    "output/manuscript/S01_source_surface.md": "cf9b0b5ea1bcd2e8e868b7ae43f5ba105bc1f91ef002081c29647354f362586e",
+    "output/manuscript/config.yaml": "9cf779fd02b796104899e2c24fb2223b465643a04b9355284ad4c3758a399e41",
+    "output/manuscript/preamble.md": "ebdb657038ccf007dffefe5e3d5834145b956e6580628356975d741bcd6fb01e",
+    "output/manuscript/references.bib": "ed44f4594867a193123aaf03334e12c2f12e167584d42ac5bc6074c4bfec9f0d"
+  },
+  "render_inputs_sha256": {
+    "output/manuscript/00_abstract.md": "32f03ce349dc7d43d19309956a45ba26de01ae3038d6d394dd0c32a2718e6e22",
+    "output/manuscript/01_introduction.md": "5d0d444605725927d88c415bbd7b2b6d27dfe62d33130cddc3cdbc4669ccb771",
+    "output/manuscript/02_system_context.md": "4b275c163d37453b87926671d8f88367ce55c720c01d8c403e1ca59f96eec5d6",
+    "output/manuscript/03_methods.md": "d9436b2b3b3b1cc50f89cf8cd81da67eed38831d0ecdde6f1e05a3e497689958",
+    "output/manuscript/04_artifacts_and_evidence.md": "37f5b91c99fe6ab0ac172f8b04819d8e7ed584fe23198248de537bc7c4628ef3",
+    "output/manuscript/05_reproducibility.md": "45fec7df0308ff210a93f6854f74235fc40207f34b40ad0d30ace8171b98cd77",
+    "output/manuscript/06_limitations_and_next_steps.md": "661342ebdc02da12fbc325fb7c9e63b46cdd0d19b78c278aae91af1f52076b7a",
+    "output/manuscript/98_symbols_glossary.md": "4342b4bac17e063cd34f0e0805afe4769048efb22beced4887080ff198577c60",
+    "output/manuscript/99_references.md": "5e80feaa0ff39228501260f8e18f34debc071e1431de9c81a48016cb428aeef2",
+    "output/manuscript/S01_source_surface.md": "cf9b0b5ea1bcd2e8e868b7ae43f5ba105bc1f91ef002081c29647354f362586e",
+    "output/manuscript/config.yaml": "9cf779fd02b796104899e2c24fb2223b465643a04b9355284ad4c3758a399e41",
+    "output/manuscript/preamble.md": "ebdb657038ccf007dffefe5e3d5834145b956e6580628356975d741bcd6fb01e",
+    "output/manuscript/references.bib": "ed44f4594867a193123aaf03334e12c2f12e167584d42ac5bc6074c4bfec9f0d"
+  },
+  "variables_sha256": "119cc01176a0a07f0630afaed25e80d8f8906dcb5bcafb63704053a5390b1a7e"
+}

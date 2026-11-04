@@ -1,0 +1,9 @@
+{
+  "counts_describe_commit": "739af221e",
+  "dirty_path_count": 0,
+  "dirty_paths": [],
+  "generator": "scripts/z_generate_manuscript_variables.py",
+  "git_available": true,
+  "receipt_version": "gnn_manuscript_variables_receipt_v1",
+  "working_tree_clean": true
+}

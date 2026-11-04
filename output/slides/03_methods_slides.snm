@@ -1,7 +1,7 @@
 \beamer@slide {tbl:backend_registry}{13}
-\beamer@slide {tbl:framework_capability}{16}
-\beamer@slide {fig:backend_matrix}{19}
-\beamer@slide {rendering-by-model-kind}{23}
-\beamer@slide {executing-by-model-kind}{29}
-\beamer@slide {fig:orchestration}{36}
-\beamer@slide {bounded-file-processing}{46}
+\beamer@slide {tbl:framework_capability}{15}
+\beamer@slide {fig:backend_matrix}{17}
+\beamer@slide {rendering-by-model-kind}{18}
+\beamer@slide {executing-by-model-kind}{24}
+\beamer@slide {fig:orchestration}{31}
+\beamer@slide {bounded-file-processing}{38}
