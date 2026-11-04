@@ -18,7 +18,7 @@
 
 ## Model kinds and framework support
 
-`render.pomdp_contract.detect_model_kind` classifies each spec; `src/gnn/render/framework_registry.py` declares the nine frameworks and their `supports_continuous` flag.
+`render.pomdp_contract.detect_model_kind` classifies each spec; `src/gnn/render/framework_registry.py` declares the twelve frameworks and their `supports_continuous` flag.
 
 | Model kind | Folders | Renders + executes on | Render status `unsupported` on |
 |---|---|---|---|
