@@ -1,7 +1,10 @@
 """One token grammar and injection contract for manuscript consumers.
 
 The template implementation is authoritative when importable. The local mirror
-keeps standalone audits headless, preserving unknown tokens verbatim.
+keeps standalone audits headless, preserving unknown tokens verbatim, and
+reproduces the injector's destination-copy rebase of ``../output/<path>`` link
+targets (:func:`rebase_output_links_for_destination`) — the part of the write
+path a comparison needs and a substitution alone does not perform.
 """
 
 from __future__ import annotations
@@ -50,6 +53,43 @@ TOKEN_RE = getattr(_INJECTOR, "_TOKEN_RE", _FALLBACK_TOKEN_RE)
 EXCLUDED_DOC_FILENAMES = frozenset(
     getattr(_INJECTOR, "EXCLUDED_DOC_FILENAMES", _FALLBACK_EXCLUDED)
 )
+
+#: The injector writes resolved copies into ``output/manuscript/``, one level
+#: below ``manuscript/``, so a link target that is correct in the source
+#: (``../output/figures/plot.png``) names ``output/output/...`` from the copy.
+#: The injector's write path re-expresses link/image targets and quoted HTML
+#: attributes for the destination and leaves every other relative form alone;
+#: the source files keep their own form. The headless mirror does the same, so
+#: the PR-time hydration gate compares the copies the renderer actually reads.
+_MARKDOWN_OUTPUT_TARGET_RE = re.compile(r"(?P<open>\]\()\.\./output/(?P<rest>[^)\s]+)")
+_HTML_OUTPUT_ATTR_RE = re.compile(
+    r"(?P<open>\b(?:src|href|data-slide-manifest)=\")\.\./output/(?P<rest>[^\"]+)"
+)
+
+
+def _fallback_rebase_output_links(text: str) -> str:
+    text = _MARKDOWN_OUTPUT_TARGET_RE.sub(
+        lambda match: f"{match.group('open')}../{match.group('rest')}", text
+    )
+    return _HTML_OUTPUT_ATTR_RE.sub(
+        lambda match: f"{match.group('open')}../{match.group('rest')}", text
+    )
+
+
+def rebase_output_links_for_destination(text: str) -> str:
+    """Re-express ``../output/<path>`` targets for the ``output/manuscript/`` copy.
+
+    Mirrors the injector's own destination rebase: markdown link/image targets
+    and quoted ``src``/``href``/``data-slide-manifest`` attributes that begin
+    ``../output/`` are rewritten to begin ``../``; every other relative form is
+    untouched, and the source files under ``manuscript/`` keep their own form.
+    The template implementation is authoritative when importable.
+    """
+    if _INJECTOR is not None:
+        rebase = getattr(_INJECTOR, "_rebase_output_links_for_destination", None)
+        if rebase is not None:
+            return cast("Callable[[str], str]", rebase)(text)
+    return _fallback_rebase_output_links(text)
 
 
 def substitute_manuscript_text(

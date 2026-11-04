@@ -68,7 +68,10 @@ from pathlib import Path
 if str(Path(__file__).resolve().parents[3]) not in sys.path:  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from gnn.manuscript.substitution import hydrate_text  # noqa: E402
+from gnn.manuscript.substitution import (  # noqa: E402
+    hydrate_text,
+    rebase_output_links_for_destination,
+)
 from gnn.manuscript.variables import token_checksum  # noqa: E402
 
 __all__ = [
@@ -768,13 +771,23 @@ def custody_issues(project_root: Path) -> list[str]:
 def _expected_hydrated_tree(
     project_root: Path, variables: dict[str, str], excluded: frozenset[str]
 ) -> dict[str, bytes]:
-    """``{relpath: bytes}`` the injector would write from this token map."""
+    """``{relpath: bytes}`` the injector would write from this token map.
+
+    Substitution alone is not the injector's output: the injector's write path
+    also re-expresses ``../output/<path>`` link targets for the copy's location
+    under ``output/manuscript/`` (one level below the project root), leaving the
+    source files' own form alone. Comparing against unrebased text reported the
+    four figure-bearing manuscripts as drift on 2026-11-04 while the render
+    itself was correct, so the expectation mirrors that step too.
+    """
     source = project_root / _SOURCE_MANUSCRIPT_REL
     out: dict[str, bytes] = {}
     for md in sorted(source.glob("*.md")):
         if md.name in excluded or md.name in _VERBATIM_AUX:
             continue
-        text = hydrate_text(md.read_text(encoding="utf-8"), variables)
+        text = rebase_output_links_for_destination(
+            hydrate_text(md.read_text(encoding="utf-8"), variables)
+        )
         out[(RENDER_INPUT_ROOT / md.name).as_posix()] = text.encode("utf-8")
     verbatim = [source / name for name in _VERBATIM_AUX] + sorted(source.glob("*.bib"))
     for path in verbatim:
