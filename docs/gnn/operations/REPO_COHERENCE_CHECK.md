@@ -1154,7 +1154,7 @@ Each action item should include:
 ```markdown
 ### Action Item: Add Type Hints to process_validation
 
-- **File**: `src/gnn/validation/processor.py`
+- **File**: `src/gnn/validation/__init__.py`
 - **Lines**: 45-60
 - **Issue**: Function `process_validation` missing type hints
 - **Recommended Fix**: Add type hints for all parameters and return type
