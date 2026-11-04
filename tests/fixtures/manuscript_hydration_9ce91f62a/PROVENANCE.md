@@ -34,3 +34,19 @@ PY
 
 A template move that changes this copy earns a **new** fixture directory, never
 an in-place edit, so this one keeps measuring the behaviour it recorded.
+
+## Placeholder link targets (added 2026-11-04)
+
+`project/` also carries the five files this input's relative links name:
+`output/figures/fixture_figure.png`, `output/figures/fixture_inline.png`,
+`output/data/fixture_table.json`, `figures/fixture_figure.png` and
+`elsewhere/fixture_note.md`. They exist so the repository's own
+`docs/development/docs_audit.py --strict` link check resolves the fixture's
+links — the `markdown-audit` job runs it on every push, and it caught the four
+dangling targets this fixture was committed with.
+
+**No recorded byte changed.** The source, `tokens.json` and the recorded output
+are byte-identical to the fixture's first commit; the added files are targets,
+read by no assertion, and the fixture still measures the behaviour it recorded.
+The alternative — excluding fixture paths from the link audit — was refused:
+that is re-scoping a gate to fit a fixture.
