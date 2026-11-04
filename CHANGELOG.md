@@ -31,9 +31,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   (`{"variables": [], "connections": []}`) when POMDP extraction returns nothing.
   That path reported success and wrote a program with no matrices, no section
   content and no connection data from a specification it had never parsed. It now
-  returns a typed refusal, `unsupported-pomdp-extraction: <file> …`, records the
-  framework as `status: "unsupported"` with no generated files, and the render
-  receipt counts it under `unsupported_files` rather than `failed_files`.
+  returns a typed refusal, `unsupported-pomdp-extraction: <file> …`, with no
+  generated files.
+- **The consumer contract:** a refused framework appears as `status: "unsupported"`
+  with `unsupported: True` in `framework_results`, and the render receipt counts it
+  under `unsupported_files`, never `failed_files`. A refusal is a correct outcome for
+  a specification that cannot support the target, so it must not read as a failure;
+  `failed_files == 0` alongside a non-empty `unsupported_files` is the expected shape.
 - `gnn.render.execution_contracts` declares the refusal classes the renderers may
   emit (`REFUSAL_CLASSES`) and `refusal_class(message)` returns a class only for a
   declared one; a test pins both directions, so a new refusal has to be registered
