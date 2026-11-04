@@ -36,6 +36,13 @@ name: Pair pin freshness
 # N commits behind" lag bound from section 5.3 is intentionally not enforced
 # here: the measured lag is reported in the summary and receipts, but
 # ancestry and owner content are the contract.
+#
+# Merging this gate makes the nightly red until the re-freeze happens, by
+# design. Drift exists now (three owners: `docs/gnn/gnn_syntax.md`,
+# `pyproject.toml`, `uv.lock`), so a red is the gate reporting the truth. The
+# disposal is the trigger-gated obligation in FEP issue #244 /
+# `CUSTODY-GNN-1`, not a workflow fix. A nightly red between now and the next
+# `v[0-9]*` tag means the gate is working and the obligation is outstanding.
 
 on:
   push:
