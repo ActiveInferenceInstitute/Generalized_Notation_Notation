@@ -674,6 +674,11 @@ def _render_registry_facts() -> (
     declaration_entries = _dict_string_keys(declarations_literal)
     if frame_entries is None or declaration_entries is None:
         return None
+    if not frame_entries or not declaration_entries:
+        # An empty literal declares no frame, so every documented renderer
+        # claim would be judged against an empty expected set — green by
+        # construction. Report it unreadable instead of certifying it.
+        return None
     frames: dict[str, bool] = {}
     for name, value in frame_entries.items():
         experimental = False

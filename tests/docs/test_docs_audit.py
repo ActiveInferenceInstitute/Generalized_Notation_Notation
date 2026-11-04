@@ -789,6 +789,35 @@ def test_model_kind_coverage_reports_unreadable_registry(
     )
 
 
+def test_model_kind_coverage_reports_empty_registry(
+    audit_mod: Any, tmp_path: Path
+) -> None:
+    """An empty literal must not become an empty expected set (green)."""
+    registry = tmp_path / "src" / "gnn" / "render" / "framework_registry.py"
+    registry.parent.mkdir(parents=True, exist_ok=True)
+    registry.write_text(
+        "FRAMEWORK_REGISTRY = {}\nRENDER_CAPABILITY_DECLARATIONS = MappingProxyType({})\n",
+        encoding="utf-8",
+    )
+    doc = tmp_path / "input" / "AGENTS.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text("# Input\n", encoding="utf-8")
+
+    issues = audit_mod.audit_model_kind_coverage([doc])
+    render_issues = audit_mod.audit_render_doc_frame_coverage()
+
+    assert len(issues) == 1
+    assert issues[0][3] == (
+        "cannot parse FRAMEWORK_REGISTRY / RENDER_CAPABILITY_DECLARATIONS"
+    )
+    assert [(issue[0], issue[3]) for issue in render_issues] == [
+        (
+            Path("src/gnn/render/framework_registry.py"),
+            "cannot parse FRAMEWORK_REGISTRY",
+        )
+    ]
+
+
 def test_render_doc_frame_coverage_flags_undocumented_frame(
     audit_mod: Any, tmp_path: Path
 ) -> None:
