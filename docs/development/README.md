@@ -56,7 +56,10 @@ uv run --frozen --no-sync python scripts/check_doc_path_references.py
 
 The [audit](docs_audit.py) checks relative destinations, repository escapes,
 same-page and cross-file anchors, heading duplicates, document pairing and owner
-claims. Code examples do not create real navigation targets. Reference definitions
+claims. Registry-bound claims are judged against source declarations: render-engine
+counts against `FRAMEWORK_REGISTRY`, and model-kind coverage plus frame
+documentation against each frame's `state_space` declaration. Code examples do not
+create real navigation targets. Reference definitions
 and URL-encoded paths are checked too. It writes a report unless `--no-write` is
 supplied; strict failures print individual diagnostics, and `--quiet` prints counts.
 [Documentation review](documentation_review.md) adds executable-example and rendered-page

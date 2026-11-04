@@ -37,7 +37,7 @@ cross-framework comparison step.
 
 ## Supported Frameworks
 
-Step 11 renders to 9 registered targets (see `src/gnn/render/AGENTS.md`). Step 12 executes all 9 — bnlearn via `src/gnn/execute/bnlearn/` (its programs skip with an install hint until the `bnlearn` extra, or Rscript plus the R `bnlearn` package for `.R` scripts, is present; Stan via the cmdstanpy driver `<stem>_stan.py`, executor `src/gnn/execute/stan/`, skipped when cmdstanpy/CmdStan is absent). PyTorch and bnlearn are registry-gated unless installed manually. Continuous (linear-Gaussian) models execute on jax, numpyro, pytorch, stan and rxinfer only; the four categorical backends (pymdp, activeinference_jl, discopy, bnlearn) return render status `unsupported` for them, recorded in `render_processing_summary.json` under `unsupported_framework_renderings` and never handed to Step 12:
+Step 11 renders to the registered targets in `src/gnn/render/framework_registry.py` (the non-experimental frames by default; the experimental `cpomdp` and `thrml` require explicit selection). Step 12 executes all of them — bnlearn via `src/gnn/execute/bnlearn/` (its programs skip with an install hint until the `bnlearn` extra, or Rscript plus the R `bnlearn` package for `.R` scripts, is present; Stan via the cmdstanpy driver `<stem>_stan.py`, executor `src/gnn/execute/stan/`, skipped when cmdstanpy/CmdStan is absent). PyTorch and bnlearn are registry-gated unless installed manually. Continuous (linear-Gaussian) models execute on jax, numpyro, pytorch, stan, rxinfer and ngclearn only; the four categorical backends (pymdp, activeinference_jl, discopy, bnlearn) return render status `unsupported` for them, recorded in `render_processing_summary.json` under `unsupported_framework_renderings` and never handed to Step 12:
 
 | Framework | Per-framework guide |
 |-----------|----------------------|
@@ -50,6 +50,7 @@ Step 11 renders to 9 registered targets (see `src/gnn/render/AGENTS.md`). Step 1
 | NumPyro | [implementations/numpyro.md](../implementations/numpyro.md) |
 | Stan | [implementations/stan.md](../implementations/stan.md) |
 | bnlearn | `src/gnn/render/AGENTS.md` (no standalone guide yet) |
+| ngc-learn | [`11_render.md` § ngc-learn](../modules/11_render.md#ngc-learn-python) |
 
 Use `--frameworks` (plural) on `src/gnn/11_render.py` / `src/gnn/12_execute.py` to restrict to a
 subset, e.g. `--frameworks pymdp,jax`, or `--frameworks lite` for the executor's

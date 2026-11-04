@@ -94,8 +94,8 @@ and the [runtime exceptions](../README.md#runtime-defaults-and-required-profiles
 Model kind matters for execution: the PyMDP preset above runs **discrete
 categorical** models. A **continuous linear-Gaussian** model (F/H/Q/R with
 `prior_mean`/`prior_cov`), such as `input/gnn_files/continuous/continuous_navigation.md`,
-renders to native LGSSM programs and executes on jax, numpyro, pytorch, stan, and
-rxinfer — categorical backends report it `unsupported`.
+renders to native LGSSM programs and executes on jax, numpyro, pytorch, stan,
+rxinfer, and ngc-learn — categorical backends report it `unsupported`.
 
 ## 5. Inspect generated artifacts
 

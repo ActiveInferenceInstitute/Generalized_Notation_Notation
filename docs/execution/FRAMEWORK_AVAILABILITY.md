@@ -29,15 +29,15 @@ for the locked Python/Gradio/Pillow compatibility profiles.
 apply:
 
 - **Discrete categorical** models execute on PyMDP, RxInfer.jl,
-  ActiveInference.jl, JAX (factorized Kronecker lane), NumPyro, PyTorch, and
-  DisCoPy. Stan executes discrete models as HMM programs via the cmdstanpy
-  driver (`src/gnn/execute/stan/`).
+  ActiveInference.jl, JAX (factorized Kronecker lane), NumPyro, PyTorch,
+  DisCoPy, bnlearn, and Stan. Stan executes discrete models as HMM programs
+  via the cmdstanpy driver (`src/gnn/execute/stan/`).
 - **Continuous linear-Gaussian** models render to native LGSSM programs via
   `src/gnn/render/continuous_script.py` and execute on JAX, NumPyro, PyTorch,
-  Stan (LGSSM), and RxInfer.jl. Categorical backends that cannot express
-  them (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) report an explicit
-  `unsupported` render status. ngc-learn has a continuous-only contract;
-  explicitly selected cpomdp has bounded continuous filtering/control admission.
+  Stan (LGSSM), RxInfer.jl, and ngc-learn. Categorical backends that cannot
+  express them (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) report an explicit
+  `unsupported` render status. ngc-learn is continuous-only; explicitly
+  selected cpomdp has bounded continuous filtering/control admission.
 
 Step 12 admits rendered scripts through the current-run selection and artifact
 indexes. An `unsupported` render is never executed for that model. Inspect both
