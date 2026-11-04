@@ -1,0 +1,577 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "generalized-notation-notation"
+version = "5.0.3"
+description = "A text-based language for standardizing Active Inference generative models"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+license = {text = "CC-BY-NC-SA-4.0"}
+authors = [
+    {name = "Active Inference Institute", email = "contact@activeinference.org"}
+]
+keywords = ["active-inference", "gnn", "cognitive-modeling", "scientific-computing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    # Ordinary source tests cover Python 3.11-3.14; comprehensive native
+    # coverage retains 3.11-3.13. Wheel/platform support separately requires
+    # the exact installed-platform release lane to pass.
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+# Core dependencies (essential for basic functionality)
+dependencies = [
+    # Core scientific computing (lightweight)
+    "numpy>=2.0",
+    "matplotlib>=3.9.0",  # 3.9.x is the first series compatible with numpy>=2.0
+    "pillow>=13.0.0",  # Nine October 2026 image-decoder advisories; also protects pip core installs
+    "networkx>=3.6.1",
+    "pyyaml>=6.0",
+    # scipy and scikit-learn moved to ml-ai optional group (all uses are deferred imports)
+    # System monitoring and utilities
+    "psutil>=5.8.0",
+    # HTTP and async communication
+    "httpx>=0.27.0",
+    "aiohttp>=3.14.4",  # Patches GHSA-5wr8-gcqf-gqf3 / GHSA-494j-54xm-rwp3 / GHSA-2g87-pp6c-29x5
+    # Pygments: official fix for CVE-2026-4539 (AdlLexer ReDoS) — replaced git fork override
+    "pygments>=2.20.0",
+    # LLM stack (Step 13+); local Ollama + cloud APIs — defaults in ``llm/defaults.py`` / config
+    "openai>=2.0",
+    "ollama>=0.1.0",
+    "python-dotenv>=1.0.0",
+    # Safe XML parsing (replaces stdlib xml.etree/minidom for untrusted input)
+    "defusedxml>=0.7.1",
+    # Active Inference ecosystem — pymdp 1.0.0 is the JAX-first rewrite
+    # (see docs/pymdp/pymdp_1_0_0_alignment_matrix.md). Step 12 uses the new
+    # Agent API: list[jax.Array] models, infer_states(empirical_prior=...),
+    # infer_policies(qs), sample_action(q_pi, rng_key=...).
+    # 1.0.4 is the supported release. It caps jax<0.11.1 pending a numpyro
+    # fix, so it resolves on the py3.11 splits (jax 0.10.2); the py>=3.12
+    # splits need jax>=0.11.1 for flax>=0.12.9 and ngclearn and stay on 1.0.3
+    # until pymdp lifts that cap.
+    "inferactively-pymdp>=1.0.4; python_full_version < '3.12'",
+    "inferactively-pymdp>=1.0.3; python_full_version >= '3.12'",
+    "equinox>=0.11.0",  # pymdp 1.0.0 Agent is an equinox Module
+    "multimethod>=1.11",  # pymdp 1.0.0 dispatch
+    # Step 12 execution backends (JAX, NumPyro, DisCoPy)
+    # PyTorch ships in the dedicated ``torch`` extra: torch>=2.13.0 resolves
+    # GHSA-rrmf-rvhw-rf47, lifting the previous lock exclusion. The bnlearn
+    # package remains omitted from the default lock because its pgmpy
+    # dependency pulls torch transitively.
+    # JAX 0.12 admitted 2026-10-20 after PyMDP/factorized/continuous checks.
+    # ngclearn>=3.2.2 requires jax>=0.11.1; the current lock also resolves
+    # numpyro 0.22.0 + flax 0.12.x + equinox 0.13.x on jax 0.12.0
+    # (py3.12) and jax 0.10.2 (py3.11). pymdp 1.0.4 pins jax<0.11.1, so the
+    # pymdp requirement above takes 1.0.4 on py3.11 and 1.0.3 (no jax upper
+    # bound) on the python>=3.12 splits that carry ngclearn.
+    "jax[cpu]>=0.7.0,<0.13",
+    "jaxlib>=0.7.0,<0.13",
+    # Flax 0.12.8 uses the supported jax.extend.core tracing API with
+    # Python 3.11/JAX 0.10.2. Flax >=0.12.9 requires Python
+    # >=3.12 and JAX >=0.11.1, so retain the explicit runtime split.
+    "flax>=0.12.8; python_full_version < '3.12'",
+    "flax>=0.12.9; python_full_version >= '3.12'",
+    "optax>=0.1.0",
+    "msgpack>=1.2.1",
+    "numpyro>=0.22",  # 0.22.0 carries the jax-0.11.x compat fix; 0.20.x breaks on jax>=0.11
+    "discopy>=1.1.0",
+    # Interactive visualization (Step 9 advanced viz Plotly dashboards; steps 8/16)
+    "pandas>=2.0",
+    "plotly>=6.7.0",
+    "seaborn>=0.12.0",
+    "h5py>=3.8.0",
+]
+
+# Optional dependencies. The ``dev`` extra now keeps only genuinely
+# optional-dependency test needs (mirroring named extras); universal dev
+# tooling lives in the PEP 735 ``[dependency-groups]`` ``dev`` group below,
+# installed by default via ``[tool.uv] default-groups``.
+[project.optional-dependencies]
+geo-infer = ["h3>=4.5.0,<5"]
+dev = [
+    # Stan executor driver library (same pin as the ``stan`` extra) so the dev
+    # environment can compile/run the Stan tests when a CmdStan toolchain exists
+    # and ``uv sync --extra dev`` never prunes it.
+    "cmdstanpy>=1.2",
+]
+
+api = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+]
+
+# Deep learning: transformer/scientific packages beyond core Step 12 backends.
+# PyTorch (Step 11/12 backend) ships in the dedicated ``torch`` extra —
+# torch>=2.13.0 resolves GHSA-rrmf-rvhw-rf47.
+ml-ai = [
+    "transformers>=5.10.0",  # GHSA-xrqw-3rrv-vx5w (save_pretrained path traversal)
+    "scipy>=1.17.1",
+    "scikit-learn>=1.0.0",
+]
+
+# Audio synthesis: SAPF/sonification output (step 15)
+audio = [
+    "librosa>=0.10.0",
+    "soundfile>=0.12.0",
+    "pedalboard>=0.7.0",
+]
+
+# GUI interfaces: Gradio frontend (step 22)
+gui = [
+    "gradio>=6.7.0",
+]
+
+# Graph/categorical: system Graphviz bindings beyond core DisCoPy rendering
+graphs = [
+    "graphviz>=0.20.0",
+]
+
+# Aspirational/user-facing groups: no core pipeline callers; installed by users
+# who extend GNN for their own workflows (notebooks, distributed compute, persistence).
+stan = [
+    # Stan backend executor (Step 12): compiles and samples the rendered .stan
+    # programs via CmdStan. Requires a CmdStan toolchain
+    # (``python -c "import cmdstanpy; cmdstanpy.install_cmdstan()"``).
+    "cmdstanpy>=1.2",
+]
+
+# Experimental continuous active-inference backend; explicitly selected.
+# Use the released wheel on both supported JAX lock splits.
+cpomdp = ["cpomdp==0.5.0"]
+# Experimental CPU/JAX Gibbs implementation; no hardware execution claim.
+thrml = ["thrml==0.1.4"]
+
+# PyTorch backend (Step 11 render + Step 12 execute): torch>=2.13.0 resolves
+# GHSA-rrmf-rvhw-rf47 (torch.jit.script memory corruption), the advisory that
+# previously kept torch out of the default lock.
+torch = [
+    "torch>=2.13.0",
+]
+research = [
+    # NOTE: jupyterlab/jupyter-server duplicate dev group entries intentionally —
+    # research group targets non-developer end-users who don't install the dev group.
+    "bleach>=6.4.0",
+    "jupyterlab>=4.6.4",
+    "jupyter-server>=2.20.0",
+    "sympy>=1.12.0",
+    "numba>=0.57.0",
+    "cython>=3.0.0",
+    # pymdp-toolbox not available, omitted
+]
+
+# Distributed/cloud execution: used by execute/distributed.py (RayDispatcher/Dask) and
+# users who run large parameter sweeps on clusters.
+scaling = [
+    "dask>=2023.0.0",
+    "distributed>=2023.0.0",
+    "ray>=2.0.0",  # distributed execution in execute/distributed.py
+]
+
+# bnlearn backend (categorical Bayesian-network exports; executed by Step 12
+# via src/gnn/execute/bnlearn/):
+# pgmpy arrives transitively with its own pinned floors.
+bnlearn = [
+    "bnlearn>=0.14.0",
+]
+
+# ngc-learn backend (continuous linear-Gaussian LGSSM render + Step 12
+# execution via src/gnn/execute/ngclearn/). ngclearn requires jax>=0.11.1,
+# which only publishes for Python>=3.12 — the extra is marker-gated to
+# py3.12+. On py3.11 the extra resolves empty and the backend is gated at
+# run time by the shared availability probe (skip, never fail), following
+# the bnlearn non-default-extra precedent. Probe receipts in the jax
+# dependency comment above.
+ngclearn = [
+    "ngclearn>=3.2.2; python_version >= '3.12'",
+    "ngcsimlib>=3.1.1; python_version >= '3.12'",
+]
+
+# All optional dependencies (install everything).
+# MAINTAINER NOTE: This list manually duplicates packages from the named
+# optional groups above (geo-infer, api, ml-ai, audio, gui, graphs, research,
+# scaling). When adding a package to any named group, ALSO add it here.
+all = [
+    # Stan backend executor
+    "cmdstanpy>=1.2",
+
+    # PyTorch backend
+    "torch>=2.13.0",  # GHSA-rrmf-rvhw-rf47 fixed in torch 2.13.0
+
+    # Machine Learning & AI
+    "transformers>=5.10.0",  # GHSA-xrqw-3rrv-vx5w (save_pretrained path traversal)
+    "scipy>=1.17.1",
+    "scikit-learn>=1.0.0",
+
+    # API server
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+
+    # Visualization and graphics
+    "graphviz>=0.20.0",
+
+    # Geo-infer spatial indexing
+    "h3>=4.5.0,<5",
+
+    # Audio processing
+    "librosa>=0.10.0",
+    "soundfile>=0.12.0",
+    "pedalboard>=0.7.0",
+
+    # GUI and interactive interfaces
+    "gradio>=6.7.0",
+
+    # Research and scientific computing
+    "bleach>=6.4.0",
+    "jupyterlab>=4.6.4",
+    "jupyter-server>=2.20.0",
+    "sympy>=1.12.0",
+    "numba>=0.57.0",
+    "cython>=3.0.0",
+    # pymdp-toolbox not available
+
+    # Scaling and performance
+    "dask>=2023.0.0",
+    "distributed>=2023.0.0",
+    "ray>=2.0.0",
+
+    # Explicit experimental inference runtimes
+    "cpomdp==0.5.0",
+    "thrml==0.1.4",
+
+    # Categorical Bayesian-network exports
+    "bnlearn>=0.14.0",
+    # ngc-learn continuous backend (py3.12+ — see the ngclearn extra above)
+    "ngclearn>=3.2.2; python_version >= '3.12'",
+    "ngcsimlib>=3.1.1; python_version >= '3.12'",
+
+]
+
+# Development tooling (PEP 735 dependency group). Installed by default via
+# ``[tool.uv] default-groups = ["dev"]`` so a fresh ``uv run`` gets the full
+# dev toolchain without ``--extra dev``. CI recipes that pass ``--extra dev``
+# still include the group (uv sync installs default groups unless
+# ``--no-default-groups`` is passed).
+[dependency-groups]
+dev = [
+    # Test framework and plugins
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=3.0.0",
+    "pytest-json-report>=1.5.0",
+    "pytest-benchmark>=4.0.0",
+    "pytest-sugar>=0.9.0",
+    "pytest-timeout>=2.1.0",
+    "pytest-xdist>=3.0.0",
+
+    # Security scanning (dev-only tools; pip-audit via uv tool / CI avoids the retired safety->nltk chain)
+    "bandit>=1.7.0",
+    "bandit-sarif-formatter>=1.1.1",
+
+    # Code quality and linting (ruff covers isort/black/flake8/pylint roles)
+    "mypy>=1.0",
+    "mypy-extensions>=1.0.0",
+    "pre-commit>=3.0.0",
+    "ruff>=0.1.0",
+
+    # Documentation generation
+    "sphinx>=7.0.0",
+    "sphinx-rtd-theme>=1.3.0",
+    "myst-parser>=2.0.0",
+    "bleach>=6.4.0",
+
+    # Interactive development
+    "ipython>=8.0.0",
+    "ipdb>=0.13.0",
+    "jupyterlab>=4.6.4",
+    "jupyter-server>=2.20.0",
+    "ipywidgets>=8.0.0",
+
+    # Performance profiling and debugging
+    "py-spy>=0.3.0",
+    "memory-profiler>=0.61.0",
+    "line-profiler>=4.0.0",
+
+    # Development utilities
+    "rich>=13.0.0",
+    "typer>=0.9.0",
+
+    # Lightweight integration surfaces exercised by the default test suite
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "websockets>=16.0",
+    "pygls>=1.3.1",
+    "import-linter>=2.15",
+]
+
+[project.urls]
+Homepage = "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation"
+Documentation = "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/tree/main/docs"
+Repository = "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git"
+Issues = "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/issues"
+
+[project.scripts]
+gnn = "gnn.cli:main"
+
+[tool.uv]
+default-groups = ["dev"]
+# Gradio 6.30.0 still caps Pillow <13. Qualify its GNN GUI consumers with
+# the patched decoder instead; see README runtime exceptions/removal checks.
+override-dependencies = ["pillow>=13.0.0"]
+# Security floors for transitive packages resolved through optional extras.
+# Keep these as resolver constraints so the packages do not become core runtime
+# dependencies merely because Dependabot tracks them in uv.lock.
+constraint-dependencies = [
+    "fsspec>=2026.6.0",  # GHSA-27vj-qcqg-25rc
+    "gitpython>=3.1.58",
+    "idna>=3.15",
+    "jupyterlab>=4.6.4",
+    "mistune>=3.3.0",
+    "multidict>=6.9.1",  # GHSA-54p9-h82j-f925
+    "pillow>=13.0.0",
+    "python-multipart>=0.0.27",
+    "ray>=2.56.0",
+    "setuptools>=83.0.0",
+    "soupsieve>=2.8.4",
+    "starlette>=1.0.1",
+    "tornado>=6.5.9",  # GHSA-c2m8-h5v5-343r, GHSA-chx6-46f5-w4vp, GHSA-3hv7-mjh2-fv65
+    "virtualenv>=21.14.13",  # GHSA-cx6f-vjhg-g3cc: unescaped --prompt in the bash activator
+    "urllib3>=2.8.0",  # GHSA-gh4c-6fx4-qh6g: chunked Deflate streaming loop
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gnn"]
+
+[tool.mypy]
+# numpy 2.4.x pyi requires a 3.12 mypy target (the 3.11 target failed on
+# the CI leg).
+python_version = "3.12"
+mypy_path = "src"
+explicit_package_bases = true
+exclude = "(^src/gnn/output/|^.venv/)"
+warn_return_any = true
+warn_unused_configs = false
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "aiohttp.*",
+    "dask.*",
+    "distributed.*",
+    "defusedxml.*",
+    "fastapi.*",
+    "jax.*",
+    "jsonschema.*",
+    "flax.*",
+    "optax.*",
+    "gradio.*",
+    "h5py.*",
+    "h3.*",
+    "librosa.*",
+    "lsprotocol.*",
+    "matplotlib.*",
+    "mpl_toolkits.*",
+    "networkx.*",
+    "openai.*",
+    "pandas.*",
+    "pedalboard.*",
+    "plotly.*",
+    "psutil.*",
+    "pygls.*",
+    "pkg_resources.*",
+    "discopy.*",
+    "pymdp.*",
+    "ray.*",
+    "scipy.*",
+    "seaborn.*",
+    "sklearn.*",
+    "soundfile.*",
+    "tensorflow.*",
+    "torch.*",
+    "numpyro.*",
+    "uvicorn.*",
+    "watchdog.*",
+    "yaml.*",
+]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["src/gnn"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+# Raised from 50 by deep-horizon wave 2 (MAJ-T1): CI dev-only coverage
+# measures 60.56% (run 34240450010) and the wave-2 extras harness measures
+# 61.14%; the floor pins that improvement with headroom for platform jitter.
+fail_under = 60
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101"]
+
+[tool.ruff]
+# Keep Python lint/format scope stable when Ruff adds Markdown formatting.
+include = ["*.py", "*.pyi", "*.ipynb", "**/pyproject.toml"]
+target-version = "py311"
+line-length = 88
+extend-exclude = ["output", "cache", "temp", "tmp"]
+
+# Lint rules: omit ``W`` (mass whitespace noise) and ``UP`` (pyupgrade churn on a large
+# tree). CI runs ``ruff check src/``; keep the set aligned with what the repo can sustain.
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+]
+ignore = [
+    "E501",  # line too long, handled by the formatter
+    "E402",  # module import not at top (sys.path bootstrap in orchestrators)
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "B905",  # zip without strict= across a large existing surface
+    # Style patterns (ruff 0.14+); tighten incrementally
+    "E701",  # multiple statements on one line (colon)
+    "E702",  # multiple statements on one line (semicolon)
+    "E721",  # type comparison
+    "E731",  # lambda assignment
+    "E741",  # ambiguous variable name
+    "F821",  # undefined name (lazy imports, string annotations, template examples)
+    "F823",  # undefined local
+    "B007",  # unused loop control variable
+    "B904",  # raise without from inside except
+    "C401",  # unnecessary generator set
+    "C403",  # unnecessary list comprehension (set)
+    "C405",  # unnecessary literal set
+    "C408",  # unnecessary dict call
+    "C414",  # unnecessary double cast / process
+    "C416",  # unnecessary comprehension
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**" = ["F401"]
+
+# Facade re-export surfaces (MAJ-04 mechanical splits): these modules import
+# moved names purely to preserve consumer import paths. Every name in each
+# facade's re-export block is part of the module's public surface.
+"src/gnn/analysis/visualizations.py" = ["F401"]
+"src/gnn/analysis/analyzer.py" = ["F401"]
+"src/gnn/render/jax/jax_renderer.py" = ["F401"]
+"src/gnn/render/discopy/translator.py" = ["F401"]
+"src/gnn/integration/meta_analysis/visualizer.py" = ["F401"]
+"src/gnn/integration/meta_analysis/visualizer_style.py" = ["F401"]
+"src/gnn/testing/round_trip_availability.py" = ["F401"]
+"src/gnn/schema_validator/validator.py" = ["F401"]
+
+# Guarded optional-dependency probes: parsers import serialization backends
+# inside try/except to test availability; the binding itself is intentionally
+# unused (usage is gated on the availability flag).
+"src/gnn/parsers/*" = ["F401"]
+
+# CVE-2026-4539 resolved: Pygments 2.20.0 (released 2026-03-29) includes the
+# official fix for the AdlLexer ReDoS (pygments/pygments#3064).  The git-fork
+# override that previously pinned to zsbahtiar/pygments.git has been removed.
+# The floor constraint ``pygments>=2.20.0`` in [project.dependencies] enforces
+# the patched version from PyPI.
+
+
+# Import-linter boundaries (S2-33 Step 0, design §4.2 I5). TYPE_CHECKING
+# blocks never execute at runtime, so they cannot break the lazy-facade
+# invariant and are excluded from the static graph.
+[tool.importlinter]
+root_package = "gnn"
+exclude_type_checking_imports = true
+
+# I1/I2: the ``gnn.utils`` facade stays light — it must not import any of its
+# own submodules statically. Resolving re-exports happens at runtime through
+# the PEP 562 ``__getattr__`` import map only.
+# ``as_packages = false`` is load-bearing: with the default True, the
+# forbidden contract skips any (source, forbidden) pair where one module is
+# an ancestor of the other (importlinter ForbiddenContract overlap skip), and
+# every facade-submodule pair is exactly that — the contract would never be
+# able to fail. With False, the source is the exact ``gnn.utils`` module and
+# the ``gnn.utils.*`` wildcard expands to every concrete submodule.
+[[tool.importlinter.contracts]]
+name = "utils facade stays lazy: no static submodule imports"
+type = "forbidden"
+as_packages = false
+source_modules = ["gnn.utils"]
+forbidden_modules = ["gnn.utils.*"]
+# I5: concern packages must not import the facade (kills accidental cycles).
+# Same overlap-skip rationale: every concern package is a descendant of
+# ``gnn.utils``, so the default package semantics would skip every pair.
+# Sources list each concern package (its own ``__init__``) AND its
+# ``.*``-wildcard expansion (its leaf modules) as exact modules.
+[[tool.importlinter.contracts]]
+name = "concern packages never import the gnn.utils facade"
+type = "forbidden"
+as_packages = false
+source_modules = [
+    "gnn.utils.testing", "gnn.utils.testing.*",
+    "gnn.utils.arguments", "gnn.utils.arguments.*",
+    "gnn.utils.pipeline_orchestration", "gnn.utils.pipeline_orchestration.*",
+    "gnn.utils.runtime_safety", "gnn.utils.runtime_safety.*",
+    "gnn.utils.observability", "gnn.utils.observability.*",
+    "gnn.utils.errors",
+    "gnn.utils.config_io",
+]
+forbidden_modules = ["gnn.utils"]
+
+# I5: the logging single-entry contract (SC-38). Every ``log_step_*`` /
+# ``setup_step_logging`` consumer imports through the public
+# ``gnn.utils.logging_utils`` entry; the implementation leaf
+# ``gnn.utils.logging.logging_utils`` is imported only by the entry facade
+# itself and by its own subpackage ``__init__`` (both pre-split tree), so
+# those two edges are ignored here. The ``gnn.*`` wildcard expands to every
+# concrete gnn module, so each (source, forbidden) pair is a real edge check;
+# the default ``as_packages = True`` listing form (source ``gnn``) would be
+# overlap-skipped for every pair because the leaf lives inside ``gnn``.
+[[tool.importlinter.contracts]]
+name = "logging single entry: only gnn.utils.logging_utils (and the gnn.utils.logging package itself) may import the implementation leaf"
+type = "forbidden"
+source_modules = ["gnn.*"]
+forbidden_modules = ["gnn.utils.logging.logging_utils"]
+ignore_imports = [
+    # Entry facade re-exports the implementation leaf (pre-split tree).
+    "gnn.utils.logging_utils -> gnn.utils.logging.logging_utils",
+    # The logging subpackage __init__ imports its own leaf (pre-split tree).
+    "gnn.utils.logging -> gnn.utils.logging.logging_utils",
+]
