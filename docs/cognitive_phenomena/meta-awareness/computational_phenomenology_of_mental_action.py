@@ -29,11 +29,6 @@ def normalise(X):  ###normalises a matrix of probabilities
     return X
 
 
-def normalise(X):  ###normalises a matrix of probabilities
-    X = X / np.sum(X, 0)
-    return X
-
-
 ####### Mind-wandering during an odd-ball perceptual task
 ####### Two-level model with single factor at each level
 

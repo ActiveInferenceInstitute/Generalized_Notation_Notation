@@ -10,8 +10,8 @@ Use repository tool configuration and actual CI command scopes;
 After a frozen development install, use actual gates:
 
 ```bash
-uv run --frozen --no-sync ruff format --check src scripts tests
-uv run --frozen --no-sync ruff check src/gnn scripts tests
+uv run --frozen --no-sync ruff format --check src scripts tests docs
+uv run --frozen --no-sync ruff check src/gnn scripts tests docs
 uv run --frozen --no-sync mypy src/gnn --show-error-codes
 uv run --frozen --no-sync lint-imports
 uv run --frozen --no-sync python scripts/check_thin_orchestrators.py
@@ -20,6 +20,9 @@ uv run --frozen --no-sync python scripts/check_dep_hygiene.py
 uv run --frozen --no-sync python docs/development/docs_audit.py --strict --check-anchors --no-write
 uv run --frozen --no-sync python scripts/check_doc_contracts.py --strict
 ```
+
+Ruff now covers every Python file the repository ships except five: four under
+`.github/` and one under `bench/`.
 
 Terminology, capabilities, validation, MCP health and manuscript gates remain
 required as declared in the [workflows](../.github/workflows/README.md).

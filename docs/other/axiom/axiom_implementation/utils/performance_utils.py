@@ -16,7 +16,7 @@ from collections import defaultdict, deque
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import psutil
@@ -542,7 +542,7 @@ def benchmark_bayesian_inference(
 ):
     """Benchmark Bayesian inference operations."""
 
-    from .math_utils import BayesianUtils, VariationalInference
+    from .math_utils import VariationalInference
 
     results = {}
 
@@ -634,4 +634,3 @@ if __name__ == "__main__":
 get_memory_stats = PerformanceTracker.get_memory_stats
 track_operation = PerformanceTracker.track_operation
 record_metric = PerformanceTracker.record_metric
-

@@ -15,13 +15,12 @@ import sys
 import time
 import traceback
 from pathlib import Path
-from typing import List, Optional
 
 # Add current directory to Python path for imports
 sys.path.append(str(Path(__file__).parent))
 
 from config.gnn_parser import load_gnn_config
-from execution.simulation_runner import SimulationRunner, run_simulation_from_config
+from execution.simulation_runner import run_simulation_from_config
 from simulation_logging.simulation_logger import create_logger
 
 

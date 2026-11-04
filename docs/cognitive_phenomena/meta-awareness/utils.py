@@ -47,7 +47,9 @@ def precision_weighted_likelihood(A: np.ndarray, gamma: float) -> np.ndarray:
 
 
 def bayesian_model_average(
-    beta_values: np.ndarray, state_beliefs: np.ndarray, likelihood_matrix: np.ndarray | None = None
+    beta_values: np.ndarray,
+    state_beliefs: np.ndarray,
+    likelihood_matrix: np.ndarray | None = None,
 ) -> float:
     """
     Compute Bayesian model average for precision beliefs.
@@ -75,7 +77,11 @@ def compute_attentional_charge(
 
     for i in range(n_obs):  # Loop over outcomes
         for j in range(n_states):  # Loop over states
-            charge += (O_bar[i] - A_bar[i, j]) * X_bar[j] * np.log(np.clip(A[i, j], 1e-16, 1.0))
+            charge += (
+                (O_bar[i] - A_bar[i, j])
+                * X_bar[j]
+                * np.log(np.clip(A[i, j], 1e-16, 1.0))
+            )
 
     return float(charge)
 

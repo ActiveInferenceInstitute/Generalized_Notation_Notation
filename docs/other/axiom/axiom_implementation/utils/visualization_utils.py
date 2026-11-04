@@ -18,7 +18,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.colors import ListedColormap
 
 # Set style
 plt.style.use("seaborn-v0_8-darkgrid")

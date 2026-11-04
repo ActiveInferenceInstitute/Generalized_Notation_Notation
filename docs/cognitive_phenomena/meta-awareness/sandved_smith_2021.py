@@ -17,7 +17,7 @@ models described in the paper, with exact replication of the computational metho
 """
 
 import warnings
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -29,14 +29,6 @@ import sys
 
 _here = _p.Path(__file__).parent
 sys.path.insert(0, str(_here))
-from visualizations import (
-    display_results_summary,
-    plot_figure_7,
-    plot_figure_10,
-    plot_figure_11,
-    save_all_figures,
-)
-
 from utils import (
     bayesian_model_average,
     compute_attentional_charge,
@@ -44,15 +36,16 @@ from utils import (
     discrete_choice,
     expected_free_energy,
     generate_oddball_sequence,
-    normalise,
     policy_posterior,
     precision_weighted_likelihood,
     setup_likelihood_matrices,
     setup_transition_matrices,
     softmax,
-    softmax_dim2,
-    update_precision_beliefs,
     variational_free_energy,
+)
+from visualizations import (
+    display_results_summary,
+    save_all_figures,
 )
 
 

@@ -4,7 +4,6 @@ Standalone test script for ActiveInference.jl renderer.
 This script tests the renderer without importing the problematic numpy-dependent modules.
 """
 
-import json
 import sys
 from pathlib import Path
 
