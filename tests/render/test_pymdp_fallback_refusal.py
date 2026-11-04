@@ -159,3 +159,42 @@ def test_canonical_pymdp_program_is_identical_across_entry_points(
     from_processor = list(processor_output.rglob("*_pymdp.py"))
     assert len(from_directory) == len(from_processor) == 1
     assert from_directory[0].read_bytes() == from_processor[0].read_bytes()
+
+
+def test_refusal_classes_are_declared_and_emitted() -> None:
+    """The refusal taxonomy cannot drift in either direction.
+
+    Same shape as ``test_state_space_declaration_matches_registry_flags``: the
+    declaration and the emitters are pinned equal, so a new typed refusal has to be
+    registered before it can be used, and a declared class that nothing emits is
+    removed rather than left behind as a promise. Without this, a new
+    ``unsupported-<class>:`` string is exactly the kind of undeclared capability the
+    taxonomy exists to prevent.
+    """
+    import re
+
+    from gnn.render.execution_contracts import REFUSAL_CLASSES, refusal_class
+
+    # Two spellings are legitimate: the literal ``unsupported-<class>:`` and the
+    # f-string form built from the shared constant, ``{UNSUPPORTED_PREFIX}<class>:``.
+    # Both name the class explicitly, so both stay scannable.
+    pattern = re.compile(
+        r"(?:unsupported-|\{UNSUPPORTED_PREFIX\})([a-z0-9]+(?:-[a-z0-9]+)*):"
+    )
+    emitted: set[str] = set()
+    root = Path(__file__).resolve().parents[2] / "src" / "gnn"
+    for path in root.rglob("*.py"):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        emitted.update(match.group(1) for match in pattern.finditer(text))
+
+    declared = set(REFUSAL_CLASSES)
+    assert emitted - declared == set(), (
+        f"refusal classes emitted but not declared: {sorted(emitted - declared)}"
+    )
+    assert declared - emitted == set(), (
+        f"refusal classes declared but never emitted: {sorted(declared - emitted)}"
+    )
+    for declared_class in declared:
+        assert refusal_class(f"unsupported-{declared_class}: detail") == declared_class
+    assert refusal_class("unsupported-undeclared-class: detail") is None
+    assert refusal_class("unsupported-composition") is None

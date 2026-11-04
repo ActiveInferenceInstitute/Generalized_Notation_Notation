@@ -13,6 +13,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from gnn.render.admission import merge_backend_options
+from gnn.render.execution_contracts import (
+    UNSUPPORTED_PREFIX,
+    is_unsupported_message,
+    refusal_class,
+)
 from gnn.render.processor.parsing import (
     _render_succeeded,
     normalize_matrices,
@@ -381,13 +386,18 @@ def _process_single_gnn_file_basic(
         # (``{"variables": [], "connections": []}``) and reported success, writing an
         # artifact that represented no specification at all.
         refusal = (
-            f"unsupported-pomdp-extraction: {gnn_file.name} has no extractable POMDP "
-            "state space, so no pymdp or bnlearn program can be rendered from it"
+            f"{UNSUPPORTED_PREFIX}pomdp-extraction: {gnn_file.name} has no "
+            "extractable POMDP state space, so no pymdp or bnlearn program can be "
+            "rendered from it"
         )
+        # Consume the declaration rather than restating the prefix: the class is
+        # registered in REFUSAL_CLASSES, so a rename or an unregistered class is
+        # caught by the taxonomy test rather than drifting silently.
+        refusal_declared = is_unsupported_message(refusal)
         framework_results: dict[str, Any] = {
             framework: {
                 "success": False,
-                "unsupported": True,
+                "unsupported": refusal_declared,
                 "status": "unsupported",
                 "message": refusal,
                 "generated_files": [],
@@ -418,7 +428,7 @@ def _process_single_gnn_file_basic(
         else:
             # ``render_file`` refuses a spec without declared Connections; any other
             # failure is a real failure and must not be re-labelled as a refusal.
-            discopy_refused = str(discopy_message).startswith("unsupported-")
+            discopy_refused = is_unsupported_message(discopy_message)
             framework_results["discopy"] = {
                 "success": False,
                 "unsupported": discopy_refused,
@@ -450,6 +460,7 @@ def _process_single_gnn_file_basic(
             )
             result["unsupported"] = all_refused
             result["reason"] = refusal
+            result["refusal_class"] = refusal_class(refusal)
         return result
 
     except Exception as e:

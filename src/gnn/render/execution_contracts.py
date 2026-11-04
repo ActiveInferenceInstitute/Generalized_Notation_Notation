@@ -21,6 +21,45 @@ CONTROL_CONTRACTS = ("cpomdp_control_v1",)
 #: Every capability refusal starts with this prefix (``unsupported-<class>:``).
 UNSUPPORTED_PREFIX = "unsupported-"
 
+#: Declared capability-refusal classes. A class is registered here before it is
+#: emitted, so the taxonomy is readable in one place and
+#: ``tests/render/test_pymdp_fallback_refusal.py`` can pin both directions:
+#: nothing is emitted undeclared, and nothing is declared that no code emits.
+#: Each entry is the ``<class>`` in ``unsupported-<class>: <detail>``.
+REFUSAL_CLASSES = (
+    "action-composition",
+    "agent-action-composition",
+    "bnlearn",
+    "composition",
+    "continuous-state",
+    "cpomdp-control",
+    "discopy-connections",
+    "discrete-state",
+    "execution-contract",
+    "factored-continuous",
+    "nonstationary",
+    "planning",
+    "pomdp-extraction",
+    "thrml",
+)
+
+
+def refusal_class(message: object) -> str | None:
+    """The declared class of a typed capability refusal, or ``None``.
+
+    Returns the ``<class>`` from ``unsupported-<class>:`` only when it is
+    declared in :data:`REFUSAL_CLASSES`. An unregistered class is not accepted
+    silently: a refusal that nothing declared is the defect this taxonomy
+    exists to prevent.
+    """
+    if not isinstance(message, str) or not message.startswith(UNSUPPORTED_PREFIX):
+        return None
+    head, separator, _detail = message[len(UNSUPPORTED_PREFIX) :].partition(":")
+    if not separator:
+        return None
+    declared = head.strip()
+    return declared if declared in REFUSAL_CLASSES else None
+
 
 def is_unsupported_message(message: object) -> bool:
     """Whether a renderer message is a typed capability refusal.
