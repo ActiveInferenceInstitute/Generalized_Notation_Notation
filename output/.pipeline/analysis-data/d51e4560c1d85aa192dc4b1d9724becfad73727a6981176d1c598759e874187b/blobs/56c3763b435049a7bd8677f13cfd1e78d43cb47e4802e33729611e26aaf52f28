@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.13" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>05_reproducibility.md.web</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      color: light-dark(#1a1a1a, #fdfdfd);
+      background-color: #fdfdfd;
+      background-color: light-dark(#fdfdfd, #1a1a1a);
+      color-scheme: light dark;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        color-scheme: light only;
+      }
+      html, body, pre, code {
+        background-color: transparent;
+      }
+      body, a, a:visited, blockquote {
+        color: black;
+      }
+      pre, code {
+        padding: 0;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a, a:visited {
+      color: inherit;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid;
+      border-color: #e6e6e6;
+      border-color: light-dark(#e6e6e6, #4c4c4c);
+      color: #606060;
+      color: light-dark(#606060, #b6b6b6);
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid currentColor;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+    }
+    th {
+      border-top: 1px solid currentColor;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+
+<link data-template-favicon rel="icon" href="favicon.ico">
+
+<style>
+:root {
+  --brand-1: #5b6ee0;
+  --web-bg: #f8f8f8;
+  --web-surface: #ffffff;
+  --web-text: #2c3e50;
+  --web-border: #bdc3c7;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand-1: #7e8ce8;
+    --web-bg: #0f1420;
+    --web-surface: #161c2b;
+    --web-text: #e6eaf2;
+    --web-border: #2a3447;
+  }
+}
+.theorem-box {
+  border-left: 4px solid var(--brand-1);
+  background: var(--web-surface);
+  padding: 0.6em 1em;
+  margin: 1.1em 0;
+  border-radius: 0 4px 4px 0;
+}
+.theorem-box.definition { border-left-style: dashed; }
+.theorem-box > p:first-child { margin-top: 0; }
+.theorem-box > p:last-child { margin-bottom: 0; }
+.figure-long-description {
+  border: 1px solid var(--web-border);
+  border-radius: 4px;
+  margin-block: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+.figure-long-description > summary { cursor: pointer; font-weight: 700; }
+.figure-long-description > p { max-width: 80ch; overflow-wrap: anywhere; }
+.figure-exact-values { max-width: 80ch; overflow-wrap: anywhere; }
+code { overflow-wrap: anywhere; word-break: break-word; }
+pre {
+  max-width: 100%;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+pre code { overflow-wrap: inherit; white-space: inherit; word-break: inherit; }
+div.sourceCode { max-width: 100%; overflow: visible; }
+pre.sourceCode { background: #2c3e50; color: #ecf0f1; }
+pre.sourceCode code,
+pre.sourceCode code span { color: inherit; }
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+mjx-container[display="true"] { max-width: 100%; overflow: visible; }
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+.table-scroll:focus-visible {
+  outline: 3px solid var(--brand-1);
+  outline-offset: 3px;
+}
+.table-scroll > table { margin-block: 0; display: table; min-width: 100%; width: 100%; }
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+body {
+  font-family: 'Liberation Serif', 'Times New Roman', serif;
+  line-height: 1.6;
+  width: min(100%, 800px);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f8f8;
+  color: #1a1a1a;
+  overflow-wrap: break-word;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+main,
+nav,
+section,
+article,
+figure,
+figcaption {
+  min-width: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  padding: 0.65rem 0.9rem;
+  transform: translateY(-120%);
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-family: sans-serif;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.skip-link:visited {
+  color: #ffffff;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  body {
+    width: 100%;
+    max-width: 100%;
+    padding: 16px;
+  }
+
+  figure img {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 800px) {
+  body {
+    width: 100%;
+    max-width: 100vw;
+    margin: 0 auto;
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 5px;
+  overflow-wrap: anywhere;
+}
+
+code {
+  background-color: #ecf0f1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Liberation Mono', 'Courier New', monospace;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+pre {
+  background-color: #2c3e50;
+  color: #ecf0f1;
+  padding: 15px;
+  border-radius: 5px;
+  max-width: 100%;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  overflow-wrap: inherit;
+  white-space: inherit;
+  word-break: inherit;
+}
+
+div.sourceCode {
+  max-width: 100%;
+  overflow: visible;
+}
+
+pre.sourceCode {
+  background: #2c3e50;
+  color: #ecf0f1;
+}
+
+pre.sourceCode code,
+pre.sourceCode code span {
+  color: inherit;
+}
+
+pre > code.sourceCode {
+  white-space: pre-wrap;
+}
+
+pre > code.sourceCode > span {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 20px 0;
+}
+
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+.table-scroll:focus-visible {
+  outline: 3px solid #1f6f8b;
+  outline-offset: 3px;
+}
+
+.table-scroll > table {
+  margin-block: 0;
+  display: table;
+  min-width: 100%;
+  width: 100%;
+}
+
+figure {
+  max-width: 100%;
+  margin: 1.5rem 0;
+}
+
+th, td {
+  border: 1px solid #bdc3c7;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #1f6f8b;
+  color: white;
+}
+
+/* Preserve a complete inline-code header within the table's scroll region. */
+th code {
+  color: inherit;
+  background-color: transparent;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #bdc3c7;
+  border-radius: 5px;
+  margin: 20px 0;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+a {
+  color: #b91c1c;
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.14em;
+  overflow-wrap: anywhere;
+}
+
+a:visited {
+  color: #8f1d1d;
+}
+
+a:hover {
+  text-decoration-thickness: 0.14em;
+}
+
+a:focus-visible {
+  outline: 3px solid #1f6f8b;
+  outline-offset: 3px;
+}
+
+.toc {
+  background-color: #ecf0f1;
+  padding: 20px;
+  border-radius: 5px;
+  margin-bottom: 30px;
+}
+
+.toc a,
+#TOC a {
+  color: #b91c1c;
+  display: inline-block;
+  min-height: 28px;
+  line-height: 1.5;
+  padding-block: 2px;
+}
+
+.toc li,
+#TOC li {
+  margin-block: 1px;
+}
+
+.math {
+  text-align: center;
+  margin: 20px 0;
+  font-size: 1.1em;
+}
+
+mjx-container[display="true"] {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+  padding-bottom: 0.25rem;
+}
+
+.figure {
+  text-align: center;
+  margin: 30px 0;
+}
+
+.figure img {
+  max-width: 100%;
+  height: auto;
+  border: 2px solid #3498db;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* A reading column keeps prose comfortable, but dense scientific figures need
+   a larger inspection surface.  The rendered image remains responsive and the
+   explicit link opens its source-resolution asset without changing the PDF. */
+.figure-full-size-link {
+  color: inherit;
+  display: block;
+  max-width: 100%;
+  text-align: center;
+}
+
+.figure-full-size-link img {
+  cursor: zoom-in;
+  margin-bottom: 0.45rem;
+}
+
+.figure-full-size-label {
+  color: #1f6f8b;
+  display: inline-block;
+  font-family: sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+}
+
+.figure-full-size-link:focus-visible {
+  outline: 3px solid #1f6f8b;
+  outline-offset: 4px;
+}
+
+@media (min-width: 1000px) {
+  /* Wide figure links stay within the viewport but extend beyond the prose
+     column. Do not clip their labels at the narrower body boundary. */
+  body {
+    overflow-x: visible;
+  }
+
+  .figure-full-size-link {
+    left: 50%;
+    max-width: none;
+    position: relative;
+    transform: translateX(-50%);
+    width: min(1080px, calc(100vw - 3rem));
+  }
+}
+
+.figure-caption {
+  font-style: italic;
+  color: #4b5563;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.figure-long-description,
+.figure-exact-values {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+</style>
+<script data-template-source-font-loader src="assets/source-web-fonts.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<main id="main-content" tabindex="-1">
+<h1 id="sec:reproducibility">Reproducibility</h1>
+<p>Reproducibility in GNN is a source- and run-binding contract across
+the 0–24 processing steps. Fixed-source parsing and token production are
+distinct from stochastic inference, dependency provisioning, and
+environment-dependent execution. Reproducing a reported outcome requires
+the selected inputs, configuration, source revision, dependencies,
+dtype, seed, and retained command and artifact receipts. This section
+lists only commands that exist in the repository, so that a reader with
+a clean checkout can reproduce the pipeline, the validation gates, and
+this manuscript itself.</p>
+<h2 id="pipeline-smoke-run">Pipeline Smoke Run</h2>
+<p>The fastest way to confirm a working installation is to drive the
+full pipeline over the discrete model family without invoking the
+optional LLM steps:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/gnn/main.py <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-dir</span> input/gnn_files/discrete <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> /tmp/gnn-smoke <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--skip-llm</span></span></code></pre></div>
+<p>This parses the discrete GNN files, runs visualization and rendering
+across the maintained backends, and writes all artifacts under the
+chosen output directory. The <code>--skip-llm</code> flag disables the
+LLM processing step; it does not establish network isolation or
+guarantee that every other step executes. Default framework selection
+excludes the experimental targets, and dependency readiness, model-kind
+admission, configured steps, and budgets determine the actual work.
+Inspect the current-run statuses and terminal exit code (0 success, 1
+error, 2 warning); missing or unfinished required work must remain a
+non-success outcome. To exercise every registered family rather than a
+single one, drive the manifest through the model-family acceptance gate
+given below: pointing <code>--target-dir</code> at
+<code>input/gnn_files</code> covers that tree’s 12 corpus directories.
+All 9 registered family target directories lie inside that tree, so a
+single invocation reaches every registered family.</p>
+<p>The discrete family exercises the categorical kind end to end. The
+continuous linear-Gaussian kind smoke-runs the same way, and the
+contrast between the two runs is itself a check of the per-kind
+contract:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/gnn/main.py <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-dir</span> input/gnn_files/continuous <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> /tmp/gnn-smoke-continuous <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--skip-llm</span></span></code></pre></div>
+<p>This selects the continuous specifications for the same pipeline.
+Admitted, ready continuous-capable lanes can render and execute
+filtering (and, for the closed-loop exemplar, belief-steering) programs;
+categorical-only targets record <code>unsupported</code>, while
+readiness and budget failures retain their own outcomes. A reader
+comparing the two receipts sees the kind taxonomy behaving as described
+in <span class="citation"
+data-cites="sec:system_context">[@sec:system_context]</span>: same
+pipeline, same steps, per-kind rendering and execution reach.</p>
+<h2 id="validation-gates">Validation Gates</h2>
+<p>GNN provides strict gates with distinct verification scopes. The
+model-family acceptance gate runs the selected manifest families and
+evaluates their declared acceptance profiles; its receipt must record
+actual execution, unsupported and skipped work, and failures:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_model_family_acceptance.py <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> output/model_family_acceptance <span class="at">--strict</span></span></code></pre></div>
+<p>The semantic-fidelity gate verifies that a parse → serialize → parse
+round trip preserves variables, edges, dimensions, parameter shapes and
+values, parameter metadata, equations, time semantics, and ontology
+mappings across the 9 model families; the cross-framework gate profiles
+the 7 maintained backends (PyMDP, RxInfer.jl, JAX, NumPyro, PyTorch,
+ActiveInference.jl, DisCoPy) — refusing any framework outside that set —
+and records explicit compatible and unsupported statuses rather than
+silently degrading. Both write their ledgers to an output directory of
+your choosing:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_semantic_fidelity_gate.py <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> output/semantic_fidelity <span class="at">--strict</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_cross_framework_reliability.py <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> output/cross_framework <span class="at">--strict</span></span></code></pre></div>
+<p>Under <code>--strict</code>, required mismatches make these gates
+exit non-zero, so these commands double as assertions in an automated
+reproduction run. Code-quality reproducibility is enforced separately
+through the developer command reference: <code>just lint</code> runs the
+Ruff linter over <code>src</code> and <code>scripts</code>, and the
+broader <code>just quality</code> recipe chains formatting, terminology,
+documentation, type, and security checks for a full pre-commit gate.</p>
+<h2 id="manuscript-reproducibility">Manuscript Reproducibility</h2>
+<p>This manuscript is itself a reproducible artifact. Every quantitative
+value in the prose — the pipeline step count, the family and backend
+counts, the source and test inventories — is a token rather than a
+hard-coded literal, and the deterministic producer regenerates all of
+them from the tracked files at the current commit:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/z_generate_manuscript_variables.py</span></code></pre></div>
+<p>That command recomputes the {{…}} tokens, persists them to
+<code>output/data/manuscript_variables.json</code> for audit, and
+hydrates the manuscript sources into <code>output/manuscript/</code>.
+The manuscript’s own figures are rebuilt from the same token map:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python <span class="at">-m</span> scripts.manuscript_build_figures</span></code></pre></div>
+<p>The hydrated sources are then rendered to PDF by the docxology
+template’s render stage. That stage lives in a separate checkout of the
+template, with this repository checked out inside it as a real directory
+at <code>projects/active/GeneralizedNotationNotation</code> (the
+template’s analysis-read custody refuses a symlinked project); run from
+the template root:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> python scripts/pipeline/stage_03_render.py <span class="dt">\</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--project</span> GeneralizedNotationNotation</span></code></pre></div>
+<p>The render needs a LaTeX installation providing the packages listed
+in <code>manuscript/preamble.md</code> plus <code>seqsplit</code>; the
+template guards <code>seqsplit</code> with <code>\IfFileExists</code>,
+so a missing copy degrades rather than failing the build.</p>
+<p>Because the variables file is regenerated before rendering, the
+counts in the rendered PDF track the repository state at the commit
+recorded in <code>output/data/manuscript_variables.json</code>
+(ff44863dc): a code change that alters, for example, the test inventory
+(679 test files, 7074 test functions) propagates into the prose on the
+next regeneration without any manual editing.</p>
+<h2 id="reproducibility-contract">Reproducibility Contract</h2>
+<ul>
+<li>Do not cite results that cannot be regenerated or directly traced to
+a command in this repository.</li>
+<li>Keep generated outputs under <code>output/</code> and maintained
+manuscript source under <code>manuscript/</code>. Regenerate owned build
+artifacts when their inputs change, and preserve the raw command
+receipts and numerical results needed to substantiate historical
+runs.</li>
+<li>Express every quantitative claim in the prose as a double-brace
+<code>{{...}}</code> token substituted by
+<code>scripts/z_generate_manuscript_variables.py</code>, never as a
+hard-coded number.</li>
+<li>Keep private data, credentials, and unpublished sensitive details
+out of the manuscript and out of version control.</li>
+<li>Record the exact verification commands — the smoke run, the
+acceptance and fidelity gates, and <code>just lint</code> — before
+marking this manuscript publication-ready.</li>
+</ul>
+</main>
+</body>
+</html>

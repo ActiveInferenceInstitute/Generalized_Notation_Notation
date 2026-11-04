@@ -268,10 +268,6 @@ Models}
 \newtheorem{remark}[theorem]{Remark}
 \newtheorem{example}[theorem]{Example}
 
-\usepackage{fvextra}
-\fvset{breaklines=true,breakanywhere=true,breaknonspaceingroup=true,breaksymbolleft={},breaksymbolright={},breakanywheresymbolpre={},breakanywheresymbolpost={}}
-\RecustomVerbatimEnvironment{verbatim}{Verbatim}{}
-
 \begin{document}
 \begin{titlepage}
 \centering
@@ -304,7 +300,7 @@ Models}
 \centering
 \includegraphics[width=1\linewidth,height=0.5\textheight,keepaspectratio,alt={The
 GeneralizedNotationNotation (GNN) pipeline at a glance, generated from
-the producer's token map at commit ff44863dc. A plain-text specification
+the producer's token map at commit 1def0ac30. A plain-text specification
 --- the StateSpaceBlock declaring the model's tensors, A, B, C, D, and E
 for the discrete categorical kind of eq.~ through eq.~ and its own
 matrix vocabulary for the other model kinds --- is parsed (Step 3),
@@ -325,7 +321,7 @@ registered render backends with 12 render targets having Step 12
 execution adapters, and 164 Model Context Protocol
 tools.}]{../figures/gnn_graphical_abstract.png}
 \caption{The GeneralizedNotationNotation (GNN) pipeline at a glance,
-generated from the producer's token map at commit ff44863dc. A
+generated from the producer's token map at commit 1def0ac30. A
 plain-text specification --- the \protect\texttt{StateSpaceBlock}
 declaring the model's tensors, \protect\texttt{A}, \protect\texttt{B},
 \protect\texttt{C}, \protect\texttt{D}, and \protect\texttt{E} for the
@@ -645,14 +641,11 @@ verified on JAX and RxInfer in the v4 acceptance ledger;
 committed models.}\label{tbl:model_kinds}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-M\allowbreak{}o\allowbreak{}d\allowbreak{}e\allowbreak{}l
-k\allowbreak{}i\allowbreak{}n\allowbreak{}d
+Model kind
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-N\allowbreak{}o\allowbreak{}t\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n
-b\allowbreak{}l\allowbreak{}o\allowbreak{}c\allowbreak{}k
+Notation block
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-E\allowbreak{}x\allowbreak{}e\allowbreak{}m\allowbreak{}p\allowbreak{}l\allowbreak{}a\allowbreak{}r
-f\allowbreak{}o\allowbreak{}l\allowbreak{}d\allowbreak{}e\allowbreak{}r
+Exemplar folder
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
 Renderer(s)
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
@@ -662,14 +655,11 @@ Executor(s)
 \endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-M\allowbreak{}o\allowbreak{}d\allowbreak{}e\allowbreak{}l
-k\allowbreak{}i\allowbreak{}n\allowbreak{}d
+Model kind
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-N\allowbreak{}o\allowbreak{}t\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n
-b\allowbreak{}l\allowbreak{}o\allowbreak{}c\allowbreak{}k
+Notation block
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-E\allowbreak{}x\allowbreak{}e\allowbreak{}m\allowbreak{}p\allowbreak{}l\allowbreak{}a\allowbreak{}r
-f\allowbreak{}o\allowbreak{}l\allowbreak{}d\allowbreak{}e\allowbreak{}r
+Exemplar folder
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
 Renderer(s)
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
@@ -1036,7 +1026,7 @@ from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, which
 mirrors the live step registry. Parsing (Step 3) precedes many later
 steps. Optional artifact enrichments are documented separately and are
 not shown as required edges. The figure is generated from
-src/gnn/STEP\_INDEX.md at commit ff44863dc; its footer restates the step
+src/gnn/STEP\_INDEX.md at commit 1def0ac30; its footer restates the step
 count, the number of required prerequisites, and the layout
 rule.}]{../figures/gnn_pipeline_dag.png}
 \caption{The 25-step GNN processing pipeline as a directed acyclic
@@ -1048,7 +1038,7 @@ Dependency Graph block of \protect\breaktt{src/gnn/STEP\_INDEX.md}, which
 mirrors the live step registry. Parsing (Step 3) precedes many later
 steps. Optional artifact enrichments are documented separately and are
 not shown as required edges. The figure is generated from
-\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit ff44863dc; its footer
+\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit 1def0ac30; its footer
 restates the step count, the number of required prerequisites, and the
 layout rule.}\label{fig:pipeline}
 \end{figure}
@@ -1070,21 +1060,21 @@ index at every build, so it cannot drift from the code it
 describes.}\label{tbl:pipeline_steps}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedleft
-S\allowbreak{}t\allowbreak{}e\allowbreak{}p
+Step
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-M\allowbreak{}o\allowbreak{}d\allowbreak{}u\allowbreak{}l\allowbreak{}e
+Module
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-P\allowbreak{}u\allowbreak{}r\allowbreak{}p\allowbreak{}o\allowbreak{}s\allowbreak{}e
+Purpose
 \end{minipage} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedleft
-S\allowbreak{}t\allowbreak{}e\allowbreak{}p
+Step
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-M\allowbreak{}o\allowbreak{}d\allowbreak{}u\allowbreak{}l\allowbreak{}e
+Module
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-P\allowbreak{}u\allowbreak{}r\allowbreak{}p\allowbreak{}o\allowbreak{}s\allowbreak{}e
+Purpose
 \end{minipage} \\
 \midrule\noalign{}
 \endhead
@@ -1175,7 +1165,7 @@ provide evidence of agreement among the projections. The executable node
 summarizes 12 of 12 registered render targets with implemented Step 12
 execution adapters and previews three by name; execution depends on
 runtime readiness, admitted model kind, and a successful source-bound
-run receipt. Counts are producer tokens at commit ff44863dc, and the
+run receipt. Counts are producer tokens at commit 1def0ac30, and the
 panel is generated by scripts/manuscript\_fig\_triple\_play.py.
 Take-away: a model is authored once and then read, seen, and run from
 that single source.}]{../figures/gnn_triple_play.png}
@@ -1189,7 +1179,7 @@ projections. The executable node summarizes 12 of 12 registered render
 targets with implemented Step 12 execution adapters and previews three
 by name; execution depends on runtime readiness, admitted model kind,
 and a successful source-bound run receipt. Counts are producer tokens at
-commit ff44863dc, and the panel is generated by
+commit 1def0ac30, and the panel is generated by
 \protect\breaktt{scripts/manuscript\_fig\_triple\_play.py}. Take-away: a
 model is authored once and then read, seen, and run from that single
 source.}\label{fig:triple_play}
@@ -1330,19 +1320,11 @@ table against tbl.~\ref{tbl:model_families}, which shows which families
 actually target each
 backend.}\label{tbl:backend_registry}\tabularnewline
 \toprule\noalign{}
-R\allowbreak{}e\allowbreak{}g\allowbreak{}i\allowbreak{}s\allowbreak{}t\allowbreak{}r\allowbreak{}y
-k\allowbreak{}e\allowbreak{}y &
-B\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d
-&
-E\allowbreak{}x\allowbreak{}e\allowbreak{}c\allowbreak{}u\allowbreak{}t\allowbreak{}e\allowbreak{}s \\
+Registry key & Backend & Executes \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-R\allowbreak{}e\allowbreak{}g\allowbreak{}i\allowbreak{}s\allowbreak{}t\allowbreak{}r\allowbreak{}y
-k\allowbreak{}e\allowbreak{}y &
-B\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d
-&
-E\allowbreak{}x\allowbreak{}e\allowbreak{}c\allowbreak{}u\allowbreak{}t\allowbreak{}e\allowbreak{}s \\
+Registry key & Backend & Executes \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -1379,29 +1361,11 @@ Step-12 executor. Read with tbl.~\ref{tbl:model_kinds}, which groups the
 same flags by model
 kind.}\label{tbl:framework_capability}\tabularnewline
 \toprule\noalign{}
-F\allowbreak{}r\allowbreak{}a\allowbreak{}m\allowbreak{}e\allowbreak{}w\allowbreak{}o\allowbreak{}r\allowbreak{}k
-&
-D\allowbreak{}i\allowbreak{}s\allowbreak{}c\allowbreak{}r\allowbreak{}e\allowbreak{}t\allowbreak{}e
-r\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}e\allowbreak{}r
-&
-C\allowbreak{}o\allowbreak{}n\allowbreak{}t\allowbreak{}i\allowbreak{}n\allowbreak{}u\allowbreak{}o\allowbreak{}u\allowbreak{}s
-r\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}e\allowbreak{}r
-&
-E\allowbreak{}x\allowbreak{}e\allowbreak{}c\allowbreak{}u\allowbreak{}t\allowbreak{}o\allowbreak{}r
-s\allowbreak{}t\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}s \\
+Framework & Discrete render & Continuous render & Executor status \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-F\allowbreak{}r\allowbreak{}a\allowbreak{}m\allowbreak{}e\allowbreak{}w\allowbreak{}o\allowbreak{}r\allowbreak{}k
-&
-D\allowbreak{}i\allowbreak{}s\allowbreak{}c\allowbreak{}r\allowbreak{}e\allowbreak{}t\allowbreak{}e
-r\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}e\allowbreak{}r
-&
-C\allowbreak{}o\allowbreak{}n\allowbreak{}t\allowbreak{}i\allowbreak{}n\allowbreak{}u\allowbreak{}o\allowbreak{}u\allowbreak{}s
-r\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}e\allowbreak{}r
-&
-E\allowbreak{}x\allowbreak{}e\allowbreak{}c\allowbreak{}u\allowbreak{}t\allowbreak{}o\allowbreak{}r
-s\allowbreak{}t\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}s \\
+Framework & Discrete render & Continuous render & Executor status \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -1438,7 +1402,7 @@ tan row (Stan, ngc-learn) is declared by that family but sits outside
 the maintained set, so it is never profiled; a red Render-Subdir cell
 would mean a registry entry with no subdirectory. The table is read
 directly from src/gnn/render/framework\_registry.py and the model-family
-manifest at commit ff44863dc, and its footer summarizes the row counts.
+manifest at commit 1def0ac30, and its footer summarizes the row counts.
 Take-away: registration, render presence, and profiling status are three
 different claims, and the table keeps them
 apart.}]{../figures/gnn_backend_capability_matrix.png}
@@ -1452,7 +1416,7 @@ declared by that family but sits outside the maintained set, so it is
 never profiled; a red Render-Subdir cell would mean a registry entry
 with no subdirectory. The table is read directly from
 \protect\breaktt{src/gnn/render/framework\_registry.py} and the
-model-family manifest at commit ff44863dc, and its footer summarizes the
+model-family manifest at commit 1def0ac30, and its footer summarizes the
 row counts. Take-away: registration, render presence, and profiling
 status are three different claims, and the table keeps them
 apart.}\label{fig:backend_matrix}
@@ -1657,7 +1621,7 @@ Auto-Injection}\label{reproducibility-and-auto-injection}
 
 Every count reported in this manuscript is emitted by the producer
 \breaktt{scripts/z\_generate\_manuscript\_variables.py} from the
-repository state at commit ff44863dc, not typed by hand. The producer
+repository state at commit 1def0ac30, not typed by hand. The producer
 reads that commit's source surfaces directly --- the step modules, the
 source tree, the model-family manifest, and the framework registry ---
 together with the project's maintained ledgers, notably the Model
@@ -1706,7 +1670,7 @@ unobserved worker internals.
 This section reports what the project has actually produced and how each
 quantitative claim is grounded. Every number below is substituted at
 render time from the deterministic producer, which reads the repository
-state at commit ff44863dc, so each figure here is regenerated from the
+state at commit 1def0ac30, so each figure here is regenerated from the
 artifacts it describes rather than transcribed.
 
 \subsection{Model-Family Coverage}\label{model-family-coverage}
@@ -1767,21 +1731,21 @@ is) and fig.~\ref{fig:family_matrix} (the same coverage as a
 matrix).}\label{tbl:model_families}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-F\allowbreak{}a\allowbreak{}m\allowbreak{}i\allowbreak{}l\allowbreak{}y
+Family
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-F\allowbreak{}r\allowbreak{}a\allowbreak{}m\allowbreak{}e\allowbreak{}w\allowbreak{}o\allowbreak{}r\allowbreak{}k\allowbreak{}s
+Frameworks
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-D\allowbreak{}e\allowbreak{}s\allowbreak{}c\allowbreak{}r\allowbreak{}i\allowbreak{}p\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n
+Description
 \end{minipage} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-F\allowbreak{}a\allowbreak{}m\allowbreak{}i\allowbreak{}l\allowbreak{}y
+Family
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-F\allowbreak{}r\allowbreak{}a\allowbreak{}m\allowbreak{}e\allowbreak{}w\allowbreak{}o\allowbreak{}r\allowbreak{}k\allowbreak{}s
+Frameworks
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-D\allowbreak{}e\allowbreak{}s\allowbreak{}c\allowbreak{}r\allowbreak{}i\allowbreak{}p\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n
+Description
 \end{minipage} \\
 \midrule\noalign{}
 \endhead
@@ -1827,7 +1791,7 @@ deliberately sparse --- most families declare a single backend, and only
 continuous, discrete, and gridworld declare several. Read it as declared
 intent, not as profiled outcomes: the gates described below supply the
 outcomes. The matrix is generated from the two registries at commit
-ff44863dc.}]{../figures/gnn_family_framework_matrix.png}
+1def0ac30.}]{../figures/gnn_family_framework_matrix.png}
 \caption{Model-family coverage across the registered rendering backends:
 one row per family from
 \protect\breaktt{input/model\_family\_manifest.json}, one column per
@@ -1839,7 +1803,7 @@ families declare a single backend, and only continuous, discrete, and
 gridworld declare several. Read it as declared intent, not as profiled
 outcomes: the gates described below supply the outcomes. The matrix is
 generated from the two registries at commit
-ff44863dc.}\label{fig:family_matrix}
+1def0ac30.}\label{fig:family_matrix}
 \end{figure}
 
 These families are not illustrative prose: they are the inputs over
@@ -2000,7 +1964,7 @@ claims.
 
 The repository's scale is itself evidence of the surface that the gates
 and pipeline cover, and it is reported in fig.~\ref{fig:repo_metrics}
-directly from the tracked files at commit ff44863dc.
+directly from the tracked files at commit 1def0ac30.
 
 \begin{figure}
 \centering
@@ -2010,7 +1974,7 @@ backends, render-target execution adapters, Model Context Protocol
 tools, source packages, test files, example models, and documentation
 files. Every bar is annotated with its exact value, and every value is a
 producer token read from output/data/manuscript\_variables.json at
-commit ff44863dc --- the same token map that substitutes the prose
+commit 1def0ac30 --- the same token map that substitutes the prose
 counts. The figure-freshness suite binds the committed image digest and
 its recorded producer inputs and counts; semantic content and visual
 correctness require their own review. The two backend bars are
@@ -2026,7 +1990,7 @@ Model Context Protocol tools, source packages, test files, example
 models, and documentation files. Every bar is annotated with its exact
 value, and every value is a producer token read from
 \protect\breaktt{output/data/manuscript\_variables.json} at commit
-ff44863dc --- the same token map that substitutes the prose counts. The
+1def0ac30 --- the same token map that substitutes the prose counts. The
 figure-freshness suite binds the committed image digest and its recorded
 producer inputs and counts; semantic content and visual correctness
 require their own review. The two backend bars are deliberately
@@ -2038,7 +2002,7 @@ Read the chart as the scale of the surface the pipeline maintains, not
 as a quality measure.}\label{fig:repo_metrics}
 \end{figure}
 
-The test suite comprises 679 test files containing 7074 test functions,
+The test suite comprises 679 test files containing 7078 test functions,
 exercising a source base of 777 Python files across 44 packages (233139
 lines of source). The pipeline's step modules --- the thin orchestrators
 named in tbl.~\ref{tbl:pipeline_steps} --- number 25, one per numbered
@@ -2246,9 +2210,9 @@ a missing copy degrades rather than failing the build.
 
 Because the variables file is regenerated before rendering, the counts
 in the rendered PDF track the repository state at the commit recorded in
-\breaktt{output/data/manuscript\_variables.json} (ff44863dc): a code
+\breaktt{output/data/manuscript\_variables.json} (1def0ac30): a code
 change that alters, for example, the test inventory (679 test files,
-7074 test functions) propagates into the prose on the next regeneration
+7078 test functions) propagates into the prose on the next regeneration
 without any manual editing.
 
 \subsection{Reproducibility Contract}\label{reproducibility-contract}
@@ -2563,17 +2527,17 @@ tbl.~\ref{tbl:actinf_symbols}
 details.}\label{tbl:gnn_constructs}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-C\allowbreak{}o\allowbreak{}n\allowbreak{}s\allowbreak{}t\allowbreak{}r\allowbreak{}u\allowbreak{}c\allowbreak{}t
+Construct
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-M\allowbreak{}e\allowbreak{}a\allowbreak{}n\allowbreak{}i\allowbreak{}n\allowbreak{}g
+Meaning
 \end{minipage} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-C\allowbreak{}o\allowbreak{}n\allowbreak{}s\allowbreak{}t\allowbreak{}r\allowbreak{}u\allowbreak{}c\allowbreak{}t
+Construct
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-M\allowbreak{}e\allowbreak{}a\allowbreak{}n\allowbreak{}i\allowbreak{}n\allowbreak{}g
+Meaning
 \end{minipage} \\
 \midrule\noalign{}
 \endhead
@@ -2671,17 +2635,17 @@ below are what make that mapping machine-checkable
 downstream.}\label{tbl:actinf_symbols}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-S\allowbreak{}y\allowbreak{}m\allowbreak{}b\allowbreak{}o\allowbreak{}l
+Symbol
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-M\allowbreak{}e\allowbreak{}a\allowbreak{}n\allowbreak{}i\allowbreak{}n\allowbreak{}g
+Meaning
 \end{minipage} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-S\allowbreak{}y\allowbreak{}m\allowbreak{}b\allowbreak{}o\allowbreak{}l
+Symbol
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-M\allowbreak{}e\allowbreak{}a\allowbreak{}n\allowbreak{}i\allowbreak{}n\allowbreak{}g
+Meaning
 \end{minipage} \\
 \midrule\noalign{}
 \endhead

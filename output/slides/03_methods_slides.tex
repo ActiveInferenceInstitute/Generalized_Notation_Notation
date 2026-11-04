@@ -142,48 +142,6 @@
 \usepackage{listings}
 \lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible}
 
-\usepackage{fvextra}
-\fvset{breaklines=true,breakanywhere=true,breaknonspaceingroup=true,breaksymbolleft={},breaksymbolright={},breakanywheresymbolpre={},breakanywheresymbolpost={}}
-\RecustomVerbatimEnvironment{verbatim}{Verbatim}{}
-
-\makeatletter
-\newbox\archive@titlebox
-\newdimen\archive@available
-\newcommand*\archivefigurebounded[1]{%
-  \sbox\pandoc@box{#1}%
-  \archive@available=\textheight%
-  \ifx\beamer@frametitle\@empty\else%
-    \setbox\archive@titlebox=\vbox{\vbox{}{\parskip0pt\usebeamertemplate***{frametitle}\vskip0.25em}}%
-    \advance\archive@available by-\ht\archive@titlebox%
-    \advance\archive@available by-\dp\archive@titlebox%
-  \fi%
-  \advance\archive@available by-\beamer@frametopskip%
-  \advance\archive@available by-2\baselineskip%
-  \ifdim\archive@available<1pt%
-    \PackageError{template}{Archive image frame has no title-safe image area}{}%
-  \fi%
-  \Gscale@div\@tempa{\archive@available}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
-  \Gscale@div\@tempb{0.98\linewidth}{\wd\pandoc@box}%
-  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi%
-  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
-  \else\usebox{\pandoc@box}\fi%
-}
-\newcommand*\archivefigurecaptionnumber[2]{#2}
-\newenvironment{archivecaptionframe}{\par\begingroup}{\par\endgroup}
-\newenvironment{archiveimageframe}{\par\begingroup\centering\let\pandocbounded\archivefigurebounded}{\par\endgroup}
-\ifdefined\pandocbounded
-\renewcommand*\pandocbounded[1]{%
-  \sbox\pandoc@box{#1}%
-  \Gscale@div\@tempa{0.40\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
-  \Gscale@div\@tempb{0.98\linewidth}{\wd\pandoc@box}%
-  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi%
-  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
-  \else\usebox{\pandoc@box}%
-  \fi%
-}
-\fi
-\makeatother
-
 % Slide layout defaults for warning-clean scientific decks.
 \usepackage{etoolbox}
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{}
@@ -400,19 +358,11 @@ table against tbl.~5, which shows which families
 actually target each
 backend.}\label{tbl:backend_registry}\tabularnewline
 \toprule\noalign{}
-R\allowbreak{}e\allowbreak{}g\allowbreak{}i\allowbreak{}s\allowbreak{}t\allowbreak{}r\allowbreak{}y
-k\allowbreak{}e\allowbreak{}y &
-B\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d
-&
-E\allowbreak{}x\allowbreak{}e\allowbreak{}c\allowbreak{}u\allowbreak{}t\allowbreak{}e\allowbreak{}s \\
+Registry key & Backend & Executes \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-R\allowbreak{}e\allowbreak{}g\allowbreak{}i\allowbreak{}s\allowbreak{}t\allowbreak{}r\allowbreak{}y
-k\allowbreak{}e\allowbreak{}y &
-B\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d
-&
-E\allowbreak{}x\allowbreak{}e\allowbreak{}c\allowbreak{}u\allowbreak{}t\allowbreak{}e\allowbreak{}s \\
+Registry key & Backend & Executes \\
 \midrule\noalign{}
 \endhead
 \texttt{pymdp} & PyMDP & yes \\
@@ -423,30 +373,12 @@ E\allowbreak{}x\allowbreak{}e\allowbreak{}c\allowbreak{}u\allowbreak{}t\allowbre
 \texttt{pytorch} & PyTorch & yes \\
 \texttt{numpyro} & NumPyro & yes \\
 \texttt{stan} & Stan & yes \\
-\bottomrule\noalign{}
-\end{longtable}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Rendering to Multiple Backends}
-
-{\def\LTcaptype{none} % do not increment counter
-\begin{longtable}[]{@{}lll@{}}
-\toprule\noalign{}
-R\allowbreak{}e\allowbreak{}g\allowbreak{}i\allowbreak{}s\allowbreak{}t\allowbreak{}r\allowbreak{}y
-k\allowbreak{}e\allowbreak{}y &
-B\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d
-&
-E\allowbreak{}x\allowbreak{}e\allowbreak{}c\allowbreak{}u\allowbreak{}t\allowbreak{}e\allowbreak{}s \\
-\midrule\noalign{}
-\endhead
 \texttt{bnlearn} & bnlearn & yes \\
 \texttt{cpomdp} & cpomdp & yes \\
 \texttt{thrml} & THRML & yes \\
 \texttt{ngclearn} & ngc-learn & yes \\
 \bottomrule\noalign{}
 \end{longtable}
-}
 
 \end{frame}
 
@@ -472,29 +404,11 @@ Step-12 executor. Read with tbl.~1, which groups the
 same flags by model
 kind.}\label{tbl:framework_capability}\tabularnewline
 \toprule\noalign{}
-F\allowbreak{}r\allowbreak{}a\allowbreak{}m\allowbreak{}e\allowbreak{}w\allowbreak{}o\allowbreak{}r\allowbreak{}k
-&
-D\allowbreak{}i\allowbreak{}s\allowbreak{}c\allowbreak{}r\allowbreak{}e\allowbreak{}t\allowbreak{}e
-r\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}e\allowbreak{}r
-&
-C\allowbreak{}o\allowbreak{}n\allowbreak{}t\allowbreak{}i\allowbreak{}n\allowbreak{}u\allowbreak{}o\allowbreak{}u\allowbreak{}s
-r\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}e\allowbreak{}r
-&
-E\allowbreak{}x\allowbreak{}e\allowbreak{}c\allowbreak{}u\allowbreak{}t\allowbreak{}o\allowbreak{}r
-s\allowbreak{}t\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}s \\
+Framework & Discrete render & Continuous render & Executor status \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-F\allowbreak{}r\allowbreak{}a\allowbreak{}m\allowbreak{}e\allowbreak{}w\allowbreak{}o\allowbreak{}r\allowbreak{}k
-&
-D\allowbreak{}i\allowbreak{}s\allowbreak{}c\allowbreak{}r\allowbreak{}e\allowbreak{}t\allowbreak{}e
-r\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}e\allowbreak{}r
-&
-C\allowbreak{}o\allowbreak{}n\allowbreak{}t\allowbreak{}i\allowbreak{}n\allowbreak{}u\allowbreak{}o\allowbreak{}u\allowbreak{}s
-r\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}e\allowbreak{}r
-&
-E\allowbreak{}x\allowbreak{}e\allowbreak{}c\allowbreak{}u\allowbreak{}t\allowbreak{}o\allowbreak{}r
-s\allowbreak{}t\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}s \\
+Framework & Discrete render & Continuous render & Executor status \\
 \midrule\noalign{}
 \endhead
 PyMDP & yes & unsupported & executor \\
@@ -505,53 +419,27 @@ DisCoPy & yes & unsupported & executor \\
 PyTorch & yes & yes & executor \\
 NumPyro & yes & yes & executor \\
 Stan & yes & yes & executor \\
-\bottomrule\noalign{}
-\end{longtable}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Rendering to Multiple Backends}
-
-{\def\LTcaptype{none} % do not increment counter
-\begin{longtable}[]{@{}llll@{}}
-\toprule\noalign{}
-F\allowbreak{}r\allowbreak{}a\allowbreak{}m\allowbreak{}e\allowbreak{}w\allowbreak{}o\allowbreak{}r\allowbreak{}k
-&
-D\allowbreak{}i\allowbreak{}s\allowbreak{}c\allowbreak{}r\allowbreak{}e\allowbreak{}t\allowbreak{}e
-r\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}e\allowbreak{}r
-&
-C\allowbreak{}o\allowbreak{}n\allowbreak{}t\allowbreak{}i\allowbreak{}n\allowbreak{}u\allowbreak{}o\allowbreak{}u\allowbreak{}s
-r\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}e\allowbreak{}r
-&
-E\allowbreak{}x\allowbreak{}e\allowbreak{}c\allowbreak{}u\allowbreak{}t\allowbreak{}o\allowbreak{}r
-s\allowbreak{}t\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}s \\
-\midrule\noalign{}
-\endhead
 bnlearn & yes & unsupported & executor \\
 cpomdp & no & yes & executor \\
 THRML & yes & unsupported & executor \\
 ngc-learn & no & yes & executor \\
 \bottomrule\noalign{}
 \end{longtable}
-}
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Rendering to Multiple Backends}
 The registry surface of these backends --- registry key, display name,
 implementation language, and which of them the cross-framework gate
-compares --- is summarized in fig.~4; the
+compares --- is summarized in fig.~\ref{fig:backend_matrix}; the
 family-by-backend coverage itself is shown in
 fig.~6.
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Rendering to Multiple Backends}
-
-\refstepcounter{figure}\label{fig:backend_matrix}
-
-\begin{archiveimageframe}
-
+\begin{figure}
+\centering
 \includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={The
 GNN rendering backend registry as a table: one row per registered
 backend, with its registry key, display name, implementation language,
@@ -562,57 +450,25 @@ tan row (Stan, ngc-learn) is declared by that family but sits outside
 the maintained set, so it is never profiled; a red Render-Subdir cell
 would mean a registry entry with no subdirectory. The table is read
 directly from src/gnn/render/framework\_registry.py and the model-family
-manifest at commit ff44863dc, and its footer summarizes the row counts.
+manifest at commit 1def0ac30, and its footer summarizes the row counts.
 Take-away: registration, render presence, and profiling status are three
 different claims, and the table keeps them
 apart.}]{../figures/gnn_backend_capability_matrix.png}
-
-\end{archiveimageframe}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Rendering to Multiple Backends}
-
-\begin{archivecaptionframe}
-
-\figurename~4:\ The
-GNN rendering backend registry as a table: one row per registered
-backend, with its registry key, display name, implementation language,
-whether a render-output subdirectory exists under
-\texttt{src/gnn/render/}, and its role in the cross-framework reference
-comparison. Amber rows are the backends the reliability gate profiles
-for the continuous family; the tan row (Stan, ngc-learn) is declared by
-that
-
-\end{archivecaptionframe}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Rendering to Multiple Backends}
-
-\begin{archivecaptionframe}
-
-family but sits outside the maintained set, so it is never profiled; a
-red Render-Subdir cell would mean a registry entry with no subdirectory.
-The table is read directly from
-\breaktt{src/gnn/render/framework\_registry.py} and the model-family
-manifest at commit ff44863dc, and its footer summarizes the row counts.
-Take-away: registration, render presence, and profiling status are three
-different claims, and
-
-\end{archivecaptionframe}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Rendering to Multiple Backends}
-
-\begin{archivecaptionframe}
-
-the table keeps them apart.
-
-\end{archivecaptionframe}
-
-
+\caption{The GNN rendering backend registry as a table: one row per
+registered backend, with its registry key, display name, implementation
+language, whether a render-output subdirectory exists under
+\protect\texttt{src/gnn/render/}, and its role in the cross-framework
+reference comparison. Amber rows are the backends the reliability gate
+profiles for the continuous family; the tan row (Stan, ngc-learn) is
+declared by that family but sits outside the maintained set, so it is
+never profiled; a red Render-Subdir cell would mean a registry entry
+with no subdirectory. The table is read directly from
+\protect\breaktt{src/gnn/render/framework\_registry.py} and the
+model-family manifest at commit 1def0ac30, and its footer summarizes the
+row counts. Take-away: registration, render presence, and profiling
+status are three different claims, and the table keeps them
+apart.}\label{fig:backend_matrix}
+\end{figure}
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Rendering by Model Kind}
@@ -783,18 +639,15 @@ touching any real cluster. Each contract only generates and validates
 Contracts}
 data; none performs live mutation, and each is governed by a strict
 acceptance gate and exercised through dedicated Model Context Protocol
-tools. fig.~5 shows how the three contracts
+tools. fig.~\ref{fig:orchestration} shows how the three contracts
 compose into one inspectable orchestration surface.
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Long-Running Orchestration
 Contracts}
-
-\refstepcounter{figure}\label{fig:orchestration}
-
-\begin{archiveimageframe}
-
+\begin{figure}
+\centering
 \includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={The
 three safe-by-design orchestration contracts introduced in GNN 3.0.0,
 side by side inside the dashed boundary that states their shared
@@ -810,55 +663,21 @@ the acceptance gates and the Model Context Protocol tools that exercise
 them are described in the text above. Take-away: long-running
 orchestration gains capability only as fast as it becomes
 inspectable.}]{../figures/gnn_orchestration.png}
-
-\end{archiveimageframe}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Long-Running Orchestration
-Contracts}
-
-\begin{archivecaptionframe}
-
-\figurename~5:\ The
-three safe-by-design orchestration contracts introduced in GNN 3.0.0,
-side by side inside the dashed boundary that states their shared
-invariant: generate and validate data only, never mutate live
+\caption{The three safe-by-design orchestration contracts introduced in
+GNN 3.0.0, side by side inside the dashed boundary that states their
+shared invariant: generate and validate data only, never mutate live
 infrastructure. Each column names the contract's source module under
-\breaktt{src/gnn/pipeline/} and chains its stages top to bottom ---
-StreamManifest, ExecutionTrace, and replay for durable observation
-streams;
-
-\end{archivecaptionframe}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Long-Running Orchestration
-Contracts}
-
-\begin{archivecaptionframe}
-
-checkpoint, resume, status, and safe cleanup for resumable run sessions;
-generate, static security review, and rollback for container plans.
-Arrows give the order the stages run in, and nothing exits the boundary.
-The panel is a fixed-layout drawing of the three contracts; the
-acceptance gates and the Model Context Protocol tools that exercise them
-are described in the text above. Take-away: long-running
-
-\end{archivecaptionframe}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Long-Running Orchestration
-Contracts}
-
-\begin{archivecaptionframe}
-
-orchestration gains capability only as fast as it becomes inspectable.
-
-\end{archivecaptionframe}
-
-
+\protect\breaktt{src/gnn/pipeline/} and chains its stages top to bottom
+--- StreamManifest, ExecutionTrace, and replay for durable observation
+streams; checkpoint, resume, status, and safe cleanup for resumable run
+sessions; generate, static security review, and rollback for container
+plans. Arrows give the order the stages run in, and nothing exits the
+boundary. The panel is a fixed-layout drawing of the three contracts;
+the acceptance gates and the Model Context Protocol tools that exercise
+them are described in the text above. Take-away: long-running
+orchestration gains capability only as fast as it becomes
+inspectable.}\label{fig:orchestration}
+\end{figure}
 \end{frame}
 
 \subsection{Analysis, Visualization, and
@@ -894,7 +713,7 @@ Auto-Injection}\label{reproducibility-and-auto-injection}
 Auto-Injection}
 Every count reported in this manuscript is emitted by the producer
 \breaktt{scripts/z\_generate\_manuscript\_variables.py} from the
-repository state at commit ff44863dc, not typed by hand. The producer
+repository state at commit 1def0ac30, not typed by hand. The producer
 reads that commit's source surfaces directly --- the step modules, the
 source tree, the model-family manifest, and the framework registry ---
 together with the project's maintained ledgers, notably the Model
