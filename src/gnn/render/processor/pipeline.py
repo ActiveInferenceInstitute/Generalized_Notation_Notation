@@ -381,10 +381,10 @@ def _process_single_gnn_file_basic(
         # PyMDP and bnlearn are rendered only from an extracted POMDP state space.
         # This path runs when extraction produced nothing, so there is no model to
         # render: refuse in the established typed-refusal family rather than emitting
-        # a program. The former fallback called the legacy ``generate_pymdp_code`` /
+        # a program. The earlier fallback called the ``generate_pymdp_code`` /
         # ``generate_bnlearn_code`` templates with an empty model
         # (``{"variables": [], "connections": []}``) and reported success, writing an
-        # artifact that represented no specification at all.
+        # artifact that represented no specification at all. See CHANGELOG, Unreleased.
         refusal = (
             f"{UNSUPPORTED_PREFIX}pomdp-extraction: {gnn_file.name} has no "
             "extractable POMDP state space, so no pymdp or bnlearn program can be "
@@ -446,9 +446,7 @@ def _process_single_gnn_file_basic(
             "success": rendered,
             "status": "rendered" if rendered else "unsupported",
             "message": (
-                f"Generated {len(generated_files)} files"
-                if rendered
-                else refusal
+                f"Generated {len(generated_files)} files" if rendered else refusal
             ),
             "generated_files": generated_files,
             "framework_results": framework_results,

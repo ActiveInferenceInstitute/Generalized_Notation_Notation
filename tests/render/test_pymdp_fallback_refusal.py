@@ -171,8 +171,6 @@ def test_refusal_classes_are_declared_and_emitted() -> None:
     ``unsupported-<class>:`` string is exactly the kind of undeclared capability the
     taxonomy exists to prevent.
     """
-    import re
-
     from gnn.render.execution_contracts import REFUSAL_CLASSES, refusal_class
 
     # Two spellings are legitimate: the literal ``unsupported-<class>:`` and the

@@ -165,9 +165,7 @@ def _write_render_receipt(
     failed: List[Dict[str, str]] = []
     unsupported: List[Dict[str, str]] = []
     for source, record in merged.items():
-        file_success = bool(
-            record.get("overall_success", record.get("success", False))
-        )
+        file_success = bool(record.get("overall_success", record.get("success", False)))
         successful += file_success
         if not file_success and record.get("unsupported"):
             unsupported_files += 1

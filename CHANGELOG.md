@@ -24,6 +24,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   `9d77cd47fd170e1e4071c0944d3c5ee3cb7a4886`, the companion revision this
   adoption was reviewed against.
 
+### Render: refuse an unextracted specification instead of emitting a program
+
+- The per-file path in `gnn.render.processor.pipeline` no longer calls the
+  `generate_pymdp_code` / `generate_bnlearn_code` templates with an empty model
+  (`{"variables": [], "connections": []}`) when POMDP extraction returns nothing.
+  That path reported success and wrote a program with no matrices, no section
+  content and no connection data from a specification it had never parsed. It now
+  returns a typed refusal, `unsupported-pomdp-extraction: <file> …`, records the
+  framework as `status: "unsupported"` with no generated files, and the render
+  receipt counts it under `unsupported_files` rather than `failed_files`.
+- `gnn.render.execution_contracts` declares the refusal classes the renderers may
+  emit (`REFUSAL_CLASSES`) and `refusal_class(message)` returns a class only for a
+  declared one; a test pins both directions, so a new refusal has to be registered
+  before it can be used and a declared class that nothing emits is removed.
+- DisCoPy is unaffected: it renders from declared `Connections`, so a specification
+  may legitimately render on DisCoPy while PyMDP and bnlearn refuse.
+
 ### Reader section-heading alignment
 
 - Key every markdown section reader by the canonical heading name. A shared
