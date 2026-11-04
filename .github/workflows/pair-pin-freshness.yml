@@ -1,9 +1,10 @@
 name: Pair pin freshness
 
-# Nightly freshness gate for the two committed pair pins (BC-12,
-# scope-comp-consumers section 5.3): each pinned companion revision must
-# remain ancestor-or-equal of the companion repository's default-branch
-# HEAD.
+# Nightly content-and-ancestry freshness gate for the two committed pair
+# pins (BC-12, scope-comp-consumers section 5.3): each pinned companion
+# revision must remain ancestor-or-equal of the companion repository's
+# default-branch HEAD, and the FEP bridge pair must also still match its
+# recorded GNN owner digests.
 #
 # The paired-revision workflows (`fep-lean-paired-revision.yml`,
 # `geo-infer-interchange.yml`) check out the companions at their *pinned*
@@ -14,9 +15,10 @@ name: Pair pin freshness
 #   - both pair files are validated (slug + 40-hex revision),
 #   - each companion is checked out at its default branch with full
 #     history (`fetch-depth: 0`) so ancestry is decidable,
-#   - scripts/check_pair_pin_freshness.py asserts ancestor-or-equal and
-#     exits 2 ("re-pin required"), naming the stale pair file, the pinned
-#     revision and the companion tip; a fresh run exits 0 with a summary.
+#   - scripts/check_pair_pin_freshness.py asserts ancestor-or-equal,
+#   - the FEP source pin's GNN owner digests are recomputed against this
+#     checkout; any mismatch exits 2 with the owner, recorded digest and
+#     actual digest, so a green nightly cannot hide content drift.
 #
 # The check is git-only (stdlib + git), so the runner's system python3 is
 # used deliberately and the job needs no Python setup step.
@@ -27,12 +29,20 @@ name: Pair pin freshness
 # SPEC's aggressive cancellation default).
 #
 # What this proves and does NOT prove (evidence-plane discipline): a green
-# run proves the pins still name commits inside each companion default
-# branch's history. It does NOT prove the pinned checkouts still agree with
-# this repository on any surface — that remains the paired workflows' job.
-# The optional "at most N commits behind" lag bound from section 5.3 is
-# intentionally not enforced here: the measured lag is reported in the
-# summary and receipts, but ancestor-or-equal is the contract.
+# run proves the pins name commits inside each companion default branch's
+# history AND that every GNN owner digest in the FEP source pin matches this
+# checkout. It does NOT prove native compilation, Q7 execution or release
+# acceptance; those remain the paired workflows' job. The optional "at most
+# N commits behind" lag bound from section 5.3 is intentionally not enforced
+# here: the measured lag is reported in the summary and receipts, but
+# ancestry and owner content are the contract.
+#
+# Merging this gate makes the nightly red until the re-freeze happens, by
+# design. Drift exists now (three owners: `docs/gnn/gnn_syntax.md`,
+# `pyproject.toml`, `uv.lock`), so a red is the gate reporting the truth. The
+# disposal is the trigger-gated obligation in FEP issue #244 /
+# `CUSTODY-GNN-1`, not a workflow fix. A nightly red between now and the next
+# `v[0-9]*` tag means the gate is working and the obligation is outstanding.
 
 on:
   push:
@@ -86,12 +96,15 @@ jobs:
           git -C geo-infer rev-parse HEAD > receipts/geo-infer-revision.txt
           cp gnn/.github/fep-lean-pair.json receipts/fep-lean-pair.json
           cp gnn/.github/gnn-pair.json receipts/gnn-pair.json
+          cp fep-lean/specs/gnn-bridge-w2-source-custody/source-pin.json receipts/fep-source-pin.json
 
-      - name: Assert pair pins are ancestor-or-equal of companion default branches
+      - name: Assert pair pins and bound owner content are fresh
         run: |
           python3 gnn/scripts/check_pair_pin_freshness.py \
             --check gnn/.github/fep-lean-pair.json fep-lean \
             --check gnn/.github/gnn-pair.json geo-infer \
+            --source-pin fep-lean/specs/gnn-bridge-w2-source-custody/source-pin.json \
+            --gnn-root gnn \
             --receipts-dir receipts
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
