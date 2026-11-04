@@ -335,6 +335,14 @@ class TestPomdpConfigTruthfulness:
                 ]
                 assert not undeclared, (name, dimension, undeclared)
             assert configs[name]["render_capabilities"] == dict(capabilities), name
+        # The declared continuous composition and the sibling
+        # ``supports_continuous`` boolean answer the same question — the
+        # continuous-state gate reads the declaration, so the two surfaces must
+        # not drift: a frame that renders continuous models declares a
+        # composition, a discrete-only frame declares none.
+        for name, entry in FRAMEWORK_REGISTRY.items():
+            declared = bool(get_render_capabilities(name).get("continuous_composition"))
+            assert declared is bool(entry.get("supports_continuous", False)), name
         # The planning admission roster is derived from the declaration and
         # pinned here: a declaration change that moves a frame in or out of the
         # one-step admission set must fail loudly.

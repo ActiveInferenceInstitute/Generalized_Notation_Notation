@@ -245,6 +245,7 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
             "supports_continuous": True,
             "continuous_only": True,
             "experimental": True,
+            "execution_contracts": ["cpomdp_control_v1"],
             "unavailable_reason": None,
         },
         "thrml": {
@@ -333,10 +334,15 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
 #:     connections, not a fixed circuit.
 #:
 #: ``execution_contracts`` remains a separate top-level registry key consumed
-#: by :func:`gnn.render.execution_contracts.unsupported_contract`; the
-#: discrete/continuous split is declared by ``supports_continuous`` and
-#: ``continuous_only``.  Together these are the machine-checked render
-#: capabilities; prose ``supported_features`` is documentation, not a gate.
+#: by :func:`gnn.render.execution_contracts.unsupported_contract`; it also
+#: carries the control-contract marker that answers whether a frame executes
+#: source-declared finite controls, and it is what admits a spec whose
+#: per-factor action counts cannot be flattened (``temporal_hierarchy``), so
+#: action structure is answered per spec by the declared contract rather than
+#: by a second capability dimension.  The discrete/continuous split is declared
+#: by ``supports_continuous`` and ``continuous_only``.  Together these are the
+#: machine-checked render capabilities; prose ``supported_features`` is
+#: documentation, not a gate.
 RENDER_DIMENSION_VALUES: Mapping[str, Tuple[str, ...]] = MappingProxyType(
     {
         "continuous_composition": ("flat", "factored", "independent_agents"),

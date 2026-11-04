@@ -48,6 +48,10 @@ REFUSALS = [
     ("discrete/tmaze_epistemic.md", "pytorch", "unsupported-execution-contract"),
     # One-step planning only: a multi-step authored horizon is refused.
     ("discrete/deep_planning_horizon.md", "pytorch", "unsupported-planning"),
+    # bnlearn refuses a factored spec whose action structure it cannot filter.
+    # The typed refusal is an unsupported cell, never a render failure: the
+    # dispatch classifies it by prefix, not by frame.
+    ("structured/factorized_posterior.md", "bnlearn", "unsupported-bnlearn"),
 ]
 
 

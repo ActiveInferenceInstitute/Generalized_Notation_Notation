@@ -72,11 +72,25 @@ def test_admission_matches_conservative_formula_and_rejects_before_write(
         admit_search(2, 1, 2, 5, 1, True, max_policies=4097)
 
 
-def test_backend_requires_explicit_selection() -> None:
+def test_backend_requires_explicit_selection(monkeypatch: pytest.MonkeyPatch) -> None:
+    from gnn.render.execution_contracts import unsupported_contract
     from gnn.render.framework_registry import FRAMEWORK_REGISTRY, get_default_frameworks
 
     assert FRAMEWORK_REGISTRY["cpomdp"]["experimental"]
     assert "cpomdp" not in get_default_frameworks()
+    # The control contract is the declaration that admits source-declared
+    # finite controls: the gate reads it instead of the frame name, so moving
+    # the declaration moves the admission with it.
+    controls = {"initialparameterization": {"cpomdp_control": [[1.0]]}}
+    assert FRAMEWORK_REGISTRY["cpomdp"]["execution_contracts"] == ["cpomdp_control_v1"]
+    assert unsupported_contract(controls, "cpomdp") is None
+    assert str(unsupported_contract(controls, "pymdp")).startswith(
+        "unsupported-cpomdp-control:"
+    )
+    monkeypatch.setitem(FRAMEWORK_REGISTRY["cpomdp"], "execution_contracts", ())
+    assert str(unsupported_contract(controls, "cpomdp")).startswith(
+        "unsupported-cpomdp-control:"
+    )
 
 
 def _kalman_reference(

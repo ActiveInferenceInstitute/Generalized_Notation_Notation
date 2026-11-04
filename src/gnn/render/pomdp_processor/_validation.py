@@ -148,7 +148,15 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
             }
 
         if getattr(pomdp_space, "model_kind", "discrete") == "continuous":
-            if not config.get("supports_continuous", False):
+            # The frame's declared continuous composition answers this: a frame
+            # that declares none renders discrete POMDPs only.  The declaration
+            # is equivalent to the sibling ``supports_continuous`` boolean
+            # (pinned by the equivalence test in
+            # tests/render/test_framework_availability.py) and is the surface the
+            # other composition gates already read.
+            from gnn.render.framework_registry import get_render_capabilities
+
+            if not get_render_capabilities(framework).get("continuous_composition"):
                 return {
                     "compatible": False,
                     "unsupported": True,

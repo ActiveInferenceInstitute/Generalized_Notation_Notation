@@ -134,14 +134,20 @@ class _RendererDispatchMixin(_POMDPProcessorSupportMixin):
                 else:  # primary
                     artifacts = [str(output_file)] if success else []
 
+            # A typed capability refusal (``unsupported-<class>:``) is recorded
+            # as unsupported whatever frame produced it; any other failure
+            # message stays a failure.  Classification therefore follows the
+            # refusal taxonomy rather than a per-frame prefix list.
+            from gnn.render.execution_contracts import is_unsupported_message
+
+            typed_refusal = is_unsupported_message(message)
             return {
                 "success": success,
-                "unsupported": not success
-                and str(message).startswith("unsupported-thrml:"),
+                "unsupported": (not success) and typed_refusal,
                 "status": "success"
                 if success
                 else "unsupported"
-                if str(message).startswith("unsupported-thrml:")
+                if typed_refusal
                 else "failed",
                 "message": message,
                 "artifacts": artifacts,
@@ -228,10 +234,15 @@ class _RendererDispatchMixin(_POMDPProcessorSupportMixin):
             }
 
         except ValueError as exc:
+            from gnn.render.execution_contracts import is_unsupported_message
+
+            message = str(exc)
+            refused = is_unsupported_message(message)
             return {
                 "success": False,
-                "unsupported": str(exc).startswith("unsupported-bnlearn:"),
-                "message": str(exc),
+                "unsupported": refused,
+                "status": "unsupported" if refused else "failed",
+                "message": message,
                 "artifacts": [],
             }
 
