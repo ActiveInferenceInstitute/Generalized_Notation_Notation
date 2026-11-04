@@ -251,7 +251,7 @@ mjx-container[display="true"] { max-width: 100%; overflow: visible; }
   outline: 3px solid var(--brand-1);
   outline-offset: 3px;
 }
-.table-scroll > table { margin-block: 0; min-width: 100%; width: max-content; }
+.table-scroll > table { margin-block: 0; display: table; min-width: 100%; width: 100%; }
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -412,8 +412,9 @@ table {
 
 .table-scroll > table {
   margin-block: 0;
+  display: table;
   min-width: 100%;
-  width: max-content;
+  width: 100%;
 }
 
 figure {
@@ -430,6 +431,15 @@ th, td {
 th {
   background-color: #1f6f8b;
   color: white;
+}
+
+/* Preserve a complete inline-code header within the table's scroll region. */
+th code {
+  color: inherit;
+  background-color: transparent;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 img {
@@ -872,7 +882,7 @@ ngc-learn) is declared by that family but sits outside the maintained
 set, so it is never profiled; a red Render-Subdir cell would mean a
 registry entry with no subdirectory. The table is read directly from
 <code>src/gnn/render/framework_registry.py</code> and the model-family
-manifest at commit 027f0de18, and its footer summarizes the row counts.
+manifest at commit f6974431e, and its footer summarizes the row counts.
 Take-away: registration, render presence, and profiling status are three
 different claims, and the table keeps them apart.</figcaption>
 </figure>
@@ -1048,7 +1058,7 @@ failed, and the reports keep those situations apart.</p>
 Auto-Injection</h2>
 <p>Every count reported in this manuscript is emitted by the producer
 <code>scripts/z_generate_manuscript_variables.py</code> from the
-repository state at commit 027f0de18, not typed by hand. The producer
+repository state at commit f6974431e, not typed by hand. The producer
 reads that commit’s source surfaces directly — the step modules, the
 source tree, the model-family manifest, and the framework registry —
 together with the project’s maintained ledgers, notably the Model

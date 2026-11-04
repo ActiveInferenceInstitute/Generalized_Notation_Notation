@@ -25,6 +25,26 @@ The custody point is a small digest manifest,
 * ``counts_describe_commit`` / ``receipt_counts_describe_commit`` — the
   commit short-hash the token map describes and the one the producer's
   receipt (written by the pre-render producer run) describes.
+* ``declared_environment`` — the environment the chain describes: the
+  template revision the render cloned, and the fully-named render profile
+  the tools made. ``recording_profile`` names the profile the render ran
+  under; ``permitted_profiles`` holds every profile this chain accepts,
+  each with every value spelled out. Declared so a fresh render can be
+  asked about the *environment* before it is asked about bytes.
+
+A profile mismatch narrows the comparison; it never widens a tolerance. On
+the recording profile every artifact is compared. On a permitted but
+different profile the one axis a permitted profile may differ in — the TeX
+Live installation — takes its artifact out of the comparison (the ``.log``
+is what TeX Live writes), and the run names what it compared and what it
+did not. A profile outside the permitted set fails without comparing bytes:
+the two axes that could have made the hosted runner differ, pandoc and
+pandoc-crossref, are pinned to the recording versions in
+``.github/workflows/custody-re-render.yml``, so a difference there is a pin
+that drifted, not an environment to tolerate. There is no
+artifact-comparison warning level: bytes from a permitted profile that
+disagree with the committed chain are drift, on every host, because a
+tolerance wide enough to hide a change is not a check.
 
 Ordering honesty: the manifest is recorded after the render, from the files
 on disk, so it cannot by itself prove a render ran. That ordering — regen,
@@ -38,6 +58,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -47,21 +68,36 @@ from pathlib import Path
 if str(Path(__file__).resolve().parents[3]) not in sys.path:  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from gnn.manuscript.substitution import hydrate_text  # noqa: E402
+from gnn.manuscript.substitution import (  # noqa: E402
+    hydrate_text,
+    rebase_output_links_for_destination,
+)
 from gnn.manuscript.variables import token_checksum  # noqa: E402
 
 __all__ = [
+    "DECLARED_ENVIRONMENT_KEY",
+    "ENGINE_DEPENDENT_ARTIFACTS",
     "HYDRATION_FIX",
     "MANIFEST_VERSION",
+    "PERMITTED_PROFILES_KEY",
+    "PERMITTED_RENDER_PROFILES",
+    "PROFILE_KEYS",
+    "RECORDING_PROFILE_KEY",
     "RECORD_COMMAND",
     "RENDER_INPUT_ROOT",
     "RENDERED_ARTIFACTS",
+    "STALE_CHAIN",
+    "TEMPLATE_REVISION_ENV",
+    "UNMEASURED",
+    "comparison_scope",
     "custody_issues",
+    "environment_report",
     "hydrate_text",
     "hydration_issues",
     "load_render_manifest",
     "manifest_path",
     "mask_log_timestamp",
+    "observed_render_environment",
     "record_render_manifest",
     "strip_volatile_tokens",
     "verify_fresh_render",
@@ -69,6 +105,54 @@ __all__ = [
 
 MANIFEST_VERSION = "gnn_render_manifest_v1"
 RECORD_COMMAND = "uv run python scripts/z_record_manuscript_render_manifest.py"
+#: A chain that describes a different render environment than the fresh
+#: one gets its own status, not a generic failure: the render is not
+#: necessarily wrong, the *chain* is out of date. Exit code 3 in
+#: ``scripts/z_verify_fresh_render.py``.
+STALE_CHAIN = "[STALE-CHAIN]"
+#: Where a recording or verifying run reports the template checkout it
+#: rendered with. The committed artifacts carry no template identity, so
+#: this is the only carrier of that axis (rules §36: declare it, or the
+#: comparison measures the host).
+TEMPLATE_REVISION_ENV = "GNN_TEMPLATE_REVISION"
+#: A chain whose environment cannot be measured gets its own status: a gate
+#: that cannot fire must not report success. Exit code 4 in
+#: ``scripts/z_verify_fresh_render.py``.
+UNMEASURED = "[UNMEASURED]"
+#: Manifest key holding the environment the chain describes.
+DECLARED_ENVIRONMENT_KEY = "declared_environment"
+#: Manifest keys naming the profile the chain was recorded under and the
+#: profiles it permits, inside :data:`DECLARED_ENVIRONMENT_KEY`.
+RECORDING_PROFILE_KEY = "recording_profile"
+PERMITTED_PROFILES_KEY = "permitted_profiles"
+#: The values one profile is made of. Membership is exact equality on every
+#: one of them; there is no family, series or suffix rule, because a rule
+#: that admits "3.x" admits a toolchain nobody measured.
+PROFILE_KEYS = ("pandoc", "pandoc_crossref", "tex_engine", "tex_roots")
+#: The artifacts TeX Live itself writes, out of :data:`RENDERED_ARTIFACTS`.
+#: Excluded from the comparison on a permitted profile that is not the
+#: recording one, and named in that run's report: TeX Live is the one axis a
+#: permitted profile may differ in. The PDF is outside the custody set
+#: entirely — it is not byte-reproducible (it embeds its own build ids).
+ENGINE_DEPENDENT_ARTIFACTS = (Path("output") / "pdf" / "_combined_manuscript.log",)
+#: The non-recording profile this chain permits, fully named and fully
+#: specified: the hosted runner's TeX Live 2023/Debian (values measured from
+#: the 2026-11-04 scheduled run's own log), with pandoc and pandoc-crossref
+#: pinned to the recording versions by ``custody-re-render.yml``. It exists
+#: because the runner cannot install TeX Live 2026, and it is the *only*
+#: permitted difference: a profile whose pandoc or crossref differ is refused
+#: rather than tolerated. Adding another one is a visible edit here that
+#: names every value.
+PERMITTED_RENDER_PROFILES: dict[str, dict[str, object]] = {
+    "tex-live-2023-debian-pandoc-3.13-crossref-0.3.26": {
+        "pandoc": "3.13",
+        "pandoc_crossref": "0.3.26",
+        "tex_engine": (
+            "This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian)"
+        ),
+        "tex_roots": ["/usr/share/texlive/texmf-dist"],
+    },
+}
 
 _MANIFEST_REL = Path("output") / "data" / "manuscript_render_manifest.json"
 _VARIABLES_REL = Path("output") / "data" / "manuscript_variables.json"
@@ -229,11 +313,44 @@ def record_render_manifest(project_root: Path) -> dict:
             f"{', '.join(sanitized)}"
         )
 
+    declared = observed_render_environment(project_root)
+    declared_values = {key: declared[key] for key in PROFILE_KEYS}
+    profile_name = _profile_name(declared_values)
+    permitted_profiles: dict[str, dict[str, object]] = dict(PERMITTED_RENDER_PROFILES)
+    for known, values in sorted(permitted_profiles.items()):
+        if all(values.get(key) == declared_values[key] for key in PROFILE_KEYS):
+            profile_name = known
+            break
+    permitted_profiles[profile_name] = declared_values
+    for key in PROFILE_KEYS:
+        if not declared_values[key]:
+            print(
+                f"[render-custody] note: {key} is unavailable on this host - "
+                "recorded as unavailable and compared by value, so a host "
+                "that measures it cannot drift past this chain"
+            )
+    if not declared["template_revision"]:
+        print(
+            f"[render-custody] note: {TEMPLATE_REVISION_ENV} is unset - this "
+            "chain records no template revision, and the fresh-render gate "
+            f"will report {UNMEASURED} until it is re-recorded with that "
+            "variable exported (the workflow exports it: "
+            "git -C template rev-parse HEAD)"
+        )
+
     manifest = {
         "manifest_version": MANIFEST_VERSION,
         "recorded_by": RECORD_COMMAND,
         "counts_describe_commit": counts_describe_commit,
         "receipt_counts_describe_commit": receipt_commit,
+        # The axes this chain declares. Recorded rather than inferred at
+        # compare time: a comparison that normalized an undeclared axis
+        # would measure the render host, not the chain (rules §36).
+        DECLARED_ENVIRONMENT_KEY: {
+            "template_revision": declared["template_revision"],
+            RECORDING_PROFILE_KEY: profile_name,
+            PERMITTED_PROFILES_KEY: permitted_profiles,
+        },
         "variables_sha256": token_checksum(strip_volatile_tokens(variables)),
         "render_artifacts_sha256": {
             rel.as_posix(): _sha256(project_root / rel) for rel in RENDERED_ARTIFACTS
@@ -260,6 +377,267 @@ def record_render_manifest(project_root: Path) -> dict:
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     return manifest
+
+
+# The stable part of the engine banner: the engine, its version and the TeX
+# Live installation identifier. The rest of the line — the preloaded format's
+# build date and the run's start time — varies per run, so a profile value
+# that included it could never match twice and would have to be normalized,
+# which is exactly the tolerance this design refuses.
+_TEX_ENGINE_RE = re.compile(
+    r"^This is (?:XeTeX|LuaTeX|pdfTeX)\b[^\n(]*(?:\([^\n)]*\))?", re.MULTILINE
+)
+# The TeX installation roots the log names: /usr/local/texlive/<year> for a
+# from-source install, /usr/share/texlive/<tree> for Debian's packages (the
+# hosted runner), .../Library/TeX/... for MacTeX.
+_TEX_ROOT_RE = re.compile(
+    r"/(?:usr/(?:local/|share/)?texlive|Library/TeX)/[0-9A-Za-z._-]+"
+)
+
+
+def _commit_equal(a: str, b: str) -> bool:
+    """Whether two revisions name the same commit at any abbreviation."""
+    return bool(a) and bool(b) and (a == b or a.startswith(b) or b.startswith(a))
+
+
+def observed_render_environment(project_root: Path) -> dict[str, object]:
+    """The environment axes the render ran in, as far as they are observable.
+
+    Measured against the committed log rather than assumed: the engine
+    banner is TeX's own ``This is XeTeX, Version ...`` line, and a
+    banner this parser does not recognize stays empty and is reported,
+    never guessed.
+
+    ``template_revision`` comes from ``$GNN_TEMPLATE_REVISION`` because the
+    committed artifacts carry no template identity: nothing in the manifest,
+    the ``.tex``, the ``.log`` or the ``.md`` names ``docxology/template`` or
+    any of its revisions (measured 2026-11-04), while the render stage clones
+    the template at its **default-branch head** on purpose — that clone is
+    the drift detector. ``tex_engine``/``tex_roots`` come from the committed
+    log's engine banner, which the render host wrote.
+
+    An unobservable axis stays empty here and is *reported* by
+    :func:`environment_report`; it is never assumed equal.
+    """
+    log = project_root / RENDERED_ARTIFACTS[0]
+    text = log.read_text(encoding="utf-8", errors="replace") if log.is_file() else ""
+    engine = _TEX_ENGINE_RE.search(text)
+    observed: dict[str, object] = {
+        "template_revision": os.environ.get(TEMPLATE_REVISION_ENV, "").strip(),
+        "tex_engine": engine.group(0).strip() if engine else "",
+        "tex_roots": sorted(set(_TEX_ROOT_RE.findall(text))),
+    }
+    observed.update(_probe_toolchain())
+    return observed
+
+
+def _probe_toolchain() -> dict[str, str]:
+    """The pandoc and pandoc-crossref versions this host has, ``""`` when absent.
+
+    Probed, not declared: these are the two versions ``custody-re-render.yml``
+    pins to the recording ones, so a difference here is a pin that drifted and
+    the comparison has to be able to say so. An absent binary reports the
+    empty string — reported as unavailable, and equal only to another empty
+    string, so it can never agree with a measured version.
+    """
+    probes = (
+        ("pandoc", ["pandoc", "--version"], re.compile(r"^pandoc\s+([0-9][^\s]*)")),
+        (
+            "pandoc_crossref",
+            ["pandoc-crossref", "--version"],
+            re.compile(r"^pandoc-crossref\s+v?([0-9][^\s]*)"),
+        ),
+    )
+    found: dict[str, str] = {}
+    for key, argv, pattern in probes:
+        try:
+            result = subprocess.run(argv, capture_output=True, check=False, timeout=30)
+        except (OSError, subprocess.SubprocessError):  # pragma: no cover - env
+            found[key] = ""
+            continue
+        match = (
+            pattern.search(result.stdout.decode("utf-8", "replace"))
+            if result.returncode == 0
+            else None
+        )
+        found[key] = match.group(1) if match else ""
+    return found
+
+
+def _profile_name(values: dict[str, object]) -> str:
+    """A readable name derived from a profile's own values.
+
+    Derived, never assigned, so the name cannot disagree with the values it
+    names: the TeX Live identifier, the pandoc version, the pandoc-crossref
+    version.
+    """
+    engine = str(values.get("tex_engine") or "")
+    texlive = re.search(r"\((TeX Live [^)]*)\)", engine)
+    leaf = texlive.group(1) if texlive else "texlive-unavailable"
+    slug = re.sub(r"[^0-9A-Za-z.]+", "-", leaf).strip("-").lower()
+    return (
+        f"{slug}-pandoc-{values.get('pandoc') or 'unavailable'}"
+        f"-crossref-{values.get('pandoc_crossref') or 'unavailable'}"
+    )
+
+
+def _declared(manifest: dict) -> dict:
+    """The chain's declared environment, or an empty dict when it has none."""
+    declared = manifest.get(DECLARED_ENVIRONMENT_KEY)
+    return declared if isinstance(declared, dict) else {}
+
+
+def _profile_axes(
+    manifest: dict,
+) -> tuple[str, dict[str, object], dict[str, dict[str, object]]]:
+    """``(recording_name, recording_values, permitted_profiles)``.
+
+    Empty name and values when the chain declares no usable profile — a bare
+    v1 manifest, or a declared name that is not one of its own permitted
+    profiles. A chain whose name and values disagree cannot be asked about a
+    fresh render, and :func:`verify_fresh_render` reports that as unmeasured
+    rather than guessing which side to trust.
+    """
+    declared = _declared(manifest)
+    raw = declared.get(PERMITTED_PROFILES_KEY)
+    if not isinstance(raw, dict):
+        return "", {}, {}
+    permitted: dict[str, dict[str, object]] = {
+        str(name): dict(values)
+        for name, values in raw.items()
+        if isinstance(values, dict)
+    }
+    name = str(declared.get(RECORDING_PROFILE_KEY) or "")
+    values = permitted.get(name)
+    if not isinstance(values, dict):
+        return "", {}, permitted
+    return name, values, permitted
+
+
+def _matching_profile(
+    observed: dict[str, object], permitted: dict[str, dict[str, object]]
+) -> str | None:
+    """The name of the permitted profile ``observed`` equals on every value."""
+    for name, values in sorted(permitted.items()):
+        if all(observed.get(key) == values.get(key) for key in PROFILE_KEYS):
+            return name
+    return None
+
+
+def comparison_scope(project_root: Path, manifest: dict) -> str:
+    """One line naming what a comparison on this host covers, and why.
+
+    The narrowing a non-recording profile buys is the one thing a green run
+    must not hide: the line names the artifacts compared, counts the render
+    inputs, and names the artifact left out and the axis that put it out.
+    """
+    recorded_name, recorded, permitted = _profile_axes(manifest)
+    observed = observed_render_environment(project_root)
+    observed_values = {key: observed[key] for key in PROFILE_KEYS}
+    inputs = len(manifest.get("render_inputs_sha256", {}) or {})
+    matched = _matching_profile(observed_values, permitted) if recorded else None
+    names = ", ".join(rel.name for rel in RENDERED_ARTIFACTS)
+    if matched is not None and observed_values != recorded:
+        compared = [
+            rel for rel in RENDERED_ARTIFACTS if rel not in ENGINE_DEPENDENT_ARTIFACTS
+        ]
+        excluded = ", ".join(rel.name for rel in ENGINE_DEPENDENT_ARTIFACTS)
+        return (
+            f"profile {_profile_name(observed_values)!r} is permitted but is not "
+            f"the recording profile {recorded_name!r}: comparing "
+            f"{len(compared)} of {len(RENDERED_ARTIFACTS)} rendered artifacts "
+            f"({', '.join(rel.name for rel in compared)}) and {inputs} render "
+            f"inputs; {excluded} not compared on "
+            "this host (the TeX Live engine is the one axis a permitted profile "
+            "may differ in, and it writes that file)"
+        )
+    return (
+        f"comparing {len(RENDERED_ARTIFACTS)} rendered artifacts ({names}) and "
+        f"{inputs} render inputs"
+    )
+
+
+def _template_gate(manifest: dict, project_root: Path) -> str | None:
+    """The ``[STALE-CHAIN]`` finding when the chain describes another template.
+
+    Runs BEFORE any byte comparison, and its finding replaces the comparison:
+    once the template has moved, every figure link in the hydrated prose is
+    expected to move with it, so a byte-level verdict would report the
+    artifact and bury the cause — the 2026-11-03 red run said only "your chain
+    is stale for HEAD" and named no axis. The template revision is the signal,
+    so it is never normalized (rules §36, second clause); when either side
+    cannot observe it, the gate reports that through
+    :func:`environment_report` and leaves the verdict to the byte comparison.
+    """
+    declared = manifest.get(DECLARED_ENVIRONMENT_KEY)
+    if not isinstance(declared, dict):
+        return None
+    recorded = str(declared.get("template_revision") or "")
+    observed = str(observed_render_environment(project_root)["template_revision"])
+    if not recorded or not observed or _commit_equal(recorded, observed):
+        return None
+    return (
+        f"{STALE_CHAIN} template moved {recorded} to {observed}; the chain "
+        f"describes {recorded}; re-record is required. The figure links in "
+        "the hydrated prose are expected to differ, so the artifact "
+        f"comparison is skipped: rerun the SC-22 ritual, then {RECORD_COMMAND}"
+    )
+
+
+def environment_report(project_root: Path, manifest: dict) -> list[str]:
+    """What this comparison can and cannot say about the render environment.
+
+    Printed on every run, pass or fail — a chain that declares no environment
+    is *reported* as unmeasured, never silently normalized into agreement, and
+    a permitted-but-different profile is *reported* as a narrowed comparison,
+    so a green run is never read as a fuller verification than it was. A
+    v1 manifest hits the first branch, which is why the declaration is
+    additive rather than a new manifest version.
+    """
+
+    def _show(value: object) -> str:
+        if isinstance(value, list):
+            return ",".join(str(item) for item in value) or "none"
+        return str(value) if value else "unavailable"
+
+    observed = observed_render_environment(project_root)
+    declared = _declared(manifest)
+    recorded_name, recorded, permitted = _profile_axes(manifest)
+    lines = [
+        "observed: "
+        + ", ".join(f"{key}={_show(observed[key])}" for key in PROFILE_KEYS),
+        "normalized on both sides by the byte comparison: commit stamps "
+        "(abbreviation length only) and the TeX banner's run-time timestamp",
+    ]
+    if not recorded:
+        lines.append(
+            "the chain declares no environment (v1 manifest): the "
+            "template-revision gate and the profile comparison are "
+            f"UNAVAILABLE here — re-record ({RECORD_COMMAND}) declares them"
+        )
+    else:
+        lines.append(
+            f"recording profile {recorded_name!r}: "
+            + ", ".join(f"{key}={_show(recorded[key])}" for key in PROFILE_KEYS)
+        )
+        lines.append(
+            f"permitted profiles ({len(permitted)}): " + ", ".join(sorted(permitted))
+        )
+    if not observed["template_revision"]:
+        lines.append(
+            f"{TEMPLATE_REVISION_ENV} is unset: the template revision this "
+            "render used is unmeasured, so the gate cannot fire"
+        )
+    elif recorded and not _commit_equal(
+        str(declared.get("template_revision") or ""),
+        str(observed["template_revision"]),
+    ):
+        lines.append(
+            "declared and observed template_revision differ - see the "
+            "gate's [STALE-CHAIN] finding"
+        )
+    lines.append(comparison_scope(project_root, manifest))
+    return lines
 
 
 def _input_tree_issues(
@@ -393,13 +771,23 @@ def custody_issues(project_root: Path) -> list[str]:
 def _expected_hydrated_tree(
     project_root: Path, variables: dict[str, str], excluded: frozenset[str]
 ) -> dict[str, bytes]:
-    """``{relpath: bytes}`` the injector would write from this token map."""
+    """``{relpath: bytes}`` the injector would write from this token map.
+
+    Substitution alone is not the injector's output: the injector's write path
+    also re-expresses ``../output/<path>`` link targets for the copy's location
+    under ``output/manuscript/`` (one level below the project root), leaving the
+    source files' own form alone. Comparing against unrebased text reported the
+    four figure-bearing manuscripts as drift on 2026-11-04 while the render
+    itself was correct, so the expectation mirrors that step too.
+    """
     source = project_root / _SOURCE_MANUSCRIPT_REL
     out: dict[str, bytes] = {}
     for md in sorted(source.glob("*.md")):
         if md.name in excluded or md.name in _VERBATIM_AUX:
             continue
-        text = hydrate_text(md.read_text(encoding="utf-8"), variables)
+        text = rebase_output_links_for_destination(
+            hydrate_text(md.read_text(encoding="utf-8"), variables)
+        )
         out[(RENDER_INPUT_ROOT / md.name).as_posix()] = text.encode("utf-8")
     verbatim = [source / name for name in _VERBATIM_AUX] + sorted(source.glob("*.bib"))
     for path in verbatim:
@@ -492,27 +880,39 @@ def verify_fresh_render(project_root: Path) -> list[str]:
     certifies the committed chain, not just render success. Per rendered
     artifact:
 
-    * ``[FAIL]`` — the artifact is missing, or it drifted from the manifest
-      AND the recorded render inputs drifted too: the fresh render
-      disagrees with the committed chain in prose as well as bytes, so the
-      committed chain is stale for HEAD.
-    * ``[WARN]`` — the artifact drifted but the committed render inputs
-      still describe the tree: same inputs, different bytes, most likely
-      toolchain variance. The v1 manifest records no tool versions, so
-      input-match is the only v1-compatible discriminator; the committed
-      chain still describes this prose.
+    * ``[STALE-CHAIN]`` — the chain declares a different template
+      revision than this render observed; the finding is returned alone
+      and the artifact comparison is skipped, because the template *is*
+      the signal and every figure link is expected to move with it.
+    * ``[FAIL]`` — the artifact drifted. With the render inputs matching
+      this chain, the same prose rendered to different bytes under a
+      *permitted* profile: that is drift, not environment, and it has no
+      warning level. With the inputs drifted too, the committed chain is
+      stale for HEAD.
+    * ``[UNMEASURED]`` — the chain declares no usable render profile (a
+      v1 manifest), or the environment does not supply the template
+      revision this render used, so the gate cannot fire. Exit code 4: a
+      switch that is off must not report success.
 
-    Commit-relative stamps are normalized on both sides before digesting:
-    the producer abbreviates ``GNN_GIT_COMMIT`` with git's repo-size
-    heuristic, so a fresh CI clone stamps 7 chars where the recording
-    checkout stamped 9 — those stamps are content-equal, and only their
-    length differs. The committed side is re-derived from ``git show`` at
-    HEAD with the manifest's stamp masked; outside a git repo (the unit
-    fixtures) the stored raw digest is used when the text carries no stamp.
-    The ``.log`` also has its TeX engine banner's start timestamp masked
-    (:func:`mask_log_timestamp`): it is the one line that differs between
-    two renders of identical inputs, and left raw it turned every clean
-    re-render into a ``[WARN]``.
+    A profile mismatch narrows the comparison instead of widening a
+    tolerance. On the recording profile every artifact is compared; on a
+    permitted but different profile the artifacts that depend on the one
+    axis a permitted profile may differ in — the TeX Live installation,
+    which writes the ``.log`` — are excluded, named and counted by
+    :func:`comparison_scope`; and a profile outside the permitted set fails
+    without comparing bytes at all, because bytes from an undeclared
+    toolchain are not evidence about this chain.
+
+    Commit-relative stamps are normalized on both sides before digesting,
+    and since 2026-11-04 the producer stamps a fixed-width abbreviation
+    (:mod:`gnn.manuscript.snapshot`), so no host can reflow an artifact it
+    already laid out by stamping a different length. The committed side is
+    re-derived from ``git show`` at HEAD with the manifest's stamp masked;
+    outside a git repo (the unit fixtures) the stored raw digest is used
+    when the text carries no stamp. The ``.log`` also has its TeX engine
+    banner's start timestamp masked (:func:`mask_log_timestamp`): it is the
+    one line that differs between two renders of identical inputs, and left
+    raw it turned every clean re-render into drift.
 
     Read-only. Returns (does not raise) so the caller can print every
     finding at once; a missing manifest is the first ``[FAIL]``.
@@ -521,6 +921,10 @@ def verify_fresh_render(project_root: Path) -> list[str]:
         manifest = load_render_manifest(project_root)
     except RuntimeError as exc:
         return [f"[FAIL] {exc}"]
+
+    gate = _template_gate(manifest, project_root)
+    if gate is not None:
+        return [gate]
 
     stamp = manifest.get("counts_describe_commit") or ""
     stamps = tuple(dict.fromkeys(s for s in (stamp, _head_stamp(project_root)) if s))
@@ -549,39 +953,106 @@ def verify_fresh_render(project_root: Path) -> list[str]:
         ).get(rel_posix, recorded)
         return normalized
 
-    inputs_match = not _input_tree_issues(project_root, manifest, stamps)
+    input_issues = _input_tree_issues(project_root, manifest, stamps)
+    inputs_match = not input_issues
     recorded_artifacts: dict[str, str] = manifest.get("render_artifacts_sha256", {})
-    issues: list[str] = []
+    issues: list[str] = [f"[FAIL] {issue}" for issue in input_issues]
     for rel in RENDERED_ARTIFACTS:
         rel_posix = rel.as_posix()
-        path = project_root / rel
-        recorded = recorded_artifacts.get(rel_posix)
-        if not path.is_file():
+        if not (project_root / rel).is_file():
             issues.append(
                 f"[FAIL] {rel_posix} is missing — the custody manifest "
                 "records it but the fresh render did not produce it"
             )
-        elif recorded is None:
+        elif rel_posix not in recorded_artifacts:
             issues.append(
                 f"[FAIL] {rel_posix} is not recorded in the custody "
                 f"manifest — re-record with: {RECORD_COMMAND}"
             )
-        elif _committed_normalized(rel_posix, recorded) == _normalized(rel):
-            continue
-        elif inputs_match:
-            issues.append(
-                f"[WARN] {rel_posix} differs from the committed custody "
-                "manifest but the render inputs match it exactly — same "
-                "inputs, different bytes, most likely toolchain variance "
-                "(the v1 manifest records no tool versions); the committed "
-                "chain still describes this prose"
+
+    observed = observed_render_environment(project_root)
+    declared = _declared(manifest)
+    recorded_name, recorded, permitted = _profile_axes(manifest)
+    excluded: tuple[Path, ...] = ()
+    compare = True
+    if not recorded:
+        issues.append(
+            f"{UNMEASURED} the committed chain declares no usable render profile "
+            "(v1 manifest, or its recording profile missing from its own "
+            "permitted set): the template-revision gate and the profile "
+            "comparison are unavailable, and a chain that cannot describe its "
+            f"environment cannot be asked whether a render matched it — "
+            f"re-record with: {RECORD_COMMAND}"
+        )
+    elif not observed["template_revision"]:
+        declared_revision = str(declared.get("template_revision") or "")
+        issues.append(
+            f"{UNMEASURED} {TEMPLATE_REVISION_ENV} is unset: the template "
+            "revision this render used is unmeasured, so the gate cannot "
+            "fire. Export it (the workflow does: git -C template rev-parse "
+            "HEAD) and re-run: "
+            + (
+                f"the chain declares {declared_revision!r}, so a template move "
+                "would otherwise pass unremarked."
+                if declared_revision
+                else "the chain declares no template revision either, so a "
+                "template move could not be detected at all."
             )
-        else:
+        )
+    elif all((project_root / rel).is_file() for rel in ENGINE_DEPENDENT_ARTIFACTS):
+        observed_values = {key: observed[key] for key in PROFILE_KEYS}
+        matched = _matching_profile(observed_values, permitted)
+        if matched is None:
+            differences = "; ".join(
+                f"{key}={observed_values[key]!r}"
+                for key in PROFILE_KEYS
+                if all(
+                    observed_values[key] != values.get(key)
+                    for values in permitted.values()
+                )
+            )
             issues.append(
-                f"[FAIL] {rel_posix} drifted from the committed custody "
-                "manifest and the render inputs drifted too — the "
-                "committed chain is stale for HEAD; rerun the SC-22 ritual "
-                f"(re-record alone with {RECORD_COMMAND} cannot fix this)"
+                f"[FAIL] render profile {_profile_name(observed_values)!r} is "
+                f"not permitted: {differences or 'no permitted profile matches'}"
+                f". Permitted: {sorted(permitted)}. pandoc and pandoc-crossref "
+                "are pinned to the recording versions by "
+                "custody-re-render.yml and the TeX Live engine is the one axis "
+                "a permitted profile may differ in, so a difference anywhere "
+                "else is a pin that drifted: pin the tool back, or declare the "
+                "new profile as a visible edit that names every value. The "
+                "artifact comparison is skipped — bytes from an undeclared "
+                "toolchain are not evidence about this chain."
+            )
+            compare = False
+        elif observed_values != recorded:
+            excluded = ENGINE_DEPENDENT_ARTIFACTS
+
+    if compare:
+        for rel in RENDERED_ARTIFACTS:
+            rel_posix = rel.as_posix()
+            recorded_digest = recorded_artifacts.get(rel_posix)
+            if not (project_root / rel).is_file() or recorded_digest is None:
+                continue
+            if rel in excluded:
+                continue
+            if _committed_normalized(rel_posix, recorded_digest) == _normalized(rel):
+                continue
+            scope = (
+                "every compared artifact" if not excluded else "the narrowed comparison"
+            )
+            issues.append(
+                f"[FAIL] {rel_posix} differs from the committed custody "
+                f"manifest under profile {recorded_name!r} — "
+                + (
+                    "the render inputs match this chain, so the same prose "
+                    "produced different bytes, and a mismatch between two "
+                    "recorded sides is drift, not environment"
+                    if inputs_match
+                    else "the render inputs drifted too, so the committed "
+                    "chain is stale for HEAD"
+                )
+                + f" ({scope}); rerun the SC-22 ritual "
+                f"({RECORD_COMMAND} alone is only the last step)"
             )
     return issues
 

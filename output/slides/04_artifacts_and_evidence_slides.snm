@@ -1,8 +1,8 @@
 \beamer@slide {model-family-coverage}{3}
 \beamer@slide {tbl:model_families}{6}
 \beamer@slide {fig:family_matrix}{9}
-\beamer@slide {semantic-fidelity-and-cross-framework-reliability-gates}{11}
-\beamer@slide {source-preserving-llm-processing}{20}
-\beamer@slide {repository-scale}{22}
-\beamer@slide {fig:repo_metrics}{23}
-\beamer@slide {claim-discipline}{25}
+\beamer@slide {semantic-fidelity-and-cross-framework-reliability-gates}{13}
+\beamer@slide {source-preserving-llm-processing}{22}
+\beamer@slide {repository-scale}{24}
+\beamer@slide {fig:repo_metrics}{25}
+\beamer@slide {claim-discipline}{30}

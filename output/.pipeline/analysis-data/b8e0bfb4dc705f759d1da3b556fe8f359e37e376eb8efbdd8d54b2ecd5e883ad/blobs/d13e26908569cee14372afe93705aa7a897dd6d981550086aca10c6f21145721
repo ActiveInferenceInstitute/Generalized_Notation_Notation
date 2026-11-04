@@ -1,0 +1,47 @@
+{
+  "counts_describe_commit": "027f0de18",
+  "manifest_version": "gnn_render_manifest_v1",
+  "receipt_counts_describe_commit": "027f0de18",
+  "recorded_by": "uv run python scripts/z_record_manuscript_render_manifest.py",
+  "render_artifacts_normalized_sha256": {
+    "output/pdf/_combined_manuscript.log": "0e6dc5ffdfc6c4de2f565e51f73a5c48d41559e3f5bf724604d7d9cc11d3182f",
+    "output/pdf/_combined_manuscript.md": "91e95e89745ee1025fe3fd79191b08e355e29156911d669a1c612674c727eb86",
+    "output/pdf/_combined_manuscript.tex": "0601d1eb6262875965a5af8b35be5a45c647c977247fc11d74f3cb2238503668"
+  },
+  "render_artifacts_sha256": {
+    "output/pdf/_combined_manuscript.log": "3c98d8c0df186972aeb9e4bd5b5a573293e07601057fcbcd8a6021c5ad96a107",
+    "output/pdf/_combined_manuscript.md": "8b3dafa667b09ff7548dd6014d489283bd3bc548e4d67f9ab7c0e101f61cb686",
+    "output/pdf/_combined_manuscript.tex": "9b73b6c3b203484cc59658f82400febb78b28348e5c86cebefc02d26a6726899"
+  },
+  "render_inputs_normalized_sha256": {
+    "output/manuscript/00_abstract.md": "a66f146435f8300a5bfa2b3fbbc60373dec0e2e3c3fa4de9856f71e8b7eef27e",
+    "output/manuscript/01_introduction.md": "5d0d444605725927d88c415bbd7b2b6d27dfe62d33130cddc3cdbc4669ccb771",
+    "output/manuscript/02_system_context.md": "1527c6d45273cc67837dc04cab9ff8c56be53a4ac1929eb469a746a5e8c542b0",
+    "output/manuscript/03_methods.md": "5cd5af03ec86b130f0b3ad067e31e35f6466c18094168facce81e8cd0c52ac6f",
+    "output/manuscript/04_artifacts_and_evidence.md": "8f5a7994669592aec145959a34c83797b640e4ac6acb961eac0976e4bda97d73",
+    "output/manuscript/05_reproducibility.md": "fa2a334bdee916f40ec1744bf74619cf7a3b18802bca2dc008a6b1f1f0670f15",
+    "output/manuscript/06_limitations_and_next_steps.md": "661342ebdc02da12fbc325fb7c9e63b46cdd0d19b78c278aae91af1f52076b7a",
+    "output/manuscript/98_symbols_glossary.md": "4342b4bac17e063cd34f0e0805afe4769048efb22beced4887080ff198577c60",
+    "output/manuscript/99_references.md": "5e80feaa0ff39228501260f8e18f34debc071e1431de9c81a48016cb428aeef2",
+    "output/manuscript/S01_source_surface.md": "f0e0dc56789814e208eca2dea598178956bcd28fc918042dc41a993466bcd2ab",
+    "output/manuscript/config.yaml": "9cf779fd02b796104899e2c24fb2223b465643a04b9355284ad4c3758a399e41",
+    "output/manuscript/preamble.md": "ebdb657038ccf007dffefe5e3d5834145b956e6580628356975d741bcd6fb01e",
+    "output/manuscript/references.bib": "ed44f4594867a193123aaf03334e12c2f12e167584d42ac5bc6074c4bfec9f0d"
+  },
+  "render_inputs_sha256": {
+    "output/manuscript/00_abstract.md": "8ebea3a5032ad755817da2272c0b7e9ccbc370b156f74c62cb3dfb377cfdc595",
+    "output/manuscript/01_introduction.md": "5d0d444605725927d88c415bbd7b2b6d27dfe62d33130cddc3cdbc4669ccb771",
+    "output/manuscript/02_system_context.md": "96cefd254dafed389497713e58f42bbd4c925c37260b3c46f0dce31436f20e9b",
+    "output/manuscript/03_methods.md": "c9c2db0cab2a8c3e47b963f5cf4463423f54d3b2f2d4a4ad4f39cc1043b70a21",
+    "output/manuscript/04_artifacts_and_evidence.md": "e08b737c87bb3db05074883c7ca1b6f4399afb59f27ae51d7cd03fb97901e216",
+    "output/manuscript/05_reproducibility.md": "af8b130f5c3f9dc9c5b91b9f97d6f8f71c0e1a47c92d385579be7e5445cc3b18",
+    "output/manuscript/06_limitations_and_next_steps.md": "661342ebdc02da12fbc325fb7c9e63b46cdd0d19b78c278aae91af1f52076b7a",
+    "output/manuscript/98_symbols_glossary.md": "4342b4bac17e063cd34f0e0805afe4769048efb22beced4887080ff198577c60",
+    "output/manuscript/99_references.md": "5e80feaa0ff39228501260f8e18f34debc071e1431de9c81a48016cb428aeef2",
+    "output/manuscript/S01_source_surface.md": "f0e0dc56789814e208eca2dea598178956bcd28fc918042dc41a993466bcd2ab",
+    "output/manuscript/config.yaml": "9cf779fd02b796104899e2c24fb2223b465643a04b9355284ad4c3758a399e41",
+    "output/manuscript/preamble.md": "ebdb657038ccf007dffefe5e3d5834145b956e6580628356975d741bcd6fb01e",
+    "output/manuscript/references.bib": "ed44f4594867a193123aaf03334e12c2f12e167584d42ac5bc6074c4bfec9f0d"
+  },
+  "variables_sha256": "7ed908addeed1f0c93f552c68c41adcb8943fb518c3c08dc211a2776403b269c"
+}

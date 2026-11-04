@@ -7,7 +7,6 @@ that were causing the original PyMDP simulation to fail.
 """
 
 import json
-import shutil
 import tempfile
 from pathlib import Path
 

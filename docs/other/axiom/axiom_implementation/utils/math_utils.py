@@ -10,13 +10,12 @@ Authors: AXIOM Research Team
 Institution: VERSES AI / Active Inference Institute
 """
 
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import scipy.special as special
 import scipy.stats as stats
 from numpy.typing import NDArray
-from scipy.optimize import minimize
 
 # Type aliases for clarity
 Matrix = NDArray[np.float64]
@@ -512,4 +511,3 @@ stick_breaking_weights = BayesianUtils.stick_breaking_weights
 ensure_positive_definite = NumericalUtils.ensure_positive_definite
 fit_linear_dynamics = LinearDynamics.fit_linear_dynamics
 compute_variational_lower_bound = VariationalInference.compute_variational_lower_bound
-

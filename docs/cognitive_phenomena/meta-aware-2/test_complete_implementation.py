@@ -15,13 +15,10 @@ This test suite validates:
 - Performance meets standards
 """
 
-import json
 import time
 import unittest
 from pathlib import Path
-from typing import Any, Dict, List
 
-import matplotlib.pyplot as plt
 import numpy as np
 from config.gnn_parser import load_gnn_config
 from core.meta_awareness_model import MetaAwarenessModel
@@ -400,22 +397,10 @@ class TestCompleteImplementation(unittest.TestCase):
 
         # Import convenience functions
         from utils.math_utils import (
-            bayesian_model_average,
-            compute_attentional_charge,
-            compute_entropy_terms,
-            discrete_choice,
-            expected_free_energy,
-            generate_oddball_sequence,
             normalise,
             normalize,
-            policy_posterior,
-            precision_weighted_likelihood,
-            setup_likelihood_matrices,
-            setup_transition_matrices,
             softmax,
             softmax_dim2,
-            update_precision_beliefs,
-            variational_free_energy,
         )
 
         # Test that they all work

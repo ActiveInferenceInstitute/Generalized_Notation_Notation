@@ -7,10 +7,10 @@ between objects, actions, and rewards for sparse interaction modeling.
 """
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 import numpy as np
-from scipy.stats import dirichlet, multivariate_normal
+from scipy.stats import multivariate_normal
 
 logger = logging.getLogger(__name__)
 

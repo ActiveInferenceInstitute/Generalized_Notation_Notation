@@ -12,7 +12,6 @@ import pathlib as _p
 # Ensure local imports resolve when running from repo root
 import sys
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 _here = _p.Path(__file__).parent
@@ -23,9 +22,8 @@ from sandved_smith_2021 import (
     run_figure_10_simulation,
     run_figure_11_simulation,
 )
+from utils import softmax, softmax_dim2
 from visualizations import display_results_summary
-
-from utils import compute_attentional_charge, softmax, softmax_dim2
 
 
 def test_utility_functions():

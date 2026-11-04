@@ -7,7 +7,7 @@ to object slots based on their color and shape features.
 """
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict
 
 import numpy as np
 from scipy.stats import invwishart, multivariate_normal

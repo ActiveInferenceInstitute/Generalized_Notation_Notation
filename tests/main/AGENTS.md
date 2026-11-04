@@ -23,6 +23,10 @@ uv run --extra dev python -m pytest tests/main/ -q
 - `test_manuscript_build_figures.py` — figure-build registry contract for
   `scripts/manuscript_build_figures.py` (registration, registry JSON,
   manuscript references, alt text).
+- `test_manuscript_hydration_mirror.py` — the headless injector mirror, pinned
+  to the recorded template output in
+  `tests/fixtures/manuscript_hydration_9ce91f62a/` (destination link rebase),
+  plus the expectation the PR-time hydration guard builds from it.
 - `test_manuscript_render_custody.py` — fail-closed `render_custody` reader
   contracts: `load_render_manifest` missing/corrupt/non-object errors, the
   manifest's documented path, and `strip_volatile_tokens` (drops only

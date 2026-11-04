@@ -9,7 +9,6 @@ mathematical specifications, parameter values, and expected behaviors.
 
 import numpy as np
 from sandved_smith_2021 import SandvedSmithModel
-
 from utils import (
     compute_attentional_charge,
     generate_oddball_sequence,

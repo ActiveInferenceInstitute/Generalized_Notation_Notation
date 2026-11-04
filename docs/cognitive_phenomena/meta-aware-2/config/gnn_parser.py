@@ -9,8 +9,6 @@ creating all model variables and parameters in a generic, dimensionally-flexible
 Part of the meta-aware-2 "golden spike" GNN-specified executable implementation.
 """
 
-import os
-
 try:
     import tomllib
 except ImportError:
@@ -20,10 +18,12 @@ except ImportError:
         try:
             import toml as tomllib  # type: ignore
         except ImportError:
+
             class _TomlFallback:
                 @staticmethod
                 def load(f):
                     import json
+
                     return json.load(f)
 
             tomllib = _TomlFallback()  # type: ignore

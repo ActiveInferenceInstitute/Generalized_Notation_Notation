@@ -629,10 +629,7 @@ def _registry_literal(name: str) -> ast.Dict | None:
         return None
     for node in ast.walk(tree):
         value = None
-        if (
-            isinstance(node, ast.AnnAssign)
-            and getattr(node.target, "id", None) == name
-        ):
+        if isinstance(node, ast.AnnAssign) and getattr(node.target, "id", None) == name:
             value = node.value
         elif isinstance(node, ast.Assign) and any(
             getattr(target, "id", None) == name for target in node.targets
@@ -737,11 +734,7 @@ def _frames_named_in(text: str) -> set[str]:
 
 def _model_kind_mentions(text: str) -> set[str]:
     """State-space values named in *text*."""
-    return {
-        kind
-        for kind in MODEL_KIND_VALUES
-        if re.search(rf"(?i)\b{kind}\b", text)
-    }
+    return {kind for kind in MODEL_KIND_VALUES if re.search(rf"(?i)\b{kind}\b", text)}
 
 
 def _model_kind_contradiction(
@@ -986,8 +979,7 @@ def audit_model_kind_coverage(
                 Path("src/gnn/render/framework_registry.py"),
                 0,
                 "",
-                "cannot parse FRAMEWORK_REGISTRY / "
-                "RENDER_CAPABILITY_DECLARATIONS",
+                "cannot parse FRAMEWORK_REGISTRY / RENDER_CAPABILITY_DECLARATIONS",
             )
         ]
     frames, declarations = facts
@@ -1014,9 +1006,7 @@ def audit_model_kind_coverage(
             )
         issues.extend(table_issues)
         issues.extend(
-            _model_kind_prose_issues(
-                rel, stripped, frames, declarations, expectations
-            )
+            _model_kind_prose_issues(rel, stripped, frames, declarations, expectations)
         )
     return issues
 
@@ -1628,18 +1618,14 @@ def format_strict_issue_detail(
             chunks.append(f"  {rel}:{lineno}  `{claimed}`  → {reason}\n")
 
     if model_kind_issues:
-        chunks.append(
-            f"## Model-kind coverage claims ({len(model_kind_issues)})\n"
-        )
+        chunks.append(f"## Model-kind coverage claims ({len(model_kind_issues)})\n")
         for rel, lineno, claimed, reason in sorted(
             model_kind_issues, key=lambda x: (str(x[0]), x[1])
         ):
             chunks.append(f"  {rel}:{lineno}  `{claimed}`  → {reason}\n")
 
     if render_doc_issues:
-        chunks.append(
-            f"## Render-doc frame coverage ({len(render_doc_issues)})\n"
-        )
+        chunks.append(f"## Render-doc frame coverage ({len(render_doc_issues)})\n")
         for rel, lineno, claimed, reason in sorted(
             render_doc_issues, key=lambda x: (str(x[0]), x[1])
         ):

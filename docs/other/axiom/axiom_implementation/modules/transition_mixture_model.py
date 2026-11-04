@@ -7,10 +7,9 @@ as piecewise linear trajectories with switching linear dynamical systems.
 """
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import numpy as np
-from scipy.stats import multivariate_normal
 
 logger = logging.getLogger(__name__)
 

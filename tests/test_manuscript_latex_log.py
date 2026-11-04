@@ -45,6 +45,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from gnn.manuscript.render_custody import (  # noqa: E402
+    TEMPLATE_REVISION_ENV,
     custody_issues,
     hydration_issues,
     mask_log_timestamp,
@@ -213,6 +214,19 @@ def test_the_preamble_patterns_reject_a_preamble_without_them() -> None:
 # --- the render custody chain ------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+def _declared_template_revision(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These fixtures render no template checkout, so they declare one.
+
+    The fresh-render gate reports ``[UNMEASURED]`` (exit 4) when the template
+    revision this render used is unknown: a gate that cannot fire must not
+    report success. That path is exercised in
+    ``tests/main/test_manuscript_render_custody.py``; these tests are about
+    what the byte comparison does once it is able to run at all.
+    """
+    monkeypatch.setenv(TEMPLATE_REVISION_ENV, "abc1234")
+
+
 def _custody_fixture(tmp_path: Path) -> Path:
     """A miniature committed tree: token map, receipt, hydrated prose, artifacts."""
     root = tmp_path / "repo"
@@ -290,15 +304,21 @@ def test_a_fresh_render_matching_the_manifest_has_no_issues(tmp_path: Path) -> N
     assert verify_fresh_render(root) == []
 
 
-def test_an_artifact_swap_with_unchanged_prose_warns(tmp_path: Path) -> None:
-    """Artifact-only drift with the recorded inputs fully matching: toolchain."""
+def test_an_artifact_swap_with_unchanged_prose_fails(tmp_path: Path) -> None:
+    """Artifact drift with the recorded inputs fully matching is still drift.
+
+    The 2026-11-04 ruling: the profile comparison narrows *what* is compared
+    on a host that is not the recording one; it never turns a disagreement
+    between two recorded sides into a warning.
+    """
     root = _custody_fixture(tmp_path)
     (root / "output" / "pdf" / "_combined_manuscript.log").write_text(
         "[1] [2] [3] Output written on x.pdf (3 pages).\n", encoding="utf-8"
     )
     issues = verify_fresh_render(root)
     assert len(issues) == 1, issues
-    assert issues[0].startswith("[WARN] output/pdf/_combined_manuscript.log"), issues
+    assert issues[0].startswith("[FAIL] output/pdf/_combined_manuscript.log"), issues
+    assert "the render inputs match this chain" in issues[0]
 
 
 def test_a_re_render_at_a_new_commit_with_identical_prose_passes(
@@ -354,7 +374,7 @@ def test_a_re_render_at_a_new_commit_with_identical_prose_passes(
 
 
 def test_an_artifact_swap_alongside_prose_drift_fails(tmp_path: Path) -> None:
-    """Artifact and input drift together: the committed chain is stale for HEAD."""
+    """Artifact and input drift together: both are named, the chain is stale."""
     root = _custody_fixture(tmp_path)
     (root / "output" / "manuscript" / "05_reproducibility.md").write_text(
         "a 26-step pipeline\n", encoding="utf-8"
@@ -363,8 +383,16 @@ def test_an_artifact_swap_alongside_prose_drift_fails(tmp_path: Path) -> None:
         "a 26-step pipeline\n", encoding="utf-8"
     )
     issues = verify_fresh_render(root)
-    assert len(issues) == 1, issues
-    assert issues[0].startswith("[FAIL] output/pdf/_combined_manuscript.md"), issues
+    assert len(issues) == 2, issues
+    assert any(
+        issue.startswith("[FAIL] output/pdf/_combined_manuscript.md")
+        for issue in issues
+    ), issues
+    assert any(
+        "[FAIL] output/manuscript/05_reproducibility.md changed after the render"
+        in issue
+        for issue in issues
+    ), issues
 
 
 def test_a_missing_artifact_fails(tmp_path: Path) -> None:
@@ -396,7 +424,7 @@ def test_mask_log_timestamp_masks_only_the_banner_start_time() -> None:
 def test_a_re_render_differing_only_in_the_log_timestamp_passes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Regression for the PR #225 review: an identical render is not a [WARN].
+    """Regression for the PR #225 review: an identical render is not drift.
 
     The committed log and a fresh one differ only in XeTeX's banner start
     time; ``verify_fresh_render`` must mask it on both sides.
@@ -429,7 +457,7 @@ def test_a_re_render_differing_only_in_the_log_timestamp_passes(
         encoding="utf-8",
     )
     issues = verify_fresh_render(root)
-    assert len(issues) == 1 and issues[0].startswith(f"[WARN] {log_rel}"), issues
+    assert len(issues) == 1 and issues[0].startswith(f"[FAIL] {log_rel}"), issues
 
 
 # --- the PR-time hydration guard ----------------------------------------------
