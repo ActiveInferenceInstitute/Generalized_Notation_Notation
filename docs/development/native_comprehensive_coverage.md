@@ -146,10 +146,15 @@ classification. A startup bypass is unobserved execution, never evidence that
 the child executed zero original-source lines.
 
 Only a file whose bytes are still changing is re-read, stopping as soon as two
-consecutive SHA-256 hashes agree, the writing process recorded in the file name is
-no longer alive, or the settle window set by `RAW_OBSERVATION_WINDOW_SECONDS`
-(five seconds) expires; a file whose bytes are already stable but cannot be parsed
-is returned unreadable at once, without re-reading. Each
+consecutive SHA-256 hashes agree or the settle window set by
+`RAW_OBSERVATION_WINDOW_SECONDS` (five seconds) expires; a file whose bytes are
+already stable but cannot be parsed is returned unreadable at once, without
+re-reading. The process named in the file is reported in the receipt but never
+shortens that window: a name is not a writer, so liveness is evidence and not a
+settling criterion. Every observation hashes the file and parses a private copy of
+it, so the file under observation is never opened by coverage and never written by
+the reader; a file that stays empty is refused as empty, never admitted as a zero
+contribution. Each
 attempt is recorded in the receipt (`size`, `sha256`, `observations`,
 `elapsed_seconds`, `observation_trail`, `settled`, `writer_alive_at_decision`), so
 an admitted file's settling cost is auditable, and a file that never settles is
