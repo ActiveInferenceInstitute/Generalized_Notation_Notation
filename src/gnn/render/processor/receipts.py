@@ -161,10 +161,14 @@ def _write_render_receipt(
         for source, record in merged.items():
             record.update(model_provenance(Path(source), 11))
     successful = attempts = rendered = 0
+    unsupported_files = 0
     failed: List[Dict[str, str]] = []
     unsupported: List[Dict[str, str]] = []
     for source, record in merged.items():
-        successful += bool(record.get("overall_success", record.get("success", False)))
+        file_success = bool(record.get("overall_success", record.get("success", False)))
+        successful += file_success
+        if not file_success and record.get("unsupported"):
+            unsupported_files += 1
         framework_results = record.get("framework_results", {})
         if not isinstance(framework_results, dict):
             continue
@@ -192,7 +196,10 @@ def _write_render_receipt(
         "file_results": merged,
         "total_files": len(merged),
         "successful_files": successful,
-        "failed_files": len(merged) - successful,
+        # A refused file is not a failed file: keep the two populations separate so
+        # "failed" always means something was attempted and did not work.
+        "failed_files": len(merged) - successful - unsupported_files,
+        "unsupported_files": unsupported_files,
         "total_framework_attempts": attempts,
         "successful_framework_renderings": rendered,
         # Refusals are counted separately and stay in the denominator, so

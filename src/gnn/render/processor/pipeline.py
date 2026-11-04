@@ -13,6 +13,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from gnn.render.admission import merge_backend_options
+from gnn.render.execution_contracts import (
+    UNSUPPORTED_PREFIX,
+    is_unsupported_message,
+    refusal_class,
+)
 from gnn.render.processor.parsing import (
     _render_succeeded,
     normalize_matrices,
@@ -367,49 +372,38 @@ def _process_single_gnn_file_basic(
         Processing result dictionary
     """
     try:
-        # Import basic generators
-        from gnn.render.bnlearn import generate_bnlearn_code
-        from gnn.render.generators import generate_pymdp_code
-
-        # Create basic model data from filename
-        model_data: dict[str, Any] = {
-            "model_name": gnn_file.stem,
-            "variables": [],
-            "connections": [],
-        }
-
         # Create file-specific output directory
         file_output_dir = output_dir / gnn_file.stem
         file_output_dir.mkdir(parents=True, exist_ok=True)
 
         generated_files: list[Any] = []
 
-        # Generate code for each framework
-        frameworks: dict[str, Any] = {
-            "pymdp": (generate_pymdp_code, ".py"),
-            "bnlearn": (generate_bnlearn_code, ".py"),
+        # PyMDP and bnlearn are rendered only from an extracted POMDP state space.
+        # This path runs when extraction produced nothing, so there is no model to
+        # render: refuse in the established typed-refusal family rather than emitting
+        # a program. The earlier fallback called the ``generate_pymdp_code`` /
+        # ``generate_bnlearn_code`` templates with an empty model
+        # (``{"variables": [], "connections": []}``) and reported success, writing an
+        # artifact that represented no specification at all. See CHANGELOG, Unreleased.
+        refusal = (
+            f"{UNSUPPORTED_PREFIX}pomdp-extraction: {gnn_file.name} has no "
+            "extractable POMDP state space, so no pymdp or bnlearn program can be "
+            "rendered from it"
+        )
+        # Consume the declaration rather than restating the prefix: the class is
+        # registered in REFUSAL_CLASSES, so a rename or an unregistered class is
+        # caught by the taxonomy test rather than drifting silently.
+        refusal_declared = is_unsupported_message(refusal)
+        framework_results: dict[str, Any] = {
+            framework: {
+                "success": False,
+                "unsupported": refusal_declared,
+                "status": "unsupported",
+                "message": refusal,
+                "generated_files": [],
+            }
+            for framework in ("pymdp", "bnlearn")
         }
-
-        for framework_name, (generator_func, extension) in frameworks.items():
-            try:
-                # Create framework subdirectory
-                framework_dir = file_output_dir / framework_name
-                framework_dir.mkdir(parents=True, exist_ok=True)
-
-                # Generate code
-                code = generator_func(model_data)
-                if code:
-                    output_file = (
-                        framework_dir / f"{gnn_file.stem}_{framework_name}{extension}"
-                    )
-                    with open(output_file, "w") as f:
-                        f.write(code)
-                    generated_files.append(str(output_file))
-
-            except Exception as e:
-                logger.warning(
-                    f"Failed to generate {framework_name} code for {gnn_file}: {e}"
-                )
 
         # DisCoPy uses the same connection-driven renderer as Step 11. Parse the
         # source file for its declared Connections instead of emitting a
@@ -424,19 +418,48 @@ def _process_single_gnn_file_basic(
         )
         if discopy_ok:
             generated_files.append(str(discopy_file))
+            framework_results["discopy"] = {
+                "success": True,
+                "unsupported": False,
+                "status": "rendered",
+                "message": discopy_message,
+                "generated_files": [str(discopy_file)],
+            }
         else:
+            # ``render_file`` refuses a spec without declared Connections; any other
+            # failure is a real failure and must not be re-labelled as a refusal.
+            discopy_refused = is_unsupported_message(discopy_message)
+            framework_results["discopy"] = {
+                "success": False,
+                "unsupported": discopy_refused,
+                "status": "unsupported" if discopy_refused else "failed",
+                "message": discopy_message,
+                "generated_files": [],
+            }
             logger.warning(
                 f"Failed to generate discopy code for {gnn_file}: {discopy_message}"
             )
 
-        return {
-            "success": len(generated_files) > 0,
-            "message": f"Generated {len(generated_files)} files"
-            if generated_files
-            else "No files generated",
+        rendered = len(generated_files) > 0
+        result: dict[str, Any] = {
+            "overall_success": rendered,
+            "success": rendered,
+            "status": "rendered" if rendered else "unsupported",
+            "message": (
+                f"Generated {len(generated_files)} files" if rendered else refusal
+            ),
             "generated_files": generated_files,
+            "framework_results": framework_results,
             "output_directory": str(file_output_dir),
         }
+        if not rendered:
+            all_refused = all(
+                entry.get("unsupported") for entry in framework_results.values()
+            )
+            result["unsupported"] = all_refused
+            result["reason"] = refusal
+            result["refusal_class"] = refusal_class(refusal)
+        return result
 
     except Exception as e:
         return {
