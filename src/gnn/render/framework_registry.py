@@ -339,10 +339,12 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
 #: source-declared finite controls, and it is what admits a spec whose
 #: per-factor action counts cannot be flattened (``temporal_hierarchy``), so
 #: action structure is answered per spec by the declared contract rather than
-#: by a second capability dimension.  The discrete/continuous split is declared
-#: by ``supports_continuous`` and ``continuous_only``.  Together these are the
-#: machine-checked render capabilities; prose ``supported_features`` is
-#: documentation, not a gate.
+#: by a second capability dimension.  Falsifier: if a Kronecker-factorized
+#: corpus spec (``B_fN`` keys and no ``control_factors``) arrives,
+#: ``action_composition`` is the dimension this decision defers to.  The
+#: discrete/continuous split is declared by ``supports_continuous`` and
+#: ``continuous_only``.  Together these are the machine-checked render
+#: capabilities; prose ``supported_features`` is documentation, not a gate.
 RENDER_DIMENSION_VALUES: Mapping[str, Tuple[str, ...]] = MappingProxyType(
     {
         "continuous_composition": ("flat", "factored", "independent_agents"),
