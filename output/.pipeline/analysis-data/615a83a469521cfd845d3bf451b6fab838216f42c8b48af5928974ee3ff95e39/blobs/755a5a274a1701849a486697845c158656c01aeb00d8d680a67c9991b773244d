@@ -1,0 +1,13 @@
+{
+  "counts_describe_commit": "739af221e",
+  "dirty_path_count": 3,
+  "dirty_paths": [
+    "output/.pipeline/",
+    "output/data/manuscript_variables.json",
+    "output/data/manuscript_variables_receipt.json"
+  ],
+  "generator": "scripts/z_generate_manuscript_variables.py",
+  "git_available": true,
+  "receipt_version": "gnn_manuscript_variables_receipt_v1",
+  "working_tree_clean": false
+}

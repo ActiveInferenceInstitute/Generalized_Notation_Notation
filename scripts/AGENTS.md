@@ -76,10 +76,18 @@ The [`lib/`](lib/) subdirectory provides shared utility functions for multiple a
 
 ## Operational Standards
 
-The repository terminology audit permits only the exact reviewed FEP_Formal
-identity-migration statements registered in `check_repo_terminology.py`. Their
-path, diagnostic and complete text must match. Other statements and altered
-lines remain failures; the [paired-revision guide](../docs/development/fep_lean_paired_revision.md)
+The repository terminology audit exempts two things, and nothing else. Exact
+reviewed FEP_Formal identity-migration statements registered in
+`check_repo_terminology.py` (path, diagnostic and complete text must match), and
+statements that deny the claim or record its retirement, such as "neither the
+module nor the function exists" or "are gone — deleted, not …". `RETIREMENT_MARKERS`
+in that script owns the exact phrases and `tests/docs/test_docs_audit.py` names the
+two statements this exemption exists for. The retirement marker must sit in the
+same clause as the banned word, so a retired subject cannot launder a stale claim
+beside it, and a notice that a surface is still live and merely marked for removal
+carries no marker and still fails. Other statements and altered lines remain
+failures; the
+[paired-revision guide](../docs/development/fep_lean_paired_revision.md)
 owns the migration contract.
 
 - Strict adherence to Pythonic PEP validation and real-implementation testing principles.
