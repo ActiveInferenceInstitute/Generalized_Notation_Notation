@@ -397,10 +397,15 @@ def _compute_graph_metrics(
     return stats
 
 
-def _generate_interactive_network(G: Any, output_path: Path) -> bool:
-    """Generate interactive network."""
+def _generate_interactive_network(G: Any, output_path: Path) -> Optional[Path]:
+    """Generate the interactive network; return the written path, or ``None``.
+
+    Callers append the result to their artifact list, so the return value must
+    be the path that landed on disk: a bare ``True`` here put the string
+    ``"True"`` into the Step 8 summary instead of the HTML artifact.
+    """
     if not PLOTLY_AVAILABLE or not go or nx is None:
-        return False
+        return None
 
     try:
         pos = nx.spring_layout(G, k=2, iterations=100, seed=42)
@@ -478,8 +483,8 @@ def _generate_interactive_network(G: Any, output_path: Path) -> bool:
         )
 
         fig.write_html(str(output_path))
-        return True
+        return output_path
 
     except Exception as e:
         logger.warning("Error generating interactive network: %s", e)
-        return False
+        return None
