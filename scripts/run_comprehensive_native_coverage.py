@@ -18,6 +18,7 @@ import signal
 import subprocess
 import sys
 import sysconfig
+import tempfile
 import time
 import tomllib
 import uuid
@@ -458,11 +459,14 @@ def junit_receipt(path: Path) -> dict:
 # A coverage data file is written when its process exits, in several SQLite transactions, so a
 # concurrent reader can see it before the writer has finished. The settle window re-observes such a
 # file until two consecutive hashes agree; it never admits a file whose bytes keep changing, and it
-# never admits a file that settles unreadable.
+# never admits a file that settles unreadable. The candidate itself is never opened by coverage:
+# its SQLite backend creates a missing schema when it opens a data file, so an in-place read of an
+# unfinished file writes to the very bytes this observer measures.
 RAW_OBSERVATION_WINDOW_SECONDS = 5.0
 RAW_OBSERVATION_POLL_SECONDS = 0.05
 RAW_OBSERVATION_TRAIL_LIMIT = 4
 RAW_DATA_CHANGED = "Native coverage raw data changed while being read"
+RAW_DATA_EMPTY = "Native coverage raw data file is empty"
 RAW_DATA_UNQUALIFIED = (
     "Unreadable raw data retained; original-source execution is unknown; never admitted"
 )
@@ -488,13 +492,21 @@ def raw_data_writer_alive(pid: int | None) -> bool | None:
 
 
 def observe_raw_coverage(
-    path: Path, checkout: Path
+    path: Path, checkout: Path, observed: Path
 ) -> tuple[CoverageData | None, dict]:
-    """Read one native coverage data file once: hash, parse, re-hash.
+    """Read one native coverage data file once without writing to it: hash, parse a copy, re-hash.
 
-    ``changed`` marks bytes that differed between the two hashes. Only that condition is retried by
-    the settle window: a writer finishing its database is benign, while a stable file that cannot be
-    parsed is corruption and is returned unreadable at once.
+    The candidate is parsed from a private byte-for-byte copy under ``observed``, never in place.
+    Coverage's SQLite backend creates a missing schema when it opens a data file, so handing it the
+    subject would write to the very bytes being measured: a zero-byte candidate would grow into a
+    schema-only database and the re-hash below would report the observer's own write as a change by
+    the writer. The hash pair stays on the subject: the bytes hashed are the bytes parsed, and the
+    second hash still comes from the subject.
+
+    ``changed`` marks bytes that differed between the two subject hashes. Only that condition is
+    retried by the settle window: a writer finishing its database is benign, while a stable file
+    that cannot be parsed is corruption and is returned unreadable at once. A file that is empty
+    and stays empty is refused for being empty, not for a change nobody made.
     """
     observation: dict = {
         "size": None,
@@ -509,7 +521,12 @@ def observe_raw_coverage(
         first = path.read_bytes()
         observation["size"] = len(first)
         observation["sha256"] = hashlib.sha256(first).hexdigest()
-        data = CoverageData(basename=str(path))
+        if not first:
+            raise DataError(RAW_DATA_EMPTY)
+        observed.mkdir(parents=True, exist_ok=True)
+        copy = observed / f"{path.name}.{uuid.uuid4().hex}.observed"
+        copy.write_bytes(first)
+        data = CoverageData(basename=str(copy))
         data.read()
         executed_original = {
             filename: len(data.lines(filename) or [])
@@ -581,26 +598,29 @@ def raw_coverage_detail(
     return detail
 
 
-def read_raw_coverage(path: Path, checkout: Path) -> tuple[CoverageData | None, dict]:
+def read_raw_coverage(
+    path: Path, checkout: Path, observed: Path
+) -> tuple[CoverageData | None, dict]:
     """Read a native coverage data file, re-observing it while its writer is still finalizing it.
 
     The file is observed until two consecutive hashes agree (the writer has stopped) or until
-    ``RAW_OBSERVATION_WINDOW_SECONDS`` elapses. A file that settles and parses is admitted, with
-    every observation recorded in the receipt so the admission is auditable; a file that never
-    settles is rejected with the original change error, and a file that settles unreadable is
-    rejected with the error it produced. Retain unreadable native data as unknown, never as zero
-    contribution.
+    ``RAW_OBSERVATION_WINDOW_SECONDS`` elapses. Every observation parses its own private copy, so
+    the subject is never written and each hash pair compares the subject with itself. A file that
+    settles and parses is admitted, with every observation recorded in the receipt so the admission
+    is auditable; a file that never settles is rejected with the original change error, and a file
+    that settles unreadable is rejected with the error it produced. Writer liveness is recorded in
+    the receipt as evidence only: a process id in a file name is not a writer, so it never shortens
+    the window. Retain unreadable native data as unknown, never as zero contribution.
     """
     pid = raw_data_pid(path.name)
     started = time.monotonic()
     deadline = started + RAW_OBSERVATION_WINDOW_SECONDS
     trail: list[dict] = []
     while True:
-        data, observation = observe_raw_coverage(path, checkout)
+        data, observation = observe_raw_coverage(path, checkout, observed)
         trail.append(observation)
         if observation["changed"]:
-            writer_alive = raw_data_writer_alive(pid)
-            if writer_alive is False or time.monotonic() >= deadline:
+            if time.monotonic() >= deadline:
                 return None, raw_coverage_detail(
                     path,
                     pid,
@@ -609,7 +629,7 @@ def read_raw_coverage(path: Path, checkout: Path) -> tuple[CoverageData | None, 
                     admitted=False,
                     error_class="DataError",
                     error=RAW_DATA_CHANGED,
-                    writer_alive=writer_alive,
+                    writer_alive=raw_data_writer_alive(pid),
                 )
             time.sleep(RAW_OBSERVATION_POLL_SECONDS)
             continue
@@ -888,9 +908,14 @@ def main() -> int:
         measured = lane_receipt["processes"]
         out_of_scope = lane_receipt["out_of_scope_processes"]
         lane_union = CoverageData(basename=str(lane / ".coverage"))
+        # An admitted observation stays backed by the private copy of the subject it parsed, so
+        # those copies live until this lane's line sets and both unions have read them.
+        observed_copies = tempfile.TemporaryDirectory(prefix="gnn-native-observed-")
         expected_lane_lines = {}
         for data_path in sorted(lane.glob(".coverage.*")):
-            data, raw_receipt = read_raw_coverage(data_path, checkout)
+            data, raw_receipt = read_raw_coverage(
+                data_path, checkout, Path(observed_copies.name)
+            )
             if data is None:
                 lane_receipt["invalid_raw_files"].append(raw_receipt)
                 continue
@@ -940,6 +965,7 @@ def main() -> int:
                 expected_lane_lines.setdefault(filename, set()).update(lines)
                 expected_union_lines.setdefault(filename, set()).update(lines)
             measured.append(raw_receipt)
+        observed_copies.cleanup()
         if lane_receipt["invalid_raw_files"]:
             reject(
                 "Unreadable native coverage data retained; original-source contribution unknown: "

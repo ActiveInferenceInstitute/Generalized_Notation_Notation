@@ -1,0 +1,61 @@
+# Template-format manuscript configuration for GeneralizedNotationNotation.
+# Scaffolded from the project README/AGENTS context; update before publication.
+
+paper:
+  title: "GeneralizedNotationNotation: A Text Language for Active Inference Models"
+  subtitle: "A text language and modular processing pipeline for Active Inference generative models"
+  # The template's title-page cover slot points at the generated graphical
+  # abstract, so the cover page and the Abstract section carry one artifact.
+  # The alt text is a literal: a config token would reach the cover verbatim,
+  # and hard-coded counts are rejected by the token gate.
+  cover:
+    image: "output/figures/gnn_graphical_abstract.png"
+    alt: "Graphical abstract: one plain-text GNN specification flowing through parse, validate, render, execute, and analyze cards into cross-repository interchange checks against the pinned GEO-INFER and fep-lean pairs."
+  version: "5.0.3"
+  date: "2026-10-31"
+
+authors:
+  - name: "Daniel Ari Friedman"
+    orcid: "0000-0001-6232-9096"
+    email: "daniel@activeinference.institute"
+    affiliation: "Active Inference Institute"
+    corresponding: true
+
+publication:
+  doi: "10.5281/zenodo.7803313"
+  # DOI names the project concept; the 4.1.0 version/distribution archive remains pending.
+  github_repository: "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation"
+  year: "2026"
+  transmission_bookends:
+    enabled: false
+    max_prior_releases: 5
+    show_steganography: false
+
+keywords:
+  - "GNN"
+  - "active inference"
+  - "generative models"
+  - "model notation"
+  - "pipeline automation"
+
+metadata:
+  documentclass: "extarticle"
+  fontsize: "9pt"
+  geometry: "margin=2cm"
+  license: "CC-BY-NC-SA-4.0"
+  language: "en"
+
+manuscript_dir: "manuscript"
+
+render:
+  formats:
+    pdf: true
+    html: true
+    slides: true
+    docx: false
+    epub: false
+
+bibliography:
+  references_path: "manuscript/references.bib"
+  fail_on_missing: true
+  fail_on_unused: false

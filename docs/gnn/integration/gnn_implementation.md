@@ -94,9 +94,9 @@ success, message, warnings = render_gnn_spec(
 )
 ```
 
-`RENDER_CLI_TARGETS` in `src/gnn/render/render.py` also still accepts `rxinfer_toml`, but that
-target is retired: `render_gnn_spec()` returns `(False, <message>, [])` for it and
-produces no artifacts. Use `rxinfer`, which routes to the canonical renderer.
+`rxinfer_toml` is a retired target name: `render_gnn_spec()` accepts it only to refuse it,
+returning `(False, <message>, [])` and producing no artifacts. No target list advertises it —
+use `rxinfer`, which routes to the canonical renderer.
 
 ### Available Renderers
 

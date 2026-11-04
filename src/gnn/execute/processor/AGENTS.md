@@ -115,7 +115,7 @@ only `gnn.execute.metadata` and the framework-availability module (`envelope.py:
 
 ## Provenance
 
-This package was extracted in-place from the former flat module `src/gnn/execute/processor.py`
+This package was extracted in-place from the former flat `processor.py` module
 into the six-file package above; the import surface is unchanged (Layer 2 above preserves it
 verbatim, Layer 1 re-homes the moved definitions on the facade). Import sites now target the
 package facade:

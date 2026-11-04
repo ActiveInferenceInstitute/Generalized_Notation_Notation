@@ -1,0 +1,141 @@
+@article{gnn2023,
+  author  = {Sm{\'e}kal, Jakub and Friedman, Daniel Ari},
+  title   = {Generalized Notation Notation for Active Inference Models},
+  journal = {Active Inference Journal},
+  year    = {2023},
+  doi     = {10.5281/zenodo.22820299},
+  url     = {https://zenodo.org/records/22820299},
+  note    = {Initial publication describing the GNN framework}
+}
+
+@article{friston2010,
+  author  = {Friston, Karl},
+  title   = {The free-energy principle: a unified brain theory?},
+  journal = {Nature Reviews Neuroscience},
+  volume  = {11},
+  number  = {2},
+  pages   = {127--138},
+  year    = {2010},
+  doi     = {10.1038/nrn2787}
+}
+
+@article{dacosta2020,
+  author  = {Da Costa, Lancelot and Parr, Thomas and Sajid, Noor and Veselic, Sebastijan and Neacsu, Victorita and Friston, Karl},
+  title   = {Active inference on discrete state-spaces: A synthesis},
+  journal = {Journal of Mathematical Psychology},
+  volume  = {99},
+  pages   = {102447},
+  year    = {2020},
+  doi     = {10.1016/j.jmp.2020.102447}
+}
+
+@article{smith2022,
+  author  = {Smith, Ryan and Friston, Karl J. and Whyte, Christopher J.},
+  title   = {A step-by-step tutorial on active inference and its application to empirical data},
+  journal = {Journal of Mathematical Psychology},
+  volume  = {107},
+  pages   = {102632},
+  year    = {2022},
+  doi     = {10.1016/j.jmp.2021.102632}
+}
+
+@book{parr2022,
+  author    = {Parr, Thomas and Pezzulo, Giovanni and Friston, Karl J.},
+  title     = {Active Inference: The Free Energy Principle in Mind, Brain, and Behavior},
+  publisher = {MIT Press},
+  year      = {2022},
+  doi       = {10.7551/mitpress/12441.001.0001}
+}
+
+@article{heins2022,
+  author  = {Heins, Conor and Millidge, Beren and Demekas, Daphne and Klein, Brennan and Friston, Karl and Couzin, Iain D. and Tschantz, Alexander},
+  title   = {pymdp: A Python library for active inference in discrete state spaces},
+  journal = {Journal of Open Source Software},
+  volume  = {7},
+  number  = {73},
+  pages   = {4098},
+  year    = {2022},
+  doi     = {10.21105/joss.04098}
+}
+
+@article{defelice2021,
+  author  = {de Felice, Giovanni and Toumi, Alexis and Coecke, Bob},
+  title   = {DisCoPy: Monoidal Categories in Python},
+  journal = {Electronic Proceedings in Theoretical Computer Science},
+  volume  = {333},
+  pages   = {183--197},
+  year    = {2021},
+  doi     = {10.4204/EPTCS.333.13}
+}
+
+@misc{koudahl2023syntheticAgents1,
+  author        = {Koudahl, Magnus and van de Laar, Thijs and de Vries, Bert},
+  title         = {Realising Synthetic Active Inference Agents, Part I: Epistemic Objectives and Graphical Specification Language},
+  year          = {2023},
+  eprint        = {2306.08014},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI},
+  url           = {https://arxiv.org/abs/2306.08014}
+}
+
+@misc{vandelaaar2023syntheticAgents2,
+  author        = {van de Laar, Thijs and Koudahl, Magnus and de Vries, Bert},
+  title         = {Realising Synthetic Active Inference Agents, Part II: Variational Message Updates},
+  year          = {2023},
+  eprint        = {2306.02733},
+  archivePrefix = {arXiv},
+  primaryClass  = {stat.ML},
+  doi           = {10.1162/neco_a_01713},
+  url           = {https://arxiv.org/abs/2306.02733}
+}
+
+@misc{bagaev2021reactiveMessagePassing,
+  author        = {Bagaev, Dmitry and de Vries, Bert},
+  title         = {Reactive Message Passing for Scalable Bayesian Inference},
+  year          = {2021},
+  eprint        = {2112.13251},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2112.13251}
+}
+
+@article{nuijten2026efePlanningVariational,
+  author  = {Nuijten, Wouter W. L. and van de Laar, Thijs and de Vries, Bert},
+  title   = {Expected Free Energy-based Planning as Variational Inference},
+  journal = {Transactions on Machine Learning Research},
+  year    = {2026},
+  eprint  = {2606.20658},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI},
+  url     = {https://arxiv.org/abs/2606.20658}
+}
+
+@misc{nuijten2026typeInference,
+  author        = {Nuijten, Wouter W. L. and Lukashchuk, Mykola and van de Laar, Thijs and de Vries, Bert},
+  title         = {What Type of Inference is Active Inference?},
+  year          = {2026},
+  eprint        = {2606.04935},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI},
+  url           = {https://arxiv.org/abs/2606.04935}
+}
+
+@misc{champion2024reframingEfe,
+  author        = {Champion, Th{\'e}ophile and Bowman, Howard and Markovi{\'c}, Dimitrije and Grze{\'s}, Marek},
+  title         = {Reframing the Expected Free Energy: Four Formulations and a Unification},
+  year          = {2024},
+  eprint        = {2402.14460},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI},
+  url           = {https://arxiv.org/abs/2402.14460}
+}
+
+@misc{rangarajan2026hierarchicalSuccessor,
+  author        = {Rangarajan, Prashant and Rao, Rajesh P. N.},
+  title         = {Hierarchical Active Inference using Successor Representations},
+  year          = {2026},
+  eprint        = {2604.15679},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2604.15679}
+}

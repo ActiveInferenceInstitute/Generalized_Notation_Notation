@@ -142,48 +142,6 @@
 \usepackage{listings}
 \lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible}
 
-\usepackage{fvextra}
-\fvset{breaklines=true,breakanywhere=true,breaknonspaceingroup=true,breaksymbolleft={},breaksymbolright={},breakanywheresymbolpre={},breakanywheresymbolpost={}}
-\RecustomVerbatimEnvironment{verbatim}{Verbatim}{}
-
-\makeatletter
-\newbox\archive@titlebox
-\newdimen\archive@available
-\newcommand*\archivefigurebounded[1]{%
-  \sbox\pandoc@box{#1}%
-  \archive@available=\textheight%
-  \ifx\beamer@frametitle\@empty\else%
-    \setbox\archive@titlebox=\vbox{\vbox{}{\parskip0pt\usebeamertemplate***{frametitle}\vskip0.25em}}%
-    \advance\archive@available by-\ht\archive@titlebox%
-    \advance\archive@available by-\dp\archive@titlebox%
-  \fi%
-  \advance\archive@available by-\beamer@frametopskip%
-  \advance\archive@available by-2\baselineskip%
-  \ifdim\archive@available<1pt%
-    \PackageError{template}{Archive image frame has no title-safe image area}{}%
-  \fi%
-  \Gscale@div\@tempa{\archive@available}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
-  \Gscale@div\@tempb{0.98\linewidth}{\wd\pandoc@box}%
-  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi%
-  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
-  \else\usebox{\pandoc@box}\fi%
-}
-\newcommand*\archivefigurecaptionnumber[2]{#2}
-\newenvironment{archivecaptionframe}{\par\begingroup}{\par\endgroup}
-\newenvironment{archiveimageframe}{\par\begingroup\centering\let\pandocbounded\archivefigurebounded}{\par\endgroup}
-\ifdefined\pandocbounded
-\renewcommand*\pandocbounded[1]{%
-  \sbox\pandoc@box{#1}%
-  \Gscale@div\@tempa{0.40\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
-  \Gscale@div\@tempb{0.98\linewidth}{\wd\pandoc@box}%
-  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi%
-  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
-  \else\usebox{\pandoc@box}%
-  \fi%
-}
-\fi
-\makeatother
-
 % Slide layout defaults for warning-clean scientific decks.
 \usepackage{etoolbox}
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{}
@@ -270,7 +228,7 @@
 This section reports what the project has actually produced and how each
 quantitative claim is grounded. Every number below is substituted at
 render time from the deterministic producer, which reads the repository
-state at commit 92f285b5b, so each figure here is regenerated from the
+state at commit 1def0ac30, so each figure here is regenerated from the
 artifacts it describes rather than transcribed.
 \end{frame}
 
@@ -289,10 +247,10 @@ manuscript does not treat them as one. Registered in no family:
 covered in sec.~7. Registered but outside
 the scanned tree: none, because all 9 target directories are themselves
 \texttt{input/gnn\_files} corpus directories. Each family declares the
-simulation frameworks it is meant to drive, which is what lets the same
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Model-Family Coverage}
+simulation frameworks it is meant to drive, which is what lets the same
 text model fan out across the executable-model leg of the Triple Play
 (Smékal and Friedman 2023). The families and their declared frameworks
 are enumerated below.
@@ -337,25 +295,25 @@ the manifest; the capability splits appended to some descriptions are
 generated from \protect\breaktt{src/gnn/render/framework\_registry.py}
 flags, not authored in the manifest, so they cannot disagree with the
 registry. Read with tbl.~3 (what each backend
-is) and fig.~6 (the same coverage as a
+is) and fig.~\ref{fig:family_matrix} (the same coverage as a
 matrix).}\label{tbl:model_families}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-F\allowbreak{}a\allowbreak{}m\allowbreak{}i\allowbreak{}l\allowbreak{}y
+Family
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-F\allowbreak{}r\allowbreak{}a\allowbreak{}m\allowbreak{}e\allowbreak{}w\allowbreak{}o\allowbreak{}r\allowbreak{}k\allowbreak{}s
+Frameworks
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-D\allowbreak{}e\allowbreak{}s\allowbreak{}c\allowbreak{}r\allowbreak{}i\allowbreak{}p\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n
+Description
 \end{minipage} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-F\allowbreak{}a\allowbreak{}m\allowbreak{}i\allowbreak{}l\allowbreak{}y
+Family
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-F\allowbreak{}r\allowbreak{}a\allowbreak{}m\allowbreak{}e\allowbreak{}w\allowbreak{}o\allowbreak{}r\allowbreak{}k\allowbreak{}s
+Frameworks
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-D\allowbreak{}e\allowbreak{}s\allowbreak{}c\allowbreak{}r\allowbreak{}i\allowbreak{}p\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n
+Description
 \end{minipage} \\
 \midrule\noalign{}
 \endhead
@@ -379,49 +337,23 @@ fixtures. \\
 fixtures. \\
 \texttt{gridworld} & pymdp, rxinfer, activeinference\_jl & Gridworld
 POMDP fixture used for cross-framework acceptance checks. \\
-\bottomrule\noalign{}
-\end{longtable}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Model-Family Coverage}
-
-{\def\LTcaptype{none} % do not increment counter
-\begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-F\allowbreak{}a\allowbreak{}m\allowbreak{}i\allowbreak{}l\allowbreak{}y
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-F\allowbreak{}r\allowbreak{}a\allowbreak{}m\allowbreak{}e\allowbreak{}w\allowbreak{}o\allowbreak{}r\allowbreak{}k\allowbreak{}s
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-D\allowbreak{}e\allowbreak{}s\allowbreak{}c\allowbreak{}r\allowbreak{}i\allowbreak{}p\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
 \texttt{scaling-study} & pymdp & PyMDP scaling-study fixtures, sampled
 conservatively for acceptance. \\
 \bottomrule\noalign{}
 \end{longtable}
-}
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Model-Family Coverage}
 The family-by-framework structure is shown in
-fig.~6, which renders the coverage matrix directly
+fig.~\ref{fig:family_matrix}, which renders the coverage matrix directly
 from the family registry rather than from a hand-maintained table.
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Model-Family Coverage}
-
-\refstepcounter{figure}\label{fig:family_matrix}
-
-\begin{archiveimageframe}
-
+\begin{figure}
+\centering
 \includegraphics[width=0.85\linewidth,height=0.40\textheight,keepaspectratio,alt={Model-family
 coverage across the registered rendering backends: one row per family
 from input/model\_family\_manifest.json, one column per backend from
@@ -432,44 +364,24 @@ deliberately sparse --- most families declare a single backend, and only
 continuous, discrete, and gridworld declare several. Read it as declared
 intent, not as profiled outcomes: the gates described below supply the
 outcomes. The matrix is generated from the two registries at commit
-92f285b5b.}]{../figures/gnn_family_framework_matrix.png}
-
-\end{archiveimageframe}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Model-Family Coverage}
-
-\begin{archivecaptionframe}
-
-\figurename~6:\ Model-family
-coverage across the registered rendering backends: one row per family
-from \breaktt{input/model\_family\_manifest.json}, one column per backend
-from \breaktt{src/gnn/render/framework\_registry.py}, and a green cell
-wherever the family declares that backend in its \texttt{frameworks}
-field. The right-hand count states how many backends each family
-declares; the grid is deliberately sparse --- most families declare a
-single
-
-\end{archivecaptionframe}
+1def0ac30.}]{../figures/gnn_family_framework_matrix.png}
+\caption{Model-family coverage across the registered rendering backends:
+one row per family from
+\protect\breaktt{input/model\_family\_manifest.json}, one column per
+backend from \protect\breaktt{src/gnn/render/framework\_registry.py}, and
+a green cell wherever the family declares that backend in its
+\protect\texttt{frameworks} field. The right-hand count states how many
+backends each family declares; the grid is deliberately sparse --- most
+families declare a single backend, and only continuous, discrete, and
+gridworld declare several. Read it as declared intent, not as profiled
+outcomes: the gates described below supply the outcomes. The matrix is
+generated from the two registries at commit
+1def0ac30.}\label{fig:family_matrix}
+\end{figure}
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Model-Family Coverage}
-
-\begin{archivecaptionframe}
-
-backend, and only continuous, discrete, and gridworld declare several.
-Read it as declared intent, not as profiled outcomes: the gates
-described below supply the outcomes. The matrix is generated from the
-two registries at commit 92f285b5b.
-
-\end{archivecaptionframe}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Model-Family Coverage}
-
 These families are not illustrative prose: they are the inputs over
 which the parser, the type checker, and the cross-framework code
 generators are exercised, and they are the substrate for the reliability
@@ -493,12 +405,12 @@ identity, variables, edges, parameter names, shapes, values and
 metadata, equations, timing, and ontology mappings; the default strict
 round trip is JSON. Parameter values and their axis order contribute to
 the contract hash, so changing values without changing shape changes the
-hash. The digest binds the represented contract; it does not prove that
-extraction was correct, that generated inference implements the intended
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
 Cross-Framework Reliability Gates}
+hash. The digest binds the represented contract; it does not prove that
+extraction was correct, that generated inference implements the intended
 mathematics (Da Costa et al. 2020), or that independent numerical
 executions agree. The gate reports scoped fidelity per selected model
 and format.
@@ -512,12 +424,12 @@ is compared with the former. For a passive linear-Gaussian model with
 rectangular observations, nonzero means and correlated covariances, an
 independent joint-Gaussian construction conditions each observation
 prefix and is compared with every posterior mean and full covariance
-from the generated JAX filter. The first observation uses the declared
-prior without an extra prediction. Exact source bytes, variable and axis
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
 Cross-Framework Reliability Gates}
+from the generated JAX filter. The first observation uses the declared
+prior without an extra prediction. Exact source bytes, variable and axis
 identities, conditioning horizons, numerical precision and
 quantity-specific tolerances remain explicit. Counterexamples change
 source identity, orientation, transition/action timing, conditioning,
@@ -526,6 +438,10 @@ comparisons do not establish universal extraction or backend
 equivalence, planning correctness or a new Lean proof; formal evidence
 remains separately scoped.
 
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
+Cross-Framework Reliability Gates}
 The replayable \breaktt{gnn-semantic-witness-v2} receipt retains the
 exact source, native result and generated-program bytes together with
 the independently reconstructed reference and per-quantity outcomes. The
@@ -533,23 +449,19 @@ the independently reconstructed reference and per-quantity outcomes. The
 accepting a passing numerical outcome; saved arrays or a prior verdict
 cannot replace this reconstruction. FEP\_Formal independently replays
 the same restricted cases with forward Bayes and recursive Kalman/Joseph
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
-Cross-Framework Reliability Gates}
 updates, using different algorithms from finite path enumeration and
 joint-Gaussian conditioning. Separate Lean checks establish
 finite-weight normalization and scalar measurement/covariance identities
 under their explicit assumptions. These scalar laws are a structural
 analogue of the multidimensional Gaussian fixture, not a proof of its
 parser, runner or complete translation. Numerical agreement, source
-custody, actual program execution and formal compilation remain separate
-evidence planes.
-
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
 Cross-Framework Reliability Gates}
+custody, actual program execution and formal compilation remain separate
+evidence planes.
+
 An additional \breaktt{gnn-semantic-witness-v3} contract admits two
 independent stationary passive Gaussian agents. It reconstructs their
 authored source independently, builds the joint block-diagonal Gaussian
@@ -562,12 +474,12 @@ measured native joint covariance. Separate finite post-evidence
 product-weight laws and false-claim controls establish their stated
 algebraic premises; they do not prove Gaussian conditioning, a parser or
 generated execution. Coupling, shared noise, control and unsupported
-source or conditioning contracts refuse explicitly.
-
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Semantic-Fidelity and
 Cross-Framework Reliability Gates}
+source or conditioning contracts refuse explicitly.
+
 The generated website exposes reported outcomes through offline
 status/text filters, posterior and covariance-variance traces, and
 residual views, with full tables and raw receipts available alongside
@@ -665,24 +577,21 @@ claims.
 \begin{frame}[fragile,allowframebreaks]{Repository Scale}
 \protect\phantomsection\label{repository-scale}
 The repository's scale is itself evidence of the surface that the gates
-and pipeline cover, and it is reported in fig.~7
-directly from the tracked files at commit 92f285b5b.
+and pipeline cover, and it is reported in fig.~\ref{fig:repo_metrics}
+directly from the tracked files at commit 1def0ac30.
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Repository Scale}
-
-\refstepcounter{figure}\label{fig:repo_metrics}
-
-\begin{archiveimageframe}
-
+\begin{figure}
+\centering
 \includegraphics[width=0.8\linewidth,height=0.40\textheight,keepaspectratio,alt={Repository-scale
 counts on a logarithmic axis: pipeline steps, model families, registered
 backends, render-target execution adapters, Model Context Protocol
 tools, source packages, test files, example models, and documentation
 files. Every bar is annotated with its exact value, and every value is a
 producer token read from output/data/manuscript\_variables.json at
-commit 92f285b5b --- the same token map that substitutes the prose
+commit 1def0ac30 --- the same token map that substitutes the prose
 counts. The figure-freshness suite binds the committed image digest and
 its recorded producer inputs and counts; semantic content and visual
 correctness require their own review. The two backend bars are
@@ -692,58 +601,29 @@ implemented Step 12 execution adapters. It excludes the separate
 execution-only Lean bridge and is not a count of observed native runs.
 Read the chart as the scale of the surface the pipeline maintains, not
 as a quality measure.}]{../figures/gnn_repo_metrics.png}
-
-\end{archiveimageframe}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Repository Scale}
-
-\begin{archivecaptionframe}
-
-\figurename~7:\ Repository-scale
-counts on a logarithmic axis: pipeline steps, model families, registered
-backends, render-target execution adapters, Model Context Protocol
-tools, source packages, test files, example models, and documentation
-files. Every bar is annotated with its exact value, and every value is a
-producer token read from \breaktt{output/data/manuscript\_variables.json}
-at commit 92f285b5b --- the same token
-
-\end{archivecaptionframe}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Repository Scale}
-
-\begin{archivecaptionframe}
-
-map that substitutes the prose counts. The figure-freshness suite binds
-the committed image digest and its recorded producer inputs and counts;
-semantic content and visual correctness require their own review. The
-two backend bars are deliberately distinct: \emph{registered backends}
-(12) counts render targets, \emph{render-target adapters} (12) counts
-the render-target subset with implemented Step 12 execution
-
-\end{archivecaptionframe}
+\caption{Repository-scale counts on a logarithmic axis: pipeline steps,
+model families, registered backends, render-target execution adapters,
+Model Context Protocol tools, source packages, test files, example
+models, and documentation files. Every bar is annotated with its exact
+value, and every value is a producer token read from
+\protect\breaktt{output/data/manuscript\_variables.json} at commit
+1def0ac30 --- the same token map that substitutes the prose counts. The
+figure-freshness suite binds the committed image digest and its recorded
+producer inputs and counts; semantic content and visual correctness
+require their own review. The two backend bars are deliberately
+distinct: \emph{registered backends} (12) counts render targets,
+\emph{render-target adapters} (12) counts the render-target subset with
+implemented Step 12 execution adapters. It excludes the separate
+execution-only Lean bridge and is not a count of observed native runs.
+Read the chart as the scale of the surface the pipeline maintains, not
+as a quality measure.}\label{fig:repo_metrics}
+\end{figure}
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Repository Scale}
-
-\begin{archivecaptionframe}
-
-adapters. It excludes the separate execution-only Lean bridge and is not
-a count of observed native runs. Read the chart as the scale of the
-surface the pipeline maintains, not as a quality measure.
-
-\end{archivecaptionframe}
-
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Repository Scale}
-
-The test suite comprises 679 test files containing 7071 test functions,
-exercising a source base of 777 Python files across 44 packages (233096
+The test suite comprises 679 test files containing 7078 test functions,
+exercising a source base of 777 Python files across 44 packages (233139
 lines of source). The pipeline's step modules --- the thin orchestrators
 named in tbl.~2 --- number 25, one per numbered
 step. The Model Context Protocol surface --- which exposes GNN's
