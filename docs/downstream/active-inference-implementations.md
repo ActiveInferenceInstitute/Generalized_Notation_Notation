@@ -23,12 +23,15 @@ notebook derives.
 ## Conformance and validation evidence
 
 - `.github/workflows/ci.yml` job `gnn-conformance` (display name
-  "gnn conformance (pinned v5.0.3)") provisions the pinned parser runtime and
+  "gnn conformance (pinned)") provisions the pinned parser runtime and
   runs the step "Validate the GNN specification against the pinned parser",
   which calls `scripts/validate_gnn_spec.py` against `specs/normal_vmp.gnn.md`.
+  The check name carries no version: the pinned revision is recorded in
+  `specs/gnn-pin.json`.
 - `scripts/gnn_parser_probe.py` probes the provisioned parser runtime.
 
 ## Verification limits
 
 Not verified: that the current `main` run is green. The pin file, specification
-and workflow definition were read at `main` on 2026-11-02.
+and workflow definition were read at `main` on 2026-11-02; the check name and
+the pin file path were re-read at `main` on 2026-11-05.
