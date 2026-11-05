@@ -23,13 +23,15 @@ that mirrors the discrete generative model from the GNN documentation.
 ## Conformance and validation evidence
 
 - `.github/workflows/ci.yml` job `gnn-conformance` (display name
-  "gnn conformance (pinned v5.0.3)") provisions a Python 3.12 runtime for the
+  "gnn conformance (pinned)") provisions a Python 3.12 runtime for the
   pinned parser and runs `scripts/validate_gnn_spec.py` against
   `specs/coin_flip.gnn.md`, so the example and the pinned GNN release stay
-  aligned.
+  aligned. The check name carries no version: the pinned revision is recorded
+  in `specs/gnn-pin.json`.
 - There is no separate GNN test module; the workflow job is the check.
 
 ## Verification limits
 
 Not verified: that the current `main` run is green. The pin file, specification
-and workflow definition were read at `main` on 2026-11-02.
+and workflow definition were read at `main` on 2026-11-02; the check name and
+the pin file path were re-read at `main` on 2026-11-05.

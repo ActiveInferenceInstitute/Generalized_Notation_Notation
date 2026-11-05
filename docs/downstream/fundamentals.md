@@ -23,13 +23,16 @@ numerical examples. The book itself is not open source.
 
 ## Conformance and validation evidence
 
-- `.github/workflows/ci.yml` job `gnn-conformance` ("gnn conformance (pinned
-  v5.0.3)") provisions the pinned parser, digest-verifies the installed parser
-  files before parsing, and re-runs `tests/test_gnn_spec.py` with that runtime.
+- `.github/workflows/ci.yml` job `gnn-conformance` ("gnn conformance (pinned)")
+  provisions the pinned parser, digest-verifies the installed parser files
+  before parsing, and re-runs `tests/test_gnn_spec.py` with that runtime. The
+  check name carries no version: the pinned revision is recorded in
+  `specs/gnn-pin.json`.
 - `scripts/validate_gnn_spec.py`, `scripts/gnn_parser_probe.py`, and
   `src/active_inference/gnn_spec.py` implement the spec surface.
 
 ## Verification limits
 
 Not verified: that the current `main` run is green. The pin file and workflow
-definition were read at `main` on 2026-11-02.
+definition were read at `main` on 2026-11-02; the check name and the pin file
+path were re-read at `main` on 2026-11-05.
