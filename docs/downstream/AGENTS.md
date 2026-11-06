@@ -3,8 +3,10 @@
 ## Overview
 
 Registry of external repositories that apply GNN. [README.md](README.md) is the
-index; one Markdown file per repository carries the full evidence. Every claim
-must be verified against the repository it describes on that repository's origin
+index; one Markdown file per repository carries the full evidence, except the
+row marked †, whose page is deferred to the scheduled count-changing change (a
+page would move `GNN_DOC_FILE_COUNT` and owe the SC-22 ritual). Every claim must
+be verified against the repository it describes on that repository's origin
 default branch.
 
 ## Contents
@@ -42,7 +44,14 @@ default branch.
   it), and the workflow job, test file or command that carries the evidence. If
   evidence is absent, write "not verified" or "no GNN-specific CI job" instead of
   implying more.
-- Re-verify a row when its repository changes its pin file or GNN specification.
+- Re-verify a row when its repository changes its pin file or GNN specification,
+  as part of GNN release-tag preparation and on request. The README's
+  "Refresh contract" section owns what is dated and what is not: rows name
+  mechanisms, and each consumer's pin file and CI job own currency.
+- Do not wire a repository gate or workflow to this tree: mechanism-named rows
+  make no per-repository currency claim a gate could check. Automation that
+  re-reads origins belongs in a separate report-only observation, never a
+  blocking gate.
 
 ## Related
 
