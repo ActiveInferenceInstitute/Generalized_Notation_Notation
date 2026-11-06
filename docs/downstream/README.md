@@ -66,6 +66,22 @@ dedicated pins or dependency declarations. The second covers revisions recorded
 in source constants, provenance records, or contract documentation. Both tables
 exclude repositories that only mention GNN in passing.
 
+## Refresh contract
+
+This registry is a dated snapshot of mechanisms, not a currency ledger: the
+read date above names the last full pass, and each row names the pin file (or
+contract) that records what the repository declares and the job, test or
+command that carries its evidence. Currency is owned by those artifacts, not by
+this page: when a row and the repository disagree, the repository wins.
+
+Rows are re-verified from origin with the read-only method above as part of
+GNN release-tag preparation and on request; a closeout that moves a row's
+subject re-verifies it, as the
+[paired-revision procedure](../development/fep_lean_paired_revision.md) does
+for the `fep_formal` row when it bumps the companion pin. No GNN gate or
+workflow reads this tree, by design: mechanism-named rows make no
+per-repository currency claim a gate could check.
+
 ## Revisions recorded in the repository's own contract
 
 These repositories carry GNN files or GNN bridge code on the default branch and

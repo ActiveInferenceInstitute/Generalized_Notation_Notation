@@ -42,7 +42,14 @@ default branch.
   it), and the workflow job, test file or command that carries the evidence. If
   evidence is absent, write "not verified" or "no GNN-specific CI job" instead of
   implying more.
-- Re-verify a row when its repository changes its pin file or GNN specification.
+- Re-verify a row when its repository changes its pin file or GNN specification,
+  as part of GNN release-tag preparation and on request. The README's
+  "Refresh contract" section owns what is dated and what is not: rows name
+  mechanisms, and each consumer's pin file and CI job own currency.
+- Do not wire a repository gate or workflow to this tree: mechanism-named rows
+  make no per-repository currency claim a gate could check. Automation that
+  re-reads origins belongs in a separate report-only observation, never a
+  blocking gate.
 
 ## Related
 

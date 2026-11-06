@@ -200,7 +200,9 @@ not exempt a current release from this sequence:
    the new reviewed FEP_Formal revision in the final commit, then push that final
    revision. The earlier draft-branch publication only supplies the fetchable
    source revision; merge to GNN main requires the final paired and repository
-   gates.
+   gates. After the bump merges, re-verify the `fep_formal` row in the
+   [downstream registry](../downstream/README.md) against the new pair (commit
+   and hash set): the row records the pair this procedure just moved.
 
 Ledger mentions of this discipline (e.g. the "paired-repin discipline" row in
 `TO-DO.md`) defer to this section.
@@ -212,7 +214,9 @@ paired interchange CI (`.github/workflows/gnn-interchange.yml` in the
 GEO_INFER checkout) checks out GNN at exactly that pinned revision. Bumping
 that pin is a reviewed companion-revision decision and follows the same
 re-pin discipline in mirror image: GNN content edits land first, then the
-GEO_INFER-side PR updates its pin to the new reviewed GNN revision.
+GEO_INFER-side PR updates its pin to the new reviewed GNN revision. When that
+bump lands, re-verify the GEO_INFER row in the
+[downstream registry](../downstream/README.md) the same way.
 
 ## Related
 
