@@ -3,8 +3,10 @@
 ## Overview
 
 Registry of external repositories that apply GNN. [README.md](README.md) is the
-index; one Markdown file per repository carries the full evidence. Every claim
-must be verified against the repository it describes on that repository's origin
+index; one Markdown file per repository carries the full evidence, except the
+row marked †, whose page is deferred to the scheduled count-changing change (a
+page would move `GNN_DOC_FILE_COUNT` and owe the SC-22 ritual). Every claim must
+be verified against the repository it describes on that repository's origin
 default branch.
 
 ## Contents

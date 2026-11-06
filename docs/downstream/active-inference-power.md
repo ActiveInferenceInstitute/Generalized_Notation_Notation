@@ -1,7 +1,7 @@
 # active_inference_power
 
 **Repository**: [`ActiveInferenceInstitute/active_inference_power`](https://github.com/ActiveInferenceInstitute/active_inference_power)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06.
 
 ## What it models
 
@@ -25,9 +25,11 @@ run.
 
 - `tests/test_gnn_specs.py` validates the declarations against the pinned
   release.
-- `.github/workflows/ci.yml` has no separate GNN job; its validation step runs
-  `python scripts/validate_gnn_specs.py` through `uv` with the development
-  extra.
+- `.github/workflows/ci.yml` job key `gnn-conformance` publishes
+  `gnn conformance (pinned)` (re-read 2026-11-06): it reads
+  `models/gnn-pin.json`, fetches the pin, and runs
+  `python scripts/validate_gnn_specs.py` and `pytest tests/test_gnn_specs.py`
+  through `uv` with the development extra.
 
 ## Verification limits
 
