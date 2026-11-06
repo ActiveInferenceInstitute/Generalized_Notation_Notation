@@ -1,7 +1,7 @@
 # GEO_INFER
 
 **Repository**: [`ActiveInferenceInstitute/GEO_INFER`](https://github.com/ActiveInferenceInstitute/GEO_INFER)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06.
 
 ## What it models
 
@@ -25,14 +25,16 @@ artifacts and run in separate Python environments.
 ## Pinned GNN revision
 
 `.github/gnn-pair.json` records `ActiveInferenceInstitute/Generalized_Notation_Notation`
-at revision `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`. The file has no tag
-field, so the revision itself is the pin. `GEO-INFER-TEST/src/geo_infer_test/gnn_pin_freshness.py`
+at revision `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1` and, re-read on
+2026-11-06, tag `v5.0.3`. `GEO-INFER-TEST/src/geo_infer_test/gnn_pin_freshness.py`
 checks pin freshness.
 
 ## Conformance and validation evidence
 
 - `.github/workflows/gnn-interchange.yml` ("Paired GNN interchange"), a reusable
-  workflow also called from `ci.yml` for main, tag, dispatch and schedule runs.
+  workflow also called from `ci.yml` for main, tag, dispatch and schedule runs;
+  job key `interchange` publishes `gnn conformance (pinned)` on Python 3.12 and
+  `gnn interchange (3.11)` on Python 3.11 (re-read 2026-11-06).
 - `GEO-INFER-TEST/validate_gnn_interchange.py` and
   `GEO-INFER-TEST/validate_gnn_pin_freshness.py`.
 - Unit tests `GEO-INFER-ACT/tests/unit/test_gnn_contract.py`,
@@ -45,4 +47,5 @@ checks pin freshness.
 
 Not verified: that the workflow passes on current `main`, and that the consumer
 boundary still matches the producer contract version. File paths and the pin
-file were read at `main` on 2026-11-02.
+file were read at `main` on 2026-11-02; the tag field and job names were
+re-read on 2026-11-06.

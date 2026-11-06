@@ -1,7 +1,7 @@
 # GEN24
 
 **Repository**: [`ActiveInferenceInstitute/GEN24`](https://github.com/ActiveInferenceInstitute/GEN24)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06.
 
 ## What it models
 
@@ -27,9 +27,11 @@ the validator path and parser file hashes, plus an explicit re-pin procedure.
 
 ## Conformance and validation evidence
 
-- `.github/workflows/ci.yml` includes a "Fetch the pinned GNN checkout" step that
-  reads the commit from `NHIM/gnn-pin.json`, followed by a "Validate the GNN
-  specification against the pinned parser" step.
+- `.github/workflows/ci.yml` job key `gnn-conformance`, display
+  `gnn conformance (pinned)` (re-read 2026-11-06), reads the commit from
+  `NHIM/gnn-pin.json`, checks the tag peels to it, and validates the
+  specification against the pinned parser. The `tests` job remains for the
+  general suite, where the parser-level GNN test skips.
 - `scripts/validate_gnn_spec.py` and `tests/test_gnn_spec.py`.
 
 ## Verification limits

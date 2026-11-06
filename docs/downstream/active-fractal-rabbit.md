@@ -1,7 +1,7 @@
 # active_fractal_rabbit
 
 **Repository**: [`ActiveInferenceInstitute/active_fractal_rabbit`](https://github.com/ActiveInferenceInstitute/active_fractal_rabbit)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06.
 
 ## What it models
 
@@ -27,10 +27,11 @@ Both are listed in the pin file's `spec_files`.
 
 ## Conformance and validation evidence
 
-- `.github/workflows/ci.yml` job `tests` includes a "Fetch the pinned GNN
-  checkout" step that reads the revision from `.github/gnn-pin.json` and a
-  "Verify the recorded GNN pin against the fetched checkout" step (with
-  `GNN_CHECKOUT` set), running `pytest tests/test_gnn_spec.py -q`.
+- `.github/workflows/ci.yml` job key `gnn-conformance`, display
+  `gnn conformance (pinned)` (re-read 2026-11-06), reads the revision from
+  `.github/gnn-pin.json`, fetches it, and validates the specifications with the
+  pinned parser. The `tests` job remains for the general suite and runs
+  `pytest tests/test_gnn_spec.py -q` with `GNN_CHECKOUT` set.
 - `src/active_fractal_rabbit/gnn_spec.py` implements the spec surface.
 
 ## Verification limits

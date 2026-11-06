@@ -1,7 +1,7 @@
 # fep_formal
 
 **Repository**: [`ActiveInferenceInstitute/fep_formal`](https://github.com/ActiveInferenceInstitute/fep_formal)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06.
 
 ## What it models
 
@@ -63,6 +63,9 @@ Per-file binding, measured 2026-11-02 by hashing each declared file at tag
   read-only check mode), and its pytest selection includes
   `tests/test_gnn_bridge_operations.py`, which exercises the bridge's read-only
   checks and their refusal paths.
+- A dedicated `.github/workflows/ci.yml` job key `gnn-conformance` publishes the
+  required `gnn conformance (pinned)` context on every push and pull request
+  (re-read 2026-11-06); the `python` job above remains separate bridge evidence.
 - `docs/pin_audit.py` (run in `ci.yml` as "Require the newest stable Lean-Mathlib
   release pair" and in the scheduled `pin-audit` job of `lean-latest.yml`)
   audits the Lean toolchain, Mathlib revision and model pins in project
