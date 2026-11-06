@@ -1,15 +1,15 @@
 {
   "algorithm": "web-renderer-combine-v1",
-  "binding_sha256": "8692cc7316a9b4c128a78ad2bb18b99a08fce6c8c41c5fa63c660f42e89798b3",
+  "binding_sha256": "0112a1db288c6aea5d939bd69ec72d3ae475146f6e6020549c77c074e321cfb0",
   "combined_path": "output/web/_combined_manuscript.md",
-  "combined_sha256": "eae3a159ab964b8e0c863dcf701258c7d90a3a5c3e90877f9ea155c7788f3357",
+  "combined_sha256": "1934ad0f282c8ae7d837c6de70480548163d0976d0acd588e8ef0eb4b20f9327",
   "combined_size_bytes": 113861,
   "input_root_kind": "hydrated",
   "ordered_inputs": [
     {
       "ordinal": 1,
       "path": "output/manuscript/00_abstract.md",
-      "sha256": "449d329665d5295781d7312efb3121359ffb0e4d027f0a15ffe07b743093cada",
+      "sha256": "d77df315ce530985fb1d75ece8d890f118993933feefa3ef69c8687ce39686f8",
       "size_bytes": 4153
     },
     {
@@ -21,25 +21,25 @@
     {
       "ordinal": 3,
       "path": "output/manuscript/02_system_context.md",
-      "sha256": "abb64027cce0578cfd53781543d20896df9ddf63e66036e88c922c789aa7d1a6",
+      "sha256": "c954b604436d85b308c1541dd8574a72544d7cc09d9fa5af9530f361038e5046",
       "size_bytes": 29775
     },
     {
       "ordinal": 4,
       "path": "output/manuscript/03_methods.md",
-      "sha256": "b4a6e4c4738751341dac1a019b8e5d9a5eebc08b1809ddd663c0ffb646c5728f",
+      "sha256": "802d54bd0d1faf228b838514ecf6b8dea32dcdb4720a53c800aaf5bb4d492da9",
       "size_bytes": 21788
     },
     {
       "ordinal": 5,
       "path": "output/manuscript/04_artifacts_and_evidence.md",
-      "sha256": "1ac803eb5327ac83875f0f1473bb7d001156387950333b094f46f148d13b414e",
+      "sha256": "d9a05df7b42dc2236f54a64d7e58427c078c075bd13da3e03865b4e6223940ad",
       "size_bytes": 17700
     },
     {
       "ordinal": 6,
       "path": "output/manuscript/05_reproducibility.md",
-      "sha256": "9b56e6d59ca94e7909d91c87d4f3fad2cf210014e2a953ac5b5b00d60fdf2f3b",
+      "sha256": "c5bfd3b701872b06958ebe0dfed785c76727930998e00ea9a4b0bbe2a4cba6de",
       "size_bytes": 7194
     },
     {
@@ -67,7 +67,7 @@
       "size_bytes": 329
     }
   ],
-  "ordered_inputs_sha256": "d2597be52187ce8f4cc76fc2c3bb0602a69e7a7e04395a4d8a35b3000fa7cd11",
+  "ordered_inputs_sha256": "7cdd4e1797ebac304e5b4dcf3d6c96c49e2b73378d4d77e8490cc3e2009b2a59",
   "project": "GeneralizedNotationNotation",
   "schema_version": "template-manuscript-composition-v1"
 }
