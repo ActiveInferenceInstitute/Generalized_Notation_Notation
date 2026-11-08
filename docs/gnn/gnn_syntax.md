@@ -39,22 +39,23 @@ For CI, type-checking, and pipeline validation, prefer examples that satisfy the
 | `## Equations` | LaTeX-rendered formulas defining model dynamics and relationships between variables |
 | `## Time` | Static/Dynamic setting, discrete/continuous time variable, and model time horizon |
 | `## ActInfOntologyAnnotation` | Variable semantic bindings to Ontological domains |
-| `## ModelParameters` | Key-value numeric parameters for the model (e.g. counts, horizons, simulation settings) |
+| `## ModelParameters` | Model settings such as counts, horizons, and execution-contract parameters |
 | `## Footer` | Closes the file and allows read-in from either end |
 | `## Signature` | Cryptographic signature block / provenance information |
 
 ### `ModelParameters` keys read by renderers
 
-Entries are `key: value`, one per line, scalar values only. Dimension keys
-declared here may be referenced by name from `StateSpaceBlock`
-(e.g. `A[num_obs, num_hidden_states]`). Beyond the dimension counts
-(`num_hidden_states`, `num_obs`, `num_actions`, `num_timesteps`,
-`num_modalities`, `learning_rate`), two keys steer inference itself:
+Write one `key: value` entry per line. Dimension keys such as
+`num_hidden_states` and `num_obs` supply integer dimensions for declarations
+such as `A[num_obs, num_hidden_states]`. Each consumer defines the type of
+its settings. For example, the [contingent T-maze](../../input/gnn_files/discrete/tmaze_epistemic.md)
+declares the list `terminal_locations: [1, 2]`, which its execution contract
+validates as absorbing location indices.
 
 | Key | Values | Effect |
 |-----|--------|--------|
-| `num_factors` | int | `> 1` selects the FACTORED model kind (see §4, *Parameterization families*) |
-| `nr_agents` | int | `> 1` selects the MULTI_AGENT model kind (see §4, *Parameterization families*) |
+| `num_factors` | int | `> 1` adds FACTORED to the detected kind set |
+| `nr_agents` | int | `> 1` adds MULTI_AGENT to the detected kind set |
 | `inference_mode` | `batch` (default) or `online` | RxInfer FLAT models: `batch` runs smoothing over the whole observation sequence; `online` runs per-timestep `infer()` on the observation prefix, so the filtered posterior drives expected-free-energy and habit-prior action selection. Any other value is rejected. |
 | `inference_iterations` | int (default `20`) | Variational iterations per `infer()` call in generated RxInfer scripts. |
 
@@ -148,61 +149,36 @@ A={
 
 ### Parameterization families
 
-Beyond the discrete POMDP matrices `A`, `B`, `C`, `D` and the optional habit
-prior `E`, three further key families are recognized. A file may carry more
-than one family at once.
+These are common parameter families. A file may declare several families,
+and the backend must admit the resulting contract.
 
 | Family | Keys | Meaning |
 |--------|------|---------|
 | Discrete POMDP | `A`, `B`, `C`, `D`, `E` | Likelihood, transition, preferences, initial prior, habit prior. `B` is ordered `(next_state, previous_state, action)`. |
-| Linear-Gaussian | `F`, `H`, `Q`, `R`, `prior_mean`, `prior_cov` | State-space system matrices: state transition, observation readout, process noise, observation noise, and the Gaussian prior over the initial latent. |
+| Linear-Gaussian | `F`, `H`, `Q`, `R`, `prior_mean`, `prior_cov` | State transition, observation readout, process-noise covariance, observation-noise covariance, and the Gaussian prior over the initial latent state. |
 | Dirichlet priors | `dirichlet_A` … `dirichlet_E` | Pseudo-counts for a matrix treated as a latent variable rather than a fixed constant. |
 | Per-level / per-agent | `A_level1`, `B_level2`, …; `A_agent1`, `B_agent2`, … | Suffixed copies of the POMDP matrices, one set per hierarchy level or per agent. |
+| Nonstationary transition | `B_t`, `B_regime` | Time-indexed or regime-indexed transitions. A regime-indexed model declares the active regimes through a schedule in `ModelParameters`. |
 
 #### Continuous-state (linear-Gaussian) files
 
-A continuous-state model declares **only** the linear-Gaussian family — no
-discrete `A`/`B`/`C`/`D` stand-in. The three exemplars under
-`input/gnn_files/continuous/` are written this way:
+The [continuous navigation exemplar](../../input/gnn_files/continuous/continuous_navigation.md)
+is a complete linear-Gaussian model with continuous states at discrete time
+steps. It declares one variable per line in `StateSpaceBlock`, including each
+matrix and vector supplied in `InitialParameterization`. In this model `F`
+is the state-transition matrix. Some categorical exemplars use `F[1]` for a
+scalar variational free energy readout.
 
-```gnn
-## GNNSection
-ActInfContinuous            # "Continuous" in the section → ModelKind.CONTINUOUS
+The generative model is `x_1 ~ N(prior_mean, prior_cov)`,
+`x_t ~ N(F x_{t-1} + u_{t-1}, Q)`, and `y_t ~ N(H x_t, R)`. With
+`goal_mean` and `control_gain` the exemplar uses the filtered state mean
+`μ_t` for proportional control, `u_t = control_gain · (goal_mean − μ_t)`.
+Passive filtering uses zero control input.
 
-## StateSpaceBlock
-x[2,1,type=float]           # continuous latent state
-y[2,1,type=float]           # continuous observation
-u[2,1,type=float]           # control input added to the state (optional)
-F[2,2,type=float]  H[2,2,type=float]  Q[2,2,type=float]  R[2,2,type=float]
-prior_mean[2,type=float]  prior_cov[2,2,type=float]
-goal_mean[2,type=float]  control_gain[1,type=float]   # optional closed loop
-
-## InitialParameterization
-F={(1.0,0.0),(0.0,1.0)}  …  prior_mean={(0.0,0.0)}  control_gain={(0.3)}
-
-## ModelParameters
-num_timesteps: 15
-dt: 0.1
-random_seed: 42
-```
-
-Generative model: `x_1 ~ N(prior_mean, prior_cov)`, `x_t = F x_{t-1} + u_{t-1}
-+ N(0, Q)`, `y_t = H x_t + N(0, R)`; when `goal_mean` and `control_gain` are
-present the controller closes the loop on beliefs, `u_t = control_gain ·
-(goal_mean − μ_t)`, otherwise the dynamics run passively. Every symbol used in
-`InitialParameterization` is declared in `StateSpaceBlock`, so the
-matrix-dimension check reports no findings. The scalar Variational Free Energy
-readout `F[1]` used by discrete files is not declared in continuous files —
-`F` is the state-transition matrix here.
-
-Framework support follows from the state space: JAX, NumPyro, PyTorch, Stan
-and RxInfer.jl render and execute continuous models natively (Kalman filter;
-NumPyro and Stan additionally run NUTS over the same model). PyMDP,
-ActiveInference.jl, DisCoPy and bnlearn are categorical and report the model as
-**unsupported** ("unsupported-continuous-state: continuous-state model: …
-supports discrete POMDPs only") —
-a distinct status from a failure, excluded from render success rates and from
-Step 12 execution.
+The [continuous exemplar index](../../input/gnn_files/INDEX.md#continuous)
+also covers factored, independent-agent, and mixed-family specifications.
+See [backend admission](implementations/README.md#backend-admission) before
+selecting a renderer for these compositions.
 
 #### Dirichlet pseudo-counts
 
@@ -222,34 +198,41 @@ dirichlet_A={
 }
 ```
 
-The renderer then treats `A` as a latent `DirichletCollection` learned
-jointly with the hidden states, rather than as a fixed matrix. The example
-above is identity-biased: mass 3 on the diagonal against 1 elsewhere, so the
-prior leans toward a faithful likelihood without asserting it. Taken from
+Each column is a prior over the observation probabilities for one state.
+Its concentration of 3 on the diagonal and 1 elsewhere favors a matching
+observation while allowing other outcomes. Learning requires a backend
+strategy that implements the declared prior. For example, the RxInfer
+learning strategy treats `A` as a latent `DirichletCollection` and infers
+it jointly with hidden states. The declaration is drawn from
 [`input/gnn_files/learning/dirichlet_likelihood_learning.md`](../../input/gnn_files/learning/dirichlet_likelihood_learning.md).
 
 #### Model-kind detection
 
-Renderers dispatch on a **model kind** derived structurally from the spec —
-from the `## GNNSection` value, the parameterization keys above, and explicit
-`nr_agents` / `num_factors` counts. Prose is never scanned, so text in a
-`ModelName` or annotation cannot change how a model renders.
+The full kind set comes from typed fields such as the `GNNSection` value,
+parameterization keys and model settings. `ModelName` and prose annotations
+have no effect on classification.
 
 | Kind | Selected by |
 |------|-------------|
-| `MULTI_AGENT` | `nr_agents > 1`, or any `[ABCDE]_agent<N>` key |
+| `MULTI_AGENT` | `nr_agents > 1` or recognized per-agent categorical or continuous keys |
+| `HYBRID` | A categorical contract key alongside a full `F/H/Q/R` block or both Gaussian prior keys |
 | `HIERARCHICAL` | `hierarchical` in `GNNSection`, or any `[ABCDE]_level<N>` key |
-| `CONTINUOUS` | `continuous` in `GNNSection`, or all of `F`/`H`/`Q`/`R`, or both `prior_mean` and `prior_cov` |
+| `CONTINUOUS` | `continuous` in `GNNSection`, a full `F/H/Q/R` block, both Gaussian prior keys, or recognized per-factor or per-agent continuous keys |
+| `NONSTATIONARY` | `nonstationary` in `GNNSection`, time-indexed or regime-indexed transition keys, or a recognized schedule setting |
 | `LEARNING` | `learning` in `GNNSection`, or any `dirichlet_[ABCDE]` key |
 | `FACTORED` | `num_factors > 1` |
-| `FLAT` | none of the above (the common case) |
+| `STRUCTURAL` | An explicit structural classification from the producer, or no matching family and no categorical contract keys |
+| `FLAT` | At least one categorical contract key and no more specific kind |
 
-Precedence runs top to bottom as listed: hierarchical and multi-agent files
-also have multiple factors, so the more specific kinds are tested first.
-`InitialParameterization` must parse to a mapping; a non-mapping value raises
-`ValueError` rather than falling back to a default kind. The authority is
-`detect_model_kind` in
-[`src/gnn/render/pomdp_contract.py`](../../src/gnn/render/pomdp_contract.py).
+`detect_model_kinds` preserves every matching family, except when the
+producer has explicitly classified the spec as structural. The single-kind
+helper `detect_model_kind` returns the highest-precedence member, using
+the table order. Backend admission also checks the full set. For example,
+`{HYBRID, CONTINUOUS}` identifies a model that the current renderers refuse
+with `unsupported-composition`.
+
+The implementation is in
+[`pomdp_contract.py`](../../src/gnn/render/pomdp_contract.py).
 
 #### B-tensor orientation (canonical vs. textbook POMDP)
 
