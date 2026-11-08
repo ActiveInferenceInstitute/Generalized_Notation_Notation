@@ -113,9 +113,10 @@ The installed-platform matrix explicitly checks out the candidate head for a
 PR and the event revision for main/manual runs. It verifies that revision before
 building the wheel and records the actual checkout, wheel and lock hashes.
 
-The FEP bridge job selects its companion-required uv 0.13.0 independently of
-GNN-owned uv 0.13.6 installs. Supply-chain requirement resolution uses core Python 3.14 and the declared
-all-extras Python 3.12 profile, rather than prospective Python 3.15.
+The FEP bridge job installs the exact uv version declared in the pinned
+companion project. GNN-owned installs use uv 0.13.6. Supply-chain requirement
+resolution uses core Python 3.14 and the declared all-extras Python 3.12
+profile, rather than prospective Python 3.15.
 
 The docs audit runs the existing exit-code documentation contract immediately
 after its frozen installation. `just release-preflight` runs the same test before

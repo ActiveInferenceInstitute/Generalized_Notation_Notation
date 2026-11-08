@@ -74,8 +74,9 @@ The installed-platform workflow also retains a Linux/amd64 Docker build and
 non-root Python 3.14 CLI/runtime checks. Keep its narrower container scope
 separate from the five installed-wheel lanes and full native coverage.
 
-The FEP paired job uses uv 0.13.0 to honor its companion project
-requirement; it never installs GNN. GNN-owned installs use uv 0.13.6.
+The FEP paired job installs the exact uv version declared in the pinned
+companion project. GNN remains a source checkout in that job. GNN-owned
+installs use uv 0.13.6.
 Supply-chain resolution uses core Python 3.14 and the declared all-extras
 Python 3.12 profile.
 
