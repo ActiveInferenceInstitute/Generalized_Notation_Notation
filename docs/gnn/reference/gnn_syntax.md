@@ -8,7 +8,8 @@ Quick reference for GNN syntax with working examples. The normative specificatio
 
 ## Syntax Validation
 
-GNN syntax is validated through the pipeline type checker:
+Use the strict file validator for authored syntax and the pipeline type
+checker for directory-level diagnostics:
 
 - **`src/gnn/5_type_checker.py`** → Syntax validation and type checking
   - See: **[src/gnn/type_checker/AGENTS.md](../../../src/gnn/type_checker/AGENTS.md)** for validation details
@@ -17,7 +18,8 @@ GNN syntax is validated through the pipeline type checker:
 **Quick Start:**
 
 ```bash
-# Validate GNN syntax
+# Validate one authored file, then type-check the exemplar directory.
+uv run --frozen --no-sync gnn validate input/gnn_files/basics/static_perception.md --strict
 uv run python src/gnn/5_type_checker.py --target-dir input/gnn_files --strict --verbose
 ```
 
@@ -33,10 +35,8 @@ levels of obligation apply, and it is worth keeping them apart:
 - **Enforced** — listed in `src/gnn/schema/parser.py::REQUIRED_SECTIONS`. Absence is
   a hard error: `validate_required_sections` emits `GNN-E001`
   (*missing required section*) and the file fails type checking.
-- **Expected** — not checked by the validator, but every sample in
-  `input/gnn_files/` supplies them and downstream renderers and analyzers
-  read them. Omitting one does not fail the type checker; it degrades or
-  skips the steps that consume it.
+- **Expected** — optional in the strict section inventory. Include the
+  sections consumed by your chosen downstream steps and model contract.
 
 | # | Section | Obligation | Parser hook |
 |---|---------|------------|-------------|
@@ -54,11 +54,9 @@ levels of obligation apply, and it is worth keeping them apart:
 | 12 | `## Footer` | Expected | `_parse_footer` |
 | 13 | `## Signature` | Expected | `_parse_signature` |
 
-Sections 7–13 are what earlier revisions of this page called "v1.5
-extensions". Treat them as mandatory when authoring — a model missing
-`InitialParameterization` cannot render, and one missing
-`ActInfOntologyAnnotation` is invisible to Steps 10, 13, and 24 — but do not
-expect the validator to catch their absence for you.
+For native simulation, supply the concrete parameters required by the chosen
+execution contract. Include `ActInfOntologyAnnotation` when you want downstream
+steps to consume explicit ontology bindings.
 
 ### `## Equations`
 
@@ -243,16 +241,13 @@ A_level2={(0.8,0.2),(0.2,0.8)}
 B_agent1={((1,0),(0,1)),((0,1),(1,0))}
 ```
 
-The `continuous/` exemplars are pure linear-Gaussian models: `x`, `y`,
-optional `u`, `F`/`H`/`Q`/`R`, `prior_mean`/`prior_cov`, optional
-`goal_mean`/`control_gain`, with no discrete A/B/C/D stand-in and every
-symbol declared in `StateSpaceBlock` (so the dimension check reports no
-`GNN-W003`/`GNN-E002` findings). Which family is present determines the model
-kind the renderer dispatches on — `detect_model_kind` routes these files as
-CONTINUOUS; the normative rules and precedence order are in
-[`gnn_syntax.md` § Parameterization families](../gnn_syntax.md#parameterization-families).
-JAX, NumPyro, PyTorch, Stan and RxInfer.jl render and execute them; PyMDP,
-ActiveInference.jl, DisCoPy and bnlearn report render status `unsupported`.
+For a complete single-block linear-Gaussian model, see
+[continuous navigation](../../../input/gnn_files/continuous/continuous_navigation.md).
+Declare each parameterized symbol in `StateSpaceBlock`. The
+[normative syntax](../gnn_syntax.md#parameterization-families) explains
+how to classify composed models. The
+[backend admission guide](../implementations/README.md#backend-admission)
+describes which compositions can be rendered.
 
 ## Canonical matrix orientation (B)
 
@@ -428,9 +423,10 @@ Simple Static Model - GNN Representation.
 Cryptographic signature goes here
 ```
 
-This parses cleanly and executes in the GNN pipeline. Only the five
-**Enforced** sections are strictly checked, per the obligation table above;
-the rest are supplied because downstream steps read them.
+This example illustrates the section layout. For a maintained static
+filtering example with a declared prior and current evidence, start with
+[`static_perception.md`](../../../input/gnn_files/basics/static_perception.md)
+and the [exemplar index](../../../input/gnn_files/INDEX.md).
 
 ## Variable naming conventions
 

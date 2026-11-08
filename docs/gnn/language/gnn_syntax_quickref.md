@@ -1,6 +1,6 @@
 # GNN Syntax Quick Reference
 
-**Version**: v3.2.0 Engine (Bundle v2.0.0)  
+**GNN language version**: v1.1
 **Status**: Cheatsheet
 
 ---
@@ -15,22 +15,22 @@ ActInfPOMDP
 GNN v1.1
 
 ## ModelName
-Active Inference POMDP Agent
+Static Perception Sketch
 
 ## StateSpaceBlock
 A[3,3, type=float]
-B[3,3,3, type=float]
+D[3, type=float]
 s[3, type=float, default=uniform]
 o[3, type=int]
 
 ## Connections
 A>o
-B>s
-s>o:observation_mapping
+s>A:observation_mapping
 D>s:prior_initialization
 
 ## InitialParameterization
 A={(0.9, 0.05, 0.05), (0.05, 0.9, 0.05), (0.05, 0.05, 0.9)}
+D={(0.3, 0.4, 0.3)}
 ```
 
 ---
@@ -45,7 +45,7 @@ NAME[dim₁, dim₂, …, type=<type>, default=<default>]
 |-----------|---------|-----------|
 | Name | `A`, `s`, `π` | ✅ |
 | Dimensions | `[3,3]`, `[num_obs, num_states]` | ✅ |
-| Type | `type=float`, `type=int`, `type=bool` | ✅ |
+| Type | `type=float`, `type=int`, `type=bool` | Optional, defaults to `float` |
 | Default | `default=uniform`, `default=zeros` | ❌ |
 
 **Defaults**: `uniform`, `zeros`, `ones`, `eye`, `random`
@@ -65,17 +65,21 @@ NAME[dim₁, dim₂, …, type=<type>, default=<default>]
 
 ## Initial Parameterization Keys
 
-| Family | Keys | Selects model kind |
+| Family | Keys | Typical kind |
 |--------|------|--------------------|
 | Discrete POMDP | `A` `B` `C` `D` `E` | FLAT (or FACTORED if `num_factors > 1`) |
 | Linear-Gaussian | `F` `H` `Q` `R` `prior_mean` `prior_cov` | CONTINUOUS |
 | Dirichlet priors | `dirichlet_A` … `dirichlet_E` | LEARNING |
 | Per-level | `A_level1`, `B_level2`, … | HIERARCHICAL |
 | Per-agent | `A_agent1`, `B_agent2`, … | MULTI_AGENT |
+| Time-varying transitions | `B_t`, `B_regime` | NONSTATIONARY |
 
-`B` is ordered `(next_state, previous_state, action)`. A file may declare
-several families at once — the `continuous/` exemplars carry both the
-discrete matrices and the linear-Gaussian block.
+The canonical `B` order is `(next_state, previous_state, action)`.
+The [kind rules](../gnn_syntax.md#model-kind-detection) cover structural
+specs and compositions. Combining categorical parameters with a complete
+linear-Gaussian block creates a hybrid composition. Check
+[backend admission](../implementations/README.md#backend-admission)
+before rendering a composition.
 
 ---
 

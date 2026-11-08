@@ -13,15 +13,14 @@ management, network boundaries, and review of rendered-script execution.
 ## Local or batch deployment
 
 ```bash
-uv sync --extra dev
-uv run gnn preflight
-uv run gnn health
+uv sync --frozen --python 3.14
+uv run --frozen --no-sync gnn preflight
+uv run --frozen --no-sync gnn health
 
-uv run python src/gnn/main.py \
+uv run --frozen --no-sync gnn run \
   --target-dir input/gnn_files \
   --output-dir output/run-$(date +%Y%m%d-%H%M%S) \
-  --only-steps "3,5,11,12,16,23" \
-  --verbose
+  --only-steps 3 5 11 12 16 23
 ```
 
 The pipeline loads `input/config.yaml` automatically. It does not load
@@ -30,17 +29,23 @@ profile files through `src/gnn/main.py`. See [Configuration](../configuration/RE
 
 ## Container deployment
 
-The repository includes a `Dockerfile`; build and run it only after reviewing the
-image's runtime requirements and the Step 12 execution safety settings:
+The repository Dockerfile builds a test image that requires separate runtime
+qualification. This example runs a small parsing and visualization workflow.
+Create the host output directory and ensure the container user (UID 1000)
+can write to it before starting the container.
 
 ```bash
 docker build -t gnn:local .
+mkdir -p output
 docker run --rm \
   --read-only \
-  --mount type=bind,src="$PWD/input/gnn_files",dst=/app/input/gnn_files,readonly \
-  --mount type=bind,src="$PWD/output",dst=/app/output \
+  --tmpfs /tmp:rw,mode=1777 \
+  --env XDG_CACHE_HOME=/tmp/.cache \
+  -v "$PWD/input/gnn_files:/workspace/input/gnn_files:ro" \
+  -v "$PWD/output:/workspace/output" \
   gnn:local \
-  uv run python src/gnn/main.py --target-dir input/gnn_files --output-dir output --verbose
+  gnn run --target-dir input/gnn_files/basics --output-dir output/container-example \
+  --only-steps 3 5 8 --skip-steps 0 1 2
 ```
 
 Do not expose the MCP/API surface publicly without adding authentication, network
@@ -54,8 +59,8 @@ module documentation before deployment rather than assuming a generic health or
 configuration endpoint:
 
 ```bash
-uv sync --extra api
-uv run gnn serve --help
+uv sync --frozen --extra api --python 3.12
+uv run --frozen --no-sync --python 3.12 gnn serve --help
 ```
 
 Bind services to a private interface and place them behind the deployment's own

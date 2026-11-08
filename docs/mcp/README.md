@@ -15,7 +15,7 @@ MCP servers expose tools over STDIO or HTTP: bind listeners to localhost in untr
 
 ### Core MCP System
 - **Location**: `src/gnn/mcp/`
-- **Main Module**: `mcp.py` - Central MCP instance and tool registration
+- **Registry**: `src/gnn/mcp/mcp.py` - Central MCP instance and tool registration
 - **Server Components**: HTTP and STDIO server implementations
 - **Tool Discovery**: Automatic registration from functional modules
 
@@ -35,7 +35,7 @@ src/gnn/
 
 ## Available MCP Tools
 
-### Core GNN Processing (`gnn/mcp.py`)
+### Core GNN Processing (`mcp/gnn_root.py`)
 - `parse_gnn_content` - Parse GNN content into a structured model representation
 - `validate_gnn_content` - Validate GNN content across supported validation levels
 - `process_gnn_directory` - Process a directory of GNN files
@@ -107,7 +107,7 @@ curl -X POST http://127.0.0.1:8080/ \
 ### STDIO Server (for AI assistants)
 ```bash
 # Start STDIO server for AI assistant integration
-uv run python -m gnn.mcp.cli server --transport stdio
+uv run --frozen --no-sync python -m gnn.mcp.server_stdio
 ```
 
 ### Command Line Interface
@@ -122,8 +122,9 @@ uv run python -m gnn.mcp.cli execute parse_gnn_content \
 ```
 #### JSON stdout contract (`--format json`)
 
-With `--format json`, each `python -m gnn.mcp.cli` command writes exactly one
-pure JSON machine document to stdout — no human text, emoji, or log frames.
+Place `--format json` before the subcommand, for example
+`python -m gnn.mcp.cli --format json status`. Finite commands use this
+machine output format. A STDIO server streams protocol messages.
 Routine log chatter is suppressed from stdout in this mode; `--verbose` is a
 human-mode concern. On failure, the CLI prints a single error document to
 stdout and exits with a nonzero code:

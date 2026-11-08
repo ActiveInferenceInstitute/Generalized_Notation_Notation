@@ -345,7 +345,7 @@ By providing a rigorous yet flexible notation, GNN fosters reproducible, accessi
 - **[PyMDP Integration](../pymdp/gnn_pymdp.md)**: Python discrete-state POMDP framework
 - **[RxInfer Integration](../rxinfer/gnn_rxinfer.md)**: Julia Bayesian active message passing
 - **[DisCoPy Integration](../discopy/gnn_discopy.md)**: Categorical string diagrams and monoidal structures
-- **[PyTorch Integration](implementations/pytorch.md)**: Neural active inference and deep learning
+- **[PyTorch Integration](implementations/pytorch.md)**: Categorical tensor filtering and linear-Gaussian inference
 - **[NumPyro Integration](implementations/numpyro.md)**: Continuous probabilistic programming via MCMC
 - **[JAX Integration](implementations/jax.md)**: High-performance vector-space compilation
 - **[ActiveInference.jl](implementations/activeinference_jl.md)**: Discrete-state Julia POMDP simulation

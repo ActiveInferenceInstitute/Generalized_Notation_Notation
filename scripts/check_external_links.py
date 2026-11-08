@@ -8,17 +8,17 @@ can be caught before they rot.
 Run from repository root:
 
   uv run python scripts/check_external_links.py            # report only
-  uv run python scripts/check_external_links.py --strict   # exit 1 on dead links
+  uv run python scripts/check_external_links.py --fail-on-dead
+  uv run python scripts/check_external_links.py --strict   # fail on every unexempted error
   uv run python scripts/check_external_links.py --concurrency 8 --timeout 15
 
 Design notes:
 
 - **Informational by default.** External sites rate-limit or bot-block
-  automated clients (crates.io, paperswithcode, Wikipedia are common), so a
-  non-2xx response is *not* proof a link is dead. CI runs this check
-  ``--strict`` on the weekly docs-audit schedule only (not per-PR), with
-  ``--allow-hosts doi.org zenodo.org`` exempting hosts verified to be
-  bot-gated rather than dead.
+  automated clients, so transient or blocked responses remain inconclusive.
+  The docs-audit workflow uses ``--fail-on-dead`` on its weekly schedule,
+  version tags, and opt-in manual runs. The host allowlist applies to
+  bot-blocked responses in ``--strict`` mode.
 - Local/template targets (localhost, 127.0.0.1, example.com, ``{host}``
   templates, ``server:port``) are skipped by design — they are configuration
   examples, not links.

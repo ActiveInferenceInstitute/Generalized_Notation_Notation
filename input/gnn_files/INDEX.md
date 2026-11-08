@@ -1,10 +1,11 @@
 # GNN Examples Index
 
-Cold-start index of the exemplar GNN spec files under `input/gnn_files/`. Each
-entry is a runnable Active Inference generative model spec: parse it, render it,
-execute it through the 25-step pipeline. For syntax and file-structure rules see
-[normative syntax](../../docs/gnn/reference/gnn_syntax.md) and the tutorials in
-[docs/gnn/tutorials/](../../docs/gnn/tutorials/).
+Cold-start index of the exemplar GNN specs under `input/gnn_files/`. The
+corpus includes native simulation examples, structural models, and fixtures
+that demonstrate explicit backend refusal. See the
+[normative syntax](../../docs/gnn/gnn_syntax.md) for file structure and the
+[backend admission guide](../../docs/gnn/implementations/README.md#backend-admission)
+for renderer selection.
 
 **Counts (measured 2026-10-07):** 38 model `.md` sources across 11 task
 folders, excluding `INDEX.md`, `AGENTS.md` and `README.md` scaffolds. Backend
@@ -103,6 +104,10 @@ contracts accordingly. Live per-backend counts come from the current run's
 - [factorized_posterior.md](structured/factorized_posterior.md)
 
 ## Running an example
+
+This targets a small categorical corpus with the maintained backend preset.
+Check the summaries for per-pair admission and execution results. Choose a
+contract-specific backend only for a target directory whose models it admits.
 
 ```bash
 uv run python src/gnn/main.py --target-dir input/gnn_files/discrete --output-dir output

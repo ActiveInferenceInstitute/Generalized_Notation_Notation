@@ -495,13 +495,19 @@ def test_anchor_audit_checks_same_page_and_ignores_code_headings(
 ) -> None:
     doc = tmp_path / "guide.md"
     doc.write_text(
-        "# Guide\n[real](#guide) [missing](#phantom)\n"
-        "````markdown\n# Phantom\n```\n[example](missing.md)\n````\n",
+        "# Guide\n[real](#guide) [missing](\n  #phantom\n)\n"
+        "````markdown\n# Phantom\n```\n[example](missing.md)\n````\n"
+        '## Example\n---\n`<a id="code-id"></a>`\n'
+        "[real](#example) [false duplicate](#example-1) [fake ID](#code-id)\n",
         encoding="utf-8",
     )
     assert audit_mod.audit_broken_links([doc]) == []
     issues = audit_mod.audit_bad_markdown_anchors([doc])
-    assert [(i[1], i[2]) for i in issues] == [(2, "#phantom")]
+    assert [(i[1], i[2]) for i in issues] == [
+        (2, "#phantom"),
+        (13, "#example-1"),
+        (13, "#code-id"),
+    ]
 
 
 def test_anchor_audit_renders_duplicate_setext_and_explicit_targets(
@@ -527,7 +533,8 @@ def test_link_audit_reports_escape_and_decodes_destinations(
     doc.write_text(
         '[valid](other%20page.md#h%C3%A9ading "title")\n'
         '[ref]: <other page.md#h%C3%A9ading> "title"\n'
-        "[escape](../outside.md)\n[missing](absent.md)\n",
+        "[escape](../outside.md)\n[missing](\n  absent.md\n)\n"
+        "[missing-ref]:\n  other.md\n",
         encoding="utf-8",
     )
     assert audit_mod.audit_bad_markdown_anchors([doc, target]) == []
@@ -535,6 +542,7 @@ def test_link_audit_reports_escape_and_decodes_destinations(
     assert [(i[1], i[2], i[3]) for i in issues] == [
         (3, "../outside.md", "relative link escapes repository"),
         (4, "absent.md", "missing: absent.md"),
+        (7, "other.md", "missing: other.md"),
     ]
 
 
@@ -543,10 +551,13 @@ def test_link_audit_keeps_actual_line_numbers_after_fences(
 ) -> None:
     doc = tmp_path / "guide.md"
     doc.write_text(
-        "~~~python\n[x](ignored.md)\n~~~\n[x](missing.md)\n", encoding="utf-8"
+        "~~~python\n[x](ignored.md)\n~~~\n"
+        "> ```markdown\n> [example](also-ignored.md)\n> ```\n"
+        "[x](missing.md)\n",
+        encoding="utf-8",
     )
     issues = audit_mod.audit_broken_links([doc])
-    assert [(i[1], i[2]) for i in issues] == [(4, "missing.md")]
+    assert [(i[1], i[2]) for i in issues] == [(7, "missing.md")]
 
 
 # ---------------------------------------------------------------------------
@@ -591,7 +602,7 @@ def _seed_model_kind_table(
     table = tmp_path / directory / "AGENTS.md"
     table.parent.mkdir(parents=True, exist_ok=True)
     lines = [
-        "| Model kind | Folders | Renders + executes on "
+        "| Model kind | Folders | Default renderer declarations "
         "| Render status `unsupported` on |",
         "|---|---|---|---|",
     ]

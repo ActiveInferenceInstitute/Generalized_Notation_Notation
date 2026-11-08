@@ -77,8 +77,9 @@ service environment to require its matching **`X-API-Key`** request header.
 Health and documentation routes remain public. Keep the value private; avoid
 putting it in URLs, committed launchers or shell history.
 
-The CLI and module starters refuse non-loopback binding without authentication.
-For a shared service, configure the key first, then start it:
+By default the CLI and module starters require authentication for non-loopback
+binding. `GNN_ALLOW_INSECURE_BIND=1` explicitly disables that bind guard.
+For a shared service, configure the key before starting it.
 
 ```bash
 : "${GNN_API_KEY:?Set a private API key before sharing the service}"

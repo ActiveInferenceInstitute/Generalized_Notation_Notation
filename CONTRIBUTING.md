@@ -6,9 +6,10 @@ Thank you for your interest in contributing to GNN! This project benefits from c
 
 ### Prerequisites
 
-- **Python 3.11+**
-- **UV** package manager ([installation](https://docs.astral.sh/uv/))
+- **Python 3.11–3.14** for the package. Use Python 3.14 for the default development profile.
+- **uv 0.13.6** to reproduce CI's package-manager version. See the [setup guide](SETUP_GUIDE.md) for installation.
 - **Git** for version control
+- **just** for the recipe examples. The [manual commands](#ci-and-automation) use uv directly.
 
 ### Setup
 
@@ -18,13 +19,13 @@ git clone https://github.com/<your-username>/Generalized_Notation_Notation.git
 cd Generalized_Notation_Notation
 
 # Install dependencies
-uv sync --extra dev
+uv sync --frozen --extra dev --python 3.14
 
 # Install pre-commit hooks
-uv run pre-commit install
+uv run --frozen --no-sync pre-commit install
 
-# Run the test suite to verify your setup
-uv run pytest tests/ -v
+# Run the fast development test selection
+just test
 ```
 
 See [SETUP_GUIDE.md](SETUP_GUIDE.md) for detailed installation instructions including optional dependency groups.
@@ -59,7 +60,7 @@ Open a [GitHub Discussion](https://github.com/ActiveInferenceInstitute/Generaliz
 3. **Run the tests** to ensure nothing is broken:
 
    ```bash
-   uv run pytest tests/ -v
+   just test
    ```
 
 4. **Commit** with clear, descriptive messages:
@@ -112,7 +113,9 @@ src/gnn/<module>/
 
 ### CI and automation
 
-Pull requests against `main` run the workflows described in [.github/README.md](.github/README.md): tests and lint (with path filters), docs audit when Markdown or `docs/` changes, dependency review, CodeQL, and workflow lint when `.github/workflows/**` changes.
+Pull requests against `main` run the primary CI and documentation audit even
+when the diff contains only documentation. See the [workflow roster](.github/workflows/README.md)
+for the separate dependency review, CodeQL, and workflow lint triggers.
 
 Before opening a PR, align locally where possible:
 
@@ -123,13 +126,16 @@ just test                  # Fast test suite
 just test-mod MODULE       # Test specific module
 
 # Or manually
-uv sync --frozen --extra dev
-uv run pytest -m "not pipeline and not mcp and not ollama and not env_heavy and not toolchain" --tb=short -q
-uv run ruff check src/
-uv run python docs/development/docs_audit.py --strict
+uv sync --frozen --extra dev --python 3.14
+uv run --frozen --no-sync pytest -m "not pipeline and not mcp and not ollama and not env_heavy and not toolchain" --tb=short -q
+uv run --frozen --no-sync ruff check src/
+uv run --frozen --no-sync python docs/development/docs_audit.py --strict --check-anchors --no-write
 ```
 
-For workflow YAML edits, run `actionlint .github/workflows/*.yml` (see the hub doc for install options). Full suite (including pipeline/MCP-marked tests) is heavier than CI; use `uv run pytest tests/ -v` when your change touches those areas.
+For workflow YAML edits, run `actionlint .github/workflows/*.yml`. When your
+change affects a pipeline, MCP, or native backend path, run the relevant
+selection with its required runtime. The [testing guide](docs/testing/README.md)
+lists the test profiles.
 
 ## Pull Request Guidelines
 

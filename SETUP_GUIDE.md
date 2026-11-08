@@ -5,11 +5,8 @@
 ### Prerequisites
 
 - **Python `>=3.11,<3.15`** installed (default 3.14.8; see the root README for named compatibility exceptions)
-- **uv 0.13.6** package manager installed (required by `uv.toml`)
-
-  ```bash
-  curl -LsSf https://astral.sh/uv/0.13.6/install.sh | sh
-  ```
+- **uv `>=0.13.6,<0.14`** installed. CI pins 0.13.6. See the
+  [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
 ### Basic Setup (Core Dependencies)
 
@@ -17,9 +14,11 @@
 # Clone the repository
 git clone https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git
 cd Generalized_Notation_Notation
+# Select the published release for a versioned install.
+git checkout v5.0.3
 
-# Run basic setup
-uv run python src/gnn/1_setup.py --verbose
+uv sync --frozen --python 3.14
+uv run --frozen --no-sync gnn health
 ```
 
 A normal `uv sync` / core install includes:
@@ -34,8 +33,8 @@ A normal `uv sync` / core install includes:
 For full functionality including Active Inference, machine learning, and visualization:
 
 ```bash
-# Install all optional packages
-uv sync --all-extras
+# Install the Python 3.12 all-extras profile.
+uv sync --frozen --all-extras --python 3.12
 ```
 
 Or install specific groups (canonical list in `pyproject.toml` → `[project.optional-dependencies]`):
@@ -47,8 +46,8 @@ uv sync --extra ml-ai
 # Install audio processing extras
 uv sync --extra audio
 
-# Install GUI interfaces
-uv sync --extra gui
+# Install the GUI profile with Python 3.12.
+uv sync --frozen --extra gui --python 3.12
 ```
 
 ## Optional Package Groups
@@ -90,7 +89,7 @@ with `uv sync --extra <group>` or together with `uv sync --all-extras`):
 
 - **Packages**: `gradio`
 - **Use case**: GUI interfaces for model construction (Step 22)
-- **Installation**: `uv sync --extra gui`. The committed uv override selects
+- **Installation**: `uv sync --frozen --extra gui --python 3.12`. The committed uv override selects
   Pillow 13 despite Gradio 6.30.0's upstream `<13` cap; plain pip GUI/all installs
   cannot resolve this combination. See the
   [runtime exceptions](README.md#runtime-defaults-and-required-profiles).
@@ -163,7 +162,7 @@ with `uv sync --extra <group>` or together with `uv sync --all-extras`):
 ### 16. **all** - Everything
 
 - **Packages**: union of every group above
-- **Installation**: `uv sync --all-extras`
+- **Installation**: `uv sync --frozen --all-extras --python 3.12`
 
 > **Core vs optional**: `inferactively-pymdp`, `jax[cpu]`, `jaxlib`, `flax`,
 > `optax`, `numpyro`, and `discopy` are **core** dependencies installed by a
@@ -189,11 +188,11 @@ with `uv sync --extra <group>` or together with `uv sync --all-extras`):
 # List available groups (shown in pyproject.toml [project.optional-dependencies])
 # Read the authoritative list from pyproject.toml or OPTIONAL_GROUPS.
 
-# Install all optional packages
-uv sync --all-extras
+# Install the Python 3.12 all-extras profile.
+uv sync --frozen --all-extras --python 3.12
 
 # Install specific groups
-uv sync --extra ml-ai --extra audio --extra gui
+uv sync --frozen --extra ml-ai --extra audio --extra gui --python 3.12
 ```
 
 ### Method 2: Using Setup Module
@@ -214,23 +213,9 @@ uv sync --frozen --extra torch
 
 ## Platform-Specific Notes
 
-### Linux (Tested on Parrot OS / Debian)
-
-- All packages install successfully using UV
-- No additional system dependencies required for core functionality
-- PyMDP and JAX work perfectly with CPU backend
-
-### macOS
-
-- All packages install successfully using UV
-- Same behavior as Linux
-- Native M1/M2 support with JAX
-
-### Windows
-
-- Core packages install successfully
-- Some optional packages may require Windows-specific builds
-- Recommended: Use WSL2 for best compatibility
+See the [installed platform acceptance guide](docs/development/installed_platform_acceptance.md)
+for tested OS, interpreter, and dependency profiles. Provision and verify native
+backends and GUI callbacks separately on the target machine.
 
 ## Verification
 

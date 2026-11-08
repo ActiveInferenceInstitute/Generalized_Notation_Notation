@@ -15,12 +15,12 @@ Use the uv version in the [setup guide](../SETUP.md), then from the repository r
 uv sync --frozen --extra dev --python 3.14
 uv run --frozen --no-sync gnn preflight
 uv run --frozen --no-sync python -m pytest tests/docs/ -q
-just release-preflight
 ```
 
-The last command provisions the frozen dev profile and checks deterministic release
-prerequisites. `just quality` runs the broader local roster. Neither replaces
-required hosted native, platform, security or companion qualification.
+For a release candidate, `just release-preflight` provisions the frozen dev
+profile and checks deterministic release prerequisites. `just quality` runs the
+broader local roster. Required hosted native, platform, security, and companion
+qualification run separately.
 
 ## Project Architecture
 
@@ -58,9 +58,10 @@ The [audit](docs_audit.py) checks relative destinations, repository escapes,
 same-page and cross-file anchors, heading duplicates, document pairing and owner
 claims. Registry-bound claims are judged against source declarations: render-engine
 counts against `FRAMEWORK_REGISTRY`, and model-kind coverage plus frame
-documentation against each frame's `state_space` declaration. Code examples do not
-create real navigation targets. Reference definitions
-and URL-encoded paths are checked too. It writes a report unless `--no-write` is
+documentation against each frame's `state_space` declaration. The link scan
+handles multiline Markdown destinations and reference definitions, including
+URL-encoded paths. It excludes inline code and fenced examples from navigation.
+It writes a report unless `--no-write` is
 supplied; strict failures print individual diagnostics, and `--quiet` prints counts.
 [Documentation review](documentation_review.md) adds executable-example and rendered-page
 review. Generated and quoted historical material keeps its declared scope.

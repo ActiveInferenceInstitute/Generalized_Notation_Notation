@@ -254,17 +254,19 @@ Backend-specific renderers live under:
 
 ### Model kinds
 
-`render.pomdp_contract.detect_model_kind` classifies each spec. Discrete kinds
-(flat, factored, hierarchical, multi-agent, learning) are canonicalised to
-`A/B/C/D[/E]` before rendering. `CONTINUOUS` specs (`F/H/Q/R`,
-`prior_mean/prior_cov`, optional `goal_mean/control_gain`) bypass
-canonicalisation: `render/continuous_common.py` validates the block and
-`render/continuous_script.py` generates the JAX / NumPyro / PyTorch / ngc-learn Kalman-filter
-scripts; Stan and RxInfer.jl have their own continuous programs. Frameworks
-whose registry entry has `supports_continuous: false` (PyMDP,
-ActiveInference.jl, DisCoPy, bnlearn) return `{"unsupported": true, "status":
-"unsupported"}` for continuous models — counted under
-`unsupported_framework_renderings`, never as failures, never executed.
+`render.pomdp_contract.detect_model_kinds` preserves the full kind set.
+`detect_model_kind` gives its precedence winner. The
+[syntax guide](../../../docs/gnn/gnn_syntax.md#model-kind-detection)
+defines the typed fields that determine classification. The
+[backend admission guide](../../../docs/gnn/implementations/README.md#backend-admission)
+covers which renderers accept specific state spaces, compositions, and
+execution contracts.
+
+Categorical routes use the shared `A/B/C/D[/E]` contract or a named
+execution contract. Single-block linear-Gaussian models use
+`continuous_common.py` for validation. `continuous_script.py` emits
+JAX, NumPyro, PyTorch and ngc-learn scripts, while Stan and RxInfer.jl
+have their own continuous generators.
 
 `STRUCTURAL` specs (issue #111) declare boundary structure only — a
 Markov-blanket wrapper with neither discrete `A/B/C/D[/E]` nor continuous
@@ -279,21 +281,13 @@ instead of attempting a discrete render; graph-backed targets (`bnlearn`,
 `stan`, `discopy`) render the declared structure legitimately and are not
 gated.
 
-Composed specs declare more than one render family — e.g. a linear-Gaussian
-`F/H/Q/R` block declared alongside `nr_agents > 1`.
-`render.pomdp_contract.detect_model_kinds` returns the full composed kind set
-(`{CONTINUOUS, MULTI_AGENT}` for that spec) while `detect_model_kind` keeps
-returning the max-precedence single winner for per-kind dispatch. No backend
-renders a composition whole: the render step reports every framework
-`{"unsupported": true, "status": "unsupported"}` with the
-`unsupported-composition:` reason — the same unsupported accounting
-structural wrappers get, counted under `unsupported_framework_renderings`
-and never a failure — rather than silently rendering the winner family with
-the other dropped. The one exception is the composed `{FACTORED, CONTINUOUS}`
-set: it renders on JAX as per-factor linear-Gaussian blocks
-(`render.continuous_script`), while every other composition stays refused.
-The composed exemplar is
-`input/gnn_files/continuous/multi_agent_lgssm.md`.
+Composed continuous models require a backend route that preserves the
+declared composition. JAX admits independent per-factor blocks.
+JAX and RxInfer admit explicitly independent Gaussian agents with
+per-agent blocks. A shared flat Gaussian block with `nr_agents > 1`
+and mixed categorical/Gaussian parameters both receive
+`unsupported-composition`. These receipts are reported under
+`unsupported_framework_renderings`.
 
 The supported framework inventory is defined in `src/gnn/render/framework_registry.py` and consumed by `health.py`, `__init__.py`, `processor.py`, `pomdp_processor.py`, and `mcp.py`.
 
