@@ -2,7 +2,7 @@
 
 Audit-backed quick reference for the GNN MCP server tool surface. Use `tests/mcp/test_mcp_audit.py` and `src/gnn/mcp/validate_tools.py` for the current live count. For full per-domain documentation see **[../modules/21_mcp.md](../modules/21_mcp.md)**.
 
-**164 tools across 36 modules** — see the generated [`src/gnn/mcp/audit_report.json`](../../../src/gnn/mcp/audit_report.json) for the authoritative current count (regenerate with `uv run python src/gnn/mcp/validate_tools.py`).
+**165 tools across 36 modules** — see the generated [`src/gnn/mcp/audit_report.json`](../../../src/gnn/mcp/audit_report.json) for the authoritative current count (regenerate with `uv run python src/gnn/mcp/validate_tools.py`).
 
 ## Full Tool Table
 
@@ -13,6 +13,7 @@ Audit-backed quick reference for the GNN MCP server tool surface. Use `tests/mcp
 | advanced_visualization | `list_d2_visualization_types` | Return all D2 diagram types supported for GNN model visualization. |
 | advanced_visualization | `process_advanced_visualization` | Process advanced visualization for GNN files: D2 diagrams, dashboards, network visualizations. |
 | analysis | `compute_complexity_metrics` | Compute complexity metrics (variables, connections, cyclomatic complexity) for GNN content. |
+| analysis | `evaluate_torchlens_fidelity` | Compare declared GNN connections with TorchLens-traced PyTorch dataflow (read-only). |
 | analysis | `get_analysis_results` | Read and return saved analysis results from a previous analysis run. |
 | analysis | `list_analysis_tools` | Return information about available GNN analysis tools and capabilities. |
 | analysis | `process_analysis` | Run statistical and complexity analysis on GNN files in a directory. |
@@ -71,7 +72,7 @@ Audit-backed quick reference for the GNN MCP server tool surface. Use `tests/mcp
 | intelligent_analysis | `get_intelligent_analysis_module_info` | Return version, feature flags, and tool inventory of the intelligent analysis module. |
 | intelligent_analysis | `process_intelligent_analysis` | Process AI-powered intelligent analysis of GNN pipeline results: failure analysis, performance optimization. |
 | llm | `analyze_gnn_with_llm` | Run LLM-based analysis on a single GNN model file: summary, complexity, connections. |
-| llm | `generate_llm_documentation` | Generate human-readable Markdown documentation for a GNN model using an LLM. |
+| llm | `generate_llm_documentation` | Generate Markdown or text documentation from deterministic GNN structural analysis. |
 | llm | `get_llm_module_info` | Return version, analysis types, output formats, and tool list of the GNN LLM module. |
 | llm | `get_llm_providers` | Return available LLM providers and their API key / configuration status. |
 | llm | `process_llm` | Run LLM analysis pipeline for all GNN files in a directory. |
@@ -120,7 +121,7 @@ Audit-backed quick reference for the GNN MCP server tool surface. Use `tests/mcp
 | render | `get_render_module_info` | Return metadata about the render module: supported frameworks and input/output formats. |
 | render | `list_render_frameworks` | Return supported render framework names and availability (best effort). |
 | render | `process_render` | Render GNN models in a directory to all supported code frameworks. |
-| render | `render_gnn_to_format` | Render a single GNN file (runs Step 11 render; does not currently filter to one framework). |
+| render | `render_gnn_to_format` | Render a single GNN file to exactly the requested framework with current artifacts. |
 | render | `render_spec_to_format` | Render a single GNN file to exactly one framework via render_gnn_spec. |
 | report | `generate_report` | Generate a comprehensive pipeline execution report with statistics and summaries. |
 | report | `get_report_module_info` | Return metadata about the report module (version, supported formats). |

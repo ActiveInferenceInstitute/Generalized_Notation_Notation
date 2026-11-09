@@ -2,7 +2,7 @@
   "modules_total": 36,
   "modules_loaded": 36,
   "modules_errored": 0,
-  "tools_total": 164,
+  "tools_total": 165,
   "modules_list": [
     "advanced_visualization",
     "analysis",
@@ -155,6 +155,14 @@
       "description": "Ensures a directory exists, creating it if necessary. Returns the absolute path."
     },
     {
+      "name": "evaluate_torchlens_fidelity",
+      "module": "gnn.analysis",
+      "category": "analysis",
+      "fn": "evaluate_torchlens_fidelity_mcp",
+      "documented": true,
+      "description": "Compare declared GNN connections with TorchLens-traced PyTorch dataflow (read-only)."
+    },
+    {
       "name": "execute_gnn_model",
       "module": "gnn.execute",
       "category": "execute",
@@ -216,7 +224,7 @@
       "category": "llm",
       "fn": "generate_llm_documentation_mcp",
       "documented": true,
-      "description": "Generate human-readable Markdown documentation for a GNN model using an LLM."
+      "description": "Generate Markdown or text documentation from deterministic GNN structural analysis."
     },
     {
       "name": "generate_report",
@@ -1064,7 +1072,7 @@
       "category": "render",
       "fn": "render_gnn_to_format_mcp",
       "documented": true,
-      "description": "Render a single GNN file (runs Step 11 render; does not currently filter to one framework)."
+      "description": "Render a single GNN file to exactly the requested framework with current artifacts."
     },
     {
       "name": "render_spec_to_format",
@@ -1358,7 +1366,7 @@
   "duplicate_registrations": [],
   "spot_checks_ok": 14,
   "spot_checks_err": 0,
-  "schema_checks_ok": 164,
+  "schema_checks_ok": 165,
   "schema_checks_err": 0,
   "logging_ok": 32,
   "logging_miss": 0,

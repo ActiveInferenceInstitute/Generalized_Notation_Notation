@@ -57,6 +57,21 @@ def discover_result_files(results_dir: Path, spec: FlatPayloadSpec) -> list[Path
     return found
 
 
+def result_model_name(
+    results_file: Path, results: dict[str, Any], framework: str
+) -> str:
+    """Return the per-model output folder name for one result file.
+
+    The segment preceding the framework directory wins (Step 12 layout
+    ``<model>/<framework>/...``); otherwise the payload ``model_name``.
+    """
+    path_parts = Path(results_file).parts
+    for i, part in enumerate(path_parts):
+        if part == framework and i >= 1:
+            return path_parts[i - 1]
+    return str(results.get("model_name", "unknown"))
+
+
 def compute_flat_payload_metrics(
     beliefs: np.ndarray, actions: list[Any], efe: np.ndarray
 ) -> dict[str, Any]:
@@ -213,14 +228,7 @@ def generate_analysis_from_logs(
             logger.error(f"Failed to read results: {e}")
             continue
 
-        # Determine model name from path: the segment preceding the framework.
-        path_parts = results_file.parts
-        model_name = results.get("model_name", "unknown")
-        for i, part in enumerate(path_parts):
-            if part == spec.framework and i >= 1:
-                model_name = path_parts[i - 1]
-                break
-
+        model_name = result_model_name(results_file, results, spec.framework)
         model_output_dir = output_dir / model_name
         model_output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -262,4 +270,5 @@ __all__ = [
     "compute_flat_payload_metrics",
     "discover_result_files",
     "generate_analysis_from_logs",
+    "result_model_name",
 ]
