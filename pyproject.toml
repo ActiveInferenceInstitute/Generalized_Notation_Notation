@@ -157,6 +157,13 @@ thrml = ["thrml==0.1.4"]
 torch = [
     "torch>=2.13.0",
 ]
+# Opt-in TorchLens op-level capture for the PyTorch backend. The emitted
+# PyTorch script imports torchlens only inside the supervised Step 12 child
+# when GNN_TORCHLENS_CAPTURE=1; the pipeline parent never imports it.
+torchlens = [
+    "torch>=2.13.0",
+    "torchlens>=3.0.2,<4",
+]
 research = [
     # NOTE: jupyterlab/jupyter-server duplicate dev group entries intentionally —
     # research group targets non-developer end-users who don't install the dev group.
@@ -206,6 +213,8 @@ all = [
 
     # PyTorch backend
     "torch>=2.13.0",  # GHSA-rrmf-rvhw-rf47 fixed in torch 2.13.0
+    # Opt-in op-level capture for the PyTorch backend (torchlens extra)
+    "torchlens>=3.0.2,<4",
 
     # Machine Learning & AI
     "transformers>=5.10.0",  # GHSA-xrqw-3rrv-vx5w (save_pretrained path traversal)
