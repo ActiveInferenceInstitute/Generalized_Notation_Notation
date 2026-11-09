@@ -344,6 +344,7 @@ def _lesion_witnesses(tl, rollout, outputs):
         lesioned = step_trace.fork().do(tl.module(site), tl.zero_ablate())
         policy = lesioned["policy"].out.detach()
         kl = float((full * (torch.log(full + EPS) - torch.log(policy + EPS))).sum())
+        kl = max(kl, 0.0)  # rounding can push an exact-zero divergence below zero
         witness["lesions"][name] = {
             "site": "agent." + site,
             "edit": "zero_ablate",

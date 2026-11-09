@@ -9,7 +9,7 @@
 - `load_sample_gnn_spec()` → `dict` — Parses the sample model; falls back to a minimal spec dict when the file is missing
 - `render_gnn_files(target_dir, output_dir)` → `dict` — Recovery-friendly bulk render used by `tests/pipeline/test_pipeline_recovery.py`
 - `FakeMCPTime()` → `FakeMCPTime` — Injectable clock standing in for `gnn.mcp.mcp.time`; `advance(seconds)` moves the observable clock forward instantly (registry cache expiry and sliding-window rate limiter read `time.time()`), no production seam required
-- `EXPECTED_MCP_TOOLS` → `int` — Exact pin of `tools_total` in the committed `src/gnn/mcp/audit_report.json` (162 at work time, 2026-09-23)
+- `EXPECTED_MCP_TOOLS` → `int` — Exact pin of `tools_total` in the committed `src/gnn/mcp/audit_report.json` (165 at work time, 2026-11-08)
 - `EXPECTED_MCP_MODULES` → `int` — Exact pin of `modules_total` in the committed `src/gnn/mcp/audit_report.json` (36 at work time)
 - `CENSUS_SOURCE` → `str` — Path of the census file the pins derive from (`src/gnn/mcp/audit_report.json`); regenerate the audit and update both constants in the same PR that adds or removes tools/modules
 
