@@ -369,6 +369,7 @@ Registered in `register_tools` (`src/gnn/analysis/mcp.py`):
 - `get_analysis_results` - Read saved analysis results
 - `compute_complexity_metrics` - Compute complexity metrics for a model
 - `list_analysis_tools` - List registered analysis tools
+- `evaluate_torchlens_fidelity` - Compare declared connections with TorchLens-traced PyTorch dataflow (read-only)
 
 ### MCP File Location
 - `src/gnn/analysis/mcp.py` - MCP tool registrations

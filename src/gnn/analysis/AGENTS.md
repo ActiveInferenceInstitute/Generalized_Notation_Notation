@@ -258,12 +258,13 @@ uv run --extra dev python -m pytest tests/analysis/ \
 
 ### Tools Registered
 
-`analysis/mcp.py` `register_tools` registers four tools:
+`analysis/mcp.py` `register_tools` registers five tools:
 
 - `process_analysis` - Run statistical and complexity analysis on GNN files in a directory
 - `get_analysis_results` - Read saved analysis JSON results from a previous run
 - `compute_complexity_metrics` - Compute complexity metrics for GNN content supplied as a string
 - `list_analysis_tools` - Report available analysis tools and capabilities (honest availability probe — reports measured availability; never asserts availability unconditionally)
+- `evaluate_torchlens_fidelity` - Compare declared `## Connections` with the TorchLens-traced dataflow recorded in PyTorch `simulation_results.json` (read-only; see [pytorch/README.md](pytorch/README.md#torchlens-structural-fidelity))
 
 ### MCP File Location
 - `src/gnn/analysis/mcp.py` - MCP tool registrations

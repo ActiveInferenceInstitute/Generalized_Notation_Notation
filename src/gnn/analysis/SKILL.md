@@ -77,6 +77,7 @@ efe = compute_expected_free_energy(beliefs, A_matrix, B_matrix)
 This module registers tools with the GNN MCP server (see `mcp.py`):
 
 - `compute_complexity_metrics`
+- `evaluate_torchlens_fidelity`
 - `get_analysis_results`
 - `list_analysis_tools`
 - `process_analysis`
