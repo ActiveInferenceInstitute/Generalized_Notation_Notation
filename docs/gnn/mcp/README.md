@@ -1,9 +1,5 @@
 # GNN MCP Documentation
 
-**Version**: v3.2.0 Engine  
-**Last Updated**: 2026-04-14  
-**Modules**: 38+ · **Pipeline steps**: 25 · **Renderers**: registry-defined backends (see [../implementations/README.md](../implementations/README.md)) · **Tests**: see [../../../README.md](../../../README.md)
-
 This directory contains documentation and references for the MCP domain of Generalized Notation Notation (GNN).
 
 ## Available Documents

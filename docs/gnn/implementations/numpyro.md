@@ -1,187 +1,62 @@
 # NumPyro Framework Implementation
 
-> **GNN Integration Layer**: Python / JAX-based Probabilistic Programming
-> **Framework Base**: `numpyro >= 0.14` (NumPy-interface Pyro with JAX backend)
-> **Simulation Architecture**: Inference-as-sampling POMDP agent
-> **Documentation Version**: 2.0.0
+The NumPyro backend has separate categorical and single-block linear-Gaussian
+routes. NumPyro and JAX are core dependencies in the
+[package metadata](../../../pyproject.toml).
 
-## Overview
+## Categorical filtering and action selection
 
-NumPyro provides a **probabilistic programming** backend for GNN models. Unlike PyMDP (which uses fixed-point belief updates) or JAX (which uses manual message-passing), NumPyro treats the generative model as a probabilistic program and uses **NUTS/MCMC** for posterior inference (SVI is planned; see NP-2 below).
+The categorical program embeds source-derived `A/B/C/D` values and records
+matrix provenance. It samples observations and transitions with NumPyro
+categorical distributions. Its belief update is a JAX tensor calculation
+using the observation likelihood and predicted state prior. The declared
+matrices remain fixed throughout the run.
 
-This unlocks uncertainty quantification beyond the classical Dirichlet-categorical parameterisation — GNN-specified matrices become priors over distributions, not point estimates.
-**Registry capability** (`src/gnn/render/framework_registry.py`): NumPyro covers
-both model kinds — discrete categorical POMDP specs (A/B/C/D[/E]) and continuous
-linear-Gaussian state-space models (`supports_continuous: True`) — and is fully
-executable (`supports_execution: True`): Step 12 runs each generated script via
-`src/gnn/execute/numpyro/numpyro_runner.py`.
-
-## Architecture
-
-| Stage | Module | Description |
-|---|---|---|
-| Rendering (Step 11) | `src/gnn/render/numpyro/numpyro_renderer.py` | GNN JSON → NumPyro probabilistic program |
-| Execution (Step 12) | `src/gnn/execute/numpyro/numpyro_runner.py` | MCMC/SVI inference, log persistence |
-| Analysis (Step 16) | `src/gnn/analysis/numpyro/analyzer.py` | Posterior summaries, uncertainty bands |
+For each candidate action it adds expected conditional observation entropy
+to the KL divergence from predicted observations to `softmax(C)`. It
+samples from the softmax of negative expected free energy. The result
+contains `beliefs`, `observations`, `actions`, `efe_history`, and
+validation findings.
 
 ## Continuous (linear-Gaussian) models
 
-For continuous specifications (`F`/`H`/`Q`/`R`, `prior_mean`/`prior_cov`,
-optional `u`, `goal_mean`, `control_gain`) `numpyro_renderer.py` delegates to
-the shared generator `src/gnn/render/continuous_script.py`. The emitted script runs
-the online Kalman filter over the linear-Gaussian state-space model and then fits
-the same model with NUTS, reporting `mcmc_posterior_means` and `mcmc_r_hat_max`
-alongside the continuous result schema (`beliefs` as posterior means,
-`posterior_cov`, `true_states_continuous`, `observations_continuous`,
-`controls`, `rmse_vs_true`).
+The shared continuous generator first runs an online Kalman filter using
+the declared `F/H/Q/R`, Gaussian prior, and any source-defined proportional
+controller. The NumPyro route then runs NUTS over the latent state trajectory
+conditional on the resulting observations and controls. The system
+matrices remain fixed.
 
-## Generative Model in NumPyro
-
-```python
-import numpyro
-import numpyro.distributions as dist
-from jax import random
-
-
-def gnn_generative_model(A, B, C, D, T=20):
-    """NumPyro probabilistic program for GNN POMDP."""
-    # Prior over initial hidden state
-    initial_state_dist = dist.Categorical(probs=D)
-    true_state = numpyro.sample("s_0", initial_state_dist)
-
-    observations = []
-    for t in range(T):
-        # Observation model: P(o | s)
-        obs = numpyro.sample(f"o_{t}", dist.Categorical(probs=A[:, true_state]))
-        observations.append(obs)
-
-        if t < T - 1:
-            # Expected Free Energy–based action selection
-            # (simplified: uniform prior over actions for unconditioned sampling)
-            action = numpyro.sample(f"a_{t}", dist.Categorical(probs=C / C.sum()))
-            # Transition model: P(s' | s, a)
-            true_state = numpyro.sample(
-                f"s_{t + 1}", dist.Categorical(probs=B[:, true_state, action])
-            )
-
-    return observations
-```
-
-## Prior Specification from GNN Matrices
-
-GNN matrices become NumPyro concentration parameters:
-
-```python
-import jax.numpy as jnp
-
-# A matrix: Dirichlet prior over likelihood columns
-A_prior = A + 1e-6  # stabilize zeros
-A_dist = dist.Dirichlet(concentration=A_prior.T * 10.0)
-A_sample = numpyro.sample("A", A_dist)
-
-# D vector: Dirichlet prior over initial state
-D_dist = dist.Dirichlet(concentration=D * 10.0)
-D_sample = numpyro.sample("D", D_dist)
-```
-
-## Running Inference
-
-```python
-from numpyro.infer import MCMC, NUTS
-
-# NUTS (No-U-Turn Sampler)
-nuts_kernel = NUTS(gnn_generative_model)
-mcmc = MCMC(nuts_kernel, num_warmup=500, num_samples=1000)
-mcmc.run(random.PRNGKey(0), A=A_matrix, B=B_matrix, C=C_vector, D=D_vector)
-
-# Posterior samples
-posterior = mcmc.get_samples()
-# {"A": shape [1000, num_obs, num_states], "D": shape [1000, num_states], ...}
-```
-
-## Telemetry Output
-
-```json
-{
-  "inference": {
-    "method": "NUTS",
-    "num_samples": 1000,
-    "num_warmup": 500,
-    "divergences": 0,
-    "r_hat_max": 1.01
-  },
-  "simulation_trace": {
-    "observations":  [1, 0, 2, 1, 1],
-    "beliefs":       [[0.05, 0.90, 0.05], ...],
-    "actions":       [0, 0, 1, 0, 0],
-    "efe_history":   [[-1.2, -0.8, -2.1], ...],
-    "posterior_uncertainty": {
-      "A_std": 0.03,
-      "D_std": 0.08
-    }
-  }
-}
-```
+The result distinguishes online filter means and covariances from
+`mcmc_posterior_means`, which use the full sequence. It also records
+`mcmc_r_hat_max`, `mcmc_sampling`, and `mcmc_rmse_vs_kalman`. Smoothing
+and filtering condition on different information, so their mean
+trajectories can differ.
 
 ## Installation
 
-NumPyro and JAX are core dependencies — `uv sync` installs them; no extra step.
-GPU (CUDA) users can swap in the CUDA-enabled JAX wheel separately if needed.
-
-Check availability:
-
 ```bash
-PYTHONPATH=src python -c "from execute.numpyro import is_numpyro_available; print(is_numpyro_available())"
+uv sync --frozen
 ```
 
 ## Run
 
+From the repository root, render and execute the maintained categorical
+gridworld using the prepared environment:
+
 ```bash
-# Render GNN to NumPyro script
-python src/gnn/11_render.py --target-dir input/gnn_files/ --frameworks numpyro
-
-# Execute with MCMC inference
-python src/gnn/12_execute.py --target-dir input/gnn_files/ --frameworks numpyro
-
-# The MCP tool takes no framework argument — it dispatches to PyMDP:
-# execute_gnn_model_mcp(gnn_file_path="...", output_directory="...")
-# For a specific backend, call the executor directly:
-# execute_gnn_model(model_path="...", execution_type="numpyro")
+uv run --frozen --no-sync python src/gnn/main.py --only-steps "3,11,12" \
+  --frameworks numpyro --target-dir input/gnn_files/pomdp_gridworld \
+  --output-dir output/numpyro_gridworld
 ```
 
-## Comparison to Other Frameworks
-
-| Feature | PyMDP | JAX | NumPyro |
-|---|---|---|---|
-| Inference method | Belief propagation | Manual message-passing | MCMC / SVI |
-| Uncertainty output | None | None | Full posterior |
-| GPU support | No | Yes | Yes |
-| Speed (20 steps) | Fast | Fast | Slow (sampling) |
-| Use case | Classical POMDP | High-perf POMDP | Uncertainty quantification |
-
-## Correlation Results
-
-During the **March 6, 2026** pipeline benchmarking audit, NumPyro was verified as **Fully Operational**. NumPyro's posterior *mean* beliefs correlate with PyMDP and JAX beliefs at ~1.0 for deterministic GNN matrices. Posterior *variance* is the unique contribution, supplying rich uncertainty mechanics while maintaining cross-framework fidelity.
+Read the current run's render and execution summaries. For model selection
+and composition restrictions, see [backend admission](README.md#backend-admission).
 
 ## Source Code Connections
 
-| Stage | Module | Key Function |
-|---|---|---|
-| Rendering | [numpyro_renderer.py](../../../src/gnn/render/numpyro/numpyro_renderer.py) | `render_gnn_to_numpyro()` |
-| Execution | [numpyro_runner.py](../../../src/gnn/execute/numpyro/numpyro_runner.py) | `execute_numpyro_script()` |
-| Analysis | [analyzer.py](../../../src/gnn/analysis/numpyro/analyzer.py) | `generate_analysis_from_logs()` |
-
-## Improvement Opportunities
-
-| ID | Area | Description | Impact |
-|---|---|---|---|
-| NP-1 | Rendering | ~~Action selection should use EFE not uniform prior~~ — now uses EFE-based softmax action selection | ✅ FIXED |
-| NP-2 | Execution | SVI not yet implemented (only NUTS) | Medium |
-| NP-3 | Analysis | Posterior uncertainty plots not linked to Step 9 (Adv Viz) | Low |
-
-## See Also / Next Steps
-
-- **[Cross-Framework Methodology](../integration/framework_integration_guide.md)**: Details on the correlation methodology and benchmarking metrics.
-- **[Architecture Reference](../reference/architecture_reference.md)**: Deep dive into the pipeline orchestrator and module integration.
-- **[GNN Implementations Index](README.md)**: Return to the master framework implementer manifest.
-- **[Back to GNN START_HERE](../../START_HERE.md)**
+| Stage | Module |
+|---|---|
+| Categorical rendering | [NumPyro renderer](../../../src/gnn/render/numpyro/numpyro_renderer.py) |
+| Continuous rendering | [Shared continuous generator](../../../src/gnn/render/continuous_script.py) |
+| Execution | [NumPyro runner](../../../src/gnn/execute/numpyro/numpyro_runner.py) |
+| Analysis | [NumPyro analyzer](../../../src/gnn/analysis/numpyro/analyzer.py) |

@@ -1,225 +1,64 @@
 # GNN Quick Reference Guide
 
-> **Version**: 2.0 | **Last Updated**: March 2026
+Run these commands from the repository root after the
+[frozen installation](../../../README.md#quick-start).
 
-A concise reference for common GNN operations, syntax patterns, and frequently used commands.
-
----
-
-## 🚀 Quick Start Commands
-
-### Running the Pipeline
+## Quick Start Commands
 
 ```bash
-# Full pipeline (all 25 steps)
-python src/gnn/main.py --target-dir input/gnn_files --verbose
+uv run --frozen --no-sync gnn validate input/gnn_files/discrete/two_state_bistable.md --strict
+uv run --frozen --no-sync gnn extract input/gnn_files/discrete/two_state_bistable.md --compact
 
-# Run specific steps
-python src/gnn/main.py --only-steps "3,5,7,8,11,12" --verbose
-
-# Skip certain steps
-python src/gnn/main.py --skip-steps "13,15" --verbose
+uv run --frozen --no-sync gnn run \
+  --target-dir input/gnn_files/basics \
+  --output-dir output/quick-reference \
+  --only-steps 3 5 6 7 8 \
+  --skip-steps 0 1 2
 ```
 
-### Individual Pipeline Steps
+Use a file for `gnn validate` and `gnn extract`, and a directory for
+`gnn run --target-dir`. Inspect
+`output/quick-reference/00_pipeline_summary/pipeline_execution_summary.json`
+and the selected step directories. Use a distinct output directory for each
+concurrent run.
 
-```bash
-# Step 1: Setup environment
-python src/gnn/1_setup.py --dev
+## GNN Syntax Quick Reference
 
-# Step 3: Parse GNN files
-python src/gnn/3_gnn.py --target-dir input/gnn_files
+Start from the [two-state exemplar](../../../input/gnn_files/discrete/two_state_bistable.md)
+and follow the [syntax reference](../../../docs/gnn/reference/gnn_syntax.md).
+The core section headers are `GNNSection`, `GNNVersionAndFlags`, `ModelName`,
+`StateSpaceBlock`, and `Connections`. Declare dimensions and types before
+referring to variables in the connection block. `D>s` is directed and
+`s-A` is undirected. Model values, time, and ontology annotations add
+information used by downstream processing.
 
-# Step 5: Type checking
-python src/gnn/5_type_checker.py --strict
+For categorical models, `A[o,s]` is the observation likelihood, `B` describes
+transitions, and `D` is the initial-state prior. The
+[parameterization guide](../../../docs/gnn/reference/gnn_syntax.md)
+explains axis conventions and the meaning of `C` and `E`. Other model kinds
+use their own declarations and admission rules.
 
-# Step 8: Visualization
-python src/gnn/8_visualization.py
+## Configuration and Backends
 
-# Step 11: Render code
-python src/gnn/11_render.py --frameworks "pymdp,jax"
+Use `gnn run --help` for step selection, logging and worker controls.
+The [configuration guide](../../../docs/configuration/README.md) describes
+`input/config.yaml`. The
+[framework availability guide](../../../docs/execution/FRAMEWORK_AVAILABILITY.md)
+separates rendering from native execution and lists required runtimes. Check
+the relevant model and backend contract before requesting Step 12.
 
-# Step 12: Execute simulations
-python src/gnn/12_execute.py --frameworks "pymdp"
-```
+## Troubleshooting
 
----
+Run `uv run --frozen --no-sync gnn doctor` to inspect runtime capabilities.
+Read the status and diagnostics for the current run before changing the
+environment or increasing a timeout. See the
+[troubleshooting guide](../../../docs/troubleshooting/README.md) for
+setup, validation, and execution issues.
 
-## 📝 GNN Syntax Quick Reference
+## Key Documentation Links
 
-### Basic Model Structure
-
-```markdown
-# GNN Model Name
-## GNNSection
-ModelName
-
-## StateSpaceBlock
-# Variables
-A[3,3,type=float]   # Matrix: rows x columns
-B[3,3,3,type=float] # 3D tensor
-C[3,type=float]     # Vector
-
-## Connections
-D>s                # D feeds into s (directed)
-s-A                # s connects to A (undirected)
-s>s_prime          # State transition
-A-o                # Likelihood mapping
-π>u                # Policy to action
-
-## InitialParameterization
-A={(0.9,0.05,0.05), (0.05,0.9,0.05), (0.05,0.05,0.9)}
-C={(0.1, 0.1, 1.0)}
-D={(0.33333, 0.33333, 0.33333)}
-
-## ActInfOntologyAnnotation
-A=LikelihoodMatrix
-s=HiddenState
-o=Observation
-```
-
-### Key Section Keywords
-
-| Section | Purpose | Required |
-|---------|---------|----------|
-| `# GNN Model Name` | Model identifier | Yes |
-| `## GNNSection` | Section declaration | Yes |
-| `## StateSpaceBlock` | Variable definitions | Yes |
-| `## Connections` | Dependency graph | Yes |
-| `## InitialParameterization` | Parameter values | Recommended |
-| `## ActInfOntologyAnnotation` | Semantic mapping | Optional |
-
----
-
-## 🎯 Common Configuration Options
-
-### Pipeline Options
-
-| Flag | Description | Example |
-|------|-------------|---------|
-| `--target-dir` | Input GNN files | `--target-dir input/gnn_files` |
-| `--output-dir` | Output location | `-o output/` |
-| `--verbose` | Detailed logging | `--verbose` |
-| `--strict` | Strict type checking | `--strict` |
-| `--estimate-resources` | Resource estimation | `--estimate-resources` |
-| `--dev` | Install dev dependencies | `--dev` |
-
-### Framework Selection
-
-```bash
-# Specific frameworks
---frameworks "pymdp,jax,discopy"
-
-# Presets
---frameworks "lite"     # PyMDP, JAX, DisCoPy
---frameworks "all"      # All available
---frameworks "julia"    # RxInfer, ActiveInference.jl
-```
-
----
-
-## 📊 Matrix Notation
-
-### Dimension Syntax
-
-```
-variable[row,col,type=type]
-variable[states,observations,type=float]
-variable[states,states,actions,type=float]
-```
-
-### Connection Types
-
-| Symbol | Meaning | Example |
-|--------|---------|---------|
-| `>` | Directed flow | `D>s` (D → s) |
-| `-` | Bidirectional | `s-A` (s ↔ A) |
-| `>` | Mapping | `A-o` (hidden → obs) |
-
----
-
-## 🔧 Troubleshooting Quick Fixes
-
-### Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| Import errors | Run `python src/gnn/1_setup.py --recreate-uv-env` |
-| Type check failures | Use `--strict` flag for detailed errors |
-| Visualization errors | Check `output/8_visualization_output/` |
-| Execution timeout | Increase timeout in `input/config.yaml` |
-| Memory issues | Use `--estimate-resources` to check requirements |
-
-### Environment Reset
-
-```bash
-# Recreate environment
-uv sync
-uv run python src/gnn/1_setup.py --recreate-uv-env --dev
-
-# Verify installation
-uv run python -c "import gnn; print('OK')"
-```
-
----
-
-## 📁 Directory Reference
-
-```
-docs/                  # Documentation root
-├── gnn/              # GNN language spec
-│   ├── gnn_syntax.md
-│   └── quickstart_tutorial.md
-├── pymdp/            # PyMDP integration
-├── rxinfer/          # RxInfer.jl integration
-├── cognitive_phenomena/  # Example models
-├── pipeline/         # Pipeline reference
-└── troubleshooting/  # Issue resolution
-
-src/                  # Source code
-├── main.py           # Main orchestrator
-├── 0_template.py     # Step 0
-├── ...
-├── 24_intelligent_analysis.py  # Step 24
-└── gnn/              # GNN module
-
-input/                # Input files
-└── gnn_files/        # GNN model files
-
-output/               # Generated outputs
-├── 3_gnn_output/     # Parsed models
-├── 5_type_checker_output/
-├── 8_visualization_output/
-└── ...
-```
-
----
-
-## 📖 Key Documentation Links
-
-| Topic | Link |
-|-------|------|
-| Full Syntax | [docs/gnn/reference/gnn_syntax.md](../../../docs/gnn/reference/gnn_syntax.md) |
-| Quick Start | [docs/quickstart.md](../../../docs/quickstart.md) |
-| Pipeline Reference | [src/gnn/AGENTS.md](../AGENTS.md) |
-| Learning Paths | [docs/learning_paths.md](../../../docs/learning_paths.md) |
-| API Reference | [docs/api/README.md](../../../docs/api/README.md) |
-
----
-
-## 🧮 Active Inference Glossary
-
-| Term | Definition |
-|------|------------|
-| **GNN** | Generalized Notation Notation - standardized model language |
-| **A-matrix** | Likelihood matrix P(o\|s) |
-| **B-matrix** | Transition matrix P(s'\|s,a) |
-| **C-vector** | Preferences log P(o) |
-| **D-vector** | Initial state prior P(s) |
-| **EFE** | Expected Free Energy |
-| **FEP** | Free Energy Principle |
-
----
-
-*For documentation index, see [docs/INDEX.md](../../../docs/INDEX.md)*
-*For changelog, see [CHANGELOG.md](CHANGELOG.md)*
+- [Operator quickstart](../../../docs/quickstart.md)
+- [Pipeline and step boundaries](../../../docs/pipeline/README.md)
+- [API guide](../../../docs/api/README.md)
+- [Model examples](../../../input/gnn_files/INDEX.md)
+- [Documentation index](../../../docs/INDEX.md)

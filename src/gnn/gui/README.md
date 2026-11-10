@@ -44,7 +44,8 @@ python src/gnn/22_gui.py --gui-types gui_3 --target-dir input/gnn_files --output
 python src/gnn/22_gui.py --gui-types "gui_1,gui_2,gui_3,oxdraw" --target-dir input/gnn_files --output-dir output --headless --verbose
 ```
 
-- Headless artifact generation is the default; pass `--interactive` to launch local web UIs (requires Gradio).
+- Headless artifact generation is the default. Provision the Python 3.12 GUI
+  profile below before passing `--interactive` to launch local web UIs.
 
 ## Headless Mode
 - If GUIs cannot be launched (or headless=True):
@@ -179,9 +180,12 @@ To add a new GUI (e.g., gui_4):
 **Example completed:** GUI 3 (State Space Design Studio) follows this pattern.
 
 ## Setup via UV
-- Step 1 installs GUI extras (`--extra gui`) to include Gradio. To install manually:
+Install the optional Gradio dependencies explicitly. Use Python 3.12 for
+interactive GUI callbacks.
+
 ```bash
-uv sync --extra gui
+uv sync --frozen --extra gui --python 3.12
+uv run --frozen --no-sync --python 3.12 gnn gui --gui-types gui_1 --interactive
 ```
 
 ## Notes

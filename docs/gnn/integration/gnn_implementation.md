@@ -108,7 +108,7 @@ use `rxinfer`, which routes to the canonical renderer.
 | **JAX** | Python | `.py` | GPU Acceleration, Automatic Differentiation, JIT Compilation |
 | **DisCoPy** | Python | `.py` | Categorical Diagrams, String Diagrams, Compositional Models |
 | **PyTorch** | Python | `.py` | Tensor POMDP; `torch` ships in the `torch` extra (`uv sync --extra torch`; GHSA-rrmf-rvhw-rf47 resolved in torch 2.13.0) |
-| **NumPyro** | Python | `.py` | NUTS/MCMC posterior inference |
+| **NumPyro** | Python | `.py` | Fixed-parameter categorical filtering, and continuous filtering plus NUTS |
 | **Stan** | Stan | `.stan` + `_stan.py` driver | HMM forward-algorithm (Dirichlet A_est, NUTS/MAP) and Kalman marginal-likelihood programs; executed by Step 12 through cmdstanpy (`src/gnn/execute/stan/`) |
 | **bnlearn** | Python | `.py` | Bayesian network structure and inference |
 

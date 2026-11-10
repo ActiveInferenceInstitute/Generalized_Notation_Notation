@@ -4,22 +4,28 @@ This module is responsible for running GNN models that have been rendered into f
 
 ## Supported Frameworks
 
-| Framework | Language | Subfolder | Script Pattern | Status |
+The table lists runtime entry points. See
+[backend admission](../../../docs/gnn/implementations/README.md#backend-admission)
+for the model contracts each renderer accepts.
+
+| Framework | Language | Subfolder | Script Pattern | Runtime or contract |
 |-----------|----------|-----------|----------------|--------|
-| **PyMDP** | Python | `pymdp/` | `*_pymdp.py` | ✅ Full support |
-| **RxInfer.jl** | Julia | `rxinfer/` | `*_rxinfer.jl` | ✅ Full support |
-| **ActiveInference.jl** | Julia | `activeinference_jl/` | `*_activeinference.jl` | ✅ Full support |
-| **JAX** | Python | `jax/` | `*_jax.py` | ✅ Full support |
-| **DisCoPy** | Python | `discopy/` | `*_discopy.py` | ✅ Full support |
-| **PyTorch** | Python | `pytorch/` | `*_pytorch.py` | ✅ Full support |
-| **NumPyro** | Python | `numpyro/` | `*_numpyro.py` | ✅ Full support |
-| **Stan** | Python (cmdstanpy driver) | `stan/` | `*_stan.py` | ✅ Full support (requires `uv sync --extra stan` + CmdStan toolchain; skipped otherwise) |
+| **PyMDP** | Python | `pymdp/` | `*_pymdp.py` | Core Python runtime |
+| **RxInfer.jl** | Julia | `rxinfer/` | `*_rxinfer.jl` | Julia and RxInfer package set |
+| **ActiveInference.jl** | Julia | `activeinference_jl/` | `*_activeinference.jl` | Julia and ActiveInference package set |
+| **JAX** | Python | `jax/` | `*_jax.py` | Core Python runtime |
+| **DisCoPy** | Python | `discopy/` | `*_discopy.py` | Core Python runtime |
+| **PyTorch** | Python | `pytorch/` | `*_pytorch.py` | `torch` extra |
+| **NumPyro** | Python | `numpyro/` | `*_numpyro.py` | Core Python runtime |
+| **Stan** | Python (cmdstanpy driver) | `stan/` | `*_stan.py` | `stan` extra and CmdStan toolchain |
 | **THRML** | Python/JAX | `thrml/` | `*_thrml.py` | Experimental categorical Gibbs smoothing; explicit `thrml` extra and selection; fresh sample/result binding |
 | **cpomdp** | Python/JAX | `cpomdp/` | `*_cpomdp.py` | Experimental continuous inference/control; explicit `cpomdp` extra and selection |
 | **ngc-learn** | Python/JAX | `ngclearn/` | `*_ngclearn.py` | Continuous predictive processing; Python >=3.12 optional runtime |
-| **Lean 4** | Lean (FEP_Formal bridge) | `lean/` | `*.lean` + emitted `*.md` | ✅ Full support (requires the FEP_Formal checkout via `FEP_FORMAL_ROOT`; the former `FEP_LEAN_ROOT` name is still accepted; skipped otherwise) |
-| **bnlearn** | Python (generator-backed; `.R` lane via Rscript) | `bnlearn/` | `*_bnlearn.py`, `*.R` | ✅ Full support (requires the `bnlearn` extra or R + R `bnlearn` package; skipped otherwise) |
-JAX, NumPyro, PyTorch, and DisCoPy are **core** dependencies (`uv sync`). If the environment is incomplete, their scripts report an explicit skipped status. Requested Julia frameworks require Julia plus their package set; in strict requested-framework runs, missing packages make Step 12 fail.
+| **Lean 4** | Lean (FEP_Formal bridge) | `lean/` | `*.lean` + emitted `*.md` | Execution-only bridge requiring a FEP_Formal checkout via `FEP_FORMAL_ROOT` |
+| **bnlearn** | Python (generator-backed; `.R` lane via Rscript) | `bnlearn/` | `*_bnlearn.py`, `*.R` | `bnlearn` extra for Python, or Rscript and the R `bnlearn` package for the R lane |
+
+Step 12 reports missing prerequisites through structured readiness records.
+Check the run summary for skip reasons and whether required work completed.
 
 ## Module Structure
 

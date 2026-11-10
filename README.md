@@ -14,19 +14,10 @@ framework-specific code, and inspect the evidence from its execution.**
 [Documentation](#documentation) · [Examples](#examples) ·
 [Contributing](#contributing) · [Zenodo archives](#zenodo-archives)
 
-**Software:** 5.0.3. [Published release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases) own accepted tags and assets;
-the [Zenodo software archive](https://doi.org/10.5281/zenodo.23631909) holds the
-published 5.0.1 source record.
-
-The current line completes GNN's custody of its own source: the FEP_Formal bridge
-pins only the declared notation contract, the paired check runs at release time
-rather than per pull request, and the performance dashboard is self-contained.
-It targets coordinated FEP_Formal qualification against the current scientific
-sources; see the
-[paired release procedure](docs/development/fep_lean_paired_revision.md).
-Version metadata does not establish publication or completed pairing.
-**Page updated:** 2026-11-02. [Package metadata](pyproject.toml) owns the version
-and dependency requirements; [CHANGELOG.md](CHANGELOG.md) owns release history.
+**Current source release:** [GNN 5.0.3](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.3).
+Install from the tagged source using the frozen lock. The release has no uploaded
+wheel or sdist. See [release artifacts and citation](#release-artifacts-and-citation)
+for downloadable distributions and exact archive identities.
 
 ## Overview
 
@@ -34,17 +25,13 @@ GNN is a human-readable, machine-parsable notation for
 [Active Inference](https://activeinference.org/) generative models. This repository
 provides the language, curated model sources, an installed Python package and a
 25-step workflow for validation, visualization, simulation, analysis and publication.
+Shared model specifications make assumptions accessible, structure checkable and
+evidence traceable as models move between domains.
 
 [![GNN: categorical and continuous model specifications move through Specify, Validate, Render, Execute and Inspect, with source identity, configuration and traceable artifacts connecting the workflow.](.github/gnn-overview-2026-10-21.png)](#project-architecture)
 
 *Five conceptual stages in the 25-step workflow. Backend admission depends on
 the model contract; the illustration contains no measured results.*
-
-The historical 4.2.0 release includes RxInfer 6.1 / ReactiveMP 7 support, secure aiohttp
-and Pillow profiles, installed-wheel acceptance across Linux, macOS and Windows,
-and independent qualification of source, native execution, manuscript and companion
-custody. Read the [release notes and source-bound assets](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.2.0)
-for exact outcomes and limits.
 
 ### Core Design Principles
 
@@ -264,7 +251,7 @@ Commands below run from the repository root and reuse the frozen environment.
 ```bash
 git clone https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git
 cd Generalized_Notation_Notation
-git checkout v5.0.1   # latest published release tag
+git checkout v5.0.3
 uv sync --frozen --python 3.14
 uv run --frozen --no-sync gnn --help
 ```
@@ -272,8 +259,8 @@ uv run --frozen --no-sync gnn --help
 For development, stay on `main` instead of checking out the release tag and install the tools with
 `uv sync --frozen --extra dev --python 3.14`. Add only the extras required by your
 backend; see [SETUP_GUIDE.md](SETUP_GUIDE.md) for Julia, Stan, GUI and other profiles.
-The published source archive for the checked-out release is listed under
-[Zenodo archives](#zenodo-archives).
+The tagged source is available through GitHub. The [Zenodo archive table](#zenodo-archives)
+identifies the separate software versions archived there.
 
 Validate and extract one committed model:
 
@@ -298,17 +285,11 @@ admitted backend, and provision its runtime before execution.
 
 ### Runtime defaults and required profiles
 
-GNN-owned environments use exact uv **0.13.6**. The frozen lock was refreshed
-with all compatible dependency updates on 2026-10-20; the [4.2.0 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.2.0)
-records the accepted source and hosted qualification. Earlier acceptance receipts keep their original
-runtime/source identities and are not renewed by editing metadata.
-
-CPython 3.15 is outside the frozen scientific profile. This checkout selects the latest 3.14 patch
-for its frozen scientific core and default `dev` group. The 3.15 probe reached
-h5py 3.16.0's source build and failed because native HDF5 (`libhdf5.dylib`) was
-unavailable on this macOS host; JAXlib itself installed on 3.15. The producer
-range remains `>=3.11,<3.15`. This is a named build/runtime exception requiring
-qualification before widening, not a general claim that Python 3.15 is unusable.
+GNN-owned environments use uv **0.13.6**. The [package metadata](pyproject.toml)
+supports CPython 3.11 through 3.14, and the frozen scientific profile defaults to
+the latest 3.14 patch. Python 3.15 qualification remains outside the current
+profile. The macOS probe reached h5py's source build and required a native HDF5
+installation.
 
 The scientific stack now admits JAX 0.12 and retains its Python-specific
 PyMDP/Flax compatibility split in `pyproject.toml`. Python 3.11 resolves JAX
@@ -426,18 +407,15 @@ their documented producer and re-pin procedures.
 
 ## Release artifacts and citation
 
-[Release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases)
-provide accepted version tags and downloadable source-bound artifacts. The
-current software version is 5.0.3 (tag `v5.0.3`, commit
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`); the release record for that tag was
-created retroactively on 2026-11-03, and downstream consumers pin that commit.
-5.0.1 remains the most recent release whose record carries uploaded source-bound
-assets. The
+[GNN 5.0.3](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.3)
+was published on 2026-11-03 from tag `v5.0.3` at commit
+`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`. That record provides tagged source.
+For separately uploaded distribution assets, the
 [GNN 5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
 carries the ordinary wheel and sdist, the manuscript PDF, a source archive, the
-source binding and verification records, and `SHA256SUMS`. The
-[4.3.0 changelog](CHANGELOG.md#430---2026-10-21) describes independent
-source-bound numerical witnesses and earlier CI documentation checks. The
+source binding and verification records, and `SHA256SUMS`. Those assets identify
+5.0.1. [The version map](docs/VERSION_MAP.md) records the history of earlier
+releases. The
 [E4 contract](docs/development/remaining_roadmap_contracts.md#e4-foundation-source-bound-numerical-witness-v1)
 states the exact finite/Gaussian scope and its limits; the
 [current delivery priorities](TO-DO.md#current-delivery-priorities) owns remaining work.

@@ -555,7 +555,7 @@ def main() -> Any:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Model Context Protocol CLI for GNN",
-        epilog="Example: python -m gnn.mcp.cli list --format human",
+        epilog="Example: python -m gnn.mcp.cli list",
     )
 
     # Global options

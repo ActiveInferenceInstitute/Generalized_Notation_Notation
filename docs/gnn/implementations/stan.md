@@ -88,10 +88,9 @@ does not execute it.
 
 ## Verification
 
-The exemplar census (`input/gnn_files/INDEX.md`, measured 2026-09-17) counts 30
-runnable specs: 27 discrete (rendered to HMM programs, NUTS or MAP by budget)
-and 3 continuous (rendered to LGSSM programs). Per-run render/execute outcomes
-and per-model validation flags live in the Step 11/12 summaries, not here.
+Select an admitted HMM or single-block linear-Gaussian example from the
+[exemplar index](../../../input/gnn_files/INDEX.md). The Step 11 and Step 12
+summaries report per-model render and execution outcomes for the current run.
 Tests: `tests/render/test_render_stan.py`,
 `tests/execute/test_execute_stan.py`,
 `tests/render/test_continuous_renderers.py` (compile/sample steps skip

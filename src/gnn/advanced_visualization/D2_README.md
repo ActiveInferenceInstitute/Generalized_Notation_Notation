@@ -83,13 +83,13 @@ Generate D2 diagrams as part of the advanced visualization step:
 
 ```bash
 # Generate all visualizations including D2 diagrams
-python src/gnn/9_advanced_viz.py --target-dir input/gnn_files --viz_type all
+python src/gnn/9_advanced_viz.py --target-dir input/gnn_files --viz-type all
 
 # Generate only D2 diagrams
-python src/gnn/9_advanced_viz.py --target-dir input/gnn_files --viz_type d2
+python src/gnn/9_advanced_viz.py --target-dir input/gnn_files --viz-type d2
 
 # Generate only pipeline diagrams
-python src/gnn/9_advanced_viz.py --target-dir input/gnn_files --viz_type pipeline
+python src/gnn/9_advanced_viz.py --target-dir input/gnn_files --viz-type pipeline
 ```
 
 ### Programmatic Usage
@@ -484,7 +484,7 @@ d2 version
 1. Check D2 CLI availability: `d2 version`
 2. Verify GNN models were parsed (step 3)
 3. Check logs for specific errors
-4. Run with `--viz_type d2` to focus on D2 only
+4. Run with `--viz-type d2` to focus on D2 only
 
 ## References
 

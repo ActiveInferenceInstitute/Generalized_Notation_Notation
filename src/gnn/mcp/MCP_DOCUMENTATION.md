@@ -227,7 +227,7 @@ python -m gnn.mcp.cli --help
 
 **stdio Transport (Recommended for local use):**
 ```bash
-python -m gnn.mcp.cli server --transport stdio
+python -m gnn.mcp.server_stdio
 ```
 
 **HTTP Transport (Authenticated local orchestration):**
@@ -244,22 +244,23 @@ The HTTP capability response is filtered to this exposed safe surface.
 
 **List all available tools:**
 ```bash
-python -m gnn.mcp.cli list --format human
+python -m gnn.mcp.cli --format human list
 ```
 
 **Execute a tool:**
 ```bash
-python -m gnn.mcp.cli execute get_gnn_files --params '{"target_dir": "doc", "recursive": true}'
+python -m gnn.mcp.cli execute get_pipeline_status
 ```
 
 **Get server status:**
 ```bash
-python -m gnn.mcp.cli status --format json
+python -m gnn.mcp.cli --format json status
 ```
 #### JSON stdout contract (`--format json`)
 
-With `--format json`, each `python -m gnn.mcp.cli` command writes exactly one
-pure JSON machine document to stdout — no human text, emoji, or log frames.
+Place `--format json` before the subcommand, for example
+`python -m gnn.mcp.cli --format json status`. Finite commands use this
+machine output format. A STDIO server streams protocol messages.
 Routine log chatter is suppressed from stdout in this mode; `--verbose` is a
 human-mode concern. On failure, the CLI prints a single error document to
 stdout and exits with a nonzero code:
@@ -504,7 +505,7 @@ server.start()
 
 **Usage:**
 ```bash
-python -m gnn.mcp.cli server --transport stdio
+python -m gnn.mcp.server_stdio
 ```
 
 ### HTTP Server

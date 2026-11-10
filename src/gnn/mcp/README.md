@@ -77,13 +77,13 @@ Comprehensive CLI for MCP operations:
 python -m gnn.mcp.cli list
 
 # Execute a tool
-python -m gnn.mcp.cli execute get_gnn_files --params '{"target_dir": "doc"}'
+python -m gnn.mcp.cli execute get_pipeline_status
 
 # Get server status
 python -m gnn.mcp.cli status
 
 # Start server
-python -m gnn.mcp.cli server --transport stdio
+python -m gnn.mcp.server_stdio
 GNN_MCP_TOKEN=local-dev-token python -m gnn.mcp.cli server --transport http --host 127.0.0.1 --port 8080
 ```
 
@@ -174,7 +174,7 @@ Implementation lives at `src/gnn/mcp/processors.py`; validators come from `gnn.s
 
 #### stdio Transport (Recommended for local use)
 ```bash
-python -m gnn.mcp.cli server --transport stdio
+python -m gnn.mcp.server_stdio
 ```
 
 #### HTTP Transport (Local JSON-RPC orchestration)
@@ -192,22 +192,23 @@ throttled by the same per-client limit.
 
 #### List all available tools
 ```bash
-python -m gnn.mcp.cli list --format human
+python -m gnn.mcp.cli --format human list
 ```
 
 #### Execute a GNN tool
 ```bash
-python -m gnn.mcp.cli execute get_gnn_files --params '{"target_dir": "doc", "recursive": true}'
+python -m gnn.mcp.cli execute get_pipeline_status
 ```
 
 #### Get server status
 ```bash
-python -m gnn.mcp.cli status --format json
+python -m gnn.mcp.cli --format json status
 ```
 #### JSON stdout contract (`--format json`)
 
-With `--format json`, each `python -m gnn.mcp.cli` command writes exactly one
-pure JSON machine document to stdout — no human text, emoji, or log frames.
+Place `--format json` before the subcommand, for example
+`python -m gnn.mcp.cli --format json status`. Finite commands use this
+machine output format. A STDIO server streams protocol messages.
 Routine log chatter is suppressed from stdout in this mode; `--verbose` is a
 human-mode concern. On failure, the CLI prints a single error document to
 stdout and exits with a nonzero code:
@@ -388,8 +389,8 @@ Configure Claude Desktop to use the GNN MCP server:
 {
   "mcpServers": {
     "gnn": {
-      "command": "python",
-      "args": ["-m", "gnn.mcp.cli", "server", "--transport", "stdio"]
+      "command": "/path/to/Generalized_Notation_Notation/.venv/bin/python",
+      "args": ["-m", "gnn.mcp.server_stdio"]
     }
   }
 }

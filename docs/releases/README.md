@@ -64,8 +64,8 @@ Git tree and preserve its producer ancestry. Create the annotated candidate tag
 at that exact main commit. Main and tag qualification may run concurrently;
 publication stays blocked until both have terminal successful checks and their
 actual artifacts are independently accepted. Never move the tag or count a
-main run as tag evidence. All sixteen release workflows run automatically on
-version tags. Collect each ref separately with
+main run as tag evidence. The [release workflow roster](../../.github/release_gate.py)
+runs automatically on version tags. Collect each ref separately with
 `--ref main` for main's automatic and explicitly dispatched profiles, and
 `--event push --ref vVERSION` for the automatic tag roster. The collector filters
 the actual run ref and requested event, even when both point to one commit. Retain failed
@@ -73,6 +73,13 @@ attempts; repair functional failures and only retry classified infrastructure
 failures with evidence. Do not lower test selections, coverage or warning policy.
 External links run at tag qualification with dead links blocking and transient
 or blocked responses remaining inconclusive.
+
+The automatic main push uses a reduced `ci.yml` profile with intentional skips.
+Main qualification requires a full run at the exact candidate SHA. Use the
+weekly full run if it covers that SHA, or dispatch the full `ci.yml` profile
+against `main` while it still resolves to the candidate. Record the resulting
+run and check its head SHA. The collector's `--dispatch-missing` option will
+leave the already visible reduced run alone.
 
 A companion's actual main qualification may similarly overlap GNN's final
 candidate checks after the companion merges and GNN pins its exact merge.
@@ -98,7 +105,7 @@ owns its exact tag, accepted source, hosted checks and downloaded asset receipts
 Version metadata alone does not establish publication. It includes RxInfer 6.1,
 current compatible dependencies, direct-script startup without stdlib module
 shadowing, aiohttp/Pillow repairs and the repeatable
-qualification procedure below. Python, Gradio/Pillow and scientific backend
+qualification procedure above. Python, Gradio/Pillow and scientific backend
 exceptions retain the scopes documented in README and CHANGELOG. PyPI and
 separate distribution archival require independent publication evidence.
 

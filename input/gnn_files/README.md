@@ -1,10 +1,10 @@
 # input/gnn_files/
 
-The exemplar corpus the pipeline runs: each entry is a runnable Active Inference
-generative model spec, grouped by task shape (`discrete/`, `continuous/`,
-`multiagent/`, `hierarchical/`, …).
+The exemplar corpus is grouped by task (`discrete/`, `continuous/`,
+`multiagent/`, `hierarchical/`, …). It includes native simulation,
+structural specification, and backend-admission examples.
 
 [`INDEX.md`](INDEX.md) is the cold-start index and owns the measured counts: it
-lists every spec, its task folder and the commands that run it. Read it before
-adding, renaming or moving a spec. Backend admission depends on each model's
-declared contract, not on the folder it sits in.
+lists each spec, its task folder, and applicable backend constraints. Read
+it before adding, renaming or moving a spec. Backend admission follows each
+model's declared contract.

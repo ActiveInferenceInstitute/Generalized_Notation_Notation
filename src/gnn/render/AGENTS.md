@@ -143,7 +143,7 @@ registry before changing public framework lists, MCP enums, or processor configs
 - `target_dir` (Path): Directory containing GNN files to process
 - `output_dir` (Path): Output directory for rendered files
 - `verbose` (bool): Enable verbose logging (default: False)
-- `frameworks` (Optional[List[str] | str]): Restrict rendering to a subset of frameworks. Accepts `None`/`"all"` for all configured frameworks, `"lite"` for `pymdp`, `jax`, `discopy`, and `bnlearn`, or a comma-separated string such as `"pymdp,jax"`.
+- `frameworks` (Optional[List[str] | str]): Restrict rendering to a subset of frameworks. `None` and `"all"` use the maintained preset. `"lite"` uses the lite preset. A comma-separated string such as `"pymdp,jax"` selects explicit frameworks, including experimental targets when named.
 - `strict_validation` (bool): Passed to POMDP extraction (`True` by default)
 - `strict_framework_success` (bool): When `True`, every requested framework render must succeed for every input file. Explicit framework requests such as `"pymdp"` or `"pymdp,jax"` are strict even when this flag is omitted; `"all"` and `"lite"` keep aggregate pipeline policy unless the flag is set.
 - `**kwargs`: Additional options forwarded to framework renderers (e.g. `timesteps`, `simulation_params`)
@@ -182,7 +182,7 @@ success = process_render(
 **Location**: `src/gnn/render/processor/rendering.py`
 
 #### `parse_frameworks_selection(frameworks: Union[str, List[str], None]) -> Tuple[Optional[List[str]], bool]`
-**Description**: Normalize the `frameworks` selection used by `process_render` and the Step 11 CLI. Pure function; resolves `None`/`"all"` to `None` (all registered frameworks), `"lite"` to the registry preset (`get_lite_frameworks()`), and comma-separated strings to a stripped name list.
+**Description**: Normalize the `frameworks` selection used by `process_render` and the Step 11 CLI. `None` and `"all"` normalize to the sentinel for the maintained preset. `"lite"` resolves to `get_lite_frameworks()`. Explicit names are validated against the registry.
 
 **Returns**: `(frameworks, explicit_request)` — `explicit_request` is `True` when the caller pinned a specific framework set, which Step 11 treats as a strict-success policy.
 

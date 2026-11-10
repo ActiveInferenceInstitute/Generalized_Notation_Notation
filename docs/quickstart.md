@@ -6,8 +6,11 @@ the project environment.
 
 ## 1. Install the environment
 
+Use uv `>=0.13.6,<0.14`. The [setup guide](SETUP.md#installation)
+shows how to select the published release when starting from a new clone.
+
 ```bash
-uv sync --frozen --extra dev --python 3.14
+uv sync --frozen --python 3.14
 ```
 
 For optional framework, audio, GUI, graph, research, or scaling dependencies, see the

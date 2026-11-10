@@ -1,172 +1,65 @@
 # PyTorch Framework Implementation
 
-> **GNN Integration Layer**: Python / GPU-Accelerated Neural Active Inference
-> **Framework Base**: `torch >= 2.0` with optional CUDA
-> **Simulation Architecture**: Neural network–augmented POMDP agent
-> **Documentation Version**: 2.0.0
+The PyTorch backend emits tensor programs for admitted categorical models
+and single-block linear-Gaussian models. The runtime is the `torch` extra
+declared in [package metadata](../../../pyproject.toml). Step 11 generates
+code without importing PyTorch. Step 12 checks runtime readiness before
+launching the generated program.
 
-## Overview
+## Categorical filtering and action selection
 
-The PyTorch integration enables **neural Active Inference** from GNN specifications. Rather than implementing the classic categorical POMDP (as PyMDP does), the PyTorch renderer builds differentiable generative models where matrices A, B, C, D can be parameterised as learned neural modules.
+The renderer embeds the source-derived matrices as float64 tensors and
+records matrix provenance. The generated program uses fixed parameters.
+At the first observation the prior is `D`. Later updates predict using
+the transition slice for the previously selected action:
 
-This enables a continuous learning trajectory: start with hand-specified GNN matrices, optionally replace them with learnable `nn.Parameter` tensors, and train end-to-end.
-**Registry capability** (`src/gnn/render/framework_registry.py`): PyTorch covers
-both model kinds — discrete categorical POMDP specs (A/B/C/D[/E]) and continuous
-linear-Gaussian state-space models (`supports_continuous: True`) — and is fully
-executable (`supports_execution: True`): Step 12 runs each generated script via
-`src/gnn/execute/pytorch/pytorch_runner.py`.
+```text
+prior_t = B[:, :, action_(t-1)] @ belief_(t-1)
+belief_t = normalize(A[observation_t, :] * prior_t)
+```
 
-## Architecture
-
-| Stage | Module | Description |
-|---|---|---|
-| Rendering (Step 11) | `src/gnn/render/pytorch/pytorch_renderer.py` | GNN JSON → PyTorch Agent script |
-| Execution (Step 12) | `src/gnn/execute/pytorch/pytorch_runner.py` | Subprocess launch, log persistence |
-| Analysis (Step 16) | `src/gnn/analysis/pytorch/analyzer.py` | Loss curves, belief accuracy, action histograms |
+For each candidate action, the program predicts a next-state distribution
+and its observation distribution. It adds expected conditional observation
+entropy (ambiguity) to the KL divergence from predicted observations to
+`softmax(C)` (risk). It samples the action from the softmax of negative
+expected free energy. The result records that convention along with the
+beliefs, observations, actions, and per-action scores.
 
 ## Continuous (linear-Gaussian) models
 
-`pytorch_renderer.py` branches on `_is_continuous_spec`: continuous
-specifications (`F`/`H`/`Q`/`R`, `prior_mean`/`prior_cov`, optional `u`,
-`goal_mean`, `control_gain`) are rendered by `_render_continuous`, which calls the
-shared generator `src/gnn/render/continuous_script.py` with the `pytorch` target. The
-emitted script runs an online Kalman filter (closed-loop when `goal_mean` and
-`control_gain` are declared) and writes the continuous result schema (`beliefs` as
-posterior means, `posterior_cov`, `true_states_continuous`,
-`observations_continuous`, `controls`, `rmse_vs_true`). `torch` ships in the
-`torch` extra (`uv sync --extra torch`): the framework registry marks PyTorch
-available and rendering is codegen-only — torch is imported by the emitted
-script, not by the renderer (torch>=2.13.0 fixes GHSA-rrmf-rvhw-rf47).
-
-## Model Initialization
-
-GNN matrices are extracted and converted to PyTorch tensors:
-
-```python
-import torch
-import torch.nn as nn
-
-# Static matrices from GNN spec
-A = torch.tensor(gnn_params["A"], dtype=torch.float32)  # [num_obs, num_states]
-B = torch.tensor(
-    gnn_params["B"], dtype=torch.float32
-)  # [num_states, num_states, num_actions]
-C = torch.tensor(gnn_params["C"], dtype=torch.float32)  # [num_obs]
-D = torch.tensor(gnn_params["D"], dtype=torch.float32)  # [num_states]
-
-# Optionally make learnable
-A_param = nn.Parameter(A.log())  # log-space for softmax stability
-B_param = nn.Parameter(B.log())
-```
-
-## Perception-Action Loop
-
-```python
-for t in range(T):
-    # Environment: stochastic observation from true state
-    obs = torch.multinomial(A[:, true_state], 1).item()
-
-    # Agent inference: softmax belief update
-    log_likelihood = A[:, :].log()[:, :].T[obs]  # [num_states]
-    log_prior = D.log() if t == 0 else belief.log()
-    belief = torch.softmax(log_likelihood + log_prior, dim=0)
-
-    # Policy evaluation: Expected Free Energy
-    efe = torch.zeros(num_actions)
-    for a in range(num_actions):
-        predicted_state = B[:, :, a] @ belief  # [num_states]
-        predicted_obs = A @ predicted_state  # [num_obs]
-        ambiguity = -(predicted_obs * predicted_obs.log()).sum()
-        risk = (predicted_obs * (predicted_obs.log() - C.log())).sum()
-        efe[a] = ambiguity + risk
-
-    # Action selection
-    action = torch.multinomial(torch.softmax(-efe, dim=0), 1).item()
-
-    # Environment transition
-    true_state = torch.multinomial(B[:, true_state, action], 1).item()
-```
-
-## Telemetry Output
-
-```json
-{
-  "simulation_trace": {
-    "observations":  [1, 0, 2, 1, 1],
-    "beliefs":       [[0.05, 0.90, 0.05], ...],
-    "actions":       [0, 0, 1, 0, 0],
-    "efe_history":   [[-1.2, -0.8, -2.1], ...]
-  },
-  "training": {
-    "loss_history":  [],
-    "epochs_run":    0,
-    "gradient_norm": null
-  }
-}
-```
+The shared continuous generator emits an online Kalman filter over the
+declared dynamics, observation model, and covariances. With `goal_mean`
+and `control_gain` it applies proportional control to the filtered mean.
+Results include posterior means and covariances, simulated states,
+observations, and controls. See [backend admission](README.md#backend-admission)
+for composition restrictions.
 
 ## Installation
 
-`torch` ships in the `torch` extra (torch>=2.13.0 resolves GHSA-rrmf-rvhw-rf47,
-the advisory that previously excluded it from the lock):
-
 ```bash
-uv sync --extra torch
-# Manual/GPU (CUDA 12.x) alternative:
-uv pip install "torch>=2.13" --index-url https://download.pytorch.org/whl/cu121
-```
-
-`torch` remains optional — with a plain `uv sync` the pipeline gracefully skips PyTorch steps. Check with:
-
-```bash
-PYTHONPATH=src python -c "from execute.pytorch import is_pytorch_available; print(is_pytorch_available())"
+uv sync --frozen --extra torch
 ```
 
 ## Run
 
+From the repository root, render and execute the maintained categorical
+gridworld using the prepared environment:
+
 ```bash
-# Render GNN to PyTorch script
-python src/gnn/11_render.py --target-dir input/gnn_files/ --frameworks pytorch
-
-# Execute PyTorch script
-python src/gnn/12_execute.py --target-dir input/gnn_files/ --frameworks pytorch
-
-# The MCP tool takes no framework argument — it dispatches to PyMDP:
-# execute_gnn_model_mcp(gnn_file_path="...", output_directory="...")
-# For a specific backend, call the executor directly:
-# execute_gnn_model(model_path="...", execution_type="pytorch")
+uv run --frozen --no-sync python src/gnn/main.py --only-steps "3,11,12" \
+  --frameworks pytorch --target-dir input/gnn_files/pomdp_gridworld \
+  --output-dir output/pytorch_gridworld
 ```
 
-## Correlation Results
-
-During the **March 6, 2026** pipeline benchmarking audit, the PyTorch integration was verified as **Fully Operational**, achieving a pristine `1.0` correlation baseline against both PyMDP and JAX reference implementations:
-
-| Pair | Correlation |
-|---|---|
-| PyTorch ↔ PyMDP | 1.0 (deterministic init) |
-| PyTorch ↔ JAX | 1.0 (same algorithm) |
-
-*Cross-framework correlation is confirmed when both use the same random seed and identical A/B/C/D matrices.*
+Inspect the current Step 11 and Step 12 summaries for admission and
+execution outcomes. A framework comparison needs the same model contract
+and compatible inference and score conventions.
 
 ## Source Code Connections
 
-| Stage | Module | Key Function |
-|---|---|---|
-| Rendering | [pytorch_renderer.py](../../../src/gnn/render/pytorch/pytorch_renderer.py) | `render_gnn_to_pytorch()` |
-| Execution | [pytorch_runner.py](../../../src/gnn/execute/pytorch/pytorch_runner.py) | `execute_pytorch_script()` |
-| Analysis | [analyzer.py](../../../src/gnn/analysis/pytorch/analyzer.py) | `generate_analysis_from_logs()` |
-
-## Improvement Opportunities
-
-| ID | Area | Description | Impact |
-|---|---|---|---|
-| PT-1 | Rendering | No gradient checkpointing for long sequences | Low |
-| PT-2 | Execution | Training loop not yet parameterisable from GNN spec | Medium |
-| PT-3 | Analysis | Loss curve visualisation only generated if training runs | Low |
-
-## See Also / Next Steps
-
-- **[Cross-Framework Methodology](../integration/framework_integration_guide.md)**: Details on the correlation methodology and benchmarking metrics.
-- **[Architecture Reference](../reference/architecture_reference.md)**: Deep dive into the pipeline orchestrator and module integration.
-- **[GNN Implementations Index](README.md)**: Return to the master framework implementer manifest.
-- **[Back to GNN START_HERE](../../START_HERE.md)**
+| Stage | Module |
+|---|---|
+| Categorical rendering | [PyTorch renderer](../../../src/gnn/render/pytorch/pytorch_renderer.py) |
+| Continuous rendering | [Shared continuous generator](../../../src/gnn/render/continuous_script.py) |
+| Execution | [PyTorch runner](../../../src/gnn/execute/pytorch/pytorch_runner.py) |
+| Analysis | [PyTorch analyzer](../../../src/gnn/analysis/pytorch/analyzer.py) |

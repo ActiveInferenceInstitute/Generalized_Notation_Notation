@@ -15,7 +15,7 @@ notation. The models the pipeline actually ships and exercises live in
 |---|---|
 | `basics/` | Static and dynamic perception — the smallest complete models |
 | `discrete/` | Discrete POMDPs: MDPs, HMMs, bandits, T-maze, planning horizon |
-| `continuous/` | Pure linear-Gaussian state-space models (`F`/`H`/`Q`/`R`, `prior_mean`/`prior_cov`, optional `u`, `goal_mean`/`control_gain`) run natively on JAX, NumPyro, PyTorch, Stan, RxInfer.jl and ngc-learn; categorical backends report them `unsupported` |
+| `continuous/` | Linear-Gaussian filtering and control, including factored and independent-agent models, plus mixed-family admission examples |
 | `hierarchical/` | Multi-level state hierarchies |
 | `learning/` | Dirichlet likelihood learning |
 | `multiagent/` | Multi-agent coordination and stigmergic swarms |
@@ -23,13 +23,18 @@ notation. The models the pipeline actually ships and exercises live in
 | `structured/` | Factorized posteriors |
 | `pomdp_gridworld/` | The 3x3 gridworld used for cross-framework comparison |
 | `pymdp_scaling_study/` | A representative state-size ladder for scaling analysis |
+| `thrml/` | Experimental finite categorical smoothing under fixed actions |
 
 Point any pipeline command at a single category — `--target-dir input/gnn_files/basics`
 — to iterate quickly instead of processing the whole corpus.
 
 ## Processing Examples with Pipeline
 
-All examples can be processed through the GNN pipeline for parsing, validation, visualization, and code generation:
+Process the corpus through the selected stages. Check the
+[exemplar index](../../../input/gnn_files/INDEX.md) for model-specific
+backend requirements and the
+[admission guide](../implementations/README.md#backend-admission) for
+unsupported combinations.
 
 ```bash
 # Process all examples
@@ -43,7 +48,7 @@ For module-specific documentation:
 
 - **[src/gnn/AGENTS.md](../../../src/gnn/AGENTS.md)**: GNN parsing module
 - **[src/gnn/render/AGENTS.md](../../../src/gnn/render/AGENTS.md)**: Code generation module
-- **[src/gnn/AGENTS.md](../../../src/gnn/AGENTS.md)**: Complete pipeline registry
+- **[Repository AGENTS.md](../../../AGENTS.md#module-registry)**: Complete pipeline registry
 
 ---
 
