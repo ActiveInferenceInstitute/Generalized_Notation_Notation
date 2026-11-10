@@ -74,12 +74,44 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           check-latest: true
+      - name: Resolve uv from pinned FEP revision
+        id: fep-uv
+        working-directory: fep-lean
+        env:
+          EXPECTED_FEP_REVISION: ${{ steps.pair.outputs.revision }}
+        run: |
+          python - <<'VERSION_PY'
+          import os
+          import re
+          import subprocess
+          import tomllib
+          from pathlib import Path
+
+          revision = subprocess.check_output(
+              ("git", "rev-parse", "HEAD"), stdin=subprocess.DEVNULL, text=True
+          ).strip()
+          if revision != os.environ["EXPECTED_FEP_REVISION"]:
+              raise SystemExit("FEP checkout differs from the pinned revision")
+          project = subprocess.check_output(
+              ("git", "show", f"{revision}:pyproject.toml"), stdin=subprocess.DEVNULL
+          )
+          uv = tomllib.loads(project.decode("utf-8")).get("tool", {}).get("uv", {})
+          requirement = uv.get("required-version")
+          component = r"(?:0|[1-9][0-9]*)"
+          version = (
+              re.fullmatch(rf"==({component}\.{component}\.{component})", requirement)
+              if isinstance(requirement, str)
+              else None
+          )
+          if version is None:
+              raise SystemExit("FEP pyproject.toml must pin tool.uv.required-version as ==MAJOR.MINOR.PATCH")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"version={version[1]}\n")
+          VERSION_PY
       - name: Install uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          # Match the independently pinned FEP project requirement. This job
-          # installs only FEP; GNN is a read-only source/contract checkout.
-          version: "0.13.0"
+          version: ${{ steps.fep-uv.outputs.version }}
           enable-cache: true
       - name: Record both checkouts before installing
         run: |
