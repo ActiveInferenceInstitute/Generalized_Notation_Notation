@@ -13,7 +13,7 @@ orchestrators, canonical `gnn.*` imports, and shared configuration contracts.
 | ActiveInference.jl | Julia | Unsupported | Julia and its committed project |
 | JAX | Python | Native | Declared base dependency |
 | DisCoPy | Python | Unsupported | Declared base dependency |
-| PyTorch | Python | Native | `torch` extra |
+| PyTorch | Python | Native | `torch` extra; optional TorchLens capture with the `torchlens` extra |
 | NumPyro | Python | Native | Declared base dependency |
 | Stan | Stan/Python driver | Native | `stan` extra and explicit CmdStan installation |
 | bnlearn | Python | Unsupported | `bnlearn` extra |

@@ -158,6 +158,12 @@ interpolation layer. Common examples include:
 - `OLLAMA_MODEL` and `OLLAMA_TEST_MODEL` for local Ollama model selection.
 - `GNN_JAX_PLATFORM` to select the JAX device for PyMDP subprocesses.
 - `GNN_ALLOW_UNSAFE_EXEC` and `GNN_SANDBOX` for the Step 12 execution safety gate.
+- `GNN_TORCHLENS_CAPTURE` (`1`, `true`, `yes` or `on`) to have discrete PyTorch
+  scripts trace their rollout with TorchLens during Step 12 (`torchlens`
+  extra), and `GNN_TORCHLENS_ARTIFACTS` (`summary`, the default, or `full`)
+  to also write the portable trace bundle and op table. Unset, nothing is
+  captured; see the
+  [PyTorch renderer README](../../src/gnn/render/pytorch/README.md#torchlens-capture-opt-in).
 
 Do not put credentials in `input/config.yaml` or commit them. See the security
 and LLM documentation for provider-specific behavior.

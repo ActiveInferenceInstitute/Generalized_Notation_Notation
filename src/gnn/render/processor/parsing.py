@@ -101,7 +101,7 @@ def _internal_representation_to_mapping(gnn_spec: Any) -> Dict[str, Any]:
         "name": gnn_spec.model_name or "model",
         "model_name": gnn_spec.model_name or "model",
         "variables": [_node_to_mapping(item) for item in gnn_spec.variables],
-        "connections": [_node_to_mapping(item) for item in gnn_spec.connections],
+        "connections": serialized["connections"],
         "parameters": parameter_nodes,
         "model_parameters": model_parameters,
         "initialparameterization": parameter_values,

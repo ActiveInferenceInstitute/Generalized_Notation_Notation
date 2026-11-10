@@ -7,6 +7,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### PyTorch: traceable discrete rollout and opt-in TorchLens capture
+
+- The discrete PyTorch renderer now emits `torch.nn.Module` components whose
+  buffers and submodules carry GNN meanings (`agent.A`…`agent.E`,
+  `agent.state_inference`, `agent.transition`, `agent.efe` with
+  `ambiguity`/`risk`, `agent.policy`, `agent.action`, and a separate
+  `process.*` generative process), driven by one seeded `torch.Generator`.
+  Seeded runs are reproducible, and on every renderable discrete corpus model
+  the recorded beliefs, EFE and policy match an independent NumPy
+  filter/EFE/policy witness to within 1e-13.
+- A declared habit `E` is honoured (`softmax(log E - G)`) and validated as a
+  strict probability vector with one entry per action; without `E` the habit
+  is uniform and the policy is unchanged. Results add `random_seed`,
+  `policy_history` and `habit`; `num_timesteps` below 1 is refused. Step 11
+  admits a `seed` option for PyTorch.
+- `GNN_TORCHLENS_CAPTURE=1` makes the Step 12 child trace the rollout with
+  TorchLens (new `torchlens` extra). The capture records whether the trace
+  reproduces the run exactly, `tl.validate` of the agent step, the dataflow
+  edges between GNN sites, and ambiguity/risk lesion witnesses, and writes an
+  HTML report and rolled graph (`GNN_TORCHLENS_ARTIFACTS=full` adds the
+  portable bundle and op table). Capture is opt-in, imported only in the
+  child, and never alters simulation results.
+- Step 16 writes `pytorch_torchlens_fidelity.{json,md,png}` for captured runs,
+  classifying every declared `## Connections` edge as direct, indirect,
+  reverse_only, not_observed or unmapped and listing undeclared traced
+  dependencies; unverified captures are reported, not evaluated. The
+  read-only MCP tool `evaluate_torchlens_fidelity` returns the same report.
+
 ### cpomdp 0.5.0 adoption
 
 - Move the cpomdp render adapter to the released `cpomdp==0.5.0` wheel:

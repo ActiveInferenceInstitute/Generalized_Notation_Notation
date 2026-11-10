@@ -3,7 +3,9 @@
 PyTorch Analyzer for GNN Pipeline
 
 Reads simulation_results.json produced by PyTorch runner and generates
-belief trajectory, action distribution, and EFE analysis plots.
+belief trajectory, action distribution, and EFE analysis plots. When the run
+recorded a TorchLens capture (``GNN_TORCHLENS_CAPTURE``), it also writes the
+declared-connections-vs-traced-dataflow report from ``torchlens_fidelity``.
 
 The analysis pipeline is shared with the NumPyro analyzer via
 ``analysis.flat_payload_analyzer``; this module binds it to the PyTorch
@@ -13,6 +15,8 @@ public ``generate_analysis_from_logs`` / ``_generate_plots`` entry points.
 @Web: https://pytorch.org/docs/stable/
 """
 
+import json
+import logging
 from pathlib import Path
 from typing import Any, List, Optional
 
@@ -20,10 +24,16 @@ import numpy as np
 
 from ..flat_payload_analyzer import (
     FlatPayloadSpec,
+    discover_result_files,
+    model_output_directory,
+    result_model_name,
 )
 from ..flat_payload_analyzer import (
     generate_analysis_from_logs as _generate_from_spec,
 )
+from .torchlens_fidelity import write_fidelity_report
+
+logger = logging.getLogger(__name__)
 
 # Public spec: PyTorch-prefixed result files, PyTorch bar color, PyTorch labels.
 PYTORCH_SPEC = FlatPayloadSpec(
@@ -57,7 +67,37 @@ def generate_analysis_from_logs(
     Returns:
         List of generated output file paths.
     """
-    return _generate_from_spec(PYTORCH_SPEC, results_dir, output_dir, verbose)
+    generated = _generate_from_spec(PYTORCH_SPEC, results_dir, output_dir, verbose)
+    generated.extend(
+        generate_torchlens_fidelity(results_dir, output_dir or results_dir)
+    )
+    return generated
+
+
+def generate_torchlens_fidelity(results_dir: Path, output_dir: Path) -> List[str]:
+    """Write TorchLens structural-fidelity reports for captured PyTorch runs.
+
+    Runs without a capture (the default) produce nothing; unavailable,
+    failed or unvalidated captures produce an explicit ``unverified`` report.
+    """
+    written: List[str] = []
+    for results_file in discover_result_files(Path(results_dir), PYTORCH_SPEC):
+        try:
+            with open(results_file) as handle:
+                results = json.load(handle)
+        except (OSError, ValueError) as exc:
+            logger.error(f"Failed to read results for TorchLens fidelity: {exc}")
+            continue
+        if not isinstance(results, dict):
+            continue
+        model_name = result_model_name(results_file, results, PYTORCH_SPEC.framework)
+        try:
+            model_output_dir = model_output_directory(Path(output_dir), model_name)
+        except ValueError as exc:
+            logger.warning("Skipping result %s: %s", results_file, exc)
+            continue
+        written.extend(write_fidelity_report(results, model_name, model_output_dir))
+    return written
 
 
 def _generate_plots(
@@ -80,4 +120,5 @@ def _generate_plots(
 __all__ = [
     "PYTORCH_SPEC",
     "generate_analysis_from_logs",
+    "generate_torchlens_fidelity",
 ]

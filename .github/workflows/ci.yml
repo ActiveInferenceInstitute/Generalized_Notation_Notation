@@ -325,10 +325,11 @@ jobs:
           retention-days: 14
 
   extras:
-    # PR-time gate for the 12 environment-skipped tests (11 sklearn cases in
-    # test_ml_integration_inference.py + 1 torch execution case in
-    # test_continuous_renderers.py). Without this job they only run in the
-    # weekly scheduled full-extras workflow. The optional-dependency lane remains mandatory.
+    # PR-time gate for the environment-skipped tests (11 sklearn cases in
+    # test_ml_integration_inference.py, 1 torch execution case in
+    # test_continuous_renderers.py, and the torch/torchlens execution and
+    # capture cases in test_render_pytorch_torchlens.py). The same cases can run
+    # locally with the frozen optional dependencies.
     # Full matrix only: a branch push to main defers this lane to the weekly run.
     if: github.event_name != 'push' || github.ref_type == 'tag'
     runs-on: ubuntu-latest
@@ -355,14 +356,15 @@ jobs:
           version: "0.13.6"
           enable-cache: true
 
-      - name: Install dependencies (dev + ml-ai + torch)
-        run: uv sync --frozen --extra dev --extra ml-ai --extra torch
+      - name: Install dependencies (dev + ml-ai + torchlens)
+        run: uv sync --frozen --extra dev --extra ml-ai --extra torchlens
 
       - name: Extras-unlock tests (skipped by the dev-only default env)
         run: |
           uv run --frozen --no-sync python -m pytest \
             tests/ml_integration/test_ml_integration_inference.py \
             tests/render/test_continuous_renderers.py \
+            tests/render/test_render_pytorch_torchlens.py \
             -q --tb=short
 
   security:

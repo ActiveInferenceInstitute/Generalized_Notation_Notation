@@ -19,6 +19,16 @@ results = run_pytorch_scripts(
 - Log persistence (stdout/stderr capture)
 - Wall-clock execution timing
 
+## Optional TorchLens capture
+
+The runner copies the parent environment into each child, so
+`GNN_TORCHLENS_CAPTURE=1` (and optionally `GNN_TORCHLENS_ARTIFACTS=full`)
+makes each discrete PyTorch script trace its own rollout with TorchLens and
+write `torchlens/` beside `simulation_results.json`. TorchLens is imported only
+inside that child, never by the runner; install it with
+`uv sync --extra torchlens`. See the
+[renderer README](../../render/pytorch/README.md#torchlens-capture-opt-in).
+
 ## See Also
 
 - [Parent: execute/README.md](../README.md)

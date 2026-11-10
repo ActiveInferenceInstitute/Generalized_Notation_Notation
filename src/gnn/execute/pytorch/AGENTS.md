@@ -23,6 +23,15 @@ pytorch/
 ## Dependencies
 
 - `torch` (runtime, checked before execution)
+- `torchlens` (optional; the child script imports it only when
+  `GNN_TORCHLENS_CAPTURE` is set, and records `unavailable` when it is missing)
+
+## Rules
+
+- The runner must not import `torchlens`; capture lives in the emitted
+  script so the parent stays free of heavy imports.
+- Capture outcomes are reported by the child in `simulation_results.json`;
+  the runner does not reinterpret them.
 
 ## Parent Module
 

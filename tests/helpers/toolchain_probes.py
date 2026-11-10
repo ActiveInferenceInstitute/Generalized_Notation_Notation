@@ -125,6 +125,12 @@ def torch_ready() -> bool:
 
 
 @functools.lru_cache(maxsize=1)
+def torchlens_ready() -> bool:
+    """PyTorch and TorchLens are importable (``uv sync --extra torchlens``)."""
+    return _module_available("torch") and _module_available("torchlens")
+
+
+@functools.lru_cache(maxsize=1)
 def sklearn_ready() -> bool:
     """scikit-learn is importable (``uv sync --extra ml-ai``)."""
     return _module_available("sklearn")
@@ -253,6 +259,10 @@ TOOLCHAIN_MARKERS: dict[str, tuple[Callable[[], bool], str]] = {
     ),
     "needs_pkl": (pkl_ready, "pkl CLI not on PATH; native eval path not exercised"),
     "needs_torch": (torch_ready, "torch is not installed (uv sync --extra torch)"),
+    "needs_torchlens": (
+        torchlens_ready,
+        "torch/torchlens are not installed (uv sync --extra torchlens)",
+    ),
     "needs_sklearn": (
         sklearn_ready,
         "scikit-learn is not installed (uv sync --extra ml-ai)",
@@ -291,4 +301,5 @@ TOOLCHAIN_MARKERS: dict[str, tuple[Callable[[], bool], str]] = {
 MARKER_IMPLICATIONS: dict[str, str] = {
     "needs_julia_env": "needs_julia",
     "needs_d2_cli": "needs_d2",
+    "needs_torchlens": "needs_torch",
 }

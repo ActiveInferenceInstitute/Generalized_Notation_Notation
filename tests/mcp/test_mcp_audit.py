@@ -274,6 +274,7 @@ class TestMCPDomainTools:
         "get_analysis_results",
         "compute_complexity_metrics",
         "list_analysis_tools",
+        "evaluate_torchlens_fidelity",
         # render
         "process_render",
         "list_render_frameworks",

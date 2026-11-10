@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, List
 
 import numpy as np
@@ -55,6 +55,35 @@ def discover_result_files(results_dir: Path, spec: FlatPayloadSpec) -> list[Path
     if root_result.exists() and root_result not in found:
         found.append(root_result)
     return found
+
+
+def result_model_name(
+    results_file: Path, results: dict[str, Any], framework: str
+) -> str:
+    """Return the per-model output folder name for one result file.
+
+    The segment preceding the framework directory wins (Step 12 layout
+    ``<model>/<framework>/...``); otherwise the payload ``model_name``.
+    """
+    path_parts = Path(results_file).parts
+    for i, part in enumerate(path_parts):
+        if part == framework and i >= 1:
+            return path_parts[i - 1]
+    return str(results.get("model_name", "unknown"))
+
+
+def model_output_directory(output_dir: Path, model_name: str) -> Path:
+    """Return a direct child for one model's analysis artifacts."""
+    if (
+        model_name in ("", ".", "..")
+        or any(character in model_name for character in ("/", "\\", "\0"))
+        or PureWindowsPath(model_name).drive
+    ):
+        raise ValueError(f"Invalid model output name: {model_name!r}")
+    destination = output_dir / model_name
+    if destination.is_symlink():
+        raise ValueError(f"Model output directory is a symbolic link: {destination}")
+    return destination
 
 
 def compute_flat_payload_metrics(
@@ -212,16 +241,16 @@ def generate_analysis_from_logs(
         except Exception as e:
             logger.error(f"Failed to read results: {e}")
             continue
+        if not isinstance(results, dict):
+            logger.warning("Skipping non-object simulation result %s", results_file)
+            continue
 
-        # Determine model name from path: the segment preceding the framework.
-        path_parts = results_file.parts
-        model_name = results.get("model_name", "unknown")
-        for i, part in enumerate(path_parts):
-            if part == spec.framework and i >= 1:
-                model_name = path_parts[i - 1]
-                break
-
-        model_output_dir = output_dir / model_name
+        model_name = result_model_name(results_file, results, spec.framework)
+        try:
+            model_output_dir = model_output_directory(output_dir, model_name)
+        except ValueError as exc:
+            logger.warning("Skipping result %s: %s", results_file, exc)
+            continue
         model_output_dir.mkdir(parents=True, exist_ok=True)
 
         beliefs = np.array(results.get("beliefs", []))
@@ -262,4 +291,6 @@ __all__ = [
     "compute_flat_payload_metrics",
     "discover_result_files",
     "generate_analysis_from_logs",
+    "model_output_directory",
+    "result_model_name",
 ]

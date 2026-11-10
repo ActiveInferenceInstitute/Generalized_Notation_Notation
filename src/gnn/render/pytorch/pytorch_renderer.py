@@ -3,21 +3,31 @@
 PyTorch Renderer for GNN Specifications
 
 Renders GNN POMDP models to standalone PyTorch simulation scripts.
-Generates the standard generative loop (same environment dynamics as PyMDP/JAX)
-using torch.tensor operations.
+Discrete models emit ``torch.nn.Module`` components named after the GNN
+variables they compute (see ``discrete_script.py`` and ``sites.py``), driven
+by one seeded ``torch.Generator``; the same rollout can be traced op by op
+with TorchLens when ``GNN_TORCHLENS_CAPTURE`` is set at execution time.
 
 @Web: https://pytorch.org/docs/stable/
 """
 
 import logging
 from copy import deepcopy
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
 from gnn.render.naming import atomic_write_text
-from gnn.render.spec_matrices import extract_abcd_matrices, format_array_literal
+from gnn.render.pomdp_contract import normalise_vector
+from gnn.render.pytorch.discrete_script import generate_discrete_script
+from gnn.render.pytorch.sites import declared_connections, gnn_variable_sites
+from gnn.render.spec_matrices import (
+    extract_abcd_matrices,
+    format_array_literal,
+    parse_gnn_matrix_value,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +54,9 @@ def render_gnn_to_pytorch(
         return False, refusal, []
 
     try:
-        model_name = gnn_spec.get("modelName", "pytorch_pomdp")
+        model_name = (
+            gnn_spec.get("modelName") or gnn_spec.get("model_name") or "pytorch_pomdp"
+        )
         logger.info(f"Rendering GNN spec to PyTorch: {model_name}")
 
         # Continuous-state (LGSSM) branch: no A/B/C/D exist on this path, so
@@ -75,6 +87,9 @@ def render_gnn_to_pytorch(
         if not valid:
             logger.warning(f"Shape validation warning: {msg}")
 
+        num_actions = B.shape[2] if B.ndim == 3 else 2
+        habit, habit_source = _extract_habit(gnn_spec, num_actions)
+
         # Generate code
         code = _generate_pytorch_code(
             model_name,
@@ -84,6 +99,10 @@ def render_gnn_to_pytorch(
             D,
             _extract_num_timesteps(gnn_spec, options),
             matrix_provenance=provenance,
+            E=habit,
+            habit_source=habit_source,
+            random_seed=_extract_random_seed(gnn_spec, options),
+            gnn_spec=gnn_spec,
         )
 
         # Write output
@@ -152,11 +171,98 @@ def _extract_num_timesteps(
     )
 
 
+def _parameter_source(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
+    """Return the first non-empty parameter block (``extract_abcd_matrices`` order)."""
+    for params in (
+        (gnn_spec.get("stateSpace") or {}).get("parameters"),
+        gnn_spec.get("initialparameterization"),
+        gnn_spec.get("parameters"),
+    ):
+        if isinstance(params, dict) and params:
+            return params
+    return {}
+
+
+def _extract_habit(
+    gnn_spec: Dict[str, Any], num_actions: int
+) -> Tuple[np.ndarray, str]:
+    """Return the habit prior E over one-step actions and its source.
+
+    A declared ``E`` must be a strict probability vector with one entry per
+    action; without one the uniform habit is used, which leaves
+    ``softmax(log E - G)`` equal to ``softmax(-G)``.
+    """
+    raw = _parameter_source(gnn_spec).get("E")
+    if raw is None:
+        return np.full(num_actions, 1.0 / num_actions), "uniform_default"
+    parsed = parse_gnn_matrix_value(raw, None)
+    if parsed is None:
+        raise ValueError("E is not a valid numeric vector")
+    if parsed.ndim != 1 and not (parsed.ndim == 2 and 1 in parsed.shape):
+        raise ValueError("E must be a vector over one-step actions")
+    habit = np.asarray(normalise_vector(parsed, name="E"), dtype=float)
+    if habit.shape != (num_actions,):
+        raise ValueError(
+            f"E has {habit.size} entries but B declares {num_actions} actions"
+        )
+    return habit, "declared"
+
+
+_MAX_SEED = 2**63 - 1
+
+
+def _extract_random_seed(
+    gnn_spec: Dict[str, Any], options: Optional[Dict[str, Any]] = None
+) -> int:
+    """Return the simulation seed: ``seed`` option, then model parameters, else 42."""
+    options = options or {}
+    model_params = gnn_spec.get("model_parameters") or {}
+    raw: Any = options.get("seed")
+    if raw is None:
+        raw = model_params.get("random_seed", model_params.get("seed"))
+    if raw is None:
+        raw = 42
+    while isinstance(raw, (list, tuple)) and len(raw) == 1:
+        raw = raw[0]
+    if isinstance(raw, (bool, np.bool_)):
+        raise ValueError("random_seed must be a nonnegative integer, not boolean")
+    if isinstance(raw, str):
+        try:
+            raw = Decimal(raw)
+        except InvalidOperation as exc:
+            raise ValueError("random_seed must be a nonnegative integer") from exc
+    if isinstance(raw, (int, np.integer)):
+        raw = int(raw)
+    if (
+        not isinstance(raw, (int, float, np.floating, Decimal))
+        or (isinstance(raw, Decimal) and not raw.is_finite())
+        or not 0 <= raw < _MAX_SEED + 1
+        or raw != int(raw)
+    ):
+        raise ValueError("random_seed must be a nonnegative 64-bit integer")
+    return int(raw)
+
+
 def _format_tensor(arr: np.ndarray, indent: int = 4) -> str:
     """Format a numpy array as a torch.tensor() literal."""
     return format_array_literal(
         arr, prefix="torch.tensor", suffix=", dtype=torch.float64", indent=indent
     )
+
+
+def _b_init_block(B: np.ndarray, num_actions: int) -> str:
+    """Return the emitted statements that bind the canonical 3-D ``B``."""
+    if B.ndim == 3:
+        slices = [
+            f"    B_slices.append({_format_tensor(B[:, :, a], indent=4)})"
+            for a in range(B.shape[2])
+        ]
+        return (
+            "B_slices = []\n"
+            + "\n".join(slices)
+            + "\n    B = torch.stack(B_slices, dim=2)"
+        )
+    return f"B = {_format_tensor(B)}.unsqueeze(2).expand(-1, -1, {num_actions}).clone()"
 
 
 def _generate_pytorch_code(
@@ -167,191 +273,40 @@ def _generate_pytorch_code(
     D: np.ndarray,
     num_timesteps: int = 10,
     matrix_provenance: Optional[Dict[str, Any]] = None,
+    *,
+    E: Optional[np.ndarray] = None,
+    habit_source: str = "uniform_default",
+    random_seed: int = 42,
+    gnn_spec: Optional[Dict[str, Any]] = None,
 ) -> str:
-    """Generate standalone PyTorch POMDP simulation script."""
-    provenance = matrix_provenance or {}
+    """Generate the standalone module-based PyTorch POMDP simulation script."""
     num_states = A.shape[1] if A.ndim == 2 else 2
     num_obs = A.shape[0] if A.ndim == 2 else num_states
     num_actions = B.shape[2] if B.ndim == 3 else 2
-
-    A_str = _format_tensor(A)
-    B_str = _format_tensor(B if B.ndim == 2 else B[:, :, 0])
-    C_str = _format_tensor(C)
-    D_str = _format_tensor(D)
-
-    B_full_init = ""
-    if B.ndim == 3:
-        slices: list[Any] = []
-        for a in range(B.shape[2]):
-            slices.append(
-                f"    B_slices.append({_format_tensor(B[:, :, a], indent=4)})"
-            )
-        B_full_init = (
-            "\n    B_slices = []\n"
-            + "\n".join(slices)
-            + "\n    B = torch.stack(B_slices, dim=2)"
-        )
-    else:
-        B_full_init = (
-            f"\n    B = {B_str}.unsqueeze(2).expand(-1, -1, {num_actions}).clone()"
-        )
-
-    code = f'''\
-#!/usr/bin/env python3
-"""
-PyTorch POMDP Simulation: {model_name}
-
-Auto-generated by GNN Pipeline — PyTorch renderer.
-Implements the standard Active Inference generative loop using PyTorch tensors.
-"""
-import json
-import os
-import sys
-import time
-from pathlib import Path
-
-try:
-    import torch
-except ImportError:
-    print("ERROR: PyTorch not installed. Install with: uv sync --extra ml-ai")
-    sys.exit(1)
-
-import numpy as np
-
-
-def run_simulation():
-    """Run POMDP simulation with PyTorch tensors."""
-    start_time = time.time()
-
-    # --- Model Parameters ---
-    num_states = {num_states}
-    num_obs = {num_obs}
-    num_actions = {num_actions}
-    T = {num_timesteps}
-
-    A = {A_str}
-    C = {C_str}
-    D = {D_str}
-    {B_full_init}
-
-    # --- Simulation State ---
-    beliefs_history = []
-    actions_history = []
-    observations_history = []
-    efe_history = []
-
-    # Initialize true state from prior
-    true_state = torch.multinomial(D, 1).item()
-    beliefs = D.clone()
-
-    for t in range(T):
-        # 1. Generate observation from true state
-        obs_probs = A[:, true_state]
-        obs_probs = obs_probs / obs_probs.sum()
-        observation = torch.multinomial(obs_probs, 1).item()
-
-        # 2. Belief update (Bayesian filtering)
-        # Predict with the action that produced this observation; at t=0
-        # the authored initial prior applies without a transition.
-        prior = beliefs if t == 0 else B[:, :, actions_history[-1]] @ beliefs
-        likelihood = A[observation, :]
-        posterior = likelihood * prior
-        evidence = posterior.sum()
-        if not np.isfinite(float(evidence)) or float(evidence) <= 0.0:
-            raise RuntimeError("Observation has zero or nonfinite predictive probability")
-        beliefs = posterior / evidence
-
-        # 3. Compute Expected Free Energy (EFE) for each action
-        efe = torch.zeros(num_actions, dtype=torch.float64)
-        for a_idx in range(num_actions):
-            B_a = B[:, :, a_idx]
-            predicted_state = B_a @ beliefs
-            predicted_obs = A @ predicted_state
-
-            # Ambiguity (expected entropy of observations)
-            log_A = torch.log(A + 1e-16)
-            ambiguity = -(predicted_state * (A * log_A).sum(dim=0)).sum()
-
-            # Risk (KL from preferred observations)
-            log_pred = torch.log(predicted_obs + 1e-16)
-            C_norm = torch.softmax(C, dim=0)
-            log_pref = torch.log(C_norm + 1e-16)
-            risk = (predicted_obs * (log_pred - log_pref)).sum()
-
-            efe[a_idx] = ambiguity + risk
-
-        # 4. Action selection (softmax over negative EFE)
-        action_probs = torch.softmax(-efe, dim=0)
-        action = torch.multinomial(action_probs, 1).item()
-
-        # 5. State transition
-        B_a = B[:, :, action]
-        transition_probs = B_a[:, true_state]
-        transition_probs = transition_probs / (transition_probs.sum() + 1e-16)
-        true_state = torch.multinomial(transition_probs, 1).item()
-
-        # Record history
-        beliefs_history.append(beliefs.cpu().numpy().tolist())
-        actions_history.append(action)
-        observations_history.append(observation)
-        efe_history.append(efe.cpu().numpy().tolist())
-
-    elapsed = time.time() - start_time
-
-    # --- Validation ---
-    beliefs_arr = np.array(beliefs_history)
-    validation = {{
-        "beliefs_in_range": bool(np.all((beliefs_arr >= 0) & (beliefs_arr <= 1))),
-        "beliefs_sum_to_one": bool(np.allclose(beliefs_arr.sum(axis=1), 1.0, atol=1e-6)),
-        "actions_in_range": all(0 <= a < num_actions for a in actions_history),
-        "all_valid": True
-    }}
-    validation["all_valid"] = all(validation.values())
-
-    results = {{
-        "schema_version": "pytorch_simulation_v1",
-        "model_name": "{model_name}",
-        "framework": "pytorch",
-        "matrix_provenance": {provenance!r},
-        "num_timesteps": T,
-        "num_states": num_states,
-        "num_observations": num_obs,
-        "num_actions": num_actions,
-        "beliefs": beliefs_history,
-        "actions": actions_history,
-        "observations": observations_history,
-        "efe_history": efe_history,
-        "expected_free_energy_convention": "pytorch renderer efe_history:"
-            " EFE = ambiguity + risk where ambiguity = -(sum_s' q(s') *"
-            " sum_o A[o,s'] log A[o,s']) (expected entropy of"
-            " observations) and risk = sum_o q(o) (log q(o) - log"
-            " softmax(C)[o]) (KL of predicted observations against"
-            " softmax-normalised preferences). Closest to the Lean"
-            " expectedFreeEnergy_eq_risk_add_ambiguity shape, but the"
-            " preference reference is softmax(C), not the raw C vector,"
-            " so values are not directly comparable without convention"
-            " mapping (bridge finding O1).",
-        "validation": validation,
-        "execution_time_seconds": round(elapsed, 4),
-        "torch_version": torch.__version__
-    }}
-
-    # Save results
-    output_dir = Path(os.environ.get("PYTORCH_OUTPUT_DIR", "."))
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_file = output_dir / "simulation_results.json"
-    with open(output_file, "w") as f:
-        json.dump(results, f, indent=2)
-
-    print(f"PyTorch POMDP simulation complete: {{T}} timesteps in {{elapsed:.3f}}s")
-    print(f"Results saved to: {{output_file}}")
-    print(f"Validation: {{validation}}")
-    if not validation["all_valid"]:
-        raise RuntimeError("Invalid simulation results; see the persisted validation receipt")
-    return results
-
-
-if __name__ == "__main__":
-    run_simulation()
-'''
-    return code
+    if int(num_timesteps) < 1:
+        raise ValueError("num_timesteps must be at least 1")
+    habit = (
+        np.full(num_actions, 1.0 / num_actions)
+        if E is None
+        else np.asarray(E, dtype=float)
+    )
+    spec = gnn_spec or {}
+    variable_sites, unmapped = gnn_variable_sites(spec)
+    return generate_discrete_script(
+        model_name=model_name,
+        random_seed=random_seed,
+        num_states=num_states,
+        num_obs=num_obs,
+        num_actions=num_actions,
+        num_timesteps=int(num_timesteps),
+        a_literal=_format_tensor(A),
+        c_literal=_format_tensor(C),
+        d_literal=_format_tensor(D),
+        e_literal=_format_tensor(habit),
+        b_init=_b_init_block(B, num_actions),
+        habit_source=habit_source,
+        matrix_provenance=matrix_provenance or {},
+        declared_connections=declared_connections(spec),
+        variable_sites=variable_sites,
+        unmapped_variables=unmapped,
+    )

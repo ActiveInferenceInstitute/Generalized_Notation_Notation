@@ -169,6 +169,80 @@ def list_analysis_tools_mcp() -> Dict[str, Any]:
         }
 
 
+def evaluate_torchlens_fidelity_mcp(results_path: str) -> Dict[str, Any]:
+    """
+    Compare declared GNN connections with TorchLens-traced PyTorch dataflow.
+
+    Reads one PyTorch ``simulation_results.json`` (or every PyTorch result
+    under a directory) and evaluates its recorded TorchLens capture: each
+    declared connection is classified as direct, indirect, reverse_only,
+    not_observed or unmapped, with undeclared traced dependencies and the
+    recorded lesion witnesses. Read-only: nothing is executed or written.
+
+    Args:
+        results_path: A simulation_results.json file or a directory to search
+
+    Returns:
+        Dictionary with one fidelity report per result file.
+    """
+
+    def _build() -> Dict[str, Any]:
+        from .flat_payload_analyzer import discover_result_files, result_model_name
+        from .pytorch.analyzer import PYTORCH_SPEC
+        from .pytorch.torchlens_fidelity import evaluate_capture
+
+        path = Path(results_path)
+        if path.is_file():
+            files = [path]
+            directory = None
+        elif path.is_dir():
+            files = sorted(discover_result_files(path, PYTORCH_SPEC))
+            directory = path.resolve()
+        else:
+            return {"success": False, "error": f"Path not found: {results_path}"}
+
+        reports: List[Dict[str, Any]] = []
+        for results_file in files:
+            try:
+                if directory is not None and (
+                    results_file.is_symlink()
+                    or not results_file.resolve().is_relative_to(directory)
+                ):
+                    raise ValueError(
+                        "result path must be inside the selected directory and not a symbolic link"
+                    )
+                results = json.loads(results_file.read_text(encoding="utf-8"))
+                if not isinstance(results, dict):
+                    raise ValueError("simulation result must be a JSON object")
+            except (OSError, ValueError) as e:
+                reports.append({"file": str(results_file), "error": str(e)})
+                continue
+            torchlens = results.get("torchlens")
+            model_name = result_model_name(results_file, results, "pytorch")
+            if torchlens is None:
+                report: Dict[str, Any] = {
+                    "status": "not_captured",
+                    "reason": "result carries no TorchLens capture summary",
+                }
+            elif isinstance(torchlens, dict) and torchlens.get("status") == "disabled":
+                report = {
+                    "status": "not_captured",
+                    "reason": torchlens.get("reason", "capture disabled"),
+                }
+            else:
+                report = evaluate_capture(torchlens)
+            reports.append(
+                {"file": str(results_file), "model_name": model_name, "report": report}
+            )
+        return {"success": True, "reports_count": len(reports), "reports": reports}
+
+    return run_tool_envelope(
+        _build,
+        wrapper_name="evaluate_torchlens_fidelity_mcp",
+        logger=logger,
+    )
+
+
 # ── MCP Registration ────────────────────────────────────────────────────────
 
 
@@ -256,4 +330,25 @@ def register_tools(mcp_instance: Any) -> None:
         category="analysis",
     )
 
-    logger.info("analysis module MCP tools registered (4 tools).")
+    mcp_instance.register_tool(
+        "evaluate_torchlens_fidelity",
+        evaluate_torchlens_fidelity_mcp,
+        {
+            "type": "object",
+            "properties": {
+                "results_path": {
+                    "type": "string",
+                    "description": (
+                        "PyTorch simulation_results.json file, or a directory "
+                        "(e.g. 12_execute_output) to search for them"
+                    ),
+                },
+            },
+            "required": ["results_path"],
+        },
+        "Compare declared GNN connections with TorchLens-traced PyTorch dataflow (read-only).",
+        module=__package__,
+        category="analysis",
+    )
+
+    logger.info("analysis module MCP tools registered (5 tools).")
