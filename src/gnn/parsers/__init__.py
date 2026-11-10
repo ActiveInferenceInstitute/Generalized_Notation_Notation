@@ -134,15 +134,8 @@ def convert_gnn_format(
     output_file: Union[str, _Path],
     target_format: (_Optional[GNNFormat]) | None = None,
 ) -> None:
-    """Convert a GNN file from one format to another."""
-    system = GNNParsingSystem()
-    result = system.parse_file(input_file)
-
-    if target_format is None:
-        output_path = _Path(output_file)
-        target_format = system._detect_format(output_path)
-
-    system.serialize_to_file(result.model, output_file, target_format)
+    """Convert a GNN file, raising ParseError if the source cannot be parsed."""
+    GNNParsingSystem().convert_file(input_file, output_file, to_format=target_format)
 
 
 __all__: list[Any] = [

@@ -17,7 +17,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from gnn.parsers import GNNFormat, GNNParsingSystem  # noqa: E402
+from gnn.parsers import GNNFormat, GNNParsingSystem, convert_gnn_format  # noqa: E402
 from gnn.parsers.common import ParseError  # noqa: E402
 from gnn.parsers.system import PARSER_REGISTRY  # noqa: E402
 from gnn.parsers.unified_parser import (  # noqa: E402
@@ -99,6 +99,12 @@ class TestGNNParsingSystemConvertFile:
         source = system.parse_file(EXEMPLAR)
         assert reparsed.model.model_name == source.model.model_name
 
+        public_out = tmp_path / "public.json"
+        assert convert_gnn_format(str(EXEMPLAR), str(public_out)) is None
+        public_result = system.parse_file(public_out)
+        assert public_result.success
+        assert public_result.model.model_name == source.model.model_name
+
     @pytest.mark.unit
     def test_explicit_target_format_overrides_extension(
         self, system: GNNParsingSystem, tmp_path: Path
@@ -107,6 +113,12 @@ class TestGNNParsingSystemConvertFile:
         result = system.convert_file(EXEMPLAR, out, to_format=GNNFormat.YAML)
         assert result == out
         assert out.stat().st_size > 0
+
+        public_out = tmp_path / "public.txt"
+        assert convert_gnn_format(EXEMPLAR, public_out, GNNFormat.YAML) is None
+        public_result = system.parse_file(public_out, GNNFormat.YAML)
+        assert public_result.success
+        assert public_result.model.model_name == system.parse_file(EXEMPLAR).model.model_name
 
     @pytest.mark.unit
     def test_unknown_output_extension_raises_value_error(
@@ -130,6 +142,18 @@ class TestGNNParsingSystemConvertFile:
         bad.write_text("not json at all", encoding="utf-8")
         with pytest.raises(ParseError):
             system.convert_file(bad, tmp_path / "out.md")
+
+        existing = tmp_path / "previous.md"
+        original = b"caller-owned output\n"
+        existing.write_bytes(original)
+        with pytest.raises(ParseError, match="bad[.]json"):
+            convert_gnn_format(bad, existing)
+        assert existing.read_bytes() == original
+
+        fresh = tmp_path / "absent" / "model.json"
+        with pytest.raises(ParseError, match="bad[.]json"):
+            convert_gnn_format(bad, fresh)
+        assert not fresh.parent.exists()
 
     @pytest.mark.unit
     def test_parse_only_target_format_raises_value_error(

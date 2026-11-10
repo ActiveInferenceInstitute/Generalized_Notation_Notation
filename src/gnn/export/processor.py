@@ -374,6 +374,7 @@ def export_model(
                 writer = resolve_format_writer(format_type)
                 if filename is None or writer is None:
                     results["errors"].append(f"Unsupported format: {format_type}")
+                    results["success"] = False
                     continue
 
                 output_file = output_dir / filename

@@ -193,8 +193,9 @@ Resolved exceptions (each verified in the tree carrying this revision):
 
 ## Consumer seams: declared cross-repo surfaces
 
-Everything else in `src/gnn/` is private to this repository. Sibling
-repositories consume exactly these five declared surfaces:
+Sibling repositories use these declared surfaces. The
+[downstream adoption guide](../gnn/integration/downstream_adoption.md)
+lists the supported entry points and verification scope.
 
 1. **Export surface** — `gnn.export.geo_infer`,
    `gnn.export.geo_infer_gaussian`, `gnn.export.geo_infer_factored`. The
@@ -226,6 +227,11 @@ repositories consume exactly these five declared surfaces:
    paired-revision run is the drift signal and is repaired by re-pinning,
    never by suppressing the check.
 
+6. **Markdown parser** — `gnn.parsers.markdown_parser.MarkdownGNNParser`
+   provides the parser entry point used by the language-model and Battleship
+   consumers. Keep consumer models and parser behavior under the
+   checkout or package revision they qualify.
+
 ### Evidence-plane discipline
 
 Each check proves one thing and nothing more:
@@ -244,7 +250,7 @@ Each check proves one thing and nothing more:
 
 ### Change protocol (announce-and-repin)
 
-Changes to surfaces 1-5 are announce-and-repin events: follow the closeout
+Changes to pinned bridge and interchange owners follow the closeout
 ordering in
 [docs/development/fep_lean_paired_revision.md](../development/fep_lean_paired_revision.md)
 — all content edits land first (the manuscript/token ritual runs at the
@@ -252,7 +258,8 @@ final content state when manuscript inputs changed), then the FEP_Formal-side
 bridge re-pin, then the GNN pin bump as the final commit; the GEO_INFER
 direction is the mirror image.
 
-Edits outside surfaces 1-5 must not force sibling re-pinning. Census
+Validate changes to the Markdown parser against its consumers. Companion
+re-pinning follows the recorded owner roster. Census
 break-class B1 (the bridge's source binding covering a whole-tree owner glob)
 was repaired on the FEP_Formal side: the GNN owner roster now binds the declared
 contract surface only — `pyproject.toml`, `uv.lock`, `src/gnn/main.py`,

@@ -184,8 +184,18 @@ class TestExportProcessor:
         from gnn.export import export_model
 
         data: dict[str, Any] = {"name": "M", "variables": [{"name": "s"}]}
-        result = export_model(data, tmp_path, formats=["json", "xml"])
-        assert isinstance(result, dict)
+        result = export_model(data, tmp_path, formats=["json", "xml", "unknown"])
+        assert result["success"] is False
+        assert result["errors"] == ["Unsupported format: unknown"]
+        assert result["formats"] == {"json": True, "xml": True}
+        assert (tmp_path / "model.json").is_file()
+        assert (tmp_path / "model.xml").is_file()
+
+        unsupported = export_model(data, tmp_path / "unsupported", formats=["unknown"])
+        assert unsupported["success"] is False
+        assert unsupported["errors"] == ["Unsupported format: unknown"]
+        assert unsupported["exports"] == {}
+        assert not any((tmp_path / "unsupported").iterdir())
 
     def test_generate_exports_empty_dir(self, tmp_path: Any) -> None:
         from gnn.export import generate_exports
