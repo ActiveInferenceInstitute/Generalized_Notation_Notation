@@ -118,7 +118,10 @@ class TestGNNParsingSystemConvertFile:
         assert convert_gnn_format(EXEMPLAR, public_out, GNNFormat.YAML) is None
         public_result = system.parse_file(public_out, GNNFormat.YAML)
         assert public_result.success
-        assert public_result.model.model_name == system.parse_file(EXEMPLAR).model.model_name
+        assert (
+            public_result.model.model_name
+            == system.parse_file(EXEMPLAR).model.model_name
+        )
 
     @pytest.mark.unit
     def test_unknown_output_extension_raises_value_error(
