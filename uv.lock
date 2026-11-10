@@ -1896,6 +1896,7 @@ all = [
     { name = "sympy" },
     { name = "thrml" },
     { name = "torch" },
+    { name = "torchlens" },
     { name = "transformers" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -1958,6 +1959,10 @@ thrml = [
 ]
 torch = [
     { name = "torch" },
+]
+torchlens = [
+    { name = "torch" },
+    { name = "torchlens" },
 ]
 
 [package.dev-dependencies]
@@ -2081,12 +2086,15 @@ requires-dist = [
     { name = "thrml", marker = "extra == 'thrml'", specifier = "==0.1.4" },
     { name = "torch", marker = "extra == 'all'", specifier = ">=2.13.0" },
     { name = "torch", marker = "extra == 'torch'", specifier = ">=2.13.0" },
+    { name = "torch", marker = "extra == 'torchlens'", specifier = ">=2.13.0" },
+    { name = "torchlens", marker = "extra == 'all'", specifier = ">=3.0.2,<4" },
+    { name = "torchlens", marker = "extra == 'torchlens'", specifier = ">=3.0.2,<4" },
     { name = "transformers", marker = "extra == 'all'", specifier = ">=5.10.0" },
     { name = "transformers", marker = "extra == 'ml-ai'", specifier = ">=5.10.0" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'all'", specifier = ">=0.23.0" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'api'", specifier = ">=0.23.0" },
 ]
-provides-extras = ["geo-infer", "dev", "api", "ml-ai", "audio", "gui", "graphs", "stan", "cpomdp", "thrml", "torch", "research", "scaling", "bnlearn", "ngclearn", "all"]
+provides-extras = ["geo-infer", "dev", "api", "ml-ai", "audio", "gui", "graphs", "stan", "cpomdp", "thrml", "torch", "torchlens", "research", "scaling", "bnlearn", "ngclearn", "all"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -7540,6 +7548,26 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e4/94/b97e863c9ceef2bc6e082e967cbfb9065b5e232f2a60c5af0f5115a1bc31/torch-2.14.1-cp314-cp314t-manylinux_2_28_aarch64.whl", hash = "sha256:9113f94f70429f9f302bf55b090b5411269083e8a72a5d015ffcc5a7f83f2c69", size = 453998592, upload-time = "2026-09-30T17:54:38.268Z" },
     { url = "https://files.pythonhosted.org/packages/03/d8/8272157c438cc26a199a8fa0caf87985477b8a1ed8a09084eb2ae40609d8/torch-2.14.1-cp314-cp314t-manylinux_2_28_x86_64.whl", hash = "sha256:e65d5fe136e533b23c2d134377f7f126721c7c78dd75b3dbb735af082a8aeb85", size = 554578730, upload-time = "2026-09-30T17:54:54.838Z" },
     { url = "https://files.pythonhosted.org/packages/45/05/451a69a4287033d8f106f5c65f92c2c0c37229d81ea101d4b047caf758cc/torch-2.14.1-cp314-cp314t-win_amd64.whl", hash = "sha256:e07306caa1de2a4ac1467e11ecfc92fc44f523dd6a521145039aef46d913963c", size = 124400129, upload-time = "2026-09-30T17:54:12.306Z" },
+]
+
+[[package]]
+name = "torchlens"
+version = "3.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "graphviz" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "safetensors" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c5/9f/30bf13a772a800b1b1e97127b82bd55c45e79101e1b8a508c735fe7ee3b2/torchlens-3.0.2.tar.gz", hash = "sha256:89f0da56e17ff6f6d1e52f87883ad14c86b72add6691284f273d2677d59c5624", size = 7631501, upload-time = "2026-11-07T00:31:35.707Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8c/6c/b368485b08104c2c20f39fb59db4c40f768b2edf7a0fff2c0858a7439440/torchlens-3.0.2-py3-none-any.whl", hash = "sha256:891fa9cf1e456f8b1ae653b56c0e760acef4de6a48de11004c8ab1751ede984d", size = 8732574, upload-time = "2026-11-07T00:31:32.813Z" },
 ]
 
 [[package]]

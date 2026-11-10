@@ -107,6 +107,7 @@ DOMAIN_TOOLS = [
     "get_analysis_results",
     "compute_complexity_metrics",
     "list_analysis_tools",
+    "evaluate_torchlens_fidelity",
     "process_render",
     "list_render_frameworks",
     "render_gnn_to_format",

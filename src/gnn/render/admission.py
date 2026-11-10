@@ -19,7 +19,15 @@ SPEC_RENDER_TARGETS = (*RENDER_FRAMEWORKS, *SPEC_TARGET_BACKENDS)
 _OPTION_SCHEMAS: dict[str, dict[str, Any]] = {
     "pymdp": {"mode": {"type": "string", "enum": ["pipeline", "standalone"]}},
     "rxinfer": {"inference_mode": {"type": "string", "enum": ["batch", "online"]}},
-    "pytorch": {"num_timesteps": {"type": "integer", "minimum": 1}},
+    "pytorch": {
+        "num_timesteps": {"type": "integer", "minimum": 1},
+        "seed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2**63 - 1,
+            "description": "Discrete rollout seed (one torch.Generator)",
+        },
+    },
     "numpyro": {"num_timesteps": {"type": "integer", "minimum": 1}},
     "jax": {
         "seed": {
