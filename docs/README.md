@@ -1,4 +1,4 @@
-# GeneralizedNotationNotation (GNN) Documentation
+# Generalized Notation Notation (GNN) Documentation
 
 This is the primary human-facing documentation hub. Other navigation files have
 narrow roles:
@@ -9,10 +9,9 @@ narrow roles:
 - [CROSS_REFERENCE_INDEX.md](CROSS_REFERENCE_INDEX.md) maps topics and frameworks.
 - [AGENTS.md](AGENTS.md) describes the documentation tree for maintainers.
 
-The code and the live CLI are authoritative for behavior. Documentation examples are
-kept intentionally small and are validated by the repository documentation checks.
-The current software version is **v5.0.3**; the [version map](VERSION_MAP.md) owns
-release history and the publication records.
+The code and installed CLI define behavior. Documentation gates check examples
+and claims at the scopes described below. The [version map](VERSION_MAP.md)
+records release and distribution identities.
 
 ## Choose a path
 
@@ -68,7 +67,7 @@ For spatial active inference, see the [GEO_INFER interchange](other/geo_infer/RE
 
 The [downstream registry](downstream/README.md) lists the repositories that apply
 GNN, each with its specification path, pinned GNN revision and conformance
-evidence, verified from each repository's origin default branch.
+evidence. Each row records the revision and verification scope.
 
 ## Current implementation map
 
@@ -106,21 +105,19 @@ uv run --frozen --no-sync gnn preflight
 uv run --frozen --no-sync gnn health
 
 # Validate one file.
-uv run --frozen --no-sync gnn validate input/gnn_files/discrete/actinf_pomdp_agent.md --strict
+uv run --frozen --no-sync gnn validate input/gnn_files/discrete/two_state_bistable.md --strict
 
 # Run a focused pipeline path.
-uv run --frozen --no-sync python src/gnn/main.py \
-  --target-dir input/gnn_files \
-  --output-dir output \
-  --only-steps "3,5,11,12" \
-  --verbose
+uv run --frozen --no-sync gnn run \
+  --target-dir input/gnn_files/basics \
+  --output-dir output/docs-quickstart \
+  --only-steps 3 5 6 7 8 \
+  --skip-steps 0 1 2
 ```
 
-The main pipeline uses `input/config.yaml` automatically. Step selection uses
-`--only-steps` and `--skip-steps`; setup uses hyphenated flags such as
-`--install-optional`, `--optional-groups`, and `--recreate-uv-env`. See the
-[configuration guide](configuration/README.md), not a generic `--config` or profile
-system.
+The pipeline loads `input/config.yaml`. Use `gnn run --help` for step selection,
+worker and logging options, and the [configuration guide](configuration/README.md)
+for configuration precedence and backend settings.
 
 ## Documentation quality checks
 

@@ -263,7 +263,7 @@ For more detailed information about specific aspects of GNN, refer to:
 - **[PyMDP Integration](../pymdp/gnn_pymdp.md)**: Python discrete-state POMDP framework
 - **[RxInfer Integration](../rxinfer/gnn_rxinfer.md)**: Julia Bayesian active message passing
 - **[DisCoPy Integration](../discopy/gnn_discopy.md)**: Categorical string diagrams and monoidal structures
-- **[PyTorch Integration](implementations/pytorch.md)**: Neural active inference and deep learning
+- **[PyTorch Integration](implementations/pytorch.md)**: Categorical tensor filtering and linear-Gaussian inference
 - **[NumPyro Integration](implementations/numpyro.md)**: Continuous probabilistic programming via MCMC
 - **[JAX Integration](implementations/jax.md)**: High-performance vector-space compilation
 - **[Stan Integration](implementations/stan.md)**: Runnable HMM and linear-Gaussian programs via CmdStan

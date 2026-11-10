@@ -1,8 +1,8 @@
 # GNN MCP Tool Quick Reference
 
-Audit-backed quick reference for the GNN MCP server tool surface. Use `tests/mcp/test_mcp_audit.py` and `src/gnn/mcp/validate_tools.py` for the current live count. For full per-domain documentation see **[../modules/21_mcp.md](../modules/21_mcp.md)**.
+Quick reference generated from an MCP audit snapshot. For the tools available in your installation, run `uv run --frozen --no-sync python -m gnn.mcp.cli list`. For full per-domain documentation see **[../modules/21_mcp.md](../modules/21_mcp.md)**.
 
-**164 tools across 36 modules** — see the generated [`src/gnn/mcp/audit_report.json`](../../../src/gnn/mcp/audit_report.json) for the authoritative current count (regenerate with `uv run python src/gnn/mcp/validate_tools.py`).
+**164 tools across 36 modules** — see the generated [`src/gnn/mcp/audit_report.json`](../../../src/gnn/mcp/audit_report.json) for the checked-in audit snapshot (regenerate with `uv run --frozen --no-sync python -m gnn.mcp.validate_tools`).
 
 ## Full Tool Table
 

@@ -1,14 +1,15 @@
 # Downstream registry — repositories that apply GNN
 
 Who already uses Generalized Notation Notation (GNN), what they model, which GNN
-revision they pin, and where their conformance evidence lives. One row per
-repository; each row links to a page with the full evidence.
+revision they record, and where their conformance evidence lives. The first
+table links to a local evidence page for each repository. The second links
+directly to the repositories' own contracts.
 
-At a glance: twenty-one repositories carry a committed GNN specification and
-record an upstream revision (nineteen of them `v5.0.3` at commit `8f293d9b`;
-GEO_INFER records the same commit without a tag; `fep_formal` pins by content
-hash), and five more record the revision in their own contract rather than
-in a pin file.
+The November 2, 2026 snapshot records twenty-one repositories with GNN models
+or interoperability code and dedicated revision evidence. Nineteen record
+`v5.0.3` at commit `8f293d9b`, GEO_INFER records that commit without a tag,
+and `fep_formal` pins by content hash. Five more record a GNN revision in their
+own contracts.
 
 | Repository | What it models | GNN specification | Pinned GNN revision | Conformance / validation evidence |
 | --- | --- | --- | --- | --- |
@@ -55,23 +56,23 @@ Every row was verified on 2026-11-02 from the repository's origin default branch
 with read-only GitHub API calls: `git/trees/<branch>?recursive=1` to locate
 files and `contents/<path>?ref=<branch>` to read pin files, specifications and
 workflow definitions. File presence, pin contents and workflow job names are
-verified; current CI status and local reproducibility are not. A row that could
-not be verified says "not verified" rather than repeating an assumption.
+verified for that observation date. Current CI status and local reproducibility
+require separate evidence. A row that could not be verified says "not verified".
 
 Candidates came from scanning the organization for the markers of GNN use
 (`.gnn.md` specification files and GNN pin files), and every repository below
-was then read from origin directly. The twenty-one repositories in the table are
-the ones with a committed GNN specification or pin on the default branch.
-Repositories that only mention GNN in passing are not listed; repositories that
-record the revision outside a pin file are in the section below.
+was then read from origin directly. The first table covers repositories with
+dedicated pins or dependency declarations. The second covers revisions recorded
+in source constants, provenance records, or contract documentation. Both tables
+exclude repositories that only mention GNN in passing.
 
 ## Revisions recorded in the repository's own contract
 
 These repositories carry GNN files or GNN bridge code on the default branch and
 record the upstream revision in their own contract rather than in a pin file.
 Each row names the contract; every path and revision below was verified from
-origin on 2026-11-02. The contract file links to that file on the repository's
-default branch, so a reader can reach it in one step. These five are rows rather
+origin on 2026-11-02. Default-branch links are navigation targets that can change
+after the observation date. These five are rows rather
 than their own pages on purpose: a page would add files under `docs/**`, which
 moves the manuscript documentation file count, so pages for them are a scheduled
 count-changing change rather than an oversight.
@@ -82,7 +83,7 @@ count-changing change rather than an oversight.
 | [act_inf_metaanalysis](https://github.com/ActiveInferenceInstitute/act_inf_metaanalysis) | `gnn/h1_fep_universality.md`, `gnn/h4_predictive_coding.md`, `gnn/h8_language_aif.md` | [`gnn/README.md`](https://github.com/ActiveInferenceInstitute/act_inf_metaanalysis/blob/main/gnn/README.md): revision `v5.0.3`/`8f293d9b`, an archive extract recipe, and recorded model SHA-256 digests |
 | [courses](https://github.com/ActiveInferenceInstitute/courses) | `course_development/gnn/01_gnn_syntax/` (syntax module, lab, model exemplars) | [`course_development/gnn/01_gnn_syntax/models/README.md`](https://github.com/ActiveInferenceInstitute/courses/blob/main/course_development/gnn/01_gnn_syntax/models/README.md) provenance table (release `v5.0.3`, commit `8f293d9b`) with a `git show` and `diff` recipe against the pinned corpus |
 | [pymdp](https://github.com/ActiveInferenceInstitute/pymdp) | Bridge code `pymdp/gnn.py`, `examples/gnn/publish_gnn_spec.py`, `test/test_gnn_bridge.py`, `docs-mkdocs/guides/gnn-interoperability.md` | `GNN_PINNED_RELEASE` and `GNN_PINNED_REVISION` constants in [`pymdp/gnn.py`](https://github.com/ActiveInferenceInstitute/pymdp/blob/master/pymdp/gnn.py) (default branch `master`) |
-| [Active_Inference_Ontology](https://github.com/ActiveInferenceInstitute/Active_Inference_Ontology) | Term export `GNN/act_inf_ontology_terms.json`, `GNN/README.md` | [`GNN/declared-labels.json`](https://github.com/ActiveInferenceInstitute/Active_Inference_Ontology/blob/main/GNN/declared-labels.json): release, commit and SHA-256 of the audited file; this repository pins *it* at `4450e8dd` in `src/gnn/ontology/ontology-pin.json` |
+| [Active_Inference_Ontology](https://github.com/ActiveInferenceInstitute/Active_Inference_Ontology) | Term export `GNN/act_inf_ontology_terms.json`, `GNN/README.md` | [`GNN/declared-labels.json`](https://github.com/ActiveInferenceInstitute/Active_Inference_Ontology/blob/main/GNN/declared-labels.json) records the audited GNN source at `v5.0.3` / `8f293d9b` with its SHA-256. GNN separately pins the ontology repository at `4450e8dd` in `src/gnn/ontology/ontology-pin.json`. |
 
 ## Exclusions
 

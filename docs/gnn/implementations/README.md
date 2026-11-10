@@ -6,14 +6,40 @@
 
 **Status**: Maintained guides; experimental status and acceptance are backend-specific
 
-**Pipeline steps**: 25 · **Renderers**: declared by `src/gnn/render/framework_registry.py`; cpomdp and THRML require explicit experimental selection · **Tests**: see [../../../README.md](../../../README.md)
+**Pipeline steps**: 25 · **Renderers**: [framework registry](../../../src/gnn/render/framework_registry.py) · **Tests**: see [repository README](../../../README.md)
 
 This directory contains documentation and references for the Implementations domain of Generalized Notation Notation (GNN).
+
+## Backend admission
+
+Choose a model from the [exemplar index](../../../input/gnn_files/INDEX.md),
+then check the renderer's declared state space, model composition, dynamics,
+and any named execution contract. The
+[framework registry](../../../src/gnn/render/framework_registry.py) declares
+these capabilities. Its maintained default set excludes experimental
+`cpomdp` and `thrml`, which require explicit selection.
+
+| Source contract | Backend boundary |
+|---|---|
+| Categorical | PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan and bnlearn accept categorical state space. Each backend has its own composition and inference limits. |
+| Single linear-Gaussian block | JAX, RxInfer.jl, PyTorch, NumPyro, Stan and ngc-learn admit the state space. Consult the backend guide for filtering, sampling, and controller semantics. |
+| Independent per-factor linear-Gaussian blocks | JAX admits the [factored exemplar](../../../input/gnn_files/continuous/factored_continuous_lgssm.md). |
+| Explicit independent linear-Gaussian agents | JAX and RxInfer admit the [independent-agent exemplar](../../../input/gnn_files/continuous/independent_gaussian_agents.md). A shared flat Gaussian block plus an agent count leaves the agent semantics unspecified and is refused. |
+| Mixed categorical and linear-Gaussian parameters | The [hybrid exemplar](../../../input/gnn_files/continuous/hybrid_discrete_continuous.md) is classified as a composition and receives `unsupported-composition` from all current backends. |
+| Nonstationary categorical transition | The Step 11/12 PyMDP route admits time-indexed and regime-switched transitions. The standalone PyMDP renderer does not implement the switching runner. |
+| `block_reset_v1`, `timed_soft_controller_v1`, `episodic_contingent_v1` | The named block-reset hierarchy, timed soft controller, and contingent T-maze contracts require JAX. |
+
+Step 11 records a refused model/backend pair as `unsupported` in
+`render_processing_summary.json`, separately from render failures. Step 12
+does not execute refused pairs. An explicit backend request can still leave
+a run's required work incomplete. Even when a renderer emits a program,
+execution depends on runtime readiness and the current run's execution
+receipt.
 
 ## Available Documents
 
 - **[PyMDP](pymdp.md)**: Native categorical Active Inference through the maintained `pymdp` Agent API; admitted composition and inference settings come from the renderer contract.
-- **[NumPyro](numpyro.md)**: Discrete and continuous probabilistic programs with preserved numeric parameters; continuous traces distinguish online filtering from optional NUTS inference.
+- **[NumPyro](numpyro.md)**: Discrete and continuous probabilistic programs with preserved numeric parameters; the continuous generator emits an online filter and a separate NUTS trajectory.
 - **[PyTorch](pytorch.md)**: Discrete and continuous tensor programs with round-trippable scientific parameters and covariance-aware continuous output.
 - **[JAX](jax.md)**: Native categorical and linear-Gaussian programs, with explicitly represented factor and independent-agent routes.
 - **[RxInfer.jl](rxinfer.md)**: Native Julia reactive inference over categorical and Gaussian model families; posterior traces retain factor/agent identity and their declared filtering or smoothing interpretation.
@@ -23,11 +49,10 @@ This directory contains documentation and references for the Implementations dom
 - **[cpomdp](cpomdp.md)**: Experimental released-wheel linear-Gaussian filtering and admitted EFE control; explicit selection and resource receipts.
 - **[THRML](thrml.md)**: Experimental released-wheel finite categorical Gibbs smoothing under fixed actions, independent components and bounded joint factor/modality composition, supervised execution, and sample-bound analysis. Structural zeros, continuous models, coupled agents, and hardware execution are outside this contract.
 
-`bnlearn` (Bayesian network structure/parameter learning) and `ngclearn`
-(predictive processing) also have maintained render and execution modules under
-`src/gnn/render/` and `src/gnn/execute/`. Their availability and supported model
-kinds come from the live registries; a backend name alone does not establish
-acceptance for every model composition.
+`bnlearn` and `ngclearn` also have maintained render and execution modules under
+`src/gnn/render/` and `src/gnn/execute/`. The bnlearn route includes finite-model
+conditional filtering over source conditional probability tables. The
+ngc-learn route covers continuous predictive processing.
 
 ### Related integration (not a render backend)
 

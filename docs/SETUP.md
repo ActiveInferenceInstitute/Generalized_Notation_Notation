@@ -39,7 +39,7 @@ The checked-in `input/config.yaml` is loaded automatically by `src/gnn/main.py`;
   [CI workflow](../.github/workflows/ci.yml) for tested interpreter splits;
   a compatible dependency install does not establish every native backend's
   readiness on that interpreter or OS.
-- Exact `uv` 0.13.6, as required by the committed project configuration.
+- `uv >=0.13.6,<0.14` is the declared tool range. CI pins 0.13.6.
 - Installed-wheel acceptance covers declared Linux, macOS and Windows lanes; see
   the [platform guide](development/installed_platform_acceptance.md) for exact
   interpreter/OS scope. Optional Julia, GUI, audio and Graphviz paths need their
@@ -60,19 +60,21 @@ Optional system tools:
 ```bash
 git clone https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git
 cd Generalized_Notation_Notation
+# Select the published release for a versioned install.
+git checkout v5.0.3
 ```
 
 ### 2. Install the project environment
 
 ```bash
-# Runtime/core dependencies.
-uv sync --frozen
+# Runtime only.
+uv sync --frozen --no-dev --python 3.14
 
-# Runtime plus development, test, lint, and documentation tooling.
-uv sync --frozen --extra dev
+# Runtime and the default development, test, lint, and documentation group.
+uv sync --frozen --python 3.14
 
-# Every declared optional group. This is the heaviest install.
-uv sync --frozen --all-extras
+# Every declared optional group, using the Python 3.12 profile.
+uv sync --frozen --all-extras --python 3.12
 ```
 
 The GUI and all-extras profiles require uv's committed Pillow 13 override while
@@ -112,10 +114,10 @@ The declared groups are visible in `pyproject.toml`:
 
 | Group | Intended surface |
 |---|---|
-| `dev` | Tests, coverage, linting, typing, docs, and development tools |
+| `dev` | CmdStanPy extra. The separate default `dev` dependency group supplies test, lint, typing, and docs tools. |
 | `api` | FastAPI and Uvicorn |
 | `audio` | Librosa, SoundFile, and Pedalboard |
-| `gui` | Gradio |
+| `gui` | Gradio. Use Python 3.12 for interactive callbacks. |
 | `graphs` | Python Graphviz bindings |
 | `ml-ai` | SciPy, scikit-learn, and Transformers |
 | `research` | Jupyter, SymPy, Numba, and research utilities |

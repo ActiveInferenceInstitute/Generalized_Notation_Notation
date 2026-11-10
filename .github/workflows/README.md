@@ -28,6 +28,10 @@ YAML workflows for CI, MCP tool-count audit, weekly all-extras suite, documentat
 
 ## Workflow files
 
+All workflows listed in the [release collector](../release_gate.py) also run on
+`v[0-9]*` tag pushes. The trigger column describes their branch, pull request,
+schedule, and manual runs in addition to any release behavior called out in a row.
+
 | File | Triggers | Jobs / behavior |
 |------|----------|-----------------|
 | [comprehensive-native-coverage.yml](comprehensive-native-coverage.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Separate Python 3.11/3.12/3.13 reports from the exact source revision. The five frozen core, MCP, pipeline, THRML and Gradio native selections retain process/source identities, unchanged statement/exclusion scope, actual raw line-set unions, JUnit and hook-restoration receipts. The original core 60% gate remains; comprehensive acceptance enforces an 80% floor and the strict integer >80% comparison separately in each environment. |
@@ -38,8 +42,8 @@ YAML workflows for CI, MCP tool-count audit, weekly all-extras suite, documentat
 | [geo-infer-interchange.yml](geo-infer-interchange.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Python 3.11/3.12 categorical, Gaussian and factored interchange with the pinned GEO companion, deterministic replay and artifact digests. H3 state labels alone do not establish geographic or inference claims. |
 | [mcp-audit.yml](mcp-audit.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | MCP tool count ≥ 140 via `tests.mcp.test_mcp_audit.count_mcp_tools`. |
 | [full-extras.yml](full-extras.yml) | Weekly cron Sunday 06:00 UTC (`0 6 * * 0`); `workflow_dispatch` | `uv sync --frozen --all-extras`, optional-import checks (audio, GUI, research/scaling), full pytest suite under all extras (Python 3.12). |
-| [docs-audit.yml](docs-audit.yml) | `push` / `pull_request` → `main`; weekly Monday 06:00 UTC; `workflow_dispatch` | Strict docs/anchor and repository/maintained-doc terminology audits on every change. Weekly or opt-in manual external observations fail on HTTP 404/410; other failures remain inconclusive and are retained. |
-| [actionlint.yml](actionlint.yml) | Changes under `.github/workflows/**`; `workflow_dispatch` | `rhysd/actionlint@v1.7.12` |
+| [docs-audit.yml](docs-audit.yml) | `push` / `pull_request` → `main`; weekly Monday 06:00 UTC; `workflow_dispatch` | Strict docs/anchor and repository/maintained-doc terminology audits on every change. Scheduled, version-tag, and opt-in manual runs also check external URLs. HTTP 404/410 fail the job; inconclusive responses are retained. |
+| [actionlint.yml](actionlint.yml) | Main pushes and pull requests changing `.github/workflows/**` or `.github/*release*`; `workflow_dispatch` | `rhysd/actionlint@v1.7.12` |
 | [dependency-review.yml](dependency-review.yml) | `pull_request` → `main`; `workflow_dispatch` | High severity + AGPL deny; PR comment summary on failure. Fork PRs may get limited review. |
 | [codeql.yml](codeql.yml) | `push` / `pull_request` (skips doc-only paths), weekly cron, `workflow_dispatch` | Init → `uv sync --frozen --extra dev` → analyze (Python). |
 | [supply-chain-audit.yml](supply-chain-audit.yml) | Weekly cron Monday 06:00 UTC, `workflow_dispatch` | Two `pip-audit` jobs (OSV); strict shell; job summary. |
@@ -78,6 +82,10 @@ longer destroys an in-flight verdict.
 Each runner installs locked dependencies once; CI commands then
 use `uv run --frozen --no-sync`. This changes scheduling and repeated setup,
 while preserving test, security and custody coverage.
+
+For release qualification at an exact main SHA, use a full CI run at that
+SHA. The automatic post-merge subset deliberately skips jobs that the release
+collector requires. See the [release procedure](../../docs/releases/README.md#repeatable-release-qualification).
 
 Assess speed from exact-run job/step timestamps and retained JUnit receipts.
 Runner availability and test-duration variance affect elapsed time; report

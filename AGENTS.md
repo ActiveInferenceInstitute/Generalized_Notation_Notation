@@ -62,16 +62,11 @@ New to this repo as an agent? In order:
 - **[audio/sapf/](src/gnn/audio/sapf/AGENTS.md)** - SAPF audio submodule (canonical home; registered via `src/gnn/audio/mcp.py`)
 - **[docs/](src/gnn/doc/AGENTS.md)** - In-repo technical documentation subtree
 
-### v3.0.0 Long-Running Orchestration Modules (`src/gnn/pipeline/`)
+### Run ownership and orchestration
 
-Safe-by-design contracts and additive live wiring introduced in v3.0.0 ("Long-Running Orchestration"). The three core contracts are pure data layers that generate, validate, and serialize plans without mutating any live infrastructure.
-
-- **`durable_streams.py`** - Durable observation streams: pure, replayable file/array stream manifests and traces (foundation laid before any live sensor/device stream)
-- **`run_session.py`** - Resumable run-session management: durable run manifests, status inspection, and resume semantics for extended acceptance runs
-- **`container_plan.py`** - Auditable container plans: validated, hardened container plans with static security review and rollback semantics
-- **`session_acceptance.py`** - Live wiring that wraps the manifest-driven model-family acceptance runner in a resumable run session
-- **`run_manifest.py`** - Additive, real-object emission turning a completed pipeline run's `output/` artifacts into durable, replayable v3 artifacts
-- **`pipeline_container_plan.py`** - Generates an auditable, hardened container plan for running the GNN pipeline, derived from the real pipeline config
+The [pipeline module](src/gnn/pipeline/AGENTS.md) owns frozen model selection,
+current-run artifacts, resumable sessions, and auditable container plans. Use
+the [pipeline guide](docs/pipeline/README.md) for public execution boundaries.
 
 ### Documentation Agents
 
@@ -113,7 +108,7 @@ graph TB
 - Setup logging via `utils.logging.logging_utils.setup_step_logging`
 - Get output directories via `pipeline.config.get_output_dir_for_script`
 - Call module processing functions from `module/__init__.py`
-- Return standardized exit codes (0=success, 1=error, 2=warning)
+- Return standardized exit codes (0=success, 1=error, 2=success with warnings/skipped)
 
 **Module Implementation** (`src/gnn/<module>/`):
 
@@ -162,48 +157,19 @@ def process_module(
 
 ## Pipeline Execution Flow
 
-```mermaid
-flowchart TD
-    Main[src/gnn/main.py] -->|Orchestrates| Steps[25 Pipeline Steps]
-    
-    Steps --> Step0[Step 0: Template]
-    Step0 --> Step1[Step 1: Setup]
-    Step1 --> Step2[Step 2: Tests]
-    Step2 --> Step3[Step 3: GNN]
-    Step3 --> Step4[Step 4: Registry]
-    Step4 --> Step5[Step 5: Type Check]
-    Step5 --> Step6[Step 6: Validation]
-    Step6 --> Step7[Step 7: Export]
-    Step7 --> Step8[Step 8: Visualization]
-    Step8 --> Step9[Step 9: Advanced Viz]
-    Step9 --> Step10[Step 10: Ontology]
-    Step10 --> Step11[Step 11: Render]
-    Step11 --> Step12[Step 12: Execute]
-    Step12 --> Step13[Step 13: LLM]
-    Step13 --> Step14[Step 14: ML Integration]
-    Step14 --> Step15[Step 15: Audio]
-    Step15 --> Step16[Step 16: Analysis]
-    Step16 --> Step17[Step 17: Integration]
-    Step17 --> Step18[Step 18: Security]
-    Step18 --> Step19[Step 19: Research]
-    Step19 --> Step20[Step 20: Website]
-    Step20 --> Step21[Step 21: MCP]
-    Step21 --> Step22[Step 22: GUI]
-    Step22 --> Step23[Step 23: Report]
-    Step23 --> Step24[Step 24: Intelligent Analysis]
-
-    Step24 --> Output[output/]
-    Output --> Summary[pipeline_execution_summary.json]
-```
+The numbered scripts follow the [step registry](src/gnn/pipeline/step_registry.py).
+The scheduler expands the requested selection using the registered prerequisites
+and dispatches steps whose inputs are ready. See the
+[pipeline guide](docs/pipeline/README.md#step-boundaries) for execution scope.
 
 ### Data Dependencies
 
-Edges below describe processor-level data flow. In v4, source consumers
+Edges below describe processor-level data flow. Source consumers
 receive the immutable selected-model manifest, artifact consumers receive
 current-run indexes, and Steps 23/24 receive the current summary snapshot.
-The [migration guide](docs/development/run_ownership_migration.md) governs
-identity, freshness and scheduling; directory presence cannot admit prior-run
-evidence. Most steps re-parse the input GNN files directly; only the edges
+The [run ownership guide](docs/development/run_ownership_migration.md)
+describes identity, freshness and scheduling. Current-run indexes determine
+which artifacts a consumer can read. Most steps re-parse the input GNN files directly; only the edges
 shown move artifacts between steps. Solid arrows are artifact reads the
 consumer performs on its primary path; dotted arrows are optional enrichments
 read only when the producer's output directory exists.
@@ -276,24 +242,7 @@ deliberately broader than this artifact graph.
 
 ---
 
-## Performance Characteristics
-
-### Latest Status
-
-- The pipeline contains 25 steps and follows the thin orchestrator pattern.
-- Module docs and tests are maintained as part of normal development.
-- Use current CI/local runs for exact pass counts and performance measurements.
-
-### Enhanced Visual Logging Features
-
-- **Visual Progress Indicators**: Real-time progress bars and status icons across all pipeline steps
-- **Color-Coded Output**: Consistent color schemes (green=success, yellow=warning, red=error)
-- **Structured Summaries**: Formatted tables showing step metrics, timing, and memory usage
-- **Correlation ID Tracking**: Unique tracking IDs for debugging and monitoring pipeline execution
-- **Screen Reader Support**: Accessible output with emoji-free alternatives for assistive technologies
-- **Performance Monitoring**: Built-in timing and resource consumption tracking with visual displays
-
-### Current verification
+## Current verification
 
 Use exact uv 0.13.6 and the frozen development environment. The
 [README runtime profiles](README.md#runtime-defaults-and-required-profiles) own
@@ -309,128 +258,20 @@ the live registries. Experimental cpomdp/THRML require explicit selection.
 Browser, public-network, native GUI, audio-DSP and Ollama integrations retain their
 explicit profiles. LLM defaults and provisioning live in the [LLM guide](docs/llm/README.md).
 
-### v3.2.0 "Exemplar Gold Standard" (2026-09-02)
-
-- **Two model kinds**: `render.pomdp_contract.detect_model_kind` classifies each spec as discrete (categorical `A/B/C/D[/E]`) or continuous; the `input/gnn_files/continuous/` exemplars declare only the linear-Gaussian state-space block (`F/H/Q/R`, `prior_mean/prior_cov`, optional closed-loop `goal_mean/control_gain`) and are rendered verbatim, never canonicalised to A/B/C/D.
-- **`unsupported` render status**: frameworks whose `framework_registry.py` entry has `supports_continuous: False` (PyMDP, ActiveInference.jl, DisCoPy, bnlearn) return `status: unsupported` for continuous models; these are counted separately under `unsupported_framework_renderings` in `render_processing_summary.json`, excluded from success rates, and never executed by Step 12.
-- **Native continuous backends**: JAX, NumPyro (+NUTS), PyTorch and Stan share `render/continuous_script.py` (online Kalman filter, Joseph-form update, closed-loop control); RxInfer.jl uses its native LGSSM strategy.
-- **Stan is executable**: `render/stan/stan_renderer.py` emits an HMM (forward-algorithm marginalisation, Dirichlet priors centred on `A`) for discrete models and the Kalman marginal likelihood for continuous ones, as `<stem>_stan.stan` plus a `<stem>_stan.py` cmdstanpy driver; `src/gnn/execute/stan/` runs it and `gnn.utils.runtime_safety.framework_availability` reports `skipped` when `cmdstanpy`/CmdStan is absent (`uv sync --extra stan`).
-- **Historical Step 12 summary merge**: v3.2 combined summaries across input folders. v4 aggregates the frozen current-run selection once and excludes inherited execution artifacts from current evidence.
-- **Julia pre-exec gate**: a `julia` launcher without a working toolchain no longer blocks scripts; the probe degrades to the advisory regex sweep unless the parser itself reports a failure.
-- Live counts come from `output/11_render_output/render_processing_summary.json` and `output/12_execute_output/summaries/execution_summary.json`; see `CHANGELOG.md` §3.2.0 for the release receipt.
-
-### v3.3.0 "One Corpus" (2026-09-06)
-
-- The `src.*` import surface is gone: `gnn.*` is the single canonical import
-  surface (from an installed wheel, or with `PYTHONPATH=src` from the repo), and
-  `src/` holds only the `gnn` package.
-- Every model file lives inside `input/gnn_files`; the former top-level
-  `multi_agent_models/` and `recursive_models/` directories are folded into
-  `multiagent/` and `recursive/` respectively.
-- Headless extraction (`gnn extract FILE` / `python -m gnn.extract`), canonical
-  B orientation with `canonicalize_pomdp()`, factor/dimension provenance, and
-  the `torch` optional extra are documented in `CHANGELOG.md` §3.3.0.
-
-### Published releases
-
-The historical [4.2.0 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.2.0)
-records exact-source checks and assets. [CHANGELOG.md](CHANGELOG.md) owns release history.
-
-The historical [patch publication receipt](docs/development/gnn_4_0_1_post_publication.json)
-records source/tag identities, exact GNN/FEP/GEO gates, issue acceptance and
-provider alert closure. Preserve historical receipts and their source epochs.
-The published **4.1.0** [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0) records exact tag, source, checks and artifacts; version metadata alone does not establish acceptance.
-Historical 4.0.1 retains its original source, checks and artifacts. Remaining
-capability limits are in [TO-DO.md](TO-DO.md).
-
-The bounded 4.1.0 implementation retains its source reviews and separate native
-acceptance records. Its
-[integration handoff](.agents/dispatch/gnn-4-1-0/README.md) records owners,
-dependencies and acceptance order. The
-[installed-platform guide](docs/development/installed_platform_acceptance.md)
-separates native wheel evidence from source-test coverage, and the
-[exact-version archival procedure](docs/releases/exact_version_archival.md)
-separates concept DOI, source archive and distribution artifact acceptance.
-
-The [ownership review](docs/development/gnn_4_1_0_ownership_review.json)
-records the aa45 source epoch: 759 Python files, 1,148 exact Exception handlers
-and 1,159 broad handlers, with nine original extraction hashes unchanged.
-The maximum scoped decision proxy is 118; this is not algorithmic complexity
-reduction. Python 3.14 GUI callbacks and experimental DisCoPy Matrix evaluation
-remain unsupported. Per-environment coverage, installation and custody records
-remain separate from focused consumer counts.
-
-### v4.0.0 "Current-run Reliability" (2026-10-01 implementation)
-
-- Frozen selection, path-derived identities, source hashes, resolved configuration,
-  current-run artifact indexes, output leases, and one monotonic deadline bind
-  each invocation. Required unfinished work prevents success. Read the
-  [migration guide](docs/development/run_ownership_migration.md) before changing
-  these contracts or consuming earlier artifacts as evidence for a new run.
-- [THRML](docs/gnn/implementations/thrml.md) uses the ordinary released
-  `thrml==0.1.4` wheel for admitted finite categorical Gibbs smoothing under
-  fixed actions. Pure validation/admission, generated native sampling,
-  supervised execution, and sample-bound analysis are separate modules.
-  Configure `render.backend_options.thrml`; direct CLI/API/MCP options share the
-  renderer's validated option set. Structural zeros, coupled agents, continuous models,
-  action search, convergence, and hardware operation are outside this contract.
-- [cpomdp](docs/gnn/implementations/cpomdp.md) remains an explicitly selected
-  experimental released-wheel backend. Admission estimates, numerical witnesses,
-  execution receipts, and formal custody retain separate claims.
-- Step 16 admits numerical comparisons only for compatible model IDs, source
-  hashes, inference semantics, inputs and declared precision. Native Gaussian
-  uncertainty comes from covariance; unbound or incompatible comparisons retain
-  refusal reasons through JSON, Markdown and plotting.
-- The [4.0.0 publication receipt](docs/development/gnn_4_0_0_post_publication.json)
-  records that release's acceptance; [TO-DO.md](TO-DO.md) owns remaining work.
-  Publication requires final repository gates, manuscript rendering, paired
-  custody, hosted results, and remote commit parity; implementation prose is not
-  a substitute for those receipts.
-
----
-
-## Module Status Matrix
-
-Module-level status is maintained in each module's own `AGENTS.md` and test files. As of v3.0.0, the `src/gnn/pipeline/` orchestration contracts (`durable_streams`, `run_session`, `container_plan`) and their live wiring (`session_acceptance`, `run_manifest`, `pipeline_container_plan`) are validated by the strict `scripts/run_v3_orchestration_acceptance.py` gate.
-
----
-
 ## Quick Start
 
-### Using `just` (Recommended)
+Use the [frozen setup profile](README.md#runtime-defaults-and-required-profiles)
+and start with the installed CLI:
 
 ```bash
-brew install just              # macOS — or: cargo install just
-just                           # See available recipes
-just test                      # Fast test suite
-just lint                      # Ruff lint check
-just pipeline                  # Full 25-step pipeline
-just pipeline-steps "3,5,11,12"  # Specific steps
-just render-health             # Check renderer availability
-just test-mod render           # Test a specific module
+uv run --frozen --no-sync gnn --help
+uv run --frozen --no-sync gnn validate input/gnn_files/discrete/two_state_bistable.md --strict
+uv run --frozen --no-sync gnn run --target-dir input/gnn_files/basics \
+  --output-dir output/quickstart --only-steps 3 5 6 7 8 --skip-steps 0 1 2
 ```
 
-### Direct Commands
-
-#### Run Full Pipeline
-
-```bash
-python src/gnn/main.py --target-dir input/gnn_files --verbose
-```
-
-#### Run Specific Steps
-
-```bash
-python src/gnn/main.py --only-steps "3,5,7,8,11,12" --verbose
-```
-
-#### Run Individual Step
-
-```bash
-python src/gnn/3_gnn.py --target-dir input/gnn_files --output-dir output --verbose
-```
-
----
+Use the [operator quickstart](docs/quickstart.md) for execution and the
+[justfile](justfile) for maintained development recipes.
 
 ## Development Guidelines
 
@@ -456,25 +297,13 @@ python src/gnn/3_gnn.py --target-dir input/gnn_files --output-dir output --verbo
 
 ## Testing
 
-### Run All Tests
-
-```bash
-python src/gnn/2_tests.py --comprehensive
-```
-
-### Run Module-Specific Tests
+Use the [testing guide](docs/testing/README.md) to select the required profile.
+The development environment supports focused tests and the local quality gates:
 
 ```bash
 uv run --frozen --no-sync python -m pytest tests/render/ -v
+just quality
 ```
-
-### Check Coverage
-
-```bash
-uv run --frozen --no-sync python -m pytest tests/ --cov=gnn --cov-report=term-missing
-```
-
----
 
 ## Runtime defaults
 
@@ -487,11 +316,9 @@ producer metadata/locks and existing compatibility/native/paired rosters.
 
 ## Cross-repo custody (FEP_Formal, GEO-INFER)
 
-This repository shares custody pairs with FEP_Formal (`fep_formal` bridge)
-and GEO-INFER (interchange). Each side pins a reviewed companion revision and
-qualifies the actual source pair. GNN 5.0.x uses the active current-source
-workflow; the older 4.2.1/4.3.0 fixed-baseline policy is historical and cannot
-admit a new candidate. GNN owns its implementation source: the FEP bridge binds
+This repository uses source-bound companion checks with FEP_Formal
+(`fep_formal` bridge) and GEO-INFER (interchange). Qualify the actual source pair
+for a new release. The FEP bridge binds
 only the declared notation contract — `pyproject.toml`, `uv.lock`,
 `src/gnn/main.py`, `docs/gnn/gnn_syntax.md`,
 `src/gnn/pipeline/step_registry.py` and the mirrored
@@ -513,198 +340,6 @@ If manuscript custody is red on main, repair main first. PR gates use the
 merge-base with the target SHA; only unchanged diagnostic and exact-evidence
 fingerprints may warn with the full base SHA. New or changed drift fails.
 Main and scheduled audits remain strict.
-
-## Agent Capabilities
-
-Each module provides specialized agent capabilities for different aspects of Active Inference model processing:
-
-### 🎯 **Template Agent** - Intelligent Pipeline Initialization
-
-- Dynamic configuration generation
-- Context-aware template selection
-- Automated dependency resolution
-- Performance-optimized execution planning
-
-### 🔧 **Setup Agent** - Environment Management
-
-- Intelligent dependency resolution
-- Virtual environment optimization
-- Platform-specific configuration
-- Automated security scanning
-
-### 🧪 **Test Agent** - Quality Assurance
-
-- Comprehensive test orchestration
-- Performance benchmarking
-- Coverage analysis and reporting
-- Regression detection and alerting
-
-### 📄 **GNN Agent** - Model Processing
-
-- Multi-format file discovery
-- Intelligent parsing and validation
-- Semantic analysis and inference
-- Cross-format data transformation
-
-### 📋 **Registry Agent** - Model Management
-
-- Version control and tracking
-- Metadata extraction and indexing
-- Model comparison and analysis
-- Provenance and lineage tracking
-
-### ✅ **Type Checker Agent** - Validation
-
-- Static type analysis
-- Resource estimation and optimization
-- Constraint verification
-- Performance prediction modeling
-
-### 🔍 **Validation Agent** - Consistency Checking
-
-- Cross-reference validation
-- Logical consistency verification
-- Mathematical constraint checking
-- Domain-specific rule enforcement
-
-### 📤 **Export Agent** - Format Translation
-
-- Multi-format data export
-- Schema transformation
-- Metadata preservation
-- Format-specific optimization
-
-### 🎨 **Visualization Agent** - Graph Generation
-
-- Network topology visualization
-- Matrix heatmap generation
-- Interactive diagram creation
-- Performance metric plotting
-
-### 🔬 **Advanced Visualization Agent** - Enhanced Graphics
-
-- 3D visualization generation
-- Interactive dashboard creation
-- Real-time data streaming
-- Custom visualization frameworks
-
-### 🧠 **Ontology Agent** - Knowledge Processing
-
-- Active Inference term mapping
-- Semantic relationship discovery
-- Knowledge graph construction
-- Domain-specific reasoning
-
-### ⚙️ **Render Agent** - Code Generation
-
-- Multi-framework code generation
-- Language-specific optimization
-- Framework-specific templates
-- Performance-tuned implementations
-
-### 🚀 **Execute Agent** - Simulation Runner
-
-- **ActiveInferenceAgent**: Primary full-fidelity execution engine
-- Multi-environment execution follows the live executor registry, including
-  PyMDP, RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan,
-  bnlearn, ngc-learn, and explicitly selected experimental THRML/cpomdp.
-- Resource monitoring and optimization
-- Explicit failure, skip, and retry reporting
-- Cross-platform compatibility
-
-### 🤖 **LLM Agent** - AI Enhancement
-
-- Natural language analysis
-- Model interpretation and explanation
-- Automated documentation generation
-- Multi-modal reasoning
-
-### 🔗 **ML Integration Agent** - Machine Learning
-
-- Model training and evaluation
-- Hyperparameter optimization
-- Performance comparison
-- Integration with ML frameworks
-
-### 🎵 **Audio Agent** - Sonification
-
-- Multi-backend audio generation
-- Real-time audio processing
-- Audio feature extraction
-- Sonification of model dynamics
-
-### 📊 **Analysis Agent** - Statistical Processing
-
-- Advanced statistical analysis
-- Performance metric computation
-- Trend analysis and forecasting
-- Anomaly detection
-
-### 🔗 **Integration Agent** - System Coordination
-
-- Cross-module data flow
-- Pipeline orchestration
-- Resource allocation
-- Inter-module communication
-
-### 🔒 **Security Agent** - Protection
-
-- Input validation and sanitization
-- Access control implementation
-- Threat detection and mitigation
-- Compliance verification
-
-### 🔬 **Research Agent** - Experimental Tools
-
-- Research workflow management
-- Experimental design assistance
-- Literature review automation
-- Collaboration tools
-
-### 🌐 **Website Agent** - Documentation
-
-- Static site generation
-- Documentation compilation
-- Cross-reference linking
-- Search and navigation
-
-### 🔗 **MCP Agent** - Protocol Integration
-
-- Tool registration and discovery
-- Protocol compliance
-- Cross-system communication
-- Standard interface implementation
-
-### 🖼️ **GUI Agent** - Interactive Interfaces
-
-- Multi-modal GUI generation
-- Real-time interaction
-- User experience optimization
-- Accessibility compliance
-
-### 📋 **Report Agent** - Documentation
-
-- Comprehensive report generation
-- Multi-format output
-- Executive summary creation
-- Performance visualization
-
-### ⏳ **Long-Running Orchestration (v3.0.0)** - Durable, Safe-by-Design Runs
-
-Released in v3.0.0 ("Long-Running Orchestration"), this capability adds three safe-by-design `src/gnn/pipeline/` contracts plus additive live wiring, with no live infrastructure mutation:
-
-- **Durable observation streams** (`durable_streams.py`): replayable file/array stream manifests and traces for long observation runs
-- **Resumable run sessions** (`run_session.py`, wired live via `session_acceptance.py`): durable, resumable manifests for extended model-family acceptance runs
-- **Auditable container plans** (`container_plan.py`, `pipeline_container_plan.py`): validated, hardened container plans with static security review and rollback semantics, derived from the real pipeline config
-- **Durable run artifacts** (`run_manifest.py`): turns a completed run's `output/` into replayable v3 artifacts
-- **3 new MCP tools** exposing these contracts to agents
-- **Strict acceptance gate**: `scripts/run_v3_orchestration_acceptance.py` exercises all three contracts end to end with positive and negative checks and fails closed
-
-```bash
-uv run --extra dev python scripts/run_v3_orchestration_acceptance.py
-```
-
----
 
 ## Learned User Preferences
 
@@ -728,7 +363,6 @@ uv run --extra dev python scripts/run_v3_orchestration_acceptance.py
 
 ---
 
-**Last Updated**: 2026-10-21
 **Pipeline Version**: [pyproject.toml](pyproject.toml) (canonical)
 **Total Steps**: 25 (0-24)
 **Status**: Maintained

@@ -23,17 +23,12 @@
 
 ### Load-bearing invariant for generation tasks
 
-An agent authoring a GNN file must know that the keys placed in
-`## InitialParameterization` determine the **model kind** the renderers
-dispatch on — discrete `A`/`B`/`C`/`D`/`E` (FLAT / FACTORED),
-linear-Gaussian `F`/`H`/`Q`/`R` plus `prior_mean`/`prior_cov` (CONTINUOUS),
-`dirichlet_[A-E]` pseudo-counts (LEARNING), `[ABCDE]_level<N>`
-(HIERARCHICAL), `[ABCDE]_agent<N>` (MULTI_AGENT). Detection is **structural**:
-prose in a `ModelName` or annotation is never scanned and cannot change how a
-model renders. Rules and precedence live in
-[`gnn_syntax.md` § Parameterization families](gnn_syntax.md#parameterization-families),
-enforced by `detect_model_kind` in
-[`src/gnn/render/pomdp_contract.py`](../../src/gnn/render/pomdp_contract.py).
+Classification reads typed fields, including the section identifier,
+parameterization keys, and model settings. A model can declare multiple
+families. Keep the full set from `detect_model_kinds` when documenting
+backend admission. `detect_model_kind` provides the precedence winner.
+See [normative model-kind rules](gnn_syntax.md#model-kind-detection) and
+[backend admission](implementations/README.md#backend-admission).
 
 ### Subsystem Indices Available
 

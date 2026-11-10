@@ -66,18 +66,15 @@ replacement for that directory argument. The parser discovers Markdown files; us
 ## Setup and dependency failures
 
 ```bash
-uv sync --extra dev
-uv run gnn preflight
-uv run gnn health
-uv run python src/gnn/1_setup.py --dev --verbose
+uv sync --frozen --python 3.14
+uv run --frozen --no-sync gnn preflight
+uv run --frozen --no-sync gnn health
 ```
 
-To install selected optional groups:
+To install selected optional groups, select Python 3.12 when using the GUI.
 
 ```bash
-uv run python src/gnn/1_setup.py \
-  --install-optional \
-  --optional-groups "audio,gui,graphs"
+uv sync --frozen --python 3.12 --extra audio --extra gui --extra graphs
 ```
 
 To rebuild the UV-managed environment, use the supported flag:
@@ -126,7 +123,7 @@ The supported Python package is `inferactively-pymdp`:
 uv run python -c "from pymdp import Agent; print('PyMDP OK')"
 ```
 
-If this import fails, repair the environment with `uv sync` or follow the setup guide.
+If this import fails, repair the environment with `uv sync --frozen` or follow the setup guide.
 
 ### JAX, NumPyro, DisCoPy
 

@@ -25,6 +25,7 @@ import html
 import logging
 import re
 import sys
+from bisect import bisect_left
 from collections.abc import Sequence
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -124,18 +125,29 @@ DESTINATION_RE = re.compile(
     r"(?:\s+(?:\"[^\"]*\"|'[^']*'|\([^()]*\)))?\s*\)"
 )
 REFERENCE_RE = re.compile(r"^ {0,3}\[[^]\n]+\]:\s*(<[^>]+>|\S+)", re.MULTILINE)
+ATX_HEADING_RE = re.compile(r"^ {0,3}#{1,6}(?:[ \t]+|$)")
+QUOTE_PREFIX_RE = re.compile(r"^ {0,3}>[ \t]?")
 
 
 def _strip_fenced_code(md: str) -> str:
-    """Blank fenced code while preserving line numbers, including long fences."""
+    """Blank fenced code while preserving line numbers, including quoted fences."""
     lines: list[str] = []
     fence_char = ""
     fence_size = 0
+    fence_depth = 0
     for line in md.splitlines(keepends=True):
-        match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line.rstrip("\r\n"))
+        content = line.rstrip("\r\n")
+        depth = 0
+        while quote := QUOTE_PREFIX_RE.match(content):
+            content = content[quote.end() :]
+            depth += 1
+        if fence_char and depth < fence_depth:
+            fence_char = ""
+        match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", content)
         if fence_char:
             if (
                 match
+                and depth == fence_depth
                 and match[1][0] == fence_char
                 and len(match[1]) >= fence_size
                 and not match[2].strip()
@@ -144,6 +156,7 @@ def _strip_fenced_code(md: str) -> str:
             lines.append("\n" if line.endswith("\n") else "")
         elif match and not (match[1][0] == "`" and "`" in match[2]):
             fence_char, fence_size = match[1][0], len(match[1])
+            fence_depth = depth
             lines.append("\n" if line.endswith("\n") else "")
         else:
             lines.append(line)
@@ -157,9 +170,21 @@ def _strip_code(md: str) -> str:
 
 def extract_links(md: str) -> list[str]:
     """Extract inline destinations and reference definitions, excluding code."""
+    return [href for _, href in _located_links(md)]
+
+
+def _located_links(md: str) -> list[tuple[int, str]]:
+    """Find destinations across line wraps and retain each opening line number."""
     stripped = _strip_code(md)
-    return [m[1].strip("<>") for m in DESTINATION_RE.finditer(stripped)] + [
-        m[1].strip("<>") for m in REFERENCE_RE.finditer(stripped)
+    newlines = [match.start() for match in re.finditer("\n", stripped)]
+    matches = sorted(
+        (*DESTINATION_RE.finditer(stripped), *REFERENCE_RE.finditer(stripped)),
+        key=lambda match: match.start(),
+    )
+    return [
+        (bisect_left(newlines, match.start()) + 1, match[1].strip("<>"))
+        for match in matches
+        if not re.search(r"\n[ \t]*\n", match[0])
     ]
 
 
@@ -202,16 +227,21 @@ def _heading_slugs_in_markdown(md: str) -> set[str]:
         m[1]
         for m in re.finditer(
             r"<(?:a|h[1-6])\b[^>]*\b(?:id|name)=[\"']([^\"']+)[\"']",
-            prose,
+            INLINE_CODE_RE.sub("", prose),
             re.IGNORECASE,
         )
     }
     used: set[str] = set()
     lines = prose.splitlines()
     for i, line in enumerate(lines):
-        if re.match(r"^ {0,3}#{1,6}\s+", line):
+        if ATX_HEADING_RE.match(line):
             heading = line.strip()
-        elif i and lines[i - 1].strip() and re.fullmatch(r" {0,3}(?:=+|-+)\s*", line):
+        elif (
+            i
+            and lines[i - 1].strip()
+            and not ATX_HEADING_RE.match(lines[i - 1])
+            and re.fullmatch(r" {0,3}(?:=+|-+)\s*", line)
+        ):
             heading = lines[i - 1].strip()
         else:
             continue
@@ -235,37 +265,33 @@ def audit_bad_markdown_anchors(files: list[Path]) -> list[tuple[Path, int, str, 
             rel_src = src.relative_to(REPO_ROOT)
         except ValueError:
             continue
-        lines = _strip_code(
-            src.read_text(encoding="utf-8", errors="replace")
-        ).splitlines()
-        for i, line in enumerate(lines, start=1):
-            for href in extract_links(line):
-                url = urlsplit(href)
-                if url.scheme or url.netloc or not url.fragment:
-                    continue
-                resolved = resolve_link(src, href) if url.path else src
-                if (
-                    resolved is None
-                    or not resolved.is_file()
-                    or resolved.suffix.lower() != ".md"
-                ):
-                    continue
-                if not resolved.is_relative_to(REPO_ROOT):
-                    continue
-                if resolved not in slug_cache:
-                    slug_cache[resolved] = _heading_slugs_in_markdown(
-                        resolved.read_text(encoding="utf-8", errors="replace")
+        for i, href in _located_links(src.read_text(encoding="utf-8", errors="replace")):
+            url = urlsplit(href)
+            if url.scheme or url.netloc or not url.fragment:
+                continue
+            resolved = resolve_link(src, href) if url.path else src
+            if (
+                resolved is None
+                or not resolved.is_file()
+                or resolved.suffix.lower() != ".md"
+            ):
+                continue
+            if not resolved.is_relative_to(REPO_ROOT):
+                continue
+            if resolved not in slug_cache:
+                slug_cache[resolved] = _heading_slugs_in_markdown(
+                    resolved.read_text(encoding="utf-8", errors="replace")
+                )
+            frag = unquote(url.fragment)
+            if frag not in slug_cache[resolved]:
+                issues.append(
+                    (
+                        rel_src,
+                        i,
+                        href,
+                        f"anchor #{frag} not found (headings in `{resolved.relative_to(REPO_ROOT)}`)",
                     )
-                frag = unquote(url.fragment)
-                if frag not in slug_cache[resolved]:
-                    issues.append(
-                        (
-                            rel_src,
-                            i,
-                            href,
-                            f"anchor #{frag} not found (headings in `{resolved.relative_to(REPO_ROOT)}`)",
-                        )
-                    )
+                )
     return issues
 
 
@@ -281,30 +307,28 @@ def audit_broken_links(files: list[Path]) -> list[tuple[Path, int, str, str]]:
     issues: list[tuple[Path, int, str, str]] = []
     for path in files:
         text = path.read_text(encoding="utf-8", errors="replace")
-        lines = _strip_code(text).splitlines()
-        for i, line in enumerate(lines, start=1):
-            for href in extract_links(line):
-                if href.startswith("`"):
-                    continue
-                resolved = resolve_link(path, href)
-                if resolved is None:
-                    continue
-                try:
-                    rtarget = resolved.relative_to(REPO_ROOT)
-                except ValueError:
-                    issues.append(
-                        (
-                            path.relative_to(REPO_ROOT),
-                            i,
-                            href,
-                            "relative link escapes repository",
-                        )
+        for i, href in _located_links(text):
+            if href.startswith("`"):
+                continue
+            resolved = resolve_link(path, href)
+            if resolved is None:
+                continue
+            try:
+                rtarget = resolved.relative_to(REPO_ROOT)
+            except ValueError:
+                issues.append(
+                    (
+                        path.relative_to(REPO_ROOT),
+                        i,
+                        href,
+                        "relative link escapes repository",
                     )
-                    continue
-                if resolved.exists():
-                    continue
-                rel = path.relative_to(REPO_ROOT)
-                issues.append((rel, i, href, f"missing: {rtarget}"))
+                )
+                continue
+            if resolved.exists():
+                continue
+            rel = path.relative_to(REPO_ROOT)
+            issues.append((rel, i, href, f"missing: {rtarget}"))
     return issues
 
 
@@ -597,7 +621,9 @@ MODEL_KIND_BLOCK_START_RE = re.compile(r"^\s*(?:[#>|*+-]|\d+[.)])\s")
 
 #: Model-kind table wiring (both tables carry the same three columns).
 MODEL_KIND_TABLE_KIND_HEADER_RE = re.compile(r"(?i)\bmodel\s+kind\b")
-MODEL_KIND_TABLE_RENDER_HEADER_RE = re.compile(r"(?i)\brenders?\b[^|]*\bexecutes?\b")
+MODEL_KIND_TABLE_RENDER_HEADER_RE = re.compile(
+    r"(?i)\b(?:default renderer declarations|renders?\b[^|]*\bexecutes?)\b"
+)
 MODEL_KIND_TABLE_UNSUPPORTED_HEADER_RE = re.compile(r"(?i)unsupported")
 MODEL_KIND_TABLE_ROW_RE = re.compile(r"(?i)^\s*\**\s*(discrete|continuous)\b")
 MODEL_KIND_TABLE_SEPARATOR_RE = re.compile(
@@ -1107,6 +1133,7 @@ MAINTAINED_ROOT_DOC_FILES = (
     "AGENTS.md",
     "README.md",
     "ARCHITECTURE.md",
+    "CONTRIBUTING.md",
     "TO-DO.md",
     "SETUP_GUIDE.md",
     "CLAUDE.md",
@@ -1136,7 +1163,7 @@ def maintained_doc_files() -> list[Path]:
         p = REPO_ROOT / name
         if p.is_file():
             keep.append(p)
-    for base in ("docs", "src/gnn"):
+    for base in (".github", "docs", "src/gnn"):
         base_dir = REPO_ROOT / base
         if base_dir.is_dir():
             for p in sorted(base_dir.rglob("*.md")):

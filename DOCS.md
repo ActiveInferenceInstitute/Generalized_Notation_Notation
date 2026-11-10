@@ -1,8 +1,7 @@
 # Generalized Notation Notation (GNN) — Comprehensive Documentation
 
-**Last Updated**: 2026-11-02 · **Current software version**: v5.0.3 ([version map](docs/VERSION_MAP.md))
-
-This document provides a complete, machine-parsable and human-accessible overview of GNN: the what, why, and how. It consolidates architecture, pipeline, data flows, artifacts, and integration points with multiple Mermaid diagrams.
+This guide maps the GNN package, pipeline, and integration points. The
+[version map](docs/VERSION_MAP.md) records source releases and published assets.
 
 ## What is GNN?
 
@@ -51,6 +50,11 @@ mindmap
 
 ## Pipeline Overview (0–24)
 
+The diagram shows the registered step numbers. The scheduler expands the
+requested steps using the [dependency table](src/gnn/utils/pipeline_orchestration/pipeline_step_dependencies.py).
+See [step boundaries](docs/pipeline/README.md#step-boundaries) for run ownership
+and artifact admission.
+
 ```mermaid
 flowchart LR
   subgraph Pipeline (0–24)
@@ -93,6 +97,10 @@ graph TB
 
 ## Data Flow From GNN Spec to Simulation
 
+This example shows a selected workflow for an admitted model with the native
+backend installed. Export is a separate output. Render and execute each
+apply their own admission checks.
+
 ```mermaid
 sequenceDiagram
   participant User
@@ -115,6 +123,10 @@ sequenceDiagram
 ```
 
 ## Artifact Map (Outputs per Step)
+
+This is a directory catalog in step order. An output directory can contain
+historical artifacts. Current-run manifests and indexes identify the artifacts
+admitted for consumption.
 
 ```mermaid
 flowchart TD
@@ -181,7 +193,8 @@ graph TD
 
 ## Error Handling and Continuation
 
-- Standard exit codes: 0=success, 1=critical error, 2=success with warnings
+- Standard exit codes are 0=success, 1=error, 2=success with warnings/skipped.
+  Strict runs treat actionable warnings as failures.
 - Structured logging and correlation IDs
 - Per-step graceful degradation and diagnostics
 
@@ -201,8 +214,9 @@ flowchart LR
 
 ## Configuration Pointers
 
-- Command-line options via `src/gnn/main.py --help`
-- Centralized config examples in `docs/configuration/README.md`
+- Use `uv run --frozen --no-sync gnn --help` and
+  `uv run --frozen --no-sync gnn run --help` from the frozen environment.
+- See the [configuration guide](docs/configuration/README.md) for resolved inputs.
 
 ## Integration Notes
 
@@ -215,8 +229,8 @@ flowchart LR
 
 The [downstream registry](docs/downstream/README.md) lists the repositories that
 apply GNN, each with its specification path, pinned GNN revision and conformance
-evidence. Every row is verified from the repository it describes on that
-repository's origin default branch.
+evidence. Read each row for its source revision and the scope of its conformance
+evidence.
 
 ## References
 
@@ -264,16 +278,14 @@ repository's origin default branch.
 
 ## Documentation maintenance
 
-Repeatable checks for Markdown in the repo (including tracked `output/**/*.md`; large trees may slow the scan):
+Run the same deterministic checks used by the
+[Docs audit workflow](.github/workflows/docs-audit.yml):
 
 ```bash
-uv run python docs/development/docs_audit.py   # writes docs/development/docs_audit_report.md
+uv run --frozen --no-sync python docs/development/docs_audit.py --strict --check-anchors --no-write
+uv run --frozen --no-sync python scripts/check_repo_terminology.py --strict
+uv run --frozen --no-sync python scripts/check_maintained_doc_terms.py --strict
 ```
 
-After reorganizing paths under `docs/gnn/`, refresh stale `gnn/...` links in bulk:
-
-```bash
-uv run python docs/development/rewrite_gnn_doc_links.py
-```
-
-Details: [docs/development/README.md](docs/development/README.md).
+The [development guide](docs/development/README.md) describes the maintained
+scope and external-link checks.

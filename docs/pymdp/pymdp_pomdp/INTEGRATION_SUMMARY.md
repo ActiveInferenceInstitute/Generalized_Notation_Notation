@@ -166,8 +166,8 @@ python3 -m src.execute.pymdp.test_pymdp_utils
 python3 -m src.execute.pymdp.test_pymdp_visualizer
 
 # Integration tests
-python3 src/gnn/11_render.py --target_dir input/gnn_files/
-python3 src/gnn/12_execute.py --target_dir input/gnn_files/
+python3 src/gnn/11_render.py --target-dir input/gnn_files/
+python3 src/gnn/12_execute.py --target-dir input/gnn_files/
 ```
 
 ### **Test Categories**
@@ -181,8 +181,8 @@ python3 src/gnn/12_execute.py --target_dir input/gnn_files/
 ### **Pipeline Execution**
 ```bash
 # Full pipeline (renders and executes PyMDP)
-python3 src/gnn/11_render.py --target_dir input/gnn_files/
-python3 src/gnn/12_execute.py --target_dir input/gnn_files/
+python3 src/gnn/11_render.py --target-dir input/gnn_files/
+python3 src/gnn/12_execute.py --target-dir input/gnn_files/
 ```
 
 ### **Direct PyMDP Execution** 

@@ -1,11 +1,10 @@
-# Support for GeneralizedNotationNotation
+# Support for Generalized Notation Notation
 
 > **📋 Document Metadata**  
 > **Type**: Support Guide | **Audience**: All Users | **Complexity**: Beginner-Friendly  
-> **Last Updated**: 2026-09-02 | **Status**: Maintained  
 > **Cross-References**: [README](README.md) | [Troubleshooting](docs/troubleshooting/README.md) | [Contributing](CONTRIBUTING.md)
 
-If you need help with GeneralizedNotationNotation (GNN), have questions, or want to discuss the project, here are several ways to get support:
+Use this guide to troubleshoot Generalized Notation Notation (GNN) or contact the project.
 
 ## Documentation
 
@@ -29,53 +28,43 @@ Before seeking direct support, please check the extensive documentation provided
 **🐍 Python Version Issues**
 
 ```bash
-# Check Python version
-python --version
-# If < 3.11, install Python 3.11+ from python.org
+uv run --frozen --no-sync python --version
 ```
+
+The supported package range is CPython 3.11–3.14. Use Python 3.14 for the
+[default frozen profile](README.md#runtime-defaults-and-required-profiles).
 
 **📦 Dependency Issues**
 
 ```bash
-# Force reinstall dependencies
-uv run python src/gnn/main.py --only-steps 1 --recreate-uv-env --dev
+uv sync --frozen --python 3.14
+uv run --frozen --no-sync gnn doctor
 ```
 
 **🔧 Pipeline Failures**
 
 ```bash
-# Run with verbose logging
-python src/gnn/main.py --verbose
-# Check specific step (e.g., type checker)
-python src/gnn/main.py --only-steps 5 --verbose
+uv run --frozen --no-sync gnn validate input/gnn_files/discrete/two_state_bistable.md --strict
+uv run --frozen --no-sync gnn run --target-dir input/gnn_files/basics \
+  --only-steps 3 5 --skip-steps 0 1 2 --output-dir output/support-repro
 ```
 
 **💾 Disk Space Issues**
 
 ```bash
-# Check available space
 df -h
-# Clean output directory
-rm -rf output/*
+du -sh output
 ```
+
+Review existing run directories before moving them. Use a dedicated output root
+for each reproduction so its results and evidence can be kept together.
 
 ### Getting Started Support
 
-**🚀 First Time Setup**
-
-```bash
-# Clone and setup
-git clone https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git
-cd Generalized_Notation_Notation
-python src/gnn/main.py --only-steps 2 --dev
-```
-
-**🎯 Quick Test**
-
-```bash
-# Test with the discrete exemplar folder (--target-dir is always a directory)
-python src/gnn/main.py --target-dir input/gnn_files/discrete --verbose
-```
+Follow the [tagged installation and first model](README.md#quick-start).
+For native execution, choose a backend from the
+[framework availability guide](docs/execution/FRAMEWORK_AVAILABILITY.md)
+and follow its installation and admission requirements.
 
 ## GitHub Issues
 
@@ -107,7 +96,7 @@ For matters not suitable for public forums or GitHub issues (e.g., sensitive inq
 
 ## Commercial Support
 
-Currently, there is no official commercial support offered for GeneralizedNotationNotation. The project is community-driven.
+The project is community-supported.
 
 ## Support Resources by Topic
 

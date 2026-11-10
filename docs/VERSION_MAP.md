@@ -1,16 +1,13 @@
 # GNN Version Map
 
-One-stop map of release changes and authoritative records. Current
-software version is **5.0.3**. Publication is established by the
-[release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases),
-not this version label. The
+This map records source versions, publication and distribution assets.
+The latest [published source release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.3)
+is **5.0.3**, published on 2026-11-03. Its tag resolves to commit
+`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1` (2026-10-31). The record
+includes GitHub source archives and has no uploaded artifacts. The
 [5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
-record owns publication and exact source-bound assets for 5.0.1 and remains the
-most recent record with uploaded source-bound assets. The `v5.0.3` tag resolves
-to commit `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1` (2026-10-31); its release
-record was created retroactively on 2026-11-03 with changelog-derived notes and
-no uploaded artifacts. The `v5.0.2` tag has no GitHub release object, so its
-publication is not established. Historical 4.2.0 and 4.1.0 retain their original release records and receipts. The 4.1.0 [changelog](../CHANGELOG.md#410---2026-10-08)
+is the latest release with uploaded, source-bound assets. The `v5.0.2` tag
+has no GitHub release object. Historical 4.2.0 and 4.1.0 retain their original release records and receipts. The 4.1.0 [changelog](../CHANGELOG.md#410---2026-10-08)
 describes the bounded minor/medium campaign. Its [GitHub release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v4.1.0)
 records exact tag/source/check/artifact identities; version metadata alone does
 not establish acceptance. Native coverage, ordinary installation and manuscript/
