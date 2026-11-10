@@ -1,11 +1,15 @@
 {
-  "counts_describe_commit": "16d7171a4",
-  "dirty_path_count": 9,
+  "counts_describe_commit": "83a550638",
+  "dirty_path_count": 13,
   "dirty_paths": [
-    "output/.pipeline/analysis-data/ea34b75aca19c8f5d0cd32a008c2b6ee4ea866ce4ad3f770512aa82b99a7cf69/",
+    "output/.pipeline/analysis-data/55bf0f82a8a7909102d7279a8e906c36f45c7eba49cd2a300043c5754fc1b79c/",
     "output/data/manuscript_variables.json",
     "output/data/manuscript_variables_receipt.json",
+    "output/figures/figure_registry.json",
+    "output/figures/gnn_graphical_abstract.png",
+    "output/figures/gnn_repo_metrics.png",
     "output/manuscript/00_abstract.md",
+    "output/manuscript/01_introduction.md",
     "output/manuscript/02_system_context.md",
     "output/manuscript/03_methods.md",
     "output/manuscript/04_artifacts_and_evidence.md",
