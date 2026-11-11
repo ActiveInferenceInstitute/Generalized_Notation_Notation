@@ -173,3 +173,9 @@ check complete posterior sequences. C/E policy optimization, causal discovery
 and component composition remain outside this filtering contract. Metadata-only
 compatibility calls still emit a labelled synthetic demonstration. See the
 [renderer contract](../../src/gnn/render/bnlearn/README.md).
+
+
+## Documents in this folder
+
+- [Comprehensive bnlearn Guide](bnlearn.md)
+- [bnlearn-GNN Integration Architecture](bnlearn-gnn.md)

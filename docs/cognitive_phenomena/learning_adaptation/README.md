@@ -407,3 +407,8 @@ class HierarchicalLearningModel:
 ### Active Inference Applications
 - Friston, K. J., et al. (2016). Active inference, curiosity and insight
 - Sajid, N., et al. (2021). Active inference: Demystified and compared 
+
+
+## Documents in this folder
+
+- [Hierarchical Learning and Adaptation Model](hierarchical_learning_model.md)

@@ -201,3 +201,8 @@ def assess_executive_control(behavioral_data):
 
 ## See also
 - [Cognitive Effort Model](../effort/effort_model.md) - Computational resource modeling for task switching
+
+
+## Documents in this folder
+
+- [Executive Control: Task Switching and Cognitive Flexibility](task_switching_model.md)

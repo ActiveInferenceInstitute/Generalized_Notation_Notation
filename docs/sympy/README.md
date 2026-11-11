@@ -128,3 +128,9 @@ All documentation in this module adheres to professional standards:
 
 **Status**: MCP tool integration implemented in `src/gnn/mcp/` (8 SymPy tools registered via Step 21); SymPy itself is not a render/execution framework  
 **Maintenance**: Regular updates with new SymPy features and integration capabilities
+
+
+## Documents in this folder
+
+- [SymPy MCP Integration Demonstration](sympy_integration_demo.md)
+- [SymPy MCP Integration Implementation Summary](implementation_summary.md)

@@ -19,6 +19,7 @@ ecosystem:
     relation: referenced-by
     note: Federated via the InstituteOS .aii manifest.
   - repo: ActiveInferenceInstitute/Active_Inference_Ontology
+    relation: references
     note: Uses Active Inference Ontology terms.
   - repo: ActiveInferenceInstitute/COGANT
     relation: feeds

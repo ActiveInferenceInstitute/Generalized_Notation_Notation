@@ -547,3 +547,8 @@ class GlobalWorkspaceModel:
 ### Active Inference Applications
 - Friston, K. J. (2018). Am I self-conscious? (Or does self-organization entail self-consciousness?)
 - Hohwy, J. (2013). The predictive mind and the puzzle of consciousness 
+
+
+## Documents in this folder
+
+- [Global Workspace Consciousness Model](global_workspace_model.md)

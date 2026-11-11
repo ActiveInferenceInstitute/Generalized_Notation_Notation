@@ -230,3 +230,8 @@ The consolidated script uses the verified working API calls from successful test
 ## License
 
 This code follows the same license as the parent GNN project and ActiveInference.jl (MIT License). 
+
+
+## Documents in this folder
+
+- [ActiveInference.jl POMDP Gridworld Simulation](POMDP_README.md)

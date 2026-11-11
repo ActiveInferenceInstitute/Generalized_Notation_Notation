@@ -205,3 +205,8 @@ uv run --extra dev python scripts/check_gnn_doc_patterns.py --strict
 See [Setup](../SETUP.md), [Configuration](../configuration/README.md), and the
 [framework availability guide](../execution/FRAMEWORK_AVAILABILITY.md) for the
 corresponding authoritative references.
+
+
+## Documents in this folder
+
+- [Pipeline Error Recovery Guide](pipeline_error_recovery.md)

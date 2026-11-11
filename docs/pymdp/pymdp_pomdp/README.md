@@ -16,3 +16,9 @@ usage.
 
 - `pymdp_gridworld_simulation.py` is a compact reference example aligned with
   current naming conventions (`q_pi, neg_efe`).
+
+
+## Documents in this folder
+
+- [PyMDP Gridworld POMDP: Complete Technical Explanation](POMDP_EXPLANATION.md)
+- [PyMDP-GNN Pipeline Integration: Complete Summary](INTEGRATION_SUMMARY.md)

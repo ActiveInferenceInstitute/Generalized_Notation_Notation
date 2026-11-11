@@ -132,3 +132,8 @@ All documentation in this module adheres to professional standards:
 
 **Status**: 🛠️ Scaffold / Planned  
 **Maintenance**: Regular updates with new Pedalboard features and integration capabilities
+
+
+## Documents in this folder
+
+- [Pedalboard: Technical Deep-Dive](pedalboard.md)

@@ -76,6 +76,10 @@ short audience map, use [START_HERE.md](START_HERE.md). For curricula, use
 - [Style guide](style_guide.md)
 - [Expected top-level directories](expected_dirs.txt)
 - [Changelog](CHANGELOG.md)
+- [Quick reference guide](QUICK_REFERENCE.md)
+- [Pipeline template assessment](TEMPLATE_ASSESSMENT.md)
+- [Single-sentence overview](single_sentence_overview.md)
+- [uv 0.12.0 compatibility audit](uv_0.12.0_compatibility_audit.md)
 
 ## Additional topic hubs
 

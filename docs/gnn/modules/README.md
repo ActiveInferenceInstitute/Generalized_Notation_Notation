@@ -23,3 +23,8 @@ graph TD
     API --> Tools["src/gnn/<module>/AGENTS.md"]
     Tools -.->|Auto-Reconciled| Docs[docs/gnn/modules/X_module.md]
 ```
+
+
+## Documents in this folder
+
+- [`main.py` — Pipeline Orchestrator](main.md)

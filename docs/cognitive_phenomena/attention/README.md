@@ -103,3 +103,8 @@ In GNN models, attention is not a separate block but is implemented via **Precis
 ### Active Inference Applications
 - Feldman, H., & Friston, K. J. (2010). Attention, uncertainty, and free-energy
 - Parr, T., & Friston, K. J. (2017). Uncertainty, epistemics and active inference 
+
+
+## Documents in this folder
+
+- [Spatial Attention Model](attention_model.md)

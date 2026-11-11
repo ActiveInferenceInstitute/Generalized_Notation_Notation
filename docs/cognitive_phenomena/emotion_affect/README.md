@@ -558,3 +558,8 @@ class InteroceptiveEmotionModel:
 ### Active Inference Applications
 - Allen, M., & Friston, K. J. (2018). From cognitivism to autopoiesis: Towards a computational framework for the embodied mind
 - Smith, R., et al. (2019). The hierarchical basis of neurovisceral integration 
+
+
+## Documents in this folder
+
+- [Interoceptive Emotion and Affect Model](interoceptive_emotion_model.md)

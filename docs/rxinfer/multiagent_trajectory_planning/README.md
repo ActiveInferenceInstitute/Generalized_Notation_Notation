@@ -174,3 +174,8 @@ These parameters can be adjusted in the `path_planning` function in `Models.jl`.
 - The inference process can be computationally intensive, especially with complex environments.
 - Increasing `nr_iterations` improves solution quality but increases computation time.
 - The solution quality depends on the random initialization controlled by the seed parameter.
+
+
+## Documents in this folder
+
+- [Multi-agent Trajectory Planning Visualizations](VISUALIZATION.md)

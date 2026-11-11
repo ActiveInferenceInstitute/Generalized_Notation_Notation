@@ -166,3 +166,8 @@ Learning_Rate = f(Prediction_Error, Uncertainty, Attention)
 ### Contemporary Research
 - Squire, L. R., & Kandel, E. R. (2009). Memory: From mind to molecules
 - Buckner, R. L., & Carroll, D. C. (2007). Self-projection and the brain 
+
+
+## Documents in this folder
+
+- [Working Memory Model](working_memory_model.md)

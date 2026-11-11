@@ -204,3 +204,10 @@ Cognitive effort is formally modeled as the **complexity cost** of belief updati
 ### Clinical Applications
 - Manohar, S. G., et al. (2015). Reward pays the cost of noise reduction
 - Westbrook, A., & Braver, T. S. (2015). Cognitive effort: A neuroeconomic approach 
+
+
+## Documents in this folder
+
+- [Cognitive Effort](cognitive_effort.md)
+- [Cognitive Effort (initial paper)](cognitive_effort_initial_paper.md)
+- [Stroop Task Effort Model](stroop_effort_model.md)

@@ -88,3 +88,10 @@ commands and unresolved limits.
 - [Documentation hub](../README.md) and [flat index](../INDEX.md)
 - [Setup](../SETUP.md), [configuration](../configuration/README.md), [troubleshooting](../troubleshooting/README.md)
 - [Agent guide](AGENTS.md) and [documentation specification](SPEC.md)
+
+
+## Documents in this folder
+
+- [Processor.py Facade Census](processor_facades.md)
+- [output/ Tracking Boundary](output_tracking.md)
+- [Released THRML Structural-Zero Verification](thrml_released_fix_acceptance.md)

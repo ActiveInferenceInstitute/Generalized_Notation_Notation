@@ -200,3 +200,9 @@ This implementation is provided for research and educational purposes. Please re
 ---
 
 *Created as part of the GeneralizedNotationNotation (GNN) project for standardizing Active Inference computational models.* 
+
+
+## Documents in this folder
+
+- [Meta-Awareness Model Documentation](meta_aware_model.md)
+- [Sandved-Smith et al. (2021) Implementation Verification](IMPLEMENTATION_VERIFICATION.md)

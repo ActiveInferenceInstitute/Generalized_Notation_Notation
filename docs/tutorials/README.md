@@ -57,3 +57,8 @@ directory; a single file path is not a directory substitute.
 For environment and configuration details, see [Setup](../SETUP.md) and
 [Configuration](../configuration/README.md). For errors, see
 [Troubleshooting](../troubleshooting/README.md).
+
+
+## Documents in this folder
+
+- [GNN Interactive Tutorial System (proposed)](interactive_tutorial_system.md)

@@ -186,3 +186,8 @@ Prior = P(Perceptual_Hypothesis | Context, Experience)
 - Feldman, H., & Friston, K. J. (2010). Attention, uncertainty, and free-energy 
 ## See also
 - [Memory Systems](../memory/memory_model.md) - Working, episodic, semantic and procedural memory
+
+
+## Documents in this folder
+
+- [Bistable Perception Model](bistable_perception_model.md)
