@@ -136,6 +136,10 @@ All documentation in this module adheres to professional standards:
 - **[Export Formats](../export/README.md)**: Multi-format export
 - **[Main Index](../README.md)**: Return to main documentation
 
+## Documents in this folder
+
+- [Pkl Examples](examples/README.md)
+
 ---
 
 **Status**: Format support implemented in `src/gnn/parsers/` (PKL parser + serializer at Step 3 serialization); Pkl is not a render/execution framework  

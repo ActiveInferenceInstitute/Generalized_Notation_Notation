@@ -21,6 +21,7 @@ This tree is part of the GNN documentation system; implementation lives in `src/
 | File | Role |
 |------|------|
 | [README.md](README.md) | Human entrypoint: `uv`, frameworks, links to `STEP_INDEX` / `main.py` |
+| [v3_orchestration.md](v3_orchestration.md) | v3.0.0 long-running orchestration contracts |
 | [pipeline_stage_hardening_review.md](pipeline_stage_hardening_review.md) | Maintained stage-by-stage review goal and GridWorld proof contract |
 | [validation_evidence_guide.md](validation_evidence_guide.md) | Commands and artifacts that certify examples, templates, docs, health, and proof paths |
 

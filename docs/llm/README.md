@@ -278,3 +278,7 @@ reason, and report unsuccessful completion for empty, token-limited or unknown
 finish reasons. Their analysis-type labels are JSON-serializable strings. The
 Ollama plain-text `analyze` helper returns an explicit failure label when a
 response is unfinished; it does not present partial text as a completed analysis.
+
+## Documents in this folder
+
+- [LLM Integration Security Guidelines](security_guidelines.md)

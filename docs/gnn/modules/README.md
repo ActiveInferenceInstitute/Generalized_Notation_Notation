@@ -28,3 +28,5 @@ graph TD
 ## Documents in this folder
 
 - [`main.py` — Pipeline Orchestrator](main.md)
+- [Module Agent Sync Maps](AGENTS.md) — per-step module index
+- [Init Modules Index](init.md)

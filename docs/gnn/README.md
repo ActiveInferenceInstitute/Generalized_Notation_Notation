@@ -68,6 +68,7 @@ the per-kind rendering strategies are documented in
 
 - [Quickstart Tutorial](tutorials/quickstart_tutorial.md) - Step-by-step first model
 - [GNN Examples](tutorials/gnn_examples_doc.md) - Model progression from simple to complex
+- [Tutorials Index](tutorials/README.md) - All maintained tutorials
 - [Advanced Modeling Patterns](advanced/advanced_modeling_patterns.md) - Hierarchical and sophisticated techniques
 - [Multi-Agent Systems](advanced/gnn_multiagent.md) - Multi-agent modeling specification
 - [Continuous Linear-Gaussian Models](advanced/advanced_modeling_patterns.md#9-continuous-linear-gaussian-models) - LGSSM kind (`F`/`H`/`Q`/`R`) with runnable exemplars in [`input/gnn_files/continuous/`](../../input/gnn_files/continuous/)

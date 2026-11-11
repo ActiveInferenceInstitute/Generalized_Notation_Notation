@@ -95,3 +95,5 @@ commands and unresolved limits.
 - [Processor.py Facade Census](processor_facades.md)
 - [output/ Tracking Boundary](output_tracking.md)
 - [Released THRML Structural-Zero Verification](thrml_released_fix_acceptance.md)
+- [Durable Runs](durable-runs.md)
+- [E4 Independent Gaussian Composition](e4_independent_gaussian_composition.md)

@@ -88,3 +88,9 @@ PYTHONPATH=src uv run --frozen --no-sync python scripts/run_v3_orchestration_acc
 - [Framework integration guide](../gnn/integration/framework_integration_guide.md)
 - [Setup](../SETUP.md)
 - [Troubleshooting](../troubleshooting/README.md)
+
+## Documents in this folder
+
+- [v3.0.0 Long-Running Orchestration](v3_orchestration.md)
+- [Pipeline Stage Hardening Review](pipeline_stage_hardening_review.md)
+- [Validation Evidence Guide](validation_evidence_guide.md)
