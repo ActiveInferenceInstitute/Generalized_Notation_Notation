@@ -1,0 +1,11 @@
+{
+  "schema": "aii-readiness/v1",
+  "repo": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+  "tier": "python-service",
+  "standard_version": "1.0.0",
+  "baseline": {
+    "commit": "b55584c712062d559b23058aab2066a7dca1ffd5",
+    "measured_at": "2026-11-10"
+  },
+  "waivers": []
+}
