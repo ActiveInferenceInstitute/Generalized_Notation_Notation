@@ -1,12 +1,14 @@
-# AII sidecar — InstituteOS metadata. Schema: instituteos.platform.aii_sidecar
+# AII sidecar — InstituteOS metadata. Schema: aii_platform.aii_sidecar
 meta:
-  updated: '2026-06-30'
+  sidecar_version: 1.2.1
+  updated: '2026-11-10'
 repo:
   name: Generalized_Notation_Notation
   slug: generalized_notation_notation
   full_name: ActiveInferenceInstitute/Generalized_Notation_Notation
-  description: '[🚀 Quick Start](#-quick-start) • [📖 Documentation](#-documentation)
-    • [🎯 Examples](#-examples) • [🛠️ Tools](#%EF%B8%8F-tools-and-utilities) • [🤝 Contributing](#-contributing)'
+  description: Methods for specifying, checking, typing, rendering, executing, analyzing,
+    and visualizing Active Inference state-space models — the Generalized Notation
+    Notation (GNN) standard.
 institute:
   category: research-software
   maturity: released
@@ -18,6 +20,24 @@ ecosystem:
     note: Federated via the InstituteOS .aii manifest.
   - repo: ActiveInferenceInstitute/Active_Inference_Ontology
     note: Uses Active Inference Ontology terms.
+  - repo: ActiveInferenceInstitute/COGANT
+    relation: feeds
+    note: Downstream GNN consumer for codebase-to-model translation.
+  - repo: ActiveInferenceInstitute/active_inference_battleship
+    relation: feeds
+    note: Downstream GNN consumer for the browser model contract.
+  - repo: ActiveInferenceInstitute/active_inference_language_model
+    relation: feeds
+    note: Downstream GNN consumer for the discrete language stack.
+  - repo: ActiveInferenceInstitute/Active_Cardference
+    relation: feeds
+    note: Downstream GNN consumer for card-game agents.
+  - repo: ActiveInferenceInstitute/ActiveInferenceCategoryTheory
+    relation: feeds
+    note: GNN materials for the category-theory curriculum.
+  - repo: ActiveInferenceInstitute/pymdp
+    relation: depends-on
+    note: Consumes the pymdp active-inference library.
   links:
     github: https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation
     website: https://www.activeinference.org
@@ -31,16 +51,35 @@ artifacts:
 - path: pyproject.toml
   kind: code
   description: Python package config.
+- path: AGENTS.md
+  kind: doc
+  description: Agent guidance.
+- path: CITATION.cff
+  kind: citation
+  description: Machine-readable citation metadata.
+- path: tests
+  kind: test
+  description: Test suite.
+- path: docs
+  kind: doc
+  description: Documentation tree.
+- path: manuscript
+  kind: publication
+  description: Manuscript sources and artifacts.
+- path: CHANGELOG.md
+  kind: doc
+  description: Changelog.
 provenance:
-  license: see-license-file
+  license: CC-BY-NC-SA-4.0
   citation:
     doi: 10.5281/zenodo.7803328
+    text: Active Inference Institute — Generalized_Notation_Notation.
 instituteos:
   tags:
-  - active
+  - gnn
   - active-inference
-  - active-inference-notation
-  - inference
+  - modeling
+  - simulation
   - python
 capabilities:
 - python-package
@@ -48,7 +87,18 @@ capabilities:
 - notebooks
 - containerized
 - dataset
+- documentation
+- ci
+- citation
+- manuscript-publication
 tasks:
   test:
     cmd: python -m pytest
     description: Run the test suite.
+docs:
+- README.md
+- AGENTS.md
+- docs/INTEGRATION.md
+- docs/README.md
+- docs/AGENTS.md
+schema: aii-sidecar/v1
