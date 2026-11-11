@@ -1,7 +1,7 @@
 # AII sidecar — InstituteOS metadata. Schema: aii_platform.aii_sidecar
 meta:
   sidecar_version: 1.2.1
-  updated: '2026-11-10'
+  updated: '2026-11-11'
 repo:
   name: Generalized_Notation_Notation
   slug: generalized_notation_notation
@@ -72,7 +72,9 @@ artifacts:
 provenance:
   license: CC-BY-NC-SA-4.0
   citation:
-    doi: 10.5281/zenodo.7803328
+    # CITATION.cff records this project concept DOI; 10.5281/zenodo.7803328 is
+    # the 2023 article DOI, not a software version (see README.md#zenodo-archives).
+    doi: 10.5281/zenodo.7803313
     text: Active Inference Institute — Generalized_Notation_Notation.
 instituteos:
   tags:
