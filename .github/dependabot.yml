@@ -21,6 +21,8 @@ updates:
         patterns:
           - "*"
 
+    cooldown:
+      default-days: 7
   - package-ecosystem: github-actions
     directory: /
     target-branch: main
@@ -35,3 +37,5 @@ updates:
     labels:
       - dependencies
       - github-actions
+    cooldown:
+      default-days: 7
