@@ -14,6 +14,23 @@ from gnn.types import GNNConnection, GNNVariable, ParsedGNN
 
 logger = logging.getLogger(__name__)
 
+#: A v1.1 connection annotation: ``target:label`` where the label is
+#: alphanumeric plus underscore (``docs/gnn/gnn_syntax.md`` §v1.1 Extension).
+_EDGE_ANNOTATION_PATTERN = re.compile(r"^(?P<target>.+?):(?P<label>[A-Za-z0-9_]+)$")
+
+
+def _split_edge_annotation(token: str) -> Tuple[str, Optional[str]]:
+    """Split a v1.1 edge annotation off a connection endpoint.
+
+    ``s:prior_initialization`` becomes ``("s", "prior_initialization")``. A
+    token with no annotation-shaped suffix is returned unchanged, so a
+    parenthesised group (``(A,B)``) or a plain name passes through.
+    """
+    match = _EDGE_ANNOTATION_PATTERN.match(token)
+    if match is None:
+        return token, None
+    return match.group("target"), match.group("label")
+
 
 class SectionParsersMixin:
     """Mixin with GNN section parsing methods."""
@@ -175,6 +192,12 @@ class SectionParsersMixin:
                 target_str = match.group(3).strip()
                 description = match.group(4)
 
+                # A v1.1 edge may carry an annotation after the target
+                # (``A>B:label``). The syntax requires parsers to accept and
+                # preserve it, so it is split off here and kept in metadata;
+                # the structural checks compare the bare variable name.
+                target_str, label = _split_edge_annotation(target_str)
+
                 # Parse variable groups
                 source = self._parse_variable_group(source_str)
                 target = self._parse_variable_group(target_str)
@@ -189,6 +212,7 @@ class SectionParsersMixin:
                     symbol=symbol,
                     description=description,
                     line_number=self.line_number - len(content) + i,
+                    metadata={"label": label} if label else {},
                 )
 
                 parsed.connections.append(connection)
