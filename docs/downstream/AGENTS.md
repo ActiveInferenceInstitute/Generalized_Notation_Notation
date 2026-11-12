@@ -3,8 +3,8 @@
 ## Overview
 
 Registry of external repositories that apply GNN. [README.md](README.md) is the
-index; one Markdown file per repository carries the full evidence, except the
-row marked †, whose page is deferred to the scheduled count-changing change (a
+index; one Markdown file per repository carries the full evidence, except rows
+marked †, whose pages are deferred to the scheduled count-changing change (a
 page would move `GNN_DOC_FILE_COUNT` and owe the SC-22 ritual). Every claim must
 be verified against the repository it describes on that repository's origin
 default branch.
@@ -13,7 +13,7 @@ default branch.
 
 | File | Role |
 |------|------|
-| [README.md](README.md) | Index table, method, scope, exclusions |
+| [README.md](README.md) | Index table, method, scope, pinned-conformance baseline, contract rows, exclusions |
 | `active-inference-language-model.md` | AILM language-stack models |
 | `geo-infer.md` | GEO-INFER spatial interchange |
 | `cogant.md` | Code-to-GNN translation |

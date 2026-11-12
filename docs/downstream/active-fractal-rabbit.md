@@ -30,8 +30,11 @@ Both are listed in the pin file's `spec_files`.
 - `.github/workflows/ci.yml` job key `gnn-conformance`, display
   `gnn conformance (pinned)` (re-read 2026-11-06), reads the revision from
   `.github/gnn-pin.json`, fetches it, and validates the specifications with the
-  pinned parser. The `tests` job remains for the general suite and runs
-  `pytest tests/test_gnn_spec.py -q` with `GNN_CHECKOUT` set.
+  pinned parser. The `tests` job remains the general suite and runs the
+  documented gate, `pytest tests/` with the 90% coverage floor, where the
+  checkout-dependent GNN checks skip with an explicit reason; the
+  `gnn-conformance` job runs `pytest tests/test_gnn_spec.py -q` with
+  `GNN_CHECKOUT` set.
 - `src/active_fractal_rabbit/gnn_spec.py` implements the spec surface.
 
 ## Verification limits

@@ -40,10 +40,12 @@ is independent of the upstream release pin.
 ## Conformance and validation evidence
 
 - `.github/workflows/ci.yml` job key `gnn-conformance`, display
-  `gnn conformance (pinned)` (re-read 2026-11-06), is the required conformance
-  check for every pull request and push; it exercises `cogant.gnn.upstream_bridge`
-  and `tests/unit/test_gnn_upstream_bridge.py`,
-  `tests/unit/test_gnn_upstream_bridge_contract.py`. The former manual
+  `gnn conformance (pinned)` (re-read 2026-11-11), runs on every push and pull
+  request with no job-level condition; no repository ruleset requires a status
+  context, so the job is the conformance lane rather than a required check. It
+  exercises `cogant.gnn.upstream_bridge` and
+  `cogant/tests/unit/test_gnn_upstream_bridge.py`,
+  `cogant/tests/unit/test_gnn_upstream_bridge_contract.py`. The former manual
   `workflow_dispatch` smoke job is no longer in the workflow list.
 - `cogant/docs/cookbook/14_gnn_validation.md` is the validation walkthrough;
   `cogant/docs/evaluation/GNN_VALIDATION_REPORT.md` and
@@ -53,4 +55,5 @@ is independent of the upstream release pin.
 
 Not verified: that the current `main` run of `gnn-conformance` is green, or that
 the 5.0.3 compatibility record is reproducible today. The compatibility JSON was
-read at `main` on 2026-11-02, and the job key and display name on 2026-11-06.
+read at `main` on 2026-11-02, and the job key, display name and ruleset on
+2026-11-11.
