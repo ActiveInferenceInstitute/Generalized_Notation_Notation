@@ -13,8 +13,9 @@ the agent contract, and [TO-DO.md](TO-DO.md) for open work.
 [pyproject.toml](pyproject.toml), the documentation/terminology/document-contract
 audits, the capability-contract audit, the MCP functional surface with a
 full-tree collection check, and the v3 orchestration acceptance gate. Individual
-arms: `./run.sh lint|type|test|coverage|docs|acceptance`; `./run.sh sync`
-installs the frozen dev environment.
+arms: `./run.sh lint|type|test|coverage|docs|contracts|acceptance`; `./run.sh sync`
+installs the frozen dev environment. Each arm's command, the CI lane it mirrors,
+and the measured wall time are in the [gate run guide](docs/RUN_GUIDE.md).
 
 `just --list` lists the wider developer recipes. `just quality` adds the fast
 non-test surfaces on top of the gate — import-linter, the thin-orchestrator and

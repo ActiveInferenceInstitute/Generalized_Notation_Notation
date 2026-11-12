@@ -63,7 +63,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies (dev)
-        run: uv sync --frozen --extra dev
+        run: ./run.sh sync
 
       - name: Validate JAX + PyMDP stack (core)
         run: |
@@ -73,11 +73,8 @@ jobs:
         id: pytest
         run: |
           mkdir -p junit
-          uv run --frozen --no-sync python -m pytest -m "not pipeline and not mcp and not ollama and not env_heavy and not toolchain" \
-            --tb=short \
-            -q \
-            -n auto --dist worksteal \
-            --cov=gnn --cov-report=term-missing --cov-report=json:junit/coverage-${{ matrix.python-version }}.json \
+          ./run.sh coverage \
+            --cov-report=json:junit/coverage-${{ matrix.python-version }}.json \
             --junitxml=junit/pytest-${{ matrix.python-version }}.xml
 
       - name: Pytest JUnit report
@@ -150,11 +147,8 @@ jobs:
         id: pytest
         run: |
           mkdir -p junit
-          uv run --frozen --no-sync python -m pytest -m "not pipeline and not mcp and not ollama and not env_heavy and not toolchain" \
-            --tb=short \
-            -q \
-            -n auto --dist worksteal \
-            --cov=gnn --cov-report=term-missing --cov-report=json:junit/coverage-3.12.json \
+          ./run.sh coverage \
+            --cov-report=json:junit/coverage-3.12.json \
             --junitxml=junit/pytest-3.12.xml
 
       - name: Pytest JUnit report
@@ -212,30 +206,12 @@ jobs:
           version: "0.13.6"
           enable-cache: true
 
-      - name: Install dependencies (dev)
-        run: uv sync --frozen --extra dev
+      - name: Ruff format and lint checks
+        run: ./run.sh lint
 
-      - name: Ruff format check
-        run: uv run --frozen --no-sync ruff format --check src scripts tests docs
-
-      - name: Ruff check
-        run: uv run --frozen --no-sync ruff check src/gnn scripts tests docs
-
-      - name: Documentation contract audit
-        run: uv run --frozen --no-sync python scripts/check_doc_contracts.py --strict
-
-      - name: Capability contracts
-        run: uv run --frozen --no-sync python scripts/check_capability_contracts.py --strict
-
+      # Deterministic documentation checks have one owner: docs-audit.yml.
       - name: Functional MCP and capability PR gate
-        run: |
-          uv run --frozen --no-sync python -m pytest \
-            tests/mcp/test_mcp_functional.py \
-            tests/mcp/test_mcp_http_auth.py \
-            tests/mcp/test_transport_reliability.py \
-            tests/render/test_framework_availability.py \
-            tests/docs/test_capability_contracts.py \
-            -q --tb=short -rs --junitxml=junit/mcp-capabilities.xml
+        run: ./run.sh contracts --junitxml=junit/mcp-capabilities.xml
 
       - name: MCP and capability test evidence
         if: always()
@@ -247,16 +223,10 @@ jobs:
           retention-days: 14
 
       - name: Mypy type check
-        run: uv run --frozen --no-sync mypy src/gnn .github/release_gate.py --show-error-codes
-
-      - name: Pytest collect-only
-        run: |
-          uv run --frozen --no-sync python -m pytest --collect-only tests/ -q --tb=no \
-            -m "not ollama"
+        run: ./run.sh type
 
       - name: v3 orchestration acceptance gate
-        run: |
-          PYTHONPATH=src uv run --frozen --no-sync python scripts/run_v3_orchestration_acceptance.py --strict
+        run: ./run.sh acceptance
 
   test312:
     # Preserve the required status while independent checks run in parallel.

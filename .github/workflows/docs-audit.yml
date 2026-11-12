@@ -53,19 +53,13 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies (dev)
-        run: uv sync --frozen --extra dev
+        run: ./run.sh sync
 
       - name: Exit-code documentation contract
         run: uv run --frozen --no-sync python -m pytest tests/utils/test_argument_and_dependency_contracts.py::test_exit_code_contract_docs_use_canonical_wording -q --no-cov
 
-      - name: Documentation audit (strict)
-        run: uv run --frozen --no-sync python docs/development/docs_audit.py --strict --check-anchors --no-write
-
-      - name: Repository terminology audit
-        run: uv run --frozen --no-sync python scripts/check_repo_terminology.py --strict
-
-      - name: Maintained documentation terminology audit
-        run: uv run --frozen --no-sync python scripts/check_maintained_doc_terms.py --strict
+      - name: Documentation, terminology and capability audits
+        run: ./run.sh docs
 
       - name: External link audit (weekly job)
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/v') || inputs.external_links

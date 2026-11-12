@@ -1,6 +1,6 @@
 # Manuscript - GeneralizedNotationNotation
 
-This directory is a template-format manuscript scaffold for:
+This directory contains the template-format manuscript sources for:
 
 **GeneralizedNotationNotation: A Text Language for Active Inference Models**
 
@@ -37,11 +37,38 @@ A standardized text-based language and processing pipeline for Active Inference 
 
 ## Verification
 
-From the sibling template checkout, after `link-projects` has synced the sidecar:
+The authoritative render command is the template's `stage_03_render.py`, with
+this repository present as a **real directory** at
+`projects/active/GeneralizedNotationNotation`. A `link-projects` symlink is
+not sufficient for hydration custody. Keep the reference template read-only;
+use a disposable copy when preparing this layout.
+
+From the project checkout:
 
 ```bash
-uv run python -m infrastructure.orchestration link-projects
-uv run python -m infrastructure.validation.cli markdown projects/working/GeneralizedNotationNotation/manuscript/
+uv run --frozen --no-sync python -m scripts.manuscript_build_figures
 ```
 
-Render only after replacing scaffold prose with project-bound evidence and checking any project-local gates documented in the repository root.
+From the prepared template root:
+
+```bash
+uv run --frozen python scripts/pipeline/stage_03_render.py \
+  --project GeneralizedNotationNotation
+```
+
+Then, from the project checkout, verify the fresh render against the existing
+chain before recording renewed evidence:
+
+```bash
+uv run --frozen --no-sync python scripts/z_verify_fresh_render.py
+uv run --frozen --no-sync python scripts/z_record_manuscript_render_manifest.py
+uv run --frozen --no-sync python scripts/check_manuscript_tokens.py --strict
+uv run --frozen --no-sync python scripts/check_hydrated_prose.py
+```
+
+Export `GNN_TEMPLATE_REVISION` from the actual template checkout for the custody
+check. A stale-chain verdict requires a deliberate renewal after a successful
+render, not suppression. See the [run guide](../docs/RUN_GUIDE.md#manuscript-rendering-and-custody)
+for the exported-copy build epoch, measured render and toolchain; see
+[reproducibility](05_reproducibility.md#sec:reproducibility) for the source,
+variable and figure contracts.

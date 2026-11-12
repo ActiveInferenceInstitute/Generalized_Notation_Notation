@@ -13,6 +13,7 @@ Open integration work uses the [canonical backlog](../TO-DO.md).
 
 - [Version map](VERSION_MAP.md)
 - [Documentation hub](README.md)
+- [Gate and CI run guide](RUN_GUIDE.md) — the eight `./run.sh` arms, the CI lane each mirrors, measured wall time
 - [Setup](SETUP.md)
 - [Configuration](configuration/README.md)
 - [Quickstart](quickstart.md)
