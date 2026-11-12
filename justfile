@@ -187,13 +187,25 @@ doc-contracts:
 doc-patterns:
     uv run python scripts/check_gnn_doc_patterns.py --strict
 
+# Check the downstream importer registry: prose <-> JSON, pin parity, spec counts
+importers:
+    uv run --frozen --no-sync python scripts/check_importer_registry.py
+
+# Re-read every public importer at origin (report-only; release preparation)
+importers-online:
+    uv run --frozen --no-sync python scripts/check_importer_registry.py --online
+
+# Check one importer checkout with the shipped reader (e.g. just importer-check ../pymcp)
+importer-check REPO:
+    PYTHONPATH=src uv run --frozen --no-sync python -m gnn.importers check --repo {{REPO}}
+
 # Run the canonical gate: ruff, mypy, pytest + coverage floor, doc/terminology,
 # capability-contract and v3 acceptance arms (`./run.sh gates`).
 gates:
     ./run.sh gates
 
 # Run fast quality gates without the full pytest suite
-quality: format-check lint import-linter thin-orchestrators shadow-guard ontology-pin flag-parity dep-hygiene validate-surface terminology doc-terms audit doc-contracts doc-patterns typecheck security capability skills-health manuscript-custody v3-acceptance mcp-count
+quality: format-check lint import-linter thin-orchestrators shadow-guard ontology-pin flag-parity dep-hygiene validate-surface terminology doc-terms audit doc-contracts doc-patterns importers typecheck security capability skills-health manuscript-custody v3-acceptance mcp-count
 
 # Run focused PyMDP/POMDP behavior checks
 test-pymdp-focused:
