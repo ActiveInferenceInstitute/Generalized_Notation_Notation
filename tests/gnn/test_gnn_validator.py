@@ -177,3 +177,45 @@ class TestValidateFileLevels:
 
         assert result.format_tested == "pkl"
         assert "parsed_successfully" in result.metadata
+
+
+class TestEdgeAnnotations:
+    """v1.1 edge annotations are labels, not variable names.
+
+    ``docs/gnn/gnn_syntax.md`` defines ``A>B:label`` and requires parsers to
+    accept and preserve the annotation. The compliance validator used to read
+    the whole right-hand token as the variable name, so a valid annotated
+    document failed with "Undefined variable in connection target".
+    """
+
+    def test_annotated_edge_validates(self, tmp_path: Path) -> None:
+        validator = GNNValidator(
+            validation_level=ValidationLevel.STANDARD, enable_cross_validation=False
+        )
+        document = _valid_document().replace("s_f > s_f", "s_f > s_f:likelihood")
+
+        result = validator.validate_file(_write_doc(tmp_path, document))
+
+        assert result.is_valid, result.errors
+
+    def test_parser_splits_the_annotation_off_the_target(self) -> None:
+        from gnn.schema_validator import GNNParser
+
+        parsed = GNNParser().parse_content(
+            _valid_document().replace("s_f > s_f", "s_f > s_f:likelihood")
+        )
+
+        connection = parsed.connections[0]
+        assert connection.target == "s_f"
+        assert connection.metadata["label"] == "likelihood"
+
+    def test_annotation_shaped_variable_is_still_checked(self, tmp_path: Path) -> None:
+        """The split must not make an undeclared variable look declared."""
+        validator = GNNValidator(
+            validation_level=ValidationLevel.STANDARD, enable_cross_validation=False
+        )
+        document = _valid_document().replace("s_f > s_f", "s_f > undeclared:likelihood")
+
+        result = validator.validate_file(_write_doc(tmp_path, document))
+
+        assert any("undeclared" in error for error in result.errors), result.errors

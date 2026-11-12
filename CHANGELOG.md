@@ -23,6 +23,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   `f1fc24de`: variables, figure registry, hydrated prose, PDF, HTML, slides and
   custody manifest move together. The reference template is not changed.
 
+### Pipeline performance budgets from a measured band
+
+- `tests/pipeline/test_pipeline_performance.py` no longer asserts absolute
+  single-point budgets. `THRESHOLDS` is now derived from the checked-in
+  `tests/pipeline/pipeline_performance_baseline.json`: each budget is the
+  recorded per-metric upper edge multiplied by the artifact's `tolerance`.
+  The artifact records the measurement environment (Apple M5 Max, macOS
+  27.0.1, arm64, 18 cores, Python 3.14.10, pytest 9.2.0, uv 0.13.7), the
+  quiet arm (16.6% CPU utilization), a self-spawned loaded arm (36 CPU-bound
+  workers on 18 cores) and an ambient loaded arm (the same workers plus other
+  host load, 100% CPU utilization), with min/median/max for every metric.
+  Memory and disk values below 1 MB are recorded at the 1 MB measurement
+  floor.
+- The largest observed loaded/quiet ratio was 29.1x (medium export, ambient
+  arm); the self-spawned arm's largest ratio was 2.4x. The 100x multiplier is
+  a host-independent ceiling above both bands: it catches order-of-magnitude
+  regressions rather than modest slowdowns. The module docstring states the
+  same derivation and band.
+- The module warms the measured paths once before timing and adds
+  `TestLoadedArmVerdict`, which spawns `2 * os.cpu_count()` CPU-bound workers
+  and asserts the same budgets, so the loaded verdict is reproducible on a
+  quiet machine. Both the quiet run and a run with 36 external CPU-bound
+  workers passed: 17 passed in 2.84 s and 17 passed in 4.81 s respectively.
+- `./run.sh gates` passed on the rebased tree: Ruff format/check, mypy (781
+  source files), 9056 passed with 78.15% coverage (floor 60%), the
+  documentation, terminology and capability-contract audits, 97
+  MCP/capability tests, and 28/28 v3 orchestration checks.
+
 ### Canonical gate, repository index and backlog grammar
 
 - `run.sh` is the repository's gate front door. `./run.sh gates` performs one
@@ -220,6 +248,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   and resumed with zero generations. Other retained partial/failed models,
   larger sources and general interpretation quality retain their own limits.
 
+### Single public parse result shape
+
+- `ParseResult` now has one declaration, in `gnn.parsers.common`.
+  `gnn.types.definitions` re-exports that same class instead of declaring a
+  second dataclass, and `gnn.types`, `gnn.parsers` and
+  `gnn.parsers.unified_parser` all expose it. Swapping the import can no longer
+  change success semantics or the available attributes. Both constructor
+  patterns keep their documented default: `ParseResult()` without a model
+  reports `success=False`, and `ParseResult(model=...)` reports `success=True`
+  unless `success` is passed explicitly. Constructor-migration tests in
+  `tests/types/test_definitions.py` cover both patterns and the identity across
+  public surfaces. GNN-010 leaves the backlog.
+
 ### Maintained release guidance
 
 - Reconcile delivery priorities with published GNN 5.0.1, FEP_Formal 2.1.0
@@ -235,6 +276,49 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   21.15.2, so the advisory-affected 21.14.12 (GHSA-cx6f-vjhg-g3cc,
   CVE-2026-115586) is no longer resolved. The floor stays a resolver constraint
   rather than a runtime dependency.
+
+### Downstream importer conformance
+
+- Add `gnn.importers`: one reader for the pin shapes the estate actually carries
+  (`commit`/`revision`, `tag`/`release`, four file locations). `python -m
+  gnn.importers check --repo .` normalizes the pin, discovers or reads the
+  declared `*.gnn.md` specifications, and validates them with the installed
+  parser at the compliance level rather than merely parsing them, so a consumer
+  checks its own checkout with the same code GNN ships. Findings carry stable
+  codes (`pin-missing`, `pin-commit-mismatch`, `spec-invalid`, …) and are
+  available as JSON.
+- Add `docs/downstream/importers.json`, the machine-readable mirror of the
+  registry tables: 42 repositories, each with its pin path, revision,
+  specification count and conformance job. `scripts/check_importer_registry.py`
+  keeps the prose and JSON forms one artifact — same repositories, well-formed
+  rows, pins matching the declared upstream release, and the spec-count contract
+  per row kind — offline and deterministic in `run.sh gates` and the `quality`
+  job. Its `--online` mode re-reads every public repository's pin and job at
+  origin and stays report-only, so a consumer moving never fails a GNN build.
+- The `--online` re-read now also confirms the `.github/GNN.md` pointer that the
+  registry's contract requires of every repository publishing a conformance
+  job: the pointer records what the job parses, and it was the one part of that
+  contract the drift detector could not see. A row without a conformance job is
+  exempt, and a missing pointer is an `origin-pointer` error naming the
+  repository and its default branch. Pin validation no longer short-circuits
+  the job and pointer checks: a dependency pin is read as text, and a missing
+  or unparseable pin is one finding rather than the end of that row's checks.
+  Eight stubbed-`gh` tests pin the behaviour, including the dependency-pin and
+  missing-pin cases and the unauthenticated degradation to
+  `online-unavailable`.
+- The first estate-wide pass found five repositories whose specifications parse
+  but do not satisfy the normative section contract: `InitialParameterization`
+  or `Time` is missing, or a connection names an undeclared matrix. The registry
+  records the finding; each repository fixes its own specifications, and the
+  gate here checks internal consistency only.
+- `just importers`, `just importers-online` and `just importer-check REPO` expose
+  the registry check, the report-only origin re-read and the per-checkout reader;
+  `just quality` runs the offline registry check with the other fast gates.
+- The compliance validator now accepts v1.1 edge annotations. `A>B:label` was
+  read as a variable name, so valid documents from five consumers were reported
+  as non-conformant; the annotation is split off the target, preserved on the
+  connection's metadata, and the structural check compares the bare name. The
+  reader's schema finding is named `pin-schema-unversioned`.
 
 ## [5.0.3] - 2026-10-31
 

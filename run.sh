@@ -92,6 +92,10 @@ gate_docs() {
     uv run --frozen --no-sync python scripts/check_gnn_doc_patterns.py --strict
     uv run --frozen --no-sync python scripts/check_doc_contracts.py --strict
     uv run --frozen --no-sync python scripts/check_capability_contracts.py --strict
+    # The downstream registry exists twice (prose + JSON); this keeps the two
+    # forms one artifact. Errors only: a commit-only pin is a recorded warning
+    # until that repository adopts the canonical pin schema.
+    uv run --frozen --no-sync python scripts/check_importer_registry.py
 }
 
 gate_contracts() {

@@ -12,8 +12,9 @@ history. Historical failures retain their original source epochs.
 ## Scope and delivery order
 
 There are **seven remaining workstreams: two externally blocked minor items and five major extensions**.
-The maintainability residuals below are bounded follow-ups under their own
-identifiers; they do not create an eighth workstream or reorder the seven.
+The maintainability residuals are complete; their evidence is recorded in
+[CHANGELOG.md](CHANGELOG.md). They did not create an eighth workstream or
+reorder the seven.
 The bounded minor/medium campaign is complete at its independently accepted scope.
 Coverage and installed-platform evidence are recorded in their maintained guides.
 Accepted bounded M1/M2/M3/M4/M5/M6/M7/M8/S5/S6 implementation is recorded in the
@@ -220,38 +221,8 @@ The lists below own outstanding work; this table owns target-version sequencing.
 
 ## Maintainability residuals
 
-These bounded follow-ups do not add a workstream to the seven above. Each keeps
-the identifier it was raised under and closes only when its acceptance probe
-holds on current source.
-
-- [ ] **GNN-007 — derive the pipeline performance budgets from a measured band (P2).**
-  Scope: `tests/pipeline/test_pipeline_performance.py` asserts absolute
-  single-point `THRESHOLDS` (processing time, memory, disk and export budgets)
-  recorded in one measurement environment. They are not bands calibrated
-  against a recorded baseline, so a slower or busier machine can fail them with
-  no code change, while the module carries the `pipeline` and `performance`
-  markers and is therefore selected by the pipeline-contracts CI job. Accept:
-  the thresholds derive from a recorded baseline artifact or are expressed
-  relative to one, the module docstring and that baseline agree, and the
-  recorded tolerance lets a quiet and a loaded run of the same source reach the
-  same verdict. Evidence: `tests/pipeline/test_pipeline_performance.py`;
-  pipeline-contracts job in `.github/workflows/ci.yml`.
-
-- [ ] **GNN-010 — declare each public parse result shape once (P1).**
-  Scope: `gnn.types.ParseResult` (`src/gnn/types/definitions.py`) and
-  `gnn.parsers.common.ParseResult` (`src/gnn/parsers/common.py`) are two
-  dataclasses with the same public name and different contracts. The first
-  defaults `model` to `None` and `success` to `False` and carries only
-  errors, warnings and metadata; the second requires `model`, defaults
-  `success` to `True` and adds `parse_time`, `source_file` and
-  `validation_result`. Both are exported from their packages, so swapping the
-  import silently changes success semantics and the available attributes.
-  Accept: every consumer imports each public shape from a single declaration,
-  constructor-migration tests cover both call patterns in use (`ParseResult()`
-  without a model and `ParseResult(model=...)`), and no behavior depends on
-  which declaration a caller happened to import. Evidence:
-  `src/gnn/types/definitions.py`; `src/gnn/parsers/common.py`;
-  `src/gnn/parsers/basic.py`; `tests/types/test_definitions.py`.
+The bounded maintainability residuals are complete; their evidence is recorded
+in [CHANGELOG.md](CHANGELOG.md).
 
 ## Verification and execution rules
 

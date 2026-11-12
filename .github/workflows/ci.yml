@@ -209,7 +209,8 @@ jobs:
       - name: Ruff format and lint checks
         run: ./run.sh lint
 
-      # Deterministic documentation checks have one owner: docs-audit.yml.
+      # Deterministic documentation checks, including the offline importer
+      # registry check, have one owner: ./run.sh docs in docs-audit.yml.
       - name: Functional MCP and capability PR gate
         run: ./run.sh contracts --junitxml=junit/mcp-capabilities.xml
 

@@ -13,19 +13,31 @@ Key test areas:
 5. Network operation timing
 6. Resource scaling characteristics
 
-Threshold scope: ``THRESHOLDS`` holds absolute, single-point budgets taken from
-one measurement environment. They are not regression bands calibrated against a
-recorded baseline, so a slower or busier machine can fail them without any code
-change. The module carries the ``pipeline`` marker, so the default/CI marker
-filter (``just test``) deselects it; run it deliberately when evaluating a
-change:
+Threshold scope: ``THRESHOLDS`` is derived from the checked-in
+``pipeline_performance_baseline.json``. That artifact records the measurement
+environment, three arms of the band (quiet, self-spawned loaded, ambient
+loaded), and the per-metric upper edge. Each budget is
+``recorded_upper_edge * TOLERANCE``; the tolerance is 100, a host-independent
+ceiling above the largest observed loaded/quiet ratio (29.1x, medium export,
+ambient arm; the self-spawned arm's largest ratio was 2.4x). The quiet arm ran
+at 16.6% CPU utilization; the loaded arms ran 36 CPU-bound workers on 18 cores
+at 100% CPU utilization. The 100x ceiling catches order-of-magnitude
+regressions rather than modest slowdowns. Memory and disk values below 1 MB are
+recorded at the 1 MB measurement floor. The module warms the measured paths
+once before timing and runs a self-spawned loaded-arm verdict test, so the
+budgets describe steady-state work and the loaded verdict is reproducible on a
+quiet machine.
+
+The module carries the ``pipeline`` marker, so the default/CI marker filter
+(``just test``) deselects it; run it deliberately when evaluating a change:
 
     uv run pytest tests/pipeline/test_pipeline_performance.py -v -m performance
-
-Converting the fixed numbers into measured bands is open work, not something
-this module currently provides.
 """
 
+import json
+import os
+import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -39,27 +51,26 @@ from gnn.utils.testing import performance_tracker
 # Test markers
 pytestmark = [pytest.mark.pipeline, pytest.mark.performance]
 
-# Performance thresholds
-THRESHOLDS: dict[str, Any] = {
-    "small_model": {
-        "processing_time": 1.0,  # seconds
-        "memory_usage": 100,  # MB
-        "disk_usage": 10,  # MB
-        "export_time": 2.0,  # seconds
-    },
-    "medium_model": {
-        "processing_time": 5.0,
-        "memory_usage": 500,
-        "disk_usage": 50,
-        "export_time": 10.0,  # seconds
-    },
-    "large_model": {
-        "processing_time": 20.0,
-        "memory_usage": 2000,
-        "disk_usage": 200,
-        "export_time": 30.0,  # seconds
-    },
-}
+# Recorded measurement band and the tolerance applied to its upper edge.
+BASELINE_PATH = Path(__file__).with_name("pipeline_performance_baseline.json")
+BASELINE: dict[str, Any] = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
+TOLERANCE = float(BASELINE["tolerance"])
+
+
+def _scale_budget(value: Any) -> Any:
+    """Multiply every numeric leaf of the recorded baseline by the tolerance."""
+    if isinstance(value, dict):
+        return {key: _scale_budget(item) for key, item in value.items()}
+    return float(value) * TOLERANCE
+
+
+# Performance thresholds derived from the recorded baseline artifact.
+THRESHOLDS: dict[str, Any] = _scale_budget(BASELINE["baseline"])
+
+
+def _directory_mb(path: Path) -> float:
+    """Return the total size of the files under ``path`` in megabytes."""
+    return sum(p.stat().st_size for p in path.rglob("*") if p.is_file()) / (1024 * 1024)
 
 
 @pytest.fixture
@@ -117,6 +128,70 @@ def create_model_file(isolated_environment: Any) -> Any:
     return _create_file
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _warm_performance_paths() -> None:
+    """Exercise the measured paths once so imports and first-call caches are warm.
+
+    The recorded baseline was taken after the same warm-up, so the budgets
+    describe steady-state work rather than one-time import cost.
+    """
+    import logging
+
+    from gnn import process_gnn_directory
+    from gnn.export import export_model
+    from gnn.pipeline.execution import run_pipeline
+    from gnn.utils.config_io.io_utils import batch_write_files
+    from gnn.visualization import generate_visualizations
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        root = Path(temp_dir)
+        (root / "input").mkdir()
+        (root / "output").mkdir()
+        model_file = root / "input" / "warmup.md"
+        model_file.write_text(
+            "\n".join(
+                [
+                    "# Warmup Model",
+                    "",
+                    "## GNNSection",
+                    "ActInfPOMDP",
+                    "",
+                    "## GNNVersionAndFlags",
+                    "GNN v1",
+                    "",
+                    "## ModelName",
+                    "WarmupModel",
+                    "",
+                    "## StateSpaceBlock",
+                    "s0[3,1]",
+                    "s1[3,1]",
+                    "",
+                    "## Connections",
+                    "s0>s1",
+                ]
+            )
+        )
+        process_gnn_directory(model_file, root / "output")
+        generate_visualizations(
+            logging.getLogger("warmup"), root / "input", root / "output"
+        )
+        export_model(
+            {
+                "model_name": "WarmupModel",
+                "model_annotation": "warmup",
+                "variables": ["s0", "s1"],
+                "connections": [{"from": "s0", "to": "s1"}],
+                "equations": [],
+                "metadata": {},
+                "source_content": model_file.read_text(),
+            },
+            root / "output",
+            formats=["json"],
+        )
+        batch_write_files([{"path": "warmup.txt", "content": "x"}], root / "output")
+        run_pipeline(target_dir=root / "input", output_dir=root / "output", steps=["3"])
+
+
 class TestGNNProcessingPerformance:
     """Test suite for GNN processing performance."""
 
@@ -164,8 +239,8 @@ class TestGNNProcessingPerformance:
         assert result["status"] == "SUCCESS"
         # Check that files were processed (actual structure may vary)
         assert "processed_files" in result or "files" in result
-        # Verify concurrent processing completes within a reasonable time bound.
-        assert tracker.duration < (THRESHOLDS["small_model"]["processing_time"] * 4)
+        # Verify concurrent processing completes within the recorded band.
+        assert tracker.duration < THRESHOLDS["parallel"]
 
 
 class TestVisualizationPerformance:
@@ -194,7 +269,9 @@ class TestVisualizationPerformance:
         else:
             assert result is True  # Boolean success indicator
 
-        assert tracker.duration < THRESHOLDS[f"{model_size}_model"]["processing_time"]
+        assert (
+            tracker.duration < THRESHOLDS[f"{model_size}_model"]["visualization_time"]
+        )
         # Use the correct attribute name for memory tracking
         if hasattr(tracker, "max_memory_mb"):
             assert (
@@ -289,10 +366,9 @@ class TestMemoryUsagePatterns:
         retained_mb = max(0.0, (final_current - baseline_current) / (1024 * 1024))
         peak_mb = peak / (1024 * 1024)
 
-        # Retention of Python-managed memory after GC should be modest; the generous
-        # bound is deliberately above observed values (typically < 25 MB) so ordinary
-        # caching changes do not flake CI.
-        assert retained_mb < 75, (
+        # Retention of Python-managed memory after GC should stay inside the
+        # recorded band; the 1 MB floor keeps allocator noise from setting it.
+        assert retained_mb < THRESHOLDS["retained_memory"], (
             f"Python allocator retained {retained_mb:.1f} MB after "
             f"process_gnn_directory (peak during call: {peak_mb:.1f} MB)"
         )
@@ -338,7 +414,7 @@ class TestDiskIOPerformance:
 
         assert result["total_files"] == 10
         assert result["successful_writes"] == 10
-        assert result["write_time_seconds"] < 1.0  # Should be fast
+        assert result["write_time_seconds"] < THRESHOLDS["disk_write"]
 
     def test_export_performance(
         self, isolated_environment: Any, create_model_file: Any
@@ -375,8 +451,11 @@ class TestDiskIOPerformance:
         assert successful_formats >= 1, (
             f"At least one format should succeed, but only {successful_formats} succeeded"
         )
-        # Allow more time for export operations
-        assert tracker.duration < 30.0  # 30 seconds should be enough for export
+        assert tracker.duration < THRESHOLDS["medium_model"]["export_time"]
+        assert (
+            _directory_mb(isolated_environment / "output")
+            < THRESHOLDS["medium_model"]["disk_usage"]
+        )
 
 
 class TestResourceScaling:
@@ -401,8 +480,7 @@ class TestResourceScaling:
             )
 
         assert result["success"]
-        max_time_per_model = 300
-        assert tracker.duration < (model_count * max_time_per_model)
+        assert tracker.duration < THRESHOLDS["pipeline"][str(model_count)]
 
     def test_resource_estimation(
         self, isolated_environment: Any, create_model_file: Any
@@ -436,6 +514,114 @@ class TestResourceScaling:
         )
         if memory_attr:
             assert memory_attr >= 0
+
+
+class TestLoadedArmVerdict:
+    """The recorded band must reach the same verdict under a self-spawned load.
+
+    The load is created by this test rather than inherited from the host, so the
+    loaded arm is reproducible on a quiet machine. The worker count and the
+    warm-up match the measurement harness that recorded the baseline artifact.
+    """
+
+    @staticmethod
+    def _spawn_load() -> list[Any]:
+        workers = 2 * (os.cpu_count() or 1)
+        return [
+            subprocess.Popen(
+                [sys.executable, "-c", "while True: pass"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            for _ in range(workers)
+        ]
+
+    @staticmethod
+    def _stop_load(workers: list[Any]) -> None:
+        for worker in workers:
+            worker.terminate()
+        for worker in workers:
+            try:
+                worker.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                worker.kill()
+                worker.wait(timeout=5)
+
+    def test_loaded_arm_verdict(
+        self, isolated_environment: Any, create_model_file: Any
+    ) -> None:
+        """Run the load-sensitive operations under a deterministic CPU load."""
+        import logging
+
+        from gnn import process_gnn_directory
+        from gnn.export import export_model
+        from gnn.pipeline.execution import run_pipeline
+        from gnn.visualization import generate_visualizations
+
+        large_model = create_model_file("large")
+        medium_model = create_model_file("medium")
+        for _ in range(3):
+            create_model_file("small")
+
+        workers = self._spawn_load()
+        try:
+            time.sleep(0.5)
+
+            with performance_tracker() as tracker:
+                processed = process_gnn_directory(
+                    large_model, isolated_environment / "output"
+                )
+            assert processed["status"] == "SUCCESS"
+            assert tracker.duration < THRESHOLDS["large_model"]["processing_time"]
+
+            with performance_tracker() as tracker:
+                generated = generate_visualizations(
+                    logging.getLogger("loaded_viz"),
+                    large_model.parent,
+                    isolated_environment / "output",
+                )
+            assert generated is True or generated.get("status") == "SUCCESS"
+            assert tracker.duration < THRESHOLDS["large_model"]["visualization_time"]
+
+            with open(medium_model) as f:
+                model_content = f.read()
+            with performance_tracker() as tracker:
+                exported = export_model(
+                    {
+                        "model_name": "TestMediumModel",
+                        "model_annotation": "loaded arm",
+                        "variables": ["s0", "s1", "s2"],
+                        "connections": [
+                            {"from": "s0", "to": "s1"},
+                            {"from": "s1", "to": "s2"},
+                        ],
+                        "equations": [],
+                        "metadata": {"size": "medium"},
+                        "source_content": model_content,
+                    },
+                    isolated_environment / "output",
+                    formats=["json", "xml", "graphml"],
+                )
+            assert any(exported["formats"].values())
+            assert tracker.duration < THRESHOLDS["medium_model"]["export_time"]
+
+            with performance_tracker() as tracker:
+                ran = run_pipeline(
+                    target_dir=isolated_environment / "input",
+                    output_dir=isolated_environment / "output",
+                    steps=["3"],
+                )
+            assert ran["success"]
+            assert tracker.duration < THRESHOLDS["pipeline"]["3"]
+
+            with performance_tracker() as tracker:
+                parallel = process_gnn_directory(
+                    isolated_environment / "input", recursive=True, parallel=True
+                )
+            assert parallel["status"] == "SUCCESS"
+            assert tracker.duration < THRESHOLDS["parallel"]
+        finally:
+            self._stop_load(workers)
 
 
 if __name__ == "__main__":

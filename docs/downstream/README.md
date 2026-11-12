@@ -7,9 +7,8 @@ repository; each row links to a page with the full evidence, except rows marked
 contract rows below (their links go to the repository's own evidence).
 
 At a glance: twenty-three repositories carry a committed GNN specification or a
-pin in a dependency declaration and record an upstream revision (twenty-one of
-them `v5.0.3` at commit `8f293d9b`; `Active_Fedference` records the same commit
-in its backend lock without a tag field; `fep_formal` pins by content hash),
+pin in a dependency declaration and record an upstream revision (twenty-two of
+them `v5.0.3` at commit `8f293d9b`; `fep_formal` pins by content hash),
 five more record the revision in their own contract rather than in a pin file,
 and fourteen carry a pin file and a `gnn conformance (pinned)` job but no GNN
 specification, listed under
@@ -39,7 +38,7 @@ specification, listed under
 | [ants](ants.md) | Ant-colony foraging in a T-maze (code for *Active Inferants*, 2021) | `gnn/ant_colony_foraging.gnn.md` | `v5.0.3` · `8f293d9b` in `gnn/upstream.json` | CI job `gnn-conformance` (`gnn conformance (pinned)`); `tests/test_gnn_conformance.py` |
 | [on_policy_distillation](on-policy-distillation.md) | On-policy distillation formalized as active inference: three small models | `gnn/bernoulli_toy.gnn.md`, `gnn/graph_world.gnn.md`, `gnn/si_tmaze.gnn.md` | `v5.0.3` · `8f293d9b` in `gnn/upstream.json` | CI job `release-gate` (`gnn conformance (pinned)`); `tests/test_gnn_upstream_conformance.py`, `tests/test_gnn.py` |
 | [pymcp](https://github.com/ActiveInferenceInstitute/pymcp) † | Model Context Protocol and REST surface over PyMDP; GNN enters as a 3x3 gridworld reference test instance | `models/gridworld_3x3.gnn.md` | `v5.0.3` · `8f293d9b` in `.github/gnn-pin.json` | CI job `gnn-conformance` publishes `gnn conformance (pinned)` and installs exactly the pinned revision before parsing the sketch; `.github/workflows/ci.yml` |
-| [Active_Fedference](https://github.com/ActiveInferenceInstitute/Active_Fedference) † | Robust federated active inference research project (FedGVI-style generalized variational inference, discrete-categorical) with a reproducible manuscript and evidence pipeline; five declared models | `src/fedference/models/*.gnn.md`: `fedgvi-sites`, `hierarchy`, `hybrid-tracking`, `moving-observer`, `sentinel` | `8f293d9b` in `src/fedference/config/gnn-backend-lock.json` (no tag field) | CI job `gnn-shard` publishes `gnn conformance (pinned)` and checks out the locked revision; `.github/workflows/ci.yml` |
+| [Active_Fedference](https://github.com/ActiveInferenceInstitute/Active_Fedference) † | Robust federated active inference research project (FedGVI-style generalized variational inference, discrete-categorical) with a reproducible manuscript and evidence pipeline; one standard GNN model and four project extension documents | `src/fedference/models/sentinel.gnn.md`; the moving-observer, hierarchy, hybrid-tracking and FedGVI-sites documents are Fedference extension payloads (`*.fed.md`, `*.fed.ir.json`), not GNN specifications | `v5.0.3` · `8f293d9b` in `.github/gnn-pin.json` | CI job `gnn-shard` publishes `gnn conformance (pinned)` and checks out the pinned revision; `.github/workflows/ci.yml` |
 
 ## How to read this registry
 
@@ -93,9 +92,25 @@ Rows are re-verified from origin with the read-only method above as part of
 GNN release-tag preparation and on request; a closeout that moves a row's
 subject re-verifies it, as the
 [paired-revision procedure](../development/fep_lean_paired_revision.md) does
-for the `fep_formal` row when it bumps the companion pin. No GNN gate or
-workflow reads this tree, by design: mechanism-named rows make no
-per-repository currency claim a gate could check.
+for the `fep_formal` row when it bumps the companion pin.
+
+The tables below exist twice: as prose here and as
+[importers.json](importers.json), one row per repository with its pin path,
+revision, specification count and conformance job. `scripts/check_importer_registry.py`
+keeps the two forms one artifact — same repositories, well-formed rows, pins
+matching the upstream release this registry declares, and the spec-count
+contract per row kind — and runs offline in `run.sh gates` and the `quality`
+job. That gate checks internal consistency only; it makes no claim about any
+repository's current state. Currency stays report-only: the same script with
+`--online` re-reads every public repository's pin, conformance job and
+`.github/GNN.md` pointer at origin and prints drift, for release preparation,
+never as a blocking gate.
+
+A consumer can check its own checkout against the same reader GNN ships:
+
+```bash
+python -m gnn.importers check --repo . --expected-commit 8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1
+```
 
 ## Pinned conformance baseline without a GNN specification
 

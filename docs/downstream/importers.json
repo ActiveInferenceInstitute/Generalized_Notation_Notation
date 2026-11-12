@@ -1,0 +1,841 @@
+{
+  "schema": "gnn-importer-registry/v1",
+  "observed": "2026-11-12",
+  "upstream": {
+    "repository": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "tag": "v5.0.3",
+    "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1"
+  },
+  "importers": [
+    {
+      "repo": "act_inf_metaanalysis",
+      "visibility": "public",
+      "kind": "contract",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "ActInf_RxInfer",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "specs/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Active_Cardference",
+      "visibility": "private",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "specs/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 14
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "test",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Active_Fedference",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-shard",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "active_fractal_rabbit",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 2
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Active_InferAnts",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "gnn/upstream.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "active_inference_battleship",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "models/gnn.pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "model-check",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "active_inference_language_model",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "gnn/upstream.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 25
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-interop",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Active_Inference_Ontology",
+      "visibility": "public",
+      "kind": "contract",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ontology.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "active_inference_power",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "models/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 2
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Active_Skillference",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "gnn/upstream.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/gates.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "ActiveBlockference",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "specs/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "ActiveInferenceCategoryTheory",
+      "visibility": "public",
+      "kind": "contract",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/docs.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "ActiveInferenceImplementations",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "specs/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "ActiveInferenceJournal",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/journal-integrity.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "AEOS",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/aeos.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "ants",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "gnn/upstream.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "ATLAS",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/tests.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Biofirm",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "CEREBRUM",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "COGANT",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 3
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "cognitive",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "specs/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/quality.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "courses",
+      "visibility": "public",
+      "kind": "contract",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "fep_formal",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "content-hash",
+        "path": "specs/gnn-bridge-w2-source-custody/source-pin.json",
+        "tag": null,
+        "commit": null,
+        "schema": null
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "fundamentals",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "specs/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Garden-of-Iris",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "GEN24",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "NHIM/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "gen25",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/docs.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "GEO_INFER",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pair.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/gnn-interchange.yml",
+        "job": "interchange",
+        "name": "${{ matrix.python == '3.12' && 'gnn conformance (pinned)' || format('gnn interchange ({0})', matrix.python) }}"
+      }
+    },
+    {
+      "repo": "institute_website",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "ISSS",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Journal_Utilities",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/test.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Knowledge-Engineering",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "NoOrg",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "on_policy_distillation",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "gnn/upstream.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 3
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "release-gate",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Parr_et_al_2022_ActInf_Textbook",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "policy_entanglement",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": "gnn/upstream.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 3
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "pymcp",
+      "visibility": "public",
+      "kind": "spec",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 1
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "pymdp",
+      "visibility": "public",
+      "kind": "contract",
+      "pin": null,
+      "specs": {
+        "count": 0
+      },
+      "conformance": null
+    },
+    {
+      "repo": "Research-Discovery-Engine",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Start",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    },
+    {
+      "repo": "Symposium",
+      "visibility": "public",
+      "kind": "pin-only",
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.0.3",
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
+      },
+      "specs": {
+        "count": 0
+      },
+      "conformance": {
+        "workflow": ".github/workflows/ci.yml",
+        "job": "gnn-conformance",
+        "name": "gnn conformance (pinned)"
+      }
+    }
+  ]
+}
