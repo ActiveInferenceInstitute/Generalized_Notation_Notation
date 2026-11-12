@@ -437,6 +437,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(
             f"importer registry: {rows} repositories, upstream {(registry.get('upstream') or {}).get('tag')}"
         )
+        pins = [row.get("pin") or {} for row in registry.get("importers") or []]
+        canonical = sum(1 for pin in pins if pin.get("schema") == "gnn-importer-pin/v1")
+        declared = sum(1 for pin in pins if pin.get("kind") in ("file", "dependency"))
+        print(
+            f"  pin schema: {canonical} of {declared} pins declare gnn-importer-pin/v1"
+        )
         for item in findings.items:
             print(f"  [{item['level']}] {item['code']}: {item['message']}")
         print("  verdict: " + ("ok" if not failed else "FAILED"))
