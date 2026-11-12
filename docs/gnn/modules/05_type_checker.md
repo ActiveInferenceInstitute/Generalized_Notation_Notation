@@ -91,6 +91,13 @@ warning-level outcome — some files are invalid, or no GNN files were found
 (per the Phase 1.1 widened contract: "nothing to do" is
 `SUCCESS_WITH_WARNINGS`, matching Steps 12/16 and the render step).
 
+The MCP surface (`type_checker/mcp.py:validate_gnn_files_mcp`) reports the same
+three outcomes but never flattens them: `success` is `True` only for the literal
+`True` sentinel, `exit_code` echoes the sentinel as `0` / `2` / `1`, and the
+message names the refusal (`failed (checker returned False)`). A run with
+invalid files — or with no files at all — is therefore reported as a warning,
+never as success.
+
 ## Resource Estimation Outputs
 
 For each model, `estimate_file_resources(content)` produces:
@@ -138,6 +145,10 @@ Key coverage areas:
   Phase 1.1 warning-continuation exits (invalid files → 2, no files → 2)
   are pinned by `test_validate_single_gnn_file_never_raises_on_content_error`
   and `test_validate_gnn_files_no_files_is_warning_exit_2` in the same file.
+- The MCP outcome judgement is pinned by
+  `tests/type_checker/test_type_checker_mcp_outcome_judgement.py`: every
+  non-`True` sentinel (`2`, `False`, `None`, `0`) is a refusal, and a real
+  strict-mode hard failure is never reported as "completed successfully".
 
 Per CLAUDE.md real-implementation policy, tests use real parsed GNN models from the
 sample corpus rather than MagicMock fixtures.
