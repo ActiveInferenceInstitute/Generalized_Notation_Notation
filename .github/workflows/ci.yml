@@ -227,6 +227,12 @@ jobs:
       - name: Capability contracts
         run: uv run --frozen --no-sync python scripts/check_capability_contracts.py --strict
 
+      - name: Importer registry
+        # The downstream registry exists as prose and as JSON; this keeps the
+        # two forms one artifact. Offline and deterministic by design; the
+        # origin re-read is `--online` and belongs to release preparation.
+        run: uv run --frozen --no-sync python scripts/check_importer_registry.py
+
       - name: Functional MCP and capability PR gate
         run: |
           uv run --frozen --no-sync python -m pytest \

@@ -103,3 +103,4 @@ test matrix.
 | Measured results | Live command output; `output/` artifacts |
 | Public type and API identities | [Typed/API contracts](docs/development/interop_api.md) |
 | Benchmark producers, result shapes, data provenance | [Research contracts](docs/development/interop_research.md) |
+| Which repositories apply GNN, and what each pins | [Downstream registry](docs/downstream/README.md) and [importers.json](docs/downstream/importers.json) |
