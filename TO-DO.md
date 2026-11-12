@@ -1,6 +1,6 @@
 # TO-DO — GNN next steps
 
-Updated 2026-11-11.
+Updated 2026-11-12.
 Current software version is owned by [pyproject.toml](pyproject.toml).
 [GitHub release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases)
 own exact tags, accepted sources, checks and public artifacts. Version metadata
@@ -37,13 +37,28 @@ S1/E4 contracts before implementing their related major extensions.
 The [remaining roadmap contracts](docs/development/remaining_roadmap_contracts.md)
 specify the next bounded units for all seven items. The 2026-10-16 bounded review added
 terminal-stop LLM completion admission and consistent direct cpomdp options;
-these corrections do not complete S1 or E3. The THRML upstream issue is closed,
-but the inspected latest PyPI release remains 0.1.4 (rechecked 2026-10-21), so S3 stays blocked on
+these corrections do not complete S1 or E3. The THRML upstream issue is closed
+(2026-10-05), but the inspected latest PyPI release remains 0.1.4 (rechecked
+2026-11-12; the project's release list still holds only 0.1.3 and 0.1.4), so S3 stays blocked on
 released compatibility. Full source-preserving multi-request processing,
 independent semantic extraction and coupled/native extension acceptance remain
 required.
 
 ## Published coordinated checkpoint
+
+[GNN 5.1.0](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.1.0)
+is the current published release: tag `v5.1.0` at commit
+`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf` (2026-11-12), the first tagged tree
+that carries the one importer reader (`src/gnn/importers.py`), so a member can
+advance its pin past a release and call that reader. The record names the exact
+commit and uploads no artifacts; the
+[5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
+remains the latest release with uploaded source-bound assets.
+[docs/downstream/importers.json](docs/downstream/importers.json) deliberately
+still records `v5.0.3` at `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1` for every
+member that has not cut over: the new pin and the deletion of that member's local
+reader belong to the member's own change, so refreshing those rows is blocked on
+those repositories rather than on GNN.
 
 [GNN 5.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1),
 [FEP_Formal 2.1.0](https://github.com/ActiveInferenceInstitute/fep_formal/releases/tag/v2.1.0)
@@ -94,6 +109,26 @@ exact-source workflow collector/artifact acceptance from the
 [release procedure](docs/releases/README.md#repeatable-release-qualification).
 For each target:
 
+- **No hosted qualification is possible while the organization's billing lock
+  stands.** The test-bearing workflows dispatched on `main` on 2026-11-12 all
+  failed within seconds because their jobs never started:
+  [CI 43274809991](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/43274809991),
+  [Local gates 43274809976](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/43274809976),
+  [Installed Platforms 43274810045](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/43274810045)
+  and [native coverage 43274809920](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/43274809920)
+  each report "The job was not started because your account is locked due to a
+  billing issue"; the only successful runs among the hundred most recent are
+  Dependabot and Dependency Graph updates, which execute no repository test.
+  Qualify changes with local `./run.sh gates` receipts and record them as local;
+  the organization's billing owner must clear the lock before any hosted result
+  can be cited here or in a release record.
+- Re-derive the installed matrix after the unreleased PyMDP change: `d7d98d569`
+  replaces the split requirement with `inferactively-pymdp>=1.0.5`, so the
+  Python 3.11 (jax 0.10.2) and 3.12+ (jax 0.12.0) splits now resolve one pymdp
+  release. The Installed Platforms lane produced no receipt (run
+  [43274810045](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/43274810045)
+  failed to start), so the installed-platform acceptance this file requires
+  before publication is still outstanding and locally owned.
 - Record cold/warm setup, queue, job and test durations from provider/JUnit
   receipts; identify the measured bottleneck before changing scheduling.
 - Reuse frozen installations within a job and cache toolchain inputs keyed to
@@ -181,8 +216,22 @@ The lists below own outstanding work; this table owns target-version sequencing.
   Progress: E3-FA1 adds source-declared ordered finite actions, explicit control
   matrices and units, complete policy/component receipts and a total evaluation
   cap; its independent numerical witnesses retain a separate bounded scope.
-  The adapter now runs on the released `cpomdp==0.5.0` wheel; that adoption was
-  reviewed against the FEP_Formal merge
+  The declared optional dependency advanced from `cpomdp==0.5.0` to
+  `cpomdp==0.5.1` (`b7c647b71`, #364) and `uv.lock` resolves 0.5.1, but the
+  version guard embedded in the generated script still refuses every release
+  other than 0.5.0
+  ([`src/gnn/render/cpomdp/script_template.py`](src/gnn/render/cpomdp/script_template.py)
+  line 125), while [the adapter guide](docs/gnn/implementations/cpomdp.md),
+  [`src/gnn/render/cpomdp/AGENTS.md`](src/gnn/render/cpomdp/AGENTS.md) and the
+  `needs_cpomdp` expectations in `tests/render/test_cpomdp_contracts.py` and
+  `tests/render/test_cpomdp_finite_controls.py` also declare 0.5.0. Those tests
+  skip wherever the extra is absent
+  ([`tests/helpers/toolchain_probes.py`](tests/helpers/toolchain_probes.py)), so
+  the default arms cannot see the drift and a render followed by execution fails
+  against the locked wheel. Reconcile the guard, the prose and the test
+  expectations with the pin, then re-accept the passive/parity/EFE witnesses on
+  the installed release — owned here, with no external blocker. The 0.5.0
+  adoption was reviewed against the FEP_Formal merge
   `9d77cd47fd170e1e4071c0944d3c5ee3cb7a4886` (#296), and the companion pin has
   since advanced to the later qualified main revision recorded in
   [`.github/fep-lean-pair.json`](.github/fep-lean-pair.json); further
