@@ -313,13 +313,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 ### Downstream importer conformance
 
 - `gnn.importers` is one reader for the pin shapes the estate actually carries
-  (`commit`/`revision`, `tag`/`release`, four file locations). `python -m
-  gnn.importers check --repo .` normalizes the pin, discovers or reads the
-  declared `*.gnn.md` specifications, and validates them with the installed
-  parser at the compliance level rather than merely parsing them, so a consumer
-  checks its own checkout with the same code GNN ships. Findings carry stable
-  codes (`pin-missing`, `pin-commit-mismatch`, `spec-invalid`, …) and are
-  available as JSON. `importer_variables` produces the
+  (`commit`/`revision`, `tag`/`release`, seven candidate pin locations).
+  `python -m gnn.importers check --repo .` normalizes the pin, discovers or
+  reads the declared `*.gnn.md` specifications, and validates them with the
+  installed parser at the compliance level rather than merely parsing them, so
+  a consumer checks its own checkout with the same code GNN ships. Findings
+  carry stable codes (`pin-missing`, `pin-commit-mismatch`, `spec-invalid`, …)
+  and are available as JSON. `importer_variables` produces the
   `gnn-importer-variables/v1` map a manuscript consumes instead of re-reading
   the pin JSON.
 - `docs/downstream/importers.json` is the machine-readable mirror of the
