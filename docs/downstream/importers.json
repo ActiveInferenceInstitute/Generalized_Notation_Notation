@@ -412,10 +412,11 @@
       "visibility": "public",
       "kind": "spec",
       "pin": {
-        "kind": "dependency",
-        "path": "cogant/pyproject.toml",
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1"
+        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 3
