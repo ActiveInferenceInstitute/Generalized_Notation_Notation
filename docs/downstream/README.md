@@ -112,6 +112,23 @@ A consumer can check its own checkout against the same reader GNN ships:
 python -m gnn.importers check --repo . --expected-commit 8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1
 ```
 
+## Workflow groups
+
+`importers.json` also carries a `workflow_groups` block: one entry per set of
+repositories that share a concern, with the canonical implementation of that
+concern and the step each member takes to use it. The `gnn-fep` group is the
+[GNN–FEP contract](../workflows/gnn-fep.md): twenty-two members, one pin reader
+(`src/gnn/importers.py`, called as `python -m gnn.importers check --repo .`).
+
+Each member row records its role, how it reaches the reader (`direct`, or
+`wrapper` with the file and the reason), its current arm, its pin path, its
+`.github/GNN.md` pointer, its documentation hub and its manuscript producer.
+`scripts/check_importer_registry.py` compares that block with the contract page's
+member table in both directions and refuses a member that records a private pin
+reader instead of the canonical command, so the contract and the data cannot
+drift apart. It records the copies members still carry; it does not claim they
+are already gone.
+
 ## Pinned conformance baseline without a GNN specification
 
 Fourteen repositories carry no `.gnn.md` specification but pin GNN and publish

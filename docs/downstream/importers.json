@@ -476,7 +476,8 @@
         "path": "specs/gnn-bridge-w2-source-custody/source-pin.json",
         "tag": null,
         "commit": null,
-        "schema": null
+        "schema": null,
+        "party": "gnn"
       },
       "specs": {
         "count": 1
@@ -837,5 +838,279 @@
         "name": "gnn conformance (pinned)"
       }
     }
-  ]
+  ],
+  "workflow_groups": {
+    "gnn-fep": {
+      "contract": "docs/workflows/gnn-fep.md",
+      "canonical_reader": "src/gnn/importers.py",
+      "members": [
+        {
+          "repo": "Generalized_Notation_Notation",
+          "role": "upstream",
+          "install": "upstream",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": null,
+          "pointer": null,
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/INDEX.md",
+          "manuscript": "scripts/z_generate_manuscript_variables.py",
+          "gate": "./run.sh gates"
+        },
+        {
+          "repo": "fep_formal",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": "specs/gnn-bridge-w2-source-custody/source-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": null,
+          "manuscript": null,
+          "gate": "bash scripts/gate.sh gnn"
+        },
+        {
+          "repo": "pymdp",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": null,
+          "pointer": null,
+          "docs_index": null,
+          "docs_flat_index": null,
+          "manuscript": null,
+          "gate": null
+        },
+        {
+          "repo": "pymcp",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": ".github/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": null,
+          "gate": "./run.sh all"
+        },
+        {
+          "repo": "Active_InferAnts",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": "gnn/upstream.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": null,
+          "gate": "./run.sh gate"
+        },
+        {
+          "repo": "ants",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": "gnn/upstream.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": null,
+          "gate": "python scripts/gate.py all"
+        },
+        {
+          "repo": "ActInf_RxInfer",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": "specs/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": null,
+          "gate": "./run.sh all"
+        },
+        {
+          "repo": "ActiveBlockference",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": "specs/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": "scripts/manuscript_variables.py",
+          "gate": "uv run python scripts/release_check.py --arm all"
+        },
+        {
+          "repo": "Active_Fedference",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": ".github/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": null,
+          "manuscript": "scripts/z_generate_manuscript_variables.py",
+          "gate": "python scripts/gate.py"
+        },
+        {
+          "repo": "Active_Cardference",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": "specs/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": "scripts/z_generate_manuscript_variables.py",
+          "gate": "./run.sh"
+        },
+        {
+          "repo": "active_fractal_rabbit",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": ".github/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": "scripts/z_generate_manuscript_variables.py",
+          "gate": "./run.sh all"
+        },
+        {
+          "repo": "policy_entanglement",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": "gnn/upstream.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": null,
+          "manuscript": "scripts/manuscript_variables.py",
+          "gate": "make ci"
+        },
+        {
+          "repo": "on_policy_distillation",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": "gnn/upstream.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": null,
+          "manuscript": "scripts/z_generate_manuscript_variables.py",
+          "gate": "python scripts/gate.py"
+        },
+        {
+          "repo": "active_inference_battleship",
+          "role": "importer",
+          "install": "wrapper",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": "models/gnn.pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": "research/variables.py",
+          "gate": "bun run check",
+          "wrapper": "scripts/parse_gnn.py",
+          "reason": "the gate is Bun; no Python package is importable from it, so the wrapper shells out to the pinned reader"
+        },
+        {
+          "repo": "active_inference_power",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": "models/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": "scripts/z_generate_manuscript_variables.py",
+          "gate": "./run.sh"
+        },
+        {
+          "repo": "active_inference_language_model",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": "gnn/upstream.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": "scripts/z_generate_manuscript_variables.py",
+          "gate": "scripts/verify_release.py full"
+        },
+        {
+          "repo": "COGANT",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": ".github/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": null,
+          "manuscript": "scripts/z_generate_manuscript_variables.py",
+          "gate": "python run_gate.py"
+        },
+        {
+          "repo": "CEREBRUM",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": ".github/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": null,
+          "gate": "python scripts/gate.py all"
+        },
+        {
+          "repo": "Biofirm",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": ".github/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": null,
+          "manuscript": null,
+          "gate": "./run.sh gate"
+        },
+        {
+          "repo": "GEO_INFER",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": ".github/gnn-pair.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/INDEX.md",
+          "manuscript": "scripts/z_generate_manuscript_variables.py",
+          "gate": "python scripts/gate.py gates"
+        },
+        {
+          "repo": "AEOS",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": ".github/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": null,
+          "gate": "./run.sh gate"
+        },
+        {
+          "repo": "Active_Inference_Ontology",
+          "role": "importer",
+          "install": "direct",
+          "arm": "python -m gnn.importers check --repo .",
+          "pin": ".github/gnn-pin.json",
+          "pointer": ".github/GNN.md",
+          "docs_index": "docs/README.md",
+          "docs_flat_index": "docs/documentation-index.md",
+          "manuscript": null,
+          "gate": "./run.sh all"
+        }
+      ]
+    }
+  }
 }
