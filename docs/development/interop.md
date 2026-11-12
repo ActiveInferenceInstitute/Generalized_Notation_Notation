@@ -2,7 +2,7 @@
 
 `generalized-notation-notation` is the installed distribution. Its version, Python
 floor and console script are declared in [pyproject.toml](../../pyproject.toml)
-(currently `5.0.3`, Python `>=3.11,<3.15`, and `gnn = gnn.cli:main`). This guide
+(currently `5.1.0`, Python `>=3.11,<3.15`, and `gnn = gnn.cli:main`). This guide
 describes existing contracts and explicitly identifies surfaces that cannot yet be
 consumed through a common interface. Runtime behavior is unchanged by these
 declarations.

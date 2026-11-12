@@ -15,7 +15,7 @@
 git clone https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git
 cd Generalized_Notation_Notation
 # Select the published release for a versioned install.
-git checkout v5.0.3
+git checkout v5.1.0
 
 uv sync --frozen --python 3.14
 uv run --frozen --no-sync gnn health

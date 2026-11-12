@@ -3,7 +3,7 @@
 **Describe an Active Inference generative model once. Validate its structure,
 render framework-specific code, execute admitted models and inspect the evidence.**
 
-[![Version: 5.0.3](https://img.shields.io/badge/version-5.0.3-00a6b8.svg)](../CHANGELOG.md#503---2026-10-31)
+[![Version: 5.1.0](https://img.shields.io/badge/version-5.1.0-00a6b8.svg)](../CHANGELOG.md#510---2026-11-12)
 [![CI](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml)
 [![CI Python: 3.11–3.14](https://img.shields.io/badge/CI%20Python-3.11%E2%80%933.14-3776ab.svg)](workflows/ci.yml)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-lightgrey.svg)](../LICENSE.md)
@@ -28,16 +28,18 @@ scientific workflow** spanning parsing, validation, visualization, simulation,
 analysis and publication. Start with the CLI below, or explore the
 [Python and service interfaces](#interfaces).
 
-**Software:** 5.0.3. [Published release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases) own accepted tags and assets.
+**Software:** 5.1.0. [Published release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases) own accepted tags and assets.
 
-This major version adds replayable numerical witnesses, interactive evidence
-inspection and configurable file workers. It targets coordinated FEP_Formal
-2 qualification against the current scientific sources; see the
-[paired release procedure](../docs/development/fep_lean_paired_revision.md).
-Version metadata does not establish publication or completed pairing.
-[Candidate release notes](../CHANGELOG.md#501---2026-10-24) describe the changes;
+This minor version publishes the downstream importer registry. `gnn.importers`
+is the one reader a member calls to normalize its GNN pin, check the pin and
+its `.github/GNN.md` pointer, and validate the specifications under it, so a
+member deletes its local copy in the change that advances its pin. The
+[GNN–FEP contract](../docs/workflows/gnn-fep.md) states the prerequisite an
+earlier tag could not meet and the reader's upstream exception.
+Version metadata does not establish publication or a passing member gate.
+[Release notes](../CHANGELOG.md#510---2026-11-12) describe the changes;
 [package metadata](../pyproject.toml) owns version and dependency requirements.
-**Page updated:** 2026-10-31.
+**Page updated:** 2026-11-12.
 
 ## Start here
 

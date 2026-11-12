@@ -1,10 +1,15 @@
 # GNN Version Map
 
 This map records source versions, publication and distribution assets.
-The latest [published source release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.3)
-is **5.0.3**, published on 2026-11-03. Its tag resolves to commit
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1` (2026-10-31). The record
+The latest [published source release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.1.0)
+is **5.1.0**, tagged 2026-11-12; its GitHub release record names the exact
+commit. It is the first release whose tree contains `src/gnn/importers.py`, so a
+member can advance its pin past a release and call the shared reader. The record
 includes GitHub source archives and has no uploaded artifacts. The
+[5.0.3 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.3)
+resolves to commit `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1` (2026-10-31) and
+remains the revision the downstream registry records for members that have not
+yet cut over. The
 [5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
 is the latest release with uploaded, source-bound assets. The `v5.0.2` tag
 has no GitHub release object. Historical 4.2.0 and 4.1.0 retain their original release records and receipts. The 4.1.0 [changelog](../CHANGELOG.md#410---2026-10-08)
@@ -19,6 +24,7 @@ original source identity and limits. The manuscript authored epoch remains
 
 | Version | Date | Theme | Primary record |
 | --- | --- | --- | --- |
+| 5.1.0 | 2026-11-12 | Publish the downstream importer registry and its one reader as release surface: `gnn.importers`, `python -m gnn.importers`, the registry checker and the GNN–FEP contract | [CHANGELOG §5.1.0](../CHANGELOG.md#510---2026-11-12); [release record](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.1.0) |
 | 5.0.3 | 2026-10-31 | Remove an unused dead bibliography URL; carry the 5.0.2 source-custody decoupling, release-time paired check and self-contained dashboard into a qualified patch | [CHANGELOG §5.0.3](../CHANGELOG.md#503---2026-10-31); [release record](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.3) created retroactively 2026-11-03 |
 | 5.0.2 | 2026-10-30 | GNN source custody decoupling, release-time paired check and a self-contained performance dashboard | [CHANGELOG §5.0.2](../CHANGELOG.md#502---2026-10-30); tag only, no GitHub release object |
 | 5.0.1 | 2026-10-24 | Remove an unused dead bibliography URL; renew exact-source manuscript, pairing and release qualification | [CHANGELOG §5.0.1](../CHANGELOG.md#501---2026-10-24) |

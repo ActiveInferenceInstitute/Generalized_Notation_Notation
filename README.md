@@ -3,7 +3,7 @@
 **Describe an Active Inference generative model in Markdown, validate it, render
 framework-specific code, and inspect the evidence from its execution.**
 
-[![Version: 5.0.3](https://img.shields.io/badge/version-5.0.3-00a6b8.svg)](pyproject.toml)
+[![Version: 5.1.0](https://img.shields.io/badge/version-5.1.0-00a6b8.svg)](pyproject.toml)
 [![CI](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml)
 [![Python 3.11–3.14](https://img.shields.io/badge/python-3.11%E2%80%933.14-blue.svg)](pyproject.toml)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](LICENSE.md)
@@ -14,7 +14,7 @@ framework-specific code, and inspect the evidence from its execution.**
 [Documentation](#documentation) · [Examples](#examples) ·
 [Contributing](#contributing) · [Zenodo archives](#zenodo-archives)
 
-**Current source release:** [GNN 5.0.3](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.3).
+**Current source release:** [GNN 5.1.0](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.1.0).
 Install from the tagged source using the frozen lock. The release has no uploaded
 wheel or sdist. See [release artifacts and citation](#release-artifacts-and-citation)
 for downloadable distributions and exact archive identities.
@@ -253,7 +253,7 @@ Commands below run from the repository root and reuse the frozen environment.
 ```bash
 git clone https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git
 cd Generalized_Notation_Notation
-git checkout v5.0.3
+git checkout v5.1.0
 uv sync --frozen --python 3.14
 uv run --frozen --no-sync gnn --help
 ```
@@ -423,12 +423,15 @@ their documented producer and re-pin procedures.
 
 ## Release artifacts and citation
 
-[GNN 5.0.3](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.3)
-was published on 2026-11-03 from tag `v5.0.3` at commit
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`. That record provides tagged source.
-Downstream consumers pin that commit; the
-[downstream registry](docs/downstream/README.md) records which repositories pin
-it, in which pin file and with what conformance evidence. For separately
+[GNN 5.1.0](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.1.0)
+is the first release whose tree contains `src/gnn/importers.py`, the one reader
+the downstream estate calls instead of carrying its own copy. The GitHub release
+record owns the tag, its exact commit and the source archives. Until each
+member's own cutover advances its pin, the
+[downstream registry](docs/downstream/README.md) still records that member
+pinning the previous `v5.0.3` revision at
+`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, in its pin file, with its
+conformance evidence. For separately
 uploaded distribution assets, the
 [GNN 5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
 carries the ordinary wheel and sdist, the manuscript PDF, a source archive, the
