@@ -1,0 +1,529 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-11-12",
+  "source_revision": "8d02e45b80c09fa6c42770bf0c82d1d3b0215a2e",
+  "environment": {
+    "host": "Apple M5 Max",
+    "os": "macOS 27.0.1",
+    "arch": "arm64",
+    "cpu_count": 18,
+    "memory_gb": 128,
+    "python": "3.14.10",
+    "pytest": "pytest 9.2.0",
+    "uv": "uv 0.13.7 (Homebrew 2026-11-03 aarch64-apple-darwin)"
+  },
+  "method": {
+    "harness": "A temporary script replicated each measured operation (process_gnn_directory, generate_visualizations, export_model, batch_write_files, run_pipeline) with the same fixtures as this module, warmed each path once, and took 3 samples per metric.",
+    "quiet_arm": "Host at 16.6% CPU utilization (1-minute load average 16.9; other users' I/O waiters inflate the load average).",
+    "loaded_self_spawned_arm": "The harness spawned 36 CPU-bound Python workers (2x the 18 cores) and waited 0.5 s before measuring; the workers were terminated after the arm.",
+    "loaded_ambient_arm": "36 external CPU-bound `yes` workers on 18 cores plus other host load, 100% CPU utilization, 10 s pre-load.",
+    "samples_per_metric": 3,
+    "aggregation": "The recorded baseline is the maximum of the quiet, self-spawned loaded and ambient loaded maxima per metric; memory and disk values below 1 MB use the 1 MB measurement floor."
+  },
+  "tolerance": 100.0,
+  "tolerance_basis": "The largest observed loaded/quiet ratio was 29.1x (medium export) in the ambient loaded arm; the self-spawned arm's largest ratio was 2.4x (medium processing). 100 is a host-independent ceiling above both bands: it catches order-of-magnitude regressions rather than modest slowdowns.",
+  "resolution_floor": {
+    "time_seconds": 0.0,
+    "memory_mb": 1.0,
+    "disk_mb": 1.0
+  },
+  "band": {
+    "quiet": {
+      "small": {
+        "processing_time": {
+          "max": 0.0004680156707763672,
+          "median": 0.0002741813659667969,
+          "min": 0.00023865699768066406
+        },
+        "visualization_time": {
+          "max": 0.0012736320495605469,
+          "median": 0.0011548995971679688,
+          "min": 0.0010128021240234375
+        },
+        "memory_usage": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "visualization_memory": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "disk_usage_bytes": {
+          "max": 170.0,
+          "median": 170.0,
+          "min": 170.0
+        },
+        "export_time": {
+          "max": 0.0004820823669433594,
+          "median": 0.0002448558807373047,
+          "min": 0.0002300739288330078
+        },
+        "export_bytes": {
+          "max": 662.0,
+          "median": 662.0,
+          "min": 662.0
+        }
+      },
+      "medium": {
+        "processing_time": {
+          "max": 0.0004241466522216797,
+          "median": 0.0003409385681152344,
+          "min": 0.00030994415283203125
+        },
+        "visualization_time": {
+          "max": 0.004157066345214844,
+          "median": 0.003943204879760742,
+          "min": 0.003431081771850586
+        },
+        "memory_usage": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "visualization_memory": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "disk_usage_bytes": {
+          "max": 172.0,
+          "median": 172.0,
+          "min": 172.0
+        },
+        "export_time": {
+          "max": 0.00031185150146484375,
+          "median": 0.00027179718017578125,
+          "min": 0.0002200603485107422
+        },
+        "export_bytes": {
+          "max": 2373.0,
+          "median": 2373.0,
+          "min": 2373.0
+        }
+      },
+      "large": {
+        "processing_time": {
+          "max": 0.001110076904296875,
+          "median": 0.0010259151458740234,
+          "min": 0.0009989738464355469
+        },
+        "visualization_time": {
+          "max": 0.027290821075439453,
+          "median": 0.026865243911743164,
+          "min": 0.026842832565307617
+        },
+        "memory_usage": {
+          "max": 0.03125,
+          "median": 0.015625,
+          "min": 0.0
+        },
+        "visualization_memory": {
+          "max": 0.59375,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "disk_usage_bytes": {
+          "max": 170.0,
+          "median": 170.0,
+          "min": 170.0
+        },
+        "export_time": {
+          "max": 0.0003650188446044922,
+          "median": 0.0003020763397216797,
+          "min": 0.00030112266540527344
+        },
+        "export_bytes": {
+          "max": 22170.0,
+          "median": 22170.0,
+          "min": 22170.0
+        }
+      },
+      "parallel": {
+        "max": 0.0007281303405761719,
+        "median": 0.0005350112915039062,
+        "min": 0.00047016143798828125
+      },
+      "disk_write": {
+        "max": 0.0017624579995754175,
+        "median": 0.0017345830056001432,
+        "min": 0.0014682080000056885
+      },
+      "retained_memory_mb": {
+        "max": 0.00079345703125,
+        "median": 0.00079345703125,
+        "min": 0.00079345703125
+      },
+      "pipeline": {
+        "1": {
+          "max": 0.18181204795837402,
+          "median": 0.1790180206298828,
+          "min": 0.16347718238830566
+        },
+        "10": {
+          "max": 0.23090624809265137,
+          "median": 0.1805860996246338,
+          "min": 0.1773371696472168
+        },
+        "3": {
+          "max": 0.1787879467010498,
+          "median": 0.17692899703979492,
+          "min": 0.1764979362487793
+        }
+      }
+    },
+    "loaded_self_spawned": {
+      "small": {
+        "processing_time": {
+          "max": 0.0007119178771972656,
+          "median": 0.00042819976806640625,
+          "min": 0.00027298927307128906
+        },
+        "visualization_time": {
+          "max": 0.0013742446899414062,
+          "median": 0.000990152359008789,
+          "min": 0.0009818077087402344
+        },
+        "memory_usage": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "visualization_memory": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "disk_usage_bytes": {
+          "max": 170.0,
+          "median": 170.0,
+          "min": 170.0
+        },
+        "export_time": {
+          "max": 0.0004177093505859375,
+          "median": 0.00020384788513183594,
+          "min": 0.0001971721649169922
+        },
+        "export_bytes": {
+          "max": 662.0,
+          "median": 662.0,
+          "min": 662.0
+        }
+      },
+      "medium": {
+        "processing_time": {
+          "max": 0.0009989738464355469,
+          "median": 0.0003142356872558594,
+          "min": 0.0003039836883544922
+        },
+        "visualization_time": {
+          "max": 0.003596067428588867,
+          "median": 0.0035698413848876953,
+          "min": 0.003494739532470703
+        },
+        "memory_usage": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "visualization_memory": {
+          "max": 0.015625,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "disk_usage_bytes": {
+          "max": 172.0,
+          "median": 172.0,
+          "min": 172.0
+        },
+        "export_time": {
+          "max": 0.00022220611572265625,
+          "median": 0.00020194053649902344,
+          "min": 0.00019693374633789062
+        },
+        "export_bytes": {
+          "max": 2373.0,
+          "median": 2373.0,
+          "min": 2373.0
+        }
+      },
+      "large": {
+        "processing_time": {
+          "max": 0.0011107921600341797,
+          "median": 0.0010440349578857422,
+          "min": 0.0010368824005126953
+        },
+        "visualization_time": {
+          "max": 0.02863287925720215,
+          "median": 0.028234004974365234,
+          "min": 0.027894973754882812
+        },
+        "memory_usage": {
+          "max": 0.046875,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "visualization_memory": {
+          "max": 0.578125,
+          "median": 0.015625,
+          "min": 0.0
+        },
+        "disk_usage_bytes": {
+          "max": 170.0,
+          "median": 170.0,
+          "min": 170.0
+        },
+        "export_time": {
+          "max": 0.0002796649932861328,
+          "median": 0.0002560615539550781,
+          "min": 0.000247955322265625
+        },
+        "export_bytes": {
+          "max": 22170.0,
+          "median": 22170.0,
+          "min": 22170.0
+        }
+      },
+      "parallel": {
+        "max": 0.0008800029754638672,
+        "median": 0.0006878376007080078,
+        "min": 0.0005869865417480469
+      },
+      "disk_write": {
+        "max": 0.0013534589961636811,
+        "median": 0.0013292910007294267,
+        "min": 0.0012112499971408397
+      },
+      "retained_memory_mb": {
+        "max": 0.00079345703125,
+        "median": 0.00079345703125,
+        "min": 0.00079345703125
+      },
+      "pipeline": {
+        "1": {
+          "max": 0.1810302734375,
+          "median": 0.1785590648651123,
+          "min": 0.17367100715637207
+        },
+        "10": {
+          "max": 0.17580199241638184,
+          "median": 0.1746509075164795,
+          "min": 0.1704871654510498
+        },
+        "3": {
+          "max": 0.17551684379577637,
+          "median": 0.16988801956176758,
+          "min": 0.16470789909362793
+        }
+      }
+    },
+    "loaded_ambient": {
+      "small": {
+        "processing_time": {
+          "max": 0.0005488395690917969,
+          "median": 0.00037217140197753906,
+          "min": 0.0003712177276611328
+        },
+        "visualization_time": {
+          "max": 0.002646923065185547,
+          "median": 0.0024487972259521484,
+          "min": 0.002332925796508789
+        },
+        "memory_usage": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "visualization_memory": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "disk_usage_bytes": {
+          "max": 170.0,
+          "median": 170.0,
+          "min": 170.0
+        },
+        "export_time": {
+          "max": 0.0007998943328857422,
+          "median": 0.0007030963897705078,
+          "min": 0.00034689903259277344
+        },
+        "export_bytes": {
+          "max": 662.0,
+          "median": 662.0,
+          "min": 662.0
+        }
+      },
+      "medium": {
+        "processing_time": {
+          "max": 0.0004169940948486328,
+          "median": 0.0003299713134765625,
+          "min": 0.0003178119659423828
+        },
+        "visualization_time": {
+          "max": 0.04503893852233887,
+          "median": 0.03429603576660156,
+          "min": 0.02363896369934082
+        },
+        "memory_usage": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "visualization_memory": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "disk_usage_bytes": {
+          "max": 172.0,
+          "median": 172.0,
+          "min": 172.0
+        },
+        "export_time": {
+          "max": 0.009087800979614258,
+          "median": 0.0004200935363769531,
+          "min": 0.00039124488830566406
+        },
+        "export_bytes": {
+          "max": 2373.0,
+          "median": 2373.0,
+          "min": 2373.0
+        }
+      },
+      "large": {
+        "processing_time": {
+          "max": 0.0013997554779052734,
+          "median": 0.001336812973022461,
+          "min": 0.0013210773468017578
+        },
+        "visualization_time": {
+          "max": 0.31128597259521484,
+          "median": 0.25256896018981934,
+          "min": 0.2376410961151123
+        },
+        "memory_usage": {
+          "max": 0.03125,
+          "median": 0.015625,
+          "min": 0.0
+        },
+        "visualization_memory": {
+          "max": 0.546875,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "disk_usage_bytes": {
+          "max": 170.0,
+          "median": 170.0,
+          "min": 170.0
+        },
+        "export_time": {
+          "max": 0.0005950927734375,
+          "median": 0.000514984130859375,
+          "min": 0.0005018711090087891
+        },
+        "export_bytes": {
+          "max": 22170.0,
+          "median": 22170.0,
+          "min": 22170.0
+        }
+      },
+      "parallel": {
+        "max": 0.0023949146270751953,
+        "median": 0.001985788345336914,
+        "min": 0.0007350444793701172
+      },
+      "disk_write": {
+        "max": 0.014624540999648161,
+        "median": 0.00147974999708822,
+        "min": 0.0013899170007789508
+      },
+      "retained_memory_mb": {
+        "max": 0.00079345703125,
+        "median": 0.00079345703125,
+        "min": 0.00079345703125
+      },
+      "pipeline": {
+        "1": {
+          "max": 0.18332505226135254,
+          "median": 0.18215203285217285,
+          "min": 0.1494290828704834
+        },
+        "10": {
+          "max": 0.17431282997131348,
+          "median": 0.17279911041259766,
+          "min": 0.17048382759094238
+        },
+        "3": {
+          "max": 0.176893949508667,
+          "median": 0.17237401008605957,
+          "min": 0.1688990592956543
+        }
+      }
+    }
+  },
+  "baseline": {
+    "small_model": {
+      "processing_time": 0.0007119178771972656,
+      "visualization_time": 0.002646923065185547,
+      "memory_usage": 1.0,
+      "disk_usage": 1.0,
+      "export_time": 0.0007998943328857422
+    },
+    "medium_model": {
+      "processing_time": 0.0009989738464355469,
+      "visualization_time": 0.04503893852233887,
+      "memory_usage": 1.0,
+      "disk_usage": 1.0,
+      "export_time": 0.009087800979614258
+    },
+    "large_model": {
+      "processing_time": 0.0013997554779052734,
+      "visualization_time": 0.31128597259521484,
+      "memory_usage": 1.0,
+      "disk_usage": 1.0,
+      "export_time": 0.0005950927734375
+    },
+    "parallel": 0.0023949146270751953,
+    "disk_write": 0.014624540999648161,
+    "retained_memory": 1.0,
+    "pipeline": {
+      "1": 0.18332505226135254,
+      "3": 0.1787879467010498,
+      "10": 0.23090624809265137
+    }
+  },
+  "thresholds": {
+    "small_model": {
+      "processing_time": 0.07119178771972656,
+      "visualization_time": 0.2646923065185547,
+      "memory_usage": 100.0,
+      "disk_usage": 100.0,
+      "export_time": 0.07998943328857422
+    },
+    "medium_model": {
+      "processing_time": 0.09989738464355469,
+      "visualization_time": 4.503893852233887,
+      "memory_usage": 100.0,
+      "disk_usage": 100.0,
+      "export_time": 0.9087800979614258
+    },
+    "large_model": {
+      "processing_time": 0.13997554779052734,
+      "visualization_time": 31.128597259521484,
+      "memory_usage": 100.0,
+      "disk_usage": 100.0,
+      "export_time": 0.05950927734375
+    },
+    "parallel": 0.23949146270751953,
+    "disk_write": 1.4624540999648161,
+    "retained_memory": 100.0,
+    "pipeline": {
+      "1": 18.332505226135254,
+      "3": 17.87879467010498,
+      "10": 23.090624809265137
+    }
+  }
+}
