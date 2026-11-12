@@ -30,11 +30,12 @@ records release and distribution identities.
 ### Running the repository
 
 1. [Setup](SETUP.md)
-2. [Configuration](configuration/README.md)
-3. [Pipeline guide](pipeline/README.md)
-4. [Troubleshooting](troubleshooting/README.md)
-5. [Framework availability](execution/FRAMEWORK_AVAILABILITY.md)
-6. [Dashboard](gnn/modules/20_website.md) — the run's Step 20 website at `output/20_website_output/index.html`
+2. [Gate and CI run guide](RUN_GUIDE.md) — one arm at a time, or the whole gate
+3. [Configuration](configuration/README.md)
+4. [Pipeline guide](pipeline/README.md)
+5. [Troubleshooting](troubleshooting/README.md)
+6. [Framework availability](execution/FRAMEWORK_AVAILABILITY.md)
+7. [Dashboard](gnn/modules/20_website.md) — the run's Step 20 website at `output/20_website_output/index.html`
 
 ### Developing or integrating
 

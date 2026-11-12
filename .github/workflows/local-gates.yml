@@ -10,7 +10,7 @@ name: Local gates
 #   - just flag-parity (CLI flags vs maintained-doc mentions)
 #   - just dep-hygiene (optional-dependency consumers + stale mypy overrides)
 #   - just validate-surface (validate_gnn* public surface audit)
-#   - just doc-patterns (except-Exception ratchet, --strict; also in ci.yml + docs-audit.yml)
+# Doc-pattern checks now have one owner: ./run.sh docs in docs-audit.yml.
 #
 # Deliberately NOT wired here: `just gridworld` — since 2026-09-19 the recipe
 # runs the full GridWorld pipeline end-to-end (local Julia toolchains) and
@@ -120,5 +120,3 @@ jobs:
       - name: Doc path reference gate
         run: uv run --frozen --no-sync python scripts/check_doc_path_references.py
 
-      - name: Doc pattern ratchet
-        run: uv run --frozen --no-sync python scripts/check_gnn_doc_patterns.py --strict

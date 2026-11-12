@@ -13,6 +13,7 @@ Open integration work uses the [canonical backlog](../TO-DO.md).
 
 - [Version map](VERSION_MAP.md)
 - [Documentation hub](README.md)
+- [Gate and CI run guide](RUN_GUIDE.md) — the eight `./run.sh` arms, the CI lane each mirrors, measured wall time
 - [Setup](SETUP.md)
 - [Configuration](configuration/README.md)
 - [Quickstart](quickstart.md)
@@ -63,7 +64,7 @@ Open integration work uses the [canonical backlog](../TO-DO.md).
 - [Audio](audio/README.md)
 - [FEP_Formal (Lean 4)](other/fep_lean/README.md) — Lean ↔ GNN bridge program (contract v0.7); [reviewed companion and custody rules](development/fep_lean_paired_revision.md)
 - [GEO_INFER (spatial active inference)](other/geo_infer/README.md) — JSON artifact interchange (categorical, Gaussian, factored); consumer boundary in GEO-INFER-ACT, validation harness in GEO-INFER-TEST
-- [Downstream registry](downstream/README.md) — repositories that apply GNN: specs, pins and conformance evidence
+- [Downstream registry](downstream/README.md) — specifications, pins and conformance evidence; [read-only machine projection](downstream/importers.json)
 
 ## Theory and applications
 

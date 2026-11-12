@@ -7,6 +7,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Bounded gate composition and manuscript operation
+
+- Expose the existing MCP/collection function as `./run.sh contracts`.
+  Pytest arms forward report arguments; ordinary CI delegates to those arms
+  instead of duplicating commands. The aggregate now actually synchronizes once.
+- Give deterministic docs, pattern and capability audits one CI owner in
+  `docs-audit.yml`, preserving test selections, artifact names and job statuses.
+- Add the [run guide](docs/RUN_GUIDE.md), dated local measurements, upstream
+  pin/pointer boundaries and the ten-minute arm budget. No speedup is claimed.
+- Correct the manuscript README's symlink-based rendering advice: hydration
+  needs a real project directory inside a disposable template tree. The
+  reference template and downstream registry remain unchanged.
+- Renew manuscript evidence from the actual clean-source render against template
+  `f1fc24de`: variables, figure registry, hydrated prose, PDF, HTML, slides and
+  custody manifest move together. The reference template is not changed.
+
 ### Pipeline performance budgets from a measured band
 
 - `tests/pipeline/test_pipeline_performance.py` no longer asserts absolute

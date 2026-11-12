@@ -15,6 +15,7 @@
 #   test       pytest with the repository's default selection
 #   coverage   pytest with the coverage report and the configured floor
 #   docs       documentation, terminology and capability-contract audits
+#   contracts  MCP functional surface plus a full-tree collection check
 #   acceptance v3 orchestration acceptance gate
 #   help       this text
 #
@@ -40,9 +41,14 @@ need_uv() {
 
 # One frozen install, then `--no-sync` for every step: re-resolving per step is
 # how a gate silently drifts from the lock the CI lane installed.
+environment_synced=false
 sync_env() {
+    if "$environment_synced"; then
+        return
+    fi
     need_uv
     uv sync --frozen --extra dev
+    environment_synced=true
 }
 
 # Selection CI uses for the parallel suite: runtime-gate integration groups
@@ -67,14 +73,14 @@ gate_type() {
 gate_test() {
     sync_env
     uv run --frozen --no-sync python -m pytest tests/ "${PYTEST_SELECT[@]}" \
-        "${PYTEST_PARALLEL[@]}" -q --tb=short
+        "${PYTEST_PARALLEL[@]}" -q --tb=short "$@"
 }
 
 gate_coverage() {
     sync_env
     uv run --frozen --no-sync python -m pytest tests/ "${PYTEST_SELECT[@]}" \
         "${PYTEST_PARALLEL[@]}" -q --tb=short \
-        --cov=gnn --cov-report=term-missing
+        --cov=gnn --cov-report=term-missing "$@"
 }
 
 gate_docs() {
@@ -103,7 +109,7 @@ gate_contracts() {
         tests/mcp/test_transport_reliability.py \
         tests/render/test_framework_availability.py \
         tests/docs/test_capability_contracts.py \
-        -q --tb=short -rs
+        -q --tb=short -rs "$@"
     # Collection must stay importable across the whole tree (the `quality`
     # job's collect-only step); a collection error fails here, not in CI.
     uv run --frozen --no-sync python -m pytest --collect-only tests/ -q --tb=no \
@@ -131,15 +137,18 @@ gate_all() {
     echo "== gate: green =="
 }
 
-case "${1:-gates}" in
+mode="${1:-gates}"
+if (($#)); then shift; fi
+case "$mode" in
   gates)      gate_all ;;
   sync)       sync_env ;;
   lint)       gate_lint ;;
   type)       gate_type ;;
-  test)       gate_test ;;
-  coverage)   gate_coverage ;;
+  test)       gate_test "$@" ;;
+  coverage)   gate_coverage "$@" ;;
   docs)       gate_docs ;;
+  contracts)  gate_contracts "$@" ;;
   acceptance) gate_acceptance ;;
   help|-h|--help) sed -n '2,/^set -euo/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//' ;;
-  *) echo "Usage: $0 {gates|sync|lint|type|test|coverage|docs|acceptance|help}" >&2; exit 2 ;;
+  *) echo "Usage: $0 {gates|sync|lint|type|test|coverage|docs|contracts|acceptance|help}" >&2; exit 2 ;;
 esac
