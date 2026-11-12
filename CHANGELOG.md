@@ -246,6 +246,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 - `just importers`, `just importers-online` and `just importer-check REPO` expose
   the registry check, the report-only origin re-read and the per-checkout reader;
   `just quality` runs the offline registry check with the other fast gates.
+- The compliance validator now accepts v1.1 edge annotations. `A>B:label` was
+  read as a variable name, so valid documents from five consumers were reported
+  as non-conformant; the annotation is split off the target, preserved on the
+  connection's metadata, and the structural check compares the bare name. The
+  reader's schema finding is named `pin-schema-unversioned`.
 
 ## [5.0.3] - 2026-10-31
 

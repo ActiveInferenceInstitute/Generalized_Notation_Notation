@@ -29,8 +29,8 @@ four file locations), reads the specifications the pin declares or discovers
 them, and validates each at the compliance level — the normative section
 contract, not just a parse. Findings carry stable codes (`pin-missing`,
 `pin-commit-mismatch`, `pin-tag-mismatch`, `spec-missing`, `spec-invalid`,
-`pin-schema-legacy`) and `--json` emits the whole report. The canonical pin
-schema is `gnn-importer-pin/v1`; legacy pins are read and reported, never
+`pin-schema-unversioned`) and `--json` emits the whole report. The canonical pin
+schema is `gnn-importer-pin/v1`; pins written before the schema are read and reported, never
 rewritten.
 
 The estate-wide view is [the downstream registry](../downstream/README.md) and
