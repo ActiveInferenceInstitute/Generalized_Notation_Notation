@@ -129,6 +129,16 @@ reader instead of the canonical command, so the contract and the data cannot
 drift apart. It records the copies members still carry; it does not claim they
 are already gone.
 
+`Generalized_Notation_Notation` is the upstream member, not an importer to
+migrate: it owns `src/gnn/importers.py` and has no GNN pin or pointer. Do not run
+the importer command above on this checkout; its companion pins describe
+dependencies, not a GNN revision it consumes. Follow the contract's
+[upstream boundary](../workflows/gnn-fep.md#the-reader-is-not-for-this-repositorys-own-tree).
+Verify the reader with `python -m pytest tests/gnn/test_importers.py` and the
+group with `python scripts/check_importer_registry.py`. Retain `./run.sh gates`
+as this repository's whole gate; its focused `lint`, `type` and `docs` arms
+remain available.
+
 ## Pinned conformance baseline without a GNN specification
 
 Fourteen repositories carry no `.gnn.md` specification but pin GNN and publish
