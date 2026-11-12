@@ -238,6 +238,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   per row kind — offline and deterministic in `run.sh gates` and the `quality`
   job. Its `--online` mode re-reads every public repository's pin and job at
   origin and stays report-only, so a consumer moving never fails a GNN build.
+- The `--online` re-read now also confirms the `.github/GNN.md` pointer that the
+  registry's contract requires of every repository publishing a conformance
+  job: the pointer records what the job parses, and it was the one part of that
+  contract the drift detector could not see. A row without a conformance job is
+  exempt, and a missing pointer is an `origin-pointer` error naming the
+  repository and its default branch. Five stubbed-`gh` tests pin the behaviour,
+  including the unauthenticated degradation to `online-unavailable`.
 - The first estate-wide pass found five repositories whose specifications parse
   but do not satisfy the normative section contract: `InitialParameterization`
   or `Time` is missing, or a connection names an undeclared matrix. The registry

@@ -102,8 +102,9 @@ matching the upstream release this registry declares, and the spec-count
 contract per row kind — and runs offline in `run.sh gates` and the `quality`
 job. That gate checks internal consistency only; it makes no claim about any
 repository's current state. Currency stays report-only: the same script with
-`--online` re-reads every public repository's pin and conformance job at origin
-and prints drift, for release preparation, never as a blocking gate.
+`--online` re-reads every public repository's pin, conformance job and
+`.github/GNN.md` pointer at origin and prints drift, for release preparation,
+never as a blocking gate.
 
 A consumer can check its own checkout against the same reader GNN ships:
 
