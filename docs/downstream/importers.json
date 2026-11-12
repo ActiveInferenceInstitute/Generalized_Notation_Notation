@@ -16,7 +16,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -36,7 +36,7 @@
         "path": "specs/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -96,7 +96,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": "active-fractal-rabbit-gnn-pin-v1"
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 2
@@ -116,7 +116,7 @@
         "path": "gnn/upstream.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -156,7 +156,7 @@
         "path": "gnn/upstream.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 25
@@ -176,7 +176,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -216,7 +216,7 @@
         "path": "gnn/upstream.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -236,7 +236,7 @@
         "path": "specs/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -256,7 +256,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -276,7 +276,7 @@
         "path": "specs/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -296,7 +296,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -316,7 +316,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -336,7 +336,7 @@
         "path": "gnn/upstream.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -356,7 +356,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -376,7 +376,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": "biofirm-gnn-pin-v1"
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -396,7 +396,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": "cerebrum-gnn-pin-v1"
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -435,7 +435,7 @@
         "path": "specs/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -455,7 +455,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -495,7 +495,7 @@
         "path": "specs/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -515,7 +515,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -535,7 +535,7 @@
         "path": "NHIM/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -555,7 +555,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -575,7 +575,7 @@
         "path": ".github/gnn-pair.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -595,7 +595,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -615,7 +615,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -635,7 +635,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -655,7 +655,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -675,7 +675,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -695,7 +695,7 @@
         "path": "gnn/upstream.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 3
@@ -715,7 +715,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -735,7 +735,7 @@
         "path": "gnn/upstream.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 3
@@ -755,7 +755,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 1
@@ -785,7 +785,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -805,7 +805,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
@@ -825,7 +825,7 @@
         "path": ".github/gnn-pin.json",
         "tag": "v5.0.3",
         "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-        "schema": null
+        "schema": "gnn-importer-pin/v1"
       },
       "specs": {
         "count": 0
