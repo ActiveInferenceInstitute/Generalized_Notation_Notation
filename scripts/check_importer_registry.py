@@ -51,6 +51,30 @@ KINDS = ("spec", "pin-only", "contract")
 PIN_KINDS = ("file", "dependency", "content-hash")
 VISIBILITIES = ("public", "private")
 
+#: The one command a member runs instead of carrying its own pin reader.
+CANONICAL_IMPORTER_ARM = "python -m gnn.importers check --repo ."
+
+#: How a member reaches the canonical reader. ``direct`` is the only kind that
+#: needs no member-side copy; ``wrapper`` is for a gate whose language cannot
+#: import it and records the file that shells out; ``upstream`` is the reader's
+#: own repository, which is not an importer of itself.
+INSTALL_KINDS = ("direct", "wrapper", "upstream")
+
+#: The documentation hub every member publishes, and the flattened indexes some
+#: add beside it. A member's declared hub must be one of these, so a typo in the
+#: contract cannot pass as a path.
+DOCS_HUBS = ("docs/README.md",)
+DOCS_FLAT_INDEXES = ("docs/INDEX.md", "docs/documentation-index.md")
+
+#: The template's own manuscript producer: the filename the docxology render
+#: pipeline invokes before a PDF render.
+CANONICAL_MANUSCRIPT_PRODUCER = "scripts/z_generate_manuscript_variables.py"
+
+#: Markers that bound the contract's member table, so prose parity is a set
+#: comparison rather than a scan of every repository name in the document.
+MEMBERS_START = "<!-- gnn-fep-members:start -->"
+MEMBERS_END = "<!-- gnn-fep-members:end -->"
+
 _ROW_RE = re.compile(r"^\|\s*\[([^\]]+)\]\([^)]+\)")
 
 
@@ -251,6 +275,191 @@ def check_pin_parity(registry: Dict[str, Any], findings: Findings) -> None:
             )
 
 
+def contract_members(path: Path) -> Set[str]:
+    """Return the repositories the contract's marked member table names."""
+    text = path.read_text(encoding="utf-8")
+    if MEMBERS_START not in text or MEMBERS_END not in text:
+        raise ValueError(f"{path}: missing {MEMBERS_START} / {MEMBERS_END} markers")
+    block = text.split(MEMBERS_START, 1)[1].split(MEMBERS_END, 1)[0]
+    names: Set[str] = set()
+    for line in block.splitlines():
+        match = _ROW_RE.match(line)
+        if match:
+            names.add(match.group(1))
+    return names
+
+
+def check_workflow_groups(registry: Dict[str, Any], findings: Findings) -> None:
+    """Check each workflow group against the importer rows it claims.
+
+    A group records, for one set of repositories, how each member reaches the
+    canonical pin reader. The value is that three separate hand-edited
+    artifacts — the contract prose, this JSON, and each member's row — agree:
+    a member the contract names but the rows do not know, a pin path that
+    drifted from the row, or an ``arm`` that is not the canonical command is
+    exactly the divergence this check exists to refuse.
+    """
+    groups = registry.get("workflow_groups")
+    if groups is None:
+        return
+    if not isinstance(groups, dict) or not groups:
+        findings.error("group-shape", "workflow_groups must be a non-empty object")
+        return
+    rows = {
+        row.get("repo"): row
+        for row in registry.get("importers") or []
+        if isinstance(row, dict)
+    }
+    for group_id, group in sorted(groups.items()):
+        if not isinstance(group, dict):
+            findings.error("group-shape", f"{group_id}: must be an object")
+            continue
+        contract = group.get("contract")
+        contract_path: Optional[Path] = None
+        if not isinstance(contract, str) or not contract:
+            findings.error("group-contract", f"{group_id}: contract is empty")
+        else:
+            contract_path = ROOT / contract
+            if not contract_path.is_file():
+                findings.error(
+                    "group-contract", f"{group_id}: {contract} does not exist"
+                )
+                contract_path = None
+        members = group.get("members")
+        if not isinstance(members, list) or not members:
+            findings.error(
+                "group-members", f"{group_id}: members must be a non-empty list"
+            )
+            continue
+
+        seen: Set[str] = set()
+        for member in members:
+            if not isinstance(member, dict):
+                findings.error(
+                    "group-member-shape", f"{group_id}: member is not an object"
+                )
+                continue
+            repo = member.get("repo")
+            if not isinstance(repo, str) or not repo:
+                findings.error("group-member-repo", f"{group_id}: member has no repo")
+                continue
+            if repo in seen:
+                findings.error(
+                    "group-member-duplicate", f"{group_id}: {repo} listed twice"
+                )
+            seen.add(repo)
+            row = rows.get(repo)
+            role = member.get("role")
+            _require(
+                role in ("upstream", "importer"),
+                findings,
+                "group-member-role",
+                f"{repo}: role {role!r} not in ('upstream', 'importer')",
+            )
+            if row is None:
+                upstream = (registry.get("upstream") or {}).get("repository") or ""
+                if role == "upstream" and repo == upstream.rsplit("/", 1)[-1]:
+                    _require(
+                        member.get("pin") is None and member.get("pointer") is None,
+                        findings,
+                        "group-upstream-pin",
+                        f"{repo}: the reader's own repository carries no importer pin or pointer",
+                    )
+                    continue
+                findings.error(
+                    "group-member-unknown",
+                    f"{group_id}: {repo} is not an importer row",
+                )
+                continue
+            install = member.get("install")
+            _require(
+                install in INSTALL_KINDS,
+                findings,
+                "group-member-install",
+                f"{repo}: install {install!r} not in {INSTALL_KINDS}",
+            )
+            _require(
+                member.get("arm") == CANONICAL_IMPORTER_ARM,
+                findings,
+                "group-member-arm",
+                f"{repo}: arm {member.get('arm')!r} is not the canonical "
+                f"{CANONICAL_IMPORTER_ARM!r}",
+            )
+            if install == "wrapper":
+                wrapper = member.get("wrapper")
+                _require(
+                    isinstance(wrapper, str) and bool(wrapper),
+                    findings,
+                    "group-member-wrapper",
+                    f"{repo}: install 'wrapper' must name the wrapper file",
+                )
+                _require(
+                    isinstance(member.get("reason"), str)
+                    and bool(member.get("reason")),
+                    findings,
+                    "group-member-reason",
+                    f"{repo}: install 'wrapper' must record why it cannot call the reader",
+                )
+            expected_pin = (row.get("pin") or {}).get("path")
+            _require(
+                member.get("pin") == expected_pin,
+                findings,
+                "group-member-pin",
+                f"{repo}: contract pin {member.get('pin')!r} != row pin {expected_pin!r}",
+            )
+            hub = member.get("docs_index")
+            _require(
+                hub is None or hub in DOCS_HUBS,
+                findings,
+                "group-member-docs",
+                f"{repo}: docs_index {hub!r} not in {DOCS_HUBS} or null",
+            )
+            flat = member.get("docs_flat_index")
+            _require(
+                flat is None or flat in DOCS_FLAT_INDEXES,
+                findings,
+                "group-member-flat-index",
+                f"{repo}: docs_flat_index {flat!r} not in {DOCS_FLAT_INDEXES} or null",
+            )
+            manuscript = member.get("manuscript")
+            _require(
+                manuscript is None
+                or (
+                    isinstance(manuscript, str)
+                    and manuscript.endswith(".py")
+                    and "/" in manuscript
+                ),
+                findings,
+                "group-member-manuscript",
+                f"{repo}: manuscript {manuscript!r} must be a script path or null",
+            )
+            gate = member.get("gate")
+            _require(
+                gate is None or isinstance(gate, str),
+                findings,
+                "group-member-gate",
+                f"{repo}: gate must be a command string or null",
+            )
+
+        if contract_path is None:
+            continue
+        try:
+            documented = contract_members(contract_path)
+        except (OSError, ValueError) as exc:
+            findings.error("group-contract-members", f"{group_id}: {exc}")
+            continue
+        for missing in sorted(seen - documented):
+            findings.error(
+                "group-member-undocumented",
+                f"{group_id}: {missing} is in the JSON but not the contract table",
+            )
+        for extra in sorted(documented - seen):
+            findings.error(
+                "group-member-unregistered",
+                f"{group_id}: {extra} is in the contract table but not the JSON",
+            )
+
+
 class GhError(RuntimeError):
     """A ``gh`` call failed for a reason other than a missing path."""
 
@@ -410,6 +619,8 @@ def check_local_repo(
         if pin.get("kind") in ("file", "dependency")
         else None,
         require_pin=pin.get("kind") is not None,
+        pin_path=Path(pin["path"]) if pin.get("path") else None,
+        pin_party=pin.get("party"),
     )
     for item in report["findings"]:
         if item["level"] == "error":
@@ -458,6 +669,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     check_schema(registry, findings)
     check_docs_parity(registry, findings)
     check_pin_parity(registry, findings)
+    check_workflow_groups(registry, findings)
     if args.online:
         check_online(registry, findings)
     if args.repo is not None:
@@ -486,6 +698,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(
             f"  pin schema: {canonical} of {declared} pins declare gnn-importer-pin/v1"
         )
+        groups = registry.get("workflow_groups") or {}
+        for group_id, group in sorted(groups.items()):
+            members = (group or {}).get("members") or []
+            direct = sum(1 for m in members if m.get("install") == "direct")
+            print(
+                f"  group {group_id}: {len(members)} members, {direct} call the reader directly"
+            )
         for item in findings.items:
             print(f"  [{item['level']}] {item['code']}: {item['message']}")
         print("  verdict: " + ("ok" if not failed else "FAILED"))

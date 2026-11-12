@@ -47,6 +47,7 @@ Open integration work uses the [canonical backlog](../TO-DO.md).
 - [Framework integration](gnn/integration/framework_integration_guide.md)
 - [API](api/README.md)
 - [Development](development/README.md)
+- [Cross-repository workflow contracts](workflows/README.md)
 - [Testing](testing/README.md)
 - [Security](security/README.md)
 - [Doc audit](development/docs_audit.py)

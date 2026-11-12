@@ -45,6 +45,7 @@ records release and distribution identities.
 4. [Framework integration](gnn/integration/framework_integration_guide.md)
 5. [API documentation](api/README.md)
 6. [Development guide](development/README.md)
+7. [Cross-repository workflow contracts](workflows/README.md)
 
 ### Research and theory
 

@@ -27,28 +27,54 @@ Earlier shapes are read, never rewritten: ``revision`` is accepted for
 ``commit``, ``release`` for ``tag``, ``repository`` may be an ``org/name`` or a
 URL, and ``spec_files`` is optional (absent means "discover ``*.gnn.md``").
 
+Two shapes need a hint from the caller:
+
+* **A two-party custody pin.** ``fep_formal`` records ``fep_lean`` and ``gnn``
+  as separate sub-objects of ``specs/gnn-bridge-w2-source-custody/source-pin.json``
+  with per-file SHA-256 owners instead of a release tag. ``--pin`` names the
+  file and ``--pin-party gnn`` names the sub-record; the reader normalizes it
+  to the same :class:`ImporterPin`.
+* **A differently directed pair pin.** The upstream GNN checkout pins its
+  downstreams in ``.github/gnn-pair.json``; discovery would read that as a GNN
+  pin and report a fork. ``--pin`` is how a caller with a non-conventional pin
+  states which file it means.
+
+``--require-pointer`` additionally checks ``.github/GNN.md``: the pointer must
+name the pin file, the pinned revision and — when given — the conformance
+workflow and job key. It is opt-in because a repository adopts it deliberately,
+in the same change that writes the pointer.
+
 Usage::
 
     python -m gnn.importers check --repo . --json
     python -m gnn.importers check --repo . --expected-commit 8f293d9b...
+    python -m gnn.importers check --repo . --require-pointer \
+        --workflow .github/workflows/ci.yml --job gnn-conformance
+    python -m gnn.importers check --repo . \
+        --pin specs/gnn-bridge-w2-source-custody/source-pin.json --pin-party gnn
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 __all__ = [
+    "IMPORTER_VARIABLES_SCHEMA",
     "PIN_SCHEMA",
+    "POINTER_PATH",
     "ImporterPin",
     "PinError",
     "check_importer",
+    "check_pointer",
     "discover_specs",
     "find_pin",
+    "importer_variables",
     "main",
     "normalize_repository",
     "read_pin",
@@ -73,6 +99,12 @@ PIN_CANDIDATES: Tuple[str, ...] = (
     "NHIM/gnn-pin.json",
     ".github/gnn-pair.json",
 )
+
+#: The human-readable pointer every importer publishes beside its pin. It
+#: records what the conformance job parses, so a reader can reach the pin, the
+#: revision and the job from one file instead of reconstructing them from a
+#: workflow definition.
+POINTER_PATH = ".github/GNN.md"
 
 #: Directories never searched for specifications.
 SKIP_DIRS = frozenset(
@@ -119,6 +151,10 @@ class ImporterPin:
     schema: Optional[str] = None
     recorded: Optional[str] = None
     spec_files: Tuple[str, ...] = ()
+    #: Sub-record this pin was read from, for a two-party custody pin that
+    #: nests one object per repository (``fep_formal`` records ``fep_lean`` and
+    #: ``gnn`` in one file). ``None`` for the ordinary flat pin.
+    party: Optional[str] = None
     raw: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -154,11 +190,17 @@ def find_pin(repo_root: Path) -> Optional[Path]:
     return None
 
 
-def read_pin(path: Path) -> ImporterPin:
+def read_pin(path: Path, *, party: Optional[str] = None) -> ImporterPin:
     """Read and normalize one pin file.
 
+    Args:
+        path: The pin file.
+        party: Sub-record to read, for a custody pin that nests one object per
+            repository. ``None`` reads the file as a flat pin.
+
     Raises:
-        PinError: the file is not JSON, or records no commit/revision.
+        PinError: the file is not JSON, records no commit/revision, or the
+            requested ``party`` sub-record is absent.
     """
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -167,11 +209,21 @@ def read_pin(path: Path) -> ImporterPin:
     if not isinstance(payload, dict):
         raise PinError(f"{path}: pin must be a JSON object")
 
-    commit = payload.get("commit") or payload.get("revision")
+    source = payload
+    if party is not None:
+        nested = payload.get(party)
+        if not isinstance(nested, dict):
+            raise PinError(
+                f"{path}: records no {party!r} sub-record "
+                f"(file names {sorted(payload)})"
+            )
+        source = nested
+
+    commit = source.get("commit") or source.get("revision")
     if not isinstance(commit, str) or not commit.strip():
         raise PinError(f"{path}: pin records no commit/revision")
-    tag = payload.get("tag") or payload.get("release")
-    spec_files = payload.get("spec_files")
+    tag = source.get("tag") or source.get("release")
+    spec_files = source.get("spec_files")
     if isinstance(spec_files, str):
         spec_files = [spec_files]
     if not isinstance(spec_files, list):
@@ -180,14 +232,13 @@ def read_pin(path: Path) -> ImporterPin:
         path=path,
         commit=commit.strip(),
         tag=tag.strip() if isinstance(tag, str) and tag.strip() else None,
-        repository=normalize_repository(payload.get("repository")),
-        schema=payload.get("schema")
-        if isinstance(payload.get("schema"), str)
-        else None,
-        recorded=payload.get("recorded")
-        if isinstance(payload.get("recorded"), str)
+        repository=normalize_repository(source.get("repository")),
+        schema=source.get("schema") if isinstance(source.get("schema"), str) else None,
+        recorded=source.get("recorded")
+        if isinstance(source.get("recorded"), str)
         else None,
         spec_files=tuple(str(item) for item in spec_files),
+        party=party,
         raw=payload,
     )
 
@@ -233,6 +284,121 @@ def _validate_spec(path: Path) -> List[str]:
     return [str(error) for error in errors] or ["invalid specification"]
 
 
+def _relative(path: Path, root: Path) -> str:
+    """Return ``path`` relative to ``root`` when it is inside it, else the name."""
+    try:
+        return str(path.relative_to(root))
+    except ValueError:
+        return path.name
+
+
+def check_pointer(
+    repo_root: Path,
+    pin: ImporterPin,
+    *,
+    workflow: Optional[str] = None,
+    job: Optional[str] = None,
+) -> List[Dict[str, str]]:
+    """Check the importer's ``.github/GNN.md`` pointer against its pin.
+
+    The pointer is what a human reads and what the estate's online re-read
+    looks for; a pointer that names a different pin, revision or job is a
+    finding, not a documentation preference. Every check is textual: the
+    pointer is prose, so the reader asks whether the facts appear, not whether
+    the file has a schema.
+    """
+    findings: List[Dict[str, str]] = []
+    path = repo_root / POINTER_PATH
+    if not path.is_file():
+        return [
+            {
+                "level": "error",
+                "code": "pointer-missing",
+                "message": f"{POINTER_PATH} is absent; it must name {_relative(pin.path, repo_root)}, "
+                f"{pin.commit[:12]} and the conformance job",
+            }
+        ]
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        return [
+            {
+                "level": "error",
+                "code": "pointer-unreadable",
+                "message": f"{POINTER_PATH} is not readable text ({exc})",
+            }
+        ]
+
+    pin_name = _relative(pin.path, repo_root)
+    if pin_name not in text:
+        findings.append(
+            {
+                "level": "error",
+                "code": "pointer-pin-unnamed",
+                "message": f"{POINTER_PATH} does not name the pin file {pin_name}",
+            }
+        )
+    if pin.commit not in text and pin.commit[:12] not in text:
+        findings.append(
+            {
+                "level": "error",
+                "code": "pointer-revision-unnamed",
+                "message": f"{POINTER_PATH} does not name the pinned revision {pin.commit[:12]}",
+            }
+        )
+    if workflow and Path(workflow).name not in text:
+        findings.append(
+            {
+                "level": "error",
+                "code": "pointer-workflow-unnamed",
+                "message": f"{POINTER_PATH} does not name the workflow {workflow}",
+            }
+        )
+    if job and job not in text:
+        findings.append(
+            {
+                "level": "error",
+                "code": "pointer-job-unnamed",
+                "message": f"{POINTER_PATH} does not name the job key {job}",
+            }
+        )
+    return findings
+
+
+#: Schema identifier for the GNN-derived subset of a manuscript variable map.
+IMPORTER_VARIABLES_SCHEMA = "gnn-importer-variables/v1"
+
+
+def importer_variables(
+    pin: ImporterPin,
+    *,
+    repo_root: Path,
+    job: Optional[str] = None,
+    job_name: Optional[str] = None,
+) -> Dict[str, str]:
+    """Return the GNN-derived manuscript variables for one importer.
+
+    A repository whose manuscript states which GNN release it consumes needs
+    the same seven facts this reader already normalizes. Producing them here
+    means the prose and the conformance job cannot disagree about the pin, and
+    a consumer does not re-read the JSON in its own variable script.
+
+    ``gnn_job_key`` and ``gnn_job_name`` are the conformance job the registry
+    row records; a caller that has them passes them, because the reader does
+    not parse workflow YAML.
+    """
+    return {
+        "schema": IMPORTER_VARIABLES_SCHEMA,
+        "gnn_pin_path": _relative(pin.path, repo_root),
+        "gnn_pin_schema": pin.schema or "",
+        "gnn_repository": pin.repository or "",
+        "gnn_tag": pin.tag or "",
+        "gnn_commit": pin.commit,
+        "gnn_job_key": job or "",
+        "gnn_job_name": job_name or "",
+    }
+
+
 def check_importer(
     repo_root: Path,
     *,
@@ -241,11 +407,27 @@ def check_importer(
     expected_repository: Optional[str] = UPSTREAM_REPOSITORY,
     validate_specs: bool = True,
     require_pin: bool = True,
+    pin_path: Optional[Path] = None,
+    pin_party: Optional[str] = None,
+    require_pointer: bool = False,
+    pointer_workflow: Optional[str] = None,
+    pointer_job: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Check one importer checkout and return a JSON-ready report.
 
     Findings carry ``level`` (``error`` fails the check, ``warning`` does not)
     and ``code`` so a caller can filter without parsing prose.
+
+    Args:
+        pin_path: Read this pin instead of discovering one. Needed where a
+            repository keeps a differently named custody pin
+            (``fep_formal``'s ``source-pin.json``) or where the conventional
+            candidate list would pick a *different repository's* pin (the
+            upstream GNN checkout pins its downstreams in
+            ``.github/gnn-pair.json``).
+        pin_party: Sub-record to read inside ``pin_path`` for a two-party pin.
+        require_pointer: Also require ``.github/GNN.md`` to name the pin, the
+            revision and the declared workflow and job.
     """
     repo_root = repo_root.resolve()
     findings: List[Dict[str, str]] = []
@@ -257,10 +439,23 @@ def check_importer(
         "ok": False,
     }
 
-    pin_path = find_pin(repo_root)
+    pin_file = find_pin(repo_root)
+    if pin_path is not None:
+        pin_file = pin_path if pin_path.is_absolute() else repo_root / pin_path
+        if not pin_file.is_file():
+            findings.append(
+                {
+                    "level": "error",
+                    "code": "pin-missing",
+                    "message": f"the declared pin {_relative(pin_file, repo_root)} is absent",
+                }
+            )
+            pin_file = None
     pin: Optional[ImporterPin] = None
-    if pin_path is None:
-        if require_pin:
+    if pin_file is None:
+        if pin_path is not None:
+            pass  # the absent declared pin is already the finding
+        elif require_pin:
             findings.append(
                 {
                     "level": "error",
@@ -280,14 +475,15 @@ def check_importer(
             )
     else:
         try:
-            pin = read_pin(pin_path)
+            pin = read_pin(pin_file, party=pin_party)
         except PinError as exc:
             findings.append(
                 {"level": "error", "code": "pin-unreadable", "message": str(exc)}
             )
         else:
             report["pin"] = {
-                "path": str(pin.path.relative_to(repo_root)),
+                "path": _relative(pin.path, repo_root),
+                "party": pin.party,
                 "commit": pin.commit,
                 "tag": pin.tag,
                 "repository": pin.repository,
@@ -295,6 +491,14 @@ def check_importer(
                 "recorded": pin.recorded,
                 "spec_files": list(pin.spec_files),
             }
+            if not re.fullmatch(r"[0-9a-f]{40}", pin.commit):
+                findings.append(
+                    {
+                        "level": "error",
+                        "code": "pin-commit-shape",
+                        "message": f"pin records {pin.commit!r}, which is not a 40-character commit id",
+                    }
+                )
             if pin.schema != PIN_SCHEMA:
                 findings.append(
                     {
@@ -372,6 +576,28 @@ def check_importer(
             }
         )
 
+    if require_pointer:
+        if pin is None:
+            findings.append(
+                {
+                    "level": "error",
+                    "code": "pointer-unchecked",
+                    "message": f"{POINTER_PATH} cannot be checked without a readable pin",
+                }
+            )
+        else:
+            pointer_findings = check_pointer(
+                repo_root,
+                pin,
+                workflow=pointer_workflow,
+                job=pointer_job,
+            )
+            findings.extend(pointer_findings)
+            report["pointer"] = {
+                "path": POINTER_PATH,
+                "ok": not pointer_findings,
+            }
+
     report["ok"] = not any(item["level"] == "error" for item in findings)
     return report
 
@@ -380,13 +606,19 @@ def _format_text(report: Dict[str, Any]) -> str:
     lines = [f"importer: {report['repo']}"]
     pin = report["pin"]
     if pin:
+        party = f" [{pin['party']}]" if pin.get("party") else ""
         lines.append(
-            f"  pin: {pin['path']} -> {pin['tag'] or '(no tag)'} @ {pin['commit'][:10]}"
+            f"  pin: {pin['path']}{party} -> {pin['tag'] or '(no tag)'} @ {pin['commit'][:10]}"
             f" (schema {pin['schema'] or 'unversioned'})"
         )
     else:
         lines.append("  pin: none")
     lines.append(f"  specs: {report['specs']['count']}")
+    pointer = report.get("pointer")
+    if pointer:
+        lines.append(
+            f"  pointer: {pointer['path']} -> {'ok' if pointer['ok'] else 'FAILED'}"
+        )
     for item in report["findings"]:
         lines.append(f"  [{item['level']}] {item['code']}: {item['message']}")
     lines.append("  verdict: " + ("ok" if report["ok"] else "FAILED"))
@@ -423,6 +655,31 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="treat a missing pin as a warning instead of an error",
     )
+    check.add_argument(
+        "--pin",
+        default=None,
+        help="read this pin instead of discovering one (for a differently named custody pin)",
+    )
+    check.add_argument(
+        "--pin-party",
+        default=None,
+        help="sub-record to read inside --pin for a two-party custody pin",
+    )
+    check.add_argument(
+        "--require-pointer",
+        action="store_true",
+        help=f"also require {POINTER_PATH} to name the pin, revision, workflow and job",
+    )
+    check.add_argument(
+        "--workflow",
+        default=None,
+        help="conformance workflow the pointer must name (with --require-pointer)",
+    )
+    check.add_argument(
+        "--job",
+        default=None,
+        help="conformance job key the pointer must name (with --require-pointer)",
+    )
     check.add_argument("--json", action="store_true", help="emit the report as JSON")
     args = parser.parse_args(argv)
 
@@ -433,6 +690,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         expected_repository=args.expected_repository or None,
         validate_specs=not args.no_validate,
         require_pin=not args.allow_missing_pin,
+        pin_path=Path(args.pin) if args.pin else None,
+        pin_party=args.pin_party,
+        require_pointer=args.require_pointer,
+        pointer_workflow=args.workflow,
+        pointer_job=args.job,
     )
     if args.json:
         print(json.dumps(report, indent=2, sort_keys=True))

@@ -40,3 +40,4 @@ troubleshooting
 tutorials
 type-inference-zoo
 visualization
+workflows

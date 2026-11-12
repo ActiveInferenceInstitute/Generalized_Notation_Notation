@@ -14,7 +14,7 @@ default branch.
 | File | Role |
 |------|------|
 | [README.md](README.md) | Index table, method, scope, pinned-conformance baseline, contract rows, exclusions |
-| [importers.json](importers.json) | Machine-readable mirror of the README tables: one row per repository with its pin path, pin revision, specification count and conformance job. `scripts/check_importer_registry.py` keeps the two forms one artifact |
+| [importers.json](importers.json) | Machine-readable mirror of the README tables: one row per repository with its pin path, pin revision, specification count and conformance job, plus the `workflow_groups` block that binds a set of members to one canonical implementation. `scripts/check_importer_registry.py` keeps the two forms one artifact |
 | `active-inference-language-model.md` | AILM language-stack models |
 | `geo-infer.md` | GEO-INFER spatial interchange |
 | `cogant.md` | Code-to-GNN translation |
