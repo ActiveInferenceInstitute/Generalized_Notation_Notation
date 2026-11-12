@@ -17,6 +17,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   record. Binary publication bytes are not text-normalized or compared
   across fresh renders. The counts/source commit remains the pre-render
   identity, not the eventual commit that carries the artifacts.
+- Renew the full SC-22 chain from source `b5b2779bb` with template
+  `f1fc24de3a2989531e954bf5098360dbfb47ec3d`, pandoc 3.13,
+  pandoc-crossref 0.3.26 and TeX Live 2026. The real render completed in
+  123.25 seconds, verifying the PDF, combined HTML, ten HTML sections and
+  ten slide decks. The shipped PDF is 1,450,049 bytes; its SHA-256 is
+  recorded in the manifest rather than inferred from an older size report.
 
 ### Bounded gate composition and manuscript operation
 
