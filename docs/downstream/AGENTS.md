@@ -14,6 +14,7 @@ default branch.
 | File | Role |
 |------|------|
 | [README.md](README.md) | Index table, method, scope, pinned-conformance baseline, contract rows, exclusions |
+| [importers.json](importers.json) | Machine-readable mirror of the README tables: one row per repository with its pin path, pin revision, specification count and conformance job. `scripts/check_importer_registry.py` keeps the two forms one artifact |
 | `active-inference-language-model.md` | AILM language-stack models |
 | `geo-infer.md` | GEO-INFER spatial interchange |
 | `cogant.md` | Code-to-GNN translation |
@@ -48,10 +49,16 @@ default branch.
   as part of GNN release-tag preparation and on request. The README's
   "Refresh contract" section owns what is dated and what is not: rows name
   mechanisms, and each consumer's pin file and CI job own currency.
-- Do not wire a repository gate or workflow to this tree: mechanism-named rows
-  make no per-repository currency claim a gate could check. Automation that
-  re-reads origins belongs in a separate report-only observation, never a
-  blocking gate.
+- The gate wired to this tree checks *internal consistency only*:
+  `scripts/check_importer_registry.py` (errors only, offline, in `run.sh gates`
+  and the `quality` job) proves that `importers.json` and the README tables list
+  the same repositories, that every row is well formed, that each pin matches
+  the upstream release this registry declares, and that the spec-count contract
+  per row kind holds. It makes no claim about any repository's current state.
+- Currency stays report-only. `--online` re-reads every public repository's pin
+  and conformance job at origin and prints drift; it is for release preparation
+  and never part of a blocking gate, because a mechanism-named row must not fail
+  a build when a consumer moves.
 
 ## Related
 

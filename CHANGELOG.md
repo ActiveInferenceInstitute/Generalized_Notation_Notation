@@ -220,6 +220,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   CVE-2026-115586) is no longer resolved. The floor stays a resolver constraint
   rather than a runtime dependency.
 
+### Downstream importer conformance
+
+- Add `gnn.importers`: one reader for the pin shapes the estate actually carries
+  (`commit`/`revision`, `tag`/`release`, four file locations). `python -m
+  gnn.importers check --repo .` normalizes the pin, discovers or reads the
+  declared `*.gnn.md` specifications, and validates them with the installed
+  parser at the compliance level rather than merely parsing them, so a consumer
+  checks its own checkout with the same code GNN ships. Findings carry stable
+  codes (`pin-missing`, `pin-commit-mismatch`, `spec-invalid`, …) and are
+  available as JSON.
+- Add `docs/downstream/importers.json`, the machine-readable mirror of the
+  registry tables: 42 repositories, each with its pin path, revision,
+  specification count and conformance job. `scripts/check_importer_registry.py`
+  keeps the prose and JSON forms one artifact — same repositories, well-formed
+  rows, pins matching the declared upstream release, and the spec-count contract
+  per row kind — offline and deterministic in `run.sh gates` and the `quality`
+  job. Its `--online` mode re-reads every public repository's pin and job at
+  origin and stays report-only, so a consumer moving never fails a GNN build.
+- The first estate-wide pass found five repositories whose specifications parse
+  but do not satisfy the normative section contract: `InitialParameterization`
+  or `Time` is missing, or a connection names an undeclared matrix. The registry
+  records the finding; each repository fixes its own specifications, and the
+  gate here checks internal consistency only.
+
 ## [5.0.3] - 2026-10-31
 
 ### Release qualification repair

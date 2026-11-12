@@ -14,6 +14,31 @@ declarations.
 | Documentation | [Root index](../../INDEX.md); [documentation index](../INDEX.md); [guided tour](../START_HERE.md) | Maintained documentation lives under `docs/`. The guides link to the same contract owners and the [canonical backlog](../../TO-DO.md). |
 | API surface | [Typed/API contracts](interop_api.md); [CLI](../../src/gnn/cli/README.md); [HTTP applications](../../src/gnn/api/README.md); [MCP](../../src/gnn/mcp/README.md) | `gnn = gnn.cli:main` is the only packaged console script. Select the HTTP surface explicitly: `gnn serve --surface runs` starts `gnn.api.app`, `--surface jobs` starts `gnn.api.server`, and `--surface both` runs the jobs surface on port+1. Both factories install the same `gnn.api.responses` envelopes and report `gnn.__version__` as their version. |
 
+## Importer conformance
+
+A repository that applies GNN records the upstream revision it consumes in a pin
+file and keeps `*.gnn.md` specifications. The installed distribution ships the
+reader for both, so a consumer checks its own checkout with GNN's own code:
+
+```bash
+python -m gnn.importers check --repo . --expected-commit 8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1
+```
+
+It normalizes the pin shapes in use (`commit`/`revision`, `tag`/`release`, the
+four file locations), reads the specifications the pin declares or discovers
+them, and validates each at the compliance level — the normative section
+contract, not just a parse. Findings carry stable codes (`pin-missing`,
+`pin-commit-mismatch`, `pin-tag-mismatch`, `spec-missing`, `spec-invalid`,
+`pin-schema-legacy`) and `--json` emits the whole report. The canonical pin
+schema is `gnn-importer-pin/v1`; legacy pins are read and reported, never
+rewritten.
+
+The estate-wide view is [the downstream registry](../downstream/README.md) and
+its machine-readable mirror
+[importers.json](../downstream/importers.json). `scripts/check_importer_registry.py`
+keeps those two forms one artifact offline; `--online` re-reads origin and is
+report-only.
+
 ## Ownership boundaries
 
 GNN declares its own typed models, artifacts and identifiers. It does not copy
