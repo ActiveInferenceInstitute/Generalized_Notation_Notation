@@ -1,13 +1,8 @@
 {
-  "counts_describe_commit": "676a7b343",
-  "dirty_path_count": 16,
+  "counts_describe_commit": "b0da6caca",
+  "dirty_path_count": 11,
   "dirty_paths": [
-    "output/.pipeline/analysis-data/1802082ed258e16c8724aa0000b6803dcf8e8778ccdb083c46b48462fadfa409/",
-    "output/.pipeline/analysis-data/985f470f91d42529ede7dfc19bce487dc51b42e81fdf79ee0447f8ee44c24972/",
-    "output/.pipeline/analysis-data/e00a28729516259805b6180336f20bd63d0cabdc0aab462b33ec0b8f88f32877/",
-    "output/.pipeline/analysis/985f470f91d42529ede7dfc19bce487dc51b42e81fdf79ee0447f8ee44c24972/",
-    "output/.pipeline/analysis/d8905b8161851d4a624c971042809674c0f6c9cfc45c8d37f896c0d1345358ca/",
-    "output/.pipeline/analysis/e00a28729516259805b6180336f20bd63d0cabdc0aab462b33ec0b8f88f32877/",
+    "output/.pipeline/analysis-data/d174fddd3284aa9c5eec55e63161f4795e697d1e4ed98b98cc17d43e35f42b20/",
     "output/data/manuscript_variables.json",
     "output/data/manuscript_variables_receipt.json",
     "output/figures/figure_registry.json",

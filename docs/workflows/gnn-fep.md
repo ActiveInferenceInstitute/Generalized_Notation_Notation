@@ -151,9 +151,10 @@ gates.
 ## Manuscript variables for GNN-derived models
 
 The render pipeline invokes `scripts/z_generate_manuscript_variables.py` before a
-PDF render, which is why that filename, not a name of the author's choosing, is
-the producer contract. Of the twenty-two members, eight already use it and three
-use a different name.
+PDF render — `infrastructure.core.pipeline.hydration_recovery.HYDRATION_SCRIPT`
+in `docxology/template` names that exact path — which is why that filename, not a
+name of the author's choosing, is the producer contract. Of the twenty-two
+members, eight already use it and three use a different name.
 
 A manuscript that states which GNN release it consumes must not re-read the pin
 JSON. It calls `gnn.importers.importer_variables`, which returns the
