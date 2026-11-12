@@ -702,18 +702,53 @@ class GNNSerializer(Protocol):
 # ================================
 
 
+class _UnspecifiedSuccess:
+    """Sentinel for an omitted ``ParseResult.success`` argument."""
+
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        """Render the sentinel readably in signatures and reprs."""
+        return "<unspecified success>"
+
+
+_UNSPECIFIED_SUCCESS: Any = _UnspecifiedSuccess()
+
+
 @dataclass
 class ParseResult:
-    """Result of parsing a GNN specification."""
+    """Result of parsing a GNN specification.
 
-    model: GNNInternalRepresentation
-    success: bool = True
+    This is the single declaration of the public ``ParseResult`` shape. Every
+    public path -- :mod:`gnn.parsers.common`, :mod:`gnn.parsers`,
+    :mod:`gnn.parsers.unified_parser` and :mod:`gnn.types` (which re-exports
+    this class from :mod:`gnn.types.definitions`) -- exposes this one class
+    object, so the import a consumer chooses cannot change the success contract
+    or the available attributes.
+
+    ``model`` is ``None`` when the parse produced no model. The ``success``
+    default keeps both historical constructor patterns:
+    ``ParseResult()`` has no model and therefore reports ``False`` (the typed
+    shape's contract), while ``ParseResult(model=...)`` reports ``True`` (the
+    parser shape's contract) because it carries the parse product. Passing
+    ``success`` explicitly always wins.
+    """
+
+    # ``None`` only for a result constructed without a model; every parser
+    # binds a model at construction, so the fleet reads ``model`` directly.
+    model: GNNInternalRepresentation = None  # type: ignore[assignment]
+    success: bool = _UNSPECIFIED_SUCCESS
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     parse_time: Optional[float] = None
     source_file: Optional[str] = None
     validation_result: Optional["ValidationResult"] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Resolve the omitted ``success`` argument from ``model`` presence."""
+        if self.success is _UNSPECIFIED_SUCCESS:
+            self.success = self.model is not None
 
     def has_errors(self) -> bool:
         """Check if there are any errors."""

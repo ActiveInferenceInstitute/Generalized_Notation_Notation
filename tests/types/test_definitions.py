@@ -17,6 +17,7 @@ from gnn.types import (
     ComprehensiveTestReport,
     GNNConnection,
     GNNFormat,
+    GNNInternalRepresentation,
     GNNSyntaxError,
     GNNVariable,
     ParsedGNN,
@@ -158,14 +159,44 @@ class TestDataclassDefaults:
 
 
 class TestParseResult:
-    """ParseResult accumulates errors and warnings."""
+    """ParseResult has one declaration behind every public import path.
 
-    def test_defaults(self) -> Any:
+    Two constructor patterns are in use: ``ParseResult()`` without a model
+    (typed consumers) and ``ParseResult(model=...)`` (parser consumers). Each
+    must keep the default documented by the surviving single shape, and no
+    behavior may depend on which public surface supplied the class.
+    """
+
+    def test_single_declaration_across_public_surfaces(self) -> Any:
+        import gnn.parsers.common as parsers_common
+        import gnn.types.definitions as types_definitions
+
+        assert ParseResult is parsers_common.ParseResult
+        assert ParseResult is types_definitions.ParseResult
+
+    def test_bare_construction_keeps_typed_defaults(self) -> Any:
         result = ParseResult()
         assert result.model is None
         assert result.success is False
         assert result.errors == []
         assert result.warnings == []
+        assert result.parse_time is None
+        assert result.source_file is None
+        assert result.validation_result is None
+        assert result.metadata == {}
+
+    def test_model_construction_reports_success(self) -> Any:
+        model = GNNInternalRepresentation(model_name="Demo")
+        result = ParseResult(model=model)
+        assert result.model is model
+        assert result.success is True
+        assert result.errors == []
+        assert result.warnings == []
+
+    def test_explicit_success_wins_over_model_presence(self) -> Any:
+        model = GNNInternalRepresentation(model_name="Demo")
+        assert ParseResult(model=model, success=False).success is False
+        assert ParseResult(success=True).success is True
 
     def test_add_error_flips_success(self) -> Any:
         result = ParseResult(success=True)
@@ -173,10 +204,17 @@ class TestParseResult:
         assert result.errors == ["oops"]
         assert result.success is False
 
+    def test_add_error_on_model_construction(self) -> Any:
+        result = ParseResult(model=GNNInternalRepresentation(model_name="Demo"))
+        result.add_error("oops")
+        assert result.has_errors() is True
+        assert result.success is False
+
     def test_add_warning_keeps_success(self) -> Any:
         result = ParseResult(success=True)
         result.add_warning("lossy detail")
         assert result.warnings == ["lossy detail"]
+        assert result.has_warnings() is True
         assert result.success is True
 
 

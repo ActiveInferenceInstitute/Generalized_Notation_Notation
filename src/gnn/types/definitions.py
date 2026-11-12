@@ -132,24 +132,14 @@ class ParsedGNN:
     round_trip_verified: bool = False
 
 
-@dataclass
-class ParseResult:
-    """Provide ParseResult behavior."""
-
-    model: "Optional[GNNInternalRepresentation]" = None
-    success: bool = False
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-    def add_error(self, error: str) -> Any:
-        """Provide add error behavior."""
-        self.errors.append(error)
-        self.success = False
-
-    def add_warning(self, warning: str) -> Any:
-        """Provide add warning behavior."""
-        self.warnings.append(warning)
+# ``ParseResult`` has one declaration, in ``gnn.parsers.common``: the parser
+# fleet constructs it with a model, and this module re-exports the same class
+# object so typed consumers and parser consumers cannot diverge. Importing the
+# implementation module (never the ``gnn.types`` facade) keeps the runtime
+# import graph acyclic.
+from gnn.parsers.common import (  # noqa: E402  single-declaration re-export
+    ParseResult as ParseResult,
+)
 
 
 @dataclass

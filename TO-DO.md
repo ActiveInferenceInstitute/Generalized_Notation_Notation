@@ -237,22 +237,6 @@ holds on current source.
   same verdict. Evidence: `tests/pipeline/test_pipeline_performance.py`;
   pipeline-contracts job in `.github/workflows/ci.yml`.
 
-- [ ] **GNN-010 — declare each public parse result shape once (P1).**
-  Scope: `gnn.types.ParseResult` (`src/gnn/types/definitions.py`) and
-  `gnn.parsers.common.ParseResult` (`src/gnn/parsers/common.py`) are two
-  dataclasses with the same public name and different contracts. The first
-  defaults `model` to `None` and `success` to `False` and carries only
-  errors, warnings and metadata; the second requires `model`, defaults
-  `success` to `True` and adds `parse_time`, `source_file` and
-  `validation_result`. Both are exported from their packages, so swapping the
-  import silently changes success semantics and the available attributes.
-  Accept: every consumer imports each public shape from a single declaration,
-  constructor-migration tests cover both call patterns in use (`ParseResult()`
-  without a model and `ParseResult(model=...)`), and no behavior depends on
-  which declaration a caller happened to import. Evidence:
-  `src/gnn/types/definitions.py`; `src/gnn/parsers/common.py`;
-  `src/gnn/parsers/basic.py`; `tests/types/test_definitions.py`.
-
 ## Verification and execution rules
 
 Freeze the scope, owner, source baseline and acceptance criteria before each
