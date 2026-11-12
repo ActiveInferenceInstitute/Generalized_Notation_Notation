@@ -27,12 +27,13 @@ It prints `gnn.types.definitions`, the module that owns the dataclass.
 | Declaration | Owner | Consumer note |
 | --- | --- | --- |
 | `ParsedGNN` | [`gnn/types/definitions.py`](../../src/gnn/types/definitions.py) | Re-exported by `gnn.types`. |
-| `ParseResult` (parser result) | [`gnn/parsers/common.py`](../../src/gnn/parsers/common.py) | Returned by the `gnn.parsers` parse entry points. |
-| `ParseResult` (typed model) | `gnn.types.definitions` | A separate dataclass; re-exported as `gnn.types.ParseResult`. Do not substitute one for the other. |
+| `ParseResult` | [`gnn/parsers/common.py`](../../src/gnn/parsers/common.py) | Single authoritative definition, returned by the `gnn.parsers` entry points and re-exported by `gnn.types` and `gnn.types.definitions`; import either surface. |
 | `GNNFormat`, `GNNInternalRepresentation` | `gnn.parsers.common` | Single authoritative definitions, re-exported by `gnn.types`; import either surface, not a third copy. |
 
-The two `ParseResult` declarations are a known duplication. Consumers must import the
-one their producer returns; unifying them is open work, not a shipped behavior.
+`ParseResult` has one declaration. `ParseResult()` without a model reports
+`success=False`; `ParseResult(model=...)` reports `success=True` unless the caller
+passes `success` explicitly. Importing it from `gnn.types` or `gnn.parsers.common`
+yields the same class, so neither surface can silently change the contract.
 
 ## HTTP applications
 

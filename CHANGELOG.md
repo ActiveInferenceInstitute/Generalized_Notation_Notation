@@ -204,6 +204,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   and resumed with zero generations. Other retained partial/failed models,
   larger sources and general interpretation quality retain their own limits.
 
+### Single public parse result shape
+
+- `ParseResult` now has one declaration, in `gnn.parsers.common`.
+  `gnn.types.definitions` re-exports that same class instead of declaring a
+  second dataclass, and `gnn.types`, `gnn.parsers` and
+  `gnn.parsers.unified_parser` all expose it. Swapping the import can no longer
+  change success semantics or the available attributes. Both constructor
+  patterns keep their documented default: `ParseResult()` without a model
+  reports `success=False`, and `ParseResult(model=...)` reports `success=True`
+  unless `success` is passed explicitly. Constructor-migration tests in
+  `tests/types/test_definitions.py` cover both patterns and the identity across
+  public surfaces. GNN-010 leaves the backlog.
+
 ### Maintained release guidance
 
 - Reconcile delivery priorities with published GNN 5.0.1, FEP_Formal 2.1.0
