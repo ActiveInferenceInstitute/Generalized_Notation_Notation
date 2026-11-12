@@ -37,5 +37,11 @@ updates:
     labels:
       - dependencies
       - github-actions
+    groups:
+      # codeql init and analyze must move together: analyzing with a different
+      # version than the one that wrote the configuration file fails the job.
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
     cooldown:
       default-days: 7

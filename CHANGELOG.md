@@ -7,6 +7,93 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Canonical gate, repository index and backlog grammar
+
+- `run.sh` is the repository's gate front door. `./run.sh gates` performs one
+  frozen install and then runs the whole arm against that `--no-sync`
+  environment — `ruff format --check`, `ruff check`, `mypy`, `pytest` under the
+  configured coverage floor, the documentation, terminology and
+  documentation-contract audits, the capability-contract audit, the MCP
+  functional surface with a full-tree collection check, and the v3 orchestration
+  acceptance gate — so no step can resolve a different lock than the one CI
+  installed. `sync`, `lint`, `type`, `test`, `coverage`, `docs` and
+  `acceptance` run the individual arms. The script exports `PYTHONHASHSEED=0`
+  and `PYTHONPATH=src` to match the hosted job environment, and it names the
+  coverage floor's real home: `fail_under` under
+  `[tool.coverage.report]` in `pyproject.toml`, which coverage.py honours; the
+  key under `[tool.coverage.run]` is ignored.
+- `.github/workflows/ci.yml` stays the definition of the hosted lane: the
+  `quality (3.12)` job owns Ruff, mypy, the documentation and capability audits,
+  the MCP functional gate, collect-only and the v3 acceptance step, and the
+  matrix no longer repeats those steps per interpreter version. `./run.sh gates`
+  is that lane's local counterpart, so a developer runs the same commands
+  without reconstructing them from workflow YAML.
+- `justfile` gains a `gates` recipe that delegates to `./run.sh gates`, so the
+  recipe list and the script cannot describe the gate differently.
+- `INDEX.md` maps the repository: the gate, root documents, execution surface,
+  documentation tree, tooling/data/configuration, and where each fact lives.
+  `docs/README.md`, `docs/INDEX.md`, `docs/development/README.md`,
+  `docs/development/AGENTS.md` and `docs/learning_paths.md` route
+  sibling-project consumers to the interoperability guides and the canonical
+  backlog instead of implying a second documentation index tree.
+- `TO-DO.md` is rewritten in the canonical backlog grammar (ID / Outcome /
+  Acceptance probe / Dependencies / Priority / Evidence source). Shipped items
+  move to this changelog and leave the queue rather than being checked off in
+  place, and the verification commands use `./run.sh gates`.
+
+### Test determinism and honest gate configuration
+
+- Execute tests no longer write process-global numpy RNG state:
+  `tests/execute/test_pymdp_contracts.py`,
+  `tests/execute/test_discrete_models_pymdp.py` and
+  `tests/execute/test_execute_pymdp_visualization_module.py` dropped their
+  `np.random.seed()` calls. A simulation seed now comes from
+  `model_parameters.random_seed` — the value `run_pymdp_simulation` consumes —
+  and synthetic visualization data uses a local `np.random.default_rng(42)`, so
+  the autouse `_auto_seed_rng` fixture stays the single writer of global state
+  under `-n auto --dist worksteal`.
+- `tests/infrastructure/test_environment_overall.py` bounds validation overhead
+  against the same real probes on the same host: three interleaved passes of
+  the independent probe cost and of the full validation, compared by median
+  against `1.5 × probe + 1 s`, with every sample recorded as a test property.
+  A fixed wall-clock bound could only measure machine load. `tests/README.md`
+  records the measured samples and the budget arithmetic, and notes that the
+  baseline does not time `validate_environment` itself, so repeated work inside
+  the method cannot enlarge its own allowance.
+- Testing documentation states the configuration that actually runs: `pytest.ini`
+  is the only pytest configuration file (`pyproject.toml` carries no
+  `[tool.pytest.ini_options]` block), coverage options stay in
+  `pyproject.toml`, and the floor is `fail_under = 60` in
+  `[tool.coverage.report]`, which pytest-cov enforces on `--cov` runs.
+  `docs/gnn/testing/test_patterns.md` and `docs/gnn/testing/SPEC.md` describe the
+  split, the local seed rule and the cross-framework reliability contract.
+
+### Documentation additions and corrections
+
+- Add `docs/development/interop.md` with `interop_api.md` and
+  `interop_research.md`: the consumer-facing map of typed declarations,
+  CLI/HTTP/MCP surfaces, benchmark producers and fixture provenance. Surfaces
+  that cannot yet be consumed through a common interface are named as such and
+  recorded as backlog rows with acceptance probes rather than as readiness
+  claims, and these declarations change no runtime behaviour.
+- `docs/gnn/gnn_paper.md` is labelled a historical publication artifact: its
+  notation samples, empirical figures and defaults describe the state at
+  publication, and the current syntax, per-framework defaults, implementation
+  inventory and flat link index are canonical where they differ.
+- `docs/gnn/implementations/activeinference_jl.md` records the renderer's real
+  `num_timesteps` default (20, from
+  `src/gnn/render/activeinference_jl/activeinference_renderer.py`) instead of
+  15.
+- `src/gnn/pipeline/cross_framework_reliability.py` and
+  `docs/gnn/testing/SPEC.md` state the reliability ledger's intended contract:
+  structural metadata (recorded seed, timesteps, matrix shapes, trace lengths)
+  across compatible backends, not cross-backend trajectory equality, which the
+  maintained frameworks' different inference numerics do not define.
+  Per-framework trajectory assertions stay in `tests/execute/`.
+- `tests/pipeline/test_pipeline_performance.py` documents that its `THRESHOLDS`
+  are single-point budgets from one measurement environment and that the
+  `pipeline` marker keeps the module out of the CI gate selection.
+
 ### PyTorch: traceable discrete rollout and opt-in TorchLens capture
 
 - The discrete PyTorch renderer now emits `torch.nn.Module` components whose
@@ -2896,7 +2983,7 @@ Completes the remaining RED_TEAM_REVIEW.md items from the 2026-08-14 wave.
 - `ci.yml`: Set `PYTHONHASHSEED=0` in test job environment for deterministic dict iteration across runs (removes non-reproducibility risk from unsorted JSON keys).
 - `ci.yml`: Added `scripts/run_v3_orchestration_acceptance.py --strict` as a CI step (19/19 v3 acceptance checks) — the acceptance gate previously never ran in CI.
 - `ci.yml` + `mcp-audit.yml`: Raised MCP tool-count guard threshold from 130 to 140 to match the actual tool count, preventing silent tool-count regressions.
-- `pyproject.toml`: Added `fail_under = 50` threshold to `[tool.coverage.run]` — coverage was measured but never enforced.
+- `pyproject.toml`: Added a `fail_under` coverage threshold — coverage was measured but never enforced. The key belongs in `[tool.coverage.report]`, which is where it sits today, at `60`; the original `[tool.coverage.run]` placement was ignored by coverage.py, so no build ever failed on it.
 
 ---
 

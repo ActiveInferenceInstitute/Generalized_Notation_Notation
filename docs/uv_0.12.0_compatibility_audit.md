@@ -13,7 +13,14 @@ status: "complete"
 > layout at audit time. Since v3.3.0 the canonical import surface is `gnn.*`;
 > see [VERSION_MAP.md](VERSION_MAP.md).
 
-**Repository:** `projects/outside_of_hum/GeneralizedNotationNotation`
+> **Superseded (2026-10-29):** this is the dated record of the uv 0.12.0 pass.
+> The repository now requires `uv >=0.13.6,<0.14` (`required-version` in
+> [uv.toml](../uv.toml)), every `astral-sh/setup-uv` step pins
+> `version: "0.13.6"`, and the [Dockerfile](../Dockerfile) pins
+> `ARG UV_VERSION=0.13.6`. Current toolchain state lives in
+> [README.md](../README.md) and [AGENTS.md](../AGENTS.md).
+
+**Repository:** `ActiveInferenceInstitute/Generalized_Notation_Notation`
 **Date:** 2026-07-30
 **Auditor:** Aria
 **Target uv version:** 0.12.0

@@ -3,7 +3,14 @@
 **Version**: 3.6.0
 **Last Updated**: 2026-09-23
 **Status**: Maintained
-**Scope**: GNN language, pipeline, and renderer architecture. See [implementations/README.md](implementations/README.md) and the repository test commands for current inventory and evidence.
+**Scope**: GNN language, pipeline, and renderer architecture. See [implementations/README.md](implementations/README.md), [docs/INDEX.md](../INDEX.md), and the repository test commands for current inventory and evidence.
+
+> **Provenance.** This file reproduces the published paper text and is a
+> historical artifact: its notation samples, empirical figures and defaults
+> describe the state at publication. Current syntax, per-framework defaults and
+> the renderer inventory live in [gnn_syntax.md](gnn_syntax.md),
+> [implementations/](implementations/README.md) and the flat link index at
+> [docs/INDEX.md](../INDEX.md); where they differ, those files are canonical.
 
 Published on April 5, 2023 at: <https://zenodo.org/records/7803328>
 

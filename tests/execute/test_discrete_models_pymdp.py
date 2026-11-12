@@ -326,7 +326,6 @@ def test_pymdp_execute(model_file: str, tmp_path: Path) -> None:
         assert not list(tmp_path.rglob("*simulation_results.json"))
         return
 
-    np.random.seed(42)
     ok, results = run_pymdp_simulation(
         gnn_spec, tmp_path / model_file.replace(".md", "")
     )
@@ -383,7 +382,6 @@ def test_pymdp_analysis_extractor(model_file: str, tmp_path: Path) -> None:
         assert not list(tmp_path.rglob("*simulation_results.json"))
         return
 
-    np.random.seed(42)
     ok, results = run_pymdp_simulation(gnn_spec, tmp_path / "run")
     if not ok:
         raise AssertionError(

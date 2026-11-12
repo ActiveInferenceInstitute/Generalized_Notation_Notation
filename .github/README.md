@@ -371,10 +371,14 @@ completed work reviewable.
 | --- | --- |
 | [src/gnn/](../src/gnn/) | Installed Python package, numbered orchestrators and module implementations |
 | [input/](../input/) | Model sources, family manifest and configuration |
-| [output/](../output/) | Committed publication artifacts and recorded provenance |
+| [output/](../output/) | Committed publication artifacts and recorded provenance; volatile run outputs are gitignored ([tracking policy](../docs/development/output_tracking.md)) |
 | [tests/](../tests/) | Behavior, contract and integration checks |
 | [docs/](../docs/) | Language, framework, scientific and operator guides |
 | [scripts/](../scripts/) | Audits, acceptance tools and publication tooling |
+| [INDEX.md](../INDEX.md) | Repository map: gate, execution surface, docs tree, canonical homes |
+| [TO-DO.md](../TO-DO.md) | Canonical backlog table (open work only) |
+| [justfile](../justfile) | Developer recipes; `just quality` runs the fast check suite CI mirrors |
+| [run.sh](../run.sh) | Gate front door for a local run; `./run.sh gates` mirrors the CI gate |
 | [pyproject.toml](../pyproject.toml), [uv.lock](../uv.lock) | Package metadata and locked dependencies |
 | [Root README](../README.md) | Extended project narrative and examples |
 

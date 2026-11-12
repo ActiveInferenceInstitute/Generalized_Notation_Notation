@@ -34,16 +34,16 @@ def test_data() -> Any:
     num_actions = 4  # Up, Down, Left, Right
 
     # Generate synthetic trajectory data
-    np.random.seed(42)  # For reproducibility in tests
-    states = np.random.randint(0, num_states, num_timesteps).tolist()
+    rng = np.random.default_rng(42)  # Local generator: no global RNG mutation
+    states = rng.integers(0, num_states, num_timesteps).tolist()
     observations = states.copy()  # Full observability for testing
-    actions = np.random.randint(0, num_actions, num_timesteps).tolist()
-    rewards = np.random.randn(num_timesteps).tolist()
+    actions = rng.integers(0, num_actions, num_timesteps).tolist()
+    rewards = rng.standard_normal(num_timesteps).tolist()
 
     # Generate synthetic belief distributions
     beliefs: list[Any] = []
     for _t in range(num_timesteps):
-        belief = np.random.dirichlet(np.ones(num_states))
+        belief = rng.dirichlet(np.ones(num_states))
         beliefs.append(belief)
 
     return {
@@ -56,7 +56,7 @@ def test_data() -> Any:
         "num_observations": num_observations,
         "num_actions": num_actions,
         "metrics": {
-            "expected_free_energy": np.random.randn(num_timesteps).tolist(),
+            "expected_free_energy": rng.standard_normal(num_timesteps).tolist(),
             "actions": actions,
             "belief_confidence": [float(max(b)) for b in beliefs],
             "cumulative_preference": rewards,
@@ -182,20 +182,20 @@ def test_visualizer() -> Any:
         output_dir = Path(temp_dir)
 
         # Create synthetic test data
-        np.random.seed(42)
+        rng = np.random.default_rng(42)
         num_timesteps = 20
         num_states = 9
 
         test_data: dict[str, Any] = {
-            "states": np.random.randint(0, num_states, num_timesteps).tolist(),
+            "states": rng.integers(0, num_states, num_timesteps).tolist(),
             "beliefs": [
-                np.random.dirichlet(np.ones(num_states)) for _ in range(num_timesteps)
+                rng.dirichlet(np.ones(num_states)) for _ in range(num_timesteps)
             ],
             "metrics": {
-                "expected_free_energy": np.random.randn(num_timesteps).tolist(),
-                "actions": np.random.randint(0, 4, num_timesteps).tolist(),
-                "belief_confidence": np.random.rand(num_timesteps).tolist(),
-                "cumulative_preference": np.random.randn(num_timesteps).tolist(),
+                "expected_free_energy": rng.standard_normal(num_timesteps).tolist(),
+                "actions": rng.integers(0, 4, num_timesteps).tolist(),
+                "belief_confidence": rng.random(num_timesteps).tolist(),
+                "cumulative_preference": rng.standard_normal(num_timesteps).tolist(),
             },
             "num_states": num_states,
         }
@@ -241,20 +241,20 @@ def test_pipeline_integration() -> Any:
         output_dir = Path(temp_dir)
 
         # Create test data in the format expected by save_all_visualizations
-        np.random.seed(42)
+        rng = np.random.default_rng(42)
         num_timesteps = 20
         num_states = 9
 
         sim_results: dict[str, Any] = {
-            "states": np.random.randint(0, num_states, num_timesteps).tolist(),
+            "states": rng.integers(0, num_states, num_timesteps).tolist(),
             "beliefs": [
-                np.random.dirichlet(np.ones(num_states)) for _ in range(num_timesteps)
+                rng.dirichlet(np.ones(num_states)) for _ in range(num_timesteps)
             ],
             "metrics": {
-                "expected_free_energy": np.random.randn(num_timesteps).tolist(),
-                "actions": np.random.randint(0, 4, num_timesteps).tolist(),
-                "belief_confidence": np.random.rand(num_timesteps).tolist(),
-                "cumulative_preference": np.random.randn(num_timesteps).tolist(),
+                "expected_free_energy": rng.standard_normal(num_timesteps).tolist(),
+                "actions": rng.integers(0, 4, num_timesteps).tolist(),
+                "belief_confidence": rng.random(num_timesteps).tolist(),
+                "cumulative_preference": rng.standard_normal(num_timesteps).tolist(),
             },
             "num_states": num_states,
         }

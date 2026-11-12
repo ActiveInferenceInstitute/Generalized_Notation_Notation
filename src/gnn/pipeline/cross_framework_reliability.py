@@ -1,4 +1,15 @@
-"""Cross-framework reliability gates for maintained GNN model families."""
+"""Cross-framework reliability gates for maintained GNN model families.
+
+Contract: the ledger compares *structural metadata* between backends that a
+model-family profile declares compatible — recorded ``random_seed`` presence,
+``num_timesteps``, matrix shapes and trace lengths (see
+:func:`compare_framework_metrics`). It deliberately does not compare trajectory
+values across backends: the maintained frameworks reach the same model through
+different inference numerics (message passing, sampling, JAX/likelihood
+parameterisation, string diagrams), so cross-backend value equality is not a
+defined contract. Trajectory assertions belong to the per-framework contract
+tests under ``tests/execute``.
+"""
 
 from __future__ import annotations
 

@@ -67,6 +67,38 @@ The comprehensive path can require provisioned native tools and extras; do not
 claim a partial local environment ran every profile. Preserve JUnit, process
 outcomes and actual skips. Timing depends on selection and host.
 
+## Environment validation timing
+
+`test_environment_module_performance` runs the real environment validation,
+including package inventory in a separate interpreter and the JAX/Optax/Flax/
+PyMDP import, JIT compilation and runtime probe. A fixed ten-second limit failed
+at **22.4 seconds** in a parallel coverage gate. Three isolated runs on the same
+macOS arm64 host measured **3.380, 2.305 and 2.041 seconds** (median **2.305
+seconds**), with the JAX subprocess accounting for **3.099, 2.154 and 1.876
+seconds** — a single absolute time therefore depends on host load and cold start.
+
+The test interleaves three independent passes of the real prerequisite probes
+with three full validations, times both with `time.perf_counter()` and compares
+their medians. Full validation must finish within **1.5 times the independent
+probe median plus one second**; the 50% allowance and the one-second margin
+absorb host variation while still rejecting sustained extra validation work. A
+single cold start cannot set either median. Both paths must pass the real
+probes, and full validation must report all six diagnostics and the current
+Python version. The baseline does not time
+`EnvironmentManager.validate_environment`, so repeated work inside that method
+cannot enlarge its own allowance. The probes keep their production subprocess
+deadlines (package inventory 60 s, JAX stack 120 s); the relative assertion
+targets validation overhead rather than changes shared by both probe paths.
+
+Samples, medians and the calculated budget are recorded as pytest properties.
+Retain them in a focused JUnit report with:
+
+```bash
+uv run --frozen --no-sync python -m pytest \
+  tests/infrastructure/test_environment_overall.py::test_environment_module_performance \
+  -o junit_family=xunit1 --junitxml=/tmp/gnn-environment-timing.xml -q
+```
+
 ## Exit-code contract
 
 The pipeline uses **0=success, 1=error, 2=success with warnings/skipped**.

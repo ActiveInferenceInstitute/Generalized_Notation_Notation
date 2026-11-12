@@ -134,18 +134,20 @@ def test_extract_pymdp_data_from_real_execution_payload(tmp_path: Path) -> None:
 @pytest.mark.integration
 def test_pymdp_seeded_reproducibility_contract(tmp_path: Path) -> None:
     """
-    With the same numpy seed and same spec, simple simulation outputs should match.
+    Repeated runs of one spec reproduce identical trajectories.
+
+    The runner draws from ``np.random.default_rng(model_parameters.random_seed)``,
+    never from the process-global numpy RNG, so the seed is part of the spec.
     """
     gnn_spec = _minimal_gnn_spec()
+    gnn_spec["model_parameters"]["random_seed"] = 123
 
-    np.random.seed(123)
     ok1, res1 = run_pymdp_simulation(gnn_spec, tmp_path / "r1")
     if not ok1:
         raise AssertionError(
             f"PyMDP unavailable for reproducibility check: {res1.get('error')}"
         )
 
-    np.random.seed(123)
     ok2, res2 = run_pymdp_simulation(gnn_spec, tmp_path / "r2")
     assert ok2, "second PyMDP simulation run should succeed"
 
@@ -165,7 +167,8 @@ def test_actinf_pomdp_golden_pymdp_simulation(tmp_path: Path) -> None:
         raise AssertionError("PyMDP (inferactively-pymdp) not installed")
 
     spec = _actinf_gnn_spec(timesteps=12)
-    np.random.seed(42)
+    # Deterministic rollout from the spec's seed, not the process-global RNG.
+    spec.setdefault("model_parameters", {})["random_seed"] = 42
     ok, results = run_pymdp_simulation(spec, tmp_path / "actinf_run")
     assert ok, f"golden ActInf POMDP simulation failed: {results.get('error')}"
     assert results.get("framework") == "PyMDP"

@@ -15,6 +15,17 @@ tenant isolation. Long-running execution uses asyncio subprocesses with one
 shared supervision owner; it does not execute the orchestrator in a worker
 thread.
 
+The two applications are `gnn.api.app` (run surface, launched by
+`gnn serve --surface runs`) and `gnn.api.server` (job surface,
+`python -m gnn.api.server`). Both advertise `MODULE_VERSION`, which re-exports
+`gnn.__version__`, and both import their requests and responses from
+`gnn.api.models`. Each keeps its own exclusive route table and its own
+in-memory store. No cross-release API compatibility contract is declared; the
+generated OpenAPI schema and the API contract tests are the authority for the
+accepted surface. The
+[typed consumer contract](../../../docs/development/interop_api.md) maps models,
+inputs/outputs, errors, and MCP interfaces.
+
 The installed `api` extra and its dependency constraints are declared in
 [pyproject.toml](../../../pyproject.toml). [README.md](README.md) owns runnable
 setup instructions. Each factory's OpenAPI schema owns the exact endpoint and
@@ -63,7 +74,10 @@ is canonical for the adversary model, descriptor-operation limits, bounded
 cleanup and native acceptance. These safeguards do not certify arbitrary hostile
 producer code or permanent pathname ancestry after concurrent directory rename.
 
-## Contributor references
+---
+## Documentation
 
-- [AGENTS.md](AGENTS.md): contributor workflow and module ownership.
-- [SKILL.md](SKILL.md): capability API.
+- **[README](README.md)**: Launch commands and implemented routes.
+- **[AGENTS](AGENTS.md)**: Contributor workflow and module ownership.
+- **[SPEC](SPEC.md)**: This specification.
+- **[SKILL](SKILL.md)**: Callable discovery.
