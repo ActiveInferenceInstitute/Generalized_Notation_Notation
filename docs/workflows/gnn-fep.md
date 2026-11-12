@@ -241,6 +241,24 @@ property of the arm, not of an unrelated test.
 
 For the lead repository, see the measured arms below.
 
+### The contract's own arm, run today against every member checkout
+
+This is the reader, not the member's gate. It was run read-only on 2026-11-12
+against each member's current checkout, with that member's pin path and the
+workflow and job its registry row records:
+
+| Result | Members |
+| --- | --- |
+| passes | `fep_formal` (warning `pin-schema-unversioned`), `pymcp`, `Active_InferAnts`, `ants`, `ActInf_RxInfer`, `ActiveBlockference`, `Active_Fedference`, `Active_Cardference`, `active_fractal_rabbit`, `policy_entanglement`, `on_policy_distillation`, `active_inference_battleship`, `active_inference_power`, `active_inference_language_model`, `COGANT`, `CEREBRUM`, `Biofirm`, `GEO_INFER`, `AEOS` (warning `spec-absent`), `Active_Inference_Ontology` (warning `spec-absent`) |
+| fails | `pymdp`: `pin-missing` — it records the revision in `pymdp/gnn.py` constants and has no pin file |
+
+So twenty of twenty-one importers already satisfy the pin, revision, pointer and
+specification contract on their current trees; the migration for them is the
+deletion of the local reader, not a new integration. `pymdp` is the one member
+that must add a pin file before it can pass. This says nothing about whether any
+member's own gate is green — that is a different run, and the table above records
+which of those were actually taken.
+
 ## `fep_formal` and the Lean boundary
 
 `fep_formal` stays a row of its own, and not as a GNN `spec` row. Three facts
