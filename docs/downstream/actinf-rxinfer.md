@@ -17,8 +17,8 @@ that mirrors the discrete generative model from the GNN documentation.
 
 ## Pinned GNN revision
 
-`specs/gnn-pin.json` records tag `v5.0.3` and commit
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`.
+`specs/gnn-pin.json` records tag `v5.1.0` and commit
+`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`.
 
 ## Conformance and validation evidence
 

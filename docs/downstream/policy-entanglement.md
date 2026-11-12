@@ -23,8 +23,8 @@ boundary alongside pymdp POMDP simulations.
 
 ## Pinned GNN revision
 
-`gnn/upstream.json` pins tag `v5.0.3`, commit
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, and names the parser module
+`gnn/upstream.json` pins tag `v5.1.0`, commit
+`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`, and names the parser module
 `gnn.parsers.markdown_parser` and class `MarkdownGNNParser`.
 
 ## Conformance and validation evidence

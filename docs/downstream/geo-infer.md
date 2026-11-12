@@ -25,8 +25,8 @@ artifacts and run in separate Python environments.
 ## Pinned GNN revision
 
 `.github/gnn-pair.json` records `ActiveInferenceInstitute/Generalized_Notation_Notation`
-at revision `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1` and, re-read on
-2026-11-06, tag `v5.0.3`. `GEO-INFER-TEST/src/geo_infer_test/gnn_pin_freshness.py`
+at revision `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf` and, re-read on
+2026-11-12, tag `v5.1.0`. `GEO-INFER-TEST/src/geo_infer_test/gnn_pin_freshness.py`
 checks pin freshness.
 
 ## Conformance and validation evidence

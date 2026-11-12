@@ -20,14 +20,14 @@ run. GNN is the notation for the model ladder.
 
 ## Pinned GNN revision
 
-`gnn/upstream.json` pins the upstream repository at tag `v5.0.3`, commit
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`.
+`gnn/upstream.json` pins the upstream repository at tag `v5.1.0`, commit
+`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`.
 
 ## Conformance and validation evidence
 
 - CI job key `gnn-interop` in `.github/workflows/ci.yml`, display name
-  `gnn conformance (pinned)`, checks out the pinned GNN release as
-  `../ailm-gnn-v5.0.3`, asserts its HEAD equals the pin, and runs
+  `gnn conformance (pinned)`, materializes the pinned GNN release at
+  `refs/gnn-upstream/checkout`, asserts its HEAD equals the pin, and runs
   `scripts/verify_gnn_release.py` with `AILM_REQUIRE_GNN_INTEROP=1`, so a missing
   prerequisite fails instead of skipping.
 - `src/ailm/gnn/conformance.py` enforces the AILM-side parse contract against a

@@ -17,9 +17,9 @@ validation.
 
 ## Pinned GNN revision
 
-`specs/gnn-pin.json` records tag `v5.0.3`, commit
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, `language_version` "GNN v1.1",
-`recorded` 2026-11-01, and SHA-256 digests of five pinned parser files.
+`specs/gnn-pin.json` records tag `v5.1.0`, commit
+`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`, `language_version` "GNN v1.1",
+`recorded` 2026-11-12, and SHA-256 digests of five pinned parser files.
 
 ## Conformance and validation evidence
 

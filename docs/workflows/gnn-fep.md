@@ -11,23 +11,36 @@ of [importers.json](../downstream/importers.json). `scripts/check_importer_regis
 keeps the two forms one artifact in the same way it already keeps the downstream
 tables one artifact, and `./run.sh gates` runs that check in its `docs` arm.
 
-## Prerequisite: the reader ships in a revision, not in a version name
+## Prerequisite: the reader ships in v5.1.0
 
 `gnn.importers` was added in `e6a9d3917` ("Make the downstream importer registry
-executable", #366). The estate's pin is `v5.0.3` at `8f293d9b`, which predates
-that commit, so a virtual environment built from the pinned revision has no
-`gnn.importers` module and `python -m gnn.importers` cannot run there.
+executable", #366). It first ships in release `v5.1.0`, whose tag `v5.1.0`
+peels to commit `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf` ("Release GNN 5.1.0
+with the downstream importer registry", #385). That tree contains
+`src/gnn/importers.py`, so `python -m gnn.importers` runs in an environment
+built from the release, and `git describe --tags --contains e6a9d3917` resolves
+to `v5.1.0`.
 
-Adoption is therefore staged by the pin, not by the date of this contract:
+Before that release existed, the estate's pin was `v5.0.3` at `8f293d9b`, a
+revision that predates the module, so the reader could not run from the
+environment the pin built. The interim arm therefore kept a local reader behind
+the member's own `gnn` arm and added a drift check on the pin and pointer
+defined here. That history still explains the reader's two-argument bootstrap:
+`--pin PATH --pin-party gnn` exists because a content-addressed two-party
+custody record (`fep_formal`'s `source-pin.json`) is not discoverable as a
+release pin, so the reader must be told both the file and the sub-record. It is
+a pin-shape exception, not a reason to carry a local reader.
 
-- **Until a member's pin names a revision that contains `src/gnn/importers.py`**,
-  the member keeps its own reader behind its own `gnn` arm and adds a drift
-  check on the pin and pointer defined here. It must not call
-  `python -m gnn.importers`, and it must not vendor a copy of this file.
-- **Cutover** happens in the same change that advances the member's pin past a
-  release containing the reader: delete the local reader, call
+The release resolves the prerequisite. Cutover is the procedure members now
+follow:
+
+- Advance the member's pin to `v5.1.0` or a later release that contains
+  `src/gnn/importers.py`.
+- In the same change, delete the member's local reader and call
   `python -m gnn.importers check --repo .` from the environment the arm already
-  builds, and record the old and new revisions in the pull request.
+  builds. Add `--require-pointer --workflow <file> --job <key>` once the
+  pointer is complete.
+- Record the old and new revisions in the pull request.
 - **Upstream exception**: this repository is the source of the reader and pins
   nothing, so it verifies the reader with the focused tests —
   `python -m pytest tests/gnn/test_importers.py` plus
@@ -37,18 +50,23 @@ Adoption is therefore staged by the pin, not by the date of this contract:
   plus a whole-tree collect-only (`run.sh:101-119`), none of which exercises the
   reader.
 
-The seven importers that attempted the cutover before this prerequisite existed
-left their pull requests open with the blocker recorded — `fep_formal` #260,
-`pymcp` #24, `ants` #20, `ActInf_RxInfer` #14, `Active_Fedference` #23,
-`on_policy_distillation` #21, `active_inference_battleship` #17 — and those pull
-requests are the cutover queue. None of them merges before the pin moves; each
-member's interim state is a local reader with the drift check.
+The seven importers that reached this prerequisite as a blocker have all merged
+after the release shipped: `fep_formal` #260
+(`0cf22ab7abfb496192045159dcb9e06ace57af28`), `pymcp` #24
+(`3c65a598b6d6478a586ac08bb8f1fd093ebf67a4`), `ants` #15
+(`f0102e868aacbac646ddc4ba9ad9b40fb5489005`), `ActInf_RxInfer` #14
+(`2d69bf6387129ad60de72509e9547b90a2c9ff59`), `Active_Fedference` #23
+(`c9d1c905aa8ef197719ee2887568792b4f3defdb`), `on_policy_distillation` #21
+(`0745938665a37b6509d8bf5908c17a6d0b292a3f`) and
+`active_inference_battleship` #17
+(`674a436a63db05215d7ad5ff737927922b2c8485`).
 
 `Generalized_Notation_Notation` #381 is not part of that queue. Upstream pins
 nothing, and its blocker was this contract's own wrong instruction (`./run.sh
-gnn` is not an arm in this repository). With the row below corrected it can
-complete as a documentation-only change, verified with the focused importer
-tests and the registry checker.
+gnn` is not an arm in this repository). It merged as a documentation-only
+change at `d31c1768114098e91033ad2ad5a383e188c3cd67` ("docs: clarify GNN-FEP
+upstream migration boundary"), verified with the focused importer tests and the
+registry checker.
 
 ## What this contract decides
 
@@ -74,7 +92,7 @@ door, which the arm is added to; it is never replaced by this contract.
 | --- | --- | --- | --- | --- | --- | --- |
 | [Generalized_Notation_Notation](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation) | upstream | `./run.sh gates` | `docs/README.md` and `docs/INDEX.md` | `scripts/z_generate_manuscript_variables.py` | none: this repository is the upstream | `python -m pytest tests/gnn/test_importers.py` + `scripts/check_importer_registry.py` (upstream: no importer check) |
 | [fep_formal](https://github.com/ActiveInferenceInstitute/fep_formal) | importer | `bash scripts/gate.sh gnn` | `docs/README.md` | none | `specs/gnn-bridge-w2-source-custody/source-pin.json`, party `gnn` | `python -m gnn.importers check --repo .` |
-| [pymdp](https://github.com/ActiveInferenceInstitute/pymdp) | importer | none: no gate front door in the checkout | none | none | none in a file: `pymdp/gnn.py` constants | `python -m gnn.importers check --repo .` |
+| [pymdp](https://github.com/ActiveInferenceInstitute/pymdp) | importer | `./gate.sh gnn` | none | none | `.github/gnn-pin.json` | `python -m gnn.importers check --repo .` |
 | [pymcp](https://github.com/ActiveInferenceInstitute/pymcp) | importer | `./run.sh all` | `docs/README.md` and `docs/documentation-index.md` | none | `.github/gnn-pin.json` | `python -m gnn.importers check --repo .` |
 | [Active_InferAnts](https://github.com/ActiveInferenceInstitute/Active_InferAnts) | importer | `./run.sh gate` | `docs/README.md` and `docs/documentation-index.md` | none | `gnn/upstream.json` | `python -m gnn.importers check --repo .` |
 | [ants](https://github.com/ActiveInferenceInstitute/ants) | importer | `python scripts/gate.py all` | `docs/README.md` and `docs/documentation-index.md` | none | `gnn/upstream.json` | `python -m gnn.importers check --repo .` |
@@ -96,10 +114,11 @@ door, which the arm is added to; it is never replaced by this contract.
 | [Active_Inference_Ontology](https://github.com/ActiveInferenceInstitute/Active_Inference_Ontology) | importer | `./run.sh all` | `docs/README.md` and `docs/documentation-index.md` | none | `.github/gnn-pin.json` | `python -m gnn.importers check --repo .` |
 <!-- gnn-fep-members:end -->
 
-Two members have no gate front door to add an arm to (`pymdp`), or a gate in a
-language that cannot import the reader (`active_inference_battleship`). Both are
-recorded in the JSON with `install` and, for the second, a `wrapper` file and a
-`reason`; every other member installs nothing and calls the reader directly.
+One member has a gate in a language that cannot import the reader:
+`active_inference_battleship`. It is recorded in the JSON with `install`
+`wrapper`, the `wrapper` file and a `reason`; every other member installs
+nothing and calls the reader directly. `pymdp` calls it from `./gate.sh gnn`,
+which materializes the pinned parser tree and runs the shared module there.
 
 ## Why the canonical form is a direct call, not a vendored copy
 
@@ -148,7 +167,7 @@ contract; twenty-one is the migration.
 | Member | Copy |
 | --- | --- |
 | `fep_formal` | `src/fep_formal/bridge/operations.py:140` (`pin_sources`), over the nested `source-pin.json` |
-| `pymdp` | `pymdp/gnn.py:97` and `:100` (release and revision as module constants) |
+| `pymdp` | `pymdp/gnn.py:97` and `:100` (module constants mirroring `.github/gnn-pin.json` for library consumers) |
 | `pymcp` | `scripts/gnn_conformance.py:41`, `:71`, `:80`–`:93` |
 | `Active_InferAnts` | `gnn_conformance.py:33`, `:63`, `:125` |
 | `ants` | `gnn_conformance.py:33`, `:60`, `:120`; `scripts/gate.py:43`, `:144` |
@@ -292,24 +311,28 @@ workflow and job its registry row records:
 | passes | `fep_formal` (warning `pin-schema-unversioned`), `pymcp`, `Active_InferAnts`, `ants`, `ActInf_RxInfer`, `ActiveBlockference`, `Active_Fedference`, `Active_Cardference`, `active_fractal_rabbit`, `policy_entanglement`, `on_policy_distillation`, `active_inference_battleship`, `active_inference_power`, `active_inference_language_model`, `COGANT`, `CEREBRUM`, `Biofirm`, `GEO_INFER`, `AEOS` (warning `spec-absent`), `Active_Inference_Ontology` (warning `spec-absent`) |
 | fails | `pymdp`: `pin-missing` — it records the revision in `pymdp/gnn.py` constants and has no pin file |
 
-So twenty of twenty-one importers already satisfy the pin, revision, pointer and
-specification contract on their current trees; the migration for them is the
-deletion of the local reader, not a new integration. `pymdp` is the one member
-that must add a pin file before it can pass. This says nothing about whether any
-member's own gate is green — that is a different run, and the table above records
-which of those were actually taken.
+At the time of that sweep, twenty of twenty-one importers satisfied the pin,
+revision, pointer and specification contract on their trees; `pymdp` was the
+one member without a pin file. It has since added `.github/gnn-pin.json` at
+`v5.1.0` / `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf` and `.github/GNN.md`, so
+the `pin-missing` result belongs to the earlier sweep and its registry row now
+records the pin. This says nothing about whether any member's own gate is green
+— that is a different run, and the table above records which of those were
+actually taken.
 
 ## `fep_formal` and the Lean boundary
 
 `fep_formal` stays a row of its own, and not as a GNN `spec` row. Three facts
 decide it:
 
-1. Its custody record is not a release pin. `source-pin.json` has
-   `schema_version: 1` and two sub-objects, `fep_lean` and `gnn`; the `gnn`
-   sub-object names descriptive commit `2778e65c` with six SHA-256 owner
-   digests and no tag. It is a content-addressed custody artifact, so the reader
-   takes `--pin-party gnn` and reports the missing tag as `pin-schema-unversioned`
-   rather than inventing one.
+1. Its custody record is a content-addressed two-party pin, not a discovery
+   target. `source-pin.json` has `schema_version: 1` and two sub-objects,
+   `fep_lean` and `gnn`; the `gnn` sub-object now names release `v5.1.0` at
+   commit `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf` with six SHA-256 owner
+   digests. The reader still takes `--pin-party gnn` because discovery cannot
+   find a nested, differently named custody record — the two-argument
+   bootstrap. It previously named `2778e65c` with no tag, which is why
+   `pin-schema-unversioned` was the earlier finding.
 2. Its evidence is a Lean proof surface, not a parser run. The conformance job
    runs `bash scripts/gate.sh gnn`, which drives `generate_probe.py --check`,
    `check_geo_notation_bridge.py --check`, `validate_retained.py` and
@@ -356,9 +379,10 @@ which the table above locates.
 
 Member-specific notes:
 
-- `pymdp` has no pin file, no pointer and no gate front door. It adopts
-  `.github/gnn-pin.json`, adds `.github/GNN.md`, and keeps `pymdp/gnn.py`'s
-  constants only as the code-facing bridge surface, generated from the pin.
+- `pymdp` now records the pin in `.github/gnn-pin.json`, publishes
+  `.github/GNN.md`, and calls the reader from `./gate.sh gnn`; `pymdp/gnn.py`'s
+  constants remain only as the code-facing bridge surface and must agree with
+  the pin.
 - `fep_formal` passes `--pin specs/gnn-bridge-w2-source-custody/source-pin.json
   --pin-party gnn` and keeps its owner-digest and paired-revision gates.
 - `GEO_INFER` keeps `gnn-pair.json` as its pin path; the reader already accepts

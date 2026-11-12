@@ -96,17 +96,19 @@ This repository is the GNN **producer**, not a self-pinned importer. It has no
 one or confuse its companion pins with importer schema `gnn-importer-pin/v1`.
 The existing [downstream registry](downstream/README.md) records consumers'
 actual pin paths, `.github/GNN.md` pointers, job keys and validation scopes.
-Its recorded release pin is `v5.0.3` at
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`; the pointer explains what a consumer
-parses, not universal coverage of every sketch. The commonly published display
-name is `gnn conformance (pinned)`; some job keys differ, as the registry states.
-The registry is unchanged by this work.
+The current release is `v5.1.0` at
+`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`; the registry records both the
+members that have moved to it and those still on `v5.0.3` at `8f293d9b` while
+they cut over. The pointer explains what a consumer parses, not universal
+coverage of every sketch. The commonly published display name is
+`gnn conformance (pinned)`; some job keys differ, as the registry states.
 
 Its read-only [machine projection](downstream/importers.json) declares
 `gnn-importer-registry/v1` and records each importer's canonical pin path,
 `gnn-importer-pin/v1` schema and conformance workflow/job/display name.
-`scripts/check_importer_registry.py` checks schema, prose/JSON parity and
-declared release pins offline as part of `./run.sh docs`. Its explicit
+`scripts/check_importer_registry.py` checks schema, prose/JSON parity and each
+row's pin against the release tag it names offline as part of
+`./run.sh docs`. Its explicit
 `--online` mode additionally checks each public pin, job and `.github/GNN.md`
 pointer at origin; that networked drift check is not part of this arm.
 
