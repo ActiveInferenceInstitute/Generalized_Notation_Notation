@@ -294,17 +294,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   CVE-2026-115586) is no longer resolved. The floor stays a resolver constraint
   rather than a runtime dependency.
 
+## [5.1.0] - 2026-11-12
+
+### Downstream importer registry as release surface
+
+- Publish `gnn.importers` in a tagged tree for the first time. The module landed
+  in `e6a9d3917` ("Make the downstream importer registry executable", #366) and
+  no tag contained it: the estate's pin, `v5.0.3` at `8f293d9b`, predates it, so
+  an environment built from that pin has no reader and `python -m gnn.importers`
+  cannot run there.
+- Advances no member pin. Each member deletes its local reader in the same
+  change that advances its pin past this release and records the old and new
+  revisions in its pull request; until then the registry continues to record
+  that member pinning `v5.0.3` at `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`.
+  The reader contract, the registry schema and every member's pin are unchanged
+  by this release.
+
 ### Downstream importer conformance
 
-- Add `gnn.importers`: one reader for the pin shapes the estate actually carries
-  (`commit`/`revision`, `tag`/`release`, four file locations). `python -m
-  gnn.importers check --repo .` normalizes the pin, discovers or reads the
-  declared `*.gnn.md` specifications, and validates them with the installed
-  parser at the compliance level rather than merely parsing them, so a consumer
-  checks its own checkout with the same code GNN ships. Findings carry stable
-  codes (`pin-missing`, `pin-commit-mismatch`, `spec-invalid`, …) and are
-  available as JSON.
-- Add `docs/downstream/importers.json`, the machine-readable mirror of the
+- `gnn.importers` is one reader for the pin shapes the estate actually carries
+  (`commit`/`revision`, `tag`/`release`, seven candidate pin locations).
+  `python -m gnn.importers check --repo .` normalizes the pin, discovers or
+  reads the declared `*.gnn.md` specifications, and validates them with the
+  installed parser at the compliance level rather than merely parsing them, so
+  a consumer checks its own checkout with the same code GNN ships. Findings
+  carry stable codes (`pin-missing`, `pin-commit-mismatch`, `spec-invalid`, …)
+  and are available as JSON. `importer_variables` produces the
+  `gnn-importer-variables/v1` map a manuscript consumes instead of re-reading
+  the pin JSON.
+- `docs/downstream/importers.json` is the machine-readable mirror of the
   registry tables: 42 repositories, each with its pin path, revision,
   specification count and conformance job. `scripts/check_importer_registry.py`
   keeps the prose and JSON forms one artifact — same repositories, well-formed
@@ -312,7 +330,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   per row kind — offline and deterministic in `run.sh gates` and the `quality`
   job. Its `--online` mode re-reads every public repository's pin and job at
   origin and stays report-only, so a consumer moving never fails a GNN build.
-- The `--online` re-read now also confirms the `.github/GNN.md` pointer that the
+- The `--online` re-read also confirms the `.github/GNN.md` pointer that the
   registry's contract requires of every repository publishing a conformance
   job: the pointer records what the job parses, and it was the one part of that
   contract the drift detector could not see. A row without a conformance job is

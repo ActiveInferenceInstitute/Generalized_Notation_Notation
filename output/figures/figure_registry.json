@@ -15,12 +15,12 @@
         "GNN_STEP_RENDER": "11",
         "GNN_STEP_TYPE_CHECKER": "5",
         "GNN_STEP_VALIDATION": "6",
-        "GNN_VERSION": "5.0.3"
+        "GNN_VERSION": "5.1.0"
       },
       "filename": "gnn_graphical_abstract.png",
       "generated_by": "scripts/manuscript_fig_graphical_abstract.py",
       "label": "fig:graphical_abstract",
-      "png_sha256": "f0ff5bf62c7070ebbf9daa141afc32708c2c660c0775d7b648bdde18e2c6dd85",
+      "png_sha256": "bb81fb4e97e7e70ca406cdb083147ec3419c14bf8b143e682f3c74b229a4325c",
       "source_sha256": {}
     },
     {
@@ -72,12 +72,12 @@
         "GNN_SRC_PACKAGE_COUNT": "44",
         "GNN_STEP_COUNT": "25",
         "GNN_TEST_FILE_COUNT": "687",
-        "GNN_VERSION": "5.0.3"
+        "GNN_VERSION": "5.1.0"
       },
       "filename": "gnn_repo_metrics.png",
       "generated_by": "scripts/manuscript_fig_repo_metrics.py",
       "label": "fig:repo_metrics",
-      "png_sha256": "5bf501c114ab0facebe66ff1141e043575f516ad97d5cb863d65e22d7e11bb6d",
+      "png_sha256": "4da2134878ac9180f63bc26cf7ffd6de54d7bd94135ef190b08bb6d18e6dfcde",
       "source_sha256": {}
     },
     {
