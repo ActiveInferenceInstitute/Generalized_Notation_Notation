@@ -7,6 +7,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### MCP type-checker outcome judgement
+
+- `validate_gnn_files_mcp` (`src/gnn/type_checker/mcp.py`) no longer reports a
+  hard failure as success. `GNNTypeChecker.validate_gnn_files` returns the
+  pipeline sentinel `True` / `2` / `False`, and the MCP wrapper tested it with
+  `success is True or success == 0`; because `False == 0` is true in Python, a
+  strict-mode or processing hard failure produced
+  `"message": "GNN validation completed successfully"` alongside
+  `"success": false`. Reproduced with a strict-mode `[GNN-E002]` corpus before
+  the change. Only literal `True` now passes, the checker's return value is
+  echoed in refusal messages (`failed (checker returned False)`), and the
+  response keeps the sentinel under a new numeric `exit_code` (0 / 2 / 1)
+  while `success` is a real bool instead of the raw `2`/`False` sentinel.
+  The 2 (`SUCCESS_WITH_WARNINGS`) outcome itself was already reported
+  correctly and is unchanged.
+- Pinned by `tests/type_checker/test_type_checker_mcp_outcome_judgement.py`,
+  which fails on the previous expression for each of `2`, `False`, `None` and
+  `0` as well as on real invalid-file (exit 2) and strict hard-failure runs.
+
 ### PyMDP 1.0.5
 
 - Replace the split `inferactively-pymdp` requirement (`>=1.0.4` for

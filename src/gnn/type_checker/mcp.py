@@ -34,26 +34,37 @@ def validate_gnn_files_mcp(
         verbose: Enable verbose output
 
     Returns:
-        Dictionary with operation status and validation results.
+        Dictionary with operation status and validation results. ``success``
+        is a real bool — only the pipeline ``True`` sentinel counts — and the
+        checker's raw exit sentinel is reported separately as ``exit_code``.
     """
     try:
         checker = GNNTypeChecker(strict_mode=strict)
-        success = checker.validate_gnn_files(
+        returned = checker.validate_gnn_files(
             target_dir=Path(target_directory),
             output_dir=Path(output_directory),
             verbose=verbose,
             strict=strict,
             estimate_resources=estimate_resources,
         )
-        outcome = (
-            "completed successfully"
-            if success is True or success == 0
-            else "completed with warnings (nothing to process or some files invalid)"
-            if success == 2
-            else "failed"
-        )
+        # ``validate_gnn_files`` returns the pipeline exit sentinel:
+        # True (exit 0), 2 (exit 2, SUCCESS_WITH_WARNINGS), False (exit 1).
+        # Only literal ``True`` is a pass. ``False == 0`` is true in Python,
+        # so testing the sentinel against 0 would report a hard failure as
+        # success; the returned value is echoed on refusal so the refusal is
+        # diagnosable.
+        if returned is True:
+            exit_code, outcome = 0, "completed successfully"
+        elif returned == 2:
+            exit_code, outcome = (
+                2,
+                "completed with warnings (nothing to process or some files invalid)",
+            )
+        else:
+            exit_code, outcome = 1, f"failed (checker returned {returned!r})"
         return {
-            "success": success,
+            "success": returned is True,
+            "exit_code": exit_code,
             "target_directory": target_directory,
             "output_directory": output_directory,
             "strict_mode": strict,
