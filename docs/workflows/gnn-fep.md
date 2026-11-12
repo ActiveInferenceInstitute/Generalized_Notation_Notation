@@ -11,6 +11,34 @@ of [importers.json](../downstream/importers.json). `scripts/check_importer_regis
 keeps the two forms one artifact in the same way it already keeps the downstream
 tables one artifact, and `./run.sh gates` runs that check in its `docs` arm.
 
+## Prerequisite: the reader ships in a revision, not in a version name
+
+`gnn.importers` was added in `e6a9d3917` ("Make the downstream importer registry
+executable", #366). The estate's pin is `v5.0.3` at `8f293d9b`, which predates
+that commit, so a virtual environment built from the pinned revision has no
+`gnn.importers` module and `python -m gnn.importers` cannot run there.
+
+Adoption is therefore staged by the pin, not by the date of this contract:
+
+- **Until a member's pin names a revision that contains `src/gnn/importers.py`**,
+  the member keeps its own reader behind its own `gnn` arm and adds a drift
+  check on the pin and pointer defined here. It must not call
+  `python -m gnn.importers`, and it must not vendor a copy of this file.
+- **Cutover** happens in the same change that advances the member's pin past a
+  release containing the reader: delete the local reader, call
+  `python -m gnn.importers check --repo .` from the environment the arm already
+  builds, and record the old and new revisions in the pull request.
+- **Upstream exception**: this repository is the source of the reader and pins
+  nothing, so it verifies the reader with its own gate (`./run.sh contracts` and
+  `./run.sh gates`), never with an importer check.
+
+Members that attempted the cutover before this prerequisite existed left their
+pull requests open with the blocker recorded — `Generalized_Notation_Notation`
+#381, `fep_formal` #260, `pymcp` #24, `ActInf_RxInfer` #14, `Active_Fedference`
+#23, `on_policy_distillation` #21, `active_inference_battleship` #17, `ants` #20
+— and those pull requests are the cutover queue. None of them merges before the
+pin moves; each member's interim state is a local reader with the drift check.
+
 ## What this contract decides
 
 1. **Pin parsing has one home.** `gnn.importers.read_pin` normalizes every pin
@@ -33,7 +61,7 @@ door, which the arm is added to; it is never replaced by this contract.
 <!-- gnn-fep-members:start -->
 | Repository | Role | Gate | Docs index | Manuscript producer | GNN pin | Reader arm |
 | --- | --- | --- | --- | --- | --- | --- |
-| [Generalized_Notation_Notation](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation) | upstream | `./run.sh gates` | `docs/README.md` and `docs/INDEX.md` | `scripts/z_generate_manuscript_variables.py` | none: this repository is the upstream | `python -m gnn.importers check --repo .` |
+| [Generalized_Notation_Notation](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation) | upstream | `./run.sh gates` | `docs/README.md` and `docs/INDEX.md` | `scripts/z_generate_manuscript_variables.py` | none: this repository is the upstream | `./run.sh contracts` (upstream: no importer check) |
 | [fep_formal](https://github.com/ActiveInferenceInstitute/fep_formal) | importer | `bash scripts/gate.sh gnn` | `docs/README.md` | none | `specs/gnn-bridge-w2-source-custody/source-pin.json`, party `gnn` | `python -m gnn.importers check --repo .` |
 | [pymdp](https://github.com/ActiveInferenceInstitute/pymdp) | importer | none: no gate front door in the checkout | none | none | none in a file: `pymdp/gnn.py` constants | `python -m gnn.importers check --repo .` |
 | [pymcp](https://github.com/ActiveInferenceInstitute/pymcp) | importer | `./run.sh all` | `docs/README.md` and `docs/documentation-index.md` | none | `.github/gnn-pin.json` | `python -m gnn.importers check --repo .` |
