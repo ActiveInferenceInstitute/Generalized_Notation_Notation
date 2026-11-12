@@ -17,9 +17,9 @@ declares the claim boundary `illustrative-ecological-control`.
 
 ## Pinned GNN revision
 
-`.github/gnn-pin.json` (schema `biofirm-gnn-pin-v1`) records tag `v5.0.3`,
-revision `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, version 5.0.3,
-`pinned_on` 2026-11-01, the spec directory and file, and the claim boundary.
+`.github/gnn-pin.json` (schema `gnn-importer-pin/v1`) records tag `v5.1.0`,
+revision `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`, version 5.1.0,
+`recorded` 2026-11-12, the spec directory and file, and the claim boundary.
 
 ## Conformance and validation evidence
 

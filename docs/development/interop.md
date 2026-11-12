@@ -21,7 +21,7 @@ file and keeps `*.gnn.md` specifications. The installed distribution ships the
 reader for both, so a consumer checks its own checkout with GNN's own code:
 
 ```bash
-python -m gnn.importers check --repo . --expected-commit 8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1
+python -m gnn.importers check --repo . --expected-commit 75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf
 ```
 
 It normalizes the pin shapes in use (`commit`/`revision`, `tag`/`release`, the

@@ -21,8 +21,8 @@ prior `E[N²]`.
 
 ## Pinned GNN revision
 
-`models/gnn.pin.json` records the repository, tag `v5.0.3` and commit
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`. `model:import` resolves that commit
+`models/gnn.pin.json` records the repository, tag `v5.1.0` and commit
+`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`. `model:import` resolves that commit
 in the `GNN_ROOT` checkout, materializes the commit's `src/gnn` tree into an
 external cache, runs the parser from those exact bytes, and binds per-file
 digests; the checkout's own HEAD is not the pin.

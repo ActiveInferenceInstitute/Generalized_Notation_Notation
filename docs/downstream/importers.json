@@ -3,8 +3,8 @@
   "observed": "2026-11-12",
   "upstream": {
     "repository": "ActiveInferenceInstitute/Generalized_Notation_Notation",
-    "tag": "v5.0.3",
-    "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1"
+    "tag": "v5.1.0",
+    "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf"
   },
   "importers": [
     {
@@ -34,8 +34,8 @@
       "pin": {
         "kind": "file",
         "path": "specs/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -74,8 +74,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -114,8 +114,8 @@
       "pin": {
         "kind": "file",
         "path": "gnn/upstream.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -134,8 +134,8 @@
       "pin": {
         "kind": "file",
         "path": "models/gnn.pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -154,8 +154,8 @@
       "pin": {
         "kind": "file",
         "path": "gnn/upstream.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -174,8 +174,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -194,8 +194,8 @@
       "pin": {
         "kind": "file",
         "path": "models/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -234,8 +234,8 @@
       "pin": {
         "kind": "file",
         "path": "specs/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -314,8 +314,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -334,8 +334,8 @@
       "pin": {
         "kind": "file",
         "path": "gnn/upstream.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -374,8 +374,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -394,8 +394,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -575,8 +575,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pair.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -695,8 +695,8 @@
       "pin": {
         "kind": "file",
         "path": "gnn/upstream.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -735,8 +735,8 @@
       "pin": {
         "kind": "file",
         "path": "gnn/upstream.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -755,8 +755,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -772,11 +772,22 @@
       "repo": "pymdp",
       "visibility": "public",
       "kind": "contract",
-      "pin": null,
+      "pin": {
+        "kind": "file",
+        "path": ".github/gnn-pin.json",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
+        "schema": "gnn-importer-pin/v1"
+      },
       "specs": {
         "count": 0
       },
-      "conformance": null
+      "conformance": {
+        "workflow": null,
+        "job": null,
+        "name": "gnn conformance (local arm)",
+        "local_arm": "./gate.sh gnn"
+      }
     },
     {
       "repo": "Research-Discovery-Engine",
@@ -873,12 +884,12 @@
           "role": "importer",
           "install": "direct",
           "arm": "python -m gnn.importers check --repo .",
-          "pin": null,
-          "pointer": null,
+          "pin": ".github/gnn-pin.json",
+          "pointer": ".github/GNN.md",
           "docs_index": null,
           "docs_flat_index": null,
           "manuscript": null,
-          "gate": null
+          "gate": "./gate.sh gnn"
         },
         {
           "repo": "pymcp",

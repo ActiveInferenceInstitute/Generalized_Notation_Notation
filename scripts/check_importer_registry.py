@@ -11,9 +11,12 @@ one artifact in two forms:
 
 - **Offline (default, deterministic, no network).** Schema and enum checks,
   one row per repository, docs <-> JSON parity in both directions, pin parity
-  against the declared upstream release, and the spec-count contract per row
-  kind (``spec`` rows carry at least one specification, ``pin-only`` rows
-  carry none).
+  between each row's tag and commit as this repository's tags resolve them,
+  the registry's declared upstream release against its own tag, and the
+  spec-count contract per row kind (``spec`` rows carry at least one
+  specification, ``pin-only`` rows carry none). Rows may hold different
+  releases: the registry records the release each member actually declares,
+  not one estate-wide pin.
 - **Online (``--online``).** Re-reads each public repository's pin file at its
   default branch and compares path, tag and commit with the registry, confirms
   the named workflow exists and declares the named job, and confirms the row's
@@ -115,6 +118,35 @@ def prose_repositories(path: Path = PROSE) -> Set[str]:
 def _require(condition: bool, findings: Findings, code: str, message: str) -> None:
     if not condition:
         findings.error(code, message)
+
+
+def _tag_commit(tag: str) -> Optional[str]:
+    """Return the commit a release tag names in this repository, or ``None``.
+
+    The registry records a pin per member, and members legitimately hold
+    different releases while the estate cuts over. The offline check therefore
+    resolves each pin's tag against this repository's own tags instead of
+    requiring every row to equal the newest release.
+    """
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(ROOT),
+                "rev-parse",
+                "--verify",
+                f"refs/tags/{tag}^{{commit}}",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
 
 
 def check_schema(registry: Dict[str, Any], findings: Findings) -> None:
@@ -223,6 +255,13 @@ def check_docs_parity(registry: Dict[str, Any], findings: Findings) -> None:
 def check_pin_parity(registry: Dict[str, Any], findings: Findings) -> None:
     upstream = registry.get("upstream") or {}
     tag, commit = upstream.get("tag"), upstream.get("commit")
+    if tag:
+        _require(
+            _tag_commit(tag) == commit,
+            findings,
+            "upstream-tag-commit",
+            f"upstream tag {tag!r} does not resolve to declared commit {str(commit)[:10]}",
+        )
     for row in registry.get("importers") or []:
         if not isinstance(row, dict):
             continue
@@ -245,33 +284,45 @@ def check_pin_parity(registry: Dict[str, Any], findings: Findings) -> None:
         if not isinstance(pin, dict):
             continue
         if pin.get("kind") in ("file", "dependency"):
-            if pin.get("tag") is None:
+            pinned_tag = pin.get("tag")
+            if pinned_tag is None:
                 findings.warning(
                     "pin-tag-absent",
                     f"{repo}: pin records a commit but no tag; the tag is the human-readable identity",
                 )
             else:
+                resolved = _tag_commit(pinned_tag)
                 _require(
-                    pin.get("tag") == tag,
+                    resolved is not None,
                     findings,
-                    "pin-tag",
-                    f"{repo}: pin tag {pin.get('tag')!r} != upstream {tag!r}",
+                    "pin-tag-unknown",
+                    f"{repo}: pin tag {pinned_tag!r} is not a tag in this repository",
                 )
-            _require(
-                pin.get("commit") == commit,
-                findings,
-                "pin-commit",
-                f"{repo}: pin commit {str(pin.get('commit'))[:10]} != upstream {str(commit)[:10]}",
-            )
+                if resolved is not None:
+                    _require(
+                        pin.get("commit") == resolved,
+                        findings,
+                        "pin-commit",
+                        f"{repo}: pin tag {pinned_tag!r} resolves to "
+                        f"{resolved[:10]}, not {str(pin.get('commit'))[:10]}",
+                    )
         conformance = row.get("conformance")
         if pin.get("kind") != "content-hash":
-            _require(
+            hosted = (
                 isinstance(conformance, dict)
                 and conformance.get("workflow")
-                and conformance.get("job"),
+                and conformance.get("job")
+            )
+            local = (
+                isinstance(conformance, dict)
+                and conformance.get("name")
+                and conformance.get("local_arm")
+            )
+            _require(
+                bool(hosted or local),
                 findings,
                 "conformance-missing",
-                f"{repo}: no conformance workflow/job recorded",
+                f"{repo}: no hosted conformance workflow/job or local arm recorded",
             )
 
 

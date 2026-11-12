@@ -29,29 +29,19 @@ it was taken from. Two pin files carry the bridge:
 - `specs/gnn-bridge-w1-bridge-operations/syntax-pin.json` records SHA-256
   hashes for GNN's `docs/gnn/gnn_syntax.md` and
   `src/gnn/pipeline/step_registry.py`.
-- `specs/gnn-bridge-w2-source-custody/source-pin.json` records GNN commit
-  `2778e65c2228148417b2cf71832eb86a019785fb` with SHA-256 hashes for the six
-  declared contract files (`pyproject.toml`, `uv.lock`, `src/gnn/main.py`,
-  `docs/gnn/gnn_syntax.md`, `src/gnn/pipeline/step_registry.py`,
+- `specs/gnn-bridge-w2-source-custody/source-pin.json` records release
+  `v5.1.0` at GNN commit `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf` with
+  SHA-256 hashes for the six declared contract files (`pyproject.toml`,
+  `uv.lock`, `src/gnn/main.py`, `docs/gnn/gnn_syntax.md`,
+  `src/gnn/pipeline/step_registry.py`,
   `docs/other/fep_lean/bridge-contract.md`), and the `fep_lean` companion
   commit `301c2d2405b260ef8b645b0c5a3914fbcdf5c49c` with its own file hashes.
-  All six GNN hashes reproduce exactly from that commit.
 
-Per-file binding, measured 2026-11-11 by hashing each declared file at tag
-`v5.0.3`, at the pinned `2778e65c` and on GNN `main` at `68d15b2a`:
-
-- `src/gnn/pipeline/step_registry.py`, `src/gnn/main.py` and the mirrored
-  `docs/other/fep_lean/bridge-contract.md` have the same bytes at all three
-  revisions.
-- `docs/gnn/gnn_syntax.md` matches the recorded hash at the pinned commit and
-  on `main`, but not at tag `v5.0.3`: the notation contract itself moved after
-  the release, and the pin follows it.
-- `pyproject.toml` and `uv.lock` match the recorded hashes only at the pinned
-  commit; they already differed at tag `v5.0.3` and have moved again on `main`.
-  The dependency files bind to the pinned commit rather than to a release tag,
-  which is what content-addressing is for.
-
-`2778e65c` is 206 commits after tag `v5.0.3` and is an ancestor of GNN `main`.
+Per-file binding, measured 2026-11-12 by hashing each declared file at commit
+`75c834bd`: all six GNN hashes reproduce exactly. The previous pin `2778e65c`
+was 206 commits after tag `v5.0.3` and is an ancestor of GNN `main`; it
+predated `src/gnn/importers.py`, which is why the pin moved to the release that
+carries the reader.
 
 ## Conformance and validation evidence
 

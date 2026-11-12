@@ -16,8 +16,8 @@ benchmarking.
 
 ## Pinned GNN revision
 
-`gnn/upstream.json` pins the upstream repository at tag `v5.0.3`, commit
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`.
+`gnn/upstream.json` pins the upstream repository at tag `v5.1.0`, commit
+`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`.
 
 ## Conformance and validation evidence
 
