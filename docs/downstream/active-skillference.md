@@ -1,7 +1,7 @@
 # Active_Skillference
 
 **Repository**: [`ActiveInferenceInstitute/Active_Skillference`](https://github.com/ActiveInferenceInstitute/Active_Skillference)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
 
 ## What it models
 
@@ -24,9 +24,12 @@ active inference agent that anchors the course material.
 - `tests/test_gnn_conformance.py` checks the declaration against the pinned
   release, with `src/gnn_conformance.py` as the shared implementation and
   `scripts/validate_gnn_spec.py` as the command-line entry point.
-- `.github/workflows/gates.yml` has no GNN-specific job; the step "Tests with the
-  coverage floor" runs `uv run pytest -q` with source coverage and a 90%
-  fail-under floor enabled, which includes the conformance test.
+- `.github/workflows/gates.yml` job key `gnn-conformance` publishes
+  `gnn conformance (pinned)` (re-read 2026-11-06): it validates
+  `gnn/discrete_active_inference_agent.gnn.md` with the parser revision pinned
+  in `gnn/upstream.json`, and `tests/test_gnn_conformance.py` fails rather than
+  skips when the pin is unavailable. The "Tests with the coverage floor" step
+  remains the general suite.
 
 ## Verification limits
 

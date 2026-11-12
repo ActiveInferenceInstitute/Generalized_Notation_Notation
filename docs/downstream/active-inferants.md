@@ -1,7 +1,7 @@
 # Active_InferAnts
 
 **Repository**: [`ActiveInferenceInstitute/Active_InferAnts`](https://github.com/ActiveInferenceInstitute/Active_InferAnts)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
 
 ## What it models
 
@@ -23,10 +23,12 @@ benchmarking.
 
 - `tests/test_gnn_conformance.py`, `gnn_conformance.py`, and
   `scripts/validate_gnn_spec.py`.
-- `.github/workflows/ci.yml` runs unit tests. There is no GNN-specific job name
-  on `main` (verified 2026-11-02), so the evidence is the test file run by the
-  generic suite rather than a dedicated job.
+- `.github/workflows/ci.yml` job key `gnn-conformance` publishes
+  `gnn conformance (pinned)` (re-read 2026-11-06): it validates
+  `gnn/gaussian_agent.gnn.md` with the parser revision pinned in
+  `gnn/upstream.json`, and `tests/test_gnn_conformance.py` fails rather than
+  skips when the pin is unavailable.
 
 ## Verification limits
 
-No GNN-specific workflow job; not verified that the current `main` run is green.
+Not verified that the current `main` run of `gnn-conformance` is green.

@@ -1,7 +1,7 @@
 # on_policy_distillation
 
 **Repository**: [`ActiveInferenceInstitute/on_policy_distillation`](https://github.com/ActiveInferenceInstitute/on_policy_distillation)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
 
 ## What it models
 
@@ -29,10 +29,10 @@ specifications carry the small models the argument depends on.
   `tests/test_gnn_upstream_conformance.py` checks the recorded upstream revision.
 - A local `src/gnn` package (parser, upstream, concordance and model modules)
   carries the bridge code the tests exercise.
-- `.github/workflows/ci.yml` has no GNN-specific job; the documented release gate
-  runs `python -m pytest tests/ -q` through `uv` with the development extra,
-  source coverage and a 90% fail-under floor enabled, which includes both GNN
-  test modules.
+- `.github/workflows/ci.yml` job key `release-gate` publishes
+  `gnn conformance (pinned)` (re-read 2026-11-06): it provisions the revision
+  pinned in `gnn/upstream.json` and runs the conformance check as a named job
+  instead of a hidden step; both GNN test modules remain part of the suite.
 
 ## Verification limits
 

@@ -358,6 +358,7 @@ command, environment and failure through [SUPPORT.md](SUPPORT.md).
 | Configuration and execution | [Configuration](docs/configuration/README.md), [pipeline](docs/pipeline/README.md), [availability](docs/execution/FRAMEWORK_AVAILABILITY.md) |
 | Scientific evidence and boundaries | [Validation evidence](docs/pipeline/validation_evidence_guide.md), [filesystem guarantees](docs/security/filesystem_boundaries.md) |
 | Releases and archival | [Release procedure](docs/releases/README.md), [exact-version archival](docs/releases/exact_version_archival.md) |
+| Who uses GNN | [Downstream registry](docs/downstream/README.md) |
 
 ## Examples
 
@@ -425,7 +426,10 @@ their documented producer and re-pin procedures.
 [GNN 5.0.3](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.3)
 was published on 2026-11-03 from tag `v5.0.3` at commit
 `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`. That record provides tagged source.
-For separately uploaded distribution assets, the
+Downstream consumers pin that commit; the
+[downstream registry](docs/downstream/README.md) records which repositories pin
+it, in which pin file and with what conformance evidence. For separately
+uploaded distribution assets, the
 [GNN 5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
 carries the ordinary wheel and sdist, the manuscript PDF, a source archive, the
 source binding and verification records, and `SHA256SUMS`. Those assets identify

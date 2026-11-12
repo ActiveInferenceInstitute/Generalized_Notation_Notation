@@ -1,7 +1,7 @@
 # fep_formal
 
 **Repository**: [`ActiveInferenceInstitute/fep_formal`](https://github.com/ActiveInferenceInstitute/fep_formal)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
 
 ## What it models
 
@@ -30,27 +30,28 @@ it was taken from. Two pin files carry the bridge:
   hashes for GNN's `docs/gnn/gnn_syntax.md` and
   `src/gnn/pipeline/step_registry.py`.
 - `specs/gnn-bridge-w2-source-custody/source-pin.json` records GNN commit
-  `0f563547caf22f9d222ea40cb11f5fbd6bedeb56` with SHA-256 hashes for the six
+  `2778e65c2228148417b2cf71832eb86a019785fb` with SHA-256 hashes for the six
   declared contract files (`pyproject.toml`, `uv.lock`, `src/gnn/main.py`,
   `docs/gnn/gnn_syntax.md`, `src/gnn/pipeline/step_registry.py`,
   `docs/other/fep_lean/bridge-contract.md`), and the `fep_lean` companion
-  commit `40e30c7ecb6680a9c01d3486fb65140c2aa49410` with its own file hashes.
+  commit `301c2d2405b260ef8b645b0c5a3914fbcdf5c49c` with its own file hashes.
   All six GNN hashes reproduce exactly from that commit.
 
-Per-file binding, measured 2026-11-02 by hashing each declared file at tag
-`v5.0.3`, at `0f563547` and on GNN `main` at `295ed67d`:
+Per-file binding, measured 2026-11-11 by hashing each declared file at tag
+`v5.0.3`, at the pinned `2778e65c` and on GNN `main` at `68d15b2a`:
 
-- `docs/gnn/gnn_syntax.md`, `src/gnn/pipeline/step_registry.py`,
-  `src/gnn/main.py` and the mirrored `docs/other/fep_lean/bridge-contract.md`
-  have the same bytes at all three revisions: the notation contract binds at
-  tag `v5.0.3` and is still unchanged on `main`.
-- `pyproject.toml` and `uv.lock` match the recorded hashes only at `0f563547`.
-  They already differed at tag `v5.0.3`, and one later commit moved them on
-  `main` (`1ea2f35c6`, "Raise the virtualenv security floor and re-lock to
-  21.15.2"). The dependency files bind to the pinned commit rather than to a
-  release tag, which is what content-addressing is for.
+- `src/gnn/pipeline/step_registry.py`, `src/gnn/main.py` and the mirrored
+  `docs/other/fep_lean/bridge-contract.md` have the same bytes at all three
+  revisions.
+- `docs/gnn/gnn_syntax.md` matches the recorded hash at the pinned commit and
+  on `main`, but not at tag `v5.0.3`: the notation contract itself moved after
+  the release, and the pin follows it.
+- `pyproject.toml` and `uv.lock` match the recorded hashes only at the pinned
+  commit; they already differed at tag `v5.0.3` and have moved again on `main`.
+  The dependency files bind to the pinned commit rather than to a release tag,
+  which is what content-addressing is for.
 
-`0f563547` is 34 commits after tag `v5.0.3` and is an ancestor of GNN `main`.
+`2778e65c` is 206 commits after tag `v5.0.3` and is an ancestor of GNN `main`.
 
 ## Conformance and validation evidence
 
@@ -63,6 +64,11 @@ Per-file binding, measured 2026-11-02 by hashing each declared file at tag
   read-only check mode), and its pytest selection includes
   `tests/test_gnn_bridge_operations.py`, which exercises the bridge's read-only
   checks and their refusal paths.
+- A dedicated `.github/workflows/ci.yml` job key `gnn-conformance` publishes the
+  `gnn conformance (pinned)` context on every push and pull request
+  (re-read 2026-11-11); the `python` job above remains separate bridge evidence.
+  The `protect-default-branch` ruleset requires the separate
+  `gitvault/fep-gnn-conformance` check, not this context.
 - `docs/pin_audit.py` (run in `ci.yml` as "Require the newest stable Lean-Mathlib
   release pair" and in the scheduled `pin-audit` job of `lean-latest.yml`)
   audits the Lean toolchain, Mathlib revision and model pins in project

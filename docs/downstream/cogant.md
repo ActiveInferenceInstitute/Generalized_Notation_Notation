@@ -1,7 +1,7 @@
 # COGANT
 
 **Repository**: [`ActiveInferenceInstitute/COGANT`](https://github.com/ActiveInferenceInstitute/COGANT)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
 
 ## What it models
 
@@ -39,16 +39,21 @@ is independent of the upstream release pin.
 
 ## Conformance and validation evidence
 
-- `.github/workflows/ci.yml` job "Optional upstream GNN smoke (manual)"
-  (`workflow_dispatch`) exercises `cogant.gnn.upstream_bridge` and
-  `tests/unit/test_gnn_upstream_bridge.py`,
-  `tests/unit/test_gnn_upstream_bridge_contract.py`.
+- `.github/workflows/ci.yml` job key `gnn-conformance`, display
+  `gnn conformance (pinned)` (re-read 2026-11-11), runs on every push and pull
+  request with no job-level condition; no repository ruleset requires a status
+  context, so the job is the conformance lane rather than a required check. It
+  exercises `cogant.gnn.upstream_bridge` and
+  `cogant/tests/unit/test_gnn_upstream_bridge.py`,
+  `cogant/tests/unit/test_gnn_upstream_bridge_contract.py`. The former manual
+  `workflow_dispatch` smoke job is no longer in the workflow list.
 - `cogant/docs/cookbook/14_gnn_validation.md` is the validation walkthrough;
   `cogant/docs/evaluation/GNN_VALIDATION_REPORT.md` and
   `cogant/docs/evaluation/GNN_UPSTREAM_AUDIT_SURFACE.md` carry recorded results.
 
 ## Verification limits
 
-Not verified: that the manual smoke job has run recently, or that the 5.0.3
-compatibility record is reproducible today. The compatibility JSON was read at
-`main` on 2026-11-02.
+Not verified: that the current `main` run of `gnn-conformance` is green, or that
+the 5.0.3 compatibility record is reproducible today. The compatibility JSON was
+read at `main` on 2026-11-02, and the job key, display name and ruleset on
+2026-11-11.

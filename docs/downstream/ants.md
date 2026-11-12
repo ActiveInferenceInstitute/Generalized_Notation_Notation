@@ -1,7 +1,7 @@
 # ants
 
 **Repository**: [`ActiveInferenceInstitute/ants`](https://github.com/ActiveInferenceInstitute/ants)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
 
 ## What it models
 
@@ -23,9 +23,12 @@ restates the foraging generative model in the shared notation.
 
 - `tests/test_gnn_conformance.py` checks the declaration against the pinned
   release; `gnn_conformance.py` and `scripts/validate_gnn_spec.py` implement it.
-- `.github/workflows/ci.yml` has no GNN-specific job; the step
-  "Test (pytest + coverage)" runs `uv run pytest`, which includes the
-  conformance test.
+- `.github/workflows/ci.yml` job key `gnn-conformance` publishes
+  `gnn conformance (pinned)` (re-read 2026-11-06): it validates
+  `gnn/ant_colony_foraging.gnn.md` with the parser revision pinned in
+  `gnn/upstream.json`, and `tests/test_gnn_conformance.py` fails rather than
+  skips when the pin is unavailable. The "Test (pytest + coverage)" step
+  remains the general suite.
 
 ## Verification limits
 

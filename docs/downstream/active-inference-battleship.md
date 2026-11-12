@@ -1,7 +1,7 @@
 # active_inference_battleship
 
 **Repository**: [`ActiveInferenceInstitute/active_inference_battleship`](https://github.com/ActiveInferenceInstitute/active_inference_battleship)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
 
 ## What it models
 
@@ -35,8 +35,11 @@ digests; the checkout's own HEAD is not the pin.
 - Documented commands: `bun run model:check` compares current local source bytes
   with the compiled artifact; `bun run model:import` re-imports after an
   intentional, supported source change.
-- No GitHub Actions workflows exist on `main`: `.github/` contains only
-  `dependabot.yml` (verified 2026-11-02), so there is no CI job evidence to cite.
+- `.github/workflows/ci.yml` (workflow name "GNN pin conformance") job
+  `model-check` publishes `gnn conformance (pinned)`: it reads
+  `models/gnn.pin.json`, resolves the pinned commit and tag, parses with the
+  pinned upstream parser and binds per-file digests (re-read 2026-11-06). The
+  2026-11-02 statement that no workflows existed is superseded.
 
 ## Verification limits
 

@@ -1,7 +1,7 @@
 # policy_entanglement
 
 **Repository**: [`ActiveInferenceInstitute/policy_entanglement`](https://github.com/ActiveInferenceInstitute/policy_entanglement)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
 
 ## What it models
 
@@ -33,8 +33,10 @@ boundary alongside pymdp POMDP simulations.
   `test_gnn_round_trip.py`, `test_gnn_upstream_conformance.py`,
   `test_gnn_harness_conformance.py`, `test_gnn_concordance.py`.
 - Scripts: `scripts/gnn_to_pymdp.py`, `scripts/simulate_gnn.py`.
-- No GitHub Actions workflows exist on `main`: `.github/` contains only
-  `dependabot.yml` (verified 2026-11-02), so there is no CI job evidence to cite.
+- `.github/workflows/ci.yml` job `gnn-conformance` publishes
+  `gnn conformance (pinned)`: it reads the pin from `gnn/upstream.json` and
+  validates against the pinned upstream parser (re-read 2026-11-06). The
+  2026-11-02 statement that no workflows existed is superseded.
 
 ## Verification limits
 

@@ -1,7 +1,7 @@
 # Biofirm
 
 **Repository**: [`ActiveInferenceInstitute/Biofirm`](https://github.com/ActiveInferenceInstitute/Biofirm)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
 
 ## What it models
 
@@ -25,10 +25,12 @@ revision `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, version 5.0.3,
 
 - `tests/test_gnn.py` exercises the spec surface; `src/biofirm/gnn.py`
   implements it.
-- `.github/workflows/ci.yml` ("biofirm-ci") runs the test suite. There is no
-  GNN-specific job name on `main` (verified 2026-11-02), so the evidence is the
-  test file run by the generic suite rather than a dedicated job.
+- `.github/workflows/ci.yml` job key `gnn-conformance` publishes
+  `gnn conformance (pinned)` (re-read 2026-11-06): it validates
+  `models/biofirm_ecosystem_variable.gnn.md` with the parser revision pinned in
+  `.github/gnn-pin.json`, and `tests/test_gnn.py` fails rather than skips when
+  the explicitly selected pin is unavailable.
 
 ## Verification limits
 
-No GNN-specific workflow job; not verified that the current `main` run is green.
+Not verified that the current `main` run of `gnn-conformance` is green.
