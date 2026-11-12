@@ -57,7 +57,7 @@
 
 | Task | Command | Working directory | Description |
 | --- | --- | --- | --- |
-| `test` | `python -m pytest` | `.` | Run the test suite. |
+| `test` | `./run.sh test` | `.` | Run the test suite. |
 
 ## Validation
 

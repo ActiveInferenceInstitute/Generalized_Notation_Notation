@@ -7,6 +7,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Audit command parity and publication evidence
+
+- Delegate the InstituteOS sidecar test task to `./run.sh test` and
+  `just typecheck` to `./run.sh type`, retaining the canonical frozen
+  environment, bounded test selection and release-gate type coverage.
+- Record the shipped `GeneralizedNotationNotation_combined.pdf` SHA-256
+  and byte size in the custody manifest's separate `publication_artifacts`
+  record. Binary publication bytes are not text-normalized or compared
+  across fresh renders. The counts/source commit remains the pre-render
+  identity, not the eventual commit that carries the artifacts.
+
 ### Bounded gate composition and manuscript operation
 
 - Expose the existing MCP/collection function as `./run.sh contracts`.

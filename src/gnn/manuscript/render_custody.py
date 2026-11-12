@@ -19,6 +19,9 @@ The custody point is a small digest manifest,
 * ``render_artifacts_sha256`` — sha256 of the committed ``.log``/``.tex``/
   ``.md``. A re-render committed without re-recording the manifest fails;
   so does a manifest re-recorded against artifacts that are not committed.
+* ``publication_artifacts`` — exact SHA-256 and byte size of the shipped PDF.
+  These identify the publication bytes, not byte-reproducible fresh-render
+  evidence. The counts/source commit precedes the eventual artifact commit.
 * ``render_inputs_sha256`` — sha256 of every committed hydrated file under
   ``output/manuscript/``. A prose edit that never reached a render shows up
   here as a disagreement with the tree on disk.
@@ -132,8 +135,8 @@ PROFILE_KEYS = ("pandoc", "pandoc_crossref", "tex_engine", "tex_roots")
 #: The artifacts TeX Live itself writes, out of :data:`RENDERED_ARTIFACTS`.
 #: Excluded from the comparison on a permitted profile that is not the
 #: recording one, and named in that run's report: TeX Live is the one axis a
-#: permitted profile may differ in. The PDF is outside the custody set
-#: entirely — it is not byte-reproducible (it embeds its own build ids).
+#: permitted profile may differ in. The PDF is recorded separately as exact
+#: publication bytes, not compared across renders (it embeds build ids).
 ENGINE_DEPENDENT_ARTIFACTS = (Path("output") / "pdf" / "_combined_manuscript.log",)
 #: The non-recording profile this chain permits, fully named and fully
 #: specified: the hosted runner's TeX Live 2023/Debian (values measured from
@@ -158,6 +161,7 @@ _MANIFEST_REL = Path("output") / "data" / "manuscript_render_manifest.json"
 _VARIABLES_REL = Path("output") / "data" / "manuscript_variables.json"
 RENDER_INPUT_ROOT = Path("output") / "manuscript"
 _RECEIPT_REL = Path("output") / "data" / "manuscript_variables_receipt.json"
+_PUBLICATION_REL = Path("output") / "pdf" / "GeneralizedNotationNotation_combined.pdf"
 _SOURCE_MANUSCRIPT_REL = Path("manuscript")
 # Hydration mirror of ``infrastructure.rendering.manuscript_injection``
 # (docxology/template): ``_TOKEN_RE`` is its token pattern, and these are
@@ -283,7 +287,7 @@ def record_render_manifest(project_root: Path) -> dict:
 
     missing = [
         rel.as_posix()
-        for rel in (*RENDERED_ARTIFACTS, RENDER_INPUT_ROOT)
+        for rel in (*RENDERED_ARTIFACTS, _PUBLICATION_REL, RENDER_INPUT_ROOT)
         if not (rel if rel.is_absolute() else project_root / rel).exists()
     ]
     if missing:
@@ -354,6 +358,12 @@ def record_render_manifest(project_root: Path) -> dict:
         "variables_sha256": token_checksum(strip_volatile_tokens(variables)),
         "render_artifacts_sha256": {
             rel.as_posix(): _sha256(project_root / rel) for rel in RENDERED_ARTIFACTS
+        },
+        "publication_artifacts": {
+            _PUBLICATION_REL.as_posix(): {
+                "sha256": _sha256(project_root / _PUBLICATION_REL),
+                "size_bytes": (project_root / _PUBLICATION_REL).stat().st_size,
+            }
         },
         "render_inputs_sha256": _render_inputs(project_root),
         # Preserve a trustworthy normalized baseline outside Git as well.

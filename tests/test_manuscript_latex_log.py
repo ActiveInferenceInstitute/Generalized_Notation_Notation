@@ -34,6 +34,7 @@ Two facts these tests exist to protect:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import sys
@@ -252,6 +253,9 @@ def _custody_fixture(tmp_path: Path) -> Path:
     (root / "output" / "pdf" / "_combined_manuscript.log").write_text(
         "[1] [2] Output written on x.pdf (2 pages).\n", encoding="utf-8"
     )
+    (root / "output" / "pdf" / "GeneralizedNotationNotation_combined.pdf").write_bytes(
+        b"%PDF-1.7\nfixture publication\n"
+    )
     record_render_manifest(root)
     return root
 
@@ -259,6 +263,33 @@ def _custody_fixture(tmp_path: Path) -> Path:
 def test_the_committed_pdf_evidence_is_the_render_the_manifest_records() -> None:
     """Log, tex, md, hydrated prose, token map and receipt: one render's chain."""
     assert custody_issues(REPO_ROOT) == []
+
+
+def test_publication_receipt_records_exact_bytes_not_fresh_render_identity(
+    tmp_path: Path,
+) -> None:
+    root = _custody_fixture(tmp_path)
+    pdf = root / "output" / "pdf" / "GeneralizedNotationNotation_combined.pdf"
+    manifest = record_render_manifest(root)
+    rel = pdf.relative_to(root).as_posix()
+    assert manifest["publication_artifacts"] == {
+        rel: {
+            "sha256": hashlib.sha256(pdf.read_bytes()).hexdigest(),
+            "size_bytes": pdf.stat().st_size,
+        }
+    }
+    assert manifest["counts_describe_commit"] == "abc1234"
+    assert rel not in manifest["render_artifacts_sha256"]
+    assert rel not in manifest["render_artifacts_normalized_sha256"]
+    pdf.write_bytes(b"%PDF-1.7\nfresh render with another build id\n")
+    assert verify_fresh_render(root) == []
+
+
+def test_recording_requires_the_final_publication(tmp_path: Path) -> None:
+    root = _custody_fixture(tmp_path)
+    (root / "output" / "pdf" / "GeneralizedNotationNotation_combined.pdf").unlink()
+    with pytest.raises(RuntimeError, match="GeneralizedNotationNotation_combined.pdf"):
+        record_render_manifest(root)
 
 
 def test_a_missing_custody_manifest_is_a_failure_not_a_skip() -> None:
@@ -349,6 +380,7 @@ def test_a_re_render_at_a_new_commit_with_identical_prose_passes(
         "output/pdf/_combined_manuscript.md": b"rendered at abc1234\n",
         "output/pdf/_combined_manuscript.tex": b"rendered at abc1234\n",
         "output/pdf/_combined_manuscript.log": b"[1] written at abc1234.\n",
+        "output/pdf/GeneralizedNotationNotation_combined.pdf": b"%PDF-1.7\nfixture\n",
     }
     for rel, data in parent.items():
         (root / rel).write_bytes(data)
