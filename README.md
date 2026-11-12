@@ -51,6 +51,8 @@ the model contract; the illustration contains no measured results.*
 | Run your first model | [Quick start](#quick-start), [full quickstart](docs/quickstart.md), [setup guide](SETUP_GUIDE.md) |
 | Write GNN | [Language hub](docs/gnn/language/README.md), [syntax reference](docs/gnn/reference/gnn_syntax.md) |
 | Choose an example | [Exemplar index](input/gnn_files/INDEX.md), [model-family manifest](input/model_family_manifest.json) |
+| Find a file or a canonical home | [Repository index](INDEX.md), [documentation index](docs/INDEX.md) |
+| Verify a checkout | [run.sh](run.sh) — `./run.sh gates` (`just gates` runs the same arm) |
 | Understand or extend the implementation | [Architecture](ARCHITECTURE.md), [module registry](AGENTS.md), [system documentation](DOCS.md) |
 | Change automation | [GitHub guide](.github/README.md), [workflow index](.github/workflows/README.md) |
 | Contribute or get help | [Contributing](CONTRIBUTING.md), [support](SUPPORT.md), [security](SECURITY.md), [roadmap](TO-DO.md) |
@@ -71,7 +73,7 @@ Generalized_Notation_Notation/
 ├── manuscript/              # Authored manuscript sources
 ├── output/                  # Tracked publication evidence and provenance
 ├── .github/                 # Automation and GitHub-facing documentation
-└── pyproject.toml, uv.lock, uv.toml
+└── pyproject.toml, pytest.ini, uv.lock, uv.toml
 ```
 
 ## Motivation and Goals
@@ -285,7 +287,10 @@ admitted backend, and provision its runtime before execution.
 
 ### Runtime defaults and required profiles
 
-GNN-owned environments use uv **0.13.6**. The [package metadata](pyproject.toml)
+GNN-owned environments use uv **0.13.6**: [uv.toml](uv.toml) sets
+`required-version = ">=0.13.6,<0.14"`, the GNN-owned `astral-sh/setup-uv` steps
+pin `version: "0.13.6"`, and the [Dockerfile](Dockerfile) pins
+`ARG UV_VERSION=0.13.6`. The [package metadata](pyproject.toml)
 supports CPython 3.11 through 3.14, and the frozen scientific profile defaults to
 the latest 3.14 patch. Python 3.15 qualification remains outside the current
 profile. The macOS probe reached h5py's source build and required a native HDF5
@@ -373,6 +378,13 @@ Current CI and exact-source receipts establish operational status. The
 [workflow index](.github/workflows/README.md) owns triggers, Python matrices,
 native selections, security checks and coverage requirements.
 
+The canonical local gate is `./run.sh gates` (`just gates` runs the same arm):
+`ruff format --check`, `ruff check`, `mypy`, the parallel `pytest` selection
+under the coverage floor, the documentation, terminology and capability-contract
+audits, and the v3 orchestration acceptance gate. It mirrors the `quality` job in
+[`ci.yml`](.github/workflows/ci.yml) plus the unit-suite selection and coverage
+floor, so a local green gate and a green CI gate are the same evidence class.
+
 After frozen development setup:
 
 ```bash
@@ -383,11 +395,14 @@ uv run --frozen --no-sync python scripts/check_maintained_doc_terms.py --strict
 ```
 
 Preflight catches deterministic mistakes before expensive hosted qualification.
-The ordinary test matrix covers Python 3.11–3.14. Core coverage retains its 60%
-floor; comprehensive native coverage requires strictly more than 80% independently
-on each declared interpreter. Native, installed-platform, all-extras, manuscript
-and paired-custody evidence retain their own environments and acceptance scopes.
-The [release procedure](docs/releases/README.md#repeatable-release-qualification)
+The ordinary test matrix covers Python 3.11–3.14. Core coverage is enforced
+inside the gate, not reported to a service and not shown as a badge:
+`[tool.coverage.report] fail_under = 60` in [pyproject.toml](pyproject.toml)
+fails `./run.sh gates` below 60 %; comprehensive native coverage requires
+strictly more than 80% independently on each declared interpreter. Native,
+installed-platform, all-extras, manuscript and paired-custody evidence retain
+their own environments and acceptance scopes. The
+[release procedure](docs/releases/README.md#repeatable-release-qualification)
 collects exact commit/run/attempt/job identities across all sixteen workflows.
 
 Use [tests/README.md](tests/README.md) for test selection and

@@ -9,6 +9,11 @@ narrow roles:
 - [CROSS_REFERENCE_INDEX.md](CROSS_REFERENCE_INDEX.md) maps topics and frameworks.
 - [AGENTS.md](AGENTS.md) describes the documentation tree for maintainers.
 
+**Sibling-project integration**: the [interoperability guide](development/interop.md)
+maps canonical data/model declarations, API envelopes, benchmark producers and
+registration, and the [open backlog](../TO-DO.md). This repository's documentation
+index is [INDEX.md](INDEX.md); there is no separate `docs/index` tree.
+
 The code and installed CLI define behavior. Documentation gates check examples
 and claims at the scopes described below. The [version map](VERSION_MAP.md)
 records release and distribution identities.

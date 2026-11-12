@@ -7,6 +7,11 @@ Start with the [contribution guide](../../CONTRIBUTING.md),
 The installed package is `gnn`; implementation lives under `src/gnn/`, numbered
 scripts delegate to shared modules, and tests live under `tests/`.
 
+Sibling-project contracts: [Interoperability](interop.md),
+[Typed models and APIs](interop_api.md), and
+[Benchmarks and dataset provenance](interop_research.md).
+Open integration work is recorded in the [canonical backlog](../../TO-DO.md).
+
 ## Quick Start for Developers
 
 Use the uv version in the [setup guide](../SETUP.md), then from the repository root:

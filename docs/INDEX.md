@@ -4,6 +4,11 @@ This is the flat link index. For human onboarding, use [README.md](README.md). F
 short audience map, use [START_HERE.md](START_HERE.md). For curricula, use
 [learning_paths.md](learning_paths.md).
 
+For sibling-project consumption, start with [Interoperability](development/interop.md),
+[Typed/API contracts](development/interop_api.md), and
+[Benchmarks and data provenance](development/interop_research.md).
+Open integration work uses the [canonical backlog](../TO-DO.md).
+
 ## Start and operate
 
 - [Version map](VERSION_MAP.md)

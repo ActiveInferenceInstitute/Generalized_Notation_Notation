@@ -96,7 +96,7 @@ The CLI module is a thin dispatcher — each subcommand delegates to the corresp
 - `validate` → `gnn.schema` section/state-space/connection/dimension checks plus `validation.validate_content()` shared semantic evidence. JSON includes `data.semantic`. Findings retain exit code 2, or 1 with `--strict`.
 - `parse` → `gnn.schema.parse_state_space()` + `gnn.frontmatter.parse_frontmatter()`
 - `extract` → `gnn.extract.extract_to_json()` (lazy import; emits a structured error envelope when the extractor is unavailable)
-- `render` → `render.processor` (planned full integration)
+- `render` → `render.process_render()`
 - `report` → `report.pipeline_report.generate_pipeline_report()`
 - `reproduce` → `pipeline.hasher.lookup_run()` + `main.main(override_args=...)`
 - `preflight` → `pipeline.preflight.run_preflight()`
@@ -114,3 +114,4 @@ The CLI module is a thin dispatcher — each subcommand delegates to the corresp
 
 - [SPEC.md](SPEC.md) — Module specification
 - [AGENTS.md](AGENTS.md) — Agent documentation
+- [Typed consumer contract](../../../docs/development/interop_api.md) — canonical imports, HTTP application selection and compatibility limits

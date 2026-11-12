@@ -21,6 +21,7 @@ manuscript/companion updates. The tree also contains retained JSON receipts and
 
 ## Quick Navigation
 
+- **Sibling-project contracts**: [Interoperability](interop.md), [Typed/API contracts](interop_api.md), [Benchmarks and provenance](interop_research.md); open work in [TO-DO.md](../../TO-DO.md)
 - [Documentation audit tooling](README.md#documentation-audit-tooling)
 - [Contributor handoff](contributor_handoff.md)
 - [Roadmap implementation contracts](remaining_roadmap_contracts.md)

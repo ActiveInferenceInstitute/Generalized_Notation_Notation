@@ -6,7 +6,8 @@ This file contains comprehensive tests for the environment module functionality.
 
 import subprocess
 import sys
-from pathlib import Path
+from collections.abc import Callable
+from statistics import median
 from typing import Any
 
 import pytest
@@ -157,18 +158,59 @@ def test_environment_module_completeness() -> None:
 
 
 @pytest.mark.slow
-def test_environment_module_performance() -> None:
-    """Test environment module performance characteristics."""
+def test_environment_module_performance(
+    record_property: Callable[[str, object], None],
+) -> None:
+    """Bound validation overhead against the same real probes on this host."""
     import time
 
-    from gnn.setup import EnvironmentManager
+    from gnn.setup import EnvironmentManager, uv_management
+    from gnn.setup.constants import PROJECT_ROOT, VENV_PATH, VENV_PYTHON
+    from gnn.utils.runtime_safety.jax_stack_validation import (
+        run_jax_stack_probe_subprocess,
+    )
 
     manager = EnvironmentManager()
-    start_time = time.time()
-    manager.validate_environment()
-    processing_time = time.time() - start_time
-    # 30s upper bound: this is a pathological-regression smoke, not a
-    # benchmark. The old 10s bound tripped spuriously under loaded local
-    # runs (-n 4 xdist + coverage measured 13.5s; deep horizon wave 2,
-    # run #5) while unloaded CI passes with seconds to spare.
-    assert processing_time < 30.0
+    reference_samples: list[float] = []
+    validation_samples: list[float] = []
+    # Interleave three independent probe passes and full validations so the
+    # medians tolerate one cold start or scheduling outlier under xdist.
+    for _ in range(3):
+        start_time = time.perf_counter()
+        assert uv_management.check_system_requirements()
+        assert VENV_PATH.exists()
+        assert uv_management.get_installed_package_versions()
+        ok_jax, diagnostic = run_jax_stack_probe_subprocess(VENV_PYTHON, PROJECT_ROOT)
+        assert ok_jax, diagnostic
+        reference_samples.append(time.perf_counter() - start_time)
+
+        start_time = time.perf_counter()
+        result = manager.validate_environment()
+        validation_samples.append(time.perf_counter() - start_time)
+        for check in (
+            "system_requirements",
+            "uv_environment",
+            "dependencies",
+            "jax_installation",
+            "jax_stack_functional",
+            "overall_status",
+        ):
+            assert result[check] is True, f"{check} failed: {result}"
+        assert result["python_version"] == ".".join(map(str, sys.version_info[:3]))
+
+    reference_time = median(reference_samples)
+    processing_time = median(validation_samples)
+    # Independent calibration scales with host/JAX speed without allowing the
+    # validation under test to inflate its own budget by repeating work.
+    budget = 1.5 * reference_time + 1.0
+    record_property("reference_elapsed_seconds", reference_time)
+    record_property("validation_elapsed_seconds", processing_time)
+    record_property("validation_budget_seconds", budget)
+    record_property("reference_samples_seconds", reference_samples)
+    record_property("validation_samples_seconds", validation_samples)
+    assert processing_time <= budget, (
+        f"Full validation median {processing_time:.3f}s exceeds {budget:.3f}s "
+        f"(1.5 x independent probe median {reference_time:.3f}s + 1s); "
+        f"reference samples={reference_samples}, "
+        f"validation samples={validation_samples}"
+    )

@@ -186,24 +186,44 @@ toolchain, a running Ollama server), the file belongs in `DEFAULT_SKIP_ALLOWLIST
 
 ## Coverage Configuration
 
-Runtime pytest settings live in `pytest.ini` at the repository root, which takes
-precedence over the `[tool.pytest.ini_options]` block in `pyproject.toml`. Markers are
-registered in `pytest.ini` (single source of truth, covered by `--strict-markers`).
-Coverage settings are in `pyproject.toml`:
+Runtime pytest settings live in `pytest.ini` at the repository root — the only pytest
+configuration pytest reads; `pyproject.toml` carries no `[tool.pytest.ini_options]`
+block. Markers are registered in `pytest.ini` (single source of truth, covered by
+`--strict-markers`):
+
+```ini
+# pytest.ini
+[pytest]
+addopts =
+    --strict-markers
+    --strict-config
+    --tb=short
+    --durations=10
+    --durations-min=1.0
+    --maxfail=10
+    -p no:randomly
+    -p no:sugar
+    -p no:stepwise
+```
+
+Coverage settings are in `pyproject.toml`, with the floor in the *report* section —
+coverage.py ignores `fail_under` under `[tool.coverage.run]`:
 
 ```toml
 # pyproject.toml
 [tool.coverage.run]
-source = ["src"]
+source = ["src/gnn"]
 omit = ["*/tests/*", "*/test_*", "*/__pycache__/*", "*/venv/*", "*/.venv/*"]
-fail_under = 50
+
+[tool.coverage.report]
+fail_under = 60
 ```
 
 Generate HTML report:
 
 ```bash
 uv run --extra dev python -m pytest tests/ \
-  --cov=src --cov-report=html --cov-report=term-missing -q
+  --cov=gnn --cov-report=html --cov-report=term-missing -q
 # → htmlcov/index.html
 ```
 

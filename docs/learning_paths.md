@@ -14,6 +14,9 @@ Theory-first track: see [Advanced Path: Research and Custom Extensions](#advance
 
 Implementation focus: [Intermediate Path](#intermediate-path-building-and-integrating-models), [Development Guide](development/README.md), and [Practitioner Path](CROSS_REFERENCE_INDEX.md#practitioner-path).
 
+For consumption from another project, use the [Interoperability guide](development/interop.md)
+before choosing a typed import, HTTP application, benchmark producer, or dataset fixture.
+
 ## Academic learning path
 
 Structured progression: [Beginner Path](#beginner-path-getting-started-with-gnn) → [Intermediate](#intermediate-path-building-and-integrating-models) → [Advanced](#advanced-path-research-and-custom-extensions).

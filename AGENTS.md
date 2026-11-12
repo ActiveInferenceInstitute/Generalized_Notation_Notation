@@ -4,6 +4,11 @@
 
 The GNN (Generalized Notation Notation) Pipeline is a comprehensive 25-step system for processing Active Inference generative models. Each module follows the **thin orchestrator pattern** where numbered scripts delegate to modular implementations.
 
+Sibling-project consumers should start with the [interoperability guide](docs/development/interop.md):
+it identifies canonical typed imports, exact API and benchmark entry points,
+result shapes, and the surfaces that cannot yet be shared, with integration gaps
+tracked as backlog rows in [TO-DO.md](TO-DO.md).
+
 ---
 
 ## Cold Start
@@ -13,7 +18,7 @@ New to this repo as an agent? In order:
 1. **What this is**: [SPEC.md](SPEC.md) + this file's Overview (25-step GNN pipeline, thin orchestrators).
 2. **Exemplar spec files**: [input/gnn_files/INDEX.md](input/gnn_files/INDEX.md) — every runnable example with a selection table.
 3. **Version map**: [docs/VERSION_MAP.md](docs/VERSION_MAP.md) — release history and version-sensitive surfaces.
-4. **How to verify**: verification commands live in [TO-DO.md](TO-DO.md); doc audits: `uv run python docs/development/docs_audit.py --strict --check-anchors --no-write`.
+4. **How to verify**: the canonical gate is `./run.sh gates` (`just gates`); verification commands live in [TO-DO.md](TO-DO.md); doc audits: `uv run python docs/development/docs_audit.py --strict --check-anchors --no-write`.
 ---
 
 ## Module Registry
@@ -246,7 +251,12 @@ deliberately broader than this artifact graph.
 
 Use exact uv 0.13.6 and the frozen development environment. The
 [README runtime profiles](README.md#runtime-defaults-and-required-profiles) own
-Python defaults and compatibility exceptions. Start with `just release-preflight`;
+Python defaults and compatibility exceptions. The canonical gate is
+`./run.sh gates` (`just gates` runs the same arm): `ruff format --check`,
+`ruff check`, `mypy`, the parallel `pytest` selection under the coverage floor,
+the documentation, terminology and capability-contract audits, and the v3
+orchestration acceptance gate. `just release-preflight` runs the deterministic
+preflight before hosted qualification;
 [workflow guidance](.github/workflows/README.md) owns hosted selections and
 [TO-DO.md](TO-DO.md#verification-and-execution-rules) owns verification obligations.
 Use current runs for test totals, readiness and performance; historical receipts
@@ -291,6 +301,9 @@ Use the [operator quickstart](docs/quickstart.md) for execution and the
 - Document all classes and methods
 - Preserve the core coverage floor and strict >80% comprehensive native profiles
   declared in the workflows
+- Keep terminal output screen-reader safe: `VisualConfig(enable_emoji=False)`
+  (`src/gnn/utils/observability/visual_logging.py`) strips emoji slots, and no
+  CLI flag toggles it
 - Include explicit error handling, status reporting, and dependency diagnostics
 
 ---
@@ -302,7 +315,8 @@ The development environment supports focused tests and the local quality gates:
 
 ```bash
 uv run --frozen --no-sync python -m pytest tests/render/ -v
-just quality
+./run.sh gates                 # canonical gate; `just gates` is the same arm
+just quality                   # fast quality arm without the full suite
 ```
 
 ## Runtime defaults

@@ -5,9 +5,12 @@ Testing strategy, coverage expectations, and quality gates for GNN.
 Complements `tests/` which holds the actual test suite.
 
 ## Coverage Gates
-- Coverage threshold enforced via `fail_under = 50` in `pyproject.toml`:
-  `[tool.coverage.run] fail_under = 50` — CI will now fail on coverage
-  regression below the floor, not just report it.
+- Coverage threshold enforced via `fail_under = 60` in `pyproject.toml`
+  `[tool.coverage.report]`. The key must live in the *report* section:
+  coverage.py ignores it under `[tool.coverage.run]`, so a placement there
+  never failed a build. pytest-cov reads the configured floor on every
+  `--cov` run, so the CI test lane and `just test-cov` fail below 60%
+  instead of merely reporting the number.
 - Real-implementation policy: tests exercise real dependencies. A missing
   surface must fail loudly rather than be skipped or substituted.
 - Zero-skip contract: `tests/test_zero_skip_contracts.py` scans every
@@ -24,12 +27,29 @@ Complements `tests/` which holds the actual test suite.
 
 ## Reproducibility Requirements
 - `PYTHONHASHSEED=0` must be set in the environment for deterministic
-  dict iteration across runs (CI enforces this via `ci.yml` env block).
-  Without this, JSON output files with unsorted keys may differ between
-  pipeline runs even with identical inputs.
+  dict iteration across runs. The `ci.yml` test lanes set it at job level, so
+  CI runs agree without any per-step export; set the same value locally when
+  comparing JSON fingerprints. Without it, JSON output files with unsorted
+  keys may differ between pipeline runs even with identical inputs.
 - A function-scoped `_auto_seed_rng` autouse fixture (`conftest.py`)
   calls `np.random.seed(0)` before every test, providing a deterministic
   baseline even for unseeded test functions.
+- Tests that need their own random data build a local
+  `np.random.default_rng(seed)` instead of calling `np.random.seed()`, so the
+  fixture above stays the single writer of process-global RNG state.
+- Simulation seeds belong in the spec: `run_pymdp_simulation` draws from
+  `np.random.default_rng(model_parameters.random_seed)`, never from the
+  process-global numpy RNG, so a reproducibility test sets `random_seed`.
+
+## Cross-Framework Reliability Contract
+`src/gnn/pipeline/cross_framework_reliability.py` (driven by
+`scripts/run_cross_framework_reliability.py`) compares *structural metadata*
+between backends a model-family profile declares compatible: recorded
+`random_seed` presence, `num_timesteps`, matrix shapes and trace lengths.
+Trajectory values are intentionally not compared across backends — the
+maintained frameworks compute the same model with different inference
+numerics, so cross-backend value equality is not a defined contract.
+Per-framework trajectory assertions live in `tests/execute/`.
 
 ## Test Categories
 | Category | Files | Purpose |

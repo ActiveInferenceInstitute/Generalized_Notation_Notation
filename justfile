@@ -187,6 +187,11 @@ doc-contracts:
 doc-patterns:
     uv run python scripts/check_gnn_doc_patterns.py --strict
 
+# Run the canonical gate: ruff, mypy, pytest + coverage floor, doc/terminology,
+# capability-contract and v3 acceptance arms (`./run.sh gates`).
+gates:
+    ./run.sh gates
+
 # Run fast quality gates without the full pytest suite
 quality: format-check lint import-linter thin-orchestrators shadow-guard ontology-pin flag-parity dep-hygiene validate-surface terminology doc-terms audit doc-contracts doc-patterns typecheck security capability skills-health manuscript-custody v3-acceptance mcp-count
 

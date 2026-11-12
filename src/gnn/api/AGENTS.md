@@ -7,28 +7,31 @@
 **Category**: Infrastructure / API
 **Status**: Production Ready
 **Version**: [pyproject.toml](../../../pyproject.toml) (canonical)
-**Last Updated**: 2026-09-24
+**Last Updated**: 2026-11-11
 
-The `api` module provides a FastAPI-based REST interface for the GNN processing pipeline.
-It enables programmatic pipeline invocation, job management, and tool discovery without
-requiring direct CLI access.
+The `api` module provides two independent local FastAPI applications for the GNN
+pipeline: `gnn.api.app` serves runs and evidence, `gnn.api.server` serves jobs and
+tool discovery. Neither is a numbered pipeline step. [README.md](README.md) owns
+launch commands and implemented routes; [SPEC.md](SPEC.md) owns the contract
+boundaries and invariants.
 
 ## Architecture
 
-```
-src/gnn/api/
-  __init__.py    -- Module metadata, availability checks
-  app.py         -- FastAPI "run" surface (run/runs/report/stream/health); `gnn serve` entry point
-  server.py      -- FastAPI "job/tool" surface (process/jobs/tools/health)
-  models.py      -- Pydantic request/response models (API contract)
-  responses.py   -- Canonical envelopes and exception handlers
-  processor.py   -- In-memory job manager (create_job/get_job/cancel_job/list_jobs/get_pipeline_tools)
-  auth.py        -- Optional API-key authentication (GNN_API_KEY)
-  path_utils.py  -- Symlink-safe repo path resolution
-  rate_limit.py  -- Request rate limiting
-  mcp.py         -- MCP tool registration manifest
-  AGENTS.md      -- This file
-```
+| File | Responsibility |
+|------|----------------|
+| [app.py](app.py) | Run API started by `gnn serve --surface runs`: `POST /api/v1/run`, hash-addressed runs, Markdown report, SSE stream, health |
+| [server.py](server.py) | Job API: `POST /api/v1/process`, UUID jobs, cancellation, pipeline tools |
+| [parity.py](parity.py) | Shared CLI-parity routes registered on both factories |
+| [models.py](models.py) | Pydantic requests/responses for both surfaces, including `RunRequest`, `RunStatus`, `RunHealthResponse` |
+| [responses.py](responses.py) | Canonical `{status,data,error,meta}` envelopes and exception handlers |
+| [processor.py](processor.py) | In-memory job and run stores; `create_job`, `get_job`, `cancel_job`, `list_jobs`, `get_pipeline_tools`, `delete_run` |
+| [pipeline_runner.py](pipeline_runner.py) | Shared pipeline argv construction, step planning and summary ingestion |
+| [process_supervision.py](process_supervision.py) | Bounded owned-process supervision and cleanup receipts |
+| [auth.py](auth.py) | Optional `GNN_API_KEY` authentication and non-loopback bind guard |
+| [rate_limit.py](rate_limit.py) | Per-client request rate limiting |
+| [path_utils.py](path_utils.py) | Symlink-safe repository path resolution |
+| [mcp.py](mcp.py) | MCP tool wrappers, executable registration and manifest export |
+| [__init__.py](__init__.py) | Availability/metadata; `MODULE_VERSION` re-exports `gnn.__version__` |
 
 ## Endpoints
 
@@ -63,15 +66,18 @@ configuration without executing it).
 
 ## Installation
 
-The API module requires optional dependencies:
+The API module requires the optional `api` extra. Run these commands from the
+repository root:
 
 ```bash
-uv sync --extra api
-# then:
-python -m gnn.api.server
-# or:
-uvicorn gnn.api.server:app --reload
+UV_PYTHON=3.12 uv sync --frozen --extra api
+UV_PYTHON=3.12 uv run --frozen --no-sync gnn serve --surface runs --host 127.0.0.1 --port 8000
 ```
+
+Replace `runs` with `jobs` for the job surface. Its equivalent module entry
+point is `python -m gnn.api.server --host 127.0.0.1 --port 8000`. Direct ASGI
+launchers bypass the starter's bind and authentication checks and must enforce
+the same policy themselves.
 
 ## Design Decisions
 
@@ -123,6 +129,25 @@ builder. `parallel` enables concurrent tiers; limits do not establish actual
 concurrency or speedup. Step-12 execution worker configuration is not admitted
 by these API requests.
 
+## Maintainer rules
+
+1. Keep both factories explicit: their exclusive route tables and response
+   models differ despite sharing the `/api/v1` prefix. `gnn serve` dispatches to
+   `app.py`; `python -m gnn.api.server` starts `server.py`.
+2. Import shared requests/responses from `gnn.api.models` and register the
+   shared surface through `gnn.api.parity`; do not fork a model or envelope per
+   factory.
+3. `RunRequest.config` and `ToolRequest.kwargs` are accepted but must be empty;
+   non-empty values are rejected because neither runner forwards them.
+4. Both stores are process-local and lost on restart. An MCP submission creates
+   a pending job without scheduling execution; a separate HTTP process has a
+   different store. Callers start `execute_job_async` explicitly.
+5. Preserve repository-local path validation and loopback defaults. A configured
+   `GNN_API_KEY` is the only authentication boundary; neither application
+   provides per-user filesystem or process isolation.
+6. Update generated OpenAPI expectations and the API contract tests together
+   when changing routes, models or envelopes. No cross-release HTTP
+   compatibility contract is declared.
 
 ---
 ## Documentation

@@ -10,6 +10,9 @@ This comprehensive reference documents programmatic integration with the General
 > **Authoritative `gnn` exports:** [`src/gnn/__init__.py`](../../src/gnn/__init__.py). **Format counts / registries:** [`src/gnn/SPEC.md`](../../src/gnn/SPEC.md). \
 > The September 2026 import probes are historical evidence. Current public exports, module specifications and exact-source consumer checks define accepted interfaces. Install each declared optional group before using its surface; importing a class does not establish native backend readiness. The [API guide](README.md) includes exercised discovery/parsing and CLI examples.
 
+For current typed model imports, HTTP applications, envelopes/errors, and
+version limits, use the [consumer contract](../development/interop_api.md).
+
 ## API map
 
 1. **Package `gnn` (Step 3)** — file discovery, parsing, validation, multi-format serialization under [`src/gnn/`](../../src/gnn/).

@@ -12,6 +12,18 @@ Key test areas:
 4. Disk I/O performance
 5. Network operation timing
 6. Resource scaling characteristics
+
+Threshold scope: ``THRESHOLDS`` holds absolute, single-point budgets taken from
+one measurement environment. They are not regression bands calibrated against a
+recorded baseline, so a slower or busier machine can fail them without any code
+change. The module carries the ``pipeline`` marker, so the default/CI marker
+filter (``just test``) deselects it; run it deliberately when evaluating a
+change:
+
+    uv run pytest tests/pipeline/test_pipeline_performance.py -v -m performance
+
+Converting the fixed numbers into measured bands is open work, not something
+this module currently provides.
 """
 
 import tempfile

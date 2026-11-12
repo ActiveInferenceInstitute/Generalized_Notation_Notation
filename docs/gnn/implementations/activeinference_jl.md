@@ -84,7 +84,7 @@ sources = [
 | `num_hidden_states` | `N_STATES` | `model_parameters.num_hidden_states` or inferred from `A.shape[1]` |
 | `num_obs` | `N_OBSERVATIONS` | `model_parameters.num_obs` or inferred from `A.shape[0]` |
 | `num_actions` | `N_CONTROLS` | `model_parameters.num_actions` or inferred from `B.shape[2]` |
-| `num_timesteps` | `n_steps` | `model_parameters.num_timesteps` (default: 15) |
+| `num_timesteps` | `n_steps` | `model_parameters.num_timesteps` (default: 20, from `src/gnn/render/activeinference_jl/activeinference_renderer.py`) |
 
 ### The E Vector (Policy Prior)
 
