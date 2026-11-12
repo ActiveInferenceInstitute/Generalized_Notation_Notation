@@ -43,13 +43,14 @@ JAX arrays, and explicit PRNG keys).
 ## Version Scope
 
 Local docs track the repository-tested behaviour of `inferactively-pymdp`
-1.0.4, locked for Python 3.11. pymdp 1.0.4 caps `jax<0.11.1`, so the
-Python 3.12+ splits, which need `jax>=0.11.1` for flax and ngclearn, resolve
-1.0.3 (see the requirement comment in `pyproject.toml`).
+1.0.5, which resolves on every supported Python: 1.0.5 lifts the
+`jax<0.11.1` cap that kept the Python 3.12+ splits, which need `jax>=0.11.1`
+for flax and ngclearn, on 1.0.3 (see the requirement comment in
+`pyproject.toml`).
 
 - <https://github.com/infer-actively/pymdp>
 - <https://github.com/infer-actively/pymdp/releases/tag/v1.0.0>
-- <https://github.com/infer-actively/pymdp/releases/tag/v1.0.4>
+- <https://github.com/infer-actively/pymdp/releases/tag/v1.0.5>
 
 Upstream features that this repository does not wire in (e.g. `infer_and_plan`,
 full JAX PRNG-key learning loops, `pybefit` model-fitting) are documented as
