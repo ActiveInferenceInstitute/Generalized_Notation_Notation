@@ -265,7 +265,9 @@ def audit_bad_markdown_anchors(files: list[Path]) -> list[tuple[Path, int, str, 
             rel_src = src.relative_to(REPO_ROOT)
         except ValueError:
             continue
-        for i, href in _located_links(src.read_text(encoding="utf-8", errors="replace")):
+        for i, href in _located_links(
+            src.read_text(encoding="utf-8", errors="replace")
+        ):
             url = urlsplit(href)
             if url.scheme or url.netloc or not url.fragment:
                 continue
