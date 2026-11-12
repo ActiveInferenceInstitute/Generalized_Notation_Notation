@@ -319,8 +319,7 @@ def _check_public_row_online(row: Dict[str, Any], findings: Findings) -> None:
             findings.error(
                 "origin-pin", f"{repo}: {pin['path']} not found at origin/{default}"
             )
-            return
-        if pin.get("kind") == "dependency":
+        elif pin.get("kind") == "dependency":
             # A dependency pin is a declaration inside a build file, not a
             # JSON document: the revision must appear in the file's text.
             if pin.get("commit") and pin["commit"] not in raw:
@@ -328,29 +327,31 @@ def _check_public_row_online(row: Dict[str, Any], findings: Findings) -> None:
                     "origin-pin-drift",
                     f"{repo}: {pin['path']} does not name {str(pin.get('commit'))[:10]} at origin",
                 )
-            return
-        try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError:
-            if pin.get("kind") != "content-hash":
-                findings.error(
-                    "origin-pin-json",
-                    f"{repo}: {pin['path']} is not JSON at origin",
-                )
-            return
-        if pin.get("kind") in ("file", "dependency") and isinstance(payload, dict):
-            commit = payload.get("commit") or payload.get("revision")
-            tag = payload.get("tag") or payload.get("release")
-            if commit != pin.get("commit"):
-                findings.error(
-                    "origin-pin-drift",
-                    f"{repo}: origin pin commit {str(commit)[:10]} != registry {str(pin.get('commit'))[:10]}",
-                )
-            if tag != pin.get("tag"):
-                findings.error(
-                    "origin-pin-drift",
-                    f"{repo}: origin pin tag {tag!r} != registry {pin.get('tag')!r}",
-                )
+        else:
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError:
+                if pin.get("kind") != "content-hash":
+                    findings.error(
+                        "origin-pin-json",
+                        f"{repo}: {pin['path']} is not JSON at origin",
+                    )
+            else:
+                if pin.get("kind") in ("file", "dependency") and isinstance(
+                    payload, dict
+                ):
+                    commit = payload.get("commit") or payload.get("revision")
+                    tag = payload.get("tag") or payload.get("release")
+                    if commit != pin.get("commit"):
+                        findings.error(
+                            "origin-pin-drift",
+                            f"{repo}: origin pin commit {str(commit)[:10]} != registry {str(pin.get('commit'))[:10]}",
+                        )
+                    if tag != pin.get("tag"):
+                        findings.error(
+                            "origin-pin-drift",
+                            f"{repo}: origin pin tag {tag!r} != registry {pin.get('tag')!r}",
+                        )
     conformance = row.get("conformance")
     if isinstance(conformance, dict) and conformance.get("workflow"):
         raw = _gh(
