@@ -356,17 +356,32 @@ Member arms were not run except where the table above records one. Each member's
 own gate remains its evidence, and this page makes no claim about a member's
 current green state.
 
-### One custody cost this change carries
+### The SC-22 ritual, run
 
-This page adds three files under `docs/`, so `GNN_DOC_FILE_COUNT` moves from 675
-to 678. The token map, the repo-metrics figure and the hydrated manuscript are
-not regenerated here: `scripts/check_manuscript_tokens.py --strict` already fails
-on `origin/main` before this change (`committed token_checksum 22f31c37db3f !=
-producer-at-HEAD 8f9a7688c733`), and a partial ritual — new variables without a
-fresh render — would leave the figures and the PDF disagreeing. The whole SC-22
-ritual, including the template render, stays owed against `HEAD`; the PR-time
-hydration gate is unaffected and green, because it compares the committed
-artifacts against the committed map.
+The three added files move `GNN_DOC_FILE_COUNT` from 676 to 679 in the tree —
+the committed map said 675, already one behind, which is the stale checksum the
+token gate had been reporting — so the custody chain was renewed rather than
+deferred:
+
+1. `python -m scripts.manuscript_build_figures` rebuilt the seven figure
+   artifacts, including `gnn_repo_metrics.png`, whose "Documentation files" cell
+   carries that count.
+2. The template's `scripts/pipeline/stage_03_render.py` ran from a private clone
+   of `docxology/template@f1fc24de` with this repository checked out as a real
+   directory at `projects/active/GeneralizedNotationNotation`, producing the
+   combined PDF, ten slide decks and the HTML tree. The shared reference
+   checkout was read, never written.
+3. `scripts/z_record_manuscript_render_manifest.py` recorded the chain with
+   `GNN_TEMPLATE_REVISION` exported, under the profile the chain already
+   declared: `tex-live-2026-pandoc-3.13-crossref-0.3.26` (pandoc 3.13,
+   pandoc-crossref 0.3.26, XeTeX TeX Live 2026 on this host).
+4. `scripts/z_verify_fresh_render.py` compares the committed chain with the
+   artifacts: `fresh render matches output/data/manuscript_render_manifest.json`.
+
+`scripts/check_manuscript_tokens.py --strict` and
+`scripts/check_hydrated_prose.py` are both green, so the token map, the figures,
+the hydrated prose, the `.tex`/`.md`/`.log` and the PDF are artifacts of one
+render. Only `output/**` changed; no source file moved.
 
 ## Non-goals
 
