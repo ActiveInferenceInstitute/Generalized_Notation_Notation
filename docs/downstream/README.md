@@ -58,12 +58,13 @@ specification, listed under
 
 ## Method and scope
 
-Every row was verified on 2026-11-02 from the repository's origin default branch
-with read-only GitHub API calls: `git/trees/<branch>?recursive=1` to locate
-files and `contents/<path>?ref=<branch>` to read pin files, specifications and
-workflow definitions. Pin files and workflow job names were re-read on
-2026-11-06, and every row, plus the baseline and contract rows, was re-read
-again on 2026-11-11; the values below are those of 2026-11-11. File presence,
+Every row was verified from the repository's origin default branch with
+read-only GitHub API calls: `git/trees/<branch>?recursive=1` to locate files and
+`contents/<path>?ref=<branch>` to read pin files, specifications and workflow
+definitions. The first full pass was on 2026-11-02; pin files and workflow job
+names were re-read on 2026-11-06, and every row, plus the baseline and contract
+rows, was re-read again on 2026-11-11, which is the observation date the values
+below carry. File presence,
 pin contents and workflow job names are verified for that observation date;
 current CI status, branch rulesets and local reproducibility require separate
 evidence. A row that could not be verified says "not verified" rather than

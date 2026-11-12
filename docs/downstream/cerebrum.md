@@ -1,7 +1,7 @@
 # CEREBRUM
 
 **Repository**: [`ActiveInferenceInstitute/CEREBRUM`](https://github.com/ActiveInferenceInstitute/CEREBRUM)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
 
 ## What it models
 

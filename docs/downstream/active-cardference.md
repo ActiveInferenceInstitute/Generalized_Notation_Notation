@@ -1,7 +1,7 @@
 # Active_Cardference
 
 **Repository**: [`ActiveInferenceInstitute/Active_Cardference`](https://github.com/ActiveInferenceInstitute/Active_Cardference)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls.
+· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
 
 ## What it models
 
