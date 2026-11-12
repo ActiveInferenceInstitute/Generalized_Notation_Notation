@@ -1837,8 +1837,7 @@ dependencies = [
     { name = "flax", version = "0.12.10", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "h5py" },
     { name = "httpx" },
-    { name = "inferactively-pymdp", version = "1.0.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "inferactively-pymdp", version = "1.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "inferactively-pymdp" },
     { name = "jax", version = "0.10.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "jax", version = "0.12.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "jaxlib", version = "0.10.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -2034,8 +2033,7 @@ requires-dist = [
     { name = "h3", marker = "extra == 'geo-infer'", specifier = ">=4.5.0,<5" },
     { name = "h5py", specifier = ">=3.8.0" },
     { name = "httpx", specifier = ">=0.27.0" },
-    { name = "inferactively-pymdp", marker = "python_full_version < '3.12'", specifier = ">=1.0.4" },
-    { name = "inferactively-pymdp", marker = "python_full_version >= '3.12'", specifier = ">=1.0.3" },
+    { name = "inferactively-pymdp", specifier = ">=1.0.5" },
     { name = "jax", extras = ["cpu"], specifier = ">=0.7.0,<0.13" },
     { name = "jaxlib", specifier = ">=0.7.0,<0.13" },
     { name = "jupyter-server", marker = "extra == 'all'", specifier = ">=2.20.0" },
@@ -2668,63 +2666,28 @@ wheels = [
 
 [[package]]
 name = "inferactively-pymdp"
-version = "1.0.3"
+version = "1.0.5"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version == '3.13.*' and sys_platform == 'win32'",
-    "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version == '3.12.*' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.12.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-]
 dependencies = [
     { name = "equinox" },
-    { name = "jax", version = "0.12.0.1", source = { registry = "https://pypi.org/simple" } },
-    { name = "jaxlib", version = "0.12.0.1", source = { registry = "https://pypi.org/simple" } },
-    { name = "matplotlib" },
-    { name = "mctx" },
-    { name = "multimethod" },
-    { name = "networkx", version = "3.7", source = { registry = "https://pypi.org/simple" } },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "seaborn" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7d/88/1d1a61975980d74d3b9aa04eb2b6016e0cf436d589b5422403f81654b1ac/inferactively_pymdp-1.0.3.tar.gz", hash = "sha256:077a2d07053446fb9de6c9b47bf91d3869600c177344754f7047cf507ad1897d", size = 701268, upload-time = "2026-06-15T15:40:18.328Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/15/33ba02e28445e571cc207712a271802165b05e6baa53d115b1b61bf7cc45/inferactively_pymdp-1.0.3-py3-none-any.whl", hash = "sha256:b8b36cc0c92354efde2b2653cffb4d0d9666bbd2e750d240a3626fc0585280ab", size = 636622, upload-time = "2026-06-15T15:40:16.415Z" },
-]
-
-[[package]]
-name = "inferactively-pymdp"
-version = "1.0.4"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-]
-dependencies = [
-    { name = "equinox" },
-    { name = "jax", version = "0.10.2", source = { registry = "https://pypi.org/simple" } },
-    { name = "jaxlib", version = "0.10.2", source = { registry = "https://pypi.org/simple" } },
+    { name = "jax", version = "0.10.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "jax", version = "0.12.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "jaxlib", version = "0.10.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "jaxlib", version = "0.12.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "jaxtyping" },
     { name = "matplotlib" },
     { name = "mctx" },
     { name = "multimethod" },
-    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" } },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "networkx", version = "3.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "opt-einsum" },
     { name = "seaborn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/61/49/ad9848844aa56aecaf3074170150ab18d91ab15df5b93ea6318191d6e188/inferactively_pymdp-1.0.4.tar.gz", hash = "sha256:92368bbfab7346e46aa2cb4a5b213dd90dee6a8699a3d4d1bda0b970aee123ca", size = 712820, upload-time = "2026-08-23T13:05:25.653Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/47/e165cacac83517d523e93e486290bc4b11e7a6544f251466846a8617a3b0/inferactively_pymdp-1.0.5.tar.gz", hash = "sha256:c58461217fe16d9bf4c4df8e49411d36fff8ae067f4b42225f5c69c4832963a7", size = 718158, upload-time = "2026-11-07T15:10:10.374Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/64/00/d8d9670da465956dcd0d446ee988e57544428a48f98877e31537ca1cafdb/inferactively_pymdp-1.0.4-py3-none-any.whl", hash = "sha256:5bb8c67f4a8d076031b1ead666a9333c61b989fa57baccd73cc483d81b41fb33", size = 640653, upload-time = "2026-08-23T13:05:24.259Z" },
+    { url = "https://files.pythonhosted.org/packages/91/8f/d106043c9b409dc6f0b5614811173f72f404d18d25b6b1a115eba3e288d6/inferactively_pymdp-1.0.5-py3-none-any.whl", hash = "sha256:5e423a331894c7d4dbda1d935d7b592556dfea229d99890aec02d5216e9f1d84", size = 642033, upload-time = "2026-11-07T15:10:08.618Z" },
 ]
 
 [[package]]

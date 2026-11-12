@@ -304,7 +304,7 @@ constraints. Notable floors as of 2026-10-20:
 ### Core Dependencies
 
 - Python: 3.11+ (`>=3.11,<3.15`)
-- `inferactively-pymdp` 1.0.4 on Python 3.11 and 1.0.3 on 3.12+ (JAX-first rewrite; 1.0.4 caps `jax<0.11.1`)
+- `inferactively-pymdp>=1.0.5` on every supported Python (JAX-first rewrite; 1.0.5 lifts the `jax<0.11.1` cap that split 1.0.4/1.0.3 by interpreter)
 - `jax[cpu]>=0.7.0,<0.13`, `jaxlib>=0.7.0,<0.13`, `flax`, `optax`, `numpyro>=0.22` (0.22 carries the jax 0.11 compatibility fix)
 - `pillow>=13.0.0` and `aiohttp>=3.14.4` (lock: 13.0.0 and 3.14.5).
 - numpy, matplotlib, networkx, pyyaml, pandas, plotly, seaborn, h5py

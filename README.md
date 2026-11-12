@@ -296,10 +296,11 @@ the latest 3.14 patch. Python 3.15 qualification remains outside the current
 profile. The macOS probe reached h5py's source build and required a native HDF5
 installation.
 
-The scientific stack now admits JAX 0.12 and retains its Python-specific
-PyMDP/Flax compatibility split in `pyproject.toml`. Python 3.11 resolves JAX
-0.10.2, PyMDP 1.0.4 and Flax 0.12.8; newer supported Python profiles resolve
-JAX 0.12.0.1, PyMDP 1.0.3 and Flax 0.12.10. ActiveInference.jl retains its
+The scientific stack admits JAX 0.12 and keeps the Python-specific Flax
+compatibility split in `pyproject.toml`. Python 3.11 resolves JAX 0.10.2,
+PyMDP 1.0.5 and Flax 0.12.8; newer supported Python profiles resolve JAX
+0.12.0.1, PyMDP 1.0.5 and Flax 0.12.10. PyMDP 1.0.5 carries no JAX upper
+bound, so its requirement needs no split. ActiveInference.jl retains its
 Distributions ceiling because DistributionsAD's extension fails with the newer
 `@check_args` API; its committed Project documents that exception. RxInfer
 resolves 6.1.0 on Julia 1.13.2. The separate FEP companion still requires its

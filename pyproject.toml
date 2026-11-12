@@ -55,12 +55,11 @@ dependencies = [
     # (see docs/pymdp/pymdp_1_0_0_alignment_matrix.md). Step 12 uses the new
     # Agent API: list[jax.Array] models, infer_states(empirical_prior=...),
     # infer_policies(qs), sample_action(q_pi, rng_key=...).
-    # 1.0.4 is the supported release. It caps jax<0.11.1 pending a numpyro
-    # fix, so it resolves on the py3.11 splits (jax 0.10.2); the py>=3.12
-    # splits need jax>=0.11.1 for flax>=0.12.9 and ngclearn and stay on 1.0.3
-    # until pymdp lifts that cap.
-    "inferactively-pymdp>=1.0.4; python_full_version < '3.12'",
-    "inferactively-pymdp>=1.0.3; python_full_version >= '3.12'",
+    # 1.0.5 is the supported release: it lifts the jax<0.11.1 cap that forced
+    # 1.0.4 on the py3.11 splits (jax 0.10.2) and 1.0.3 on the py>=3.12 splits
+    # that need jax>=0.11.1 for flax>=0.12.9 and ngclearn, so one requirement
+    # now serves every supported interpreter.
+    "inferactively-pymdp>=1.0.5",
     "equinox>=0.11.0",  # pymdp 1.0.0 Agent is an equinox Module
     "multimethod>=1.11",  # pymdp 1.0.0 dispatch
     # Step 12 execution backends (JAX, NumPyro, DisCoPy)
@@ -71,9 +70,8 @@ dependencies = [
     # JAX 0.12 admitted 2026-10-20 after PyMDP/factorized/continuous checks.
     # ngclearn>=3.2.2 requires jax>=0.11.1; the current lock also resolves
     # numpyro 0.22.0 + flax 0.12.x + equinox 0.13.x on jax 0.12.0
-    # (py3.12) and jax 0.10.2 (py3.11). pymdp 1.0.4 pins jax<0.11.1, so the
-    # pymdp requirement above takes 1.0.4 on py3.11 and 1.0.3 (no jax upper
-    # bound) on the python>=3.12 splits that carry ngclearn.
+    # (py3.12) and jax 0.10.2 (py3.11). pymdp>=1.0.5 carries no jax upper
+    # bound, so the pymdp requirement above resolves 1.0.5 on every split.
     "jax[cpu]>=0.7.0,<0.13",
     "jaxlib>=0.7.0,<0.13",
     # Flax 0.12.8 uses the supported jax.extend.core tracing API with
