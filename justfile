@@ -80,7 +80,7 @@ format-check:
 
 # Run mypy type checking
 typecheck:
-    uv run mypy src/gnn --show-error-codes
+    ./run.sh type
 
 # Run bandit security scan (same thresholds as CI)
 security:

@@ -106,6 +106,9 @@ def _tree(root: Path) -> Path:
         (root / f"output/pdf/_combined_manuscript.{suffix}").write_text(
             "rendered at abc1234\n"
         )
+    (root / "output/pdf/GeneralizedNotationNotation_combined.pdf").write_bytes(
+        b"%PDF-1.7\nfixture publication\n"
+    )
     return root
 
 
