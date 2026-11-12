@@ -52,31 +52,35 @@ frozen environment was provisioned before timing; caches were not cleared.
 These are single observations, not statistically controlled performance data.
 The first mypy run and subsequent cached runs are not equivalent conditions.
 
-| Arm | Baseline seconds | Initial post-change seconds |
+| Arm | Baseline seconds | Final seconds |
 | --- | ---: | ---: |
-| sync | 1.7 | 1.8 |
-| lint | 2.3 | 1.9 |
-| type | 28.5 | 2.9 |
-| test | 129.8 | 170.2 |
-| coverage | 152.1 | 178.5 |
-| docs | 33.1 | 19.1 |
-| contracts | unavailable as a CLI arm | 18.7 |
-| acceptance | 2.4 | 2.5 |
+| sync | 1.7 | 4.2 |
+| lint | 2.3 | 4.8 |
+| type | 28.5 | 8.6 |
+| test | 129.8 | 528.5 |
+| coverage | 152.1 | 492.2 |
+| docs | 33.1 | 40.4 |
+| contracts | unavailable as a CLI arm | 47.0 |
+| acceptance | 2.4 | 5.2 |
 
-The initial post-change measurements cover the exposed `contracts` arm and
-documentation changes, before CI delegation and pytest-report argument
-forwarding. `test`'s 170.2 seconds is the child receipt's start/finish interval;
-the other values include the governed-launch wrapper. No speedup is claimed:
-cache state, wrapper overhead and concurrent host work were not controlled.
-The newly exposed contracts function also completed in 30.0 seconds on its
-first run; the baseline CLI rejected `contracts` with exit 2.
+Final implementation source: `fab18063ecf30bb11f4324df7cb6d27d3932355c`.
+Each arm completed under GitVault's qualified offline test runner with a
+source-bound intent and `duration.upper_seconds=600`; times include its launch
+overhead. Rendering overlapped the sweep, and host load/cache state were not
+controlled. These observations establish completion, not a speedup.
 
-Each final arm is bounded to 600 seconds by GitVault's qualified offline test
-runner (`execute --classification test`, intent
-`duration.upper_seconds=600`). A timeout is a failed/incomplete observation,
-not a passing shortened suite. Final measurements and exact verification
-commands are included in the PR body. Native compiles, full matrices and
-release qualification are deliberately not run.
+`test` and `coverage` each passed 9,013 tests and 10 subtests; coverage was
+78.1285% against the existing 60% floor. `contracts` passed 97 tests and
+completed whole-tree collection. The first final docs run failed on two new
+Markdown anchors in 20.2 seconds; the table records the successful corrected
+rerun. The baseline CLI rejected `contracts` with exit 2; its existing function
+completed in 30.0 seconds after exposure.
+
+A 600-second timeout would be a failed/incomplete observation, not a passing
+shortened suite. No arm reached that limit. Native compilation, complete
+native/all-extras matrices, live providers, paired companions and release
+qualification were deliberately not run. Exact commands are retained in the
+PR body; `coverage` and `contracts` exercised the forwarded report arguments.
 
 ## Upstream pins and consumer pointers
 
@@ -106,7 +110,7 @@ That composite action is not a claim about this repository's setup.
 ## Manuscript rendering and custody
 
 The authoritative renderer is the template's `scripts/pipeline/stage_03_render.py`.
-The [manuscript reproduction section](../manuscript/05_reproducibility.md#sec:reproducibility)
+The [manuscript reproduction section](../manuscript/05_reproducibility.md#manuscript-reproducibility)
 and [custody workflow](../.github/workflows/custody-re-render.yml) own the ritual:
 regenerate variables, rebuild figures, render, verify the old chain, then record
 the renewed manifest after a successful render. Figures are declared in
@@ -136,7 +140,9 @@ tree containing symlinked pytest artifacts blocked admission in the first
 copy; excluding it allowed the real render, without changing either reference
 checkout or source manuscript.
 
-The old committed manifest names template `0d4eeb2f`; fresh verification against
-`f1fc24de` reported `[STALE-CHAIN]`, not a successful artifact comparison.
-Renewing that chain requires a successful fresh render and the repository's
-manifest recorder; never suppress the stale result or hand-edit its hashes.
+The old manifest named template `0d4eeb2f`; verification correctly reported
+`[STALE-CHAIN]` against `f1fc24de`. This change also rendered clean source
+`fab18063e` in 405.8 seconds (32 pages, 1,449,735 bytes), rebuilt figures and
+recorded a renewed manifest bound to that actual render. Token and hydrated
+prose audits and all 35 focused custody/figure checks passed. The generated
+publication artifacts are retained together; no hashes were hand-edited.

@@ -275,9 +275,9 @@ window.MathJax.chtml = Object.assign({}, window.MathJax.chtml, {
 });
 var templateMathOutput = window.MathJax.output || {};
 window.MathJax.output = Object.assign({}, templateMathOutput, {
-  displayOverflow: "linebreak",
+  displayOverflow: "scroll",
   linebreaks: Object.assign({}, templateMathOutput.linebreaks, {
-    inline: true,
+    inline: false,
     width: "100%",
     lineleading: 0.5
   })
@@ -306,8 +306,8 @@ window.MathJax.startup = Object.assign({}, window.MathJax.startup, {
         .then(async function () {
           var width = document.documentElement.clientWidth;
           try {
-            // MathJax 4 MathItem.STATE.METRICS = 110. The default RERENDER
-            // state retains old container metrics and cannot reflow on zoom.
+            // MathJax 4 MathItem.STATE.METRICS = 110. Restart from metrics
+            // after a viewport change rather than retaining old container widths.
             await window.MathJax.startup.document.rerenderPromise(110);
             window.normalizeTemplateMathJaxAria();
             window.templateMathJaxReflowError = null;
@@ -392,7 +392,14 @@ pre > code.sourceCode > span {
   white-space: pre-wrap;
   word-break: break-word;
 }
-mjx-container[display="true"] { max-width: 100%; overflow: visible; }
+.math.inline {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: auto;
+  vertical-align: middle;
+}
+mjx-container[display="true"] { max-width: 100%; overflow-x: auto; }
 .table-scroll {
   max-width: 100%;
   overflow-x: auto;
@@ -410,8 +417,6 @@ mjx-container[display="true"] { max-width: 100%; overflow: visible; }
 
 html {
   max-width: 100%;
-  overflow-x: hidden;
-  overflow-x: clip;
 }
 
 body {
@@ -424,8 +429,6 @@ body {
   background-color: #f8f8f8;
   color: #1a1a1a;
   overflow-wrap: break-word;
-  overflow-x: hidden;
-  overflow-x: clip;
 }
 
 main,
@@ -653,10 +656,18 @@ a:focus-visible {
   font-size: 1.1em;
 }
 
+.math.inline {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: auto;
+  vertical-align: middle;
+}
+
 mjx-container[display="true"] {
   display: block;
   max-width: 100%;
-  overflow: visible;
+  overflow-x: auto;
   padding-bottom: 0.25rem;
 }
 
@@ -707,10 +718,6 @@ mjx-container[display="true"] {
 @media (min-width: 1000px) {
   /* Wide figure links stay within the viewport but extend beyond the prose
      column. Do not clip their labels at the narrower body boundary. */
-  body {
-    overflow-x: visible;
-  }
-
   .figure-full-size-link {
     left: 50%;
     max-width: none;
@@ -910,6 +917,7 @@ class="toc-section-number">10</span> References</a></li>
 </ul>
 </nav>
 <main id="main-content" tabindex="-1">
+
 <h1 data-number="1" id="sec:abstract"><span
 class="header-section-number">1</span> Abstract</h1>
 <figure id="fig:graphical_abstract">
@@ -917,7 +925,7 @@ class="header-section-number">1</span> Abstract</h1>
 alt="End-to-end summary panel of the GNN pipeline in seven left-to-right stage cards: a plain-text GNN document declaring A, B, C, D and E; parsing; validation and type checking with the B-tensor orientation check; code rendering to the registered backends; supervised dispatch through execution adapters including the bnlearn lane; analysis; and cross-repository interchange with GEO-INFER and fep_lean. Step pills name the pipeline step behind each stage, a callout states the two newest capabilities, and a footer strip carries the producer&#x27;s scale counts for steps, families, backends and MCP tools." /><span class="figure-full-size-label" aria-hidden="true">Open full-size figure</span></a>
 <figcaption>Figure 1: The GeneralizedNotationNotation
 (GNN) pipeline at a glance, generated from the producer’s token map at
-commit 68d15b2ae. A plain-text specification — the
+commit fab18063e. A plain-text specification — the
 <code>StateSpaceBlock</code> declaring the model’s tensors,
 <code>A</code>, <code>B</code>, <code>C</code>, <code>D</code>, and
 <code>E</code> for the discrete categorical kind of eq. <a
@@ -985,7 +993,9 @@ backends — with coverage gaps recorded as explicit profiled-unsupported
 statuses rather than silently omitted — providing inspectable
 infrastructure for reproducing and comparing Active Inference models
 within the recorded capability and verification boundaries.</p>
+
 <hr />
+
 <h1 data-number="2" id="sec:introduction"><span
 class="header-section-number">2</span> Introduction</h1>
 <h2 data-number="2.1" id="motivation"><span
@@ -1146,7 +1156,9 @@ source details in sec. <a href="#sec:references">10</a>. Read in this
 order, the manuscript moves from why a standard notation is needed,
 through how GNN realizes it across model kinds, to the scoped evidence
 available for the notation and its implementations.</p>
+
 <hr />
+
 <h1 data-number="3" id="sec:system_context"><span
 class="header-section-number">3</span> System Context</h1>
 <p>Generalized Notation Notation (GNN) couples a small, declarative text
@@ -1648,7 +1660,7 @@ of <code>src/gnn/STEP_INDEX.md</code>, which mirrors the live step
 registry. Parsing (Step 3) precedes many later steps. Optional artifact
 enrichments are documented separately and are not shown as required
 edges. The figure is generated from <code>src/gnn/STEP_INDEX.md</code>
-at commit 68d15b2ae; its footer restates the step count, the number of
+at commit fab18063e; its footer restates the step count, the number of
 required prerequisites, and the layout rule.</figcaption>
 </figure>
 <p>The per-step responsibilities are enumerated in tbl. <a
@@ -1804,7 +1816,7 @@ describes.</caption>
 </table></div>
 <p>This staged design keeps the architecture modular. The implementation
 is organized into 44 source packages, one cluster of responsibilities
-per concern, and is documented across 675 documentation files so that
+per concern, and is documented across 676 documentation files so that
 each step’s contract, inputs, and outputs are specified independently of
 the others. New backends or analyses attach to the graph by declaring
 their dependencies rather than by editing a monolith, and deterministic
@@ -1843,7 +1855,7 @@ projections. The executable node summarizes 12 of 12 registered render
 targets with implemented Step 12 execution adapters and previews three
 by name; execution depends on runtime readiness, admitted model kind,
 and a successful source-bound run receipt. Counts are producer tokens at
-commit 68d15b2ae, and the panel is generated by
+commit fab18063e, and the panel is generated by
 <code>scripts/manuscript_fig_triple_play.py</code>. Take-away: a model
 is authored once and then read, seen, and run from that single
 source.</figcaption>
@@ -1872,7 +1884,9 @@ governed per kind: renderers and executors apply the computed
 classification and their declared capability boundaries, and receipts
 distinguish successful, unsupported, skipped, partial, and failed
 outcomes for the selected model.</p>
+
 <hr />
+
 <h1 data-number="4" id="sec:methods"><span
 class="header-section-number">4</span> Methods</h1>
 <p>The GeneralizedNotationNotation (GNN) method carries a plain-text
@@ -2173,7 +2187,7 @@ the reliability gate profiles for the continuous family; the tan row
 maintained set, so it is never profiled; a red Render-Subdir cell would
 mean a registry entry with no subdirectory. The table is read directly
 from <code>src/gnn/render/framework_registry.py</code> and the
-model-family manifest at commit 68d15b2ae, and its footer summarizes the
+model-family manifest at commit fab18063e, and its footer summarizes the
 row counts. Take-away: registration, render presence, and profiling
 status are three different claims, and the table keeps them
 apart.</figcaption>
@@ -2363,7 +2377,7 @@ class="header-section-number">4.7</span> Reproducibility and
 Auto-Injection</h2>
 <p>Every count reported in this manuscript is emitted by the producer
 <code>scripts/z_generate_manuscript_variables.py</code> from the
-repository state at commit 68d15b2ae, not typed by hand. The producer
+repository state at commit fab18063e, not typed by hand. The producer
 reads that commit’s source surfaces directly — the step modules, the
 source tree, the model-family manifest, and the framework registry —
 together with the project’s maintained ledgers, notably the Model
@@ -2404,13 +2418,15 @@ records unprofiled wall times, separate parent and terminated-child CPU
 times, runtime/source/input identities and the PIDs that actually return
 results; deterministic traces describe their calling thread rather than
 unobserved worker internals.</p>
+
 <hr />
+
 <h1 data-number="5" id="sec:artifacts_evidence"><span
 class="header-section-number">5</span> Artifacts and Evidence</h1>
 <p>This section reports what the project has actually produced and how
 each quantitative claim is grounded. Every number below is substituted
 at render time from the deterministic producer, which reads the
-repository state at commit 68d15b2ae, so each figure here is regenerated
+repository state at commit fab18063e, so each figure here is regenerated
 from the artifacts it describes rather than transcribed.</p>
 <h2 data-number="5.1" id="model-family-coverage"><span
 class="header-section-number">5.1</span> Model-Family Coverage</h2>
@@ -2553,7 +2569,7 @@ declares; the grid is deliberately sparse — most families declare a
 single backend, and only continuous, discrete, and gridworld declare
 several. Read it as declared intent, not as profiled outcomes: the gates
 described below supply the outcomes. The matrix is generated from the
-two registries at commit 68d15b2ae.</figcaption>
+two registries at commit fab18063e.</figcaption>
 </figure>
 <p>These families are not illustrative prose: they are the inputs over
 which the parser, the type checker, and the cross-framework code
@@ -2705,7 +2721,7 @@ class="header-section-number">5.4</span> Repository Scale</h2>
 <p>The repository’s scale is itself evidence of the surface that the
 gates and pipeline cover, and it is reported in fig. <a
 href="#fig:repo_metrics">7</a> directly from the tracked files at commit
-68d15b2ae.</p>
+fab18063e.</p>
 <figure id="fig:repo_metrics">
 <a class="figure-full-size-link" href="../figures/gnn_repo_metrics.png" target="_blank" rel="noopener" aria-label="Open full-size Figure 7, Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered…"><img src="../figures/gnn_repo_metrics.png" style="width:80.0%"
 alt="Horizontal bar chart on a logarithmic axis of repository-scale counts: pipeline steps, model families, registered backends, render-target adapters, MCP tools, source packages, test files, example models and documentation files. Each bar is annotated with its exact value; all values come from output/data/manuscript_variables.json." /><span class="figure-full-size-label" aria-hidden="true">Open full-size figure</span></a>
@@ -2715,7 +2731,7 @@ render-target execution adapters, Model Context Protocol tools, source
 packages, test files, example models, and documentation files. Every bar
 is annotated with its exact value, and every value is a producer token
 read from <code>output/data/manuscript_variables.json</code> at commit
-68d15b2ae — the same token map that substitutes the prose counts. The
+fab18063e — the same token map that substitutes the prose counts. The
 figure-freshness suite binds the committed image digest and its recorded
 producer inputs and counts; semantic content and visual correctness
 require their own review. The two backend bars are deliberately
@@ -2770,7 +2786,9 @@ tokens describe the source surface and do not by themselves establish
 native execution or scientific correctness. When a value would otherwise
 need a literal number with no producer behind it, the discipline is to
 omit the number rather than to hard-code it.</p>
+
 <hr />
+
 <h1 data-number="6" id="sec:reproducibility"><span
 class="header-section-number">6</span> Reproducibility</h1>
 <p>Reproducibility in GNN is a source- and run-binding contract across
@@ -2888,7 +2906,7 @@ so a missing copy degrades rather than failing the build.</p>
 <p>Because the variables file is regenerated before rendering, the
 counts in the rendered PDF track the repository state at the commit
 recorded in <code>output/data/manuscript_variables.json</code>
-(68d15b2ae): a code change that alters, for example, the test inventory
+(fab18063e): a code change that alters, for example, the test inventory
 (683 test files, 7130 test functions) propagates into the prose on the
 next regeneration without any manual editing.</p>
 <h2 data-number="6.4" id="reproducibility-contract"><span
@@ -2911,7 +2929,9 @@ out of the manuscript and out of version control.</li>
 acceptance and fidelity gates, and <code>just lint</code> — before
 marking this manuscript publication-ready.</li>
 </ul>
+
 <hr />
+
 <h1 data-number="7" id="sec:limitations_next_steps"><span
 class="header-section-number">7</span> Limitations and Next Steps</h1>
 <h2 data-number="7.1" id="current-limitations"><span
@@ -3062,7 +3082,9 @@ extending native hierarchical rendering beyond the two-level strategies,
 broadening continuous reach across the remaining registered backends,
 and populating the reserved recursive corpus each arrive with their own
 gate evidence rather than by prose assertion.</p>
+
 <hr />
+
 <h1 data-number="8" id="sec:source_surface"><span
 class="header-section-number">8</span> Supplemental Source Surface</h1>
 <p>This supplement records the top-level source surfaces a reader or
@@ -3109,7 +3131,7 @@ throughout the manuscript. Treating these scripts as the source of
 reproduction commands keeps reported numbers bound to what the code
 actually computes.</p>
 <p>The <code>docs/</code> tree is the prose and reference surface,
-comprising 675 files of specification, tutorial, and design
+comprising 676 files of specification, tutorial, and design
 documentation for the GNN language and its Active Inference grounding
 <span class="citation" data-cites="gnn2023">(<a href="#ref-gnn2023"
 role="doc-biblioref">Smékal and Friedman 2023</a>)</span>. It is the
@@ -3150,7 +3172,9 @@ audit. External references are resolved from
 <code>manuscript/references.bib</code>, which the same gate cross-checks
 against every citation key in the prose. This manuscript quotes no
 private or unpublished material.</p>
+
 <hr />
+
 <h1 data-number="9" id="sec:symbols_glossary"><span
 class="header-section-number">9</span> Symbols and Glossary</h1>
 <p>This glossary defines the Generalized Notation Notation (GNN)
@@ -3526,13 +3550,16 @@ href="#ref-gnn2023" role="doc-biblioref">Smékal and Friedman 2023</a>;
 <a href="#ref-heins2022" role="doc-biblioref">Heins et al. 2022</a>; <a
 href="#ref-defelice2021" role="doc-biblioref">Felice et al.
 2021</a>)</span>.</p>
+
 <hr />
+
 <h1 data-number="10" id="sec:references"><span
 class="header-section-number">10</span> References</h1>
 <p>Entries below are resolved by Pandoc from <a
 href="https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/blob/main/manuscript/references.bib"><code>manuscript/references.bib</code></a>
 at render time; <code>scripts/check_manuscript_tokens.py</code> fails
 the build on a citation key that file does not define.</p>
+
 <div id="refs" class="references csl-bib-body hanging-indent"
 role="list">
 <div id="ref-bagaev2021reactiveMessagePassing" class="csl-entry"

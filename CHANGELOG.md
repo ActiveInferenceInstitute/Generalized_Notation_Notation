@@ -19,6 +19,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 - Correct the manuscript README's symlink-based rendering advice: hydration
   needs a real project directory inside a disposable template tree. The
   reference template and downstream registry remain unchanged.
+- Renew manuscript evidence from the actual clean-source render against template
+  `f1fc24de`: variables, figure registry, hydrated prose, PDF, HTML, slides and
+  custody manifest move together. The reference template is not changed.
 
 ### Canonical gate, repository index and backlog grammar
 

@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc 3.13" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>05_reproducibility.md.web</title>
+  <meta name="author" content="Daniel Ari Friedman" />
+  <meta name="description" content="A text language and modular processing pipeline for Active Inference generative models" />
+  <title>GeneralizedNotationNotation: A Text Language for Active
+Inference Models</title>
   <style>
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -244,7 +247,91 @@
     code span.va { color: #19177c; } /* Variable */
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-  </style>
+    /* CSS for citations */
+    div.csl-bib-body { }
+    div.csl-entry {
+      clear: both;
+    }
+    .hanging-indent div.csl-entry {
+      margin-left:2em;
+      text-indent:-2em;
+    }
+    div.csl-left-margin {
+      min-width:2em;
+      float:left;
+    }
+    div.csl-right-inline {
+      margin-left:2em;
+      padding-left:1em;
+    }
+    div.csl-indent {
+      margin-left: 2em;
+    }  </style>
+  <script data-template-mathjax-config>
+window.MathJax = window.MathJax || {};
+window.MathJax.chtml = Object.assign({}, window.MathJax.chtml, {
+  fontURL: "https://cdn.jsdelivr.net/npm/@mathjax/mathjax-newcm-font@4.0.0/chtml/woff2",
+  dynamicPrefix: "https://cdn.jsdelivr.net/npm/@mathjax/mathjax-newcm-font@4.0.0/chtml/dynamic"
+});
+var templateMathOutput = window.MathJax.output || {};
+window.MathJax.output = Object.assign({}, templateMathOutput, {
+  displayOverflow: "scroll",
+  linebreaks: Object.assign({}, templateMathOutput.linebreaks, {
+    inline: false,
+    width: "100%",
+    lineleading: 0.5
+  })
+});
+window.normalizeTemplateMathJaxAria = function () {
+  document.querySelectorAll("mjx-speech[aria-roledescription]").forEach(function (node) {
+    var roleDescription = node.getAttribute("aria-roledescription") || "";
+    if (/[-]/.test(roleDescription)) {
+      node.setAttribute("aria-roledescription", "mathematical expression");
+    }
+  });
+};
+window.MathJax.startup = Object.assign({}, window.MathJax.startup, {
+  ready: function () {
+    var measuredWidth = document.documentElement.clientWidth;
+    var reflowQueued = false;
+    window.MathJax.startup.defaultReady();
+    window.templateMathJaxReflowPromise = window.MathJax.startup.promise.then(
+      window.normalizeTemplateMathJaxAria
+    );
+    function reflowDisplayMath() {
+      if (reflowQueued || document.documentElement.clientWidth === measuredWidth) return;
+      reflowQueued = true;
+      window.templateMathJaxReflowPromise = window.templateMathJaxReflowPromise
+        .catch(function () { /* A later resize may retry a failed render. */ })
+        .then(async function () {
+          var width = document.documentElement.clientWidth;
+          try {
+            // MathJax 4 MathItem.STATE.METRICS = 110. Restart from metrics
+            // after a viewport change rather than retaining old container widths.
+            await window.MathJax.startup.document.rerenderPromise(110);
+            window.normalizeTemplateMathJaxAria();
+            window.templateMathJaxReflowError = null;
+          } catch (error) {
+            window.templateMathJaxReflowError = String(error);
+            console.error("MathJax viewport reflow failed", error);
+            throw error;
+          } finally {
+            measuredWidth = width;
+            reflowQueued = false;
+          }
+        })
+        .then(reflowDisplayMath);
+      // Keep failure observable to callers without an unhandled rejection.
+      window.templateMathJaxReflowPromise.catch(function () {});
+    }
+    window.addEventListener("resize", reflowDisplayMath);
+    // Also cover a resize that happened during the initial asynchronous render.
+    window.templateMathJaxReflowPromise.then(reflowDisplayMath);
+  }
+});
+</script>
+<script defer=""
+  type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-chtml.js" integrity="sha384-2BWc4dVaHADUocwKrUrK9u3iDwHxVMKXWEcoRmUkXYSFKhAsgVAYClu9ydNuo5Oz" crossorigin="anonymous"></script>
 
 <link data-template-favicon rel="icon" href="favicon.ico">
 
@@ -305,7 +392,14 @@ pre > code.sourceCode > span {
   white-space: pre-wrap;
   word-break: break-word;
 }
-mjx-container[display="true"] { max-width: 100%; overflow: visible; }
+.math.inline {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: auto;
+  vertical-align: middle;
+}
+mjx-container[display="true"] { max-width: 100%; overflow-x: auto; }
 .table-scroll {
   max-width: 100%;
   overflow-x: auto;
@@ -323,8 +417,6 @@ mjx-container[display="true"] { max-width: 100%; overflow: visible; }
 
 html {
   max-width: 100%;
-  overflow-x: hidden;
-  overflow-x: clip;
 }
 
 body {
@@ -337,8 +429,6 @@ body {
   background-color: #f8f8f8;
   color: #1a1a1a;
   overflow-wrap: break-word;
-  overflow-x: hidden;
-  overflow-x: clip;
 }
 
 main,
@@ -566,10 +656,18 @@ a:focus-visible {
   font-size: 1.1em;
 }
 
+.math.inline {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: auto;
+  vertical-align: middle;
+}
+
 mjx-container[display="true"] {
   display: block;
   max-width: 100%;
-  overflow: visible;
+  overflow-x: auto;
   padding-bottom: 0.25rem;
 }
 
@@ -620,10 +718,6 @@ mjx-container[display="true"] {
 @media (min-width: 1000px) {
   /* Wide figure links stay within the viewport but extend beyond the prose
      column. Do not clip their labels at the narrower body boundary. */
-  body {
-    overflow-x: visible;
-  }
-
   .figure-full-size-link {
     left: 50%;
     max-width: none;
@@ -652,7 +746,8 @@ mjx-container[display="true"] {
 <body>
 <a class="skip-link" href="#main-content">Skip to main content</a>
 <main id="main-content" tabindex="-1">
-<h1 id="sec:reproducibility">Reproducibility</h1>
+<h1 data-number="6" id="sec:reproducibility"><span
+class="header-section-number">6</span> Reproducibility</h1>
 <p>Reproducibility in GNN is a source- and run-binding contract across
 the 0–24 processing steps. Fixed-source parsing and token production are
 distinct from stochastic inference, dependency provisioning, and
@@ -662,7 +757,8 @@ dtype, seed, and retained command and artifact receipts. This section
 lists only commands that exist in the repository, so that a reader with
 a clean checkout can reproduce the pipeline, the validation gates, and
 this manuscript itself.</p>
-<h2 id="pipeline-smoke-run">Pipeline Smoke Run</h2>
+<h2 data-number="6.1" id="pipeline-smoke-run"><span
+class="header-section-number">6.1</span> Pipeline Smoke Run</h2>
 <p>The fastest way to confirm a working installation is to drive the
 full pipeline over the discrete model family without invoking the
 optional LLM steps:</p>
@@ -701,10 +797,10 @@ filtering (and, for the closed-loop exemplar, belief-steering) programs;
 categorical-only targets record <code>unsupported</code>, while
 readiness and budget failures retain their own outcomes. A reader
 comparing the two receipts sees the kind taxonomy behaving as described
-in <span class="citation"
-data-cites="sec:system_context">[@sec:system_context]</span>: same
-pipeline, same steps, per-kind rendering and execution reach.</p>
-<h2 id="validation-gates">Validation Gates</h2>
+in sec. <a href="manuscript__02_system_context.html#sec:system_context">3</a>: same pipeline, same steps,
+per-kind rendering and execution reach.</p>
+<h2 data-number="6.2" id="validation-gates"><span
+class="header-section-number">6.2</span> Validation Gates</h2>
 <p>GNN provides strict gates with distinct verification scopes. The
 model-family acceptance gate runs the selected manifest families and
 evaluates their declared acceptance profiles; its receipt must record
@@ -736,7 +832,8 @@ through the developer command reference: <code>just lint</code> runs the
 Ruff linter over <code>src</code> and <code>scripts</code>, and the
 broader <code>just quality</code> recipe chains formatting, terminology,
 documentation, type, and security checks for a full pre-commit gate.</p>
-<h2 id="manuscript-reproducibility">Manuscript Reproducibility</h2>
+<h2 data-number="6.3" id="manuscript-reproducibility"><span
+class="header-section-number">6.3</span> Manuscript Reproducibility</h2>
 <p>This manuscript is itself a reproducible artifact. Every quantitative
 value in the prose — the pipeline step count, the family and backend
 counts, the source and test inventories — is a token rather than a
@@ -766,10 +863,11 @@ so a missing copy degrades rather than failing the build.</p>
 <p>Because the variables file is regenerated before rendering, the
 counts in the rendered PDF track the repository state at the commit
 recorded in <code>output/data/manuscript_variables.json</code>
-(68d15b2ae): a code change that alters, for example, the test inventory
+(fab18063e): a code change that alters, for example, the test inventory
 (683 test files, 7130 test functions) propagates into the prose on the
 next regeneration without any manual editing.</p>
-<h2 id="reproducibility-contract">Reproducibility Contract</h2>
+<h2 data-number="6.4" id="reproducibility-contract"><span
+class="header-section-number">6.4</span> Reproducibility Contract</h2>
 <ul>
 <li>Do not cite results that cannot be regenerated or directly traced to
 a command in this repository.</li>

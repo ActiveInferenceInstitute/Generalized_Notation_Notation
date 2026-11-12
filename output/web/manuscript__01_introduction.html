@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc 3.13" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>01_introduction.md.web</title>
+  <meta name="author" content="Daniel Ari Friedman" />
+  <meta name="description" content="A text language and modular processing pipeline for Active Inference generative models" />
+  <title>GeneralizedNotationNotation: A Text Language for Active
+Inference Models</title>
   <style>
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -179,7 +182,156 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-  </style>
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    /* CSS for citations */
+    div.csl-bib-body { }
+    div.csl-entry {
+      clear: both;
+    }
+    .hanging-indent div.csl-entry {
+      margin-left:2em;
+      text-indent:-2em;
+    }
+    div.csl-left-margin {
+      min-width:2em;
+      float:left;
+    }
+    div.csl-right-inline {
+      margin-left:2em;
+      padding-left:1em;
+    }
+    div.csl-indent {
+      margin-left: 2em;
+    }  </style>
+  <script data-template-mathjax-config>
+window.MathJax = window.MathJax || {};
+window.MathJax.chtml = Object.assign({}, window.MathJax.chtml, {
+  fontURL: "https://cdn.jsdelivr.net/npm/@mathjax/mathjax-newcm-font@4.0.0/chtml/woff2",
+  dynamicPrefix: "https://cdn.jsdelivr.net/npm/@mathjax/mathjax-newcm-font@4.0.0/chtml/dynamic"
+});
+var templateMathOutput = window.MathJax.output || {};
+window.MathJax.output = Object.assign({}, templateMathOutput, {
+  displayOverflow: "scroll",
+  linebreaks: Object.assign({}, templateMathOutput.linebreaks, {
+    inline: false,
+    width: "100%",
+    lineleading: 0.5
+  })
+});
+window.normalizeTemplateMathJaxAria = function () {
+  document.querySelectorAll("mjx-speech[aria-roledescription]").forEach(function (node) {
+    var roleDescription = node.getAttribute("aria-roledescription") || "";
+    if (/[-]/.test(roleDescription)) {
+      node.setAttribute("aria-roledescription", "mathematical expression");
+    }
+  });
+};
+window.MathJax.startup = Object.assign({}, window.MathJax.startup, {
+  ready: function () {
+    var measuredWidth = document.documentElement.clientWidth;
+    var reflowQueued = false;
+    window.MathJax.startup.defaultReady();
+    window.templateMathJaxReflowPromise = window.MathJax.startup.promise.then(
+      window.normalizeTemplateMathJaxAria
+    );
+    function reflowDisplayMath() {
+      if (reflowQueued || document.documentElement.clientWidth === measuredWidth) return;
+      reflowQueued = true;
+      window.templateMathJaxReflowPromise = window.templateMathJaxReflowPromise
+        .catch(function () { /* A later resize may retry a failed render. */ })
+        .then(async function () {
+          var width = document.documentElement.clientWidth;
+          try {
+            // MathJax 4 MathItem.STATE.METRICS = 110. Restart from metrics
+            // after a viewport change rather than retaining old container widths.
+            await window.MathJax.startup.document.rerenderPromise(110);
+            window.normalizeTemplateMathJaxAria();
+            window.templateMathJaxReflowError = null;
+          } catch (error) {
+            window.templateMathJaxReflowError = String(error);
+            console.error("MathJax viewport reflow failed", error);
+            throw error;
+          } finally {
+            measuredWidth = width;
+            reflowQueued = false;
+          }
+        })
+        .then(reflowDisplayMath);
+      // Keep failure observable to callers without an unhandled rejection.
+      window.templateMathJaxReflowPromise.catch(function () {});
+    }
+    window.addEventListener("resize", reflowDisplayMath);
+    // Also cover a resize that happened during the initial asynchronous render.
+    window.templateMathJaxReflowPromise.then(reflowDisplayMath);
+  }
+});
+</script>
+<script defer=""
+  type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-chtml.js" integrity="sha384-2BWc4dVaHADUocwKrUrK9u3iDwHxVMKXWEcoRmUkXYSFKhAsgVAYClu9ydNuo5Oz" crossorigin="anonymous"></script>
 
 <link data-template-favicon rel="icon" href="favicon.ico">
 
@@ -240,7 +392,14 @@ pre > code.sourceCode > span {
   white-space: pre-wrap;
   word-break: break-word;
 }
-mjx-container[display="true"] { max-width: 100%; overflow: visible; }
+.math.inline {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: auto;
+  vertical-align: middle;
+}
+mjx-container[display="true"] { max-width: 100%; overflow-x: auto; }
 .table-scroll {
   max-width: 100%;
   overflow-x: auto;
@@ -258,8 +417,6 @@ mjx-container[display="true"] { max-width: 100%; overflow: visible; }
 
 html {
   max-width: 100%;
-  overflow-x: hidden;
-  overflow-x: clip;
 }
 
 body {
@@ -272,8 +429,6 @@ body {
   background-color: #f8f8f8;
   color: #1a1a1a;
   overflow-wrap: break-word;
-  overflow-x: hidden;
-  overflow-x: clip;
 }
 
 main,
@@ -501,10 +656,18 @@ a:focus-visible {
   font-size: 1.1em;
 }
 
+.math.inline {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: auto;
+  vertical-align: middle;
+}
+
 mjx-container[display="true"] {
   display: block;
   max-width: 100%;
-  overflow: visible;
+  overflow-x: auto;
   padding-bottom: 0.25rem;
 }
 
@@ -555,10 +718,6 @@ mjx-container[display="true"] {
 @media (min-width: 1000px) {
   /* Wide figure links stay within the viewport but extend beyond the prose
      column. Do not clip their labels at the narrower body boundary. */
-  body {
-    overflow-x: visible;
-  }
-
   .figure-full-size-link {
     left: 50%;
     max-width: none;
@@ -587,26 +746,40 @@ mjx-container[display="true"] {
 <body>
 <a class="skip-link" href="#main-content">Skip to main content</a>
 <main id="main-content" tabindex="-1">
-<h1 id="sec:introduction">Introduction</h1>
-<h2 id="motivation">Motivation</h2>
+<h1 data-number="2" id="sec:introduction"><span
+class="header-section-number">2</span> Introduction</h1>
+<h2 data-number="2.1" id="motivation"><span
+class="header-section-number">2.1</span> Motivation</h2>
 <p>Active Inference has matured into a broad research program spanning
-the free energy principle [friston2010], discrete state-space
-formulations of perception and action [dacosta2020], and a growing body
-of pedagogy and reference implementations [parr2022; smith2022]. Recent
+the free energy principle <span class="citation"
+data-cites="friston2010">(<a href="index.html#ref-friston2010"
+role="doc-biblioref">Friston 2010</a>)</span>, discrete state-space
+formulations of perception and action <span class="citation"
+data-cites="dacosta2020">(<a href="index.html#ref-dacosta2020"
+role="doc-biblioref">Da Costa et al. 2020</a>)</span>, and a growing
+body of pedagogy and reference implementations <span class="citation"
+data-cites="parr2022 smith2022">(<a href="index.html#ref-parr2022"
+role="doc-biblioref">Parr et al. 2022</a>; <a href="index.html#ref-smith2022"
+role="doc-biblioref">Smith et al. 2022</a>)</span>. Recent
 graphical-specification and message-passing work makes the same
 practical pressure visible: active-inference agents need representations
 that can be inspected as model structure and then carried into
-executable inference updates without being reauthored by hand
-[koudahl2023syntheticAgents1; vandelaaar2023syntheticAgents2;
-bagaev2021reactiveMessagePassing]. As the field has grown, so has a
-quieter problem: the models themselves are difficult to share,
-reproduce, and compare. A generative model that lives only as a tangle
-of matrix definitions inside one author’s script, a diagram in a slide
-deck, and a paragraph of prose in a paper has no single authoritative
-form. The same model is described three times, in three incompatible
-media, with no guarantee that they agree. When a reader wants to re-run
-that model in a different toolkit, they must reverse-engineer it from
-whichever fragment they happen to have.</p>
+executable inference updates without being reauthored by hand <span
+class="citation"
+data-cites="koudahl2023syntheticAgents1 vandelaaar2023syntheticAgents2 bagaev2021reactiveMessagePassing">(<a
+href="index.html#ref-koudahl2023syntheticAgents1" role="doc-biblioref">Koudahl et
+al. 2023</a>; <a href="index.html#ref-vandelaaar2023syntheticAgents2"
+role="doc-biblioref">Laar et al. 2023</a>; <a
+href="index.html#ref-bagaev2021reactiveMessagePassing" role="doc-biblioref">Bagaev
+and Vries 2021</a>)</span>. As the field has grown, so has a quieter
+problem: the models themselves are difficult to share, reproduce, and
+compare. A generative model that lives only as a tangle of matrix
+definitions inside one author’s script, a diagram in a slide deck, and a
+paragraph of prose in a paper has no single authoritative form. The same
+model is described three times, in three incompatible media, with no
+guarantee that they agree. When a reader wants to re-run that model in a
+different toolkit, they must reverse-engineer it from whichever fragment
+they happen to have.</p>
 <p>This is a reproducibility and interoperability crisis specific to the
 structure of Active Inference work. The discipline depends on precisely
 specified state spaces, observation and transition tensors, prior
@@ -621,10 +794,13 @@ attracts its own notation, its own notebooks, and its own simulation
 stack. Yet the community has lacked a notation that is simultaneously
 human-readable, machine-parseable, and faithful to the underlying
 mathematics across those kinds. Generalized Notation Notation (GNN) was
-introduced to fill exactly that gap [gnn2023]: a standard, text-based
-way to write down an Active Inference generative model once, such that
-every downstream use derives from the same source of truth.</p>
-<h2 id="the-gnn-approach">The GNN Approach</h2>
+introduced to fill exactly that gap <span class="citation"
+data-cites="gnn2023">(<a href="index.html#ref-gnn2023" role="doc-biblioref">Smékal
+and Friedman 2023</a>)</span>: a standard, text-based way to write down
+an Active Inference generative model once, such that every downstream
+use derives from the same source of truth.</p>
+<h2 data-number="2.2" id="the-gnn-approach"><span
+class="header-section-number">2.2</span> The GNN Approach</h2>
 <p>GNN treats the model specification as a first-class artifact. A model
 is written in a plain-text language whose syntax captures the components
 an Active Inference modeller actually reasons about — state factors,
@@ -649,11 +825,11 @@ diagram, the equations, and the running code are all generated from one
 parsed document rather than three artifacts that merely claim to
 describe the same model. The Triple Play turns a model from a
 description scattered across media into one specification with traceable
-projections (see <span class="citation"
-data-cites="fig:triple_play">[@fig:triple_play]</span>). Shared source
+projections (see fig. <a href="manuscript__02_system_context.html#fig:triple_play">3</a>). Shared source
 identity supports their comparison; parameter, orientation, model-kind,
 and numerical checks are still required to establish fidelity.</p>
-<h2 id="contributions">Contributions</h2>
+<h2 data-number="2.3" id="contributions"><span
+class="header-section-number">2.3</span> Contributions</h2>
 <p>This work contributes a standard notation together with the
 infrastructure that makes it usable in practice:</p>
 <ul>
@@ -689,61 +865,44 @@ continuous, hierarchical, multiagent, precision, structured, gridworld,
 scaling-study), turning interoperability claims into checks that must
 pass rather than assertions that are merely made.</li>
 </ul>
-<h2 id="reader-orientation">Reader Orientation</h2>
+<h2 data-number="2.4" id="reader-orientation"><span
+class="header-section-number">2.4</span> Reader Orientation</h2>
 <p>The remainder of this manuscript is organized to move from language
-to mechanism to evidence. <span class="citation"
-data-cites="sec:system_context">[@sec:system_context]</span> states the
-notation and the model kinds it denotes — the discrete categorical
-factorization, its four matrices, and its two free-energy objectives as
-explicit equations (<span class="citation"
-data-cites="eq:generative_model">[@eq:generative_model]</span> through
-<span class="citation" data-cites="eq:policy">[@eq:policy]</span>), the
-continuous linear-Gaussian state-space kind with its optional
-closed-loop control structure (<span class="citation"
-data-cites="eq:lgssm_state">[@eq:lgssm_state]</span> through <span
-class="citation" data-cites="eq:closed_loop">[@eq:closed_loop]</span>),
-and the multi-agent, hierarchical, learning, and structural compositions
-— and it presents the model-kind table (<span class="citation"
-data-cites="tbl:model_kinds">[@tbl:model_kinds]</span>), the pipeline
-structure (<span class="citation"
-data-cites="fig:pipeline">[@fig:pipeline]</span>), the Triple Play
-(<span class="citation"
-data-cites="fig:triple_play">[@fig:triple_play]</span>), and the
-per-step responsibility table (<span class="citation"
-data-cites="tbl:pipeline_steps">[@tbl:pipeline_steps]</span>). <span
-class="citation" data-cites="sec:methods">[@sec:methods]</span> follows
-a specification through the pipeline — parsing, kind-scoped type
-checking, rendering, execution, and reporting — and presents the backend
-registry (<span class="citation"
-data-cites="tbl:backend_registry">[@tbl:backend_registry]</span>), the
-per-kind framework capability matrix (<span class="citation"
-data-cites="tbl:framework_capability">[@tbl:framework_capability]</span>),
-the backend registry surface (<span class="citation"
-data-cites="fig:backend_matrix">[@fig:backend_matrix]</span>), and the
-long-running orchestration contracts (<span class="citation"
-data-cites="fig:orchestration">[@fig:orchestration]</span>). <span
-class="citation"
-data-cites="sec:artifacts_evidence">[@sec:artifacts_evidence]</span>
-reports what the project has produced and how each number is grounded,
-with the model-family registry (<span class="citation"
-data-cites="tbl:model_families">[@tbl:model_families]</span>), the
-family-by-framework coverage (<span class="citation"
-data-cites="fig:family_matrix">[@fig:family_matrix]</span>), and
-repository-scale metrics (<span class="citation"
-data-cites="fig:repo_metrics">[@fig:repo_metrics]</span>). <span
-class="citation"
-data-cites="fig:graphical_abstract">[@fig:graphical_abstract]</span>
-condenses this same arc — specification, validation, rendering,
-execution, analysis, and interchange — into the summary panel at the
-head of the manuscript. Claims of independent re-execution are addressed
-in <span class="citation"
-data-cites="sec:reproducibility">[@sec:reproducibility]</span>, the
-boundaries of the current system in <span class="citation"
-data-cites="sec:limitations_next_steps">[@sec:limitations_next_steps]</span>,
-the symbol and construct tables in <span class="citation"
-data-cites="sec:symbols_glossary">[@sec:symbols_glossary]</span>, and
-full source details in <span class="citation"
-data-cites="sec:references">[@sec:references]</span>. Read in this
+to mechanism to evidence. sec. <a href="manuscript__02_system_context.html#sec:system_context">3</a>
+states the notation and the model kinds it denotes — the discrete
+categorical factorization, its four matrices, and its two free-energy
+objectives as explicit equations (eq. <a
+href="manuscript__02_system_context.html#eq:generative_model">1</a> through eq. <a
+href="manuscript__02_system_context.html#eq:policy">8</a>), the continuous linear-Gaussian state-space
+kind with its optional closed-loop control structure (eq. <a
+href="manuscript__02_system_context.html#eq:lgssm_state">9</a> through eq. <a
+href="manuscript__02_system_context.html#eq:closed_loop">11</a>), and the multi-agent, hierarchical,
+learning, and structural compositions — and it presents the model-kind
+table (tbl. <a href="manuscript__02_system_context.html#tbl:model_kinds">1</a>), the pipeline structure
+(fig. <a href="manuscript__02_system_context.html#fig:pipeline">2</a>), the Triple Play (fig. <a
+href="manuscript__02_system_context.html#fig:triple_play">3</a>), and the per-step responsibility table
+(tbl. <a href="manuscript__02_system_context.html#tbl:pipeline_steps">2</a>). sec. <a
+href="manuscript__03_methods.html#sec:methods">4</a> follows a specification through the pipeline —
+parsing, kind-scoped type checking, rendering, execution, and reporting
+— and presents the backend registry (tbl. <a
+href="manuscript__03_methods.html#tbl:backend_registry">3</a>), the per-kind framework capability
+matrix (tbl. <a href="manuscript__03_methods.html#tbl:framework_capability">4</a>), the backend
+registry surface (fig. <a href="manuscript__03_methods.html#fig:backend_matrix">4</a>), and the
+long-running orchestration contracts (fig. <a
+href="manuscript__03_methods.html#fig:orchestration">5</a>). sec. <a
+href="manuscript__04_artifacts_and_evidence.html#sec:artifacts_evidence">5</a> reports what the project has
+produced and how each number is grounded, with the model-family registry
+(tbl. <a href="manuscript__04_artifacts_and_evidence.html#tbl:model_families">5</a>), the family-by-framework
+coverage (fig. <a href="manuscript__04_artifacts_and_evidence.html#fig:family_matrix">6</a>), and repository-scale
+metrics (fig. <a href="manuscript__04_artifacts_and_evidence.html#fig:repo_metrics">7</a>). fig. <a
+href="manuscript__00_abstract.html#fig:graphical_abstract">1</a> condenses this same arc —
+specification, validation, rendering, execution, analysis, and
+interchange — into the summary panel at the head of the manuscript.
+Claims of independent re-execution are addressed in sec. <a
+href="manuscript__05_reproducibility.html#sec:reproducibility">6</a>, the boundaries of the current system
+in sec. <a href="manuscript__06_limitations_and_next_steps.html#sec:limitations_next_steps">7</a>, the symbol and
+construct tables in sec. <a href="manuscript__98_symbols_glossary.html#sec:symbols_glossary">9</a>, and full
+source details in sec. <a href="manuscript__99_references.html#sec:references">10</a>. Read in this
 order, the manuscript moves from why a standard notation is needed,
 through how GNN realizes it across model kinds, to the scoped evidence
 available for the notation and its implementations.</p>

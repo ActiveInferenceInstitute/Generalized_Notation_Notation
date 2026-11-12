@@ -70,5 +70,5 @@ Export `GNN_TEMPLATE_REVISION` from the actual template checkout for the custody
 check. A stale-chain verdict requires a deliberate renewal after a successful
 render, not suppression. See the [run guide](../docs/RUN_GUIDE.md#manuscript-rendering-and-custody)
 for the exported-copy build epoch, measured render and toolchain; see
-[reproducibility](05_reproducibility.md#sec:reproducibility) for the source,
+[reproducibility](05_reproducibility.md#manuscript-reproducibility) for the source,
 variable and figure contracts.
