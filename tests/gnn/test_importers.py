@@ -268,8 +268,42 @@ def test_check_importer_reports_a_tag_mismatch(tmp_path: Path) -> None:
     assert "pin-tag-mismatch" in [item["code"] for item in report["findings"]]
 
 
+def test_check_importer_rejects_a_pin_that_names_a_fork(tmp_path: Path) -> None:
+    """A pin naming a fork tracks code this distribution does not publish."""
+    _write_pin(
+        tmp_path, _canonical_pin(repository="someone/Generalized_Notation_Notation")
+    )
+    _write_spec(tmp_path)
+
+    report = check_importer(tmp_path)
+
+    assert report["ok"] is False
+    assert "pin-repository-mismatch" in [item["code"] for item in report["findings"]]
+
+
+def test_check_importer_accepts_a_url_form_repository(tmp_path: Path) -> None:
+    _write_pin(
+        tmp_path,
+        _canonical_pin(
+            repository="https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git"
+        ),
+    )
+    _write_spec(tmp_path)
+
+    report = check_importer(tmp_path)
+
+    assert report["ok"] is True
+
+
 def test_check_importer_flags_a_legacy_schema_as_a_warning_only(tmp_path: Path) -> None:
-    _write_pin(tmp_path, {"repository": "x/y", "revision": COMMIT, "tag": "v5.0.3"})
+    _write_pin(
+        tmp_path,
+        {
+            "repository": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+            "revision": COMMIT,
+            "tag": "v5.0.3",
+        },
+    )
     _write_spec(tmp_path)
 
     report = check_importer(tmp_path)
