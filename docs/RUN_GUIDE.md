@@ -15,7 +15,7 @@ Hosted Actions is billing-locked for this estate; the evidence below is local.
 | `./run.sh type` | Mypy on `src/gnn` and the release gate | `ci.yml`: `quality` |
 | `./run.sh test` | Default parallel pytest selection, without coverage instrumentation | Developer arm; same selection as CI coverage |
 | `./run.sh coverage` | Same selection, with the existing coverage floor | `ci.yml`: `test`, `pytest312` / `pytest (3.12)` |
-| `./run.sh docs` | Relative links/anchors, terminology, doc patterns, documentation and capability contracts | `docs-audit.yml`: `markdown-audit` |
+| `./run.sh docs` | Relative links/anchors, terminology, doc patterns, documentation and capability contracts; offline importer registry consistency | `docs-audit.yml`: `markdown-audit` |
 | `./run.sh contracts` | MCP functional/auth/transport, framework availability and capability tests; whole-tree collection | `ci.yml`: `quality` |
 | `./run.sh acceptance` | Strict v3 orchestration acceptance | `ci.yml`: `quality` |
 
@@ -63,7 +63,7 @@ The first mypy run and subsequent cached runs are not equivalent conditions.
 | contracts | unavailable as a CLI arm | 47.0 |
 | acceptance | 2.4 | 5.2 |
 
-Final implementation source: `fab18063ecf30bb11f4324df7cb6d27d3932355c`.
+Measured implementation source: `fab18063ecf30bb11f4324df7cb6d27d3932355c`.
 Each arm completed under GitVault's qualified offline test runner with a
 source-bound intent and `duration.upper_seconds=600`; times include its launch
 overhead. Rendering overlapped the sweep, and host load/cache state were not
@@ -82,6 +82,13 @@ native/all-extras matrices, live providers, paired companions and release
 qualification were deliberately not run. Exact commands are retained in the
 PR body; `coverage` and `contracts` exercised the forwarded report arguments.
 
+Main advanced before merge. Integration source `676a7b343` preserves its new
+parser shape, performance budgets and importer validation. The offline importer
+registry check added upstream remains in `run.sh docs`; its duplicate CI
+invocation is owned by `docs-audit.yml` with the other documentation checks.
+The table retains its original measured source identity rather than attributing
+those samples to the later merge.
+
 ## Upstream pins and consumer pointers
 
 This repository is the GNN **producer**, not a self-pinned importer. It has no
@@ -94,6 +101,14 @@ Its recorded release pin is `v5.0.3` at
 parses, not universal coverage of every sketch. The commonly published display
 name is `gnn conformance (pinned)`; some job keys differ, as the registry states.
 The registry is unchanged by this work.
+
+Its read-only [machine projection](downstream/importers.json) declares
+`gnn-importer-registry/v1` and records each importer's canonical pin path,
+`gnn-importer-pin/v1` schema and conformance workflow/job/display name.
+`scripts/check_importer_registry.py` checks schema, prose/JSON parity and
+declared release pins offline as part of `./run.sh docs`. Its explicit
+`--online` mode additionally checks each public pin, job and `.github/GNN.md`
+pointer at origin; that networked drift check is not part of this arm.
 
 GNN's own companion pins are [`.github/gnn-pair.json`](../.github/gnn-pair.json)
 (GEO_INFER `21b65a26dd15288d6e578baef86a8bcfd6a7b5db`) and
@@ -146,3 +161,15 @@ The old manifest named template `0d4eeb2f`; verification correctly reported
 recorded a renewed manifest bound to that actual render. Token and hydrated
 prose audits and all 35 focused custody/figure checks passed. The generated
 publication artifacts are retained together; no hashes were hand-edited.
+
+After integrating main as `676a7b343`, the same real renderer completed again
+in 251.4 seconds and produced a 32-page, 1,449,618-byte PDF, with HTML and all
+10 slide decks verified. Variables, figures and custody were regenerated for
+that integration source; the earlier measurement identities remain historical.
+
+The integrated `./run.sh gates` command returned 0 in 479.1 seconds: 9,058
+tests and 10 subtests passed under coverage, followed by docs/importer audits,
+97 MCP/capability tests and 28 acceptance checks. Its 600-second supervisor
+receipt nevertheless failed with `source_unchanged=false`; the Git index hash
+also changed during the run. This is retained as a green command outcome but
+not a passing source-bound receipt. Committed custody is verified separately.
