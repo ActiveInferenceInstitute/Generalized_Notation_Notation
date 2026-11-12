@@ -243,6 +243,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   or `Time` is missing, or a connection names an undeclared matrix. The registry
   records the finding; each repository fixes its own specifications, and the
   gate here checks internal consistency only.
+- `just importers`, `just importers-online` and `just importer-check REPO` expose
+  the registry check, the report-only origin re-read and the per-checkout reader;
+  `just quality` runs the offline registry check with the other fast gates.
 
 ## [5.0.3] - 2026-10-31
 
