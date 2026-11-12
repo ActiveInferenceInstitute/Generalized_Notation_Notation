@@ -15,10 +15,11 @@ one artifact in two forms:
   kind (``spec`` rows carry at least one specification, ``pin-only`` rows
   carry none).
 - **Online (``--online``).** Re-reads each public repository's pin file at its
-  default branch and compares path, tag and commit with the registry, and
-  confirms the named workflow exists and declares the named job. This is the
-  drift detector; it needs ``gh`` and network access, so it is never part of
-  the local gate.
+  default branch and compares path, tag and commit with the registry, confirms
+  the named workflow exists and declares the named job, and confirms the row's
+  repository publishes the ``.github/GNN.md`` pointer that records what the job
+  parses. This is the drift detector; it needs ``gh`` and network access, so it
+  is never part of the local gate.
 
 A row is evidence of a declaration, not of a passing run: the registry says
 what a repository pins and where its evidence lives, and the repository's own
@@ -250,19 +251,40 @@ def check_pin_parity(registry: Dict[str, Any], findings: Findings) -> None:
             )
 
 
+class GhError(RuntimeError):
+    """A ``gh`` call failed for a reason other than a missing path."""
+
+
 def _gh(*args: str) -> Optional[str]:
+    """Run one ``gh`` call. ``None`` means the path is absent at origin.
+
+    A transient failure (network, 5xx, rate limit, timeout) must not be reported
+    as a missing file: it raises :class:`GhError`, and the caller degrades that
+    repository to an ``online-unavailable`` warning instead of a false drift
+    error.
+    """
     try:
         result = subprocess.run(
             ["gh", *args], capture_output=True, text=True, timeout=120
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise GhError(f"gh could not run: {exc}") from exc
+    if result.returncode == 0:
+        return result.stdout
+    stderr = (result.stderr or "") + (result.stdout or "")
+    if "HTTP 404" in stderr or "Not Found" in stderr:
         return None
-    return result.stdout if result.returncode == 0 else None
+    detail = (result.stderr or result.stdout or "").strip().splitlines()
+    raise GhError(detail[-1][:200] if detail else "gh failed")
 
 
 def check_online(registry: Dict[str, Any], findings: Findings) -> None:
-    """Re-read each public repository's pin and workflow at origin."""
-    if _gh("auth", "status") is None:
+    """Re-read each public repository's pin, workflow job and pointer at origin."""
+    try:
+        authenticated = _gh("auth", "status") is not None
+    except GhError:
+        authenticated = False
+    if not authenticated:
         findings.warning(
             "online-unavailable",
             "gh is unavailable or unauthenticated; skipped origin re-read",
@@ -271,74 +293,94 @@ def check_online(registry: Dict[str, Any], findings: Findings) -> None:
     for row in registry.get("importers") or []:
         if not isinstance(row, dict) or row.get("visibility") != "public":
             continue
-        repo, pin = row.get("repo"), row.get("pin")
-        full = f"ActiveInferenceInstitute/{repo}"
-        default = _gh("api", f"repos/{full}", "--jq", ".default_branch")
-        if not default:
-            findings.error("origin-repo", f"{repo}: not readable at origin")
-            continue
-        default = default.strip()
-        if isinstance(pin, dict) and pin.get("path"):
-            raw = _gh(
-                "api",
-                f"repos/{full}/contents/{pin['path']}?ref={default}",
-                "-H",
-                "Accept: application/vnd.github.raw",
+        try:
+            _check_public_row_online(row, findings)
+        except GhError as exc:
+            findings.warning("online-unavailable", f"{row.get('repo')}: {exc}")
+
+
+def _check_public_row_online(row: Dict[str, Any], findings: Findings) -> None:
+    """Compare one public row's pin, conformance job and pointer with origin."""
+    repo, pin = row.get("repo"), row.get("pin")
+    full = f"ActiveInferenceInstitute/{repo}"
+    default = _gh("api", f"repos/{full}", "--jq", ".default_branch")
+    if not default:
+        findings.error("origin-repo", f"{repo}: not readable at origin")
+        return
+    default = default.strip()
+    if isinstance(pin, dict) and pin.get("path"):
+        raw = _gh(
+            "api",
+            f"repos/{full}/contents/{pin['path']}?ref={default}",
+            "-H",
+            "Accept: application/vnd.github.raw",
+        )
+        if raw is None:
+            findings.error(
+                "origin-pin", f"{repo}: {pin['path']} not found at origin/{default}"
             )
-            if raw is None:
+            return
+        if pin.get("kind") == "dependency":
+            # A dependency pin is a declaration inside a build file, not a
+            # JSON document: the revision must appear in the file's text.
+            if pin.get("commit") and pin["commit"] not in raw:
                 findings.error(
-                    "origin-pin", f"{repo}: {pin['path']} not found at origin/{default}"
+                    "origin-pin-drift",
+                    f"{repo}: {pin['path']} does not name {str(pin.get('commit'))[:10]} at origin",
                 )
-                continue
-            if pin.get("kind") == "dependency":
-                # A dependency pin is a declaration inside a build file, not a
-                # JSON document: the revision must appear in the file's text.
-                if pin.get("commit") and pin["commit"] not in raw:
-                    findings.error(
-                        "origin-pin-drift",
-                        f"{repo}: {pin['path']} does not name {str(pin.get('commit'))[:10]} at origin",
-                    )
-                continue
-            try:
-                payload = json.loads(raw)
-            except json.JSONDecodeError:
-                if pin.get("kind") != "content-hash":
-                    findings.error(
-                        "origin-pin-json",
-                        f"{repo}: {pin['path']} is not JSON at origin",
-                    )
-                continue
-            if pin.get("kind") in ("file", "dependency") and isinstance(payload, dict):
-                commit = payload.get("commit") or payload.get("revision")
-                tag = payload.get("tag") or payload.get("release")
-                if commit != pin.get("commit"):
-                    findings.error(
-                        "origin-pin-drift",
-                        f"{repo}: origin pin commit {str(commit)[:10]} != registry {str(pin.get('commit'))[:10]}",
-                    )
-                if tag != pin.get("tag"):
-                    findings.error(
-                        "origin-pin-drift",
-                        f"{repo}: origin pin tag {tag!r} != registry {pin.get('tag')!r}",
-                    )
-        conformance = row.get("conformance")
-        if isinstance(conformance, dict) and conformance.get("workflow"):
-            raw = _gh(
-                "api",
-                f"repos/{full}/contents/{conformance['workflow']}?ref={default}",
-                "-H",
-                "Accept: application/vnd.github.raw",
+            return
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            if pin.get("kind") != "content-hash":
+                findings.error(
+                    "origin-pin-json",
+                    f"{repo}: {pin['path']} is not JSON at origin",
+                )
+            return
+        if pin.get("kind") in ("file", "dependency") and isinstance(payload, dict):
+            commit = payload.get("commit") or payload.get("revision")
+            tag = payload.get("tag") or payload.get("release")
+            if commit != pin.get("commit"):
+                findings.error(
+                    "origin-pin-drift",
+                    f"{repo}: origin pin commit {str(commit)[:10]} != registry {str(pin.get('commit'))[:10]}",
+                )
+            if tag != pin.get("tag"):
+                findings.error(
+                    "origin-pin-drift",
+                    f"{repo}: origin pin tag {tag!r} != registry {pin.get('tag')!r}",
+                )
+    conformance = row.get("conformance")
+    if isinstance(conformance, dict) and conformance.get("workflow"):
+        raw = _gh(
+            "api",
+            f"repos/{full}/contents/{conformance['workflow']}?ref={default}",
+            "-H",
+            "Accept: application/vnd.github.raw",
+        )
+        if raw is None:
+            findings.error(
+                "origin-workflow",
+                f"{repo}: {conformance['workflow']} not found at origin",
             )
-            if raw is None:
-                findings.error(
-                    "origin-workflow",
-                    f"{repo}: {conformance['workflow']} not found at origin",
-                )
-            elif conformance.get("job") and f"  {conformance['job']}:" not in raw:
-                findings.error(
-                    "origin-job",
-                    f"{repo}: job {conformance['job']!r} not declared in {conformance['workflow']}",
-                )
+        elif conformance.get("job") and f"  {conformance['job']}:" not in raw:
+            findings.error(
+                "origin-job",
+                f"{repo}: job {conformance['job']!r} not declared in {conformance['workflow']}",
+            )
+    if conformance:
+        pointer = _gh(
+            "api",
+            f"repos/{full}/contents/.github/GNN.md?ref={default}",
+            "-H",
+            "Accept: application/vnd.github.raw",
+        )
+        if pointer is None:
+            findings.error(
+                "origin-pointer",
+                f"{repo}: .github/GNN.md not found at origin/{default}",
+            )
 
 
 def check_local_repo(
