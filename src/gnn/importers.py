@@ -23,7 +23,7 @@ Canonical pin (``schema``: :data:`PIN_SCHEMA`)::
       "spec_files": ["models/gridworld_3x3.gnn.md"]
     }
 
-Legacy shapes are read, never rewritten: ``revision`` is accepted for
+Earlier shapes are read, never rewritten: ``revision`` is accepted for
 ``commit``, ``release`` for ``tag``, ``repository`` may be an ``org/name`` or a
 URL, and ``spec_files`` is optional (absent means "discover ``*.gnn.md``").
 
@@ -107,7 +107,7 @@ class ImporterPin:
     """A normalized importer pin.
 
     ``commit`` is the only required identity: a tag can move, a commit cannot.
-    ``schema`` and ``recorded`` are ``None`` for legacy pins that predate the
+    ``schema`` and ``recorded`` are ``None`` for pins that predate the
     canonical schema; :func:`check_importer` reports that as a finding rather
     than failing, so an importer can adopt the schema deliberately.
     """
@@ -299,7 +299,7 @@ def check_importer(
                 findings.append(
                     {
                         "level": "warning",
-                        "code": "pin-schema-legacy",
+                        "code": "pin-schema-unversioned",
                         "message": f"pin declares schema {pin.schema!r}, not {PIN_SCHEMA!r}",
                     }
                 )
@@ -382,7 +382,7 @@ def _format_text(report: Dict[str, Any]) -> str:
     if pin:
         lines.append(
             f"  pin: {pin['path']} -> {pin['tag'] or '(no tag)'} @ {pin['commit'][:10]}"
-            f" (schema {pin['schema'] or 'legacy'})"
+            f" (schema {pin['schema'] or 'unversioned'})"
         )
     else:
         lines.append("  pin: none")

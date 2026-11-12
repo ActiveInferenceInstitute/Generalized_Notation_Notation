@@ -295,7 +295,9 @@ def test_check_importer_accepts_a_url_form_repository(tmp_path: Path) -> None:
     assert report["ok"] is True
 
 
-def test_check_importer_flags_a_legacy_schema_as_a_warning_only(tmp_path: Path) -> None:
+def test_check_importer_flags_an_unversioned_schema_as_a_warning_only(
+    tmp_path: Path,
+) -> None:
     _write_pin(
         tmp_path,
         {
@@ -309,7 +311,7 @@ def test_check_importer_flags_a_legacy_schema_as_a_warning_only(tmp_path: Path) 
     report = check_importer(tmp_path)
 
     assert report["ok"] is True
-    assert [item["code"] for item in report["findings"]] == ["pin-schema-legacy"]
+    assert [item["code"] for item in report["findings"]] == ["pin-schema-unversioned"]
 
 
 def test_check_importer_rejects_a_specification_missing_a_required_section(
