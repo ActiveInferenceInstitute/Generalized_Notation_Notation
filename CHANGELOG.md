@@ -7,6 +7,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Pipeline performance budgets from a measured band
+
+- `tests/pipeline/test_pipeline_performance.py` no longer asserts absolute
+  single-point budgets. `THRESHOLDS` is now derived from the checked-in
+  `tests/pipeline/pipeline_performance_baseline.json`: each budget is the
+  recorded per-metric upper edge multiplied by the artifact's `tolerance`.
+  The artifact records the measurement environment (Apple M5 Max, macOS
+  27.0.1, arm64, 18 cores, Python 3.14.10, pytest 9.2.0, uv 0.13.7), the
+  quiet arm (16.6% CPU utilization), a self-spawned loaded arm (36 CPU-bound
+  workers on 18 cores) and an ambient loaded arm (the same workers plus other
+  host load, 100% CPU utilization), with min/median/max for every metric.
+  Memory and disk values below 1 MB are recorded at the 1 MB measurement
+  floor.
+- The largest observed loaded/quiet ratio was 29.1x (medium export, ambient
+  arm); the self-spawned arm's largest ratio was 2.4x. The 100x multiplier is
+  a host-independent ceiling above both bands: it catches order-of-magnitude
+  regressions rather than modest slowdowns. The module docstring states the
+  same derivation and band.
+- The module warms the measured paths once before timing and adds
+  `TestLoadedArmVerdict`, which spawns `2 * os.cpu_count()` CPU-bound workers
+  and asserts the same budgets, so the loaded verdict is reproducible on a
+  quiet machine. Both the quiet run and a run with 36 external CPU-bound
+  workers passed: 17 passed in 2.84 s and 17 passed in 4.81 s respectively.
+- `./run.sh gates` passed on the rebased tree: Ruff format/check, mypy (781
+  source files), 9056 passed with 78.15% coverage (floor 60%), the
+  documentation, terminology and capability-contract audits, 97
+  MCP/capability tests, and 28/28 v3 orchestration checks.
+
 ### Canonical gate, repository index and backlog grammar
 
 - `run.sh` is the repository's gate front door. `./run.sh gates` performs one
