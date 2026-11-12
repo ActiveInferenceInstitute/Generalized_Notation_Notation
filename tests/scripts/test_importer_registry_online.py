@@ -157,3 +157,42 @@ def test_online_degrades_a_transient_failure_to_a_warning(monkeypatch) -> None:
     check_importer_registry.check_online(_registry(_row("Alpha")), findings)
     assert [item["code"] for item in findings.items] == ["online-unavailable"]
     assert findings.failed is False
+
+
+def test_online_checks_the_job_and_pointer_for_a_dependency_pin(monkeypatch) -> None:
+    """A dependency pin is read as text, and the job and pointer still run."""
+    row = _row("Alpha")
+    row["pin"] = {
+        "kind": "dependency",
+        "path": "pyproject.toml",
+        "tag": "v5.0.3",
+        "commit": COMMIT,
+        "schema": "gnn-importer-pin/v1",
+    }
+    _stub(
+        monkeypatch,
+        {
+            "pyproject.toml?ref=main": (
+                "generalized-notation-notation @ git+https://github.com/x/y@" + "0" * 40
+            ),
+            ".github/workflows/ci.yml?ref=main": WORKFLOW_BODY,
+        },
+    )
+    findings = check_importer_registry.Findings()
+    check_importer_registry.check_online(_registry(row), findings)
+    codes = [item["code"] for item in findings.items]
+    assert "origin-pin-drift" in codes, findings.items
+    assert "origin-pointer" in codes, findings.items
+    assert "origin-job" not in codes, findings.items
+
+
+def test_online_still_checks_the_job_and_pointer_without_the_pin_file(
+    monkeypatch,
+) -> None:
+    """A missing pin is one finding; it must not hide the job and pointer."""
+    _stub(monkeypatch, {".github/workflows/ci.yml?ref=main": WORKFLOW_BODY})
+    findings = check_importer_registry.Findings()
+    check_importer_registry.check_online(_registry(_row("Alpha")), findings)
+    codes = [item["code"] for item in findings.items]
+    assert "origin-pin" in codes, findings.items
+    assert "origin-pointer" in codes, findings.items
