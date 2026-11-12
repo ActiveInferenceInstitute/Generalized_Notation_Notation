@@ -316,15 +316,38 @@ Member-specific notes:
 
 ## Verification
 
-The lead repository's gate is the local evidence. Measured on this branch with
-the frozen environment:
+The lead repository's arms are the only measured evidence on this page. Both
+columns were measured in one worktree with the same frozen environment, switching
+between `origin/main` and this branch, so the comparison is the change and not a
+cold install:
 
-| Arm | Before | After |
+| Arm | `origin/main` | this branch |
 | --- | --- | --- |
-| `./run.sh docs` | 24.51 s | see the pull request body |
+| `./run.sh docs` | 13.97 s | 16.54 s |
+| `python scripts/check_importer_registry.py` alone | 0.05–0.08 s (three runs) | 0.05–0.07 s (three runs) |
 
-Member arms were not run. Each member's own gate remains its evidence, and this
-page makes no claim about a member's current green state.
+The registry check itself did not move; the arm grew by the three documentation
+files this change adds to the tree the `docs` arm walks. `./run.sh lint` and
+`./run.sh type` (781 source files) are green on the branch. The two new test
+files contribute twenty-five tests. The registry reports 42 repositories and
+`group gnn-fep: 22 members, 20 call the reader directly`; the two that do not are
+the upstream member and the wrapper.
+
+Member arms were not run except where the table above records one. Each member's
+own gate remains its evidence, and this page makes no claim about a member's
+current green state.
+
+### One custody cost this change carries
+
+This page adds three files under `docs/`, so `GNN_DOC_FILE_COUNT` moves from 675
+to 678. The token map, the repo-metrics figure and the hydrated manuscript are
+not regenerated here: `scripts/check_manuscript_tokens.py --strict` already fails
+on `origin/main` before this change (`committed token_checksum 22f31c37db3f !=
+producer-at-HEAD 8f9a7688c733`), and a partial ritual — new variables without a
+fresh render — would leave the figures and the PDF disagreeing. The whole SC-22
+ritual, including the template render, stays owed against `HEAD`; the PR-time
+hydration gate is unaffected and green, because it compares the committed
+artifacts against the committed map.
 
 ## Non-goals
 
