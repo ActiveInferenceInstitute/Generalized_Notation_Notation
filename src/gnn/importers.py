@@ -57,6 +57,10 @@ __all__ = [
 #: Schema identifier a canonical importer pin declares.
 PIN_SCHEMA = "gnn-importer-pin/v1"
 
+#: The upstream a pin is expected to name. A pin that names a fork is a real
+#: finding: the consumer is tracking code this distribution does not publish.
+UPSTREAM_REPOSITORY = "ActiveInferenceInstitute/Generalized_Notation_Notation"
+
 #: Pin locations in precedence order. The first file that exists wins; the
 #: order is canonical-location-first so a repository that adopts
 #: ``.github/gnn-pin.json`` keeps one reader even if an older file remains.
@@ -234,6 +238,7 @@ def check_importer(
     *,
     expected_commit: Optional[str] = None,
     expected_tag: Optional[str] = None,
+    expected_repository: Optional[str] = UPSTREAM_REPOSITORY,
     validate_specs: bool = True,
     require_pin: bool = True,
 ) -> Dict[str, Any]:
@@ -314,6 +319,21 @@ def check_importer(
                         "message": f"pin records tag {pin.tag!r}, expected {expected_tag!r}",
                     }
                 )
+            if (
+                expected_repository
+                and pin.repository
+                and pin.repository != expected_repository
+            ):
+                findings.append(
+                    {
+                        "level": "error",
+                        "code": "pin-repository-mismatch",
+                        "message": (
+                            f"pin names {pin.repository}, expected {expected_repository}; "
+                            "a pin that names a fork tracks code this distribution does not publish"
+                        ),
+                    }
+                )
 
     specs = discover_specs(repo_root, pin)
     report["specs"]["count"] = len(specs)
@@ -389,6 +409,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "--expected-tag", default=None, help="upstream tag the pin must record"
     )
     check.add_argument(
+        "--expected-repository",
+        default=UPSTREAM_REPOSITORY,
+        help="repository the pin must name (empty string disables the check)",
+    )
+    check.add_argument(
         "--no-validate",
         action="store_true",
         help="read the pin and list specifications without parsing them",
@@ -405,6 +430,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         Path(args.repo),
         expected_commit=args.expected_commit,
         expected_tag=args.expected_tag,
+        expected_repository=args.expected_repository or None,
         validate_specs=not args.no_validate,
         require_pin=not args.allow_missing_pin,
     )
