@@ -19,10 +19,10 @@ logging/
 └── SPEC.md              # Technical specification
 ```
 
-## Hardening Achievements (v1.6.0)
+## Guarantees
 
-- **Remediated Duplication**: Fixed a handler collision between root and step-level handlers that caused duplicate terminal output.
-- **Unified Tracing**: Established a single-source-of-truth for correlation IDs, ensuring logs from subprocesses are correctly tagged and formatted.
+- **No duplicate output**: root and step-level handlers do not collide, so each record prints once.
+- **Single correlation source**: one correlation-ID source tags and formats records from subprocesses.
 - **Logging Facade**: `gnn.utils.logging_utils` retains the supported public imports;
   internal formatter and progress names are also re-exported from
   `logging/logging_utils.py`. The shared correlation context is owned by
@@ -39,7 +39,6 @@ logging/
 ## Features
 
 - **Correlation Tracing**: `[ID:STEP]` tags on every line for cross-module debugging.
-- **Rich Aesthetics**: Vibrant terminal output with glassmorphism-compatible visual logging.
 - **Performance Aware**: Integrated memory and duration tracking in every log line.
 - **Resilient Initialization**: Defensive handler management prevents double-logging even with redundant calls.
 

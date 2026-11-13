@@ -21,25 +21,12 @@ OneFileLLM integration enables:
 - **Multi-Source Bundling**: Combine GNN models with supporting artifacts
 - **Data Aggregation**: Heterogeneous knowledge ingestion and packaging
 
-## Contents
-
-**Files**:        2 | **Subdirectories**:        1
-
 ## Quick Navigation
 
 - **README.md**: [Directory overview](README.md)
 - **GNN Documentation**: [gnn/AGENTS.md](../../gnn/AGENTS.md)
 - **Main Documentation**: [docs/README.md](../README.md)
 - **Pipeline Reference**: [src/gnn/AGENTS.md](../../../src/gnn/AGENTS.md)
-
-## Documentation Structure
-
-This module is organized as follows:
-
-- **Overview**: High-level description and purpose
-- **Contents**: Files and subdirectories
-- **Integration**: Connection to the broader pipeline
-- **Usage**: How to work with this subsystem
 
 ## Integration with Pipeline
 
@@ -91,15 +78,6 @@ def optimize_token_usage(xml_doc: XMLDocument, max_tokens: int) -> XMLDocument:
         Optimized XMLDocument
     """
 ```
-
-## Standards and Guidelines
-
-All documentation in this module adheres to professional standards:
-
-- **Clarity**: Concrete, technical writing
-- **Functionality**: Describes actual capabilities
-- **Completeness**: Comprehensive coverage
-- **Consistency**: Uniform structure and style
 
 ## Related Resources
 

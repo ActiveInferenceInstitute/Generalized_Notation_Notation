@@ -122,7 +122,7 @@ success = process_advanced_viz(
 - Multi-view reports assembled from extracted model data
 - HTML-based interactive reports
 
-### D2 Diagram Generation (NEW)
+### D2 Diagram Generation
 
 - **GNN Model Structure**: Visualize state space components, connections, and Active Inference ontology
 - **POMDP Diagrams**: Generative model components (A, B, C, D, E matrices) and inference processes
@@ -224,7 +224,7 @@ success = process_advanced_viz(
 )
 ```
 
-### D2 Diagram Generation (NEW)
+### D2 Diagram Generation
 
 ```python
 # Generate only D2 diagrams
@@ -375,8 +375,7 @@ uv run --extra dev python -m pytest tests/advanced_visualization/ \
 
 ## Composability Helpers
 
-The refactor deduplicated cross-file logic into a small set of shared helpers
-in `_shared.py` and the package root:
+Cross-file logic shares these helpers in `_shared.py` and the package root:
 
 - `record_attempt(results, attempt, *, optional_message_filter=None)` — pure
   aggregate bookkeeping for `AdvancedVisualizationAttempt` → `AdvancedVisualizationResults`
@@ -384,17 +383,17 @@ in `_shared.py` and the package root:
   `optional_message_filter` suppresses warning entries whose message mentions an
   optional dependency marker (e.g. `"D2 CLI"`) so optional CLI absence is not
   surfaced as a hard warning. Used by `process_advanced_viz` for all three
-  attempt-accounting sites (previously triplicated).
+  attempt-accounting sites.
 - `_conn_endpoints(conn_info) -> (source_variables, target_variables)` — normalizes
   scalar `{"source", "target"}` and new `{"source_variables", "target_variables"}`
   connection formats in one call. Used by all three connection-expansion sites in
-  `network_viz.py` (previously triplicated).
+  `network_viz.py`.
 - `VAR_TYPE_COLORS` / `VAR_TYPE_UNKNOWN_COLOR` — the canonical var-type → hex
-  color palette used by the 3D visualization (previously inlined twice).
+  color palette used by the 3D visualization.
 - `FORCE_LAYOUT_SEED` / `LAYOUT_SEED` / `LAYOUT_SPAN` / `LAYOUT_ITERATIONS` / `LAYOUT_STEP`
   — named constants for the force-directed 3D layout (seed=42, span=10, iterations=50,
-  step=0.01). The layout now uses `np.random.default_rng(42)` instead of mutating the
-  process-global RNG via `np.random.seed(42)`.
+  step=0.01). The layout draws from `np.random.default_rng(42)` and leaves the
+  process-global RNG untouched.
 - `VIZ_TYPE_CHOICES` (package root) — the canonical tuple of `viz_type` values
   accepted by `process_advanced_viz`; the `src/gnn/9_advanced_viz.py` orchestrator imports
   this instead of hand-maintaining a duplicate list. Scope note: this is true at
@@ -439,17 +438,6 @@ in `_shared.py` and the package root:
 - `_create_network_graph` resolves real node indices via a name→index map
   over `blocks`; both extractor formats and scalar connections
   resolve, unresolvable pairs are silently skipped, positions stay seeded.
-
-## Dashboard Footer Timestamp (Fixed)
-
-`dashboard.py` previously shipped `{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}`
-as **literal text** in the footer because the closing HTML chunk was a plain
-`"""` string (no `f` prefix) and `datetime` was not imported. The broad
-`except Exception` in `generate_dashboard` swallowed the resulting `NameError`,
-so dashboard generation silently returned `None` 100% of the time. The fix
-imports `datetime` and prefixes the footer chunk with `f`. Regression test:
-`TestDashboardTimestampRenders.test_footer_contains_rendered_timestamp` in
-`test_advanced_visualization_public_api_refactor.py` (lines 116-117).
 
 ### Test Categories
 

@@ -21,25 +21,12 @@ X402 integration enables:
 - **Economic Operations**: Enable economic autonomy for intelligent systems
 - **HTTP 402 Integration**: Leverage original "Payment Required" status code
 
-## Contents
-
-**Files**:        2 | **Subdirectories**:        1
-
 ## Quick Navigation
 
 - **README.md**: [Directory overview](README.md)
 - **GNN Documentation**: [gnn/AGENTS.md](../../gnn/AGENTS.md)
 - **Main Documentation**: [docs/README.md](../README.md)
 - **Pipeline Reference**: [src/gnn/AGENTS.md](../../../src/gnn/AGENTS.md)
-
-## Documentation Structure
-
-This module is organized as follows:
-
-- **Overview**: High-level description and purpose
-- **Contents**: Files and subdirectories
-- **Integration**: Connection to the broader pipeline
-- **Usage**: How to work with this subsystem
 
 ## Integration with Pipeline
 
@@ -89,15 +76,6 @@ def handle_402_response(response: HTTPResponse) -> PaymentHandler:
         PaymentHandler for processing payment
     """
 ```
-
-## Standards and Guidelines
-
-All documentation in this module adheres to professional standards:
-
-- **Clarity**: Concrete, technical writing
-- **Functionality**: Describes actual capabilities
-- **Completeness**: Comprehensive coverage
-- **Consistency**: Uniform structure and style
 
 ## Related Resources
 

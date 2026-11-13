@@ -21,10 +21,6 @@ Quadray integration enables:
 - **Hierarchical Structures**: Representation of complex geometric relationships
 - **4D Spatial Perspective**: Tetrahedral basis for probability space visualization
 
-## Contents
-
-**Files**: 5 | **Subdirectories**: 1
-
 ### Core Documentation Files
 
 - **`README.md`**: Directory overview and navigation

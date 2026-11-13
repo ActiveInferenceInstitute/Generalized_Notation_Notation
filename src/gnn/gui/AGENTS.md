@@ -473,7 +473,7 @@ arguments. Registrations live in `src/gnn/gui/mcp.py`.
 
 ### Step-22 headless default and the 600s step-timeout wall
 - Pipeline step 22 runs under the per-step timeout registry `pipeline/step_timeouts.py`
-  (`"22_gui.py": 600`, `step_timeouts.py:26`; overridable via `GNN_STEP_TIMEOUT_22` and
+  (`"22_gui.py": 600`, `step_timeouts.py`; overridable via `GNN_STEP_TIMEOUT_22` and
   `GNN_STEP_TIMEOUT_SCALE`, documented in `src/gnn/pipeline/README.md`).
 - Interactive GUI servers never exit on their own (`process_gui` keeps the process alive
   while servers run), so an in-pipeline `--interactive` run burns the full 600s budget
