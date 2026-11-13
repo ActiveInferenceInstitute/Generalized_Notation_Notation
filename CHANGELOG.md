@@ -7,6 +7,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### soupsieve marker split keeps beautifulsoup4 4.15.0 on every interpreter
+
+- The soupsieve 4.0 bump (Dependabot #390) left `uv.lock` holding one
+  soupsieve release for every interpreter: `soupsieve 4.0` requires
+  `>=3.11.5`, so `beautifulsoup4 4.15.0` (which needs only
+  `soupsieve>=1.6.1`) was unsatisfiable on 3.11.0–3.11.4 and uv backtracked
+  to `beautifulsoup4 4.6.3` — the 2018 release, which declares no soupsieve
+  dependency at all. `beautifulsoup4` is reached transitively through
+  `nbconvert` (via `jupyter-server`/`jupyterlab` in the `dev` group and the
+  `research`/`all` extras), so this was a real supported-interpreter path, not
+  a lock artefact with no consumer.
+- `[tool.uv]`/`uv.toml` `constraint-dependencies` now split soupsieve by
+  marker: `>=4` on `python_full_version >= '3.11.5'` and `>=2.8.4,<4` below
+  it, resolving `soupsieve 2.10` (2026 release, `>=3.10`) on 3.11.0–3.11.4.
+  The literal `>=3,<4` split is not available: soupsieve 3.0 and 3.0.1 are
+  the only 3.x releases admitting `<3.11.5` and both are yanked on PyPI.
+  `beautifulsoup4 4.15.0` therefore resolves on every supported interpreter
+  and no interpreter uses 4.6.3. `uv.lock` is regenerated with `uv lock`; no
+  lock entry is hand-edited.
+
 ### MCP type-checker outcome judgement
 
 - `validate_gnn_files_mcp` (`src/gnn/type_checker/mcp.py`) no longer reports a
