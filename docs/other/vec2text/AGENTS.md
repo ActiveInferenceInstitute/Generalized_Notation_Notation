@@ -21,25 +21,12 @@ Vec2Text integration enables:
 - **Text Representation**: Enhanced text representation capabilities
 - **Embedding Inversion**: Two-stage correction architecture for precise inversion
 
-## Contents
-
-**Files**:        2 | **Subdirectories**:        1
-
 ## Quick Navigation
 
 - **README.md**: [Directory overview](README.md)
 - **GNN Documentation**: [gnn/AGENTS.md](../../gnn/AGENTS.md)
 - **Main Documentation**: [docs/README.md](../README.md)
 - **Pipeline Reference**: [src/gnn/AGENTS.md](../../../src/gnn/AGENTS.md)
-
-## Documentation Structure
-
-This module is organized as follows:
-
-- **Overview**: High-level description and purpose
-- **Contents**: Files and subdirectories
-- **Integration**: Connection to the broader pipeline
-- **Usage**: How to work with this subsystem
 
 ## Integration with Pipeline
 
@@ -88,15 +75,6 @@ def analyze_privacy_implications(embeddings: List[np.ndarray]) -> PrivacyAnalysi
         PrivacyAnalysis with information-theoretic insights
     """
 ```
-
-## Standards and Guidelines
-
-All documentation in this module adheres to professional standards:
-
-- **Clarity**: Concrete, technical writing
-- **Functionality**: Describes actual capabilities
-- **Completeness**: Comprehensive coverage
-- **Consistency**: Uniform structure and style
 
 ## Related Resources
 

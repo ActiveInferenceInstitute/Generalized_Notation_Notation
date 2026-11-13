@@ -12,7 +12,3 @@ are indexed in [.agent_rules/README.md](../.agent_rules/README.md).
   [.github/workflows/local-gates.yml](../.github/workflows/local-gates.yml);
   `just quality` chains the local gates.
 - Verification and execution obligations live in [TO-DO.md](../TO-DO.md).
-
-This file previously held a generated assistant-memory instruction block whose
-`cognilayer` MCP tools are not registered for this repository; the accurate
-entry points are the guides above.

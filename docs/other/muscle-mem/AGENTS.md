@@ -21,10 +21,6 @@ Muscle-Mem integration enables:
 - **Cost Reduction**: Save computational resources for complex GNN models
 - **LLM Optimization**: Reduce LLM calls in LLM-integrated GNN agents
 
-## Contents
-
-**Files**: 2 | **Subdirectories**: 0
-
 ### Core Documentation Files
 
 - **`README.md`**: Directory overview and navigation

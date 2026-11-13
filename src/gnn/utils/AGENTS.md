@@ -60,7 +60,7 @@ logger = setup_step_logging("3_gnn", verbose=True)
 #### `setup_main_logging(log_dir: Optional[Path] = None, verbose: bool = False, log_format: str = "human") -> logging.Logger`
 **Description**: Set up logging for the main pipeline orchestrator. `log_dir` is the directory for log files; `log_format` selects console output style (`"human"` or `"json"`). Initializes `PipelineLogger`, sets verbosity, establishes the `"main"` correlation context, and returns the configured `GNN_Pipeline` logger.
 
-**Location**: `src/gnn/utils/logging/logging_utils.py:172` (re-exported by the `utils/logging_utils.py` facade).
+**Location**: `src/gnn/utils/logging/logging_utils.py` (re-exported by the `utils/logging_utils.py` facade).
 
 #### `log_step_start(logger, message)` / `log_step_success(logger, message)` / `log_step_error(logger, message)` / `log_step_warning(logger, message)`
 **Description**: Step lifecycle logging helpers (`utils/logging_utils.py`). `log_step_start` returns a correlation-aware context; the others log structured lifecycle events. `observability/structured_logging.py` additionally exposes `log_step_start(logger, step_name, **context)` and friends with richer metadata when a step needs it.
@@ -79,9 +79,8 @@ logger = setup_step_logging("3_gnn", verbose=True)
 
 ### Argument Parsing Functions
 
-> **Modularization note (2026-08-14)**: the former 2,263-line
-> `argument_utils.py` was split into single-responsibility modules (now under
-> `arguments/`) — `arg_definitions` (shared `STEP_ARGUMENTS`/constants),
+> **Module layout**: argument handling lives in single-responsibility modules under
+> `arguments/` — `arg_definitions` (shared `STEP_ARGUMENTS`/constants),
 > `arg_parsing` (the `ArgumentParser`), `path_conversion` (`validate_and_convert_paths`),
 > `pipeline_arguments` (command building), and `step_config` (`StepConfiguration`).
 > `gnn.utils.runtime_safety.safe_eval.safe_literal_eval` provides bounded,
@@ -191,18 +190,17 @@ The pipeline utility functions live in their canonical home, `gnn.pipeline`
 
 ## Composability Notes
 
-### Shared single-source helpers (2026-09-04 consolidation)
+### Shared single-source helpers
 
-Duplicated logic was collapsed onto one implementation each; the old
-top-level paths were removed with the SC-38 facade takedown:
+Each helper below is the only implementation of its concern; import it from the path shown:
 
 - **Writable-directory probe**: `gnn.utils.config_io.io_utils.verify_directory_writable(directory, probe_name=".write_probe") -> None` is the single create-rename-cleanup probe. `gnn.utils.pipeline_orchestration.pipeline_validator.check_pipeline_readiness` calls it and keeps its own error messaging.
 - **Canonical memory probe**: `gnn.utils.runtime_safety.resource_manager.get_memory_usage` (alias of `get_current_memory_usage`).
-- **Step-argument fallback defaults**: `gnn.utils.arguments.arg_parsing.fallback_default_for(arg_name)` backed by the `_FALLBACK_DEFAULTS` mapping replaced two ~70-line if/elif ladders in `ArgumentParser.parse_step_arguments` and `ArgumentParser.create_default_namespace`. `create_default_namespace` now matches the registered contract for `advanced_stats` (`False`) and `simulation_params` (`"{}"`) where it previously fell through to `None`.
-- **Injectable project root**: `StepConfiguration.validate_step_args(step_name, args, project_root=None)` accepts an explicit project root for missing-input-path repair; when omitted, the caller-frame heuristic (long-standing default) applies (unchanged behavior for existing callers).
-- **`with_resource_limits`**: exceptions raised by the wrapped body always propagate; limit violations are only raised when the body completed normally (previously a `RuntimeError` raised from `finally` could mask a body failure).
-- **Environment redaction**: `gnn.utils.mcp.SENSITIVE_ENV_KEY_MARKERS`, `is_sensitive_env_key(key) -> bool`, and `redact_environment() -> dict[str, str]` centralize secret filtering used by `get_environment_info` (markers widened with `credential`, `passwd`, `auth`).
-- **Monitor alert bands**: `PipelineMonitor.health_thresholds["duration_variance"]` now defines `"critical": 3.0` (previously a `KeyError` on the >3x-baseline alert path); the degraded-band warning fires between 2x and 3x baseline.
+- **Step-argument fallback defaults**: `gnn.utils.arguments.arg_parsing.fallback_default_for(arg_name)` backed by the `_FALLBACK_DEFAULTS` mapping supplies the defaults for `ArgumentParser.parse_step_arguments` and `ArgumentParser.create_default_namespace`; `create_default_namespace` matches the registered contract, including `advanced_stats` (`False`) and `simulation_params` (`"{}"`).
+- **Injectable project root**: `StepConfiguration.validate_step_args(step_name, args, project_root=None)` accepts an explicit project root for missing-input-path repair; when omitted, the caller-frame heuristic applies.
+- **`with_resource_limits`**: exceptions raised by the wrapped body always propagate; limit violations are only raised when the body completed normally, so a limit error never masks a body failure.
+- **Environment redaction**: `gnn.utils.mcp.SENSITIVE_ENV_KEY_MARKERS`, `is_sensitive_env_key(key) -> bool`, and `redact_environment() -> dict[str, str]` centralize secret filtering used by `get_environment_info` (markers include `credential`, `passwd`, `auth`).
+- **Monitor alert bands**: `PipelineMonitor.health_thresholds["duration_variance"]` defines `"critical": 3.0` (above 3x baseline); the degraded-band warning fires between 2x and 3x baseline.
 
 ---
 

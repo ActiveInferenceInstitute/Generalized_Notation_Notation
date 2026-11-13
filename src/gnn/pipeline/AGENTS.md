@@ -486,41 +486,6 @@ Registered by `register_tools()` in `pipeline/mcp.py`:
 
 ## Version History
 
-### 2026-09-04 — Composability refactor (fleet worker)
-
-Internal quality pass; every external entry point's behavior is preserved:
-
-- **Shared atomic writes**: `pipeline/_io.py` now owns the mkstemp +
-  `os.replace` recipe. `durable_streams`, `run_session.checkpoint`,
-  `run_manifest._write_index`, and `hasher.index_run` all delegate (the
-  history index write is now atomic too).
-- **Shared family selection**: `model_family_acceptance.select_model_families()`
-  is the single filter rule; `semantic_fidelity` and `session_acceptance`
-  delegate instead of re-implementing it.
-- **Cycle detection**: new `dag.find_circular_dependencies()`; the
-  `validate_pipeline_dependencies` MCP tool now reports real
-  `circular_dependencies` instead of a stubbed empty list.
-- **Single version source**: `pipeline/_version.py`; `execution.get_pipeline_info()`
-  now reports the package version instead of a stale "1.0.0".
-- **Registry-derived counts**: `dag.resolve_execution_order`'s default
-  `total_steps` and `execution.get_pipeline_status/get_pipeline_info` derive
-  step counts from `step_registry` instead of hardcoding 25.
-- **Path constants**: `config.DEFAULT_TARGET_DIR` / `config.DEFAULT_OUTPUT_DIR`
-  replace the repeated `"input/gnn_files"` / `"output"` literals
-  (`execution`, `context`, package defaults).
-- **Status-set dedup**: `execution._SUCCESS_STATUSES` replaces the two inline
-  copies of `{"SUCCESS", "SUCCESS_WITH_WARNINGS", "SKIPPED"}`.
-- **Comma-separated step lists**: `resolve_step_numbers("3,5")` now works
-  (mirrors the `--only-steps` CLI form; previously silently resolved to `[]`).
-- **Preflight**: `validate_config` now validates `pipeline.skip_steps` with
-  the canonical `read_skip_steps` parser (bad values are a preflight error
-  instead of a mid-run failure).
-- **Package surface**: `__all__` is fully typed and complete (adds
-  `resolve_step_numbers`,
-  `get_module_info`, `validate_pipeline_step`, `discover_pipeline_steps`,
-  `DEFAULT_TARGET_DIR`, `DEFAULT_OUTPUT_DIR`).
-- **PipelineContext** removed 2026-09-15 (N-4: delete) — production-dead; `StepStatus` re-homed to `pipeline.schemas`.
-
 ### Current Version: [pyproject.toml](../../../pyproject.toml) (canonical)
 
 **Features**:

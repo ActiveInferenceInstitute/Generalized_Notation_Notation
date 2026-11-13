@@ -28,15 +28,6 @@ Browse the [current directory](./) for files and subdirectories; use the task li
 - **Main Documentation**: [docs/README.md](../README.md)
 - **Pipeline Reference**: [src/gnn/AGENTS.md](../../src/gnn/AGENTS.md)
 
-## Documentation Structure
-
-This module is organized as follows:
-
-- **Overview**: High-level description and purpose
-- **Contents**: Files and subdirectories
-- **Integration**: Connection to the broader pipeline
-- **Usage**: How to work with this subsystem
-
 ## Integration with Pipeline
 
 This documentation is integrated with the 25-step GNN processing pipeline:
@@ -46,15 +37,6 @@ This documentation is integrated with the 25-step GNN processing pipeline:
 3. **Integration** (Steps 17-24): System coordination and output
 
 See [src/gnn/AGENTS.md](../../src/gnn/AGENTS.md) for complete pipeline documentation.
-
-## Standards and Guidelines
-
-All documentation in this module adheres to professional standards:
-
-- **Clarity**: Concrete, technical writing
-- **Functionality**: Describes actual capabilities
-- **Completeness**: Comprehensive coverage
-- **Consistency**: Uniform structure and style
 
 ## Related Resources
 

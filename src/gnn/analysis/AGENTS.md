@@ -322,60 +322,60 @@ runtime authority.
 Per-file contract for `processor.py`, `viz_plots.py`, `framework_extractors.py`,
 and `viz_dashboard.py` (the `process_analysis` API itself is specified in the
 [API Reference](#api-reference); the shared-helper modules are covered under
-Shared Composability Helpers). Line anchors refer to the current tree.
+Shared Composability Helpers).
 
 ### `processor.py`
 
-**Role**: Step 16 entry point. `process_analysis` (processor.py:282) runs the
-full step pipeline and writes `analysis_results.json` (processor.py:713) and
-`analysis_summary.md` (processor.py:722).
+**Role**: Step 16 entry point. `process_analysis` (processor.py) runs the
+full step pipeline and writes `analysis_results.json` (processor.py) and
+`analysis_summary.md` (processor.py).
 
 **Public surface** (beyond `process_analysis`):
 
 - `aggregate_simulation_results(results_list: List[Dict[str, Any]]) -> Dict[str, Any]`
-  (processor.py:205) — collects `execution_time` / `free_energy_final` /
+  (processor.py) — collects `execution_time` / `free_energy_final` /
   `steps_completed` metric lists and the set of frameworks used across
   post-simulation result rows.
 - `generate_summary_statistics(aggregated_data: Dict[str, Any]) -> Dict[str, Any]`
-  (processor.py:247) — mean/std/min/max/count per metric; consumes the
+  (processor.py) — mean/std/min/max/count per metric; consumes the
   `aggregate_simulation_results` output and populates
-  `results["overall_statistics"]` (processor.py:476-482).
-- `convert_numpy_types(obj: Any) -> Any` (processor.py:742) — `json.dump`
+  `results["overall_statistics"]` (processor.py).
+- `convert_numpy_types(obj: Any) -> Any` (processor.py) — `json.dump`
   default for numpy scalars/arrays, sets, `Path`s, and unknown objects;
-  re-exported from `gnn.analysis` (`analysis/__init__.py:79`).
+  re-exported from `gnn.analysis` (`analysis/__init__.py`).
 
 **Private helpers (contract-relevant)**:
 
-- `_coerce_bool_flag` (processor.py:50) and `_normalize_generate_animations`
-  (processor.py:65) — animation-flag normalization: `generate_animations` is
+- `_coerce_bool_flag` (processor.py) and `_normalize_generate_animations`
+  (processor.py) — animation-flag normalization: `generate_animations` is
   canonical, `no_animations` is only a compatibility inverse accepted when the
   canonical key is absent, and a conflicting pair raises `ValueError`, which
-  `process_analysis` converts to `False` (processor.py:326-329).
-- `_scope_from_execution_summary` (processor.py:111) — derives current-run
+  `process_analysis` converts to `False` (processor.py).
+- `_scope_from_execution_summary` (processor.py) — derives current-run
   framework/model scope from the Step 12 summary; successful details carrying
   a result pointer narrow the framework set.
-- `_filter_execution_summary` (processor.py:175) — deep-copied summary
+- `_filter_execution_summary` (processor.py) — deep-copied summary
   limited to current-run frameworks before empirical visualization.
 
 **Maintenance contract**:
 
 - Per-framework analyzer dispatch table `_FRAMEWORK_ANALYZERS`
-  (processor.py:492-500) lists pymdp, activeinference_jl, discopy, jax,
+  (processor.py) lists pymdp, activeinference_jl, discopy, jax,
   rxinfer, pytorch, numpyro. Each is imported as
   `importlib.import_module(".{module_key}.analyzer", package="analysis")`
-  (processor.py:512-514) and called as
+  (processor.py) and called as
   `generate_analysis_from_logs(execution_dir, fw_output_dir, verbose)`
-  (processor.py:518-520). Adding a framework requires a row here plus
+  (processor.py). Adding a framework requires a row here plus
   `analysis/<framework>/analyzer.py`; bnlearn is rendered/executed but has no
   analyzer and stays absent.
 - Cross-module calls resolve through re-exports: `analyze_execution_results`
-  (processor.py:422, called at processor.py:432),
-  `generate_unified_framework_dashboard` (processor.py:588, called at
-  processor.py:644), and `visualize_all_framework_outputs` (processor.py:589,
-  called at processor.py:595) come from `post_simulation`;
-  `_current_schema_visualization_data` (processor.py:591) from
+  (processor.py, called at processor.py),
+  `generate_unified_framework_dashboard` (processor.py, called at
+  processor.py), and `visualize_all_framework_outputs` (processor.py,
+  called at processor.py) come from `post_simulation`;
+  `_current_schema_visualization_data` (processor.py) from
   `visualizations` (re-exported from `viz_schema`);
-  `write_gridworld_analysis_manifest` (processor.py:693) from
+  `write_gridworld_analysis_manifest` (processor.py) from
   `visualizations` (re-exported from `viz_manifest`).
 
 ### `viz_plots.py`
@@ -383,34 +383,34 @@ full step pipeline and writes `analysis_results.json` (processor.py:713) and
 **Role**: Per-model execution-output plotting (extracted from
 `visualizations.py`). Consumes `viz_base` (`np`, `plt`, `safe_savefig`),
 `viz_schema` (schema gating), `viz_animations` (GridWorld suite), and
-`viz_dashboard` (comparison charts) (viz_plots.py:18-34).
+`viz_dashboard` (comparison charts) (viz_plots.py).
 
 **Public surface**:
 
 - `visualize_all_framework_outputs(execution_dir: Path, output_dir: Path, logger_instance: Optional[logging.Logger] = None, allowed_frameworks: Optional[set[str]] = None, allowed_model_names: Optional[set[str]] = None, generate_animations: bool = True) -> List[str]`
-  (viz_plots.py:39) — discovers `*_results.json` (excluding `simulation_data`
-  subtrees, viz_plots.py:87-89) and `*simulation_results.json`
-  (viz_plots.py:132), merges entries per `(framework, model)` key, and
+  (viz_plots.py) — discovers `*_results.json` (excluding `simulation_data`
+  subtrees, viz_plots.py) and `*simulation_results.json`
+  (viz_plots.py), merges entries per `(framework, model)` key, and
   schema-gates pymdp/rxinfer/activeinference_jl against
-  `CURRENT_VISUALIZATION_SCHEMAS` (viz_plots.py:97-102, 151-156). Writes:
+  `CURRENT_VISUALIZATION_SCHEMAS` (viz_plots.py, 151-156). Writes:
   - `{model}_{framework}_free_energy.png`, `{model}_{framework}_vfe_vs_efe.png`,
     `{model}_{framework}_observations.png` under
-    `output_dir.parent / <framework>` (viz_plots.py:321, 340-389);
+    `output_dir.parent / <framework>` (viz_plots.py, 340-389);
   - belief heatmaps and action analysis are deliberately NOT produced here —
     the per-framework analyzers already emit richer versions
-    (viz_plots.py:324-327); the exported builders remain for direct reuse;
+    (viz_plots.py); the exported builders remain for direct reuse;
   - when more than one framework has data:
     `cross_framework_comparison.png`, `efe_convergence_comparison.png`,
     `confidence_comparison.png`, `framework_radar.png`
-    (viz_plots.py:397-444) and, when `generate_animations`, the GridWorld
-    animation suite (viz_plots.py:446-453).
+    (viz_plots.py) and, when `generate_animations`, the GridWorld
+    animation suite (viz_plots.py).
 - Scalar plot builders — each returns the saved path, raises `ValueError` on
   empty input, and saves through `viz_base.safe_savefig`:
   - `generate_belief_heatmaps(beliefs: List[List[float]], output_path: Path, title: str = "Belief State Evolution Heatmap") -> str`
-    (viz_plots.py:459) — heatmap + per-state trajectory pair; needs at least
+    (viz_plots.py) — heatmap + per-state trajectory pair; needs at least
     two timesteps.
   - `generate_action_analysis(actions: List[int], output_path: Path, title: str = "Action Selection Analysis") -> str`
-    (viz_plots.py:516) — histogram, sequence, transition matrix.
+    (viz_plots.py) — histogram, sequence, transition matrix.
   - `generate_free_energy_plots(free_energy: List[float], output_path: Path, title: str = "Free Energy Dynamics") -> str`
     — four data panels: evolution with min-EFE overlay (handles per-policy 2D
     input), selected-EFE distribution, per-step change and rolling-variance
@@ -426,8 +426,8 @@ full step pipeline and writes `analysis_results.json` (processor.py:713) and
     are retained; oversized nominal canvases are refused before allocation.
 
 **Maintenance contract**: public re-export chain is `visualizations.py`
-(viz_plots import at visualizations.py:35-42) → `post_simulation.py`
-(post_simulation.py:97-108) → `analysis/__init__`; signature changes must
+(viz_plots import at visualizations.py) → `post_simulation.py`
+(post_simulation.py) → `analysis/__init__`; signature changes must
 update all three. Split-smoke test for the split:
 `tests/analysis/test_analysis_split_smoke.py`.
 
@@ -436,62 +436,62 @@ update all three. Split-smoke test for the split:
 **Role**: Per-framework `extract_*_data(execution_result) -> Dict[str, Any]`
 normalizers — the single source for turning raw Step 12 results into analysis
 fields. `post_simulation.analyze_execution_results` dispatches on the
-framework name (post_simulation.py:188-206).
+framework name (post_simulation.py).
 
 **Schema constants**:
 
-- `CURRENT_SIMULATION_SCHEMAS` (framework_extractors.py:20) — framework →
+- `CURRENT_SIMULATION_SCHEMAS` (framework_extractors.py) — framework →
   `*_simulation_v1` mapping (pytorch, numpyro, pymdp, rxinfer,
   activeinference_jl).
 - `KRONECKER_FACTORIZED_SCHEMA = "jax_kronecker_factorized_v1"`
-  (framework_extractors.py:458).
+  (framework_extractors.py).
 
 **Extractors**:
 
-- `extract_pymdp_data` (framework_extractors.py:96) — strict
+- `extract_pymdp_data` (framework_extractors.py) — strict
   `pymdp_simulation_v1` (top-level payload, nested `simulation_data`, or
   impl-dir files); counts `visualizations/*.{png,svg}`
-  (framework_extractors.py:135-142); missing or wrong-schema payload sets
-  `extraction_error` (framework_extractors.py:147-152).
-- `extract_rxinfer_data` (framework_extractors.py:187) — a schema hit returns
+  (framework_extractors.py); missing or wrong-schema payload sets
+  `extraction_error` (framework_extractors.py).
+- `extract_rxinfer_data` (framework_extractors.py) — a schema hit returns
   the normalized payload; otherwise the collected-file fallback maps
-  `efe_history` → `free_energy` (framework_extractors.py:244-246).
-- `extract_activeinference_jl_data` (framework_extractors.py:273) — schema hit
+  `efe_history` → `free_energy` (framework_extractors.py).
+- `extract_activeinference_jl_data` (framework_extractors.py) — schema hit
   → normalizer; else `simulation_results.csv` (impl dir or
-  `activeinference_outputs_*`, framework_extractors.py:315-322) or JSON
+  `activeinference_outputs_*`, framework_extractors.py) or JSON
   fallback; returns the full Active-Inference field set (A/B/C/D matrices,
   precisions, VFE, information gain, pragmatic value;
-  framework_extractors.py:418-453).
-- `extract_jax_data` (framework_extractors.py:525) — dispatches to
-  `extract_jax_kronecker_data` (framework_extractors.py:461) on the Kronecker
+  framework_extractors.py).
+- `extract_jax_data` (framework_extractors.py) — dispatches to
+  `extract_jax_kronecker_data` (framework_extractors.py) on the Kronecker
   schema (top-level, nested, or impl-dir probe); everything else follows the
-  pymdp-compatible historical path (framework_extractors.py:547).
-- `extract_discopy_data` (framework_extractors.py:550) — reads
+  pymdp-compatible historical path (framework_extractors.py).
+- `extract_discopy_data` (framework_extractors.py) — reads
   `discopy_execution_report.json` from three candidate locations
-  (framework_extractors.py:570-577); diagrams come from successful
-  `diagram_validation` executions (framework_extractors.py:593-598).
-- `extract_pytorch_data` (framework_extractors.py:670) and
-  `extract_numpyro_data` (framework_extractors.py:677) — shared
-  `_extract_schema_aware_data` (framework_extractors.py:629): schema-gated
+  (framework_extractors.py); diagrams come from successful
+  `diagram_validation` executions (framework_extractors.py).
+- `extract_pytorch_data` (framework_extractors.py) and
+  `extract_numpyro_data` (framework_extractors.py) — shared
+  `_extract_schema_aware_data` (framework_extractors.py): schema-gated
   dispatch, `efe_history` → `expected_free_energy`
-  (framework_extractors.py:665-666), ungated schema-less fallback (nested
+  (framework_extractors.py), ungated schema-less fallback (nested
   `simulation_data` holding beliefs/actions/observations, or the execution
-  result itself, framework_extractors.py:658-663).
+  result itself, framework_extractors.py).
 
 **Private helpers**: `_normalise_current_simulation_payload`
-(framework_extractors.py:29) — canonical field mapping shared by the pymdp /
+(framework_extractors.py) — canonical field mapping shared by the pymdp /
 rxinfer / activeinference_jl / pytorch / numpyro paths; pymdp passes
 `fallback_top_level=False` because its schema stores data only in by-factor
-maps (framework_extractors.py:37-39; pinned by
+maps (framework_extractors.py; pinned by
 `tests/render/test_jax_factorized_pipeline.py`).
-`_load_current_schema_from_impl_dir` (framework_extractors.py:70) — ordered
+`_load_current_schema_from_impl_dir` (framework_extractors.py) — ordered
 impl-dir probe for a schema-stamped payload.
 
 **Maintenance contract**: `post_simulation.py` re-exports all extractor
-functions (framework_extractors import at post_simulation.py:69-78; listed in
-its `__all__` at post_simulation.py:28-35). `analysis/__init__` re-exports the
+functions (framework_extractors import at post_simulation.py; listed in
+its `__all__` at post_simulation.py). `analysis/__init__` re-exports the
 pymdp / rxinfer / activeinference_jl / jax / jax_kronecker / discopy extractors
-via its `post_simulation` import (`analysis/__init__.py:64-69`); the pytorch
+via its `post_simulation` import (`analysis/__init__.py`); the pytorch
 and numpyro extractors are importable from
 `gnn.analysis.framework_extractors` and `gnn.analysis.post_simulation`, not
 from `gnn.analysis` directly. Adding an extractor: extend
@@ -503,42 +503,42 @@ data: pymdp signals `extraction_error`; the others return empty lists.
 ### `viz_dashboard.py`
 
 **Role**: Cross-framework dashboards and comparison charts. Consumed directly
-by `visualizations.py` (viz_dashboard import at visualizations.py:24-30) and
-by `viz_plots.visualize_all_framework_outputs` (viz_plots.py:24-29).
+by `visualizations.py` (viz_dashboard import at visualizations.py) and
+by `viz_plots.visualize_all_framework_outputs` (viz_plots.py).
 
 **Public surface**:
 
 - `generate_unified_framework_dashboard(framework_data: Dict[str, Dict[str, Any]], output_dir: Path, model_name: str = "Active Inference Model") -> List[str]`
-  (viz_dashboard.py:28) — up to three artifacts under `output_dir`:
+  (viz_dashboard.py) — up to three artifacts under `output_dir`:
   `unified_belief_comparison.png` when two or more frameworks have beliefs
-  (viz_dashboard.py:106, 171), `unified_action_efe_comparison.png` when
-  actions or EFE exist (viz_dashboard.py:178, 261), and
-  `unified_entropy_comparison.png` (viz_dashboard.py:267, 312). Called from
-  processor.py:644 with `cross_framework/unified_dashboard`.
+  (viz_dashboard.py, 171), `unified_action_efe_comparison.png` when
+  actions or EFE exist (viz_dashboard.py, 261), and
+  `unified_entropy_comparison.png` (viz_dashboard.py, 312). Called from
+  processor.py with `cross_framework/unified_dashboard`.
 - `generate_cross_framework_comparison(framework_data: Dict[str, Dict[str, Any]], output_path: Path) -> str`
-  (viz_dashboard.py:320) — execution-time / steps / success-rate bars,
-  aggregated by unique framework name (viz_dashboard.py:333-403); raises
-  `ValueError` when nothing aggregated (viz_dashboard.py:375-376).
+  (viz_dashboard.py) — execution-time / steps / success-rate bars,
+  aggregated by unique framework name (viz_dashboard.py); raises
+  `ValueError` when nothing aggregated (viz_dashboard.py).
 - `generate_efe_convergence_comparison(framework_data: Dict[str, Dict[str, Any]], output_path: Path) -> List[str]`
-  (viz_dashboard.py:449) — raw + running-mean EFE overlay; returns `[]`
+  (viz_dashboard.py) — raw + running-mean EFE overlay; returns `[]`
   unless two or more frameworks provide an EFE series
-  (viz_dashboard.py:500-502).
+  (viz_dashboard.py).
 - `generate_confidence_comparison(framework_data: Dict[str, Dict[str, Any]], output_path: Path) -> List[str]`
-  (viz_dashboard.py:551) — confidence + uncertainty panels; returns `[]`
+  (viz_dashboard.py) — confidence + uncertainty panels; returns `[]`
   unless two or more frameworks have confidence data
-  (viz_dashboard.py:599-601).
+  (viz_dashboard.py).
 - `generate_framework_radar(exec_summary_path: Path, framework_data: Dict[str, Dict[str, Any]], output_path: Path) -> List[str]`
-  (viz_dashboard.py:643) — five-axis radar (Speed, Data Richness, Belief
-  Quality, Timesteps, Validation; viz_dashboard.py:737-743) built from
+  (viz_dashboard.py) — five-axis radar (Speed, Data Richness, Belief
+  Quality, Timesteps, Validation; viz_dashboard.py) built from
   `execution_summary.json` details plus collected simulation data
-  (viz_dashboard.py:671-731); returns `[]` for fewer than two frameworks
-  (viz_dashboard.py:733-734).
+  (viz_dashboard.py); returns `[]` for fewer than two frameworks
+  (viz_dashboard.py).
 
 **Maintenance contract**: the EFE/confidence/radar comparisons return `[]`
 when matplotlib is unavailable (`MATPLOTLIB_AVAILABLE` from `viz_base`,
-viz_dashboard.py:17-22); all saves go through `viz_base.safe_savefig`;
+viz_dashboard.py); all saves go through `viz_base.safe_savefig`;
 framework names normalize via `viz_schema._normalize_framework_name`
-(viz_dashboard.py:23). Re-export chain: `visualizations.py` →
+(viz_dashboard.py). Re-export chain: `visualizations.py` →
 `post_simulation.py` → `analysis/__init__`.
 
 ---

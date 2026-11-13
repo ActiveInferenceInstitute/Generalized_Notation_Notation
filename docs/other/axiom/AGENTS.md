@@ -56,9 +56,3 @@ This documentation integrates with the 25-step GNN processing pipeline:
 6. **Integration** (Steps 17-24): Output and reporting
 
 See [src/gnn/AGENTS.md](../../../src/gnn/AGENTS.md) for complete pipeline documentation.
-
----
-
-**Status**: ✅ Production Ready  
-**Compliance**: Professional documentation standards  
-**Maintenance**: Regular updates with new features

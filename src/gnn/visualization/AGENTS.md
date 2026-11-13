@@ -425,34 +425,6 @@ python src/gnn/8_visualization.py --verbose --target-dir input/gnn_files
 
 ## Version History
 
-### Documentation update (2026-09-04)
-
-**Refactoring / composability**:
-- Decomposed `core/process.py` into pure, reusable helpers: `load_cached_artifacts`,
-  `render_matrix_artifacts`, `write_viz_manifest`, `write_sampling_note`; sampling moved
-  to pure `core/sampling.py::sample_parsed_data`; matrix collection to pure
-  `matrix/extract.py::collect_visualization_matrices`.
-- `theme.py` is now the single source of truth for node colors and edge styles —
-  removed the private copies in `graph/network_visualizations.py` and
-  `analysis/combined_analysis.py`. This also fixes a latent rendering gap:
-  `state_observation`, `state_transition_matrix` and `policy_action` edges now use
-  their themed styles instead of the gray `generic_causal` fallback.
-- Removed ~230 lines of dead private methods from `visualizer.py`; removed dead
-  `edge_attrs` construction and an O(variables × edges) type rescan in
-  `graph/network_visualizations.py`.
-- `process_visualization` now accepts an injected `logger` (keyword-only) instead of
-  silently discarding the pipeline-provided one.
-- `mcp.get_visualization_options_mcp` no longer fabricates options with
-  `success: True` on error — it fails with `success: False` and logs.
-
-**New functionality**:
-- `visualization.backends.backend_status()` — one-call backend availability report.
-- `visualization.graph.stats.compute_connection_statistics()` — pure degree statistics.
-- Package root now re-exports the full documented public API (previously only
-  reachable via subpackage paths), including `load_visualization_model`, `GNNParser`,
-  `generate_network_visualizations`, `generate_combined_analysis`, and the new pure
-  helpers.
-
 ### Current Version: [pyproject.toml](../../../pyproject.toml) (canonical)
 
 **Features**:
