@@ -348,7 +348,18 @@ constraint-dependencies = [
     "python-multipart>=0.0.27",
     "ray>=2.56.0",
     "setuptools>=83.0.0",
-    "soupsieve>=2.8.4",
+    # soupsieve is reached transitively through nbconvert -> beautifulsoup4.
+    # soupsieve 3.0.2+ (and 4.x) requires Python >=3.11.5, so an unmarked
+    # floor let the resolver hold one soupsieve version for every interpreter:
+    # >=3.11.5 took 4.0 while 3.11.0-3.11.4 had no candidate, and uv
+    # backtracked beautifulsoup4 to its 2018 4.6.3 release (no soupsieve
+    # dependency at all) for those interpreters. beautifulsoup4 4.15.0 needs
+    # only soupsieve>=1.6.1, so split the branch by marker: the modern
+    # interpreter keeps the 4.x bump, and 3.11.0-3.11.4 stays on soupsieve 2.10
+    # (2026 release, >=3.10). soupsieve 3.0/3.0.1 are the only 3.x releases
+    # that admit <3.11.5 and both are yanked on PyPI.
+    "soupsieve>=4; python_full_version >= '3.11.5'",
+    "soupsieve>=2.8.4,<4; python_full_version < '3.11.5'",
     "starlette>=1.0.1",
     "tornado>=6.5.9",  # GHSA-c2m8-h5v5-343r, GHSA-chx6-46f5-w4vp, GHSA-3hv7-mjh2-fv65
     "virtualenv>=21.14.13",  # GHSA-cx6f-vjhg-g3cc: unescaped --prompt in the bash activator
