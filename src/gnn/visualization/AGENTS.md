@@ -63,6 +63,16 @@ processing failures.
 is the shared helper used by Step 8. It sorts paths deterministically and uses
 recursive matching only when the `recursive` flag is true.
 
+**Processing stages**: [core/process.py](core/process.py) performs the batch in
+pure helpers, each usable on its own — `load_cached_artifacts` (reuse PNGs
+fresher than the source and delete stale ones), `render_matrix_artifacts`
+(2D heatmaps plus rank-3 tensor panels, recording every failed figure),
+`write_viz_manifest` (`{model}_viz_manifest.json`, including recorded figure
+failures), and `write_sampling_note` (`{model}_sampling_note.txt` sidecar).
+Downsampling lives in [core/sampling.py](core/sampling.py) `sample_parsed_data`
+and matrix collection in [matrix/extract.py](matrix/extract.py)
+`collect_visualization_matrices`.
+
 **Example**:
 ```python
 from gnn.visualization import process_visualization
@@ -128,7 +138,11 @@ package root as `compute_connection_statistics`.
 - `theme.py` — **Single source of truth** for the color palette (node +
   generative-model), edge styles, and figure defaults; `graph` and `analysis`
   render from `theme.get_edge_style` / `theme.get_var_type_color` / theme
-  constants rather than private copies
+  constants rather than private copies. Every connection type
+  `graph/network_visualizations.py` derives has its own `EDGE_STYLES` entry —
+  including `state_observation`, `state_transition_matrix`, and
+  `policy_action` — so `generic_causal` is reached only for genuinely unknown
+  types
 - `compat/viz_compat.py` — Safe matplotlib/numpy/seaborn imports + `viz_var_type()` helper
 
 ### Required Dependencies
@@ -292,6 +306,12 @@ Registration lives in [`mcp.py`](mcp.py) via `register_tools(mcp_instance)` (GNN
 | `get_visualization_options` | `get_visualization_options_mcp` | Return `get_visualization_options()` dict |
 | `list_visualization_artifacts` | `list_visualization_artifacts_mcp` | List PNG/SVG/HTML/PDF under an output dir |
 | `get_visualization_module_info` | `get_visualization_module_info_mcp` | Return `get_module_info()` metadata |
+
+Failures are reported, never fabricated: `get_visualization_options_mcp` runs
+through the shared `run_tool_envelope`, which logs and returns
+`{"success": False, "error": ...}` on an exception, and
+`list_visualization_artifacts_mcp` returns `success: False` for a missing
+directory.
 
 ---
 

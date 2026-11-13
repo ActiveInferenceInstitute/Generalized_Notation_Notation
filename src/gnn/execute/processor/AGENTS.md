@@ -129,24 +129,24 @@ package facade:
 
 Test files that import this package (verified by grep at repo tip):
 
-| Test | Import cite | Imports |
-| --- | --- | --- |
-| `tests/execute/test_execute_benchmark_samples.py` | `:9` | `_aggregate_benchmark_samples` |
-| `tests/execute/test_execute_envelope_factories.py` | `:17-20` | `_base_execution_envelope`, `_make_distributed_dispatch_failure_result`, `_make_local_worker_pool_failure_result` |
-| `tests/execute/test_execute_fallback_receipts.py` | `:32` | `_make_skipped_result` |
-| `tests/execute/test_execute_outcome_classification.py` | `:19` | `_classify_execute_outcome` |
-| `tests/execute/test_execute_overall.py` | `:36,38-41` | facade module, `collect_execution_outputs`, `determine_script_framework`, `execute_single_script` |
-| `tests/execute/test_execute_script_safely.py` | `:111,194,302-304` | `process_execute`, facade `ProcessPoolExecutor` patch, `ScriptExecutionContext`, `_build_script_execution_command` |
-| `tests/execute/test_execute_slim_detail.py` | `:9` | `_slim_execution_detail`, `_summarize_collected_outputs` |
-| `tests/execute/test_execute_stan.py` | `:50` | `_load_render_summary_contract` |
-| `tests/execute/test_receipt_reliability.py` | `:159` | `_write_execution_summaries` |
-| `tests/execute/test_resource_measurement.py` | `:30` | `_write_execution_summaries` |
-| `tests/execute/test_execute_bnlearn.py` | `:21` | facade module |
-| `tests/execute/test_julia_env_headless.py` | `:21` | facade module |
-| `tests/execute/test_ngclearn_runner.py` | `:26` | facade module |
-| `tests/execute/test_discrete_models_pymdp.py` | `:312` | `process_execute` |
-| `tests/execute/test_pymdp_contracts.py` | `:197` | `process_execute` |
-| `tests/render/test_rxinfer_multiagent_contract.py` | `:18-21` | `_load_rxinfer_execution_metadata_from_script`, `execute_single_script` |
+| Test | Imports |
+| --- | --- |
+| `tests/execute/test_execute_benchmark_samples.py` | `_aggregate_benchmark_samples` |
+| `tests/execute/test_execute_envelope_factories.py` | `_base_execution_envelope`, `_make_distributed_dispatch_failure_result`, `_make_local_worker_pool_failure_result` |
+| `tests/execute/test_execute_fallback_receipts.py` | `_make_skipped_result` |
+| `tests/execute/test_execute_outcome_classification.py` | `_classify_execute_outcome` |
+| `tests/execute/test_execute_overall.py` | facade module, `collect_execution_outputs`, `determine_script_framework`, `execute_single_script` |
+| `tests/execute/test_execute_script_safely.py` | `process_execute`, facade `ProcessPoolExecutor` patch, `ScriptExecutionContext`, `_build_script_execution_command` |
+| `tests/execute/test_execute_slim_detail.py` | `_slim_execution_detail`, `_summarize_collected_outputs` |
+| `tests/execute/test_execute_stan.py` | `_load_render_summary_contract` |
+| `tests/execute/test_receipt_reliability.py` | `_write_execution_summaries` |
+| `tests/execute/test_resource_measurement.py` | `_write_execution_summaries` |
+| `tests/execute/test_execute_bnlearn.py` | facade module |
+| `tests/execute/test_julia_env_headless.py` | facade module |
+| `tests/execute/test_ngclearn_runner.py` | facade module |
+| `tests/execute/test_discrete_models_pymdp.py` | `process_execute` |
+| `tests/execute/test_pymdp_contracts.py` | `process_execute` |
+| `tests/render/test_rxinfer_multiagent_contract.py` | `_load_rxinfer_execution_metadata_from_script`, `execute_single_script` |
 
 Run the facade-contract and seam coverage with:
 

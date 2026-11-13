@@ -368,11 +368,10 @@ full step pipeline and writes `analysis_results.json` (processor.py) and
   (processor.py). Adding a framework requires a row here plus
   `analysis/<framework>/analyzer.py`; bnlearn is rendered/executed but has no
   analyzer and stays absent.
-- Cross-module calls resolve through re-exports: `analyze_execution_results`
-  (processor.py, called at processor.py),
-  `generate_unified_framework_dashboard` (processor.py, called at
-  processor.py), and `visualize_all_framework_outputs` (processor.py,
-  called at processor.py) come from `post_simulation`;
+- Cross-module calls resolve through re-exports: `analyze_execution_results`,
+  `generate_unified_framework_dashboard`, and `visualize_all_framework_outputs`
+  come from `post_simulation` and are imported inside the calling function in
+  processor.py;
   `_current_schema_visualization_data` (processor.py) from
   `visualizations` (re-exported from `viz_schema`);
   `write_gridworld_analysis_manifest` (processor.py) from
@@ -392,10 +391,10 @@ full step pipeline and writes `analysis_results.json` (processor.py) and
   subtrees, viz_plots.py) and `*simulation_results.json`
   (viz_plots.py), merges entries per `(framework, model)` key, and
   schema-gates pymdp/rxinfer/activeinference_jl against
-  `CURRENT_VISUALIZATION_SCHEMAS` (viz_plots.py, 151-156). Writes:
+  `CURRENT_VISUALIZATION_SCHEMAS` (viz_plots.py). Writes:
   - `{model}_{framework}_free_energy.png`, `{model}_{framework}_vfe_vs_efe.png`,
     `{model}_{framework}_observations.png` under
-    `output_dir.parent / <framework>` (viz_plots.py, 340-389);
+    `output_dir.parent / <framework>` (viz_plots.py);
   - belief heatmaps and action analysis are deliberately NOT produced here —
     the per-framework analyzers already emit richer versions
     (viz_plots.py); the exported builders remain for direct reuse;
@@ -511,9 +510,9 @@ by `viz_plots.visualize_all_framework_outputs` (viz_plots.py).
 - `generate_unified_framework_dashboard(framework_data: Dict[str, Dict[str, Any]], output_dir: Path, model_name: str = "Active Inference Model") -> List[str]`
   (viz_dashboard.py) — up to three artifacts under `output_dir`:
   `unified_belief_comparison.png` when two or more frameworks have beliefs
-  (viz_dashboard.py, 171), `unified_action_efe_comparison.png` when
-  actions or EFE exist (viz_dashboard.py, 261), and
-  `unified_entropy_comparison.png` (viz_dashboard.py, 312). Called from
+  (viz_dashboard.py), `unified_action_efe_comparison.png` when
+  actions or EFE exist (viz_dashboard.py), and
+  `unified_entropy_comparison.png` (viz_dashboard.py). Called from
   processor.py with `cross_framework/unified_dashboard`.
 - `generate_cross_framework_comparison(framework_data: Dict[str, Dict[str, Any]], output_path: Path) -> str`
   (viz_dashboard.py) — execution-time / steps / success-rate bars,

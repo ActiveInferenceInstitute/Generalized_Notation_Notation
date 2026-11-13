@@ -161,25 +161,25 @@ This package was extracted in-place from the former monolithic
 
 Test files that import this package (verified by grep at repo tip):
 
-| Test | Import cite | Imports |
-| --- | --- | --- |
-| `tests/render/test_pomdp_renderer_regressions.py` | `:11` | `POMDPRenderProcessor` |
-| `tests/render/test_composed_model_kinds.py` | `:27` | `POMDPRenderProcessor`, `pomdp_to_gnn_spec` |
-| `tests/render/test_continuous_renderers.py` | `:29` | `pomdp_to_gnn_spec` |
-| `tests/render/test_jax_factorized_pipeline.py` | `:38` | `_factor_action_counts`, `_is_kronecker_factorized_spec`, `pomdp_to_gnn_spec` |
-| `tests/render/test_structural_model_kind.py` | `:37` | `POMDPRenderProcessor`, `pomdp_to_gnn_spec` |
-| `tests/render/test_rxinfer_model_strategies.py` | `:28` | `pomdp_to_gnn_spec` |
-| `tests/render/test_rxinfer_viz_log_contract.py` | `:24` | `POMDPRenderProcessor` |
-| `tests/render/test_rxinfer_efe_correctness.py` | `:23` | `POMDPRenderProcessor` |
-| `tests/render/test_rxinfer_multiagent_contract.py` | `:23` | `POMDPRenderProcessor` |
-| `tests/render/test_stigmergic_multi_agent.py` | `:45` | `pomdp_to_gnn_spec` |
-| `tests/render/test_ngclearn_renderer.py` | `:28` | `POMDPRenderProcessor`, `pomdp_to_gnn_spec` |
-| `tests/render/test_render_contracts.py` | `:296` | `POMDPRenderProcessor` |
-| `tests/analysis/test_rxinfer_cross_framework.py` | `:135` | `pomdp_to_gnn_spec` |
-| `tests/gnn/test_pomdp_extractor_continuous.py` | `:10` | `POMDPRenderProcessor`, `pomdp_to_gnn_spec` |
-| `tests/execute/test_discrete_models_pymdp.py` | `:59` | `POMDPRenderProcessor` |
-| `tests/execute/test_pymdp_contracts.py` | `:39` | `POMDPRenderProcessor` |
-| `tests/pipeline/test_pomdp_gridworld_cross_framework.py` | `:19` | `POMDPRenderProcessor` |
+| Test | Imports |
+| --- | --- |
+| `tests/render/test_pomdp_renderer_regressions.py` | `POMDPRenderProcessor` |
+| `tests/render/test_composed_model_kinds.py` | `POMDPRenderProcessor`, `pomdp_to_gnn_spec` |
+| `tests/render/test_continuous_renderers.py` | `pomdp_to_gnn_spec` |
+| `tests/render/test_jax_factorized_pipeline.py` | `_factor_action_counts`, `_is_kronecker_factorized_spec`, `pomdp_to_gnn_spec` |
+| `tests/render/test_structural_model_kind.py` | `POMDPRenderProcessor`, `pomdp_to_gnn_spec` |
+| `tests/render/test_rxinfer_model_strategies.py` | `pomdp_to_gnn_spec` |
+| `tests/render/test_rxinfer_viz_log_contract.py` | `POMDPRenderProcessor` |
+| `tests/render/test_rxinfer_efe_correctness.py` | `POMDPRenderProcessor` |
+| `tests/render/test_rxinfer_multiagent_contract.py` | `POMDPRenderProcessor` |
+| `tests/render/test_stigmergic_multi_agent.py` | `pomdp_to_gnn_spec` |
+| `tests/render/test_ngclearn_renderer.py` | `POMDPRenderProcessor`, `pomdp_to_gnn_spec` |
+| `tests/render/test_render_contracts.py` | `POMDPRenderProcessor` |
+| `tests/analysis/test_rxinfer_cross_framework.py` | `pomdp_to_gnn_spec` |
+| `tests/gnn/test_pomdp_extractor_continuous.py` | `POMDPRenderProcessor`, `pomdp_to_gnn_spec` |
+| `tests/execute/test_discrete_models_pymdp.py` | `POMDPRenderProcessor` |
+| `tests/execute/test_pymdp_contracts.py` | `POMDPRenderProcessor` |
+| `tests/pipeline/test_pomdp_gridworld_cross_framework.py` | `POMDPRenderProcessor` |
 
 Run the regression and facade-contract coverage with:
 

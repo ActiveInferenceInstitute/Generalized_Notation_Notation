@@ -121,6 +121,13 @@ success = process_advanced_viz(
 - Model-summary dashboard artifacts when requested and `interactive=True`
 - Multi-view reports assembled from extracted model data
 - HTML-based interactive reports
+- The dashboard HTML footer records the generation run: `dashboard.py` imports
+  `datetime` and renders `Generated on <YYYY-MM-DD HH:MM:SS> | GNN Dashboard
+  System` from an f-string chunk. That same chunk carries the tab-switching
+  `<script>`, so its `{{`/`}}` escapes must stay in an f-string and render as
+  single braces. `TestDashboardTimestampRenders` in
+  `tests/advanced_visualization/test_advanced_visualization_public_api_refactor.py`
+  pins both the rendered timestamp and the escaping.
 
 ### D2 Diagram Generation
 
