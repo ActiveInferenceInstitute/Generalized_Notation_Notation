@@ -69,6 +69,56 @@ in `VALIDATOR_COMMANDS` (capability contracts, docs audit, and the
 `tests/pipeline/test_autonomous_contract.py` pytest suite). Entry point:
 `uv run --extra dev python src/gnn/main.py --autonomous`.
 
+### Shared Building Blocks
+
+Cross-cutting behaviour is implemented once and delegated to; these are the
+shared owners new code must reuse instead of re-implementing.
+
+- **Atomic writes** — `pipeline/_io.py` owns the mkstemp +
+  `os.replace` recipe as `atomic_write_text` / `atomic_write_bytes` (a unique
+  temporary file in the destination directory, then replace, so the rename
+  cannot cross a filesystem boundary). Stream manifests
+  and traces (`durable_streams.py`), run-session checkpoints
+  (`run_session.py`), the run-manifest index write (`run_manifest.py`), the
+  history index (`hasher.index_run`), run-context snapshots
+  (`run_context.py`), and finalization (`finalization.py`) all delegate to it,
+  so the history index write is atomic too.
+- **Single version source** — `pipeline/_version.py` re-exports
+  `gnn.__version__` and exists so leaf modules can read the version without an
+  import cycle. `pipeline/__init__.py`, `execution.get_pipeline_info()`, and
+  `execution.create_pipeline_config()` report that value rather than a
+  hardcoded string.
+- **Shared family selection** —
+  `model_family_acceptance.select_model_families()` is the single filter rule
+  for accepting model families; `semantic_fidelity` and `session_acceptance`
+  delegate to it instead of re-implementing the match.
+- **Cycle detection** — `dag.find_circular_dependencies()` is the shared
+  Kahn-peel detector; the `validate_pipeline_dependencies` MCP tool reports its
+  result as the tool's `circular_dependencies` field.
+- **Registry-derived counts** — `dag.resolve_execution_order()` defaults
+  `total_steps` to `len(step_registry.STEPS)`; `get_pipeline_status()` and
+  `get_pipeline_info()` count steps from the registry-derived
+  `_STEP_SCRIPT_BY_NUM`, so no module hardcodes 25.
+- **Path constants** — `config.DEFAULT_TARGET_DIR` (`"input/gnn_files"`) and
+  `config.DEFAULT_OUTPUT_DIR` (`"output"`) are the canonical defaults;
+  `execution` and the package defaults read them instead of repeating the
+  literals.
+- **Status set** — `execution._SUCCESS_STATUSES` (frozenset of `SUCCESS`,
+  `SUCCESS_WITH_WARNINGS`, `SKIPPED`) is the one success predicate.
+- **Step-list normalization** — `execution.resolve_step_numbers()` is the one
+  parser for step identifiers, including the comma-separated `--only-steps`
+  form (`"3,5"`).
+- **Preflight** — `preflight.validate_config()` validates
+  `pipeline.skip_steps` with the canonical `read_skip_steps` parser and
+  reports an error with a fix hint, so bad values fail preflight instead of
+  mid-run.
+- **Package surface** — `pipeline/__init__.py` declares a typed, complete
+  `__all__` that includes `resolve_step_numbers`, `get_module_info`,
+  `validate_pipeline_step`, `discover_pipeline_steps`, `DEFAULT_TARGET_DIR`,
+  and `DEFAULT_OUTPUT_DIR`.
+- **Step status type** — `pipeline.schemas.StepStatus` is the status literal;
+  the former `PipelineContext` carrier is gone and has no replacement.
+
 ---
 
 ## API Reference
