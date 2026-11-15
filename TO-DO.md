@@ -1,6 +1,6 @@
 # TO-DO — GNN next steps
 
-Updated 2026-11-12.
+Updated 2026-11-15.
 Current software version is owned by [pyproject.toml](pyproject.toml).
 [GitHub release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases)
 own exact tags, accepted sources, checks and public artifacts. Version metadata
@@ -11,10 +11,12 @@ history. Historical failures retain their original source epochs.
 
 ## Scope and delivery order
 
-There are **seven remaining workstreams: two externally blocked minor items and five major extensions**.
+The scientific and release roadmap has **seven remaining workstreams: two
+externally blocked minor items and five major extensions**.
 The maintainability residuals are complete; their evidence is recorded in
-[CHANGELOG.md](CHANGELOG.md). They did not create an eighth workstream or
-reorder the seven.
+[CHANGELOG.md](CHANGELOG.md). The [package improvements](#package-improvements)
+below have their own acceptance criteria and follow the scientific prerequisites
+where they touch those workstreams.
 The bounded minor/medium campaign is complete at its independently accepted scope.
 Coverage and installed-platform evidence are recorded in their maintained guides.
 Accepted bounded M1/M2/M3/M4/M5/M6/M7/M8/S5/S6 implementation is recorded in the
@@ -272,6 +274,134 @@ The lists below own outstanding work; this table owns target-version sequencing.
 
 The bounded maintainability residuals are complete; their evidence is recorded
 in [CHANGELOG.md](CHANGELOG.md).
+
+## Package improvements
+
+The November 15 review used GNN main at `d18d8095d2f1`. Its static Python
+inventory covered 781 files under `src/gnn` and 219 distinct import edges
+between 50 groups. Groups combine numbered entry points and distinguish
+top-level packages and support modules. The count includes imports inside
+functions and optional branches and excludes type-checking-only imports.
+Read the imports together with the
+[step registry](src/gnn/pipeline/step_registry.py),
+[framework registry](src/gnn/render/framework_registry.py),
+[MCP discovery](src/gnn/mcp/discovery.py) and
+[dependency declarations](pyproject.toml) for string-based imports, subprocess
+toolchains, package extras and artifact dependencies.
+
+| Boundary | Packages and contracts to exercise |
+| --- | --- |
+| Source, notation and compliance | `parsers`, `grammars`, `types`, `schema`, `schemas`, `schema_validator`, `type_systems`, `type_checker`, `validation`, `ontology`, `formal_specs`, `extract`, `processing`, `model_registry`, `gnn_examples` and the [importer reader](src/gnn/importers.py). |
+| Scheduling and run ownership | `pipeline`, `multimodel`, `template`, `setup`, `testing`, `security` and `utils` own selection, environment, policy, execution support or custody across the numbered steps. |
+| Rendering, execution and interchange | `render`, `execute` and `rxinfer_interchange` connect to PyMDP/JAX, the Python scientific extras, Julia and CmdStan runtimes, and the [FEP_Formal and GEO_INFER paired contracts](docs/development/fep_lean_paired_revision.md). The [framework list](src/gnn/frameworks.py) owns backend names, including the execution-only Lean bridge. |
+| Results and presentation | `analysis`, `integration`, `report`, `intelligent_analysis`, `visualization`, `advanced_visualization`, `audio`, `llm`, `ml_integration`, `research`, `website`, `doc`, `documentation` and `manuscript` have distinct result, enrichment, documentation or publication responsibilities. |
+| Entry points and editor surfaces | `cli`, `api`, `mcp`, `lsp` and `gui` expose different transports over shared model and pipeline behavior. Use the [interoperability contracts](docs/development/interop_api.md) to identify installed import paths and response owners. |
+| Public downstreams | The [importer registry](docs/downstream/importers.json) and [workflow roster](docs/workflows/gnn-fep.md) track pins, specs and conformance. The [PyMDP parser bridge](https://github.com/ActiveInferenceInstitute/pymdp/blob/1cccd9e159b59377c9a8dba6c0c954fb2efb2b4e/pymdp/gnn.py), [COGANT pipeline bridge](https://github.com/ActiveInferenceInstitute/COGANT/blob/5a3833e08d916c9a5040f754fdf4de4f4c444331/cogant/py/cogant/gnn/upstream_bridge/pipeline.py) and [Active_Fedference backend](https://github.com/ActiveInferenceInstitute/Active_Fedference/blob/2089dd3cf3a4d9c0881256da5c9df4f8c280c240/src/fedference/gnn/backend.py) also exercise GNN behavior. Record the actual source, wheel, subprocess or interchange boundary for each consumer. |
+
+### Minor package improvements
+
+- [ ] **Repair the LSP launch guide (P2).** The [LSP README](src/gnn/lsp/README.md)
+  advertises `python -m gnn.lsp` although the package has no `__main__.py`.
+  Document the installed `gnn lsp` command and the pygls and fallback paths.
+  Accept an initialize/shutdown exchange in a clean wheel environment for
+  each documented mode.
+- [ ] **Close the installed cpomdp version mismatch before extending search (P1,
+  E3).** Reconcile the [generated runner guard](src/gnn/render/cpomdp/script_template.py)
+  and the lock, documentation and test expectations already identified under E3.
+  Accept a render-to-execute smoke test with the declared extra and a clear refusal
+  for an incompatible runtime. Keep the native parity witnesses under E3.
+- [ ] **Keep public importer evidence accurate (P2).** Add revision and evidence
+  categories for installed imports, source pins, CLI invocation, paired
+  interchange, conformance and references to the
+  [existing registry check](scripts/check_importer_registry.py). The review found
+  19 of 41 public rows with a v5.1.0 file pin, one with v5.1.0 content custody,
+  and 21 with v5.0.3 pins. Refresh the stale `active_fractal_rabbit` and
+  `COGANT` rows and the `ActiveInferenceJournal` workflow path first. Read each
+  public pin, pointer and workflow at one exact default-branch commit. Update
+  the prose and JSON together, retaining historical compatibility receipts.
+  Keep live freshness report-only and record unavailable evidence explicitly.
+- [ ] **Honor the MCP validation options (P2).** The
+  [root MCP validation tool](src/gnn/mcp/gnn_root.py) advertises a format hint
+  and accepts a validation level. Define how explicit hints interact with
+  format detection and return a stable error for an unknown level. Exercise
+  Markdown, JSON and YAML with matching and conflicting hints through the tool.
+
+### Medium package improvements
+
+- [ ] **Carry model identity through standalone parsing and export (P1).**
+  [Step 3](src/gnn/processing/multi_format_processor.py) writes by stem and
+  [Step 7](src/gnn/export/processor.py) groups carrier entries by basename.
+  Reuse the collision-safe approach in
+  [RunContext](src/gnn/pipeline/run_context.py) for standalone Steps 3, 7 and 8.
+  Accept two nested input files with the same stem, distinct artifacts with
+  exact source identity, a preserved unique-stem path and an end-to-end
+  [current-run regression](tests/pipeline/test_current_run_contract.py).
+- [ ] **Make validation depth consistent and observable (P1).**
+  [The schema validator](src/gnn/schema/parser.py) runs Draft 2020-12 checks
+  when `jsonschema` imports and checks only required keys otherwise.
+  [The parser system](src/gnn/parsers/system.py) also handles strict validation
+  differently for files and strings. Define the levels for parse, semantic
+  validation and compliance. Declare the full schema dependency or expose
+  the reduced mode explicitly. Verify an invalid field type in an installed
+  wheel and run the same invalid model through the file and string paths.
+  Preserve structured errors and distinguish any intentional compatibility
+  defaults across Step 3 and the importer reader.
+- [ ] **Move shared operations below their transport adapters (P2).**
+  [HTTP parity](src/gnn/api/parity.py) and [render MCP](src/gnn/render/mcp.py)
+  import CLI operations, while the CLI starts HTTP factories. Move one shared
+  operation at a time into its owning model or pipeline service, retaining CLI
+  exits, HTTP envelopes, MCP errors and path/custody checks. Extend the
+  existing import-linter contracts and [parity tests](tests/api/test_api_parity.py).
+- [ ] **Qualify the wheel and optional runtime profiles (P1).** Expand
+  [dependency hygiene](scripts/check_dep_hygiene.py) and the
+  [installed-platform lane](.github/workflows/installed-platforms.yml) to probe
+  the base wheel, each advertised runtime profile, and missing-extra behavior.
+  Record the actual Python, distributions, entry points and backend versions.
+  Review direct use of Pydantic and Rich in core modules and Starlette in the
+  API against the current transitive dependency declarations.
+  Include the current PyMDP/JAX interpreter splits, normalized `all` extra
+  membership and a downstream type-check of the documented public imports
+  before promising an installed `py.typed` contract.
+- [ ] **Cut over importers and remove private backend reads one consumer at a
+  time (P1).** Use the [canonical released reader](src/gnn/importers.py) on
+  the member's own pin and specs before retiring local conformance code.
+  Extend the existing [PyMDP simulation receipt](src/gnn/execute/pymdp/simulation.py)
+  with measured dtype, device and agent identity from the same execution.
+  Migrate Active_Fedference from `_build_pymdp_agent` after verifying existing
+  batch and horizon fields and comparing producer and consumer receipts at
+  exact pins. Exercise the PyMDP parser bridge and COGANT's subprocess
+  contract as independent compatibility checks.
+
+### Major package improvements
+
+- [ ] **Version the model and result handoffs across the pipeline (P1).**
+  After standalone model identity is fixed, define a typed Step 3 parsed-model
+  contract for validation, export, visualization and render consumers.
+  Carry the same identity through execution into
+  [integration collection](src/gnn/integration/meta_analysis/collector.py),
+  analysis and report. Reuse
+  [artifact ownership](src/gnn/pipeline/artifact_ownership.py) and the execution
+  [summary/detail formats](src/gnn/execute/processor/summary.py). Accept
+  migration readers, old and new fixtures, rejection of stale or mixed-run
+  artifacts, and output parity for normal runs, replay and resume. Test the
+  resulting machine-readable contract with COGANT's current summary reader,
+  which uses output modification time to identify fresh results.
+- [ ] **Establish package dependency direction and a smaller import surface
+  (P2).** Map required and optional dependencies to their first use before
+  changing packaging. Start with the reciprocal `parsers` and `types`
+  imports and the `pipeline` and `report` dependencies. Move shared contracts
+  toward their owners, preserve re-export identity and existing installed
+  entry points, and require fresh-process import checks for parser-only,
+  CLI, API and scientific consumers. Change extras or distribution boundaries
+  only after the installed profiles and downstream probes pass.
+- [ ] **Share versioned benchmark evidence across projects (P2).** Extend the
+  [research contracts](docs/development/interop_research.md) through one
+  GNN producer and one independent public consumer first. Record exact
+  producer, consumer, model/fixture digest, axes, seed, units, toolchain and
+  unsupported outcomes. Validate each adapter against independently computed
+  expectations and preserve the original results. Bind any changed FEP or GEO
+  owner through the existing paired-revision procedure and keep E4's native
+  numerical acceptance distinct.
 
 ## Verification and execution rules
 
