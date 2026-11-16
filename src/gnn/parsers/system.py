@@ -136,7 +136,8 @@ class GNNParsingSystem:
         Initialize the parsing system.
 
         Args:
-            strict_validation: Whether to perform strict validation
+            strict_validation: Attach internal model validation diagnostics
+                to successful file and string parses.
         """
         self.strict_validation = strict_validation
         self.parsers: Dict[GNNFormat, GNNParser] = {}
@@ -176,7 +177,7 @@ class GNNParsingSystem:
             format_hint: Optional format hint
 
         Returns:
-            ParseResult containing the parsed model
+            ParseResult with the parse outcome and any model validation diagnostics.
         """
         file_path = Path(file_path)
 
@@ -201,6 +202,7 @@ class GNNParsingSystem:
             result = parser.parse_string(content)
         result.model.source_format = format_hint
         result.source_file = str(file_path)
+        self._record_model_validation(result, format_hint)
         return result
 
     def parse_string(self, content: str, format: GNNFormat) -> ParseResult:
@@ -212,7 +214,7 @@ class GNNParsingSystem:
             format: Format of the content
 
         Returns:
-            ParseResult containing the parsed model
+            ParseResult with the parse outcome and any model validation diagnostics.
         """
         if format not in self.parsers:
             raise ValueError(f"Unsupported format: {format}")
@@ -223,17 +225,45 @@ class GNNParsingSystem:
             # Parse the content using the parser's string API
             result = parser.parse_string(content)
 
-            # Validate if strict validation is enabled
-            if self.strict_validation:
-                validation_result = self.validator.validate(result.model)
-                if not validation_result.is_valid:
-                    logger.warning(f"Validation warnings: {validation_result.warnings}")
-
-            return result
-
         except Exception as e:
             logger.error(f"Parsing failed for format {format}: {e}")
             raise ParseError(f"Failed to parse {format} content: {e}") from e
+
+        self._record_model_validation(result, format)
+        return result
+
+    def _record_model_validation(self, result: ParseResult, format: GNNFormat) -> None:
+        """Attach semantic checks without changing the parse outcome."""
+        if not self.strict_validation or not result.success or result.model is None:
+            return
+
+        from gnn.types.definitions import ValidationLevel, ValidationResult
+
+        report = ValidationResult(
+            is_valid=False,
+            validation_level=ValidationLevel.STRICT,
+            format_tested=format.value,
+            metadata={"available": True},
+        )
+        try:
+            validation = self.validator.validate(result.model)
+        except (
+            AttributeError,
+            LookupError,
+            RecursionError,
+            TypeError,
+            ValueError,
+        ) as exc:
+            report.metadata["available"] = False
+            report.errors.append(f"Internal model validation unavailable: {exc}")
+        else:
+            report.is_valid = validation.is_valid
+            report.errors = [str(issue) for issue in validation.errors]
+            report.warnings = [str(issue) for issue in validation.warnings]
+        result.validation_result = report
+
+        if report.errors:
+            logger.warning("Internal model validation: %s", report.errors)
 
     def convert(
         self,

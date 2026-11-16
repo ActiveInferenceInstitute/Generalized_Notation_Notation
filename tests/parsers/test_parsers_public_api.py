@@ -72,3 +72,48 @@ class TestMarkdownParsing:
         assert "Sections: 3" in outline
         for section in ("ModelName", "StateSpaceBlock", "Connections"):
             assert f"- {section}" in outline
+
+
+def test_model_validation_diagnostics_match_file_and_string(tmp_path: Path) -> None:
+    from gnn.parsers import GNNFormat, GNNParsingSystem
+    from gnn.types import ValidationLevel
+
+    content = '{"model_name": ""}'
+    source = tmp_path / "model.json"
+    source.write_text(content, encoding="utf-8")
+    parser = GNNParsingSystem()
+    from_file = parser.parse_file(source)
+    from_string = parser.parse_string(content, GNNFormat.JSON)
+
+    assert from_file.success and from_string.success
+    report = from_file.validation_result
+    assert report is not None and not report.is_valid
+    assert report.validation_level is ValidationLevel.STRICT
+    assert report.metadata["available"] is True
+    assert any("Model name is required" in error for error in report.errors)
+    assert from_string.validation_result == report
+
+    without_validation = GNNParsingSystem(strict_validation=False)
+    assert without_validation.parse_file(source).validation_result is None
+    assert (
+        without_validation.parse_string(content, GNNFormat.JSON).validation_result
+        is None
+    )
+
+
+def test_model_validation_unavailable_preserves_parse(tmp_path: Path) -> None:
+    from gnn.parsers import GNNFormat, GNNParsingSystem
+
+    content = '{"model_name": 1}'
+    source = tmp_path / "model.json"
+    source.write_text(content, encoding="utf-8")
+    parser = GNNParsingSystem()
+    from_file = parser.parse_file(source)
+    from_string = parser.parse_string(content, GNNFormat.JSON)
+
+    assert from_file.success and from_string.success
+    report = from_file.validation_result
+    assert report is not None and not report.is_valid
+    assert report.metadata["available"] is False
+    assert report.errors[0].startswith("Internal model validation unavailable")
+    assert from_string.validation_result == report

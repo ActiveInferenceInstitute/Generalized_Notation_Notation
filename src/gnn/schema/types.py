@@ -1,7 +1,14 @@
 """Structured declarations and diagnostics for the lightweight schema parser."""
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Literal, NamedTuple, Optional
+
+
+class GNNObjectValidation(NamedTuple):
+    """Validation errors and the checks that produced them."""
+
+    mode: Literal["draft-2020-12", "required-keys"]
+    errors: list[str]
 
 
 @dataclass
