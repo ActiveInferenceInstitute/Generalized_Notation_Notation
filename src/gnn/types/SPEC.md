@@ -4,13 +4,12 @@
 Single authoritative home for the shared dataclass types used across the GNN pipeline — the parsed-document model plus validation and round-trip results — kept dependency-light so any consumer can import it safely.
 
 ## Components
-- `definitions.py` - `ValidationLevel` (BASIC, STANDARD, STRICT, RESEARCH, ROUND_TRIP), `GNNSyntaxError` (line/column context plus `format_message()`), `ValidationResult` (round-trip aggregation with success-rate helper), `GNNVariable` / `GNNConnection` / `ParsedGNN` (the parsed-document model), `ParseResult` (model plus errors and warnings), `RoundTripResult` (per-format pair outcome), `ComprehensiveTestReport` (format-matrix keyed test report)
-- `__init__.py` - Public re-export surface (`__all__`, eleven names); runtime re-exports `GNNFormat` / `GNNInternalRepresentation` from `gnn.parsers.common`, their single authoritative definition
+- `definitions.py` defines `ValidationLevel`, `GNNSyntaxError`, `ValidationResult`, `GNNVariable`, `GNNConnection`, `ParsedGNN`, `RoundTripResult`, and `ComprehensiveTestReport`. It exposes the parser-owned `ParseResult` as a lazy compatibility alias.
+- `__init__.py` exports eleven public names. `GNNFormat`, `GNNInternalRepresentation`, and `ParseResult` resolve lazily from `gnn.parsers.common`.
 
 ## Invariants
-- The runtime import graph stays acyclic: `gnn.parsers.basic` imports the names it needs from `definitions.py` (the implementation module) rather than from this package facade, so no import order between `gnn.types` and `gnn.parsers` can produce a partially-initialized cycle.
-- Stdlib only at runtime (`dataclasses`, `datetime`, `enum`, `typing`); parser names appear in `definitions.py` only under `TYPE_CHECKING`, with quoted annotations.
-- `gnn.parsers.common` is a runtime re-export target only and never runtime-imports back.
+- Importing the shared dataclasses uses only the standard library. `gnn.parsers.basic` imports its shared types directly from `definitions.py`.
+- Each parser alias resolves to the same class object as its original declaration, preserving fully qualified names used by serialized data.
 
 ## Key Exports
 ```python

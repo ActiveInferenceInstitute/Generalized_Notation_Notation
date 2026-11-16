@@ -9,6 +9,10 @@ helpers (add_error/add_warning/add_round_trip_result), accounting
 and the package facade re-export of GNNFormat.
 """
 
+import os
+import subprocess
+import sys
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -168,11 +172,49 @@ class TestParseResult:
     """
 
     def test_single_declaration_across_public_surfaces(self) -> Any:
-        import gnn.parsers.common as parsers_common
-        import gnn.types.definitions as types_definitions
+        probe = """
+import pickle
+import sys
+from importlib import import_module
 
-        assert ParseResult is parsers_common.ParseResult
-        assert ParseResult is types_definitions.ParseResult
+first = import_module(sys.argv[1])
+if first.__name__.startswith('gnn.types'):
+    assert 'gnn.parsers' not in sys.modules
+    assert 'gnn.parsers.common' not in sys.modules
+    assert 'ParseResult' in dir(first)
+
+# Protocol-zero globals record the former import paths.
+legacy_result = pickle.loads(b'cgnn.types.definitions\\nParseResult\\n.')
+legacy_format = pickle.loads(b'cgnn.types\\nGNNFormat\\n.')
+from gnn.types.definitions import *
+from gnn import types
+from gnn.parsers import common
+
+assert ParseResult is common.ParseResult is types.ParseResult
+assert types.definitions.ParseResult is ParseResult
+assert common.GNNFormat is types.GNNFormat
+assert common.GNNInternalRepresentation is types.GNNInternalRepresentation
+assert ParseResult.__module__ == 'gnn.parsers.common'
+
+assert legacy_result is ParseResult
+assert legacy_format is common.GNNFormat
+model = types.GNNInternalRepresentation(model_name='Alias compatibility')
+restored = pickle.loads(pickle.dumps(ParseResult(model=model)))
+assert type(restored) is ParseResult
+assert restored.model.to_dict() == model.to_dict()
+"""
+        root = Path(__file__).resolve().parents[2]
+        env = {**os.environ, "PYTHONPATH": str(root / "src")}
+        for module in ("gnn.types", "gnn.types.definitions", "gnn.parsers.common"):
+            result = subprocess.run(  # nosec B603 - fixed interpreter and probe
+                [sys.executable, "-B", "-P", "-c", probe, module],
+                cwd=root,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+            assert result.returncode == 0, f"{module}: {result.stderr}"
 
     def test_bare_construction_keeps_typed_defaults(self) -> Any:
         result = ParseResult()
