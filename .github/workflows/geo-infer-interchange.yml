@@ -97,14 +97,17 @@ jobs:
           version: "0.13.1"
           enable-cache: true
           cache-dependency-glob: geo-infer/uv.lock
+          cache-suffix: gnn-interchange-core
       - name: Install GEO locked runtime
         env:
           GEO_PYTHON: ${{ matrix.python }}
         run: |
+          # Match the pinned validator's test, inference and H3 imports.
           uv sync --project geo-infer --locked --python "$GEO_PYTHON" \
-            --all-packages --all-extras \
-            --no-install-package cupy --no-install-package mayavi \
-            --no-install-package vaex --no-install-package vaex-core
+            --no-default-groups \
+            --package geo-infer-act --package geo-infer-space --package geo-infer-test
+          uv pip list --python geo-infer/.venv/bin/python --format json \
+            > receipts/geo-installed-distributions.json
       - name: Install GNN uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
