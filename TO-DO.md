@@ -218,26 +218,12 @@ The lists below own outstanding work; this table owns target-version sequencing.
   Progress: E3-FA1 adds source-declared ordered finite actions, explicit control
   matrices and units, complete policy/component receipts and a total evaluation
   cap; its independent numerical witnesses retain a separate bounded scope.
-  The declared optional dependency advanced from `cpomdp==0.5.0` to
-  `cpomdp==0.5.1` (`b7c647b71`, #364) and `uv.lock` resolves 0.5.1, but the
-  version guard embedded in the generated script still refuses every release
-  other than 0.5.0
-  ([`src/gnn/render/cpomdp/script_template.py`](src/gnn/render/cpomdp/script_template.py)
-  line 125), while [the adapter guide](docs/gnn/implementations/cpomdp.md),
-  [`src/gnn/render/cpomdp/AGENTS.md`](src/gnn/render/cpomdp/AGENTS.md) and the
-  `needs_cpomdp` expectations in `tests/render/test_cpomdp_contracts.py` and
-  `tests/render/test_cpomdp_finite_controls.py` also declare 0.5.0. Those tests
-  skip wherever the extra is absent
-  ([`tests/helpers/toolchain_probes.py`](tests/helpers/toolchain_probes.py)), so
-  the default arms cannot see the drift and a render followed by execution fails
-  against the locked wheel. Reconcile the guard, the prose and the test
-  expectations with the pin, then re-accept the passive/parity/EFE witnesses on
-  the installed release — owned here, with no external blocker. The 0.5.0
-  adoption was reviewed against the FEP_Formal merge
-  `9d77cd47fd170e1e4071c0944d3c5ee3cb7a4886` (#296), and the companion pin has
-  since advanced to the later qualified main revision recorded in
-  [`.github/fep-lean-pair.json`](.github/fep-lean-pair.json); further
-  control/search behavior remains open.
+  The generated runner, lock, adapter guide and native tests agree on
+  `cpomdp==0.5.1`. The bounded review exercised the installed passive, parity
+  and EFE fixtures and the readiness refusal for an incompatible runtime.
+  The earlier 0.5.0 adoption was reviewed against the FEP_Formal merge
+  `9d77cd47fd170e1e4071c0944d3c5ee3cb7a4886` (#296). The later qualified
+  companion revision is recorded in [`.github/fep-lean-pair.json`](.github/fep-lean-pair.json).
   Remaining scope: specify further control/search behavior through the
   [cpomdp adapter](docs/gnn/implementations/cpomdp.md), preserving passive
   no-search behavior, explicit EFE defaults and complete policy/source identity.
@@ -300,73 +286,41 @@ toolchains, package extras and artifact dependencies.
 
 ### Minor package improvements
 
-- [ ] **Repair the LSP launch guide (P2).** The [LSP README](src/gnn/lsp/README.md)
-  advertises `python -m gnn.lsp` although the package has no `__main__.py`.
-  Document the installed `gnn lsp` command and the pygls and fallback paths.
-  Accept an initialize/shutdown exchange in a clean wheel environment for
-  each documented mode.
-- [ ] **Close the installed cpomdp version mismatch before extending search (P1,
-  E3).** Reconcile the [generated runner guard](src/gnn/render/cpomdp/script_template.py)
-  and the lock, documentation and test expectations already identified under E3.
-  Accept a render-to-execute smoke test with the declared extra and a clear refusal
-  for an incompatible runtime. Keep the native parity witnesses under E3.
-- [ ] **Keep public importer evidence accurate (P2).** Add revision and evidence
-  categories for installed imports, source pins, CLI invocation, paired
-  interchange, conformance and references to the
-  [existing registry check](scripts/check_importer_registry.py). The review found
-  19 of 41 public rows with a v5.1.0 file pin, one with v5.1.0 content custody,
-  and 21 with v5.0.3 pins. Refresh the stale `active_fractal_rabbit` and
-  `COGANT` rows and the `ActiveInferenceJournal` workflow path first. Read each
-  public pin, pointer and workflow at one exact default-branch commit. Update
-  the prose and JSON together, retaining historical compatibility receipts.
-  Keep live freshness report-only and record unavailable evidence explicitly.
-- [ ] **Honor the MCP validation options (P2).** The
-  [root MCP validation tool](src/gnn/mcp/gnn_root.py) advertises a format hint
-  and accepts a validation level. Define how explicit hints interact with
-  format detection and return a stable error for an unknown level. Exercise
-  Markdown, JSON and YAML with matching and conflicting hints through the tool.
+- [ ] **Keep public importer evidence accurate (P2).** Record distinct
+  evidence categories for installed imports, source pins, CLI invocation,
+  paired interchange, conformance and references in the
+  [registry check](scripts/check_importer_registry.py). Its online checker
+  reads eligible pin, pointer and workflow declarations from one observed
+  default-branch revision. Keep that source binding and extend unavailable
+  reporting to authentication or transport failures. Preserve historical
+  compatibility receipts, update prose and JSON together, and keep live
+  freshness outside required gates.
 
 ### Medium package improvements
 
-- [ ] **Carry model identity through standalone parsing and export (P1).**
-  [Step 3](src/gnn/processing/multi_format_processor.py) writes by stem and
-  [Step 7](src/gnn/export/processor.py) groups carrier entries by basename.
-  Reuse the collision-safe approach in
-  [RunContext](src/gnn/pipeline/run_context.py) for standalone Steps 3, 7 and 8.
-  Accept two nested input files with the same stem, distinct artifacts with
-  exact source identity, a preserved unique-stem path and an end-to-end
-  [current-run regression](tests/pipeline/test_current_run_contract.py).
-- [ ] **Make validation depth consistent and observable (P1).**
-  [The schema validator](src/gnn/schema/parser.py) runs Draft 2020-12 checks
-  when `jsonschema` imports and checks only required keys otherwise.
-  [The parser system](src/gnn/parsers/system.py) also handles strict validation
-  differently for files and strings. Define the levels for parse, semantic
-  validation and compliance. Declare the full schema dependency or expose
-  the reduced mode explicitly. Verify an invalid field type in an installed
-  wheel and run the same invalid model through the file and string paths.
-  Preserve structured errors and distinguish any intentional compatibility
-  defaults across Step 3 and the importer reader.
 - [ ] **Move shared operations below their transport adapters (P2).**
-  [HTTP parity](src/gnn/api/parity.py) and [render MCP](src/gnn/render/mcp.py)
-  import CLI operations, while the CLI starts HTTP factories. Move one shared
-  operation at a time into its owning model or pipeline service, retaining CLI
-  exits, HTTP envelopes, MCP errors and path/custody checks. Extend the
-  existing import-linter contracts and [parity tests](tests/api/test_api_parity.py).
-- [ ] **Qualify the wheel and optional runtime profiles (P1).** Expand
-  [dependency hygiene](scripts/check_dep_hygiene.py) and the
-  [installed-platform lane](.github/workflows/installed-platforms.yml) to probe
-  the base wheel, each advertised runtime profile, and missing-extra behavior.
-  Record the actual Python, distributions, entry points and backend versions.
-  Review direct use of Pydantic and Rich in core modules and Starlette in the
-  API against the current transitive dependency declarations.
-  Include the current PyMDP/JAX interpreter splits, normalized `all` extra
-  membership and a downstream type-check of the documented public imports
-  before promising an installed `py.typed` contract.
+  The render artifact lookup now lives with the renderer. Move the remaining
+  shared [HTTP parity](src/gnn/api/parity.py) operations out of CLI commands and
+  templates one at a time. Preserve CLI exits, HTTP envelopes, MCP errors and
+  path/custody checks. Extend the import-linter contracts and
+  [parity tests](tests/api/test_api_parity.py).
+
+- [ ] **Qualify the wheel and optional runtime profiles (P1).** Build on the
+  [base-wheel profile](docs/development/installed_platform_acceptance.md) and
+  extend [dependency hygiene](scripts/check_dep_hygiene.py) and the
+  [installed-platform lane](.github/workflows/installed-platforms.yml) to cover
+  the remaining advertised runtime profiles and missing-extra behavior,
+  including the pygls LSP mode beyond the base fallback exchange. Record the
+  actual Python, distributions, entry points and backend versions. Review the
+  direct uses of Pydantic and Rich in core modules and Starlette in the API.
+  Record the PyMDP/JAX interpreter splits, normalized `all` extra membership
+  and a downstream type-check of the documented public imports before
+  promising an installed `py.typed` contract.
 - [ ] **Cut over importers and remove private backend reads one consumer at a
   time (P1).** Use the [canonical released reader](src/gnn/importers.py) on
   the member's own pin and specs before retiring local conformance code.
-  Extend the existing [PyMDP simulation receipt](src/gnn/execute/pymdp/simulation.py)
-  with measured dtype, device and agent identity from the same execution.
+  Use the measured dtype, device and agent identity already recorded in the
+  [PyMDP simulation receipt](src/gnn/execute/pymdp/SPEC.md).
   Migrate Active_Fedference from `_build_pymdp_agent` after verifying existing
   batch and horizon fields and comparing producer and consumer receipts at
   exact pins. Exercise the PyMDP parser bridge and COGANT's subprocess
@@ -375,8 +329,8 @@ toolchains, package extras and artifact dependencies.
 ### Major package improvements
 
 - [ ] **Version the model and result handoffs across the pipeline (P1).**
-  After standalone model identity is fixed, define a typed Step 3 parsed-model
-  contract for validation, export, visualization and render consumers.
+  Extend the [versioned Step 3 receipt](docs/development/run_ownership_migration.md)
+  from its Step 6 validation consumer to export, visualization and render.
   Carry the same identity through execution into
   [integration collection](src/gnn/integration/meta_analysis/collector.py),
   analysis and report. Reuse
@@ -388,20 +342,21 @@ toolchains, package extras and artifact dependencies.
   which uses output modification time to identify fresh results.
 - [ ] **Establish package dependency direction and a smaller import surface
   (P2).** Map required and optional dependencies to their first use before
-  changing packaging. Start with the reciprocal `parsers` and `types`
-  imports and the `pipeline` and `report` dependencies. Move shared contracts
-  toward their owners, preserve re-export identity and existing installed
-  entry points, and require fresh-process import checks for parser-only,
-  CLI, API and scientific consumers. Change extras or distribution boundaries
-  only after the installed profiles and downstream probes pass.
-- [ ] **Share versioned benchmark evidence across projects (P2).** Extend the
-  [research contracts](docs/development/interop_research.md) through one
-  GNN producer and one independent public consumer first. Record exact
-  producer, consumer, model/fixture digest, axes, seed, units, toolchain and
-  unsupported outcomes. Validate each adapter against independently computed
-  expectations and preserve the original results. Bind any changed FEP or GEO
-  owner through the existing paired-revision procedure and keep E4's native
-  numerical acceptance distinct.
+  changing packaging. Keep the lazy public `parsers` / `types` aliases and the
+  model-family ledger renderer with its acceptance producer. Reduce the other
+  reciprocal `pipeline` and `report` dependencies, preserving public re-export
+  identity and installed entry points. Require fresh-process checks for
+  parser-only, CLI, API and scientific consumers. Change extras or distribution
+  boundaries only after the installed profiles and downstream probes pass.
+- [ ] **Share versioned benchmark evidence across projects (P2).** Qualify
+  an independent public consumer of the GNN scaling manifest in the
+  [research contracts](docs/development/interop_research.md). Record exact
+  producer and consumer revisions, model/fixture digests, axes, seeds where
+  applicable, units, toolchain and unsupported outcomes. Verify fixture
+  interpretation and refusals independently, preserve the original results,
+  and qualify timing or result adapters with their own evidence. Bind changes
+  to paired FEP or GEO owners through the existing revision procedure. E4's
+  native numerical acceptance retains its own criteria.
 
 ## Verification and execution rules
 
