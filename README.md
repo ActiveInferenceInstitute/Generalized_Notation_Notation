@@ -304,9 +304,9 @@ bound, so its requirement needs no split. ActiveInference.jl retains its
 Distributions ceiling because DistributionsAD's extension fails with the newer
 `@check_args` API; its committed Project documents that exception. RxInfer
 resolves 6.1.0 on Julia 1.13.2. The separate FEP companion still requires its
-own exact uv 0.13.0; Lean execution selects the FEP_Formal companion pinned in
+own exact uv 0.13.7; Lean execution selects the FEP_Formal companion pinned in
 `.github/fep-lean-pair.json` at
-`48206d6de664966d4a721080aee76a6c3bdf3e0a`, and the companion's declared
+`ffc6c4d515fbf4dd5df4ea3329c6dd66eda00902`, and the companion's declared
 project identity selects its CLI (`fep-formal` for the canonical project,
 `fep_lean` for pre-rename checkouts). These explicit compatibility profiles
 take precedence over unqualified upgrades.

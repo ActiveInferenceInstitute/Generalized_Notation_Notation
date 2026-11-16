@@ -115,7 +115,7 @@ pointer at origin; that networked drift check is not part of this arm.
 GNN's own companion pins are [`.github/gnn-pair.json`](../.github/gnn-pair.json)
 (GEO_INFER `21b65a26dd15288d6e578baef86a8bcfd6a7b5db`) and
 [`.github/fep-lean-pair.json`](../.github/fep-lean-pair.json)
-(fep_formal `48206d6de664966d4a721080aee76a6c3bdf3e0a`). Their workflows are
+(fep_formal `ffc6c4d515fbf4dd5df4ea3329c6dd66eda00902`). Their workflows are
 [Paired GEO_INFER interchange](../.github/workflows/geo-infer-interchange.yml)
 and [Paired fep_formal revision](../.github/workflows/fep-lean-paired-revision.yml).
 They do not use the importer conformance job or importer pin schema.
