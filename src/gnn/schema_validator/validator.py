@@ -95,31 +95,42 @@ class GNNValidator(
         self,
         file_path: Union[str, Path],
         validation_level: Union[ValidationLevel, str, None] = None,
+        *,
+        format_hint: str | None = None,
     ) -> ValidationResult:
-        """Enhanced validation with comprehensive testing capabilities."""
+        """Validate a file, optionally requiring an explicit text format.
+
+        Without a hint, retain extension-based structure checks and the
+        parser's automatic detection. A hint selects both checks and parser
+        and refuses any Markdown recovery from a requested structured format.
+        """
         import time
 
         start_time = time.time()
 
-        validation_level = validation_level or self.validation_level
+        if validation_level is None:
+            validation_level = self.validation_level
         # Resolve string levels before the broad exception handler below:
         # an invalid level string must raise at the public API, not be
         # downgraded to a generic validation error.
         if isinstance(validation_level, str):
             validation_level = self._resolve_level(validation_level)
         file_path = Path(file_path)
-
+        if format_hint is not None and format_hint not in (
+            "markdown",
+            "json",
+            "xml",
+            "yaml",
+        ):
+            raise ValueError(f"Unknown text format hint {format_hint!r}")
+        file_format = format_hint or self._detect_file_format(file_path)
         result = ValidationResult(
             is_valid=True,
             validation_level=validation_level,
-            format_tested=self._detect_file_format(file_path),
+            format_tested=file_format,
         )
 
         try:
-            # Step 1: Basic file access and format detection
-            file_format = self._detect_file_format(file_path)
-            result.format_tested = file_format
-
             # Handle binary formats
             if file_format in ["binary", "pickle"]:
                 return self._validate_binary_file(file_path, result)
@@ -135,7 +146,23 @@ class GNNValidator(
 
             # Step 2: Parse the file using enhanced parser
             try:
-                parsed_gnn = self.parser.parse_file(file_path)
+                if format_hint is None:
+                    parsed_gnn = self.parser.parse_file(file_path)
+                else:
+                    parsed_gnn = self.parser.parse_content(
+                        content, str(file_path), format_hint
+                    )
+                    if (
+                        format_hint != "markdown"
+                        and parsed_gnn.source_format != format_hint
+                    ):
+                        degradation = parsed_gnn.metadata.get("parse_degraded", {})
+                        reason = degradation.get(
+                            "reason", "requested parser unavailable"
+                        )
+                        raise ValueError(
+                            f"Content was not parsed as {format_hint}: {reason}"
+                        )
                 result.semantic_checksum = parsed_gnn.semantic_checksum
                 result.metadata["parsed_successfully"] = True
                 result.metadata["source_format"] = parsed_gnn.source_format

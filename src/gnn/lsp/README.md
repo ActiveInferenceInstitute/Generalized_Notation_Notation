@@ -4,7 +4,9 @@
 
 Minimal Language Server Protocol implementation for GNN files. Provides real-time diagnostics and hover information in editors that support LSP (VS Code, Neovim, etc.).
 
-**Requires**: `pygls` package (`pip install pygls`)
+The installed `gnn lsp` command works with an ordinary GNN installation. It
+uses the pygls server when that library is available and otherwise starts
+the bundled JSON-RPC server on standard input and output.
 
 ## Features
 
@@ -17,12 +19,13 @@ Minimal Language Server Protocol implementation for GNN files. Provides real-tim
 
 ## Usage
 
-```bash
-# Start via CLI
-gnn lsp
+Use `gnn lsp` as the editor's language-server command. To use the pygls
+implementation in a source checkout, install the frozen development environment
+and launch the same command from it.
 
-# Or directly
-python -m gnn.lsp
+```bash
+uv sync --frozen
+uv run --frozen --no-sync gnn lsp
 ```
 
 ### VS Code Integration
