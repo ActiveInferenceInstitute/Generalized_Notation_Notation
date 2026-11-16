@@ -18,6 +18,7 @@ from gnn.pipeline.run_context import current_run_context, selected_model_sources
 from .cross_part_synthesis import POLICY as SYNTHESIS_POLICY
 from .cross_part_synthesis import build_plan, checked_child, checked_mode
 from .defaults import OLLAMA_RUNTIME_VALIDATION_POLICY, ollama_generation_options
+from .plan_scheduler import checked_settings as checked_plan_settings
 from .prompt_batch import batch_prompt, parse_answers, response_schema
 from .provider_identity import resolved_endpoint
 from .providers.base_provider import ProviderType
@@ -169,6 +170,15 @@ async def run_corpus(
         provider != ProviderType.OLLAMA or "num_ctx" not in generation_options
     ):
         raise ValueError("S1 synthesis requires pinned Ollama and explicit num_ctx")
+    # Opt-in S1 request-plan scheduling; absent/null leaves every established
+    # option, binding and checkpoint fingerprint unchanged.
+    plan_settings = checked_plan_settings(
+        kwargs.get("request_plan", config.get("request_plan"))
+    )
+    if plan_settings is not None and (
+        provider != ProviderType.OLLAMA or "num_ctx" not in generation_options
+    ):
+        raise ValueError("S1 request plans require pinned Ollama and explicit num_ctx")
     token_limit = kwargs.get(
         "max_tokens", os.getenv("GNN_LLM_MAX_TOKENS") or config.get("max_tokens")
     )
@@ -319,6 +329,11 @@ async def run_corpus(
             for prompt in structured
         ],
     }
+    if plan_settings is not None:
+        plan_settings["prompt"] = plan_settings["prompt"] or labels[0]
+        if plan_settings["prompt"] not in labels:
+            raise ValueError("request_plan prompt must name a selected prompt label")
+        binding["request_plan"] = plan_settings
     fingerprint = hashlib.sha256(
         json.dumps(binding, sort_keys=True).encode()
     ).hexdigest()
@@ -991,6 +1006,32 @@ async def run_corpus(
                     f"# {label.replace('_', ' ').title()}\n\n{response}\n",
                 )
                 save()
+        if plan_settings is not None:
+            from .plan_scheduler import run_corpus_plans
+
+            results["request_plans"] = await run_corpus_plans(
+                api,
+                plan_settings,
+                tasks,
+                records,
+                output_dir=output_dir,
+                processor=processor if ready else None,
+                cache=cache,
+                provider=provider,
+                endpoint_url=endpoint_url,
+                endpoint_sha256=endpoint_sha256,
+                model=model,
+                runtime_identity=runtime_identity,
+                generation_options=generation_options,
+                isolated=isolated,
+                failed_auth=failed_auth,
+                auth_errors=results["auth_errors"],
+                resume=bool(kwargs.get("resume")),
+                deadline_seconds=budget,
+                request_timeout_seconds=prompt_ceiling,
+                remaining=remaining,
+            )
+            save()
     finally:
         if not isolated and processor is not None:
             await processor.close()
@@ -1092,6 +1133,16 @@ async def run_corpus(
                 }
             ),
         }
+        plans_complete = True
+        if plan_settings is not None:
+            receipts = results.get("request_plans", [])
+            plans_complete = len(receipts) == len(paths) and all(
+                receipt.get("complete") is True for receipt in receipts
+            )
+            results["coverage"]["request_plans_required"] = len(paths)
+            results["coverage"]["request_plans_completed"] = sum(
+                receipt.get("complete") is True for receipt in receipts
+            )
         by_id = {identity["model_id"]: analysis for _, analysis, _, identity in records}
         results["unfinished_source_parts"] = [
             f"{identity['model_id']}:{label}:part_{index + 1:04d}"
@@ -1117,6 +1168,7 @@ async def run_corpus(
         results["success"] = (
             len(records) == len(paths)
             and completed == required
+            and plans_complete
             and not results["errors"]
             and remaining() > 0
         )

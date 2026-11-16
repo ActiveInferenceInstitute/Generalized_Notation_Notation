@@ -58,8 +58,8 @@ def test_pinned_copy_verifies_against_its_pin() -> None:
     counts = summary["bridge"]["counts"]
     assert counts["declaredLabels"] == 64
     assert counts["terms"] == 429
-    assert counts["resolvedDeclaredLabels"] == 12
-    assert counts["unresolvedDeclaredLabels"] == 52
+    assert counts["resolvedDeclaredLabels"] == 15
+    assert counts["unresolvedDeclaredLabels"] == 49
 
 
 def test_pin_records_the_embedded_source_and_export_digests() -> None:
@@ -178,14 +178,22 @@ def test_validate_annotations_resolves_declared_labels() -> None:
     assert result["ontology_identifier_counts"]["unresolved"] == 1
 
 
-def test_all_twelve_resolved_labels_map_to_term_ids() -> None:
+#: Labels the ontology resolved at ad808b12 (PR #19), formerly ``unresolved``.
+NEWLY_RESOLVED_AT_AD808B12 = {
+    "LikelihoodMapping": ("term-likelihood", "Likelihood"),
+    "TransitionMatrix": ("term-transition", "transition"),
+    "Preferences": ("term-preference", "Preference"),
+}
+
+
+def test_all_fifteen_resolved_labels_map_to_term_ids() -> None:
     bridge = load_ontology_bridge()
     resolved_labels = sorted(
         label
         for label, entry in bridge["declared"].items()
         if entry["status"] == DECLARED_STATUS_RESOLVED
     )
-    assert len(resolved_labels) == 12
+    assert len(resolved_labels) == 15
 
     result = validate_annotations(
         [f"x{index}={label}" for index, label in enumerate(resolved_labels)]
@@ -196,7 +204,22 @@ def test_all_twelve_resolved_labels_map_to_term_ids() -> None:
         isinstance(identifier, str) and identifier.startswith("term-")
         for identifier in identifiers
     )
-    assert len(identifiers) == 12
+    # ``Preference`` and ``Preferences`` share ``term-preference``.
+    assert len(identifiers) == 14
+
+
+def test_pr19_labels_resolve_to_their_published_terms() -> None:
+    index, error = pinned_declared_index()
+    assert error is None
+    bridge = load_ontology_bridge()
+    for label, (identifier, term) in NEWLY_RESOLVED_AT_AD808B12.items():
+        entry = bridge["declared"][label]
+        assert entry["status"] == DECLARED_STATUS_RESOLVED
+        assert (entry["id"], entry["ontologyTerm"]) == (identifier, term)
+        assert bridge["terms"][term]["id"] == identifier
+        resolution = resolve_declared_label(label, index)
+        assert resolution.status == DECLARED_STATUS_RESOLVED
+        assert resolution.identifier == identifier
 
 
 def test_validation_output_never_carries_obo_identifiers() -> None:
@@ -231,7 +254,7 @@ def test_gate_script_verifies_the_live_tree(capsys: pytest.CaptureFixture[str]) 
     assert module.main([]) == 0
     output = capsys.readouterr().out
     assert "verified" in output
-    assert "12 resolved, 52 unresolved" in output
+    assert "15 resolved, 49 unresolved" in output
 
 
 def test_gate_script_fails_when_verification_fails(
