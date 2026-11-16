@@ -75,8 +75,8 @@ def verify_owned_artifacts(output_root: Path, summary: dict[str, Any]) -> None:
                 raise ValueError(f"Current-run artifact changed: {relative}")
 
 
-def owned_artifact_paths(output_root: Path) -> set[str] | None:
-    """Return an explicit current-run inventory, None for standalone output."""
+def owned_artifact_checksums(output_root: Path) -> dict[str, str | None] | None:
+    """Read current-run artifact digests, or None for standalone output."""
     from gnn.pipeline.run_context import current_run_context
 
     context = current_run_context()
@@ -84,16 +84,22 @@ def owned_artifact_paths(output_root: Path) -> set[str] | None:
         return None
     path = output_root / "00_pipeline_summary" / "current_summary.json"
     if not path.is_file():
-        return set()
+        return {}
     summary = json.loads(path.read_text(encoding="utf-8"))
     if summary.get("run_id") != context.run_id:
         raise ValueError("Artifact inventory belongs to a different run")
     return {
-        record["path"]
+        record["path"]: record.get("sha256")
         for step in summary.get("steps", [])
         for record in step.get("artifacts", [])
         if isinstance(record, dict)
     }
+
+
+def owned_artifact_paths(output_root: Path) -> set[str] | None:
+    """Return an explicit current-run inventory, None for standalone output."""
+    checksums = owned_artifact_checksums(output_root)
+    return set(checksums) if checksums is not None else None
 
 
 def current_artifact_files(directory: Path, pattern: str = "*") -> list[Path]:

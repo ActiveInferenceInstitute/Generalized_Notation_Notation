@@ -118,10 +118,12 @@ def _publish_parse_result(
     artifact_stem: str,
     formats: list[Any],
     provenance: dict[str, str],
+    run_id: str | None,
     deadline: float | None,
     cancel_token: Any,
 ) -> int:
     """Publish one computed result in the parent, retaining per-format failures."""
+    from gnn.pipeline.parse_receipt import parsed_model_identity
     from gnn.utils.file_workers import check_file_work
 
     destination = output / artifact_stem
@@ -129,10 +131,13 @@ def _publish_parse_result(
     destination.mkdir(exist_ok=True)
     parsed_file = destination / f"{artifact_stem}_parsed.json"
     payload = record.pop("_parsed_payload")
-    if provenance:
-        payload["_gnn_provenance"] = dict(provenance)
-    parsed_file.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    payload["_gnn_provenance"] = parsed_model_identity(
+        provenance, artifact_stem, run_id
+    )
+    raw = json.dumps(payload, indent=2, default=str).encode("utf-8")
+    parsed_file.write_bytes(raw)
     record["parsed_model_file"] = str(parsed_file)
+    record["parsed_model_sha256"] = hashlib.sha256(raw).hexdigest()
     serialized = record.pop("_serialized")
     generated = 0
     for format_enum in formats:
@@ -213,6 +218,7 @@ def process_gnn_multi_format(
         logger.info(f"Available serializers: {list(available_serializers.keys())}")
 
         # A run projects its frozen model selection; standalone calls discover normally.
+        from gnn.pipeline.parse_receipt import PARSED_MODEL_SCHEMA
         from gnn.pipeline.run_context import (
             current_run_context,
             selected_model_sources,
@@ -244,6 +250,7 @@ def process_gnn_multi_format(
             return True
 
         processing_results: Dict[str, Any] = {
+            "parsed_model_schema": PARSED_MODEL_SCHEMA,
             "timestamp": datetime.now().isoformat(),
             "source_directory": str(target_path),
             "output_directory": str(step_output_dir),
@@ -288,9 +295,6 @@ def process_gnn_multi_format(
         standalone_stems = (
             model_artifact_stems(target_path, gnn_files) if run_context is None else {}
         )
-        standalone_collisions = {
-            path for path, stem in standalone_stems.items() if stem != path.stem
-        }
         worker_metadata: dict[str, Any] = {
             "requested_workers": requested_workers,
             "effective_workers": min(requested_workers, len(gnn_files)),
@@ -301,7 +305,7 @@ def process_gnn_multi_format(
                 path,
                 formats_to_emit,
                 provenance_by_stem.get(path.stem, {}).get("source_sha256"),
-                path in standalone_collisions,
+                run_context is None,
             )
             for path in gnn_files
         )
@@ -323,7 +327,7 @@ def process_gnn_multi_format(
             file_path = Path(file_result["file_path"])
             artifact_stem = standalone_stems.get(file_path, file_path.stem)
             provenance = provenance_by_stem.get(file_path.stem, {})
-            if file_path in standalone_collisions and file_result["parse_success"]:
+            if run_context is None and file_result["parse_success"]:
                 provenance = {
                     "source_path": str(file_path.absolute()),
                     "source_relative_path": file_path.relative_to(
@@ -339,6 +343,7 @@ def process_gnn_multi_format(
                         artifact_stem,
                         formats_to_emit,
                         provenance,
+                        run_context.run_id if run_context else None,
                         deadline,
                         cancel_token,
                     )

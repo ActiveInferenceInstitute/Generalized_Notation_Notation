@@ -262,30 +262,42 @@ def _validate_file(
     summary_scores: dict[str, list[Any]],
     transpose_b: bool,
     log: logging.Logger,
+    *,
+    schema: str | None,
+    producer_run_id: str | None,
+    source_sha256: str | None,
 ) -> dict[str, Any]:
     """Run every validation stage on one parsed-model manifest entry."""
+    from gnn.pipeline.parse_receipt import read_parsed_model
+
     file_name = str(file_result["file_name"])
     log.info(f"Validating: {file_name}")
 
     # Load the actual parsed GNN specification
     model_load_error: str | None = None
+    versioned = schema is not None or "parsed_model_sha256" in file_result
+    provenance = None
     parsed_model_file = file_result.get("parsed_model_file")
     if parsed_model_file and Path(parsed_model_file).exists():
         try:
-            with open(parsed_model_file, "r") as f:
-                actual_gnn_spec = json.load(f)
+            model_data, provenance = read_parsed_model(
+                Path(parsed_model_file),
+                file_result,
+                schema=schema,
+                run_id=producer_run_id,
+                source_sha256=source_sha256,
+            )
             log.info(f"Loaded parsed GNN specification from {parsed_model_file}")
-            model_data: dict[str, Any] = actual_gnn_spec
-        except Exception as e:
+        except (KeyError, OSError, TypeError, ValueError) as e:
             model_load_error = (
                 f"Failed to load parsed GNN spec from {parsed_model_file}: {e}"
             )
             log.error(model_load_error)
             model_data = file_result
     else:
-        model_load_error = (
-            f"Parsed model file not found for {file_name}; using summary data"
-        )
+        model_load_error = f"Parsed model file not found for {file_name}"
+        if not versioned:
+            model_load_error += ". Using summary data"
         log.warning(model_load_error)
         model_data = file_result
 
@@ -300,7 +312,14 @@ def _validate_file(
         file_validation_result["input_recovery"] = {
             "status": "error",
             "error": model_load_error,
-            "recovery": True,
+            "recovery": not versioned,
+        }
+        if versioned:
+            return file_validation_result
+    if provenance is not None:
+        file_validation_result["parsed_input"] = {
+            **provenance,
+            "parsed_model_sha256": file_result["parsed_model_sha256"],
         }
 
     for spec in _STAGE_SPECS:
@@ -418,11 +437,17 @@ def validate_directory(
         if gnn_results_file is None:
             return False
 
-        with open(gnn_results_file, "r") as f:
-            gnn_results = json.load(f)
+        raw_receipt = gnn_results_file.read_bytes()
         from gnn.pipeline.parse_receipt import selected_parse_receipt
 
-        gnn_results = selected_parse_receipt(gnn_results, 6)
+        gnn_results = selected_parse_receipt(
+            json.loads(raw_receipt),
+            6,
+            receipt_identity=(
+                gnn_results_file,
+                hashlib.sha256(raw_receipt).hexdigest(),
+            ),
+        )
 
         active_logger.info(
             f"Loaded {len(gnn_results['processed_files'])} parsed GNN files"
@@ -454,6 +479,9 @@ def validate_directory(
                     {spec.key: [] for spec in _STAGE_SPECS},
                     transpose_b,
                     active_logger,
+                    schema=gnn_results.get("parsed_model_schema"),
+                    producer_run_id=gnn_results.get("run_id"),
+                    source_sha256=identity["input_identity"]["file_path_sha256"],
                 )
             else:
                 file_validation_result = {

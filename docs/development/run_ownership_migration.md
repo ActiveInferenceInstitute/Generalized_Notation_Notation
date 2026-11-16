@@ -63,6 +63,19 @@ Durable manifests inventory only files authored by the current run. Older
 files can remain on disk for inspection but are excluded from current-run
 analysis, website/report collection, and durable acceptance evidence.
 
+Step 3 records `parsed_model_schema: gnn_parsed_model_v1` in its processing
+receipt. The parsed model stays at its existing path and keeps its existing
+fields. Its additive `_gnn_provenance` records the source path, source-relative
+path and SHA-256, artifact stem, and run and model IDs when owned by a run.
+The processing receipt records the parsed artifact's byte checksum.
+
+Step 6 checks the version and the parsed bytes before running validators. In
+a current run it also binds the processing receipt and artifact digests to
+the current inventory and matches the selected model identity. Its output
+keeps the accepted identity under `parsed_input`. Step 6 accepts historical
+receipts without version fields with their previous behavior. Step 7 and
+Step 8 can still read the flat model payload.
+
 Direct distributed execution now requires a ready caller-owned backend. Pass a
 running Dask client as `Dispatcher("dask", client=client)`, or initialize Ray in
 your own supervised process before dispatch. Automatic backend startup is
