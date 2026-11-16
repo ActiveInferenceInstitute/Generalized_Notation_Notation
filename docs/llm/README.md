@@ -155,6 +155,48 @@ no generation requests, but still checks current runtime/model identity.
 The reports retain fragment answers, final answers, each `.request.json`
 ledger and `.native.json` response under `prompts_<id>/synthesis/`.
 
+### Immutable request plans (`gnn_llm_request_plan_v1`)
+
+[`request_plan.py`](../../src/gnn/llm/request_plan.py) is the standalone S1
+admission and checkpoint layer. `admit_request_plan(source_bytes, ...)` freezes
+one plan before any provider call; it is not yet connected to `process_llm` or
+the corpus scheduler, so it changes no current run, cache or checkpoint format.
+
+A plan records:
+
+- the source's strict UTF-8 SHA-256 and byte length, plus contiguous segment
+  byte offsets cut on code-point boundaries. `reconstruct_source()` joins the
+  segments back to the exact original bytes, including CRLF, BOM, non-ASCII
+  text and a missing or present final newline.
+- the provider, endpoint SHA-256, model name and digest, prompt-definition
+  digest and the reviewed `checked_model_context` capacity (its policy,
+  architecture and template SHA-256). Character counts never admit context.
+- the `system`, `task`, `prior_receipts` and `output` token reservations. A
+  plan with no source budget left refuses.
+- the task contract. `part_evidence` synthesizes from ordered segment
+  checkpoints and never claims full-source reasoning. `joint_source` requires a
+  native-tokenizer source count bound to the same model digest and template,
+  and refuses without truncation when source plus reservations plus one terminal
+  token exceed capacity.
+- the invocation deadline and per-request timeout. Truncation, model
+  substitution and budget increases are recorded as `false`.
+
+Each segment and synthesis checkpoint binds the plan digest, its request digest
+and a `terminal_stop_v1` outcome whose provider, model, digest and endpoint
+match the plan. An `incomplete` status, a finish reason other than `stop`,
+missing native prompt tokens or an over-budget reply cannot be checkpointed.
+`revalidate_resume()` compares the retained plan with a freshly admitted one
+and refuses when its source, model, endpoint, tokenizer template, prompt,
+context, segment or deadline fields differ. Corrupt, re-sealed incomplete,
+relabelled or conflicting duplicate checkpoints are rejected and their segments
+return to pending. A synthesis is accepted only when its ordered dependency
+digests match every current segment checkpoint. `next_requests()` schedules the
+missing segments, then synthesis, and reports cancellation or an exhausted
+deadline as unfinished.
+
+The tests in `tests/llm/test_request_plan.py` use injected outcome records.
+They validate admission and scheduling only, not native provider behaviour.
+
 ## Context, completion and evidence
 
 Whole-source mode is the default. The provider sends intact messages with
