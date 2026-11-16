@@ -11,12 +11,12 @@ src/gnn/report/
 ├── generator.py                   # Report file writers, summary/custom reports
 ├── analyzer.py                    # Pipeline data collection (collect_pipeline_data)
 ├── formatters.py                  # HTML/Markdown section rendering
-├── pipeline_report.py             # Per-step status/timing/artifact sections
+├── pipeline_report.py             # Re-export of the per-step report (owned by gnn.pipeline.summary_wiring)
 ├── processing_report.py           # Processing-context report generator (ReportGenerator)
 ├── diff_report.py                 # Run-to-run diffing (compare_runs, archive_run)
 ├── model_family.py                # Model-family ledger markdown renderer
-├── semantic_fidelity.py           # Semantic-fidelity ledger markdown renderer
-├── cross_framework_reliability.py # Cross-framework reliability ledger renderer
+├── semantic_fidelity.py           # Re-export of gnn.pipeline.semantic_fidelity's renderer
+├── cross_framework_reliability.py # Re-export of gnn.pipeline.cross_framework_reliability's renderer
 ├── mcp.py                         # MCP tool registrations
 └── README.md                      # This documentation
 ```
@@ -98,7 +98,7 @@ success = process_report(
 
 ### Pipeline Step 23: Report Generation
 
-`23_report.py` is a thin orchestrator delegating to `process_report()`. `main.py` also imports `report.pipeline_report.generate_pipeline_report` directly for step-level report sections.
+`23_report.py` is a thin orchestrator delegating to `process_report()`. The final per-step report is written by `gnn.pipeline.summary_wiring`; `report.pipeline_report.generate_pipeline_report` re-exports it, and `gnn.pipeline` never imports `gnn.report`.
 
 ### Output Structure
 

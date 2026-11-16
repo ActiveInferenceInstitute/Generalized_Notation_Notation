@@ -147,7 +147,7 @@ None. HTML/Markdown generation is pure Python string templating.
 
 - `gnn.utils.pipeline_orchestration.pipeline_template` - Standardized pipeline processing
 - `pipeline.config` - Configuration management
-- Submodules: `analyzer.py` (pipeline data collection), `formatters.py` (HTML/Markdown section rendering), `generator.py` (report file writers), `pipeline_report.py` (per-step status/timing/artifact sections), `diff_report.py` (run-to-run comparison), `model_family.py`, `semantic_fidelity.py`, `cross_framework_reliability.py` (ledger markdown renderers)
+- Submodules: `analyzer.py` (pipeline data collection), `formatters.py` (HTML/Markdown section rendering), `generator.py` (report file writers), `pipeline_report.py` (re-exports the per-step report renderer owned by `gnn.pipeline.summary_wiring`), `diff_report.py` (run-to-run comparison), `model_family.py`, `semantic_fidelity.py`, `cross_framework_reliability.py` (re-export ledger renderers owned by the `gnn.pipeline` producers)
 
 ---
 
@@ -264,7 +264,7 @@ output/23_report_output/
 ### Imported By
 
 - `tests/report/*` - Report tests
-- `src/gnn/main.py` - Runs `23_report.py` as a pipeline step; also imports `report.pipeline_report.generate_pipeline_report` directly
+- `src/gnn/main.py` - Runs `23_report.py` as a pipeline step; the final per-step report is written by `gnn.pipeline.summary_wiring` (re-exported as `report.pipeline_report.generate_pipeline_report`); `gnn.pipeline` never imports `gnn.report`
 
 ### Data Flow
 

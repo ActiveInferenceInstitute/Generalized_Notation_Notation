@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def _cmd_templates(args: argparse.Namespace) -> int:
     """Inspect the maintained template library."""
-    from .templates import list_templates, show_template
+    from gnn.operations.templates import list_templates, show_template
 
     is_json = getattr(args, "json", False)
 
@@ -85,7 +85,7 @@ def _cmd_models(args: argparse.Namespace) -> int:
 
 def _cmd_pull(args: argparse.Namespace) -> int:
     """Copy a maintained template into an input directory."""
-    from .templates import pull_template
+    from gnn.operations.templates import pull_template
 
     is_json = getattr(args, "json", False)
     try:

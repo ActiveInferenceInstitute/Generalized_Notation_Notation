@@ -65,8 +65,9 @@ error list for callers using the existing API.
 | `both` | `runs` on the main thread, `jobs` on port+1 | Both surfaces in one process. |
 | `website` | `gnn.website.serve` | Static server over the generated output tree (port 8090). |
 
-Both FastAPI factories call `install_exception_handlers` and `register_parity_routes`
-from [`gnn/api/responses.py`](../../src/gnn/api/responses.py), so they share one
+Both FastAPI factories call `install_exception_handlers` from
+[`gnn/api/responses.py`](../../src/gnn/api/responses.py) and `register_parity_routes`
+from [`gnn/api/parity.py`](../../src/gnn/api/parity.py), so they share one
 envelope and one CLI-parity route set. Their remaining routes differ; the
 [API guide](../../src/gnn/api/README.md) is the route owner.
 
@@ -77,6 +78,43 @@ Request-validation failures return HTTP 422 with code `validation_error`, HTTP
 exceptions map to stable codes, and unhandled exceptions return HTTP 500 with
 `internal_error`. Binding to a non-loopback host requires `GNN_API_KEY`, or an explicit
 `GNN_ALLOW_INSECURE_BIND=1`.
+
+## Shared operations and dependency direction
+
+The CLI, the HTTP parity routes and the template MCP tools are transports over
+one implementation in `gnn.operations`, which imports neither transport:
+
+| Operation module | Owns | Transports |
+| --- | --- | --- |
+| [`gnn.operations.commands`](../../src/gnn/operations/commands.py) | validate check chain, parse payload, extract defect verdicts, preflight severities, atomic `PIPELINE_REPORT.md` publication | `gnn validate/parse/extract/preflight/report`; `POST /api/v1/{validate,parse,extract,preflight,report}` |
+| [`gnn.operations.templates`](../../src/gnn/operations/templates.py) | template index, checksums, symlink-refusing atomic pull | `gnn templates`, `gnn pull`; `GET /api/v1/templates[/{name}]`, `POST /api/v1/pull`; template MCP tools |
+
+Each adapter maps the shared outcome onto its own contract only: CLI exit codes
+`0`/`2`/`1`; HTTP `200` with `data.exit_code` `0` or `2`, `400` for a would-be
+exit 2 under `strict=True` or a `PathValidationError`, `404` for a missing path,
+`409` for a template destination collision or symlink. `gnn.cli.commands` and
+`gnn.cli.templates` remain re-export facades, and template records keep their
+`package://gnn.cli/...` sources because the template data still ships in
+`src/gnn/cli`. Import `gnn.operations` in new code; the package root is lazy and
+loads no submodule until a name is used.
+
+Dependency direction is pinned by
+[`tests/architecture/test_dependency_direction.py`](../../tests/architecture/test_dependency_direction.py):
+
+- `gnn.api` never imports `gnn.cli`; `gnn.operations` imports neither.
+- `gnn.pipeline` never imports `gnn.report`, `gnn.cli` or `gnn.api`. Ledger and
+  `PIPELINE_REPORT.md` renderers live with their pipeline producers
+  (`gnn.pipeline.cross_framework_reliability`, `gnn.pipeline.semantic_fidelity`,
+  `gnn.pipeline.summary_wiring`); the same-named `gnn.report` modules re-export
+  them with byte-identical Markdown.
+- In a fresh interpreter, importing `gnn`, `gnn.parsers`, `gnn.types`,
+  `gnn.importers` or `gnn.operations` leaves `gnn.report`, `gnn.execute`,
+  `gnn.cli`, `gnn.api`, `jax`, `matplotlib` and `pandas` unloaded, and building
+  either FastAPI app leaves `gnn.cli` unloaded.
+
+The static checks resolve relative, function-scope, `TYPE_CHECKING` and literal
+`importlib.import_module` imports, so moving an edge into a function or a
+string does not hide it.
 
 ## Version limits
 
