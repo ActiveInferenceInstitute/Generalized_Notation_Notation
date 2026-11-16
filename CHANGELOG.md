@@ -7,6 +7,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### fep_formal pair pin
+
+- `.github/fep-lean-pair.json` moves from `fep_formal` `48206d6d` to
+  `ffc6c4d515fbf4dd5df4ea3329c6dd66eda00902` (fep_formal PR #266, closing
+  CUSTODY-GNN-1 #244), whose source pin seals GNN at
+  `d38a20972e34dd83e42b733f16e74e7d87b0a6e1`. The six `gnn.owners` digests
+  match this tree; `.github/gnn-pair.json` stays at GEO_INFER `21b65a26`.
+  The README now states the companion's actual uv requirement, `==0.13.7`.
+  [Pair pin](.github/fep-lean-pair.json)
+
 ### Strict probabilities, request-plan scheduling, ontology pin and dependency refresh
 
 - Opt-in `strict_probabilities` (`extract_pomdp_from_file`, `extract_to_json`,

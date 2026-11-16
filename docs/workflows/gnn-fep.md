@@ -142,7 +142,7 @@ same command instead of re-implementing the pin shape in TypeScript.
 `find_pin` treats `.github/gnn-pair.json` as a GNN pin, because for `GEO_INFER`
 it is one. This repository's `.github/gnn-pair.json` points the other way: it
 pins `GEO_INFER` at `21b65a26`, and `.github/fep-lean-pair.json` pins
-`fep_formal` at `48206d6d`. Discovery would read either as a GNN pin and report a
+`fep_formal` at `ffc6c4d5`. Discovery would read either as a GNN pin and report a
 fork. That is why `check_importer` accepts `pin_path`, and why the upstream
 member records no pin: the arm is for importers, and the upstream's own pins are
 *dependencies it consumes*, not a claim about which GNN revision it is.
@@ -346,7 +346,7 @@ decide it:
    `check_geo_notation_bridge.py --check`, `validate_retained.py` and
    `test_composition.py`; the only `*.gnn.md` it reads is the Cascadia fixture.
 3. The bridge is mirrored in both directions. This repository pins `fep_formal`
-   at `48206d6d` in `.github/fep-lean-pair.json` and names the bridge contract
+   at `ffc6c4d5` in `.github/fep-lean-pair.json` and names the bridge contract
    among the files a paired revision re-drifts.
 
 So: one row, `pin.kind` `content-hash`, party `gnn`, and no `spec` kind. The
