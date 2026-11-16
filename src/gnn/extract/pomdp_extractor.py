@@ -42,6 +42,7 @@ from .pomdp_state import (
     POMDPStateSpace,
     canonicalize_pomdp,
 )
+from .pomdp_stochastic import DEFAULT_ATOL, stochastic_diagnostics
 
 logger = logging.getLogger(__name__)
 
@@ -70,14 +71,53 @@ class POMDPExtractor(POMDPSectionsMixin, POMDPParametersMixin, POMDPOrientationM
     - Validates POMDP structural consistency
     """
 
-    def __init__(self, strict_validation: bool = True) -> None:
+    def __init__(
+        self,
+        strict_validation: bool = True,
+        *,
+        strict_probabilities: bool = False,
+        probability_atol: float = DEFAULT_ATOL,
+    ) -> None:
         """
         Initialize POMDP extractor.
 
         Args:
             strict_validation: Enable strict validation of POMDP structure
+            strict_probabilities: Opt in to the strict probability and
+                dimension contract (see ``gnn.extract.pomdp_stochastic``):
+                ``A``/``A_*`` observation-axis and ``B``/``B_*`` next-state
+                conditionals sum to 1, ``D``/``D_*`` priors are probability
+                vectors, every entry is finite (and non-negative outside
+                ``C``), and ``D``/``C`` lengths match ``num_states`` /
+                ``num_observations``. Violations raise ``GNNExtractionError``
+                under ``on_error="raise"``, are returned under
+                ``on_error="collect"``, and are logged as warnings under
+                ``on_error="lenient"``. Requires ``strict_validation=True``.
+                Default False: several shipped fixtures author rounded priors
+                (``0.33333`` x 3) or layouts this contract rejects, so the
+                pre-existing strict behavior stays unchanged unless opted in.
+            probability_atol: Absolute tolerance for every sum-to-one check.
+
+        Raises:
+            ValueError: ``strict_probabilities`` without ``strict_validation``,
+                or a negative / non-finite ``probability_atol``.
         """
+        if strict_probabilities and not strict_validation:
+            raise ValueError(
+                "strict_probabilities=True requires strict_validation=True"
+            )
+        if not (
+            isinstance(probability_atol, (int, float))
+            and not isinstance(probability_atol, bool)
+            and 0.0 <= float(probability_atol) < float("inf")
+        ):
+            raise ValueError(
+                "probability_atol must be a finite non-negative number, got "
+                f"{probability_atol!r}"
+            )
         self.strict_validation = strict_validation
+        self.strict_probabilities = strict_probabilities
+        self.probability_atol = float(probability_atol)
         self.logger = logging.getLogger(__name__)
 
         # Error-collection state (reset at the start of each extraction call,
@@ -377,6 +417,8 @@ class POMDPExtractor(POMDPSectionsMixin, POMDPParametersMixin, POMDPOrientationM
                     self.logger.warning(
                         f"POMDP validation warnings: {validation_result['warnings']}"
                     )
+                if self.strict_probabilities:
+                    self._enforce_stochastic_contract(pomdp_space, content)
 
             if on_error == "collect":
                 return (pomdp_space, self._errors)
@@ -483,6 +525,44 @@ class POMDPExtractor(POMDPSectionsMixin, POMDPParametersMixin, POMDPOrientationM
                 return (None, self._errors)
             return None
 
+    def _enforce_stochastic_contract(
+        self, pomdp_space: POMDPStateSpace, content: str
+    ) -> None:
+        """Apply the opt-in strict probability/dimension contract.
+
+        ``raise``/``collect`` record structured ``GNN-E002`` (dimension) and
+        ``GNN-E007`` (probability) errors located at the tensor's
+        InitialParameterization assignment; ``lenient`` only logs them.
+        """
+        diagnostics = stochastic_diagnostics(pomdp_space, atol=self.probability_atol)
+        if not diagnostics:
+            return
+        if self._on_error not in ("raise", "collect"):
+            for diagnostic in diagnostics:
+                self.logger.warning(
+                    "POMDP probability contract: %s %s",
+                    diagnostic.code,
+                    diagnostic.message,
+                )
+            return
+        lines = content.split("\n")
+        for diagnostic in diagnostics:
+            assignment = re.compile(rf"^\s*{re.escape(diagnostic.tensor)}\s*=")
+            line = next(
+                (
+                    index
+                    for index, text in enumerate(lines, start=1)
+                    if index > self._section_line_offset and assignment.match(text)
+                ),
+                None,
+            )
+            self._record_error(
+                diagnostic.code,
+                diagnostic.message,
+                line=line,
+                section="InitialParameterization",
+            )
+
     def _validate_pomdp_structure(self, pomdp_space: POMDPStateSpace) -> Dict[str, Any]:
         """Validate POMDP structure for consistency."""
         warnings: list[Any] = []
@@ -570,6 +650,8 @@ def extract_pomdp_from_file(
     *,
     on_error: Literal["lenient", "raise"] = ...,
     insert_default_c: bool = ...,
+    strict_probabilities: bool = ...,
+    probability_atol: float = ...,
 ) -> Optional[POMDPStateSpace]: ...
 
 
@@ -580,6 +662,8 @@ def extract_pomdp_from_file(
     *,
     on_error: Literal["collect"],
     insert_default_c: bool = ...,
+    strict_probabilities: bool = ...,
+    probability_atol: float = ...,
 ) -> Tuple[Optional[POMDPStateSpace], List[GNNExtractionError]]: ...
 
 
@@ -589,6 +673,8 @@ def extract_pomdp_from_file(
     *,
     on_error: str = "lenient",
     insert_default_c: bool = True,
+    strict_probabilities: bool = False,
+    probability_atol: float = DEFAULT_ATOL,
 ) -> Union[
     Optional[POMDPStateSpace],
     Tuple[Optional[POMDPStateSpace], List[GNNExtractionError]],
@@ -604,12 +690,19 @@ def extract_pomdp_from_file(
             (spec_or_None, list[GNNExtractionError]); invalid -> ValueError.
         insert_default_c: True (default) preserves the passive-model zero-C
             adapter; False keeps C None with no adapter provenance.
+        strict_probabilities: Opt in to the strict probability/dimension
+            contract (``GNN-E002``/``GNN-E007``); requires strict_validation.
+        probability_atol: Sum-to-one tolerance (default 1e-6).
 
     Returns:
         POMDPStateSpace (lenient/raise) or a (spec | None, errors) tuple
         (collect mode).
     """
-    extractor = POMDPExtractor(strict_validation=strict_validation)
+    extractor = POMDPExtractor(
+        strict_validation=strict_validation,
+        strict_probabilities=strict_probabilities,
+        probability_atol=probability_atol,
+    )
     return extractor.extract_from_file(
         file_path,
         on_error=cast(OnErrorMode, on_error),
@@ -624,6 +717,8 @@ def extract_pomdp_from_content(
     *,
     on_error: Literal["lenient", "raise"] = ...,
     insert_default_c: bool = ...,
+    strict_probabilities: bool = ...,
+    probability_atol: float = ...,
 ) -> Optional[POMDPStateSpace]: ...
 
 
@@ -634,6 +729,8 @@ def extract_pomdp_from_content(
     *,
     on_error: Literal["collect"],
     insert_default_c: bool = ...,
+    strict_probabilities: bool = ...,
+    probability_atol: float = ...,
 ) -> Tuple[Optional[POMDPStateSpace], List[GNNExtractionError]]: ...
 
 
@@ -643,6 +740,8 @@ def extract_pomdp_from_content(
     *,
     on_error: str = "lenient",
     insert_default_c: bool = True,
+    strict_probabilities: bool = False,
+    probability_atol: float = DEFAULT_ATOL,
 ) -> Union[
     Optional[POMDPStateSpace],
     Tuple[Optional[POMDPStateSpace], List[GNNExtractionError]],
@@ -658,12 +757,19 @@ def extract_pomdp_from_content(
             (spec_or_None, list[GNNExtractionError]); invalid -> ValueError.
         insert_default_c: True (default) preserves the passive-model zero-C
             adapter; False keeps C None with no adapter provenance.
+        strict_probabilities: Opt in to the strict probability/dimension
+            contract (``GNN-E002``/``GNN-E007``); requires strict_validation.
+        probability_atol: Sum-to-one tolerance (default 1e-6).
 
     Returns:
         POMDPStateSpace (lenient/raise) or a (spec | None, errors) tuple
         (collect mode).
     """
-    extractor = POMDPExtractor(strict_validation=strict_validation)
+    extractor = POMDPExtractor(
+        strict_validation=strict_validation,
+        strict_probabilities=strict_probabilities,
+        probability_atol=probability_atol,
+    )
     return extractor.extract_from_gnn_content(
         content,
         on_error=cast(OnErrorMode, on_error),

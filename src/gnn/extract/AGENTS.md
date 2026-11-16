@@ -34,14 +34,15 @@ src/gnn/extract/
 ### Primary Responsibilities
 1. Extract POMDP state spaces (factors, modalities, matrices, provenance) from GNN files.
 2. Wrap extraction in a versioned, never-raising JSON envelope (schema 1.0.0).
-3. Provide the documented headless CLI entry: `python -m gnn.extract FILE [--strict|--no-strict] [--compact]`.
+3. Provide the documented headless CLI entry: `python -m gnn.extract FILE [--strict|--no-strict] [--strict-probabilities] [--compact]`.
 
 ### Key Capabilities
-- `extract_to_json(path, *, strict_validation=True, on_error="lenient", compact=False) -> str` — always returns JSON; success payload is `POMDPStateSpace.to_dict()`, failure is the `{"status": "error", "error": {...}}` envelope.
+- `extract_to_json(path, *, strict_validation=True, on_error="lenient", compact=False, strict_probabilities=False) -> str` — always returns JSON; success payload is `POMDPStateSpace.to_dict()`, failure is the `{"status": "error", "error": {...}}` envelope.
 - `main(argv=None) -> int` — CLI wrapper; exit 0 on success, exit 1 on failure (repo convention).
 - `POMDPExtractor` — stdlib-only parser producing `POMDPStateSpace` (state factors, observation modalities, control factors, A/B/C/D/E matrices with `matrix_provenance`, continuous families with `x, F, H, Q, R`).
 - `extract_pomdp_from_file` / `extract_pomdp_from_content` / `canonicalize_pomdp` — functional surface of the extractor module.
 - `OnErrorMode` (`"lenient" | "raise" | "collect"`) — structured error surfacing; parameter-parse failures are recorded in `matrix_provenance` in every mode.
+- `strict_probabilities` / `probability_atol` (`POMDPExtractor`, `extract_pomdp_from_*`, `extract_to_json`) — opt-in strict probability and dimension contract from `pomdp_stochastic.stochastic_diagnostics` (`GNN-E007` / `GNN-E002`); off by default.
 
 ## MCP Integration
 

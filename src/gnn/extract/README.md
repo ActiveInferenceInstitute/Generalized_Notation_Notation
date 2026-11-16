@@ -36,10 +36,10 @@ from gnn.extract import extract_to_json
 json_text = extract_to_json("input/gnn_files/example.gnn", strict_validation=True)
 ```
 
-`extract_to_json(path, *, strict_validation=True, on_error="lenient", compact=False) -> str` always returns a JSON string and never raises:
+`extract_to_json(path, *, strict_validation=True, on_error="lenient", compact=False, strict_probabilities=False) -> str` always returns a JSON string and never raises:
 
 - **Success**: the JSON object is `POMDPStateSpace.to_dict()` (no `status` key). `compact=True` emits `separators=(",", ":")` with no indentation; the default emits `indent=2`.
-- **Failure**: the error envelope `{"status": "error", "error": {"code", "message", "line", "section"}}`. Structured codes come from the extractor (e.g. `GNN-E002` shape contradictions, `GNN-E006` parameter-parse failures); a bare failure uses `GNN-E000`.
+- **Failure**: the error envelope `{"status": "error", "error": {"code", "message", "line", "section"}}`. Structured codes come from the extractor (e.g. `GNN-E002` shape contradictions, `GNN-E006` parameter-parse failures, opt-in `GNN-E007` probability violations); a bare failure uses `GNN-E000`.
 
 ## Extraction Details
 
@@ -63,6 +63,8 @@ two-dimensional B without C, it records the neutral compatibility C vector as
 adapter note, matching file extraction without changing the authored model.
 
 The `OnErrorMode` literal (`"lenient"`, `"raise"`, `"collect"`) controls how extraction errors surface; `extract_to_json` maps `raise` failures into the error envelope.
+
+Opt-in strict probability and dimension contract (`strict_probabilities=True`, requires `strict_validation=True`; implemented in `pomdp_stochastic.py`): `A`/`A_*` columns summed over the observation axis and `B`/`B_*` conditionals summed over the next-state axis equal 1 within `probability_atol` (default `1e-6`), `D`/`D_*` priors are probability vectors, entries are finite and non-negative outside the log-preference `C`, and `D`/`C` lengths match `num_states`/`num_observations`. Ambiguous (doubly stochastic) main-`B` orientation admits either the canonical or the action-outer next-state axis. Violations raise `GNN-E007` (probability) or `GNN-E002` (dimension) under `on_error="raise"`, are returned with the spec under `"collect"`, and are logged under `"lenient"`. It is off by default because several shipped fixtures (rounded `0.33333` priors, an `(action, next, previous)` B layout) do not meet it; `tests/gnn/test_pomdp_extractor_strict_probabilities.py` pins that census. `python -m gnn.extract FILE --strict-probabilities` applies it with `on_error="raise"`.
 
 ## Related Documentation
 
