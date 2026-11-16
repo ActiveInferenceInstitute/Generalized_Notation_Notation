@@ -39,9 +39,11 @@ class GNNExtractionError(Exception):
     enclosing GNN section, offset toward file-absolute when the section header
     is locatable).
 
-    Codes: GNN-E002 (shape/orientation contradiction), GNN-E006 (parameter
-    parse failure), GNN-E999 (unexpected extraction failure). Warning codes use
-    the GNN-W* namespace.
+    Codes: GNN-E002 (shape/orientation contradiction, including opt-in strict
+    D/C length mismatches), GNN-E006 (parameter parse failure), GNN-E007
+    (opt-in strict probability violation: non-stochastic A/B/D, negative or
+    non-finite entries), GNN-E999 (unexpected extraction failure). Warning
+    codes use the GNN-W* namespace.
     """
 
     code: str
