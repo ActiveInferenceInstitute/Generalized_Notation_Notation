@@ -298,7 +298,7 @@ def check_gnn_object(obj: Dict[str, Any]) -> GNNObjectValidation:
 
 
 def validate_gnn_object(obj: Dict[str, Any]) -> List[str]:
-    """Return the legacy error list. Use check_gnn_object for validation depth."""
+    """Return validation errors. Use check_gnn_object to inspect validation depth."""
     report = check_gnn_object(obj)
     if report.mode == "required-keys":
         logger.warning("jsonschema unavailable; checked required GNN model keys only")

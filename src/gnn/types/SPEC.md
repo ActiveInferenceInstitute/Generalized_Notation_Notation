@@ -4,7 +4,7 @@
 Single authoritative home for the shared dataclass types used across the GNN pipeline — the parsed-document model plus validation and round-trip results — kept dependency-light so any consumer can import it safely.
 
 ## Components
-- `definitions.py` defines `ValidationLevel`, `GNNSyntaxError`, `ValidationResult`, `GNNVariable`, `GNNConnection`, `ParsedGNN`, `RoundTripResult`, and `ComprehensiveTestReport`. It exposes the parser-owned `ParseResult` as a lazy compatibility alias.
+- `definitions.py` defines `ValidationLevel`, `GNNSyntaxError`, `ValidationResult`, `GNNVariable`, `GNNConnection`, `ParsedGNN`, `RoundTripResult`, and `ComprehensiveTestReport`. It exposes the parser-owned `ParseResult` as a lazy re-export.
 - `__init__.py` exports eleven public names. `GNNFormat`, `GNNInternalRepresentation`, and `ParseResult` resolve lazily from `gnn.parsers.common`.
 
 ## Invariants

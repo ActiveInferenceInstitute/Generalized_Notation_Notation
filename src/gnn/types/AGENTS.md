@@ -34,7 +34,7 @@ schema validator).
 - `__init__.py` — public re-export surface (`__all__`), with lazy aliases for
   the parser-owned classes. The shared types load independently of the parsers.
 - `definitions.py` — the dataclass definitions and the lazy `ParseResult`
-  compatibility alias. Parser-owned types used in annotations are quoted.
+  re-export. Parser-owned types used in annotations are quoted.
 
 ## Dependencies
 

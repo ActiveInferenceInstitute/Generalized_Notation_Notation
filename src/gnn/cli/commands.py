@@ -3,7 +3,7 @@
 
 The CLI dispatcher (:mod:`gnn.cli`) and the API parity adapters
 (:mod:`gnn.api.parity`) share parsing, validation, extraction, preflight,
-and report helpers here. The legacy render helpers delegate to the renderer,
+and report helpers here. The CLI render helpers delegate to the renderer,
 which owns single-framework result and artifact selection for all callers.
 
 Import policy: module scope imports only the standard library, and every

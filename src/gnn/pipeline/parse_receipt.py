@@ -48,7 +48,7 @@ def read_parsed_model(
     run_id: str | None,
     source_sha256: str | None,
 ) -> tuple[dict[str, Any], ParsedModelIdentity | None]:
-    """Read legacy JSON or verify a versioned Step 3 handoff before admission."""
+    """Read unversioned JSON or verify a Step 3 handoff before admission."""
     raw = path.read_bytes()
     payload = json.loads(raw)
     if not isinstance(payload, dict):
