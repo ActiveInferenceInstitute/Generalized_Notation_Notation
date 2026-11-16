@@ -201,6 +201,7 @@ def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None
     assert installs["gnn"] == [
         "uv",
         "sync",
+        "--no-cache",
         "--project",
         "gnn",
         "--locked",
@@ -214,6 +215,7 @@ def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None
     assert installs["geo-infer"] == [
         "uv",
         "sync",
+        "--no-cache",
         "--project",
         "geo-infer",
         "--locked",

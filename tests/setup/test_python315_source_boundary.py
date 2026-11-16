@@ -15,10 +15,10 @@ def test_installed_python_range_remains_qualified():
     assert metadata["project"]["requires-python"] == ">=3.11,<3.15"
 
 
+@pytest.mark.needs_python315
 def test_python315_source_syntax_and_stdlib_imports():
     python = shutil.which("python3.15")
-    if python is None:
-        pytest.skip("python3.15 is unavailable; source admission was not exercised")
+    assert python is not None
     probe = r"""
 import ast
 import pathlib

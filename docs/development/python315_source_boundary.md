@@ -18,12 +18,15 @@ The deterministic regression is:
 uv run --frozen --no-sync python -m pytest tests/setup/test_python315_source_boundary.py -q --no-cov
 ```
 
-With `python3.15` on PATH, it parses and compiles every `src/gnn/**/*.py` file
+The source probe carries the registered `needs_python315` marker, so it is
+auto-tagged `toolchain` and deselected from the default `./run.sh gates`
+selection like the other external-toolchain tests; the command above runs it
+directly. With `python3.15` on PATH, it parses and compiles every `src/gnn/**/*.py` file
 (including numerical modules), then imports the step registry and shared type
 definitions directly from source using `-I -B -S`. It checks registry behavior,
 type behavior and that imports add only standard-library modules. It neither
 installs GNN nor adds checkout paths to the interpreter search path. Without
-that interpreter, the source probe explicitly skips; the installed-range
+that interpreter, the marker's probe skips the source probe; the installed-range
 contract still runs. This is a lightweight source boundary, not full Python
 3.15 package, NumPy, or numerical-runtime qualification.
 
