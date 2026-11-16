@@ -30,6 +30,7 @@ sys.modules.setdefault("check_importer_registry", check_importer_registry)
 _spec.loader.exec_module(check_importer_registry)
 
 COMMIT = "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1"
+ORIGIN_HEAD = "a" * 40
 PIN = {
     "kind": "file",
     "path": ".github/gnn-pin.json",
@@ -73,12 +74,14 @@ def _stub(monkeypatch, contents: Dict[str, str]) -> List[str]:
     def _gh(*args: str) -> Optional[str]:
         if args[:2] == ("auth", "status"):
             return "logged in"
+        if args[:2] == ("api", "graphql"):
+            assert "select(.isPrivate == false)" in args[-1]
+            seen.append(f"graphql:{args[5]}")
+            return f"{ORIGIN_HEAD}\n"
         url = args[1]
         seen.append(url)
-        if len(args) > 2 and args[2] == "--jq":
-            return "main\n"
         for suffix, body in contents.items():
-            if url.endswith(suffix):
+            if url.endswith(f"{suffix}?ref={ORIGIN_HEAD}"):
                 return body
         return None
 
@@ -90,38 +93,55 @@ def test_online_reports_a_missing_pointer(monkeypatch) -> None:
     _stub(
         monkeypatch,
         {
-            ".github/gnn-pin.json?ref=main": PIN_BODY,
-            ".github/workflows/ci.yml?ref=main": WORKFLOW_BODY,
+            ".github/gnn-pin.json": PIN_BODY,
+            ".github/workflows/ci.yml": WORKFLOW_BODY,
         },
     )
     findings = check_importer_registry.Findings()
-    check_importer_registry.check_online(_registry(_row("Alpha")), findings)
+    observations = check_importer_registry.check_online(
+        _registry(_row("Alpha")), findings
+    )
+    assert observations == [
+        {"repo": "Alpha", "revision": ORIGIN_HEAD, "state": "drift"}
+    ]
     pointer = [item for item in findings.items if item["code"] == "origin-pointer"]
     assert len(pointer) == 1, findings.items
     assert "Alpha" in pointer[0]["message"]
 
 
 def test_online_accepts_a_published_pointer(monkeypatch) -> None:
-    _stub(
+    seen = _stub(
         monkeypatch,
         {
-            ".github/gnn-pin.json?ref=main": PIN_BODY,
-            ".github/workflows/ci.yml?ref=main": WORKFLOW_BODY,
-            ".github/GNN.md?ref=main": "# GNN conformance\n",
+            ".github/gnn-pin.json": PIN_BODY,
+            ".github/workflows/ci.yml": WORKFLOW_BODY,
+            ".github/GNN.md": "# GNN conformance\n",
         },
     )
     findings = check_importer_registry.Findings()
-    check_importer_registry.check_online(_registry(_row("Alpha")), findings)
+    observations = check_importer_registry.check_online(
+        _registry(_row("Alpha")), findings
+    )
+    assert observations == [
+        {"repo": "Alpha", "revision": ORIGIN_HEAD, "state": "matched"}
+    ]
+    base = "repos/ActiveInferenceInstitute/Alpha"
+    assert seen == [
+        "graphql:name=Alpha",
+        f"{base}/contents/.github/gnn-pin.json?ref={ORIGIN_HEAD}",
+        f"{base}/contents/.github/workflows/ci.yml?ref={ORIGIN_HEAD}",
+        f"{base}/contents/.github/GNN.md?ref={ORIGIN_HEAD}",
+    ]
     assert findings.items == []
 
 
 def test_online_exempts_a_row_without_a_conformance_job(monkeypatch) -> None:
-    seen = _stub(monkeypatch, {".github/gnn-pin.json?ref=main": PIN_BODY})
+    seen = _stub(monkeypatch, {".github/gnn-pin.json": PIN_BODY})
     findings = check_importer_registry.Findings()
     check_importer_registry.check_online(
         _registry(_row("Alpha", conformance=False)), findings
     )
-    assert not any(url.endswith(".github/GNN.md?ref=main") for url in seen)
+    assert not any("/contents/.github/GNN.md?" in url for url in seen)
     assert findings.items == []
 
 
@@ -145,17 +165,29 @@ def test_online_is_unavailable_without_gh(monkeypatch) -> None:
 def test_online_degrades_a_transient_failure_to_a_warning(monkeypatch) -> None:
     """A 5xx or a timeout is not evidence that a file is missing."""
 
+    contents_calls: List[str] = []
+
     def _gh(*args: str) -> Optional[str]:
         if args[:2] == ("auth", "status"):
             return "logged in"
-        if len(args) > 2 and args[2] == "--jq":
-            return "main\n"
+        if args[:2] == ("api", "graphql"):
+            return f"{ORIGIN_HEAD}\n" if "name=Alpha" in args else ""
+        contents_calls.append(args[1])
         raise check_importer_registry.GhError("HTTP 502 from api.github.com")
 
     monkeypatch.setattr(check_importer_registry, "_gh", _gh)
     findings = check_importer_registry.Findings()
-    check_importer_registry.check_online(_registry(_row("Alpha")), findings)
-    assert [item["code"] for item in findings.items] == ["online-unavailable"]
+    observations = check_importer_registry.check_online(
+        _registry(_row("Alpha"), _row("Beta")), findings
+    )
+    assert observations == [
+        {"repo": "Alpha", "revision": ORIGIN_HEAD, "state": "unavailable"},
+        {"repo": "Beta", "revision": None, "state": "unavailable"},
+    ]
+    assert contents_calls == [
+        f"repos/ActiveInferenceInstitute/Alpha/contents/.github/gnn-pin.json?ref={ORIGIN_HEAD}"
+    ]
+    assert [item["code"] for item in findings.items] == ["online-unavailable"] * 2
     assert findings.failed is False
 
 
@@ -172,10 +204,10 @@ def test_online_checks_the_job_and_pointer_for_a_dependency_pin(monkeypatch) -> 
     _stub(
         monkeypatch,
         {
-            "pyproject.toml?ref=main": (
+            "pyproject.toml": (
                 "generalized-notation-notation @ git+https://github.com/x/y@" + "0" * 40
             ),
-            ".github/workflows/ci.yml?ref=main": WORKFLOW_BODY,
+            ".github/workflows/ci.yml": WORKFLOW_BODY,
         },
     )
     findings = check_importer_registry.Findings()
@@ -190,7 +222,7 @@ def test_online_still_checks_the_job_and_pointer_without_the_pin_file(
     monkeypatch,
 ) -> None:
     """A missing pin is one finding; it must not hide the job and pointer."""
-    _stub(monkeypatch, {".github/workflows/ci.yml?ref=main": WORKFLOW_BODY})
+    _stub(monkeypatch, {".github/workflows/ci.yml": WORKFLOW_BODY})
     findings = check_importer_registry.Findings()
     check_importer_registry.check_online(_registry(_row("Alpha")), findings)
     codes = [item["code"] for item in findings.items]

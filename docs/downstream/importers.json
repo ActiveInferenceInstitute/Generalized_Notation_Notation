@@ -23,8 +23,8 @@
       },
       "conformance": {
         "workflow": ".github/workflows/ci.yml",
-        "job": "gnn-conformance",
-        "name": "gnn conformance (pinned)"
+        "job": "gate",
+        "name": "gate (lint, types, docs, gnn, tests)"
       }
     },
     {
@@ -94,8 +94,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -263,8 +263,8 @@
       },
       "conformance": {
         "workflow": ".github/workflows/docs.yml",
-        "job": "gnn-conformance",
-        "name": "gnn conformance (pinned)"
+        "job": "gate",
+        "name": "docs gate"
       }
     },
     {
@@ -283,8 +283,8 @@
       },
       "conformance": {
         "workflow": ".github/workflows/ci.yml",
-        "job": "gnn-conformance",
-        "name": "gnn conformance (pinned)"
+        "job": "gate",
+        "name": "gates (julia 1.13, python 3.12)"
       }
     },
     {
@@ -302,7 +302,7 @@
         "count": 0
       },
       "conformance": {
-        "workflow": ".github/workflows/journal-integrity.yml",
+        "workflow": ".github/workflows/gnn-conformance.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
       }
@@ -362,7 +362,7 @@
         "count": 0
       },
       "conformance": {
-        "workflow": ".github/workflows/tests.yml",
+        "workflow": ".github/workflows/gate.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
       }
@@ -414,8 +414,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {

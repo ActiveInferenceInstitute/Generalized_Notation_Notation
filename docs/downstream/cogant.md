@@ -1,7 +1,7 @@
 # COGANT
 
 **Repository**: [`ActiveInferenceInstitute/COGANT`](https://github.com/ActiveInferenceInstitute/COGANT)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
+· **Default branch**: `main` · **Verified**: pin, lock, pointer and workflow read on 2026-11-15 at [5a3833e](https://github.com/ActiveInferenceInstitute/COGANT/tree/5a3833e08d916c9a5040f754fdf4de4f4c444331).
 
 ## What it models
 
@@ -21,39 +21,27 @@ the validation target.
 
 ## Pinned GNN revision
 
-The nested COGANT project declares the pin as the optional `upstream`
-dependency in `cogant/pyproject.toml`:
-`generalized-notation-notation @ git+https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git@8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`,
-whose comment records the commit as peeled from the published `v5.0.3` annotated
-release tag. `cogant/uv.lock` resolves that revision to
-`generalized-notation-notation` 5.0.3. The compatibility receipt
-`cogant/docs/evaluation/gnn_v5_0_3_compatibility.json` records the resulting
-evidence: `locked_version` 5.0.3 with `locked_commit`, `expected_commit` and
-`origin_head` all `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, plus a 20-step
-upstream run with 20 successes. Two adjacent records are historical or internal
-and are not the current upstream pin:
-`cogant/evaluation/gnn_upstream_audit_surface.json` audits release 4.1.0 (commit
-`46459949944e3217f8a6a804d4ff8c52829ef275`), and
-`cogant/py/cogant/schema/versions.py` declares an internal schema constant that
-is independent of the upstream release pin.
+`.github/gnn-pin.json` declares `v5.1.0` at
+`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`. The optional `upstream`
+dependency in `cogant/pyproject.toml` and the resolved GNN package in
+`cogant/uv.lock` name that revision. The historical compatibility receipt
+`cogant/docs/evaluation/gnn_v5_0_3_compatibility.json` records its 20 passing
+upstream steps against `v5.0.3` at `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`.
 
 ## Conformance and validation evidence
 
-- `.github/workflows/ci.yml` job key `gnn-conformance`, display
-  `gnn conformance (pinned)` (re-read 2026-11-11), runs on every push and pull
-  request with no job-level condition; no repository ruleset requires a status
-  context, so the job is the conformance lane rather than a required check. It
-  exercises `cogant.gnn.upstream_bridge` and
-  `cogant/tests/unit/test_gnn_upstream_bridge.py`,
-  `cogant/tests/unit/test_gnn_upstream_bridge_contract.py`. The former manual
-  `workflow_dispatch` smoke job is no longer in the workflow list.
+- `.github/workflows/ci.yml` job key `gnn-conformance` runs the `gnn` arm of
+  `run_gate.py`. The arm uses the shared `gnn.importers` reader, then runs the
+  `cogant/scripts/gnn_conformance_probe.py` model check and selected upstream
+  Steps 3, 5 and 6. The probe binds the installed parser to the pinned
+  commit through its PEP 610 distribution metadata. The workflow also
+  runs `cogant/tests/unit/test_gnn_upstream_bridge.py` and the bridge contract tests.
 - `cogant/docs/cookbook/14_gnn_validation.md` is the validation walkthrough;
   `cogant/docs/evaluation/GNN_VALIDATION_REPORT.md` and
   `cogant/docs/evaluation/GNN_UPSTREAM_AUDIT_SURFACE.md` carry recorded results.
 
 ## Verification limits
 
-Not verified: that the current `main` run of `gnn-conformance` is green, or that
-the 5.0.3 compatibility record is reproducible today. The compatibility JSON was
-read at `main` on 2026-11-02, and the job key, display name and ruleset on
-2026-11-11.
+The source read verifies the declarations and the check definition. Current
+CI results and reproduction of the historical 5.0.3 receipt require separate
+evidence.

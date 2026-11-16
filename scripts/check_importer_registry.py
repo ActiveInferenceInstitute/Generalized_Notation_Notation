@@ -17,12 +17,13 @@ one artifact in two forms:
   specification, ``pin-only`` rows carry none). Rows may hold different
   releases: the registry records the release each member actually declares,
   not one estate-wide pin.
-- **Online (``--online``).** Re-reads each public repository's pin file at its
-  default branch and compares path, tag and commit with the registry, confirms
-  the named workflow exists and declares the named job, and confirms the row's
+- **Online (``--online``).** Resolves each public default branch to one commit,
+  compares the pin file at that commit with the registry, checks the named
+  workflow for the named job, and confirms the row's
   repository publishes the ``.github/GNN.md`` pointer that records what the job
   parses. This is the drift detector; it needs ``gh`` and network access, so it
-  is never part of the local gate.
+  is never part of the local gate. JSON includes the source revision and
+  observation state for each repository checked.
 
 A row is evidence of a declaration, not of a passing run: the registry says
 what a repository pins and where its evidence lives, and the repository's own
@@ -43,7 +44,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set
+from typing import Any, Dict, List, Literal, Optional, Sequence, Set, TypedDict
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "docs" / "downstream" / "importers.json"
@@ -79,6 +80,12 @@ MEMBERS_START = "<!-- gnn-fep-members:start -->"
 MEMBERS_END = "<!-- gnn-fep-members:end -->"
 
 _ROW_RE = re.compile(r"^\|\s*\[([^\]]+)\]\([^)]+\)")
+_ORIGIN_HEAD_QUERY = """query ($name: String!) {
+  repository(owner: "ActiveInferenceInstitute", name: $name) {
+    isPrivate
+    defaultBranchRef { target { oid } }
+  }
+}"""
 
 
 class Findings:
@@ -515,6 +522,12 @@ class GhError(RuntimeError):
     """A ``gh`` call failed for a reason other than a missing path."""
 
 
+class OriginObservation(TypedDict):
+    repo: str
+    revision: Optional[str]
+    state: Literal["matched", "drift", "unavailable"]
+
+
 def _gh(*args: str) -> Optional[str]:
     """Run one ``gh`` call. ``None`` means the path is absent at origin.
 
@@ -525,21 +538,28 @@ def _gh(*args: str) -> Optional[str]:
     """
     try:
         result = subprocess.run(
-            ["gh", *args], capture_output=True, text=True, timeout=120
+            ["gh", *args],
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise GhError(f"gh could not run: {exc}") from exc
     if result.returncode == 0:
         return result.stdout
     stderr = (result.stderr or "") + (result.stdout or "")
-    if "HTTP 404" in stderr or "Not Found" in stderr:
+    if "HTTP 404" in stderr:
         return None
     detail = (result.stderr or result.stdout or "").strip().splitlines()
     raise GhError(detail[-1][:200] if detail else "gh failed")
 
 
-def check_online(registry: Dict[str, Any], findings: Findings) -> None:
-    """Re-read each public repository's pin, workflow job and pointer at origin."""
+def check_online(
+    registry: Dict[str, Any], findings: Findings
+) -> List[OriginObservation]:
+    """Read each public repository at one origin revision and record coverage."""
+    observations: List[OriginObservation] = []
     try:
         authenticated = _gh("auth", "status") is not None
     except GhError:
@@ -549,35 +569,56 @@ def check_online(registry: Dict[str, Any], findings: Findings) -> None:
             "online-unavailable",
             "gh is unavailable or unauthenticated; skipped origin re-read",
         )
-        return
+        return observations
     for row in registry.get("importers") or []:
         if not isinstance(row, dict) or row.get("visibility") != "public":
             continue
+        repo = row.get("repo")
+        if not isinstance(repo, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+", repo):
+            continue
+        revision = None
+        start = len(findings.items)
+        state: Literal["matched", "drift", "unavailable"]
         try:
-            _check_public_row_online(row, findings)
+            head = _gh(
+                "api",
+                "graphql",
+                "-f",
+                f"query={_ORIGIN_HEAD_QUERY}",
+                "-f",
+                f"name={repo}",
+                "--jq",
+                ".data.repository | select(.isPrivate == false) | .defaultBranchRef.target.oid // empty",
+            )
+            if head is None or not re.fullmatch(r"[0-9a-f]{40}", head.strip()):
+                raise GhError("public default-branch commit could not be verified")
+            revision = head.strip()
+            _check_public_row_online(row, findings, revision)
         except GhError as exc:
-            findings.warning("online-unavailable", f"{row.get('repo')}: {exc}")
+            findings.warning("online-unavailable", f"{repo}: {exc}")
+            state = "unavailable"
+        else:
+            state = "drift" if len(findings.items) != start else "matched"
+        observations.append({"repo": repo, "revision": revision, "state": state})
+    return observations
 
 
-def _check_public_row_online(row: Dict[str, Any], findings: Findings) -> None:
+def _check_public_row_online(
+    row: Dict[str, Any], findings: Findings, revision: str
+) -> None:
     """Compare one public row's pin, conformance job and pointer with origin."""
     repo, pin = row.get("repo"), row.get("pin")
     full = f"ActiveInferenceInstitute/{repo}"
-    default = _gh("api", f"repos/{full}", "--jq", ".default_branch")
-    if not default:
-        findings.error("origin-repo", f"{repo}: not readable at origin")
-        return
-    default = default.strip()
     if isinstance(pin, dict) and pin.get("path"):
         raw = _gh(
             "api",
-            f"repos/{full}/contents/{pin['path']}?ref={default}",
+            f"repos/{full}/contents/{pin['path']}?ref={revision}",
             "-H",
             "Accept: application/vnd.github.raw",
         )
         if raw is None:
             findings.error(
-                "origin-pin", f"{repo}: {pin['path']} not found at origin/{default}"
+                "origin-pin", f"{repo}: {pin['path']} not found at {revision}"
             )
         elif pin.get("kind") == "dependency":
             # A dependency pin is a declaration inside a build file, not a
@@ -616,7 +657,7 @@ def _check_public_row_online(row: Dict[str, Any], findings: Findings) -> None:
     if isinstance(conformance, dict) and conformance.get("workflow"):
         raw = _gh(
             "api",
-            f"repos/{full}/contents/{conformance['workflow']}?ref={default}",
+            f"repos/{full}/contents/{conformance['workflow']}?ref={revision}",
             "-H",
             "Accept: application/vnd.github.raw",
         )
@@ -633,14 +674,14 @@ def _check_public_row_online(row: Dict[str, Any], findings: Findings) -> None:
     if conformance:
         pointer = _gh(
             "api",
-            f"repos/{full}/contents/.github/GNN.md?ref={default}",
+            f"repos/{full}/contents/.github/GNN.md?ref={revision}",
             "-H",
             "Accept: application/vnd.github.raw",
         )
         if pointer is None:
             findings.error(
                 "origin-pointer",
-                f"{repo}: .github/GNN.md not found at origin/{default}",
+                f"{repo}: .github/GNN.md not found at {revision}",
             )
 
 
@@ -721,8 +762,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     check_docs_parity(registry, findings)
     check_pin_parity(registry, findings)
     check_workflow_groups(registry, findings)
-    if args.online:
-        check_online(registry, findings)
+    observations = check_online(registry, findings) if args.online else None
     if args.repo is not None:
         if not args.name:
             findings.error("local-name", "--repo requires --name")
@@ -733,11 +773,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         args.strict and any(i["level"] == "warning" for i in findings.items)
     )
     if args.json:
-        print(
-            json.dumps(
-                {"ok": not failed, "findings": findings.items}, indent=2, sort_keys=True
-            )
-        )
+        report: Dict[str, Any] = {"ok": not failed, "findings": findings.items}
+        if observations is not None:
+            report["observations"] = observations
+        print(json.dumps(report, indent=2, sort_keys=True))
     else:
         rows = len(registry.get("importers") or [])
         print(
