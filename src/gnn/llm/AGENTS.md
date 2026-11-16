@@ -22,7 +22,8 @@ apply to every Python source edit.
 | `context_admission.py` | Exact reviewed provider contracts and retained context bounds; no attention attestation |
 | `cross_part_synthesis.py`, `corpus_synthesis.py` | Source-preserving joint/derived request plans and exact reducer checkpoints |
 | `source_parts.py` | Exact UTF-8 partitions, byte receipts and explicitly fragment-scoped reports |
-| `request_plan.py` | Immutable `gnn_llm_request_plan_v1` admission, segment/synthesis checkpoints and resume revalidation; not yet wired to the corpus scheduler |
+| `request_plan.py` | Immutable `gnn_llm_request_plan_v1` admission, segment/synthesis checkpoints and resume revalidation |
+| `plan_scheduler.py` | Opt-in corpus `request_plan` scheduler: exact byte windows, deterministic per-window checkpoints, terminal-stop admission and resume; offline-verified only |
 | `request_worker.py` | One pinned request per supervised, killable process |
 | `providers/ollama_provider.py` | Bounded HTTP transport, version/model preflight, intact messages and streaming |
 | `llm_processor.py` | Shared provider selection; explicit provider requests cannot substitute providers |
@@ -63,6 +64,7 @@ Separate selection/provisioning helper functions are not the corpus path.
 | `synthesis_mode` | `none`; explicit `joint_source` or `part_evidence` for multipart reducers |
 | `synthesis_max_tokens` | Positive reducer output reserve, default 4096 |
 | `resume` | False; explicit matching checkpoint reuse only |
+| `request_plan` / `llm.request_plan` | Off. A mapping with `segment_max_bytes` (>=4), `reservations` (`system`, `task`, `prior_receipts`, `output`), optional `mode` (`part_evidence` default; `joint_source` refuses without a native tokenizer count) and `prompt` (a selected label, default the first). It requires pinned Ollama and explicit `num_ctx`. When set, it enters the checkpoint binding and runs one `gnn_llm_request_plan_v1` plan per source under `request_plans/<stem>/<label>/` |
 
 Standalone HTTP uses `OLLAMA_HOST` and `OLLAMA_TIMEOUT` (60 seconds); provider
 `OLLAMA_MAX_TOKENS` defaults to 256 for generic requests. Step 13 supplies its

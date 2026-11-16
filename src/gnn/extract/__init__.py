@@ -11,7 +11,8 @@ Contract (extraction envelope schema version 1.0.0)
 ====================================================
 
 ``extract_to_json(path, *, strict_validation=True, on_error="lenient",
-compact=False) -> str`` always returns a JSON string and never raises.
+compact=False, strict_probabilities=False) -> str`` always returns a JSON
+string and never raises.
 
 - **Success** (extraction produced a ``POMDPStateSpace``): the JSON object is
   ``POMDPStateSpace.to_dict()`` (no ``status`` key). ``compact=True`` emits
@@ -26,14 +27,17 @@ compact=False) -> str`` always returns a JSON string and never raises.
 
   ``code``/``message``/``line``/``section`` come from the extractor's
   structured error attributes when present (e.g. ``GNN-E002`` shape
-  contradictions, ``GNN-E006`` parameter-parse failures); a bare failure with
+  contradictions, ``GNN-E006`` parameter-parse failures, ``GNN-E007``
+  opt-in strict probability violations); a bare failure with
   no structured error uses code ``"GNN-E000"``. Parameter-parse failures are
   never silently dropped by the extractor: they are recorded in
   ``matrix_provenance`` in every ``on_error`` mode.
 
 ``main(argv=None) -> int`` wraps ``extract_to_json`` as a CLI:
 
-- ``python -m gnn.extract FILE [--strict|--no-strict] [--compact]``
+- ``python -m gnn.extract FILE [--strict|--no-strict] [--strict-probabilities]
+  [--compact]`` (``--strict-probabilities`` also selects ``on_error="raise"``,
+  so the first probability/dimension violation becomes the error envelope)
 - success: prints the payload JSON, exit code 0
 - failure: prints the error envelope JSON, exit code 1
 
@@ -101,6 +105,7 @@ def extract_to_json(
     strict_validation: bool = True,
     on_error: str = "lenient",
     compact: bool = False,
+    strict_probabilities: bool = False,
 ) -> str:
     """Extract a POMDP state space from ``path`` and return the payload JSON.
 
@@ -112,6 +117,9 @@ def extract_to_json(
             ``gnn.extract.pomdp_extractor.extract_pomdp_from_file``.
         compact: Emit compact JSON (no indentation, ``(",", ":")``
             separators) instead of the default ``indent=2``.
+        strict_probabilities: Opt in to the extractor's strict probability
+            and dimension contract (requires ``strict_validation``); with
+            ``on_error="raise"`` a violation becomes the error envelope.
 
     Returns:
         JSON string: the ``POMDPStateSpace.to_dict()`` payload on success, or
@@ -127,6 +135,7 @@ def extract_to_json(
             path,
             strict_validation=strict_validation,
             on_error=cast(OnErrorMode, on_error),
+            strict_probabilities=strict_probabilities,
         )
     except (
         Exception
@@ -180,15 +189,34 @@ def main(argv: list[str] | None = None) -> int:
         help="Disable strict validation",
     )
     parser.add_argument(
+        "--strict-probabilities",
+        action="store_true",
+        help=(
+            "Fail on non-stochastic A/B/D tensors, negative or non-finite "
+            "entries, and D/C length mismatches (requires strict validation)"
+        ),
+    )
+    parser.add_argument(
         "--compact",
         action="store_true",
         help="Emit compact JSON instead of indented JSON",
     )
     args = parser.parse_args(argv)
 
-    payload = extract_to_json(
-        args.file, strict_validation=args.strict, compact=args.compact
-    )
+    if args.strict_probabilities and not args.strict:
+        parser.error("--strict-probabilities cannot be combined with --no-strict")
+    if args.strict_probabilities:
+        payload = extract_to_json(
+            args.file,
+            strict_validation=True,
+            on_error="raise",
+            compact=args.compact,
+            strict_probabilities=True,
+        )
+    else:
+        payload = extract_to_json(
+            args.file, strict_validation=args.strict, compact=args.compact
+        )
     print(payload)
 
     envelope: Any = json.loads(payload)

@@ -233,6 +233,12 @@ def posix_ready() -> bool:
     return os.name == "posix"
 
 
+@functools.lru_cache(maxsize=1)
+def python315_ready() -> bool:
+    """A ``python3.15`` interpreter is on PATH (source-boundary probe)."""
+    return shutil.which("python3.15") is not None
+
+
 # Registered ``needs_*`` marker -> (availability probe, skip reason).
 # Every key MUST be registered in pytest.ini ``markers``; the pairing is
 # pinned by ``tests/test_zero_skip_contracts.py``.
@@ -294,6 +300,10 @@ TOOLCHAIN_MARKERS: dict[str, tuple[Callable[[], bool], str]] = {
         "permission-based probe tests need a non-root POSIX user",
     ),
     "needs_posix": (posix_ready, "POSIX platform required (process-group kill)"),
+    "needs_python315": (
+        python315_ready,
+        "python3.15 is not on PATH; source admission was not exercised",
+    ),
 }
 
 # A marker that implies a weaker sibling gets both markers auto-applied, so

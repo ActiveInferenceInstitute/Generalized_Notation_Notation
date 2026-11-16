@@ -275,8 +275,9 @@ evidence stays unavailable.
 
 `ontology/bridge.py` adds `suggest_declared_label_alignments()` and
 `summarize_ontology_coverage()` (`gnn-ontology-alignment-diagnostics-v1`). For
-each of the 52 unresolved declared labels in the pinned v5 bridge (64 declared,
-12 resolved, 429 terms), they assign a deterministic semantic family and rank
+each of the 49 unresolved declared labels in the pinned v5 bridge (64 declared,
+15 resolved, 429 terms, ontology commit
+`ad808b12d51ec990227d52c528f62db36dfd54bc`), they assign a deterministic semantic family and rank
 candidate `term-*` anchors copied verbatim from the published release terms.
 Every candidate is marked `candidate_only`.
 

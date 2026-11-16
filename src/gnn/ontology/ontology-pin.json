@@ -1,12 +1,12 @@
 {
   "repository": "ActiveInferenceInstitute/Active_Inference_Ontology",
-  "commit": "4450e8ddbd06cca02a0009f0c29364e1b96a709c",
+  "commit": "ad808b12d51ec990227d52c528f62db36dfd54bc",
   "release": "v5",
   "path": "GNN/act_inf_ontology_terms.json",
   "schema": "active-inference-ontology/gnn-terms/v1",
-  "sha256": "b19e3d4c70cb7d47276978f4b1f21777089243f6a8514e86656b9e15f639656a",
-  "sourceSha256": "82fc5b03b3110e9dd9f74049d7ea0e578e05541a3cdeb0c6c24eaa0f99a9be0f",
-  "exportSha256": "a2c8371264e9e3d83319268e93b2a8047a8ba5576b1a22ea26716b87828cb706",
+  "sha256": "a63f6ab25d8f3ba8fb7922913ad9a39e02949ba09329ff8113381bb35c57a2e0",
+  "sourceSha256": "5ce48583956ebf20769464864332cf66519dc51303bbe973862577a3288a0f59",
+  "exportSha256": "7d1ef87d4f26e06fc0ce9837ec212f6b09bcf3b9bcd7cbe261f929763533841f",
   "copy": "src/gnn/ontology/active_inference_ontology_terms.json",
-  "provenanceNote": "Pinned at the published ontology merge commit 4450e8dd (PR #2, gnn-term-alignment merged into Active_Inference_Ontology main). The bridge bytes are unchanged from the branch tip b04797ee."
+  "provenanceNote": "Pinned at the published ontology merge commit ad808b12 (PR #19, merged into Active_Inference_Ontology main), which resolves the declared GNN labels LikelihoodMapping, TransitionMatrix and Preferences to release-v5 terms (15 resolved, 49 unresolved of 64). Previous pin: 4450e8dd (PR #2), bridge sha256 b19e3d4c."
 }

@@ -7,6 +7,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Strict probabilities, request-plan scheduling, ontology pin and dependency refresh
+
+- Opt-in `strict_probabilities` (`extract_pomdp_from_file`, `extract_to_json`,
+  `python -m gnn.extract --strict-probabilities`) checks discrete `A`/`B`/`D`
+  tensors for stochasticity and finite non-negative entries (`GNN-E007`) and
+  `D`/`C` lengths (`GNN-E002`). It requires strict validation; default
+  extraction is unchanged (#400).
+  [Error taxonomy](docs/gnn/gnn_syntax.md) ·
+  [Tests](tests/gnn/test_pomdp_extractor_strict_probabilities.py)
+- The opt-in `request_plan` option of `process_llm` runs one
+  `gnn_llm_request_plan_v1` plan per source through the corpus scheduler with
+  exact byte windows, per-window checkpoints, terminal-stop admission and
+  resume. Verified offline with injected replies only; S1 remains open.
+  [LLM guide](docs/llm/README.md) · [Scheduler](src/gnn/llm/plan_scheduler.py)
+- The ontology pin moves from `4450e8dd` to Active_Inference_Ontology
+  `ad808b12d51ec990227d52c528f62db36dfd54bc`: 64 declared labels, 15 resolved,
+  49 unresolved, 429 terms. Importing `gnn.ontology` no longer imports
+  `psutil`; structured logging loads it lazily (#400).
+  [Ontology pin](src/gnn/ontology/ontology-pin.json)
+- The lock absorbs the 11 grouped dependency updates of #402 (including
+  `pydantic` 2.14.3). The paired GEO-INFER interchange job removes unused
+  hosted toolchains, disables uv caches and prunes GEO wheel archives before
+  the GNN installation (#342). The Python 3.15 source
+  boundary is documented and tested (#400).
+  [Source boundary](docs/development/python315_source_boundary.md) ·
+  [Workflow](.github/workflows/geo-infer-interchange.yml)
+
 ### Transport direction, versioned handoffs and installed profiles
 
 - Shared command and template operations live in `gnn.operations`, below the

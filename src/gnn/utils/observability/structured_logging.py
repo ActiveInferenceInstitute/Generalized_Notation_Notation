@@ -21,7 +21,23 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import psutil
+# ``psutil`` is process telemetry, not a logging prerequisite: it is imported
+# lazily by ``_process_handle`` so that importing this module (and therefore
+# ``gnn.ontology`` and the other packages that log through it) succeeds in a
+# minimal closure without ``psutil``. When it is installed the recorded
+# telemetry is unchanged; when it is absent performance tracking degrades to
+# the same non-fatal debug path as any other probe failure (issue #400).
+
+
+def _process_handle() -> Any:
+    """Return ``psutil.Process()`` for this process, importing ``psutil`` lazily.
+
+    Raises ``ImportError`` when ``psutil`` is unavailable; callers treat that
+    like any other telemetry probe failure.
+    """
+    import psutil
+
+    return psutil.Process()
 
 
 class LogLevel(Enum):
@@ -201,7 +217,7 @@ class StructuredLogger:
     def _start_performance_tracking(self, operation_name: str) -> Any:
         """Start tracking performance metrics for an operation."""
         try:
-            process = psutil.Process()
+            process = _process_handle()
             memory_info = process.memory_info()
 
             metrics = PerformanceMetrics(
@@ -225,7 +241,7 @@ class StructuredLogger:
 
         try:
             metrics = self.performance_metrics[operation_name]
-            process = psutil.Process()
+            process = _process_handle()
             memory_info = process.memory_info()
 
             metrics.end_time = time.time()

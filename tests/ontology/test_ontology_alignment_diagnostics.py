@@ -31,7 +31,7 @@ from gnn.ontology.bridge import (
     verify_ontology_pin,
 )
 
-PINNED_SHA256 = "b19e3d4c70cb7d47276978f4b1f21777089243f6a8514e86656b9e15f639656a"
+PINNED_SHA256 = "a63f6ab25d8f3ba8fb7922913ad9a39e02949ba09329ff8113381bb35c57a2e0"
 
 
 @pytest.fixture(scope="module")
@@ -65,10 +65,10 @@ def test_pinned_counts_and_bytes_are_unchanged_by_diagnostics(bridge, report):
         summary["resolved_labels"],
         summary["unresolved_labels"],
         summary["terms"],
-    ) == (64, 12, 52, 429)
+    ) == (64, 15, 49, 429)
     assert summary["bridge"] == {"origin": "pinned_copy", "sha256": PINNED_SHA256}
     assert summary["release"] == "v5"
-    assert summary["resolved_fraction"] == 0.1875
+    assert summary["resolved_fraction"] == 0.234375
     assert report["schema"] == ALIGNMENT_DIAGNOSTICS_SCHEMA
 
 
@@ -120,7 +120,6 @@ def test_unresolved_labels_are_classified_into_semantic_families(report):
         "NextHiddenState": "state_transition",
         "ControlInputMatrix": "state_transition",
         "LogPreferenceVector": "preference",
-        "Preferences": "preference",
         "PolicyVectorFactor1": "policy_action",
         "ExpectedFreeEnergyPerPolicy": "policy_action",
         "PriorOnAction": "policy_action",
@@ -139,8 +138,8 @@ def test_unresolved_labels_are_classified_into_semantic_families(report):
     assert {label: families[label] for label in expected} == expected
     summary = summarize_ontology_coverage()
     counted = sum(len(rows) for rows in summary["unresolved_by_family"].values())
-    assert counted == 52
-    assert summary["unresolved_with_candidates"] == 52
+    assert counted == 49
+    assert summary["unresolved_with_candidates"] == 49
     assert summary["unresolved_without_candidates"] == 0
 
 
@@ -155,7 +154,12 @@ def test_structural_qualifiers_do_not_change_concept_or_candidates(report):
     assert rows["HiddenStateFactor0"]["candidates"][0]["ontology_term"] == (
         "Hidden State"
     )
-    assert rows["TransitionMatrix"]["candidates"][0]["ontology_term"] == "transition"
+    assert rows["TransitionMatrixFactor0"]["candidates"][0]["ontology_term"] == (
+        "transition"
+    )
+    # Resolved upstream at ad808b12 (PR #19): no longer a diagnostic row.
+    for label in ("LikelihoodMapping", "TransitionMatrix", "Preferences"):
+        assert label not in rows
 
 
 def test_tokenizer_handles_camel_case_acronyms_and_punctuation():
