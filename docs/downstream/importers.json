@@ -1,6 +1,6 @@
 {
   "schema": "gnn-importer-registry/v1",
-  "observed": "2026-11-12",
+  "observed": "2026-11-16",
   "upstream": {
     "repository": "ActiveInferenceInstitute/Generalized_Notation_Notation",
     "tag": "v5.1.0",
@@ -64,8 +64,8 @@
       "pin": {
         "kind": "file",
         "path": "specs/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
