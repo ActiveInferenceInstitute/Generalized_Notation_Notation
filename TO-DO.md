@@ -49,10 +49,27 @@ required.
 The 2026-11-15 integration added the `gnn_llm_request_plan_v1` request plan,
 the finite `gnn-semantic-witness-v4` smoothing witness and ontology alignment
 diagnostics ([CHANGELOG.md](CHANGELOG.md)). None of these completes a
-workstream. S1 stays open: the request plan is not yet wired into the corpus
-scheduler and has no live-provider terminal-completion evidence. E4 formal
-evidence stays unavailable. All 52 unresolved declared ontology labels remain
-`candidate_only` alignments; resolution and `ontology-pin.json` are unchanged.
+workstream. E4 formal evidence stays unavailable.
+
+The 2026-11-16 Wave 3B change wires that request plan into the corpus
+scheduler as the opt-in `request_plan` option of `process_llm`
+(`src/gnn/llm/plan_scheduler.py`). With it, the scheduler builds the plan, keeps
+per-window checkpoints, preserves byte offsets, and admits replies only on
+terminal stop. Offline tests use injected replies and confirm three things:
+- windows reconstruct the original bytes;
+- a resumed run issues only the unfinished requests;
+- a truncated or uncounted reply is refused and not checkpointed.
+
+This offline wiring is complete, but S1 stays open:
+- live multi-window acceptance against an external provider has not been run;
+- native terminal-completion evidence is still missing;
+- corpus `joint_source` admission refuses until a native tokenizer count exists.
+
+The ontology pin now targets Active_Inference_Ontology
+`ad808b12d51ec990227d52c528f62db36dfd54bc` (PR #19). Its published terms resolve
+`LikelihoodMapping`, `TransitionMatrix` and `Preferences`. Of the 64 declared
+labels, 15 resolve and 49 remain `candidate_only` alignments. `import gnn` and
+`import gnn.ontology` no longer require `psutil` (#400, item 2).
 
 ## Published coordinated checkpoint
 
@@ -197,8 +214,12 @@ The lists below own outstanding work; this table owns target-version sequencing.
   Default Smollm partial runs and the Gemma controlled-fact failure remain
   retained; the default model is unchanged. This establishes the admitted local
   profile, not general scientific interpretation or independent attention.
-  Remaining: broader large-source/provider and answer-quality acceptance;
-  native `part_evidence` qualification. Every joint source and prompt must fit
+  The opt-in corpus `request_plan` scheduler (`gnn_llm_request_plan_v1`) now
+  writes per-window checkpoints and admits only terminal-stop replies.
+  It is verified offline only.
+  Remaining: live external-provider multi-window acceptance; native tokenizer
+  counts for corpus `joint_source` plans; broader large-source/provider and
+  answer-quality acceptance; native `part_evidence` qualification. Every joint source and prompt must fit
   the selected context. Preserve exact provider/model/source identities,
   budgets, original bytes and explicit refusal/unfinished states. No silent
   truncation, sampling, model substitution or manufactured completion. Depends

@@ -1,9 +1,9 @@
 {
   "counts": {
     "declaredLabels": 64,
-    "resolvedDeclaredLabels": 12,
+    "resolvedDeclaredLabels": 15,
     "terms": 429,
-    "unresolvedDeclaredLabels": 52
+    "unresolvedDeclaredLabels": 49
   },
   "declared": {
     "Action": {
@@ -133,10 +133,10 @@
       "status": "unresolved"
     },
     "LikelihoodMapping": {
-      "id": null,
-      "match": null,
-      "ontologyTerm": null,
-      "status": "unresolved"
+      "id": "term-likelihood",
+      "match": "normalized-label",
+      "ontologyTerm": "Likelihood",
+      "status": "resolved"
     },
     "LikelihoodMatrix": {
       "id": null,
@@ -289,10 +289,10 @@
       "status": "resolved"
     },
     "Preferences": {
-      "id": null,
-      "match": null,
-      "ontologyTerm": null,
-      "status": "unresolved"
+      "id": "term-preference",
+      "match": "normalized-label",
+      "ontologyTerm": "Preference",
+      "status": "resolved"
     },
     "Prior": {
       "id": "term-prior",
@@ -367,10 +367,10 @@
       "status": "unresolved"
     },
     "TransitionMatrix": {
-      "id": null,
-      "match": null,
-      "ontologyTerm": null,
-      "status": "unresolved"
+      "id": "term-transition",
+      "match": "normalized-label",
+      "ontologyTerm": "transition",
+      "status": "resolved"
     },
     "TransitionMatrixFactor0": {
       "id": null,
@@ -395,7 +395,7 @@
     "path": "ontology.json",
     "schema": "active-inference-ontology/export/v2",
     "schemaVersion": "2.0",
-    "sha256": "a2c8371264e9e3d83319268e93b2a8047a8ba5576b1a22ea26716b87828cb706"
+    "sha256": "7d1ef87d4f26e06fc0ce9837ec212f6b09bcf3b9bcd7cbe261f929763533841f"
   },
   "generator": "scripts/ontology.py gnn-terms",
   "matchRule": "casefold and remove every character outside [a-z0-9], then require exactly one ontology label (or alias) to normalize to the same key",
@@ -412,7 +412,7 @@
   "source": {
     "path": "ontology.source.json",
     "schema": "active-inference-ontology/source/v2",
-    "sha256": "82fc5b03b3110e9dd9f74049d7ea0e578e05541a3cdeb0c6c24eaa0f99a9be0f"
+    "sha256": "5ce48583956ebf20769464864332cf66519dc51303bbe973862577a3288a0f59"
   },
   "terms": {
     "Abstract Accuracy": {
@@ -758,7 +758,7 @@
       "tag": null
     },
     "Coarse graining": {
-      "description": null,
+      "description": "Replacing a fine-grained description of a system by a coarser one through a declared map from fine to coarse states, usually with a rule representing the unresolved fine states.",
       "id": "term-coarse-graining",
       "status": "published",
       "tag": null
@@ -806,7 +806,7 @@
       "tag": null
     },
     "Conditional Probability": {
-      "description": null,
+      "description": "The probability of an event A given that an event B has occurred, P(A | B) = P(A, B) / P(B), defined when P(B) > 0.",
       "id": "term-conditional-probability",
       "status": "published",
       "tag": null
@@ -1046,7 +1046,7 @@
       "tag": "Agents in the Niche"
     },
     "Entropy": {
-      "description": null,
+      "description": "The expected Surprisal of a Distribution; for a discrete law p, H[p] = -sum_x p(x) log p(x), a measure of Uncertainty (in nats with natural logarithms).",
       "id": "term-entropy",
       "status": "published",
       "tag": null
@@ -1088,7 +1088,7 @@
       "tag": "Perception"
     },
     "Evolution": {
-      "description": null,
+      "description": "Change across generations in the heritable composition of a population (for example allele, genotype or type frequencies), produced by processes including selection, mutation, migration and random genetic drift.",
       "id": "term-evolution",
       "status": "published",
       "tag": null
@@ -1520,7 +1520,7 @@
       "tag": null
     },
     "Likelihood": {
-      "description": null,
+      "description": "The conditional probability (or density) of an Observation given Hidden State and parameters, p(o | s), read as a function of the hidden state or parameters for fixed observed data.",
       "id": "term-likelihood",
       "status": "published",
       "tag": null
@@ -1694,7 +1694,7 @@
       "tag": "Agents in the Niche"
     },
     "Niche construction": {
-      "description": null,
+      "description": "The process by which organisms modify their own or each other's environment, thereby altering the selection pressures acting on themselves and on later generations (ecological inheritance).",
       "id": "term-niche-construction",
       "status": "published",
       "tag": null
@@ -1826,7 +1826,7 @@
       "tag": null
     },
     "Precision": {
-      "description": null,
+      "description": "Broad sense: the inverse of variance, or more generally the confidence or reliability assigned to a distribution or model component.",
       "id": "term-precision",
       "status": "published",
       "tag": null
@@ -2312,7 +2312,7 @@
       "tag": null
     },
     "Variance": {
-      "description": null,
+      "description": "The expected squared deviation of a random variable from its mean, Var[X] = E[(X - E[X])^2].",
       "id": "term-variance",
       "status": "published",
       "tag": null
@@ -2594,7 +2594,7 @@
       "tag": null
     },
     "fitness": {
-      "description": null,
+      "description": "A measure of the reproductive success of a type or individual, such as expected offspring number per generation (absolute fitness), fitness relative to the population mean, or long-run growth rate in a fluctuating environment.",
       "id": "term-fitness",
       "status": "published",
       "tag": null
@@ -2630,7 +2630,7 @@
       "tag": null
     },
     "genetic": {
-      "description": null,
+      "description": "Pertaining to genes, heredity and the transmission of heritable variation between generations.",
       "id": "term-genetic",
       "status": "published",
       "tag": null
@@ -2798,7 +2798,7 @@
       "tag": null
     },
     "phenotype": {
-      "description": null,
+      "description": "The observable characteristics (traits) of an organism, arising from its genotype, environment and developmental history.",
       "id": "term-phenotype",
       "status": "published",
       "tag": null
@@ -2816,7 +2816,7 @@
       "tag": null
     },
     "population": {
-      "description": null,
+      "description": "A collection of individuals or replicating units of specified types considered together; in population models, a state given by the counts or frequencies of those types at a census.",
       "id": "term-population",
       "status": "published",
       "tag": null
@@ -2900,7 +2900,7 @@
       "tag": null
     },
     "selection": {
-      "description": null,
+      "description": "Differential survival or reproduction associated with heritable type, which changes type frequencies by reweighting each type by its fitness relative to the population mean (x_i' = x_i w_i / mean w).",
       "id": "term-selection",
       "status": "published",
       "tag": null
@@ -2966,7 +2966,7 @@
       "tag": null
     },
     "transition": {
-      "description": null,
+      "description": "A change of state between successive times; in a discrete-state Generative Model, the conditional law of the next Hidden State given the current state and Action, p(s_t+1 | s_t, u_t).",
       "id": "term-transition",
       "status": "published",
       "tag": null
