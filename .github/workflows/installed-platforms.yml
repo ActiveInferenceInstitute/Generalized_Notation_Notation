@@ -56,7 +56,8 @@ jobs:
         with:
           version: "0.13.6"
           enable-cache: true
-      - name: Build and export the frozen installed runtime
+      - name: Build the wheel and export the frozen runtime profiles
+        id: build
         run: |
           python - <<'PY'
           import os, pathlib, subprocess
@@ -70,6 +71,13 @@ jobs:
           subprocess.run(['uv', 'build', '--wheel', '--out-dir', str(scratch / 'dist')], check=True)
           subprocess.run(['uv', 'export', '--frozen', '--no-default-groups', '--extra', 'api', '--extra', 'thrml', '--no-emit-project', '--output-file', str(scratch / 'runtime.txt')], check=True, stdout=subprocess.DEVNULL)
           subprocess.run(['uv', 'export', '--frozen', '--only-group', 'dev', '--no-emit-project', '--output-file', str(scratch / 'testtools.txt')], check=True, stdout=subprocess.DEVNULL)
+          subprocess.run(['uv', 'export', '--frozen', '--no-default-groups', '--no-emit-project', '--output-file', str(scratch / 'base-runtime.txt')], check=True, stdout=subprocess.DEVNULL)
+          PY
+      - name: Install the wheel with API, THRML and development test tools
+        run: |
+          python - <<'PY'
+          import os, pathlib, subprocess
+          scratch = pathlib.Path(os.environ['RUNNER_TEMP']) / 'gnn-installed-platform'
           subprocess.run(['uv', 'venv', '--python', os.environ['UV_PYTHON'], str(scratch / 'venv')], check=True)
           python = scratch / 'venv' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
           subprocess.run(['uv', '--no-config', 'pip', 'install', '--python', str(python), '--only-binary', ':all:', '--require-hashes', '-r', str(scratch / 'runtime.txt')], cwd=scratch, check=True)
@@ -123,6 +131,30 @@ jobs:
           cases = list(tree.iter('testcase'))
           assert cases and not any(case.find(kind) is not None for case in cases for kind in ('skipped', 'failure', 'error')), 'native witness skipped or failed'
           PY
+      - name: Accept the separate base wheel outside the checkout
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, shutil, subprocess
+          checkout = pathlib.Path.cwd()
+          scratch = pathlib.Path(os.environ['RUNNER_TEMP']) / 'gnn-installed-platform'
+          venv = scratch / 'base-venv'
+          data = scratch / 'base-data'
+          data.mkdir()
+          model = data / 'static_perception.md'
+          shutil.copyfile(checkout / 'input/gnn_files/basics/static_perception.md', model)
+          subprocess.run(['uv', 'venv', '--python', os.environ['UV_PYTHON'], str(venv)], check=True)
+          python = venv / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
+          runtime = scratch / 'base-runtime.txt'
+          wheel, = (scratch / 'dist').glob('*.whl')
+          installer = ['uv', '--no-config', 'pip', 'install', '--python', str(python)]
+          subprocess.run([*installer, '--only-binary', ':all:', '--require-hashes', '-r', str(runtime)], cwd=scratch, check=True)
+          subprocess.run([*installer, '--no-deps', str(wheel)], cwd=scratch, check=True)
+          source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert source == os.environ['INSTALLED_SOURCE_REVISION'], 'base build source differs from candidate'
+          (scratch / 'base-identity.json').write_text(json.dumps({'checkout_commit': source, 'wheel_sha256': hashlib.sha256(wheel.read_bytes()).hexdigest(), 'lock_sha256': hashlib.sha256((checkout / 'uv.lock').read_bytes()).hexdigest(), 'runtime_export_sha256': hashlib.sha256(runtime.read_bytes()).hexdigest()}, indent=2))
+          subprocess.run([str(python), '-I', str(checkout / 'scripts/run_installed_platform_acceptance.py'), '--base-wheel', '--checkout', str(checkout), '--root', str(data), '--model', str(model), '--receipt', str(scratch / 'base-acceptance.json')], cwd=data, check=True)
+          PY
       - name: Tracked-file bookend
         if: always()
         run: |
@@ -143,6 +175,7 @@ jobs:
             ${{ runner.temp }}/gnn-installed-platform/*.xml
             ${{ runner.temp }}/gnn-installed-platform/tracked-*.txt
             ${{ runner.temp }}/gnn-installed-platform/data/*.log
+            ${{ runner.temp }}/gnn-installed-platform/base-data/*.log
           if-no-files-found: error
           retention-days: 14
 

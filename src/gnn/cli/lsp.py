@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from typing import Any, Callable, Optional, TextIO
+from typing import Any, BinaryIO, Callable, Optional, TextIO
 
 from gnn.lsp.completions import completion_context, context_completions
 from gnn.schema import (
@@ -34,27 +34,27 @@ from gnn.schema import (
 logger = logging.getLogger(__name__)
 
 
-def read_message(stream: Optional[TextIO] = None) -> Any:
-    """Read one Content-Length-framed JSON-RPC message from ``stream``.
+def read_message(stream: TextIO | BinaryIO | None = None) -> Any:
+    """Read one Content-Length-framed JSON-RPC message.
 
-    Defaults to ``sys.stdin``. Returns None on EOF or malformed framing.
+    Real stdin is read as bytes. Injected text streams remain supported for
+    embedded callers and tests.
     """
     if stream is None:
-        stream = sys.stdin
+        stream = getattr(sys.stdin, "buffer", sys.stdin)
     line = stream.readline()
-    if not line:
+    header = line.decode("ascii") if isinstance(line, bytes) else line
+    if not header.startswith("Content-Length: "):
         return None
 
-    if not line.startswith("Content-Length: "):
+    content_length = int(header[16:].strip())
+    if content_length < 0:
         return None
 
-    content_length = int(line[16:].strip())
-
-    # Read the empty line
     stream.readline()
-
-    # Read the body
     body = stream.read(content_length)
+    if len(body) != content_length:
+        return None
     return json.loads(body)
 
 
@@ -64,10 +64,16 @@ def write_message(msg: Any, stream: Optional[TextIO] = None) -> None:
     Defaults to ``sys.stdout`` (resolved at call time so test harnesses
     that swap stdout are honored).
     """
-    if stream is None:
-        stream = sys.stdout
     body = json.dumps(msg)
-    stream.write(f"Content-Length: {len(body)}\r\n\r\n{body}")
+    frame = f"Content-Length: {len(body)}\r\n\r\n{body}"
+    if stream is None:
+        buffer = getattr(sys.stdout, "buffer", None)
+        if buffer is not None:
+            buffer.write(frame.encode("ascii"))
+            buffer.flush()
+            return
+        stream = sys.stdout
+    stream.write(frame)
     stream.flush()
 
 

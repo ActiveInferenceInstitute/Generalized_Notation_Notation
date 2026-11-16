@@ -75,6 +75,39 @@ class TestCLILSPHelpers:
         assert msg["id"] == 1
 
     @pytest.mark.unit
+    def test_read_message_uses_utf8_byte_length_on_stdio(
+        self, monkeypatch: Any
+    ) -> None:
+        first = {"jsonrpc": "2.0", "id": 1, "params": {"text": "π"}}
+        second = {"jsonrpc": "2.0", "id": 2, "method": "shutdown"}
+        wire = bytearray()
+        for message in (first, second):
+            body = json.dumps(message, ensure_ascii=False).encode("utf-8")
+            wire.extend(f"Content-Length: {len(body)}\r\n\r\n".encode("ascii"))
+            wire.extend(body)
+        stream = io.TextIOWrapper(io.BytesIO(wire), encoding="utf-8")
+        monkeypatch.setattr(sys, "stdin", stream)
+
+        assert cli_lsp.read_message() == first
+        assert cli_lsp.read_message() == second
+        assert cli_lsp.read_message() is None
+
+    @pytest.mark.unit
+    def test_write_message_bypasses_stdio_newline_translation(
+        self, monkeypatch: Any
+    ) -> None:
+        buffer = io.BytesIO()
+        stream = io.TextIOWrapper(buffer, encoding="utf-8", newline="\r\n")
+        monkeypatch.setattr(sys, "stdout", stream)
+
+        message = {"jsonrpc": "2.0", "id": 1, "result": "π"}
+        cli_lsp.write_message(message)
+
+        header, body = buffer.getvalue().split(b"\r\n\r\n")
+        assert header == f"Content-Length: {len(body)}".encode("ascii")
+        assert json.loads(body) == message
+
+    @pytest.mark.unit
     def test_read_message_empty_stdin_returns_none(self, monkeypatch: Any) -> None:
         """An empty stdin line should yield None (EOF)."""
         monkeypatch.setattr(sys, "stdin", io.StringIO(""))
