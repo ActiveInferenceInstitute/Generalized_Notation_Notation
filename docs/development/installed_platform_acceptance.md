@@ -139,7 +139,7 @@ replace native Linux/Windows or final integrated-source acceptance.
 The wheel is `generalized_notation_notation-5.1.0-py3-none-any.whl`. Core
 requirements now include pydantic, jsonschema, rich and packaging. LSP has
 its own extra; API declares Starlette; GUI declares websockets and the
-optional watchdog consumer. The guarded legacy pkg_resources consumer maps
+optional watchdog consumer. The guarded pkg_resources consumer maps
 to setuptools in the research extra. The `all` extra is the exact normalized
 union of all named non-dev runtime extras, with matching markers.
 `uv.toml` mirrors the resolver constraints in pyproject.toml.

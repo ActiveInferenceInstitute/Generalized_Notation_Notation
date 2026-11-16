@@ -7,6 +7,62 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Transport direction, versioned handoffs and installed profiles
+
+- Shared command and template operations live in `gnn.operations`, below the
+  CLI, HTTP and MCP transports. `gnn.api` no longer imports `gnn.cli`, and
+  `gnn.cli.commands` / `gnn.cli.templates` re-export the moved objects with
+  unchanged identity. The semantic-fidelity, cross-framework and per-step
+  report renderers moved into their `gnn.pipeline` producers, so `gnn.pipeline`
+  no longer imports `gnn.report`; the report modules re-export them.
+  [Operations package](src/gnn/operations/SPEC.md) ·
+  [Direction tests](tests/architecture/test_dependency_direction.py)
+- `lint-imports` enforces six new forbidden contracts (nine total): `gnn.api`
+  never imports `gnn.cli`; `gnn.operations` and `gnn.template` stay below both
+  transports; `gnn.pipeline` never imports `gnn.report`, `gnn.cli` or
+  `gnn.api`; and `gnn.parsers`, `gnn.types` and `gnn.importers` import neither
+  transport nor `gnn.report` / `gnn.execute`.
+  [Contracts](pyproject.toml)
+- Direct runtime requirements are declared, an `lsp` extra is added, the
+  `api` and `gui` extras name their direct imports, `all` is normalized, and
+  the lock carries `opentelemetry-api` 1.45.2 and
+  `tornado` 6.6.1 (#394, #395). The dependency-hygiene check compares runtime
+  imports with declarations. API modules report a missing `api` extra with an
+  installation hint. Local wheel checks qualified the base, pygls LSP and both
+  API factory profiles outside the checkout. The wheel ships no `py.typed`
+  marker and makes no PEP 561 claim.
+  [Installed platforms](docs/development/installed_platform_acceptance.md) ·
+  [Dependency hygiene](scripts/check_dep_hygiene.py)
+- The `gnn_parsed_model_v1` Step 3 receipt now governs export (7),
+  visualization (8/9) and render (11). Each step admits the parsed artifact by
+  receipt checksum, provenance, run ID and current source bytes, and refuses
+  stale, tampered or mixed-run handoffs. Step 12 stamps each execution detail
+  with `gnn_execution_handoff_v1` provenance. The meta-analysis collector and
+  Step 16 analysis admit that summary before reading results. Unversioned
+  standalone receipts keep their historical readers, and the summaries are
+  checked against COGANT's summary reader.
+  [Run ownership guide](docs/development/run_ownership_migration.md) ·
+  [Handoff tests](tests/pipeline/test_handoff_provenance.py)
+- `gnn-semantic-witness-v4` adds a replayable finite full-sequence smoothing
+  witness with forward filtering as a named negative control. Formal evidence
+  stays unavailable and E4 remains open.
+  [Semantic witness](src/gnn/validation/semantic_witness.py)
+- Ontology diagnostics classify the 52 unresolved declared labels and rank
+  `candidate_only` anchors from the 429 pinned terms. Resolution and
+  `ontology-pin.json` are unchanged.
+  [Ontology bridge](src/gnn/ontology/bridge.py)
+- `gnn_llm_request_plan_v1` freezes source segments, provider, model, prompt
+  and context reservations and revalidates terminal-stop checkpoints on resume.
+  It is not yet wired into the corpus scheduler or exercised against a live
+  provider, so S1 remains open.
+  [Request plan](src/gnn/llm/request_plan.py)
+- The importer registry records distinct evidence categories in prose and JSON
+  and reports authentication, permission and transport failures as
+  unavailable observations (exit 2) rather than confirmed failures (exit 1).
+  Six downstream changes merged with it: ActiveInferenceJournal#48, pymdp#12,
+  ATLAS#15, Active_Fedference#35, COGANT#23 and COGANT#22.
+  [Importer registry](docs/downstream/README.md)
+
 ### Package boundaries and compatibility
 
 - The installed LSP guide uses `gnn lsp`. Local wheel checks exercised

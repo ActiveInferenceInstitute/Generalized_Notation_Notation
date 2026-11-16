@@ -357,7 +357,8 @@ def runtime_import_errors(project: dict, source: Path) -> list[str]:
         )
     )
     internal = {"gnn", "__future__", "tests"}
-    # Legacy absolute sibling imports are checked by the import-linter gate.
+    # Absolute sibling imports of top-level src/gnn modules are checked by the
+    # import-linter gate.
     internal.update(p.stem for p in source.iterdir() if p.suffix == ".py")
     internal.update(p.name for p in source.iterdir() if p.is_dir())
     errors = []

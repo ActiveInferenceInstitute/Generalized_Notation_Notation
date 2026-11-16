@@ -106,12 +106,14 @@ def run_audit() -> List[str]:
             failures.append(
                 f"src/gnn/cli/parser.py: missing CLI command contract {command}"
             )
-    if not _exists("src/gnn/cli/templates.py"):
+    # The shared template operations live below every transport adapter;
+    # src/gnn/cli/templates.py is a compatibility re-export facade.
+    if not _exists("src/gnn/operations/templates.py"):
         failures.append(
-            "src/gnn/cli/templates.py: template library implementation missing"
+            "src/gnn/operations/templates.py: template library implementation missing"
         )
     else:
-        templates_text = _read("src/gnn/cli/templates.py")
+        templates_text = _read("src/gnn/operations/templates.py")
         for required in (
             "importlib import resources",
             "_validate_template_record",
@@ -121,7 +123,7 @@ def run_audit() -> List[str]:
         ):
             if required not in templates_text:
                 failures.append(
-                    f"src/gnn/cli/templates.py: missing package-data/template safety guard {required}"
+                    f"src/gnn/operations/templates.py: missing package-data/template safety guard {required}"
                 )
     if not _exists("src/gnn/cli/template_index.json"):
         failures.append(

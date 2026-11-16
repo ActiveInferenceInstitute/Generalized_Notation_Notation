@@ -583,3 +583,44 @@ ignore_imports = [
     # The logging subpackage __init__ imports its own leaf (pre-split tree).
     "gnn.utils.logging -> gnn.utils.logging.logging_utils",
 ]
+
+# Dependency direction (Wave 2). Transports sit on top: gnn.cli and gnn.api are
+# adapters over the transport-neutral gnn.operations layer, and neither imports
+# the other. The behavioural witness for the same rules is
+# tests/architecture/test_dependency_direction.py; these contracts make the
+# static graph authoritative under `lint-imports`.
+[[tool.importlinter.contracts]]
+name = "api transport never imports the cli transport"
+type = "forbidden"
+source_modules = ["gnn.api"]
+forbidden_modules = ["gnn.cli"]
+
+[[tool.importlinter.contracts]]
+name = "shared operations stay below both transports"
+type = "forbidden"
+source_modules = ["gnn.operations"]
+forbidden_modules = ["gnn.cli", "gnn.api"]
+
+[[tool.importlinter.contracts]]
+name = "pipeline never imports report or either transport"
+type = "forbidden"
+source_modules = ["gnn.pipeline"]
+forbidden_modules = ["gnn.report", "gnn.cli", "gnn.api"]
+
+[[tool.importlinter.contracts]]
+name = "template step stays below both transports"
+type = "forbidden"
+source_modules = ["gnn.template"]
+forbidden_modules = ["gnn.cli", "gnn.api"]
+
+[[tool.importlinter.contracts]]
+name = "parsers, types and importers stay below both transports"
+type = "forbidden"
+source_modules = ["gnn.parsers", "gnn.types", "gnn.importers"]
+forbidden_modules = ["gnn.cli", "gnn.api"]
+
+[[tool.importlinter.contracts]]
+name = "parsers, types and importers never import report or execute"
+type = "forbidden"
+source_modules = ["gnn.parsers", "gnn.types", "gnn.importers"]
+forbidden_modules = ["gnn.report", "gnn.execute"]

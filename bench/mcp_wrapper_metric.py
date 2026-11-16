@@ -63,7 +63,9 @@ def scan_wrapper_loc() -> tuple[int, int]:
             print(f"HARNESS ERROR: SyntaxError scanning {py}: {exc}", file=sys.stderr)
             raise SystemExit(3)
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and WRAPPER_RE.match(node.name):
+            if isinstance(
+                node, (ast.FunctionDef, ast.AsyncFunctionDef)
+            ) and WRAPPER_RE.match(node.name):
                 end_lineno = node.end_lineno
                 if end_lineno is None:  # pragma: no cover - FunctionDef always has one
                     continue
@@ -102,7 +104,9 @@ def live_tool_names() -> tuple[list[str], int]:
         time.sleep(0.2)
 
     errored = sum(
-        1 for info in mcp_instance.modules.values() if getattr(info, "status", "") == "error"
+        1
+        for info in mcp_instance.modules.values()
+        if getattr(info, "status", "") == "error"
     )
     return sorted(mcp_instance.tools), errored
 
@@ -117,7 +121,9 @@ def main() -> int:
     try:
         live_names, errored = live_tool_names()
     except Exception as exc:
-        print(f"HARNESS ERROR: MCP registry initialization failed: {exc}", file=sys.stderr)
+        print(
+            f"HARNESS ERROR: MCP registry initialization failed: {exc}", file=sys.stderr
+        )
         return 3
     print(f"METRIC mcp_tool_count={len(live_names)}")
 
@@ -130,7 +136,9 @@ def main() -> int:
             f"tools_total: audit={audit['tools_total']} live={len(live_names)}"
         )
     if errored != audit["modules_errored"]:
-        drift.append(f"modules_errored: audit={audit['modules_errored']} live={errored}")
+        drift.append(
+            f"modules_errored: audit={audit['modules_errored']} live={errored}"
+        )
     missing = [n for n in audit_names if n not in set(live_names)]
     extra = [n for n in live_names if n not in set(audit_names)]
     if missing:
