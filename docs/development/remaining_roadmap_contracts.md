@@ -71,6 +71,29 @@ corrupt checkpoints, and genuine provider runs beyond one context window. Test
 injections validate scheduling only. S1 remains open until native coverage is
 complete for every required source/prompt in the selected acceptance corpus.
 
+### S1-RP1: immutable request plan v1
+
+[`llm/request_plan.py`](../../src/gnn/llm/request_plan.py) implements the plan
+fields above as `gnn_llm_request_plan_v1`. It records the exact source digest,
+byte length and contiguous UTF-8 segment offsets, together with the provider,
+endpoint, model and prompt digests. It also records the reviewed context
+capacity and template identity, the four context reservations, the
+`part_evidence` or `joint_source` task contract, deadlines, and the no
+truncation, substitution or budget-increase policy. `joint_source` refuses
+without a matching native-tokenizer count or when it cannot fit.
+
+Segment and synthesis checkpoints bind the plan digest, request digest and a
+`terminal_stop_v1` outcome. Resume revalidation rejects changed plan fields,
+corrupt or conflicting checkpoints, incomplete replies and stale synthesis
+dependencies. Tests cover CRLF, BOM, Unicode and trailing-byte reconstruction,
+changed source/model/endpoint/template/prompt rejection, interrupted segment and
+synthesis resume, cancellation and exhausted context or deadline budgets.
+
+This unit is not yet wired into the corpus scheduler, request worker, cache or
+existing checkpoint versions. Its tests inject outcomes. Duplicate-stem corpus
+handling and genuine provider runs beyond one context window are still
+unverified, so S1 remains open.
+
 ## E4: independent semantic witnesses
 
 Source hashes, matching values and shapes are necessary identity checks. They do
@@ -215,6 +238,52 @@ filters, explicit per-quantity outcomes and separate proof/execution/custody
 fields. The viewer labels saved receipts as unverified reported evidence; it
 does not rerun a numerical algorithm or compiler in the browser. E4 remains open
 for broader source grammars, model compositions, inference algorithms and proofs.
+
+### E4 replayable finite smoothing v4
+
+`gnn-semantic-witness-v4` adds one question:
+`gnn_finite_fixed_action_smoother_v1`. This is full-sequence smoothing on the
+restricted finite source contract with exogenous transition actions. Schema v3
+already names witness compositions, and v2 filtering receipts and their
+smoothing refusals are unchanged and still replay.
+
+The reference comes from the raw source bytes by enumerating every complete
+latent path, conditioned on the whole horizon (`conditioning_horizon` equals
+`T` at every time), in float64. Comparisons use `atol=1e-12` and `rtol=1e-10`
+and report per-time error. The receipt also retains the forward-filtering
+posteriors as a named negative control. On the asymmetric fixture these differ
+before the final time and agree only there. `gnn witness --verify` replays the
+complete receipt, reference included.
+
+Negative controls fail, refuse or raise with explicit diagnoses:
+
+- filtering posteriors substituted for smoothing (`filtering_posteriors_substituted_for_smoothing`);
+- filtering contracts, modes or questions declared for a smoothing source;
+- a conditioning-horizon mismatch;
+- a transposed rectangular `A` in either the result or the source;
+- a perturbed `B`, whether declared or hidden;
+- action timing shifted by one step (`action_timing_shifted_earlier`/`_later`);
+- float32 values with and without a float32 declaration (`float32_precision_rounding`);
+- source, reference and schema tampering on replay.
+
+Only `bnlearn` and `pgmpy` framework labels are admitted. No native smoothing
+adapter produces these results yet; the tests use the separate test oracle as
+the reported runtime. `execution_source_verified` stays false and formal
+evidence stays unavailable.
+
+### Ontology bridge alignment diagnostics
+
+`ontology/bridge.py` adds `suggest_declared_label_alignments()` and
+`summarize_ontology_coverage()` (`gnn-ontology-alignment-diagnostics-v1`). For
+each of the 52 unresolved declared labels in the pinned v5 bridge (64 declared,
+12 resolved, 429 terms), they assign a deterministic semantic family and rank
+candidate `term-*` anchors copied verbatim from the published release terms.
+Every candidate is marked `candidate_only`.
+
+These diagnostics do not change the bridge. `resolve_declared_label()` still
+returns unresolved with no identifier. The pin and the bridge copy are
+byte-unchanged, and no `obo:` or provisional identifier is emitted. Promoting a
+candidate needs a reviewed release of the upstream ontology.
 
 ### E4-P1: authored planning admission
 

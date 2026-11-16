@@ -28,9 +28,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, NamedTuple, Optional, Tuple, cast
+from typing import Any, Dict, FrozenSet, Iterable, NamedTuple, Optional, Tuple, cast
 
 ONTOLOGY_BRIDGE_SCHEMA = "active-inference-ontology/gnn-terms/v1"
 ONTOLOGY_BRIDGE_FILENAME = "active_inference_ontology_terms.json"
@@ -380,3 +381,328 @@ def pinned_declared_index() -> Tuple[Optional[DeclaredIndex], Optional[str]]:
         return declared_label_index(load_ontology_bridge()), None
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return None, f"{BRIDGE_UNAVAILABLE_REASON}: {exc}"
+
+
+# ---------------------------------------------------------------------------
+# Alignment diagnostics for unresolved declared labels (candidate-only)
+# ---------------------------------------------------------------------------
+
+ALIGNMENT_DIAGNOSTICS_SCHEMA = "gnn-ontology-alignment-diagnostics-v1"
+ALIGNMENT_DEFAULT_LIMIT = 5
+ALIGNMENT_ANCHOR_BONUS = 0.5
+ALIGNMENT_UNCLASSIFIED = "unclassified"
+ALIGNMENT_NOTE = (
+    "Candidates rank existing release terms by deterministic token overlap and "
+    "family anchors. They are curation aids only: no label is resolved, no "
+    "term-* identifier is assigned, and the pinned bridge bytes are unchanged."
+)
+
+# Structural qualifiers name an index within a GNN model, not a concept.
+_STRUCTURAL_TOKENS = frozenset({"factor", "modality"})
+
+# Ordered rules: the first family with any token set contained in a label's
+# tokens wins. Anchors are existing release-v5 term labels; an anchor absent
+# from the supplied bridge is skipped, never invented.
+ALIGNMENT_FAMILIES: Tuple[
+    Tuple[str, Tuple[FrozenSet[str], ...], Tuple[str, ...]], ...
+] = (
+    (
+        "likelihood_mapping",
+        (
+            frozenset({"likelihood"}),
+            frozenset({"observation", "matrix"}),
+            frozenset({"recognition"}),
+        ),
+        ("Likelihood", "Recognition Model", "Generative Model", "Observation"),
+    ),
+    (
+        "state_transition",
+        (
+            frozenset({"transition"}),
+            frozenset({"next", "hidden", "state"}),
+            frozenset({"control", "input"}),
+        ),
+        ("transition", "Hidden State", "State space", "Control (states)"),
+    ),
+    (
+        "preference",
+        (frozenset({"preference"}), frozenset({"goal"})),
+        ("Preference", "Pragmatic Value", "Reward"),
+    ),
+    (
+        "policy_action",
+        (frozenset({"policy"}), frozenset({"action"}), frozenset({"habit"})),
+        (
+            "Policy",
+            "Policy prior",
+            "Policy posterior",
+            "Action",
+            "Habit learning/formation",
+            "Expected Free Energy",
+        ),
+    ),
+    (
+        "control_constraint",
+        (frozenset({"constraint"}), frozenset({"control", "variance"})),
+        ("constraint", "Control (states)", "Variance"),
+    ),
+    (
+        "precision_parameter",
+        (
+            frozenset({"beta"}),
+            frozenset({"gamma"}),
+            frozenset({"precision"}),
+            frozenset({"temperature"}),
+        ),
+        ("Precision", "Uncertainty", "parameter"),
+    ),
+    (
+        "prior_posterior_belief",
+        (
+            frozenset({"prior"}),
+            frozenset({"posterior"}),
+            frozenset({"belief"}),
+            frozenset({"initial", "state"}),
+        ),
+        ("Prior", "Posterior", "Belief", "Empirical prior"),
+    ),
+    (
+        "state_or_observation",
+        (
+            frozenset({"hidden", "state"}),
+            frozenset({"observable", "state"}),
+            frozenset({"observation"}),
+        ),
+        ("Hidden State", "Observation", "Sensory observation", "State"),
+    ),
+    (
+        "temporal_structure",
+        (
+            frozenset({"time"}),
+            frozenset({"trajectory"}),
+            frozenset({"iteration"}),
+        ),
+        ("time", "trajectory", "Temporal Depth"),
+    ),
+    (
+        "population",
+        (frozenset({"agent"}),),
+        ("Agent", "population", "Swarm"),
+    ),
+)
+
+
+def _singular(token: str) -> str:
+    if len(token) > 3 and token.endswith("s") and not token.endswith("ss"):
+        return token[:-1]
+    return token
+
+
+def alignment_tokens(label: str) -> Tuple[str, ...]:
+    """Split a CamelCase/punctuated label into casefolded singular word tokens."""
+    spaced = re.sub(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", " ", label)
+    words = re.findall(r"[a-z]+|[0-9]+", spaced.casefold())
+    return tuple(_singular(word) for word in words)
+
+
+def _label_structure(label: str) -> Tuple[Tuple[str, ...], Dict[str, int]]:
+    """Return conceptual tokens and structural qualifiers such as ``factor: 1``."""
+    tokens = alignment_tokens(label)
+    qualifiers: Dict[str, int] = {}
+    concept = []
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if (
+            token in _STRUCTURAL_TOKENS
+            and index + 1 < len(tokens)
+            and tokens[index + 1].isdigit()
+        ):
+            qualifiers[token] = int(tokens[index + 1])
+            index += 2
+            continue
+        if token.isdigit():
+            qualifiers["index"] = int(token)
+        elif token not in _STRUCTURAL_TOKENS:
+            concept.append(token)
+        index += 1
+    return tuple(concept), qualifiers
+
+
+def classify_declared_label(label: str) -> str:
+    """Return the deterministic semantic family of a declared GNN label."""
+    concept = frozenset(_label_structure(label)[0])
+    for family, rules, _anchors in ALIGNMENT_FAMILIES:
+        if any(rule <= concept for rule in rules):
+            return family
+    return ALIGNMENT_UNCLASSIFIED
+
+
+def _term_rows(bridge: Dict[str, Any]) -> list[Tuple[str, str, FrozenSet[str]]]:
+    """Return ``(label, term id, tokens)`` for every published ``term-*`` row."""
+    rows = []
+    for label, entry in _mapping(bridge.get("terms")).items():
+        identifier = _mapping(entry).get("id")
+        if _is_nonempty_str(identifier) and str(identifier).startswith(
+            RESOLVED_ID_PREFIX
+        ):
+            rows.append(
+                (str(label), str(identifier), frozenset(alignment_tokens(label)))
+            )
+    return sorted(rows)
+
+
+def _rank_candidates(
+    concept: Tuple[str, ...],
+    family: str,
+    terms: list[Tuple[str, str, FrozenSet[str]]],
+    limit: int,
+) -> list[Dict[str, Any]]:
+    anchors = next(
+        (set(anchor) for name, _rules, anchor in ALIGNMENT_FAMILIES if name == family),
+        set(),
+    )
+    wanted = frozenset(concept)
+    ranked: list[Dict[str, Any]] = []
+    for label, identifier, tokens in terms:
+        shared = wanted & tokens
+        overlap = len(shared) / len(wanted | tokens) if shared else 0.0
+        anchored = label in anchors
+        score = round(overlap + (ALIGNMENT_ANCHOR_BONUS if anchored else 0.0), 6)
+        if score <= 0:
+            continue
+        ranked.append(
+            {
+                "term_id": identifier,
+                "ontology_term": label,
+                "score": score,
+                "matched_tokens": sorted(shared),
+                "basis": [
+                    name
+                    for name, present in (
+                        ("family_anchor", anchored),
+                        ("token_overlap", bool(shared)),
+                    )
+                    if present
+                ],
+                "candidate_only": True,
+            }
+        )
+    ranked.sort(key=lambda row: (-row["score"], row["ontology_term"]))
+    return ranked[:limit]
+
+
+def _alignment_bridge(
+    bridge: Optional[Dict[str, Any]],
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    if bridge is not None:
+        return bridge, {"origin": "caller", "sha256": None}
+    return load_ontology_bridge(), {
+        "origin": "pinned_copy",
+        "sha256": sha256_file(ontology_bridge_path()),
+    }
+
+
+def suggest_declared_label_alignments(
+    bridge: Optional[Dict[str, Any]] = None,
+    *,
+    labels: Optional[Iterable[str]] = None,
+    limit: int = ALIGNMENT_DEFAULT_LIMIT,
+) -> Dict[str, Any]:
+    """Classify unresolved declared labels and rank candidate release terms.
+
+    Every unresolved label keeps ``status="unresolved"`` and ``term_id=None``.
+    Candidate ``term-*`` identifiers are copied verbatim from the bridge's
+    ``terms`` block and marked ``candidate_only``; ``obo:ACTO_*`` /
+    ``obo:TEMP_*`` metadata is never read or emitted. ``labels`` restricts the
+    report to those declared labels (others report their own status without
+    candidates). Output is deterministic for a given bridge document.
+    """
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+        raise ValueError("limit must be a positive integer")
+    document, origin = _alignment_bridge(bridge)
+    index = declared_label_index(document)
+    declared = _mapping(document.get("declared"))
+    selected = (
+        sorted(
+            str(label)
+            for label, entry in declared.items()
+            if _mapping(entry).get("status") == DECLARED_STATUS_UNRESOLVED
+        )
+        if labels is None
+        else list(dict.fromkeys(labels))
+    )
+    terms = _term_rows(document)
+    rows = []
+    for label in selected:
+        resolution = resolve_declared_label(label, index)
+        concept, qualifiers = _label_structure(label)
+        family = classify_declared_label(label)
+        unresolved = resolution.status == DECLARED_STATUS_UNRESOLVED
+        rows.append(
+            {
+                "label": label,
+                "status": resolution.status,
+                "term_id": resolution.identifier,
+                "family": family,
+                "concept_tokens": list(concept),
+                "structural_qualifiers": qualifiers,
+                "candidates": _rank_candidates(concept, family, terms, limit)
+                if unresolved
+                else [],
+            }
+        )
+    release = _mapping(document.get("release"))
+    return {
+        "schema": ALIGNMENT_DIAGNOSTICS_SCHEMA,
+        "bridge_schema": document.get("schema"),
+        "release": release.get("version"),
+        "bridge": origin,
+        "candidate_only": True,
+        "limit": limit,
+        "note": ALIGNMENT_NOTE,
+        "labels": rows,
+    }
+
+
+def summarize_ontology_coverage(
+    bridge: Optional[Dict[str, Any]] = None,
+    *,
+    limit: int = ALIGNMENT_DEFAULT_LIMIT,
+) -> Dict[str, Any]:
+    """Summarize declared-label coverage and unresolved family structure.
+
+    Resolved identifiers come only from the bridge's ``declared`` block. The
+    unresolved section counts labels per family and how many have at least one
+    candidate; candidates never count as coverage.
+    """
+    suggestions = suggest_declared_label_alignments(bridge, limit=limit)
+    document, _origin = _alignment_bridge(bridge)
+    declared = _mapping(document.get("declared"))
+    resolved = {
+        str(label): str(_mapping(entry).get("id"))
+        for label, entry in sorted(declared.items())
+        if _mapping(entry).get("status") == DECLARED_STATUS_RESOLVED
+    }
+    families: Dict[str, list[str]] = {}
+    for row in suggestions["labels"]:
+        families.setdefault(row["family"], []).append(row["label"])
+    with_candidates = sum(1 for row in suggestions["labels"] if row["candidates"])
+    total = len(declared)
+    return {
+        "schema": ALIGNMENT_DIAGNOSTICS_SCHEMA,
+        "bridge_schema": suggestions["bridge_schema"],
+        "release": suggestions["release"],
+        "bridge": suggestions["bridge"],
+        "declared_labels": total,
+        "resolved_labels": len(resolved),
+        "unresolved_labels": len(suggestions["labels"]),
+        "terms": len(_term_rows(document)),
+        "resolved_fraction": round(len(resolved) / total, 6) if total else 0.0,
+        "resolved": resolved,
+        "unresolved_by_family": {key: families[key] for key in sorted(families)},
+        "unresolved_with_candidates": with_candidates,
+        "unresolved_without_candidates": len(suggestions["labels"]) - with_candidates,
+        "candidate_only": True,
+        "note": ALIGNMENT_NOTE,
+    }
