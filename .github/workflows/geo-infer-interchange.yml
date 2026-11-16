@@ -95,28 +95,36 @@ jobs:
         with:
           # GEO owns its exact toolchain independently of GNN.
           version: "0.13.1"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: geo-infer/uv.lock
           cache-suffix: gnn-interchange-core
+      - name: Reclaim unused hosted runner toolchains
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h .
       - name: Install GEO locked runtime
         env:
           GEO_PYTHON: ${{ matrix.python }}
         run: |
           # Match the pinned validator's test, inference and H3 imports.
-          uv sync --project geo-infer --locked --python "$GEO_PYTHON" \
+          uv sync --no-cache --project geo-infer --locked --python "$GEO_PYTHON" \
             --no-default-groups \
             --package geo-infer-act --package geo-infer-space --package geo-infer-test
           uv pip list --python geo-infer/.venv/bin/python --format json \
             > receipts/geo-installed-distributions.json
+      - name: Prune GEO wheel archives before GNN installation
+        run: uv cache prune
       - name: Install GNN uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           # Match exact uv 0.13.6 in GNN's uv.toml and Docker bootstrap.
           version: "0.13.6"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: gnn/uv.lock
       - name: Install GNN locked runtime
-        run: uv sync --project gnn --locked --python 3.11 --extra dev --extra geo-infer
+        run: |
+          uv sync --no-cache --project gnn --locked --python 3.11 --extra dev --extra geo-infer
+          uv cache prune
       - name: Cascadia export qualification controls
         working-directory: gnn
         run: uv run --frozen --no-sync --python 3.11 python -m pytest docs/other/geo_infer/test_qualify_export.py -q --no-cov
