@@ -73,8 +73,50 @@ Step 6 checks the version and the parsed bytes before running validators. In
 a current run it also binds the processing receipt and artifact digests to
 the current inventory and matches the selected model identity. Its output
 keeps the accepted identity under `parsed_input`. Step 6 accepts historical
-receipts without version fields with their previous behavior. Step 7 and
-Step 8 can still read the flat model payload.
+receipts without version fields with their previous behavior.
+
+Export (Step 7), visualization (Steps 8 and 9) and render (Step 11) admit the
+same versioned Step 3 handoff. When a run selects Step 3, each consumer
+requires a current-run receipt, a parsed artifact whose bytes match the
+receipt and inventory checksums, embedded provenance equal to the receipt
+identity, and current source bytes equal to the parsed source SHA-256. A stale,
+tampered or mixed-run handoff fails the consumer step; it never falls back to
+older JSON or a modification-time comparison. Accepted identities appear under
+`parsed_input` in the consumer's output, and the render summary also records
+`parsed_model_schema`. Render separately refuses a source that changed after
+parsing. A run that did not select Step 3 reads its current sources. Standalone
+output with a historical receipt without version fields keeps the flat payload
+and the modification-time reader (migration reader).
+
+Step 12 records `execution_handoff_schema: gnn_execution_handoff_v1` in
+`execution_summary.json`. Every execution detail carries a deterministic
+`_gnn_provenance` with `schema`, `run_id`, `model_id`, `artifact_stem`,
+`source_relative_path`, `source_sha256` and `rendered_artifact_sha256`. It
+contains no timestamps or absolute paths, so replay and resume reproduce
+identical handoffs. Source and rendered identities come from the Step 11 render
+summary and the executed script bytes.
+
+The integration meta-analysis collector and Step 16 analysis admit an execution
+summary before reading results. A versioned summary must have one run ID shared
+by all details, the current run's ID in a pipeline invocation, a selected model
+for each detail, its selected source SHA-256, and unchanged rendered script
+bytes. In a run, the summary bytes must match the current-run inventory and only
+inventoried result files of admitted cells are read; older files are ignored.
+Refusal is fail-closed: the collector returns no records,
+meta-analysis writes `execution_handoff.json` with `status: refused` and its
+reason, and analysis records `ExecutionHandoffRefused` and fails. A summary
+without version fields remains readable in standalone use (with log mining as
+before). In a run, or when any detail carries versioned provenance, it is refused.
+A rendered script that no longer exists is reported under
+`unverified_rendered_artifacts` rather than refused.
+
+The COGANT summary readers remain compatible. Both the modification-time reader
+and the invocation reader (`run_id`, `run_session_sha256`,
+`artifact_inventory_contract: current-run-v1` and artifact checksums) accept the
+emitted summaries. `tests/pipeline/test_handoff_provenance.py` runs vendored
+copies of both readers. It also runs the live `_read_summary` from a sibling
+`COGANT` checkout and from any checkouts listed (separated by `os.pathsep`) in
+`GNN_COGANT_CHECKOUTS`.
 
 Direct distributed execution now requires a ready caller-owned backend. Pass a
 running Dask client as `Dispatcher("dask", client=client)`, or initialize Ray in

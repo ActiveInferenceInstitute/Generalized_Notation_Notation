@@ -34,6 +34,7 @@ from ..analysis.combined_analysis import (
     generate_combined_visualizations,
 )
 from ..core.parsed_model import (
+    admitted_visualization_input,
     load_parse_artifact_stems,
     load_visualization_model,
     write_stale_json_note_if_needed,
@@ -184,6 +185,9 @@ def process_visualization(
             path: overrides.get(path.absolute(), artifact_stems[path])
             for path in gnn_files
         }
+        from gnn.pipeline.parse_receipt import HandoffRefused
+
+        handoff_refusals: List[str] = []
         for gnn_file in gnn_files:
             figure_failures: List[str] = []
             try:
@@ -202,6 +206,11 @@ def process_visualization(
                         failures=figure_failures,
                     )
                 )
+            except HandoffRefused as e:
+                # A refused versioned Step 3 handoff is a hard failure: no
+                # figures may be drawn from stale or mixed-run input.
+                handoff_refusals.append(str(e))
+                figure_failures.append(f"Error processing {gnn_file}: {e}")
             except Exception as e:
                 figure_failures.append(f"Error processing {gnn_file}: {e}")
             for message in figure_failures:
@@ -233,6 +242,12 @@ def process_visualization(
             log.warning(message)
         processing_errors.extend(rejected)
 
+        if handoff_refusals:
+            log_step_error(
+                log,
+                f"Visualization refused {len(handoff_refusals)} Step 3 handoff(s)",
+            )
+            return False
         if all_visualizations:
             log_step_success(log, f"Generated {len(all_visualizations)} visualizations")
             if processing_errors:
@@ -407,6 +422,17 @@ def _cached_figure_failures(model_dir: Path, model_name: str) -> List[str]:
     return [str(f) for f in failures] if isinstance(failures, list) else []
 
 
+def _cached_parsed_input(model_dir: Path, model_name: str) -> Any:
+    """Return the Step 3 identity recorded by the run that produced the cache."""
+    manifest_path = model_dir / f"{model_name}_viz_manifest.json"
+    try:
+        recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    meta = recorded.get("viz_meta") if isinstance(recorded, dict) else None
+    return meta.get("parsed_input") if isinstance(meta, dict) else None
+
+
 def process_single_gnn_file(
     gnn_file: Path,
     results_dir: Path,
@@ -439,7 +465,18 @@ def process_single_gnn_file(
     model_dir = results_dir / model_name
     model_dir.mkdir(exist_ok=True)
 
+    admitted = admitted_visualization_input(
+        gnn_file, results_dir, parsed_artifact_stem or model_name
+    )
     cached = load_cached_artifacts(model_dir, gnn_file.stat().st_mtime)
+    if cached and admitted is not None:
+        if _cached_parsed_input(model_dir, model_name) != admitted[1]:
+            # A versioned handoff admits cached figures only when they were
+            # drawn from the identical Step 3 model (run, source and bytes).
+            logger.info(
+                "Re-rendering %s: cached figures predate this handoff", model_name
+            )
+            cached = []
     if cached and _cached_figure_failures(model_dir, model_name):
         # The run that produced this cache lost figures: retry them rather
         # than letting a partial cache pass as a clean result.
@@ -457,6 +494,7 @@ def process_single_gnn_file(
         verbose,
         parsed_model=parsed_model,
         parsed_artifact_stem=parsed_artifact_stem or model_name,
+        admitted=admitted,
     )
     write_stale_json_note_if_needed(parsed_data, model_dir, model_name, gnn_file)
     sampled = sample_parsed_data(parsed_data)

@@ -100,8 +100,45 @@ def _check_dependencies(logger: logging.Logger) -> Dict[str, bool]:
     return dependencies
 
 
+def _admit_versioned_models(
+    receipt: Dict[str, Any],
+    logger: logging.Logger,
+    results: Optional[AdvancedVisualizationResults],
+) -> Dict[str, Dict[str, Any]]:
+    """Admit every selected versioned Step 3 model or refuse the handoff."""
+    from gnn.pipeline.parse_receipt import admit_parsed_model
+
+    models: Dict[str, Dict[str, Any]] = {}
+    for record in sorted(
+        receipt.get("processed_files", []),
+        key=lambda item: str(item.get("parsed_model_file") or item.get("file_name")),
+    ):
+        if not record.get("parse_success"):
+            logger.warning(
+                f"Skipping failed parse result: {record.get('file_name', 'unknown')}"
+            )
+            continue
+        model_name = record.get("artifact_stem") or Path(
+            str(record.get("parsed_model_file"))
+        ).stem.removesuffix("_parsed")
+        try:
+            payload, identity = admit_parsed_model(record, receipt)
+        except (KeyError, OSError, TypeError, ValueError) as exc:
+            raise ValueError(f"Step 3 handoff refused for {model_name}: {exc}") from exc
+        models[model_name] = payload
+        if results is not None and identity is not None:
+            results.parsed_inputs[model_name] = identity
+        logger.info(f"Admitted versioned parsed model: {model_name}")
+    if results is not None:
+        results.parsed_model_schema = receipt.get("parsed_model_schema")
+    return models
+
+
 def _load_gnn_models(
-    target_dir: Path, logger: logging.Logger, base_output_dir: Optional[Path] = None
+    target_dir: Path,
+    logger: logging.Logger,
+    base_output_dir: Optional[Path] = None,
+    results: Optional[AdvancedVisualizationResults] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """Load GNN models from processing results"""
     from gnn.pipeline.config import get_output_dir_for_script
@@ -157,6 +194,13 @@ def _load_gnn_models(
                     logger.warning(f"Failed to load {parsed_file}: {e}")
             return models
         return {}
+
+    from gnn.pipeline.parse_receipt import step3_handoff_receipt
+
+    # A versioned receipt is admitted byte-for-byte; refusal propagates.
+    receipt = step3_handoff_receipt(results_file, 9)
+    if receipt is not None and receipt.get("parsed_model_schema") is not None:
+        return _admit_versioned_models(receipt, logger, results)
 
     # Load results
     try:
@@ -303,6 +347,9 @@ def _save_results(
     if context is not None:
         summary["run_id"] = context.run_id
         summary["model_selection"] = [m.__dict__ for m in context.selected_models(9)]
+    if results.parsed_model_schema is not None:
+        summary["parsed_model_schema"] = results.parsed_model_schema
+        summary["parsed_inputs"] = dict(sorted(results.parsed_inputs.items()))
 
     output_file = output_dir / "advanced_viz_summary.json"
     try:
@@ -374,6 +421,7 @@ def process_advanced_viz(
                 output_dir.parent
                 if output_dir.name.endswith("_output")
                 else output_dir,
+                results,
             )
 
             if not gnn_models:
