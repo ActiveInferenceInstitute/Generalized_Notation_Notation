@@ -181,8 +181,10 @@ def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None
             assert re.fullmatch(r"astral-sh/setup-uv@[0-9a-f]{40}", action)
             active_uv = step["with"]["version"]
             setup_versions.append(active_uv)
+            if active_uv == expected_versions["geo-infer"]:
+                assert step["with"]["cache-suffix"] == "gnn-interchange-core"
         for line in step.get("run", "").replace("\\\n", " ").splitlines():
-            command = shlex.split(line)
+            command = shlex.split(line, comments=True)
             if command[:2] == ["uv", "sync"]:
                 project = command[command.index("--project") + 1]
                 assert project not in installs
@@ -217,15 +219,12 @@ def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None
         "--locked",
         "--python",
         "$GEO_PYTHON",
-        "--all-packages",
-        "--all-extras",
-        "--no-install-package",
-        "cupy",
-        "--no-install-package",
-        "mayavi",
-        "--no-install-package",
-        "vaex",
-        "--no-install-package",
-        "vaex-core",
+        "--no-default-groups",
+        "--package",
+        "geo-infer-act",
+        "--package",
+        "geo-infer-space",
+        "--package",
+        "geo-infer-test",
     ]
     assert qualification_checked
