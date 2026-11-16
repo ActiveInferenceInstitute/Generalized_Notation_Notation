@@ -348,9 +348,10 @@ def _collect_parsed_model_carrier(
     """Read step 3's on-disk parse artifacts exactly once.
 
     The carrier bundles ``gnn_processing_results.json`` plus every
-    successful ``{model}_parsed.json`` it references, keyed by source-file
-    stem — the same bytes steps 7/8 would otherwise re-read from disk.
+    successful ``{model}_parsed.json`` it references, keyed by artifact stem.
     """
+    from gnn.processing.discovery import recorded_artifact_stem
+
     step3_dir = get_output_dir_for_script("3_gnn", Path(output_dir))
     results_file = step3_dir / "gnn_processing_results.json"
     if not results_file.is_file():
@@ -384,7 +385,9 @@ def _collect_parsed_model_carrier(
             )
             continue
         source_path = entry.get("file_path")
-        key = Path(source_path).stem if source_path else parsed_path.parent.name
+        key = recorded_artifact_stem(entry.get("artifact_stem")) or (
+            Path(source_path).stem if source_path else parsed_path.parent.name
+        )
         models[key] = model
     return {"results": results, "models": models}
 

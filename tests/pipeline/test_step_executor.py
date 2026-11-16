@@ -7,6 +7,7 @@ path for a small target dir, receipts record the execution mode, and steps
 outside the whitelist are refused.
 """
 
+import hashlib
 import json
 import logging
 import os
@@ -920,7 +921,7 @@ class TestParsedModelCarrier:
     def test_step7_artifacts_byte_identical_with_carrier_on_vs_off(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Carrier-served export is byte-identical to the disk re-read.
+        """Disk and carrier exports preserve each model, even with equal stems.
 
         Extends the :70-104 parity approach against the same step-3 run:
         step 3's parsed JSON embeds per-node UUIDs and timestamps, so two
@@ -930,14 +931,44 @@ class TestParsedModelCarrier:
         content. Only the step-7 run timestamp in ``export_results.json``
         may differ.
         """
-        self._whitelist_with(monkeypatch, "7_export")
+        self._whitelist_with(monkeypatch, "7_export", "8_visualization")
         run_dir = tmp_path / "run"
         args = _pipeline_args(run_dir)
+        original = BASICS_DIR / "simple_mdp.md"
+        model_text = original.read_text(encoding="utf-8")
+        for label in ("East", "West"):
+            source = BASICS_DIR / label / "shared.md"
+            source.parent.mkdir()
+            source.write_text(
+                model_text.replace("Simple MDP Agent", f"{label} MDP"),
+                encoding="utf-8",
+            )
 
         step3 = execute_step_in_process(
             "3_gnn.py", args, LOGGER, collect_parsed_model=True
         )
         assert step3["exit_code"] == 0, step3["stderr"]
+        step3_dir = run_dir / "3_gnn_output"
+        receipt = json.loads((step3_dir / "gnn_processing_results.json").read_text())
+        records = {entry["file_path"]: entry for entry in receipt["processed_files"]}
+        assert len(records) == 3
+        assert len(receipt["summary"]["formats_per_file"]) == 3
+        paths = {Path(entry["parsed_model_file"]) for entry in records.values()}
+        assert len(paths) == 3
+        assert step3_dir / "simple_mdp" / "simple_mdp_parsed.json" in paths
+        for label in ("East", "West"):
+            source = BASICS_DIR / label / "shared.md"
+            entry = records[str(source)]
+            payload = json.loads(Path(entry["parsed_model_file"]).read_text())
+            assert payload["model_name"] == f"{label} MDP"
+            assert (
+                payload["_gnn_provenance"]["source_relative_path"]
+                == f"{label}/shared.md"
+            )
+            assert (
+                payload["_gnn_provenance"]["source_sha256"]
+                == hashlib.sha256(source.read_bytes()).hexdigest()
+            )
 
         on_step7 = execute_step_in_process(
             "7_export.py", args, LOGGER, collect_parsed_model=True
@@ -956,6 +987,15 @@ class TestParsedModelCarrier:
         off_files = _artifact_files(export_dir)
         assert on_files == off_files
         assert on_files, "no step-7 artifacts produced"
+        exports = json.loads((export_dir / "export_results.json").read_text())
+        for entry in exports["files_exported"]:
+            parsed = Path(records[entry["file_path"]]["parsed_model_file"])
+            exported = Path(entry["exports"]["json"]["export_file"])
+            assert json.loads(exported.read_text()) == json.loads(parsed.read_text())
+        exported_paths = {
+            entry["exports"]["json"]["export_file"] for entry in exports["files_exported"]
+        }
+        assert len(exported_paths) == 3
         for rel in on_files:
             on_bytes = (carrier_snapshot / rel).read_bytes()
             off_bytes = (export_dir / rel).read_bytes()
@@ -968,3 +1008,21 @@ class TestParsedModelCarrier:
             on_json.pop("timestamp", None)
             off_json.pop("timestamp", None)
             assert on_json == off_json
+
+        from gnn.visualization import load_visualization_model
+
+        viz = execute_step_in_process(
+            "8_visualization.py", args, LOGGER, collect_parsed_model=True
+        )
+        assert viz["exit_code"] in (0, 2), viz["stderr"]
+        viz_dir = run_dir / "8_visualization_output"
+        for label in ("East", "West"):
+            source = BASICS_DIR / label / "shared.md"
+            entry = records[str(source)]
+            stem = entry["artifact_stem"]
+            manifest = json.loads(
+                (viz_dir / stem / f"{stem}_viz_manifest.json").read_text()
+            )
+            assert manifest["viz_meta"]["json_path"] == entry["parsed_model_file"]
+            loaded = load_visualization_model(source, source.read_text(), viz_dir)
+            assert loaded["metadata"]["model_name"] == f"{label} MDP"

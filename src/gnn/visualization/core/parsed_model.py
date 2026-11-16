@@ -7,6 +7,8 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from gnn.processing.discovery import recorded_artifact_stem
+
 from ..parse.markdown import parse_gnn_content
 
 logger = logging.getLogger(__name__)
@@ -18,6 +20,27 @@ def resolve_gnn_step3_output_dir(results_dir: Path) -> Path:
 
     parent = results_dir.parent if results_dir.name.endswith("_output") else results_dir
     return Path(get_output_dir_for_script("3_gnn.py", parent))
+
+
+def load_parse_artifact_stems(results_dir: Path) -> dict[Path, str]:
+    """Read Step 3's overrides for colliding standalone source paths."""
+    receipt = resolve_gnn_step3_output_dir(results_dir) / "gnn_processing_results.json"
+    try:
+        result = json.loads(receipt.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    records = result.get("processed_files") if isinstance(result, dict) else None
+    if not isinstance(records, list):
+        return {}
+    stems = {}
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        source = record.get("source_path")
+        stem = recorded_artifact_stem(record.get("artifact_stem"))
+        if isinstance(source, str) and stem is not None:
+            stems[Path(source)] = stem
+    return stems
 
 
 def _ontology_list_to_dict(mappings: Any) -> Dict[str, str]:
@@ -76,6 +99,7 @@ def load_visualization_model(
     verbose: bool = False,
     *,
     parsed_model: Optional[Dict[str, Any]] = None,
+    parsed_artifact_stem: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Build the visualization input dict.
@@ -90,7 +114,11 @@ def load_visualization_model(
     re-read and staleness is still derived from the file mtimes, producing
     a dict identical to a disk load.
     """
-    model_name = gnn_file.stem
+    model_name = parsed_artifact_stem or load_parse_artifact_stems(results_dir).get(
+        gnn_file.absolute(), gnn_file.stem
+    )
+    if Path(model_name).name != model_name or model_name in {".", ".."}:
+        raise ValueError("Parsed artifact stem must be a single directory name")
     gnn_out = resolve_gnn_step3_output_dir(results_dir)
     parsed_json = gnn_out / model_name / f"{model_name}_parsed.json"
 

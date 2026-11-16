@@ -462,6 +462,8 @@ def generate_combined_visualizations(
     verbose: bool = False,
     *,
     parsed_models: Optional[Dict[str, Dict[str, Any]]] = None,
+    artifact_stems: Optional[Dict[Path, str]] = None,
+    parse_stems: Optional[Dict[Path, str]] = None,
 ) -> List[str]:
     """Generate combined visualizations."""
     visualizations: List[str] = []
@@ -529,17 +531,23 @@ def generate_combined_visualizations(
         for gnn_file in gnn_files:
             with open(gnn_file, encoding="utf-8") as f:
                 content = f.read()
-            carrier_model = parsed_models.get(gnn_file.stem) if parsed_models else None
+            parse_stem = parse_stems.get(gnn_file) if parse_stems else None
+            carrier_model = (
+                parsed_models.get(parse_stem or gnn_file.stem)
+                if parsed_models
+                else None
+            )
             file_parsed = load_visualization_model(
                 gnn_file,
                 content,
                 results_dir,
                 verbose=verbose,
                 parsed_model=carrier_model,
+                parsed_artifact_stem=parse_stem,
             )
             file_stats.append(
                 {
-                    "name": gnn_file.stem,
+                    "name": (artifact_stems or {}).get(gnn_file, gnn_file.stem),
                     "variables": len(file_parsed.get("variables", [])),
                     "connections": len(file_parsed.get("connections", [])),
                     "matrices": len(file_parsed.get("matrices", [])),

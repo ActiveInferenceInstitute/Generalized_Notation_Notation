@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Sequence, Tuple, cast
 
 from gnn.parsers.common import get_extension_for_format, get_supported_gnn_extensions
+from gnn.processing.discovery import model_artifact_stems
 from gnn.utils import log_step_error, log_step_start, log_step_success
 
 
@@ -42,15 +43,17 @@ _PARSER_WORKER_SYSTEM: Any = None
 
 
 def _parse_file_job(
-    job: tuple[Path, list[Any], str | None], *, system: Any = None
+    job: tuple[Path, list[Any], str | None, bool], *, system: Any = None
 ) -> dict[str, Any]:
     """Parse and serialize one input without writing pipeline artifacts."""
     from gnn.parsers import GNNParsingSystem
 
-    path, formats, expected_hash = job
+    path, formats, expected_hash, bind_standalone_source = job
     record: dict[str, Any] = {"file_name": path.name, "file_path": str(path)}
     try:
-        if (
+        if bind_standalone_source:
+            expected_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+        elif (
             expected_hash
             and hashlib.sha256(path.read_bytes()).hexdigest() != expected_hash
         ):
@@ -97,6 +100,8 @@ def _parse_file_job(
             and hashlib.sha256(path.read_bytes()).hexdigest() != expected_hash
         ):
             raise ValueError("Model source changed during parsing")
+        if bind_standalone_source:
+            record["source_sha256"] = expected_hash
         return record
     except Exception as exc:
         return {
@@ -110,6 +115,7 @@ def _parse_file_job(
 def _publish_parse_result(
     record: dict[str, Any],
     output: Path,
+    artifact_stem: str,
     formats: list[Any],
     provenance: dict[str, str],
     deadline: float | None,
@@ -118,11 +124,10 @@ def _publish_parse_result(
     """Publish one computed result in the parent, retaining per-format failures."""
     from gnn.utils.file_workers import check_file_work
 
-    path = Path(record["file_path"])
-    destination = output / path.stem
+    destination = output / artifact_stem
     check_file_work(deadline, cancel_token)
     destination.mkdir(exist_ok=True)
-    parsed_file = destination / f"{path.stem}_parsed.json"
+    parsed_file = destination / f"{artifact_stem}_parsed.json"
     payload = record.pop("_parsed_payload")
     if provenance:
         payload["_gnn_provenance"] = dict(provenance)
@@ -134,7 +139,7 @@ def _publish_parse_result(
         check_file_work(deadline, cancel_token)
         out_file = (
             destination
-            / f"{path.stem}_{format_enum.value}{get_extension_for_format(format_enum)}"
+            / f"{artifact_stem}_{format_enum.value}{get_extension_for_format(format_enum)}"
         )
         info = record["generated_formats"][format_enum.value]
         info["output_file"] = str(out_file)
@@ -280,6 +285,12 @@ def process_gnn_multi_format(
             if run_context
             else {}
         )
+        standalone_stems = (
+            model_artifact_stems(target_path, gnn_files) if run_context is None else {}
+        )
+        standalone_collisions = {
+            path for path, stem in standalone_stems.items() if stem != path.stem
+        }
         worker_metadata: dict[str, Any] = {
             "requested_workers": requested_workers,
             "effective_workers": min(requested_workers, len(gnn_files)),
@@ -290,6 +301,7 @@ def process_gnn_multi_format(
                 path,
                 formats_to_emit,
                 provenance_by_stem.get(path.stem, {}).get("source_sha256"),
+                path in standalone_collisions,
             )
             for path in gnn_files
         )
@@ -309,13 +321,24 @@ def process_gnn_multi_format(
         ):
             check_file_work(deadline, cancel_token)
             file_path = Path(file_result["file_path"])
+            artifact_stem = standalone_stems.get(file_path, file_path.stem)
+            provenance = provenance_by_stem.get(file_path.stem, {})
+            if file_path in standalone_collisions and file_result["parse_success"]:
+                provenance = {
+                    "source_path": str(file_path.absolute()),
+                    "source_relative_path": file_path.relative_to(
+                        target_path
+                    ).as_posix(),
+                    "source_sha256": file_result["source_sha256"],
+                }
             if file_result["parse_success"]:
                 try:
                     formats_generated = _publish_parse_result(
                         file_result,
                         step_output_dir,
+                        artifact_stem,
                         formats_to_emit,
-                        provenance_by_stem.get(file_path.stem, {}),
+                        provenance,
                         deadline,
                         cancel_token,
                     )
@@ -330,7 +353,7 @@ def process_gnn_multi_format(
                     }
                 else:
                     processing_results["summary"]["formats_per_file"][
-                        file_path.name
+                        f"{artifact_stem}{file_path.suffix}"
                     ] = formats_generated
                     processing_results["summary"]["total_formats_generated"] += (
                         formats_generated
@@ -346,7 +369,9 @@ def process_gnn_multi_format(
                     file_path,
                     file_result.get("errors", file_result.get("error")),
                 )
-            file_result.update(provenance_by_stem.get(file_path.stem, {}))
+            if artifact_stem != file_path.stem:
+                file_result["artifact_stem"] = artifact_stem
+            file_result.update(provenance)
             processing_results["processed_files"].append(file_result)
 
         check_file_work(deadline, cancel_token)

@@ -608,6 +608,7 @@ def process_export(
             )
 
         from gnn.pipeline.parse_receipt import selected_parse_receipt
+        from gnn.processing.discovery import recorded_artifact_stem
 
         gnn_results = selected_parse_receipt(gnn_results, 7)
 
@@ -631,9 +632,18 @@ def process_export(
         requested_formats = kwargs.get("formats") or list(_DEFAULT_FORMATS)
 
         filename_counts: dict[str, int] = {}
+        parsed_paths: set[Path] = set()
         for entry in gnn_results["processed_files"]:
             name = entry.get("file_name", "")
             filename_counts[name] = filename_counts.get(name, 0) + 1
+            artifact = entry.get("parsed_model_file")
+            if entry.get("parse_success") and artifact:
+                parsed_path = Path(artifact).resolve()
+                if parsed_path in parsed_paths:
+                    raise ValueError(
+                        "Step 3 records share a parsed artifact. Rerun Step 3."
+                    )
+                parsed_paths.add(parsed_path)
 
         # Process each file
         for file_result in gnn_results["processed_files"]:
@@ -656,7 +666,16 @@ def process_export(
             # consolidated in-memory carrier when one was forwarded
             # (identical bytes to the on-disk JSON; no re-read), else from
             # disk exactly as before.
-            model_stem = Path(file_name).stem
+            artifact_stem = recorded_artifact_stem(file_result.get("artifact_stem"))
+            model_stem = artifact_stem or Path(file_name).stem
+            if (
+                artifact_stem is None
+                and filename_counts[file_name] > 1
+                and "geo_infer" not in requested_formats
+            ):
+                raise ValueError(
+                    "Step 3 records share a source filename. Rerun Step 3."
+                )
             if carrier_models is not None and model_stem in carrier_models:
                 model_data = carrier_models[model_stem]
                 logger.info(
@@ -721,7 +740,7 @@ def process_export(
 
             # Preserve nested source identities instead of overwriting equal basenames.
             file_output_dir = (
-                output_dir / relative_source.parent / relative_source.stem
+                output_dir / relative_source.parent / model_stem
             ).resolve()
             if not file_output_dir.is_relative_to(Path(output_dir).resolve()):
                 raise ValueError("Model output directory must remain inside output_dir")
@@ -733,6 +752,8 @@ def process_export(
                 "exports": {},
                 "success": True,
             }
+            if artifact_stem is not None:
+                file_export_result["artifact_stem"] = artifact_stem
 
             # Generate exports for each format
             for format_name in requested_formats:
@@ -746,8 +767,7 @@ def process_export(
                     spec = get_format_spec(format_name)
                     extension = spec["extension"].lstrip(".") if spec else format_name
                     export_file = (
-                        file_output_dir
-                        / f"{Path(file_name).stem}_{format_name}.{extension}"
+                        file_output_dir / f"{model_stem}_{format_name}.{extension}"
                     )
                     if not export_file.resolve().is_relative_to(
                         Path(output_dir).resolve()
@@ -955,6 +975,10 @@ def validate_export_outputs(
 
     for file_entry in manifest.get("files_exported", []):
         file_name = file_entry.get("file_name", "<unknown>")
+        artifact_stem = file_entry.get("artifact_stem")
+        report_name = (
+            f"{artifact_stem}{Path(file_name).suffix}" if artifact_stem else file_name
+        )
         per_file: dict[str, Any] = {}
         covered: set[str] = set()
         for fmt, info in file_entry.get("exports", {}).items():
@@ -988,10 +1012,10 @@ def validate_export_outputs(
                 result["success"] = False
             per_file[fmt] = entry
             result["checked"] += 1
-        result["files"][file_name] = per_file
+        result["files"][report_name] = per_file
         if expected and not expected.issubset(covered):
             result["incomplete"].append(
-                {"file": file_name, "missing_formats": sorted(expected - covered)}
+                {"file": report_name, "missing_formats": sorted(expected - covered)}
             )
             result["success"] = False
     return result
