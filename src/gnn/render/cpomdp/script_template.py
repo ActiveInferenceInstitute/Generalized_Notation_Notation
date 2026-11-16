@@ -37,6 +37,7 @@ import math
 from collections.abc import Mapping
 from typing import Any
 
+from gnn.frameworks import CPOMDP_REQUIRED_VERSION
 from gnn.render.admission import validate_render_options
 from gnn.render.continuous_common import ContinuousSpec, literal_block
 
@@ -122,8 +123,11 @@ except ImportError:
 
 try:
     import cpomdp
-    if cpomdp.__version__ != "0.5.0":
-        raise RuntimeError("Unsupported cpomdp version; install the declared cpomdp==0.5.0 wheel")
+    if cpomdp.__version__ != REQUIRED_CPOMDP_VERSION:
+        raise RuntimeError(
+            f"Unsupported cpomdp version {cpomdp.__version__}. "
+            f"Install the declared cpomdp=={REQUIRED_CPOMDP_VERSION} wheel."
+        )
     from cpomdp import Belief, KalmanBackend, LinearGaussianModel, Preference
     from cpomdp.efe import policy_efe
     from cpomdp.enumeration import EnumeratedEFESearch, FiniteActionSet
@@ -490,6 +494,7 @@ MODEL_NAME = {json.dumps(spec.model_name)}
 RANDOM_SEED = {spec.random_seed}
 NUM_TIMESTEPS = {spec.num_timesteps}
 OUTPUT_ENV = {json.dumps(OUTPUT_ENV)}
+REQUIRED_CPOMDP_VERSION = {json.dumps(CPOMDP_REQUIRED_VERSION)}
 CONTROL_MODE = {json.dumps(opts["control_mode"])}
 ACTION_SCALE = {opts["action_scale"]!r}
 HORIZON = {opts["horizon"]}

@@ -19,7 +19,7 @@ A model with `goal_mean` and `control_gain` becomes an agent that acts. A model 
 
 ## Installation
 
-The optional extra pins the ordinary released wheel `cpomdp==0.5.0`:
+The optional extra pins the ordinary released wheel `cpomdp==0.5.1`:
 
 ```bash
 uv sync --extra cpomdp
@@ -105,7 +105,7 @@ All seven keys are mandatory. The contract version is fixed above; `version`
 identifies the author's action set. IDs must be unique nonempty strings and
 retain source order. Equal vectors with different IDs remain distinct choices;
 ties select the first authored policy in Cartesian-product order. At least two
-actions are required by released cpomdp 0.5.0. Values must be finite nonboolean
+actions are required by released cpomdp 0.5.1. Values must be finite nonboolean
 numbers, with no string conversion, normalization or deduplication. Invalid
 declarations refuse before replacing an existing artifact. Unknown keys and
 versions refuse. These controls require `efe`; `parity` and explicit
