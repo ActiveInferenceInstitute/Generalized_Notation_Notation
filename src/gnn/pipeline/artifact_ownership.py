@@ -281,3 +281,180 @@ def execution_view(execution_dir: Path, model_stems: set[str]) -> Path:
                 continue
         shutil.copy2(source, destination)
     return view
+
+
+EXECUTION_HANDOFF_SCHEMA = "gnn_execution_handoff_v1"
+EXECUTION_HANDOFF_FIELDS = (
+    "run_id",
+    "model_id",
+    "artifact_stem",
+    "source_relative_path",
+    "source_sha256",
+    "rendered_artifact_sha256",
+)
+
+
+def render_handoff_index(render_summary: Path | None) -> dict[str, dict[str, Any]]:
+    """Map each Step 11 rendered artifact to the model identity that produced it.
+
+    Standalone Step 12 has no run context; the render receipt is then the only
+    record that binds a script to its source bytes. Unreadable receipts bind
+    nothing (the execute contract loader reports them separately).
+    """
+    if render_summary is None or not render_summary.is_file():
+        return {}
+    try:
+        data = json.loads(render_summary.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    file_results = data.get("file_results") if isinstance(data, dict) else None
+    if not isinstance(file_results, dict):
+        return {}
+    index: dict[str, dict[str, Any]] = {}
+    for record in file_results.values():
+        if not isinstance(record, dict):
+            continue
+        parsed = record.get("parsed_input")
+        parsed = parsed if isinstance(parsed, dict) else {}
+        source_identity = record.get("source_identity")
+        source_identity = source_identity if isinstance(source_identity, dict) else {}
+        identity = {
+            "model_id": record.get("model_id") or parsed.get("model_id"),
+            "artifact_stem": parsed.get("artifact_stem"),
+            "source_relative_path": record.get("source_relative_path")
+            or parsed.get("source_relative_path"),
+            "source_sha256": source_identity.get("sha256")
+            or parsed.get("source_sha256"),
+        }
+        frameworks = record.get("framework_results")
+        for result in (frameworks if isinstance(frameworks, dict) else {}).values():
+            if not isinstance(result, dict):
+                continue
+            for artifact in result.get("artifact_identities") or []:
+                if isinstance(artifact, dict) and isinstance(artifact.get("path"), str):
+                    index[str(Path(artifact["path"]).resolve())] = {
+                        **identity,
+                        "rendered_artifact_sha256": artifact.get("sha256"),
+                    }
+    return index
+
+
+def execution_handoff(
+    detail: dict[str, Any],
+    run_id: str | None,
+    render_index: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Build one deterministic ``gnn_execution_handoff_v1`` detail identity.
+
+    The handoff carries no timestamps or absolute paths, so a replay or resume
+    of the same run over the same bytes reproduces it exactly.
+    """
+    from gnn.pipeline.run_context import current_run_context
+
+    script = detail.get("script_path") or detail.get("path")
+    script_path = Path(str(script)) if script else None
+    rendered = (render_index or {}).get(
+        str(script_path.resolve()) if script_path is not None else "", {}
+    )
+    script_identity = detail.get("script_identity")
+    rendered_sha = (
+        script_identity.get("sha256") if isinstance(script_identity, dict) else None
+    )
+    if rendered_sha is None and script_path is not None and script_path.is_file():
+        rendered_sha = file_sha256(script_path)
+    if rendered_sha is None:
+        rendered_sha = rendered.get("rendered_artifact_sha256")
+    model_id = detail.get("model_id") or rendered.get("model_id")
+    context = current_run_context()
+    model = (
+        next((m for m in context.models if m.model_id == model_id), None)
+        if context is not None and model_id is not None
+        else None
+    )
+    return {
+        "schema": EXECUTION_HANDOFF_SCHEMA,
+        "run_id": run_id,
+        "model_id": model_id,
+        "artifact_stem": (model.artifact_stem if model is not None else None)
+        or rendered.get("artifact_stem")
+        or detail.get("model_name"),
+        "source_relative_path": detail.get("source_relative_path")
+        or rendered.get("source_relative_path"),
+        "source_sha256": detail.get("source_sha256") or rendered.get("source_sha256"),
+        "rendered_artifact_sha256": rendered_sha,
+    }
+
+
+def _versioned_handoff(detail: dict[str, Any]) -> bool:
+    handoff = detail.get("_gnn_provenance")
+    return isinstance(handoff, dict) and "schema" in handoff
+
+
+def admit_execution_summary(summary: dict[str, Any]) -> dict[str, Any] | None:
+    """Admit a Step 12 summary for Step 15/16 consumers, or None if unversioned.
+
+    A versioned summary must be internally single-run, and under a run
+    context it must belong to that run and its selected source bytes; a
+    rendered script that changed after execution makes its results stale.
+    Unversioned summaries are accepted only when no run context governs them
+    (historical fixtures). Every refusal raises ``ValueError``.
+    """
+    from gnn.pipeline.run_context import current_run_context
+
+    context = current_run_context()
+    schema = summary.get("execution_handoff_schema")
+    details = [
+        detail
+        for detail in summary.get("execution_details") or []
+        if isinstance(detail, dict)
+    ]
+    if schema is None:
+        if any(_versioned_handoff(detail) for detail in details):
+            raise ValueError("Versioned execution handoff requires a versioned summary")
+        if context is not None and details:
+            raise ValueError("Current-run execution summary is not versioned")
+        return None
+    if schema != EXECUTION_HANDOFF_SCHEMA:
+        raise ValueError(f"Unsupported execution handoff schema: {schema!r}")
+    run_id = summary.get("run_id")
+    if not run_id:
+        raise ValueError("Versioned execution summary has no run_id")
+    if context is not None and run_id != context.run_id:
+        raise ValueError("Execution summary belongs to a different run")
+    models = {model.model_id: model for model in context.models} if context else {}
+    admitted: dict[tuple[Any, ...], dict[str, Any]] = {}
+    unverified: list[str] = []
+    for detail in details:
+        name = str(detail.get("script_name") or detail.get("script_path") or "?")
+        handoff = detail.get("_gnn_provenance")
+        if not isinstance(handoff, dict) or handoff.get("schema") != schema:
+            raise ValueError(f"Execution detail lacks a {schema} handoff: {name}")
+        if handoff.get("run_id") != run_id:
+            raise ValueError(f"Execution handoff mixes runs: {name}")
+        for key in ("model_id", "source_relative_path", "source_sha256"):
+            if key in detail and detail[key] != handoff.get(key):
+                raise ValueError(f"Execution handoff {key} disagrees with {name}")
+        if context is not None:
+            model = models.get(str(handoff.get("model_id")))
+            if model is None:
+                raise ValueError(f"Execution handoff names no selected model: {name}")
+            if handoff.get("source_sha256") != model.sha256:
+                raise ValueError(f"Execution handoff source is stale: {name}")
+        script = detail.get("script_path")
+        rendered_sha = handoff.get("rendered_artifact_sha256")
+        if isinstance(script, str) and Path(script).is_file() and rendered_sha:
+            if file_sha256(Path(script)) != rendered_sha:
+                raise ValueError(f"Rendered artifact changed after execution: {name}")
+        else:
+            unverified.append(name)
+        cell = tuple(handoff.get(field) for field in EXECUTION_HANDOFF_FIELDS[1:5])
+        admitted[cell] = {
+            field: handoff.get(field) for field in EXECUTION_HANDOFF_FIELDS[1:5]
+        }
+    return {
+        "schema": schema,
+        "run_id": run_id,
+        "admitted_details": len(details),
+        "models": [admitted[cell] for cell in sorted(admitted, key=str)],
+        "unverified_rendered_artifacts": sorted(unverified),
+    }

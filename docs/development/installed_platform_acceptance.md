@@ -128,3 +128,118 @@ execution remain explicitly provisioned lanes.
 The driver’s `omit_api` setting records a bounded pre-integration local witness. The
 required hosted workflow never uses it; that receipt cannot satisfy complete
 installed-platform acceptance.
+
+## Wave 1A local wheel and optional runtime profiles (2026-11-15)
+
+Measured on macOS 27.2.1 arm64, CPython 3.14.10, with exact uv 0.13.6.
+The candidate branch is `codex/gnn-wave1-packaging-runtime-20261115`, based on
+`d8ac475524ee640a88d7d181573642d666b0c78e`. This local receipt does not
+replace native Linux/Windows or final integrated-source acceptance.
+
+The wheel is `generalized_notation_notation-5.1.0-py3-none-any.whl`. Core
+requirements now include pydantic, jsonschema, rich and packaging. LSP has
+its own extra; API declares Starlette; GUI declares websockets and the
+optional watchdog consumer. The guarded pkg_resources consumer maps
+to setuptools in the research extra. The `all` extra is the exact normalized
+union of all named non-dev runtime extras, with matching markers.
+`uv.toml` mirrors the resolver constraints in pyproject.toml.
+
+| Local command or witness | Result |
+| --- | --- |
+| `uv sync --frozen` | Passed |
+| `uv lock --check --python 3.11`, `3.12`, `3.13`, `3.14` | All four passed |
+| `uv build --wheel --out-dir /tmp/gnn-wave1-packaging/dist` | Passed |
+| `python scripts/check_dep_hygiene.py` | Passed; no stale mypy overrides (cap 0) |
+| `ruff check .` | Passed |
+| `mypy src/gnn` | Passed, 780 source files |
+| `lint-imports` | Three contracts kept; zero broken |
+| `python -m pytest tests/packaging tests/setup tests/lsp tests/api --basetemp=/tmp/gnn-wave1-packaging/pytest --override-ini addopts= --no-cov -q` | 322 passed in 36.13 seconds |
+| `./run.sh lint`, `./run.sh type` | Passed |
+| Standalone packaging tests after witness refinements | Three passed in 0.09 seconds |
+| Final `pytest tests/setup tests/lsp tests/api tests/docs/test_capability_contracts.py --override-ini addopts= --no-cov -q` | 333 passed in 37.62 seconds |
+| Final `check_capability_contracts.py --strict` | Passed |
+
+The broad `ruff format --check .` additionally reaches pre-existing
+formatting drift in `bench/mcp_wrapper_metric.py`, outside this lane's
+ownership. The repository's maintained formatting scope, exercised by
+`run.sh lint`, passes.
+
+Each wheel profile used a fresh venv under `/tmp/gnn-wave1-packaging/`,
+outside the checkout, with separate frozen requirements exports and hashed
+binary-wheel installations. The GNN wheel was installed with `--no-deps`.
+Witnesses ran with `python -I` and checked GNN's installed module location.
+
+- **Base:** `run_installed_platform_acceptance.py --base-wheel` accepted
+  `gnn --help`, fallback LSP initialize/shutdown, schema behavior and missing
+  API/THRML diagnostics. Public parsers, types, importer and semantic-witness
+  modules imported. Direct imports of each guarded API submodule emitted the
+  actionable `generalized-notation-notation[api]` diagnostic.
+- **LSP:** the actual pygls server initialized and shut down over framed
+  stdio. The reader accepts both Content-Length and Content-Type headers.
+- **API:** both run and job app factories booted; all shared parity routes
+  were present. Both served health and template requests successfully and
+  returned the error envelope/404 for a missing parse input. Their configured
+  root was an independent scratch directory.
+- **Public typing:** ordinary strict downstream mypy reported four
+  `import-untyped` errors: the wheel has no `py.typed` marker. No PEP 561
+  support is claimed or added. Explicit implementation-type analysis with
+  `mypy --strict --no-incremental --follow-untyped-imports --follow-imports=silent`
+  passed for `GNNParsingSystem`, `GNNFormat`, `GNNVariable`, `ImporterPin` and
+  `build_semantic_witness`. Its base venv contained mypy's locked dependency
+  closure and still had neither FastAPI nor pygls installed. The hosted
+  workflow uses the same opt-in boundary and does not install the dev group
+  into that base typing environment.
+
+The lock resolves opentelemetry-api **1.45.2**, tornado **6.6.1** and
+inferactively-pymdp **1.0.5**. It retains Flax **0.12.8/0.12.10**, ngclearn's
+Python >=3.12 marker, and soupsieve **2.10/4.0** splits.
+
+Initial offline acquisition failures, the test-reader header failure and the
+ordinary untyped-wheel mypy diagnostic remain separate evidence; later runtime
+acceptance does not convert those earlier attempts into passing runs.
+
+### Local command receipts and candidate identities
+
+The source checks, wheel-profile collector and final gates are retained at:
+
+- `/tmp/gnn-wave1-packaging/checks-final.json` and command logs.
+- `/tmp/gnn-wave1-packaging/profiles-final.json` (base acceptance and initial optional-profile attempt).
+- `/tmp/gnn-wave1-packaging/base-acceptance.json`.
+- `/tmp/gnn-wave1-packaging/accepted/profiles.json` and individual profile logs
+  (runtime witnesses pass; ordinary downstream mypy records the untyped-wheel failure).
+- `/tmp/gnn-wave1-packaging/closeout/checks.json` (all checks pass after test relocation).
+- `/Volumes/GitVault/Local/execution-launches/gnn-wave1-closeout/4397-fb2ee64b4aee474792e3c70cb99db202/` (supervisor SUCCEEDED, child reaped, no remaining descendants).
+- `/tmp/gnn-wave1-packaging/final/checks.json` and logs (opt-in downstream mypy
+  and the complete `run.sh gates` attempt).
+
+Command argv select the isolated worktree explicitly. The GitVault supervisor
+receipts bind the canonical repository identity/revision separately; they must
+not be cited as testing canonical source. Wheel/lock/input digests below bind
+the measured candidate payload. Aggregate collector exit zero alone never
+certifies nested checks: consult their recorded returncodes.
+
+- wheel SHA-256: `049a0a1ca973743c339c2fdc005adb7446d853668b57f2d3d652f519deb10e2c`.
+- pyproject.toml SHA-256: `248a13cab3f1f10146b353076893787133c38feb72d95a99c9de78d782f75a80`.
+- uv.lock SHA-256: `723d2b672a88a3e2c7867cb522ed629af1c34b92b96573713977208758d82cc4`.
+- uv.toml SHA-256: `8d033c40f34d90a2c652d3f0cdd4eccfee04a7715c92134a9af4fdf16efeaa1b`.
+
+The complete `./run.sh gates` attempt reached **9,094 passed, seven failed,
+10 subtests passed**, in 423.88 seconds, with **78.22% coverage** (60% floor).
+All seven failures came from the documented test-directory count after
+introducing `tests/packaging`. The new witnesses were then relocated into
+the already approved `tests/setup` directory; the corrected focused selection
+passed all 333 tests, including all seven regressions. Strict capability
+contracts and all three relocated installed-profile witnesses also passed.
+The full suite was not repeated after relocation. Its later docs, MCP and v3
+gates were not reached. The broad gate's collector stdout, nested exit code
+and pytest footer are retained; its supervisor terminal receipt is absent,
+so no completed supervisor success is inferred from that attempt. The final
+closeout run has a complete, passing supervisor receipt.
+
+The initial focused command above is historical: current witnesses are
+`tests/setup/test_dependency_declarations.py` and
+`tests/setup/qualify_installed_profile.py`. No API CLI/operation call sites
+were changed. Scratch and bytecode from the temporary test directory were
+preserved outside the checkout.
+
+`./run.sh gates` returned 1; see the retained log for the complete gate boundary and limits. Hosted candidate lanes and release-time paired custody remain unverified by these local runs. Task scratch, venvs and command receipts are retained for review; no worktree retirement or deletion was performed.

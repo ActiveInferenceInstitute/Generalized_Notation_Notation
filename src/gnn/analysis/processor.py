@@ -373,6 +373,37 @@ def process_analysis(
                     m.__dict__ for m in context.selected_models(16)
                 ]
 
+            # Admit the Step 12 handoff before any execution-derived analysis.
+            # A stale or mixed-run versioned summary fails the step closed and
+            # hides the execution tree from every downstream analyzer.
+            from gnn.pipeline.artifact_ownership import admit_execution_summary
+
+            _, handoff_summary = (
+                load_execution_summary(execution_dir)
+                if execution_dir.exists()
+                else (None, None)
+            )
+            if handoff_summary is not None:
+                try:
+                    results["execution_handoff"] = admit_execution_summary(
+                        handoff_summary
+                    )
+                except ValueError as e:
+                    logger.error(f"Execution handoff refused: {e}")
+                    results["execution_handoff"] = {
+                        "status": "refused",
+                        "reason": str(e),
+                    }
+                    results["errors"].append(
+                        {
+                            "file": str(execution_dir),
+                            "error": f"Execution handoff refused: {e}",
+                            "error_type": "ExecutionHandoffRefused",
+                        }
+                    )
+                    results["success"] = False
+                    execution_dir = results_dir / ".refused_execution_handoff"
+
             # Process each GNN file
             for gnn_file in gnn_files:
                 try:

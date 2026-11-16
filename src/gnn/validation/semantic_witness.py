@@ -23,6 +23,12 @@ from .witness_source import (
 )
 
 SCHEMA = "gnn-semantic-witness-v2"
+COMPOSITION_SCHEMA = "gnn-semantic-witness-v3"
+SMOOTHING_SCHEMA = "gnn-semantic-witness-v4"
+SCHEMAS = (SCHEMA, COMPOSITION_SCHEMA, SMOOTHING_SCHEMA)
+SMOOTHING_CONTRACT = "gnn_finite_fixed_action_smoother_v1"
+SMOOTHING_FRAMEWORKS = ("bnlearn", "pgmpy")
+FILTERING_CONTRACTS = ("bnlearn_fixed_action_filter_v1", "gnn_lgssm_filter_v1")
 ATOL = 1e-12
 RTOL = 1e-10
 MAX_ARTIFACT_BYTES = 16 * 1024 * 1024
@@ -110,7 +116,11 @@ def _outcome(comparisons: dict[str, dict[str, Any]]) -> str:
 
 
 def _declared_checks(
-    payload: dict[str, Any], contract: dict[str, Any]
+    payload: dict[str, Any],
+    contract: dict[str, Any],
+    *,
+    schema_version: str | None = None,
+    frameworks: tuple[str, ...] | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Refuse contradictory native declarations without inventing absent labels."""
     finite = contract["model"] == "finite"
@@ -119,9 +129,8 @@ def _declared_checks(
         "state_ids": contract["state_ids"],
         "observation_ids": contract["observation_ids"],
         "model_kind": "discrete" if finite else "continuous",
-        "schema_version": "bnlearn_fixed_action_filter_v1"
-        if finite
-        else "gnn_lgssm_filter_v1",
+        "schema_version": schema_version
+        or ("bnlearn_fixed_action_filter_v1" if finite else "gnn_lgssm_filter_v1"),
         "success": True,
     }
     checks = {
@@ -139,7 +148,10 @@ def _declared_checks(
             checks["identity:source_identity.source_sha256"] = _identity(
                 contract["source_sha256"], identity["source_sha256"]
             )
-    frameworks = ("bnlearn",) if finite else ("jax", "numpyro", "pytorch", "ngclearn")
+    if frameworks is None:
+        frameworks = (
+            ("bnlearn",) if finite else ("jax", "numpyro", "pytorch", "ngclearn")
+        )
     framework = payload.get("framework")
     checks["identity:framework"] = _row(
         "unavailable"
@@ -213,7 +225,7 @@ def _declared_checks(
 
 
 def _candidate_validity(
-    payload: dict[str, Any], contract: dict[str, Any]
+    payload: dict[str, Any], contract: dict[str, Any], belief_key: str = "beliefs"
 ) -> dict[str, dict[str, Any]]:
     """Validate native distributions before approximate numerical agreement.
 
@@ -225,7 +237,7 @@ def _candidate_validity(
     t = contract["model_parameters"]["num_timesteps"]
     n = len(contract["state_ids"])
     checks = {}
-    for name, shape in (("beliefs", (t, n)), ("posterior_cov", (t, n, n))):
+    for name, shape in ((belief_key, (t, n)), ("posterior_cov", (t, n, n))):
         if name == "posterior_cov" and contract["model"] == "finite":
             continue
         value = payload.get(name)
@@ -238,7 +250,7 @@ def _candidate_validity(
             values = _array(value, name)
             if values.shape != shape:
                 raise ValueError(f"{name}: expected shape {shape}")
-            if name == "beliefs" and contract["model"] == "finite":
+            if name == belief_key and contract["model"] == "finite":
                 if (
                     np.any(values < 0)
                     or np.any(values > 1)
@@ -247,7 +259,7 @@ def _candidate_validity(
                     )
                 ):
                     raise ValueError(
-                        "beliefs: probabilities in [0,1] and categorical rows with unit mass required"
+                        f"{name}: probabilities in [0,1] and categorical rows with unit mass required"
                     )
             elif name == "posterior_cov":
                 tolerance = (
@@ -278,13 +290,25 @@ def _candidate_validity(
 
 
 def build_semantic_witness(
-    source: bytes, result: bytes, program: bytes | None = None
+    source: bytes,
+    result: bytes,
+    program: bytes | None = None,
+    *,
+    schema: str | None = None,
 ) -> dict[str, Any]:
     """Independently read a source and compare one identified native result.
 
     This process performs no native execution or Lean compilation. Hash binding
     of supplied bytes cannot authenticate how a result file was produced.
+
+    A finite ``question="smoothing"`` source produces a separately versioned
+    ``gnn-semantic-witness-v4`` receipt. ``schema`` selects the receipt version
+    during replay only: passing ``gnn-semantic-witness-v2`` reproduces that
+    version's original refusal of smoothing so retained v2 receipts stay
+    replay-valid. It never changes the admitted filtering semantics.
     """
+    if schema is not None and schema not in SCHEMAS:
+        raise ValueError("unsupported semantic witness schema")
     source_artifact, result_artifact = _artifact(source), _artifact(result)
     program_artifact = _artifact(program) if program is not None else None
     contract = read_source(source)
@@ -292,6 +316,14 @@ def build_semantic_witness(
         from .witness_composition import build_composition_witness
 
         return build_composition_witness(source, result, program, contract)
+    if (
+        contract["model"] == "finite"
+        and contract["question"] == "smoothing"
+        and schema != SCHEMA
+    ):
+        return _build_smoothing_witness(
+            contract, source_artifact, result_artifact, program_artifact
+        )
     payload = _json(result_artifact["utf8"])
     if not isinstance(payload, dict):
         raise ValueError("native result must be a JSON object")
@@ -432,6 +464,228 @@ def build_semantic_witness(
     }
 
 
+def _finite_reference(
+    contract: dict[str, Any], observations: list[Any], actions: list[Any], question: str
+) -> np.ndarray:
+    """Enumerate every latent path for one named question on the same evidence."""
+    return enumerate_finite({**contract, "question": question}, observations, actions)
+
+
+def _agrees(expected: np.ndarray, actual: Any) -> bool:
+    return bool(_quantity(expected.tolist(), actual)["status"] == "passed")
+
+
+def _smoothing_diagnosis(
+    contract: dict[str, Any],
+    observations: list[Any],
+    actions: list[Any],
+    smoothed: np.ndarray,
+    filtered: np.ndarray,
+    candidate: Any,
+) -> list[str]:
+    """Name deterministic alternative computations that explain a disagreement.
+
+    Each hypothesis is recomputed from the same retained source and evidence; a
+    match is a diagnosis of the reported values, never a repair or admission.
+    """
+    if candidate is None or _agrees(smoothed, candidate):
+        return []
+    diagnosis = []
+    if _agrees(filtered, candidate):
+        diagnosis.append("filtering_posteriors_substituted_for_smoothing")
+    if len(actions) >= 2:
+        for name, shifted in (
+            ("action_timing_shifted_earlier", [*actions[1:], actions[-1]]),
+            ("action_timing_shifted_later", [actions[0], *actions[:-1]]),
+        ):
+            if shifted != actions and _agrees(
+                _finite_reference(contract, observations, shifted, "smoothing"),
+                candidate,
+            ):
+                diagnosis.append(name)
+    if _agrees(smoothed.astype(np.float32).astype(np.float64), candidate):
+        diagnosis.append("float32_precision_rounding")
+    return diagnosis
+
+
+def _per_time_error(expected: np.ndarray, actual: Any) -> list[float] | None:
+    try:
+        values = _array(actual, "candidate")
+    except (ValueError, TypeError, OverflowError):
+        return None
+    if values.shape != expected.shape:
+        return None
+    with np.errstate(over="ignore", invalid="ignore"):
+        errors = np.abs(values - expected).max(axis=1)
+    if not np.all(np.isfinite(errors)):
+        return None
+    return [float(value) for value in errors]
+
+
+def _smoothing_question(payload: dict[str, Any]) -> dict[str, Any]:
+    """Refuse filtering declarations instead of reading them as smoothing."""
+    declared = payload.get("question")
+    contract = payload.get("inference_contract")
+    mode = payload.get("inference_mode")
+    if (
+        declared == "filtering"
+        or contract in FILTERING_CONTRACTS
+        or (isinstance(mode, str) and mode.endswith("filtering"))
+    ):
+        return _row(
+            "refused",
+            "candidate declares a filtering contract; filtering prefixes cannot "
+            "substitute for full-sequence smoothing",
+            expected="smoothing",
+            actual=declared,
+        )
+    return _identity("smoothing", declared)
+
+
+def _build_smoothing_witness(
+    contract: dict[str, Any],
+    source_artifact: dict[str, str],
+    result_artifact: dict[str, str],
+    program_artifact: dict[str, str] | None,
+) -> dict[str, Any]:
+    """Compare reported full-sequence smoothing with exact path enumeration.
+
+    The reference sums every latent path over the complete observation and
+    fixed exogenous-action sequence, so each time is conditioned on all
+    observations. A filtering reference on the same evidence is retained only
+    as a negative control; it is never accepted for this question.
+    """
+    payload = _json(result_artifact["utf8"])
+    if not isinstance(payload, dict):
+        raise ValueError("native result must be a JSON object")
+    observations = payload.get("observations")
+    actions = payload.get("transition_actions")
+    if not isinstance(observations, list) or not isinstance(actions, list):
+        raise ValueError(
+            "native observations and transition actions must be explicit lists"
+        )
+    smoothed = _finite_reference(contract, observations, actions, "smoothing")
+    filtered = _finite_reference(contract, observations, actions, "filtering")
+    t = contract["model_parameters"]["num_timesteps"]
+    identity = {
+        "dtype": "float64",
+        "initial_time": contract["initial_time"],
+        "axes": contract["axes"],
+        "conditioning_horizon": [t] * t,
+        "num_timesteps": t,
+        "num_states": len(contract["state_ids"]),
+        "num_observations": len(contract["observation_ids"]),
+        "random_seed": contract["model_parameters"]["random_seed"],
+        "inference_contract": SMOOTHING_CONTRACT,
+        "inference_mode": "exact_categorical_smoothing",
+        "control_mode": "fixed_transition_actions",
+        "action_semantics": "transition_into_next_state",
+    }
+    comparisons = {
+        f"identity:{key}": _identity(value, payload.get(key))
+        for key, value in identity.items()
+    }
+    comparisons["identity:question"] = _smoothing_question(payload)
+    comparisons.update(
+        _declared_checks(
+            payload,
+            contract,
+            schema_version=SMOOTHING_CONTRACT,
+            frameworks=SMOOTHING_FRAMEWORKS,
+        )
+    )
+    comparisons.update(_candidate_validity(payload, contract, "smoothed_beliefs"))
+    native_parameters = payload.get("parameters")
+    native_parameters = native_parameters if isinstance(native_parameters, dict) else {}
+    for key, expected in contract["parameters"].items():
+        if key == "C":
+            continue  # fixed exogenous-action smoothing has no preference query
+        comparisons[f"parameter:{key}"] = _quantity(
+            expected, native_parameters.get(key), exact=True
+        )
+    if program_artifact is not None:
+        comparisons["identity:generated_script_sha256"] = _identity(
+            program_artifact["sha256"], payload.get("generated_script_sha256")
+        )
+    admission = _outcome(comparisons)
+    reported = payload.get("smoothed_beliefs")
+    row = _quantity(smoothed.tolist(), reported)
+    row["per_time_max_abs_error"] = _per_time_error(smoothed, reported)
+    row["diagnosis"] = _smoothing_diagnosis(
+        contract, observations, actions, smoothed, filtered, reported
+    )
+    if admission != "passed":
+        row["numeric_status"] = row["status"]
+        row["status"] = (
+            "refused" if admission in ("refused", "failed") else "unavailable"
+        )
+        row["reason"] = (
+            "semantic/parameter admission did not pass; see identity and parameter rows"
+        )
+    comparisons["smoothed_beliefs"] = row
+    candidate = {key: deepcopy(payload.get(key)) for key in identity}
+    candidate.update(
+        question=deepcopy(payload.get("question")),
+        observations=observations,
+        transition_actions=actions,
+        quantities={"smoothed_beliefs": deepcopy(reported)},
+    )
+    reference = {
+        "algorithm": "finite_complete_path_enumeration_full_sequence",
+        "quantities": {"smoothed_beliefs": smoothed.tolist()},
+        "negative_control": {
+            "question": "filtering",
+            "algorithm": "finite_complete_path_enumeration_per_prefix",
+            "beliefs": filtered.tolist(),
+            "final_time_max_abs_difference": float(
+                np.abs(smoothed[-1] - filtered[-1]).max()
+            ),
+        },
+        "observations": observations,
+        "transition_actions": actions,
+        "conditioning_horizon": identity["conditioning_horizon"],
+    }
+    return {
+        "schema": SMOOTHING_SCHEMA,
+        "status": _outcome(comparisons),
+        "source_contract": contract,
+        "reference": reference,
+        "candidate": candidate,
+        "comparisons": comparisons,
+        "assumptions": {
+            "question": "smoothing",
+            "initial_time": contract["initial_time"],
+            "state_ids": contract["state_ids"],
+            "observation_ids": contract["observation_ids"],
+            "axes": contract["axes"],
+            "conditioning_horizon": identity["conditioning_horizon"],
+            "label_mapping": "Ordered source labels name numeric axes; native label provenance is not authenticated.",
+            "scope": "One stationary finite factor with fixed exogenous actions; full-sequence smoothing conditioned on every observation; float64; at most eight times, four states and 4,096 paths; no filtering substitution, planning, coupled/hybrid semantics or universal equivalence.",
+        },
+        "artifacts": {
+            "source": source_artifact,
+            "result": result_artifact,
+            "program": program_artifact,
+        },
+        "formal_evidence": {"status": "unavailable", "universal_equivalence": False},
+        "execution_evidence": {
+            "status": "artifact_only",
+            "execution_source_verified": False,
+            "reported_framework": payload.get("framework"),
+            "reported_versions": {
+                key: payload[key]
+                for key in (
+                    "python_version",
+                    "numpy_version",
+                    "bnlearn_version",
+                    "pgmpy_version",
+                )
+                if key in payload
+            },
+        },
+    }
+
+
 def verify_semantic_witness(receipt: object) -> list[str]:
     """Recompute the entire receipt, including references, rather than trust flags.
 
@@ -441,7 +695,8 @@ def verify_semantic_witness(receipt: object) -> list[str]:
     try:
         if not isinstance(receipt, dict):
             return ["semantic witness receipt must be a mapping"]
-        if receipt.get("schema") not in (SCHEMA, "gnn-semantic-witness-v3"):
+        schema = receipt.get("schema")
+        if not isinstance(schema, str) or schema not in SCHEMAS:
             return ["unsupported semantic witness schema"]
         artifacts = receipt["artifacts"]
         if not isinstance(artifacts, dict) or set(artifacts) != {
@@ -472,7 +727,7 @@ def verify_semantic_witness(receipt: object) -> list[str]:
             if artifacts["program"] is not None
             else None
         )
-        expected = build_semantic_witness(source, result, program)
+        expected = build_semantic_witness(source, result, program, schema=schema)
         if json.dumps(expected, sort_keys=True, allow_nan=False) != json.dumps(
             receipt, sort_keys=True, allow_nan=False
         ):

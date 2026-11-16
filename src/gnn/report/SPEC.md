@@ -9,10 +9,10 @@ Consolidation of pipeline outputs into comprehensive HTML/Markdown/JSON analysis
 - `generator.py` - `generate_comprehensive_report()` and report file writers (HTML/Markdown/JSON/summary/custom)
 - `analyzer.py` - `collect_pipeline_data()` aggregation over step output directories
 - `formatters.py` - HTML/Markdown section rendering (performance, errors, steps, visualizations)
-- `pipeline_report.py` - Per-step status/timing/artifact/statistics sections
+- `pipeline_report.py` - Re-exports the per-step status/timing/artifact/statistics report owned by `gnn.pipeline.summary_wiring`
 - `processing_report.py` - `ReportGenerator` processing-context reports: structural `valid/errors/warnings` mappings and typed `is_valid/errors/warnings` results retain actual Boolean counts and errors. Missing required fields or malformed validity refuse compilation; returned write failures retain completed format paths and `report_files["error"]`.
 - `diff_report.py` - `compare_runs()` / `archive_run()` run-to-run diffing
-- `model_family.py`, `semantic_fidelity.py`, `cross_framework_reliability.py` - ledger markdown renderers
+- `model_family.py`, `semantic_fidelity.py`, `cross_framework_reliability.py` - ledger markdown renderers (the last two re-export the renderers owned by their `gnn.pipeline` producers)
 - `mcp.py` - MCP tool registrations (5 tools)
 
 ## Features

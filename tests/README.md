@@ -38,7 +38,7 @@ pytest collection authority; inspect collection for actual current cases.
 
 ## Directory layout
 
-The maintained inventory is 46 maintained first-level subdirectories; 43 contain direct test files.
+The maintained inventory is 47 maintained first-level subdirectories; 44 contain direct test files.
 [scripts/check_capability_contracts.py](../scripts/check_capability_contracts.py)
 computes and enforces this description against the actual tree; it is a directory
 inventory, not a test pass count.

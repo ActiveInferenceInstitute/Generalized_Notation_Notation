@@ -27,7 +27,10 @@ policy in ``gnn.api.pipeline_runner``):
 from __future__ import annotations
 
 import importlib.util
+import json
 import shutil
+import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Set
@@ -917,3 +920,166 @@ def test_reproduce_rejects_unknown_request_fields(client: TestClient) -> None:
     assert response.status_code == 422
     envelope = _assert_envelope(response.json(), status="error")
     assert envelope["error"]["code"] == "validation_error"
+
+
+# ── Shared operations below both transports ──────────────────────────────────
+#
+# ``gnn.cli`` and ``gnn.api.parity`` are adapters over ``gnn.operations``; the
+# tests below pin that both transports run the *same* implementation and map
+# its outcomes onto their own contracts (CLI exit codes 0/2/1, HTTP envelopes).
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _cli(argv: List[str], capsys: pytest.CaptureFixture[str]) -> tuple[int, str]:
+    """Run the in-process CLI and return ``(exit_code, stdout)``."""
+    from gnn.cli import main as cli_main
+
+    capsys.readouterr()
+    code = cli_main(argv)
+    return code, capsys.readouterr().out
+
+
+@pytest.mark.unit
+def test_parity_adapters_share_one_operation_implementation() -> None:
+    """API parity, the CLI facade and gnn.operations expose identical objects."""
+    import gnn.api.parity as parity
+    import gnn.cli.commands as cli_commands
+    import gnn.operations.commands as operations
+
+    for name in (
+        "EXTRACT_DEFECT_EMPTY_SKELETON",
+        "EXTRACT_DEFECT_ERROR_STATUS",
+        "build_parse_payload",
+        "extract_payload_defect",
+        "preflight_severities",
+        "publish_pipeline_report",
+        "run_validation_checks",
+    ):
+        shared = getattr(operations, name)
+        assert getattr(parity, name) is shared, name
+        assert getattr(cli_commands, name) is shared, name
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("relative_path", "strict", "cli_exit", "http_status", "data_exit"),
+    [
+        (VALID_EXEMPLAR, False, 0, 200, 0),
+        (INVALID_EXEMPLAR, False, 2, 200, 2),
+        (INVALID_EXEMPLAR, True, 1, 400, None),
+        ("input/gnn_files/no_such_model.md", False, 1, 404, None),
+    ],
+)
+def test_validate_exit_codes_agree_across_cli_and_api(
+    client: TestClient,
+    capsys: pytest.CaptureFixture[str],
+    relative_path: str,
+    strict: bool,
+    cli_exit: int,
+    http_status: int,
+    data_exit: Optional[int],
+) -> None:
+    """CLI 0/2/1 maps to HTTP 200 (exit 0) / 200 (exit 2) / 400 or 404."""
+    argv = ["validate", str(REPO_ROOT / relative_path)]
+    if strict:
+        argv.append("--strict")
+    code, _ = _cli(argv, capsys)
+    assert code == cli_exit
+    response = client.post(
+        "/api/v1/validate", json={"file_path": relative_path, "strict": strict}
+    )
+    assert response.status_code == http_status
+    if data_exit is None:
+        _assert_envelope(response.json(), status="error")
+    else:
+        assert _assert_envelope(response.json())["data"]["exit_code"] == data_exit
+
+
+@pytest.mark.unit
+def test_template_listing_and_show_agree_across_cli_and_api(
+    client: TestClient, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Both transports return the same checksummed records, byte for byte."""
+    from gnn.operations.templates import list_templates
+
+    code, out = _cli(["templates", "list", "--json"], capsys)
+    assert code == 0
+    cli_records = json.loads(out)["data"]["templates"]
+    api_records = _assert_envelope(client.get("/api/v1/templates").json())["data"][
+        "templates"
+    ]
+    assert cli_records == api_records == list_templates()
+    assert all(r["source"].startswith("package://gnn.cli/") for r in api_records)
+
+    name = api_records[0]["name"]
+    code, out = _cli(["templates", "show", name, "--json"], capsys)
+    assert code == 0
+    api_record = _assert_envelope(client.get(f"/api/v1/templates/{name}").json())
+    assert json.loads(out)["data"]["template"] == api_record["data"]["template"]
+
+
+@pytest.mark.unit
+def test_pull_refuses_symlink_destination_on_both_transports(
+    client: TestClient, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Custody: neither transport writes through a destination symlink."""
+    name = _first_template_name(client)
+    output_dir = REPO_ROOT / "output" / "api_pull_symlink_test"
+    shutil.rmtree(output_dir, ignore_errors=True)
+    try:
+        output_dir.mkdir(parents=True)
+        plan = client.post(
+            "/api/v1/pull",
+            json={
+                "name": name,
+                "output_dir": "output/api_pull_symlink_test",
+                "dry_run": True,
+            },
+        )
+        destination = Path(_assert_envelope(plan.json())["data"]["destination"])
+        victim = output_dir / "victim.txt"
+        victim.write_bytes(b"do not overwrite")
+        destination.symlink_to(victim)
+
+        response = client.post(
+            "/api/v1/pull",
+            json={
+                "name": name,
+                "output_dir": "output/api_pull_symlink_test",
+                "overwrite": True,
+            },
+        )
+        assert response.status_code == 409
+        envelope = _assert_envelope(response.json(), status="error")
+        assert "symlink" in envelope["error"]["message"]
+
+        code, _ = _cli(["pull", name, "--output-dir", str(output_dir)], capsys)
+        assert code == 1
+        assert victim.read_bytes() == b"do not overwrite"
+        assert destination.is_symlink()
+    finally:
+        shutil.rmtree(output_dir, ignore_errors=True)
+
+
+@pytest.mark.unit
+def test_api_app_factories_do_not_load_the_cli_package() -> None:
+    """A fresh interpreter building both apps never imports ``gnn.cli``."""
+    code = (
+        "import sys\n"
+        "from gnn.api.app import create_app as run_app\n"
+        "from gnn.api.server import create_app as job_app\n"
+        "run_app(); job_app()\n"
+        "loaded = sorted(m for m in sys.modules if m == 'gnn.cli' "
+        "or m.startswith('gnn.cli.'))\n"
+        "assert not loaded, loaded\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+        cwd=REPO_ROOT,
+    )
+    assert result.returncode == 0, result.stderr

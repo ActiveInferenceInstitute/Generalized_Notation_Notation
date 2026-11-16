@@ -600,17 +600,24 @@ def process_export(
                     logger.error(f"Contents: {list(gnn_output_dir.iterdir())}")
                 return False
 
-            with open(gnn_results_file, "r") as f:
-                gnn_results = json.load(f)
+            from gnn.pipeline.parse_receipt import load_parse_receipt
+
+            # Bind the exact receipt bytes to the current-run inventory.
+            gnn_results = load_parse_receipt(gnn_results_file, 7)
 
             logger.info(
                 f"Loaded {len(gnn_results['processed_files'])} parsed GNN files"
             )
 
-        from gnn.pipeline.parse_receipt import selected_parse_receipt
+        from gnn.pipeline.parse_receipt import (
+            admit_parsed_model,
+            selected_parse_receipt,
+        )
         from gnn.processing.discovery import recorded_artifact_stem
 
-        gnn_results = selected_parse_receipt(gnn_results, 7)
+        if carrier_results is not None:
+            gnn_results = selected_parse_receipt(gnn_results, 7)
+        parsed_model_schema = gnn_results.get("parsed_model_schema")
 
         # Export results
         export_results: dict[str, Any] = {
@@ -618,6 +625,11 @@ def process_export(
             "source_directory": str(target_dir),
             "output_directory": str(output_dir),
             "files_exported": [],
+            **(
+                {"parsed_model_schema": parsed_model_schema}
+                if parsed_model_schema is not None
+                else {}
+            ),
             "summary": {
                 "total_files": 0,
                 "successful_exports": 0,
@@ -676,7 +688,34 @@ def process_export(
                 raise ValueError(
                     "Step 3 records share a source filename. Rerun Step 3."
                 )
-            if carrier_models is not None and model_stem in carrier_models:
+            parsed_input = None
+            if parsed_model_schema is not None:
+                # Versioned Step 3 handoff: verify bytes, run and source before
+                # export; a refused model is a failed export, never a fallback.
+                try:
+                    verified_data, parsed_input = admit_parsed_model(
+                        file_result, gnn_results
+                    )
+                except (KeyError, OSError, TypeError, ValueError) as exc:
+                    logger.error(f"Refused Step 3 handoff for {file_name}: {exc}")
+                    export_results["files_exported"].append(
+                        {
+                            "file_name": file_name,
+                            "file_path": file_result["file_path"],
+                            "exports": {},
+                            "success": False,
+                            "error": f"Step 3 handoff refused: {exc}",
+                        }
+                    )
+                    export_results["summary"]["total_files"] += 1
+                    export_results["summary"]["failed_exports"] += 1
+                    continue
+                model_data = (
+                    carrier_models[model_stem]
+                    if carrier_models is not None and model_stem in carrier_models
+                    else verified_data
+                )
+            elif carrier_models is not None and model_stem in carrier_models:
                 model_data = carrier_models[model_stem]
                 logger.info(
                     "Loaded parsed GNN specification for %s from the "
@@ -754,6 +793,8 @@ def process_export(
             }
             if artifact_stem is not None:
                 file_export_result["artifact_stem"] = artifact_stem
+            if parsed_input is not None:
+                file_export_result["parsed_input"] = parsed_input
 
             # Generate exports for each format
             for format_name in requested_formats:

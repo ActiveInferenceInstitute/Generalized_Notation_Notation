@@ -22,6 +22,7 @@ apply to every Python source edit.
 | `context_admission.py` | Exact reviewed provider contracts and retained context bounds; no attention attestation |
 | `cross_part_synthesis.py`, `corpus_synthesis.py` | Source-preserving joint/derived request plans and exact reducer checkpoints |
 | `source_parts.py` | Exact UTF-8 partitions, byte receipts and explicitly fragment-scoped reports |
+| `request_plan.py` | Immutable `gnn_llm_request_plan_v1` admission, segment/synthesis checkpoints and resume revalidation; not yet wired to the corpus scheduler |
 | `request_worker.py` | One pinned request per supervised, killable process |
 | `providers/ollama_provider.py` | Bounded HTTP transport, version/model preflight, intact messages and streaming |
 | `llm_processor.py` | Shared provider selection; explicit provider requests cannot substitute providers |

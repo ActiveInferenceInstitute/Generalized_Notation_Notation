@@ -46,6 +46,14 @@ released compatibility. Full source-preserving multi-request processing,
 independent semantic extraction and coupled/native extension acceptance remain
 required.
 
+The 2026-11-15 integration added the `gnn_llm_request_plan_v1` request plan,
+the finite `gnn-semantic-witness-v4` smoothing witness and ontology alignment
+diagnostics ([CHANGELOG.md](CHANGELOG.md)). None of these completes a
+workstream. S1 stays open: the request plan is not yet wired into the corpus
+scheduler and has no live-provider terminal-completion evidence. E4 formal
+evidence stays unavailable. All 52 unresolved declared ontology labels remain
+`candidate_only` alignments; resolution and `ontology-pin.json` are unchanged.
+
 ## Published coordinated checkpoint
 
 [GNN 5.1.0](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.1.0)
@@ -286,36 +294,22 @@ toolchains, package extras and artifact dependencies.
 
 ### Minor package improvements
 
-- [ ] **Keep public importer evidence accurate (P2).** Record distinct
-  evidence categories for installed imports, source pins, CLI invocation,
-  paired interchange, conformance and references in the
-  [registry check](scripts/check_importer_registry.py). Its online checker
-  reads eligible pin, pointer and workflow declarations from one observed
-  default-branch revision. Keep that source binding and extend unavailable
-  reporting to authentication or transport failures. Preserve historical
-  compatibility receipts, update prose and JSON together, and keep live
-  freshness outside required gates.
+No minor package improvement remains open. Importer evidence categories and
+unavailable-observation reporting are recorded in [CHANGELOG.md](CHANGELOG.md).
 
 ### Medium package improvements
 
-- [ ] **Move shared operations below their transport adapters (P2).**
-  The render artifact lookup now lives with the renderer. Move the remaining
-  shared [HTTP parity](src/gnn/api/parity.py) operations out of CLI commands and
-  templates one at a time. Preserve CLI exits, HTTP envelopes, MCP errors and
-  path/custody checks. Extend the import-linter contracts and
-  [parity tests](tests/api/test_api_parity.py).
-
-- [ ] **Qualify the wheel and optional runtime profiles (P1).** Build on the
-  [base-wheel profile](docs/development/installed_platform_acceptance.md) and
-  extend [dependency hygiene](scripts/check_dep_hygiene.py) and the
-  [installed-platform lane](.github/workflows/installed-platforms.yml) to cover
-  the remaining advertised runtime profiles and missing-extra behavior,
-  including the pygls LSP mode beyond the base fallback exchange. Record the
-  actual Python, distributions, entry points and backend versions. Review the
-  direct uses of Pydantic and Rich in core modules and Starlette in the API.
-  Record the PyMDP/JAX interpreter splits, normalized `all` extra membership
-  and a downstream type-check of the documented public imports before
-  promising an installed `py.typed` contract.
+- [ ] **Qualify the remaining wheel runtime profiles (P1).** The base,
+  pygls LSP and both API factory profiles are qualified from a local wheel
+  ([installed platforms](docs/development/installed_platform_acceptance.md)),
+  and [dependency hygiene](scripts/check_dep_hygiene.py) enforces direct
+  declarations. Extend the
+  [installed-platform lane](.github/workflows/installed-platforms.yml) to the
+  GUI, scientific and backend extras and their missing-extra behavior. Record
+  the actual Python, distributions, entry points, backend versions and the
+  PyMDP/JAX interpreter splits. The wheel ships no `py.typed` marker; do not
+  claim an installed typing contract until the documented public imports pass
+  an ordinary downstream type-check with the marker present.
 - [ ] **Cut over importers and remove private backend reads one consumer at a
   time (P1).** Use the [canonical released reader](src/gnn/importers.py) on
   the member's own pin and specs before retiring local conformance code.
@@ -328,26 +322,26 @@ toolchains, package extras and artifact dependencies.
 
 ### Major package improvements
 
-- [ ] **Version the model and result handoffs across the pipeline (P1).**
-  Extend the [versioned Step 3 receipt](docs/development/run_ownership_migration.md)
-  from its Step 6 validation consumer to export, visualization and render.
-  Carry the same identity through execution into
-  [integration collection](src/gnn/integration/meta_analysis/collector.py),
-  analysis and report. Reuse
-  [artifact ownership](src/gnn/pipeline/artifact_ownership.py) and the execution
-  [summary/detail formats](src/gnn/execute/processor/summary.py). Accept
-  migration readers, old and new fixtures, rejection of stale or mixed-run
-  artifacts, and output parity for normal runs, replay and resume. Test the
-  resulting machine-readable contract with COGANT's current summary reader,
-  which uses output modification time to identify fresh results.
-- [ ] **Establish package dependency direction and a smaller import surface
-  (P2).** Map required and optional dependencies to their first use before
-  changing packaging. Keep the lazy public `parsers` / `types` aliases and the
-  model-family ledger renderer with its acceptance producer. Reduce the other
-  reciprocal `pipeline` and `report` dependencies, preserving public re-export
-  identity and installed entry points. Require fresh-process checks for
-  parser-only, CLI, API and scientific consumers. Change extras or distribution
-  boundaries only after the installed profiles and downstream probes pass.
+- [ ] **Carry the versioned handoffs into report, replay and resume (P1).**
+  The [versioned Step 3 receipt](docs/development/run_ownership_migration.md)
+  governs validation, export, visualization and render, and
+  `gnn_execution_handoff_v1` governs
+  [integration collection](src/gnn/integration/meta_analysis/collector.py) and
+  Step 16 analysis. Extend the same admission to the report step, reusing
+  [artifact ownership](src/gnn/pipeline/artifact_ownership.py), and accept
+  output parity for normal runs, replay and resume with old and new fixtures.
+  Keep COGANT's summary reader as an independent compatibility check.
+- [ ] **Reduce the remaining import surface (P2).** `lint-imports` now
+  enforces nine contracts, including `gnn.api` and `gnn.operations` below
+  `gnn.cli`, `gnn.pipeline` below `gnn.report`, and parsers, types and
+  importers below both transports, `gnn.report` and `gnn.execute`
+  ([contracts](pyproject.toml),
+  [direction tests](tests/architecture/test_dependency_direction.py)). Map the
+  remaining reciprocal package dependencies, add a contract for each one cut,
+  and preserve public re-export identity and installed entry points with
+  fresh-process checks for parser-only, CLI, API and scientific consumers.
+  Change extras or distribution boundaries only after the installed profiles
+  and downstream probes pass.
 - [ ] **Share versioned benchmark evidence across projects (P2).** Qualify
   an independent public consumer of the GNN scaling manifest in the
   [research contracts](docs/development/interop_research.md). Record exact

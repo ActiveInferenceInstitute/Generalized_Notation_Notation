@@ -25,6 +25,9 @@ SRC_GNN = Path(__file__).resolve().parents[2] / "src" / "gnn"
 # (documentation, manuscript), generated/checked-in data (grammars, schemas,
 # type_systems, types, formal_specs, gnn_examples-less data trees), and
 # non-pipeline support code (parsers, testing, rxinfer_interchange).
+# `operations` holds the transport-neutral command semantics; its MCP surface
+# is the template tools in `gnn.template.mcp` and the CLI tools in
+# `gnn.cli.mcp`, so a second registration here would duplicate them.
 #
 # `extract`, `multimodel`, `processing`, and `schema_validator` previously sat
 # here as support-code/data packages; all now expose real MCP surfaces
@@ -37,6 +40,7 @@ NO_MCP_MODULES = frozenset(
         "formal_specs",
         "grammars",
         "manuscript",
+        "operations",
         "parsers",
         "rxinfer_interchange",
         "schema",

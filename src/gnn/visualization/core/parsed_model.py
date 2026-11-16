@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from gnn.processing.discovery import recorded_artifact_stem
 
@@ -92,6 +92,46 @@ def _dict_from_parsed_json(
     }
 
 
+AdmittedInput = Tuple[Dict[str, Any], Dict[str, Any], Path]
+
+
+def admitted_visualization_input(
+    gnn_file: Path, results_dir: Path, model_name: str, step: int = 8
+) -> Optional[AdmittedInput]:
+    """Admit the versioned Step 3 handoff for one model, or None if unversioned.
+
+    A versioned receipt that governs this model must verify (bytes, run and
+    source); refusal raises instead of falling back to stale JSON. Historical
+    unversioned receipts and absent receipts keep the mtime-based reader.
+    """
+    from gnn.pipeline.parse_receipt import (
+        HandoffRefused,
+        admit_parsed_model,
+        find_parse_record,
+        step3_handoff_receipt,
+    )
+
+    receipt_path = (
+        resolve_gnn_step3_output_dir(results_dir) / "gnn_processing_results.json"
+    )
+    try:
+        receipt = step3_handoff_receipt(receipt_path, step)
+        if receipt is None or receipt.get("parsed_model_schema") is None:
+            return None
+        record = find_parse_record(receipt, source=gnn_file, artifact_stem=model_name)
+        if record is None or not record.get("parse_success"):
+            return None
+        payload, identity = admit_parsed_model(record, receipt)
+    except (KeyError, OSError, TypeError, ValueError) as exc:
+        raise HandoffRefused(f"Step 3 handoff refused for {model_name}: {exc}") from exc
+    if identity is None:  # pragma: no cover - versioned receipts always bind
+        return None
+    return payload, identity, Path(record["parsed_model_file"])
+
+
+_UNSET: Any = object()
+
+
 def load_visualization_model(
     gnn_file: Path,
     content: str,
@@ -100,6 +140,8 @@ def load_visualization_model(
     *,
     parsed_model: Optional[Dict[str, Any]] = None,
     parsed_artifact_stem: Optional[str] = None,
+    admitted: Any = _UNSET,
+    step: int = 8,
 ) -> Dict[str, Any]:
     """
     Build the visualization input dict.
@@ -121,6 +163,19 @@ def load_visualization_model(
         raise ValueError("Parsed artifact stem must be a single directory name")
     gnn_out = resolve_gnn_step3_output_dir(results_dir)
     parsed_json = gnn_out / model_name / f"{model_name}_parsed.json"
+
+    if admitted is _UNSET:
+        admitted = admitted_visualization_input(gnn_file, results_dir, model_name, step)
+    if admitted is not None:
+        # Byte-verified versioned handoff: staleness is decided by identity,
+        # not modification time. The carrier holds identical parsed bytes.
+        verified, identity, verified_path = admitted
+        data = parsed_model if isinstance(parsed_model, dict) else verified
+        result = _dict_from_parsed_json(data, verified_path, False)
+        result["_viz_meta"]["parsed_input"] = identity
+        if verbose:
+            logger.info("Visualization data admitted from %s", verified_path)
+        return result
 
     if parsed_model is not None and isinstance(parsed_model, dict):
         # Consolidated in-memory carrier: the executor already read

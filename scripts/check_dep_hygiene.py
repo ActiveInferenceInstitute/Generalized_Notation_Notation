@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fail when pyproject optional-dependency groups lose their consumers.
 
-Two hygiene checks over ``pyproject.toml``:
+Dependency declaration and consumer checks over ``pyproject.toml``:
 
 Extras consumers. Every group in ``[project.optional-dependencies]`` except
 the aggregation group ``all`` and the dev group must have at least one
@@ -13,8 +13,7 @@ tables, availability probes such as
 ``importlib.util.find_spec("tensorflow")``, subprocess dispatch tables, and
 generated-script templates (the bnlearn generator emits ``import bnlearn``).
 Distribution names resolve to import names via
-``importlib.metadata.packages_distributions()`` plus a static fallback for
-groups a dev-only environment never installs (``scikit-learn`` ->
+a static alias table, including groups a dev-only environment never installs (``scikit-learn`` ->
 ``sklearn``, ``jupyter-server`` -> ``jupyter_server``, ``cython`` ->
 ``Cython``). A group with zero consumers and not in ``EXEMPT_EXTRA`` fails
 the gate.
@@ -34,9 +33,12 @@ way. The stale count is ratcheted via
 ``scripts/dep_hygiene_caps.json["stale_mypy_overrides"]``; removing stale
 override entries and then lowering the cap is the deliberate loop.
 
-Fully deterministic: AST + string literals over the working tree plus
-locally installed distribution metadata; no network, no clock, no
-randomness.
+The all extra must equal the normalized runtime-extra union (dev excluded).
+Eager third-party imports require base dependencies; deferred and ImportError-
+guarded imports may use named runtime extras. TYPE_CHECKING imports are ignored.
+
+Fully deterministic: AST + TOML + string literals with checked-in distribution
+aliases; no network, installed metadata, clock or randomness.
 
 Usage: uv run --extra dev python scripts/check_dep_hygiene.py
 """
@@ -47,9 +49,8 @@ import argparse
 import ast
 import json
 import re
+import sys
 import tomllib
-from functools import lru_cache
-from importlib.metadata import packages_distributions
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -68,6 +69,13 @@ STATIC_DIST_IMPORT_NAMES: dict[str, set[str]] = {
     "scikit-learn": {"sklearn"},
     "jupyter-server": {"jupyter_server"},
     "cython": {"Cython"},
+    "inferactively-pymdp": {"pymdp"},
+    "pyyaml": {"yaml"},
+    "pillow": {"PIL"},
+    "matplotlib": {"matplotlib", "mpl_toolkits"},
+    "setuptools": {"setuptools", "pkg_resources"},
+    "python-dotenv": {"dotenv"},
+    "opentelemetry-api": {"opentelemetry"},
 }
 
 # Attribute/function names whose string argument is a dynamic-import call.
@@ -100,23 +108,9 @@ def load_cap() -> int:
     return cap
 
 
-@lru_cache(maxsize=1)
-def installed_import_names() -> dict[str, set[str]]:
-    """Invert packages_distributions(): distribution name -> import names."""
-    inverted: dict[str, set[str]] = {}
-    for import_name, dists in packages_distributions().items():
-        for dist in dists:
-            inverted.setdefault(dist, set()).add(import_name)
-    return inverted
-
-
 def import_names_for(dist: str) -> set[str]:
-    """Import names a distribution is importable under (static + installed)."""
-    names: set[str] = set(STATIC_DIST_IMPORT_NAMES.get(dist, set()))
-    names.add(dist.replace("-", "_"))
-    names.add(dist)
-    names |= installed_import_names().get(dist, set())
-    return names
+    """Resolve import aliases from a checked-in table, independent of the venv."""
+    return STATIC_DIST_IMPORT_NAMES.get(dist, {dist.replace("-", "_")})
 
 
 class ImportRoots(ast.NodeVisitor):
@@ -207,7 +201,7 @@ def string_hit(
     names: set[str], strings_by_file: dict[str, list[str]]
 ) -> tuple[str, str] | None:
     """First (file, import-name) whose strings contain a name as a word."""
-    patterns = {name: word_pattern(name) for name in names}
+    patterns = {name: word_pattern(name) for name in sorted(names)}
     for rel in sorted(strings_by_file):
         for name, pattern in patterns.items():
             if any(pattern.search(text) for text in strings_by_file[rel]):
@@ -264,6 +258,128 @@ def mypy_override_staleness(
     return sorted(stale)
 
 
+def normalized_requirement(value: str) -> str:
+    """Normalize PEP 508 spelling without discarding versions or markers."""
+    value = re.sub(r"\s+", "", value).replace("'", '"')
+    match = re.match(r"[A-Za-z0-9_.-]+", value)
+    assert match is not None, value
+    return re.sub(r"[-_.]+", "-", match[0]).lower() + value[match.end() :]
+
+
+def all_extra_errors(extras: dict[str, list[str]]) -> list[str]:
+    expected = {
+        normalized_requirement(v)
+        for k, vs in extras.items()
+        if k not in EXTRAS_EXCLUDED_GROUPS
+        for v in vs
+    }
+    actual = {normalized_requirement(v) for v in extras.get("all", [])}
+    return [f"all missing: {v}" for v in sorted(expected - actual)] + [
+        f"all unexpected: {v}" for v in sorted(actual - expected)
+    ]
+
+
+class RuntimeImports(ast.NodeVisitor):
+    """Classify eager versus deferred/ImportError-guarded runtime imports."""
+
+    def __init__(self) -> None:
+        self.guarded = False
+        self.imports: list[tuple[str, int, bool]] = []
+
+    def visit_Import(self, node: ast.Import) -> None:
+        self.imports.extend(
+            (a.name.split(".")[0], node.lineno, self.guarded) for a in node.names
+        )
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        if node.level == 0 and node.module:
+            self.imports.append((node.module.split(".")[0], node.lineno, self.guarded))
+
+    def visit_FunctionDef(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        previous = self.guarded
+        self.guarded = True
+        self.generic_visit(node)
+        self.guarded = previous
+
+    visit_AsyncFunctionDef = visit_FunctionDef
+
+    def visit_If(self, node: ast.If) -> None:
+        test = node.test
+        if (isinstance(test, ast.Name) and test.id == "TYPE_CHECKING") or (
+            isinstance(test, ast.Attribute) and test.attr == "TYPE_CHECKING"
+        ):
+            for child in node.orelse:
+                self.visit(child)
+        else:
+            self.generic_visit(node)
+
+    def visit_Try(self, node: ast.Try) -> None:
+        def catches_import_error(handler: ast.ExceptHandler) -> bool:
+            if handler.type is None:
+                return True
+            return any(
+                isinstance(n, ast.Name)
+                and n.id
+                in {"ImportError", "ModuleNotFoundError", "Exception", "BaseException"}
+                for n in ast.walk(handler.type)
+            )
+
+        previous = self.guarded
+        self.guarded = previous or any(catches_import_error(h) for h in node.handlers)
+        for child in node.body:
+            self.visit(child)
+        self.guarded = previous
+        for child in [*node.handlers, *node.orelse, *node.finalbody]:
+            self.visit(child)
+
+
+def runtime_import_errors(project: dict, source: Path) -> list[str]:
+    """Check declarations for all absolute runtime imports in installed sources."""
+
+    def names(requirements: list[str]) -> set[str]:
+        return (
+            set().union(
+                *(
+                    import_names_for(re.split(r"[<>=!~;\[ ]", r)[0])
+                    for r in requirements
+                )
+            )
+            if requirements
+            else set()
+        )
+
+    base = names(project.get("dependencies", []))
+    optional = set().union(
+        *(
+            names(v)
+            for k, v in project.get("optional-dependencies", {}).items()
+            if k not in EXTRAS_EXCLUDED_GROUPS
+        )
+    )
+    internal = {"gnn", "__future__", "tests"}
+    # Absolute sibling imports of top-level src/gnn modules are checked by the
+    # import-linter gate.
+    internal.update(p.stem for p in source.iterdir() if p.suffix == ".py")
+    internal.update(p.name for p in source.iterdir() if p.is_dir())
+    errors = []
+    for path in sorted(source.rglob("*.py")):
+        visitor = RuntimeImports()
+        visitor.visit(ast.parse(path.read_text(encoding="utf-8")))
+        for name, line, guarded in visitor.imports:
+            if name in sys.stdlib_module_names or name in internal:
+                continue
+            if name not in (base | optional if guarded else base):
+                errors.append(
+                    f"{path.relative_to(source)}:{line}: {name} "
+                    + (
+                        "requires a runtime extra"
+                        if guarded
+                        else "requires a base dependency"
+                    )
+                )
+    return errors
+
+
 def main() -> int:
     """Run both hygiene checks; exit 1 on orphan extras or a stale cap breach."""
     parser = argparse.ArgumentParser(
@@ -283,6 +399,10 @@ def main() -> int:
     except (OSError, tomllib.TOMLDecodeError) as exc:
         print(f"check_dep_hygiene: unreadable pyproject.toml ({exc}).")
         return 1
+    errors = all_extra_errors(pyproject["project"].get("optional-dependencies", {}))
+    errors += runtime_import_errors(pyproject["project"], ROOT / "src" / "gnn")
+    for error in errors:
+        print(f"check_dep_hygiene: {error}")
     extras = pyproject.get("project", {}).get("optional-dependencies", {})
     overrides_modules = [
         module
@@ -352,7 +472,7 @@ def main() -> int:
             f"  note: stale_mypy_overrides cap can be lowered to {len(stale)} "
             f"in {CAP_FILE.relative_to(ROOT)} after this run."
         )
-    return 1 if failed else 0
+    return 1 if failed or errors else 0
 
 
 if __name__ == "__main__":

@@ -319,6 +319,15 @@ def _write_render_receipt(
         "failed_framework_renderings": failed,
         "unsupported_framework_renderings": unsupported,
     }
+    if any(
+        isinstance(record, dict) and "parsed_input" in record
+        for record in merged.values()
+    ):
+        summary["parsed_model_schema"] = next(
+            record["parsed_input"]["schema"]
+            for record in merged.values()
+            if isinstance(record, dict) and "parsed_input" in record
+        )
     if context is not None:
         summary["run_id"] = context.run_id
         summary["model_selection"] = [
