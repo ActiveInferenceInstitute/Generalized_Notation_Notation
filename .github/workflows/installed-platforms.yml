@@ -32,12 +32,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - {os: ubuntu-latest, python: "3.11"}
-          - {os: ubuntu-latest, python: "3.12"}
-          - {os: ubuntu-latest, python: "3.14"}
-          - {os: macos-latest, python: "3.14"}
-          - {os: windows-latest, python: "3.14"}
+        # Pull requests and main pushes run four lanes; version tags and manual
+        # dispatch add Linux/Python 3.11 while requires-python still admits it.
+        include: ${{ fromJSON((github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type != 'tag')) && '[{"os":"ubuntu-latest","python":"3.12"},{"os":"ubuntu-latest","python":"3.14"},{"os":"macos-latest","python":"3.14"},{"os":"windows-latest","python":"3.14"}]' || '[{"os":"ubuntu-latest","python":"3.11"},{"os":"ubuntu-latest","python":"3.12"},{"os":"ubuntu-latest","python":"3.14"},{"os":"macos-latest","python":"3.14"},{"os":"windows-latest","python":"3.14"}]') }}
     env:
       UV_PYTHON: ${{ matrix.python }}
       INSTALLED_SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}

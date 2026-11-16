@@ -1,12 +1,14 @@
 # Installed-package and native platform acceptance
 
 The [installed-platform workflow](../../.github/workflows/installed-platforms.yml)
-accepts an ordinary wheel outside the source checkout. Its candidate matrix is
-Linux/Python 3.11, 3.12 and 3.14, macOS/Python 3.14, and Windows/Python 3.14.
+accepts an ordinary wheel outside the source checkout. Its pull-request matrix is
+Linux/Python 3.12 and 3.14, macOS/Python 3.14, and Windows/Python 3.14; version
+tags and manual dispatch add Linux/Python 3.11 while `requires-python` admits it.
 A supported release must have successful native receipts for its exact source;
 a resolvable wheel plan or classifier alone does not establish support.
-The ordinary source test suite has a separate Python 3.11–3.14 matrix;
-comprehensive native coverage retains its Python 3.11–3.13 matrix.
+The ordinary source test suite has a separate Python 3.12–3.14 pull-request
+matrix (3.11 on tags, weekly and dispatch); comprehensive native coverage runs
+Python 3.12–3.14 on pull requests and adds 3.11 on tags and dispatch.
 
 ## Version 4.1.0 installed evidence
 

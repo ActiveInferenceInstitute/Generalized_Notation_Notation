@@ -95,8 +95,8 @@ GEO checkout of the revision in GNN's committed pair pin. Install the GEO
 workspace with its uv 0.13.1 executable, locked dependencies, all packages and
 extras, and the existing cupy, mayavi, vaex and vaex-core exclusions. Select
 Python 3.11 and 3.12 in separate GEO environments to cover both hosted rows.
-Install GNN with its uv 0.13.4 executable, locked dependencies, Python 3.11,
-and the dev and geo-infer extras.
+Install GNN with its uv 0.13.6 executable, locked dependencies, the same
+Python as the GEO row (3.11 or 3.12), and the dev and geo-infer extras.
 
 The [paired workflow](../../.github/workflows/geo-infer-interchange.yml) owns
 the exact installation and runner command lines. Those options belong to uv

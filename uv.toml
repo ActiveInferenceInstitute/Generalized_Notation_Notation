@@ -2,7 +2,7 @@
 # Runtime exception/removal checks: README.md, Runtime defaults and required profiles.
 # Floor, not equality: custody comes from `--frozen` and uv.lock, not from the
 # tool that reads them. 0.13.6 is what CI installs; <0.14 admits host patch
-# updates (0.13.7) while a new minor remains an explicit repository decision.
+# updates (0.13.7, 0.13.8) while a new minor remains an explicit repository decision.
 required-version = ">=0.13.6,<0.14"
 # soupsieve is transitive (nbconvert -> beautifulsoup4). soupsieve 3.0.2+ and
 # 4.x require Python >=3.11.5, so a single unmarked floor resolved one

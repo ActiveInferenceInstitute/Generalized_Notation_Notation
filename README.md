@@ -331,8 +331,8 @@ To remove the Python exception, provision/review native HDF5 and remaining build
 prerequisites, qualify the exact default dependency profile on 3.15, and
 review any producer-range change through the documented paired re-pin ritual.
 Then run the selected source/native gates before changing the default pin.
-Python 3.11/3.12/3.13 tests and the coupled `test (3.12)` required status remain
-compatibility lanes. The exact native coverage, paired-revision, manuscript,
+Python 3.11/3.12/3.13 tests remain compatibility lanes (3.11 on tags, the
+weekly schedule and manual dispatch). The exact native coverage, paired-revision, manuscript,
 GridWorld and all-extras/GUI profiles retain their declared runtimes and evidence
 contracts. This bounded default-profile check does not establish all-extras,
 GUI, Docker, hosted, paired, or scientific publication acceptance.
@@ -397,7 +397,8 @@ uv run --frozen --no-sync python scripts/check_maintained_doc_terms.py --strict
 ```
 
 Preflight catches deterministic mistakes before expensive hosted qualification.
-The ordinary test matrix covers Python 3.11–3.14. Core coverage is enforced
+The ordinary test matrix covers Python 3.12–3.14 on pull requests and adds 3.11
+on tags, the weekly schedule and manual dispatch. Core coverage is enforced
 inside the gate, not reported to a service and not shown as a badge:
 `[tool.coverage.report] fail_under = 60` in [pyproject.toml](pyproject.toml)
 fails `./run.sh gates` below 60 %; comprehensive native coverage requires
