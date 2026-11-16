@@ -184,7 +184,7 @@ def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None
             if active_uv == expected_versions["geo-infer"]:
                 assert step["with"]["cache-suffix"] == "gnn-interchange-core"
         for line in step.get("run", "").replace("\\\n", " ").splitlines():
-            command = shlex.split(line)
+            command = shlex.split(line, comments=True)
             if command[:2] == ["uv", "sync"]:
                 project = command[command.index("--project") + 1]
                 assert project not in installs
