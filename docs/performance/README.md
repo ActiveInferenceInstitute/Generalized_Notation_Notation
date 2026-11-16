@@ -75,11 +75,6 @@ uv run python src/gnn/main.py --only-steps "3,5,6" --skip-llm --verbose
 uv run python src/gnn/main.py --only-steps "16" --no-animations --verbose
 ```
 
-The following are not main-pipeline options: `--performance-tracking`, `--workers`,
-`--parallel-strategy`, `--memory-limit`, `--streaming-mode`, `--enable-cache`,
-`--complexity-analysis`, `--optimization-suggestions`, `--resource-estimation`, and
-`--target`. Use the documented options above or the relevant module API.
-
 ## Inspect results
 
 - Pipeline summary: `output/<run>/00_pipeline_summary/pipeline_execution_summary.json`
