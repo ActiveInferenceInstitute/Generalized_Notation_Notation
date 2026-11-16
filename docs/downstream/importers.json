@@ -25,7 +25,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gate",
         "name": "gate (lint, types, docs, gnn, tests)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "ActInf_RxInfer",
@@ -45,7 +50,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "Active_Cardference",
@@ -65,7 +75,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "test",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "Active_Fedference",
@@ -85,7 +100,13 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-shard",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance",
+        "cli_invocation"
+      ]
     },
     {
       "repo": "active_fractal_rabbit",
@@ -105,7 +126,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "Active_InferAnts",
@@ -125,7 +151,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "active_inference_battleship",
@@ -145,7 +176,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "model-check",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "active_inference_language_model",
@@ -165,7 +201,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-interop",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "Active_Inference_Ontology",
@@ -185,7 +226,12 @@
         "workflow": ".github/workflows/ontology.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "active_inference_power",
@@ -205,7 +251,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "Active_Skillference",
@@ -225,7 +276,12 @@
         "workflow": ".github/workflows/gates.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "ActiveBlockference",
@@ -245,7 +301,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "ActiveInferenceCategoryTheory",
@@ -265,7 +326,12 @@
         "workflow": ".github/workflows/docs.yml",
         "job": "gate",
         "name": "docs gate"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "ActiveInferenceImplementations",
@@ -285,7 +351,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gate",
         "name": "gates (julia 1.13, python 3.12)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "ActiveInferenceJournal",
@@ -294,8 +365,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -305,7 +376,14 @@
         "workflow": ".github/workflows/gnn-conformance.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance",
+        "cli_invocation",
+        "installed_import"
+      ]
     },
     {
       "repo": "AEOS",
@@ -325,7 +403,12 @@
         "workflow": ".github/workflows/aeos.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "ants",
@@ -345,7 +428,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "ATLAS",
@@ -354,8 +442,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -365,7 +453,14 @@
         "workflow": ".github/workflows/gate.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance",
+        "installed_import",
+        "cli_invocation"
+      ]
     },
     {
       "repo": "Biofirm",
@@ -385,7 +480,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "CEREBRUM",
@@ -405,7 +505,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "COGANT",
@@ -425,7 +530,14 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance",
+        "installed_import",
+        "cli_invocation"
+      ]
     },
     {
       "repo": "cognitive",
@@ -445,7 +557,12 @@
         "workflow": ".github/workflows/quality.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "courses",
@@ -465,7 +582,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "fep_formal",
@@ -486,7 +608,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "fundamentals",
@@ -506,7 +633,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "Garden-of-Iris",
@@ -526,7 +658,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "GEN24",
@@ -546,7 +683,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "gen25",
@@ -566,7 +708,12 @@
         "workflow": ".github/workflows/docs.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "GEO_INFER",
@@ -586,7 +733,13 @@
         "workflow": ".github/workflows/gnn-interchange.yml",
         "job": "interchange",
         "name": "${{ matrix.python == '3.12' && 'gnn conformance (pinned)' || format('gnn interchange ({0})', matrix.python) }}"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance",
+        "paired_interchange"
+      ]
     },
     {
       "repo": "institute_website",
@@ -595,8 +748,8 @@
       "pin": {
         "kind": "file",
         "path": ".github/gnn-pin.json",
-        "tag": "v5.0.3",
-        "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
+        "tag": "v5.1.0",
+        "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
         "schema": "gnn-importer-pin/v1"
       },
       "specs": {
@@ -606,7 +759,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "ISSS",
@@ -626,7 +784,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "Journal_Utilities",
@@ -646,7 +809,12 @@
         "workflow": ".github/workflows/test.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "Knowledge-Engineering",
@@ -666,7 +834,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "NoOrg",
@@ -686,7 +859,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "on_policy_distillation",
@@ -706,7 +884,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "release-gate",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "Parr_et_al_2022_ActInf_Textbook",
@@ -726,7 +909,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "policy_entanglement",
@@ -746,7 +934,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "pymcp",
@@ -766,7 +959,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "pymdp",
@@ -787,7 +985,13 @@
         "job": null,
         "name": "gnn conformance (local arm)",
         "local_arm": "./gate.sh gnn"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance",
+        "cli_invocation"
+      ]
     },
     {
       "repo": "Research-Discovery-Engine",
@@ -807,7 +1011,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "Start",
@@ -827,7 +1036,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     },
     {
       "repo": "Symposium",
@@ -847,7 +1061,12 @@
         "workflow": ".github/workflows/ci.yml",
         "job": "gnn-conformance",
         "name": "gnn conformance (pinned)"
-      }
+      },
+      "evidence_categories": [
+        "reference",
+        "source_pin",
+        "conformance"
+      ]
     }
   ],
   "workflow_groups": {

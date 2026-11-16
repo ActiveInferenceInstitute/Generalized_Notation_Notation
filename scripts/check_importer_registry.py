@@ -51,6 +51,15 @@ REGISTRY = ROOT / "docs" / "downstream" / "importers.json"
 PROSE = ROOT / "docs" / "downstream" / "README.md"
 
 SCHEMA = "gnn-importer-registry/v1"
+EVIDENCE_CATEGORIES = (
+    "installed_import",
+    "source_pin",
+    "cli_invocation",
+    "paired_interchange",
+    "conformance",
+    "reference",
+)
+
 KINDS = ("spec", "pin-only", "contract")
 PIN_KINDS = ("file", "dependency", "content-hash")
 VISIBILITIES = ("public", "private")
@@ -208,6 +217,17 @@ def check_schema(registry: Dict[str, Any], findings: Findings) -> None:
             "row-visibility",
             f"{repo}: visibility {row.get('visibility')!r} not in {VISIBILITIES}",
         )
+        categories = row.get("evidence_categories")
+        _require(
+            isinstance(categories, list)
+            and bool(categories)
+            and all(isinstance(c, str) and c in EVIDENCE_CATEGORIES for c in categories)
+            and len(categories)
+            == len(set(c for c in categories if isinstance(c, str))),
+            findings,
+            "row-evidence-categories",
+            f"{repo}: evidence_categories must be a nonempty unique list from {EVIDENCE_CATEGORIES}",
+        )
         specs = row.get("specs") or {}
         _require(
             isinstance(specs.get("count"), int) and specs.get("count", -1) >= 0,
@@ -257,6 +277,37 @@ def check_docs_parity(registry: Dict[str, Any], findings: Findings) -> None:
             "registry-missing-row",
             f"{extra}: in docs/downstream/README.md but not in importers.json",
         )
+
+    prose_categories: Dict[str, List[str]] = {}
+    for line in PROSE.read_text(encoding="utf-8").splitlines():
+        match = _ROW_RE.match(line)
+        if not match:
+            continue
+        repo = match.group(1)
+        marker = re.search(r"<!-- evidence_categories: ([a-z_, ]+) -->", line)
+        if repo in prose_categories:
+            findings.error("docs-duplicate-row", f"{repo}: duplicate prose row")
+        prose_categories[repo] = marker.group(1).split(", ") if marker else []
+        cell = line.rsplit("|", 2)[-2].split("<!--", 1)[0]
+        visible = re.findall(r"`([a-z_]+)`", cell)
+        if sorted(visible) != sorted(prose_categories[repo]):
+            findings.error(
+                "docs-evidence-categories",
+                f"{repo}: visible categories differ from prose marker",
+            )
+    for row in rows:
+        if isinstance(row, dict) and row.get("repo"):
+            expected = row.get("evidence_categories")
+            actual = prose_categories.get(row["repo"], [])
+            if (
+                not isinstance(expected, list)
+                or not all(isinstance(c, str) for c in expected)
+                or sorted(actual) != sorted(expected)
+            ):
+                findings.error(
+                    "docs-evidence-categories",
+                    f"{row['repo']}: prose evidence categories differ from JSON",
+                )
 
 
 def check_pin_parity(registry: Dict[str, Any], findings: Findings) -> None:
@@ -519,17 +570,22 @@ def check_workflow_groups(registry: Dict[str, Any], findings: Findings) -> None:
 
 
 class GhError(RuntimeError):
-    """A ``gh`` call failed for a reason other than a missing path."""
+    """An origin observation could not be completed."""
+
+    def __init__(self, message: str, reason: str = "transport") -> None:
+        super().__init__(message)
+        self.reason = reason
 
 
 class OriginObservation(TypedDict):
     repo: str
     revision: Optional[str]
+    reason: Optional[str]
     state: Literal["matched", "drift", "unavailable"]
 
 
 def _gh(*args: str) -> Optional[str]:
-    """Run one ``gh`` call. ``None`` means the path is absent at origin.
+    """Run one ``gh`` call; a failed HTTP observation is unavailable.
 
     A transient failure (network, 5xx, rate limit, timeout) must not be reported
     as a missing file: it raises :class:`GhError`, and the caller degrades that
@@ -545,14 +601,25 @@ def _gh(*args: str) -> Optional[str]:
             timeout=120,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
-        raise GhError(f"gh could not run: {exc}") from exc
+        raise GhError("gh could not run (transport)", "transport") from exc
     if result.returncode == 0:
         return result.stdout
     stderr = (result.stderr or "") + (result.stdout or "")
-    if "HTTP 404" in stderr:
-        return None
-    detail = (result.stderr or result.stdout or "").strip().splitlines()
-    raise GhError(detail[-1][:200] if detail else "gh failed")
+    lower = stderr.lower()
+    if (
+        args[:2] == ("auth", "status")
+        or "401" in lower
+        or "authentication" in lower
+        or "not logged" in lower
+    ):
+        reason = "authentication"
+    elif "403" in lower or "permission" in lower or "resource not accessible" in lower:
+        reason = "permission"
+    elif "http " in lower:
+        reason = "http"
+    else:
+        reason = "transport"
+    raise GhError(f"gh observation unavailable ({reason})", reason)
 
 
 def check_online(
@@ -560,16 +627,29 @@ def check_online(
 ) -> List[OriginObservation]:
     """Read each public repository at one origin revision and record coverage."""
     observations: List[OriginObservation] = []
+    auth_reason = "authentication"
     try:
         authenticated = _gh("auth", "status") is not None
-    except GhError:
+    except GhError as exc:
+        auth_reason = exc.reason
         authenticated = False
     if not authenticated:
         findings.warning(
             "online-unavailable",
             "gh is unavailable or unauthenticated; skipped origin re-read",
         )
-        return observations
+        return [
+            {
+                "repo": row["repo"],
+                "revision": None,
+                "state": "unavailable",
+                "reason": auth_reason,
+            }
+            for row in registry.get("importers", [])
+            if isinstance(row, dict)
+            and row.get("visibility") == "public"
+            and isinstance(row.get("repo"), str)
+        ]
     for row in registry.get("importers") or []:
         if not isinstance(row, dict) or row.get("visibility") != "public":
             continue
@@ -577,6 +657,7 @@ def check_online(
         if not isinstance(repo, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+", repo):
             continue
         revision = None
+        reason: Optional[str] = None
         start = len(findings.items)
         state: Literal["matched", "drift", "unavailable"]
         try:
@@ -595,11 +676,15 @@ def check_online(
             revision = head.strip()
             _check_public_row_online(row, findings, revision)
         except GhError as exc:
+            del findings.items[start:]
+            reason = exc.reason
             findings.warning("online-unavailable", f"{repo}: {exc}")
             state = "unavailable"
         else:
             state = "drift" if len(findings.items) != start else "matched"
-        observations.append({"repo": repo, "revision": revision, "state": state})
+        observations.append(
+            {"repo": repo, "revision": revision, "state": state, "reason": reason}
+        )
     return observations
 
 
@@ -772,8 +857,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     failed = findings.failed or (
         args.strict and any(i["level"] == "warning" for i in findings.items)
     )
+    unavailable = observations is not None and any(
+        o["state"] == "unavailable" for o in observations
+    )
+    status = "failed" if failed else "unavailable" if unavailable else "passed"
     if args.json:
-        report: Dict[str, Any] = {"ok": not failed, "findings": findings.items}
+        report: Dict[str, Any] = {
+            "ok": status == "passed",
+            "status": status,
+            "findings": findings.items,
+        }
         if observations is not None:
             report["observations"] = observations
         print(json.dumps(report, indent=2, sort_keys=True))
@@ -797,8 +890,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
         for item in findings.items:
             print(f"  [{item['level']}] {item['code']}: {item['message']}")
-        print("  verdict: " + ("ok" if not failed else "FAILED"))
-    return 0 if not failed else 1
+        print("  verdict: " + status)
+    return 1 if failed else 2 if unavailable else 0
 
 
 if __name__ == "__main__":
