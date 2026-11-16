@@ -9,12 +9,24 @@ from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Any, Dict, Literal
 
-from fastapi import FastAPI, Request
-from fastapi.encoders import jsonable_encoder
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+try:
+    from fastapi import FastAPI, Request
+    from fastapi.encoders import jsonable_encoder
+    from fastapi.exceptions import RequestValidationError
+    from fastapi.responses import JSONResponse
+except ImportError as exc:
+    raise ImportError(
+        "GNN API requires the api extra. Install generalized-notation-notation[api]."
+    ) from exc
+
 from pydantic import BaseModel, ConfigDict, Field
-from starlette.exceptions import HTTPException as StarletteHTTPException
+
+try:
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+except ImportError as exc:
+    raise ImportError(
+        "GNN API requires the api extra. Install generalized-notation-notation[api]."
+    ) from exc
 
 logger = logging.getLogger(__name__)
 

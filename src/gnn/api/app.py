@@ -26,9 +26,14 @@ from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse, StreamingResponse
+try:
+    from fastapi import BackgroundTasks, FastAPI, HTTPException
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import PlainTextResponse, StreamingResponse
+except ImportError as exc:
+    raise ImportError(
+        "GNN API requires the api extra. Install generalized-notation-notation[api]."
+    ) from exc
 
 FASTAPI_AVAILABLE = True
 

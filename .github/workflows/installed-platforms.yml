@@ -155,6 +155,44 @@ jobs:
           (scratch / 'base-identity.json').write_text(json.dumps({'checkout_commit': source, 'wheel_sha256': hashlib.sha256(wheel.read_bytes()).hexdigest(), 'lock_sha256': hashlib.sha256((checkout / 'uv.lock').read_bytes()).hexdigest(), 'runtime_export_sha256': hashlib.sha256(runtime.read_bytes()).hexdigest()}, indent=2))
           subprocess.run([str(python), '-I', str(checkout / 'scripts/run_installed_platform_acceptance.py'), '--base-wheel', '--checkout', str(checkout), '--root', str(data), '--model', str(model), '--receipt', str(scratch / 'base-acceptance.json')], cwd=data, check=True)
           PY
+      - name: Qualify separate LSP and API wheel profiles and public typing
+        run: |
+          python - <<'PYCODE'
+          import os, pathlib, subprocess, re, tomllib
+          checkout = pathlib.Path.cwd()
+          scratch = pathlib.Path(os.environ['RUNNER_TEMP']) / 'gnn-installed-platform'
+          wheel, = (scratch / 'dist').glob('*.whl')
+          for profile in ('lsp', 'api'):
+              requirements = scratch / (profile + '-runtime.txt')
+              subprocess.run(['uv', 'export', '--frozen', '--no-default-groups', '--no-emit-project', '--extra', profile, '--output-file', str(requirements)], check=True, stdout=subprocess.DEVNULL)
+              environment = scratch / (profile + '-venv')
+              subprocess.run(['uv', 'venv', '--python', os.environ['UV_PYTHON'], str(environment)], check=True)
+              python = environment / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
+              subprocess.run(['uv', '--no-config', 'pip', 'install', '--python', str(python), '--only-binary', ':all:', '--require-hashes', '-r', str(requirements)], cwd=scratch, check=True)
+              subprocess.run(['uv', '--no-config', 'pip', 'install', '--python', str(python), '--no-deps', str(wheel)], cwd=scratch, check=True)
+              with (scratch / (profile + '-profile.log')).open('w') as log:
+                  subprocess.run([str(python), '-I', str(checkout / 'tests/setup/qualify_installed_profile.py'), profile], cwd=scratch, stdout=log, stderr=subprocess.STDOUT, check=True)
+          python = scratch / 'base-venv' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
+          # Install only mypy's locked dependency closure into the base venv;
+          # the public typing witness must retain missing API/LSP extras.
+          packages = tomllib.loads((checkout / 'uv.lock').read_text())['package']
+          needed = {'mypy'}
+          while True:
+              expanded = needed | {dep['name'] for package in packages if package['name'] in needed for dep in package.get('dependencies', [])}
+              if expanded == needed:
+                  break
+              needed = expanded
+          logical = (scratch / 'testtools.txt').read_text().replace('\\\n', '').splitlines()
+          requirements = scratch / 'mypy-tools.txt'
+          requirements.write_text('\n'.join(line for line in logical if (match := re.match(r'([A-Za-z0-9_.-]+)==', line)) and match[1] in needed) + '\n')
+          subprocess.run(['uv', '--no-config', 'pip', 'install', '--python', str(python), '--require-hashes', '-r', str(requirements)], cwd=scratch, check=True)
+          subprocess.run([str(python), '-I', '-c', "import importlib.util; assert importlib.util.find_spec('fastapi') is None; assert importlib.util.find_spec('pygls') is None"], cwd=scratch, check=True)
+          public = scratch / 'public_imports.py'
+          public.write_text('from gnn.parsers import GNNParsingSystem as GNNParsingSystem\nfrom gnn.types import GNNFormat as GNNFormat, GNNVariable as GNNVariable\nfrom gnn.importers import ImporterPin as ImporterPin\nfrom gnn.validation.semantic_witness import build_semantic_witness as build_semantic_witness\n')
+          # The wheel currently has no py.typed marker: analyze implementation
+          # types by explicit opt-in, without advertising PEP 561 support.
+          subprocess.run([str(python), '-I', '-m', 'mypy', '--strict', '--no-incremental', '--follow-untyped-imports', '--follow-imports=silent', str(public)], cwd=scratch, stdout=(scratch / 'public-mypy.log').open('w'), stderr=subprocess.STDOUT, check=True)
+          PYCODE
       - name: Tracked-file bookend
         if: always()
         run: |
@@ -173,6 +211,8 @@ jobs:
           path: |
             ${{ runner.temp }}/gnn-installed-platform/*.json
             ${{ runner.temp }}/gnn-installed-platform/*.xml
+            ${{ runner.temp }}/gnn-installed-platform/*-profile.log
+            ${{ runner.temp }}/gnn-installed-platform/public-mypy.log
             ${{ runner.temp }}/gnn-installed-platform/tracked-*.txt
             ${{ runner.temp }}/gnn-installed-platform/data/*.log
             ${{ runner.temp }}/gnn-installed-platform/base-data/*.log

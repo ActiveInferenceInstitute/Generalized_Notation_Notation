@@ -50,7 +50,12 @@ from typing import (
     cast,
 )
 
-from fastapi import FastAPI, HTTPException
+try:
+    from fastapi import FastAPI, HTTPException
+except ImportError as exc:
+    raise ImportError(
+        "GNN API requires the api extra. Install generalized-notation-notation[api]."
+    ) from exc
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from gnn.api.path_utils import (

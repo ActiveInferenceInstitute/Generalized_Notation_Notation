@@ -21,8 +21,13 @@ import time
 from collections.abc import Awaitable, Callable
 from typing import Dict, List
 
-from fastapi import Request
-from starlette.responses import Response
+try:
+    from fastapi import Request
+    from starlette.responses import Response
+except ImportError as exc:
+    raise ImportError(
+        "GNN API requires the api extra. Install generalized-notation-notation[api]."
+    ) from exc
 
 from gnn.api.responses import error_response
 
