@@ -41,23 +41,26 @@ report-only.
 
 ### Frozen pre-import resources
 
-The standalone [bootstrap](../../interop/gnn_bootstrap.py) and
+The standalone [bootstrap](../../interop/gnn_bootstrap.py),
+[v5.0.3 source manifest](../../interop/v5.0.3-source-manifest.json) and
 [v5.1.0 source manifest](../../interop/v5.1.0-source-manifest.json) are
 independently qualified, byte-preserved consumer resources, not a replacement
 for the current installed `gnn.importers` module. Fetch them from the same
 reviewed immutable source commit, not a moving branch or an invented release
-asset. This source publication neither changes the v5.1.0 tag/release nor
-rebuilds its package.
+asset. This source publication changes no existing tag, release or package.
 
 | Resource | SHA-256 |
 | --- | --- |
 | `interop/gnn_bootstrap.py` | `f638d4c01fe7de31e43d793e59bf382d0c3d1a82f365c59238334a2b40adfb37` |
+| `interop/v5.0.3-source-manifest.json` | `17a35bb2114e76a38119128d290d12377cb641652d70788000482366dca0a14a` |
 | `interop/v5.1.0-source-manifest.json` | `43b33c0b2b40386afa3f306fec4cc13bc1fd7c3b570fbf11d5008bad5c8e6b51` |
 
-The manifest binds all 1,232 package files at
-`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`; do not regenerate it from the
-installation being checked or change a consumer pin to match a different
-resource. Verify the independently trusted bootstrap digest, then compile and
+The v5.0.3 manifest binds all 1,225 package files at
+`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`; the distinct v5.1.0 manifest
+binds all 1,232 files at `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`.
+Use the manifest matching the consumer's existing pin; never substitute one
+release's inventory for another or regenerate it from the installation being
+checked. Verify the independently trusted bootstrap digest, then compile and
 execute those exact checked bytes before **any** `gnn` import. Bind the frozen
 manifest bytes and digest, and keep `qualified_source` around the actual
 parser/verdict imports and execution, not just an earlier static check.

@@ -10,7 +10,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 ### Frozen importer resources
 
 - Publish the independently qualified standalone pre-import bootstrap and the
-  complete v5.1.0 package-source manifest as byte-preserved source resources.
+  distinct complete v5.0.3/v5.1.0 package-source manifests as byte-preserved resources.
   They are separate from the current installed importer, retain their original
   SHA-256 identities and license, and do not change any release tag, consumer
   pin, scientific artifact or installed-runtime acceptance.
