@@ -9,6 +9,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ### fep_formal pair pin
 
+- `.github/fep-lean-pair.json` moves from `fep_formal` `ffc6c4d5` to
+  `98d1eb0dba7f6b2227bc540ae45f0e2ecd13fc74` (fep_formal PR #267, which
+  restores hosted Python acceptance without changing production source). Its
+  source pin still seals GNN at `d38a20972e34dd83e42b733f16e74e7d87b0a6e1`;
+  the six `gnn.owners` and 319 `fep_lean.owners` digests match.
+  [Pair pin](.github/fep-lean-pair.json)
 - `.github/fep-lean-pair.json` moves from `fep_formal` `48206d6d` to
   `ffc6c4d515fbf4dd5df4ea3329c6dd66eda00902` (fep_formal PR #266, closing
   CUSTODY-GNN-1 #244), whose source pin seals GNN at

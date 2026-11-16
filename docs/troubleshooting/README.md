@@ -83,9 +83,6 @@ To rebuild the UV-managed environment, use the supported flag:
 uv run python src/gnn/1_setup.py --recreate-uv-env --dev
 ```
 
-The current flags are hyphenated. `--install_optional`, `--optional_groups`, and
-`--recreate-venv` are obsolete spellings.
-
 ## Render and execute failures
 
 Render a deliberately small target set first:
@@ -111,9 +108,8 @@ uv run python src/gnn/12_execute.py \
   --verbose
 ```
 
-Step 12 has no dry-run mode. Use `uv run gnn health` to inspect dependency status.
-There is also no `--force-regenerate` render flag; rerun Step 11 into an explicit
-output directory when regeneration is required.
+Use `uv run gnn health` to inspect dependency status before Step 12.
+Rerun Step 11 into an explicit output directory to regenerate the render.
 
 ### PyMDP
 
@@ -170,10 +166,8 @@ uv run python src/gnn/main.py --skip-llm --verbose
 uv run python src/gnn/main.py --only-steps "16" --no-animations --verbose
 ```
 
-There is no main-pipeline `--debug`, `--diagnostics`, `--conservative`,
-`--conservative-memory`, or `--memory-efficient` option. Replace those imagined
-modes with a focused `--only-steps` run, `--verbose`, `--estimate-resources`, and an
-explicit `--target-dir`.
+For diagnosis, focus the run with `--only-steps` and `--target-dir`. Use `--verbose`
+for additional output and `--estimate-resources` to estimate resource use.
 
 ## Reading failures
 

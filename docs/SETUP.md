@@ -104,9 +104,7 @@ To recreate the UV environment through the supported flag:
 uv run python src/gnn/1_setup.py --recreate-uv-env --dev
 ```
 
-The equivalent main-pipeline flag is `--recreate-uv-env`. The old
-`--recreate-venv`, `--install_optional`, and `--optional_groups` spellings are not
-supported.
+The main pipeline also accepts `--recreate-uv-env`.
 
 ## Dependency groups
 
@@ -205,9 +203,8 @@ uv run --extra dev python -m pytest tests/ -q \
   --ignore=tests/llm/test_llm_ollama_integration.py
 ```
 
-There is no main-pipeline `--dry-run`, `--debug`, `--memory-efficient`,
-`--force-regenerate`, or `--config-file` option. Use `--verbose`, targeted step
-selection, explicit output directories, and the health/preflight commands instead.
+For a focused diagnostic run, use `--verbose`, targeted step selection, and an
+explicit output directory. Check the environment with `gnn health` or `gnn preflight`.
 
 ## Environment variables
 
