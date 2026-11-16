@@ -52,8 +52,8 @@ JAX, Matplotlib or upstream THRML checkout to make a candidate pass.
 ## Base wheel acceptance
 
 Each platform lane also installs the same built wheel into a separate clean
-environment. Its hashed export uses `--no-default-groups` and selects zero
-extras. This environment runs the installed CLI validate and extract commands,
+environment. Its hashed export excludes default dependency groups and
+optional extras. This environment runs the installed CLI validate and extract commands,
 checks the distribution's `gnn` console entry point and exercises an
 initialize/shutdown exchange through the LSP fallback. The API command must
 diagnose its missing extra and the THRML readiness probe must report that its
