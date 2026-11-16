@@ -19,13 +19,14 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from .commands import (
+from gnn.operations.commands import (
     EXTRACT_DEFECT_EMPTY_SKELETON,
     EXTRACT_DEFECT_ERROR_STATUS,
     build_parse_payload,
     extract_payload_defect,
     run_validation_checks,
 )
+
 from .helpers import (
     EXIT_ERROR,
     EXIT_SUCCESS,

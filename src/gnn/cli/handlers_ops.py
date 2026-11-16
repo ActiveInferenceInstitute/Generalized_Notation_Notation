@@ -14,7 +14,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from .commands import preflight_severities, publish_pipeline_report
+from gnn.operations.commands import preflight_severities, publish_pipeline_report
+
 from .helpers import EXIT_ERROR, EXIT_SUCCESS, EXIT_WARNING, _print_envelope
 
 logger = logging.getLogger(__name__)

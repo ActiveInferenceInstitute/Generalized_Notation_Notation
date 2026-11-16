@@ -8,6 +8,11 @@ backend logic as the corresponding CLI command, in-process (no subprocess, no
 BackgroundTasks), with heavy backend modules imported lazily inside handlers
 to keep app boot fast and import cycles impossible.
 
+Dependency direction: the shared operations live in :mod:`gnn.operations`
+(``commands`` and ``templates``), below both transports. This module and
+:mod:`gnn.cli` import downward from there; ``gnn.api`` never imports
+``gnn.cli`` (enforced by ``tests/architecture/test_dependency_direction.py``).
+
 Exit-code → HTTP mapping (pinned contract; mirrors the strict
 ``pipeline_exit_succeeded`` policy in ``gnn.api.pipeline_runner``):
 
@@ -59,7 +64,8 @@ from gnn.api.path_utils import (
     resolve_repo_path,
 )
 from gnn.api.responses import APIEnvelope, success_envelope
-from gnn.cli.commands import (
+from gnn.frameworks import RENDER_FRAMEWORKS
+from gnn.operations.commands import (
     EXTRACT_DEFECT_EMPTY_SKELETON,
     EXTRACT_DEFECT_ERROR_STATUS,
     build_parse_payload,
@@ -68,7 +74,6 @@ from gnn.cli.commands import (
     publish_pipeline_report,
     run_validation_checks,
 )
-from gnn.frameworks import RENDER_FRAMEWORKS
 from gnn.render import find_render_artifact, render_processing_succeeded
 from gnn.render.admission import render_options_inventory
 
@@ -868,12 +873,12 @@ def _pull(
     dry_run: bool,
     overwrite: bool,
 ) -> PullResponse:
-    """Delegate to the shared template copy (``gnn.cli.templates.pull_template``).
+    """Delegate to the shared template copy (``operations.templates.pull_template``).
 
     The API maps unknown template names to 404 and an existing destination to
     409.
     """
-    from gnn.cli.templates import pull_template as pull_template_backend
+    from gnn.operations.templates import pull_template as pull_template_backend
 
     try:
         result = pull_template_backend(
@@ -1010,7 +1015,7 @@ def register_parity_routes(app: FastAPI) -> None:
     @app.get("/api/v1/templates", response_model=APIEnvelope, tags=["Templates"])
     def list_gnn_templates() -> APIEnvelope:
         """List maintained templates (CLI ``gnn templates list`` parity)."""
-        from gnn.cli.templates import list_templates
+        from gnn.operations.templates import list_templates
 
         def _operate() -> TemplatesResponse:
             records = [TemplateRecordModel(**entry) for entry in list_templates()]
@@ -1022,7 +1027,7 @@ def register_parity_routes(app: FastAPI) -> None:
     @app.get("/api/v1/templates/{name}", response_model=APIEnvelope, tags=["Templates"])
     def show_gnn_template(name: str) -> APIEnvelope:
         """Show one maintained template (CLI ``gnn templates show`` parity)."""
-        from gnn.cli.templates import show_template
+        from gnn.operations.templates import show_template
 
         try:
             record = show_template(name)

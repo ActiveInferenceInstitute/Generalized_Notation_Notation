@@ -402,7 +402,7 @@ def pull_template_mcp(
     """
     Pull a maintained template into ``output_dir``.
 
-    Thin MCP wrapper around :func:`gnn.cli.templates.pull_template`.
+    Thin MCP wrapper around :func:`gnn.operations.templates.pull_template`.
 
     Args:
         name: Name of the maintained template to pull.
@@ -422,7 +422,7 @@ def pull_template_mcp(
     """
 
     def _build() -> Dict[str, Any]:
-        from gnn.cli.templates import pull_template as _pull_template
+        from gnn.operations.templates import pull_template as _pull_template
 
         result = _pull_template(
             name, Path(output_dir), dry_run=dry_run, overwrite=overwrite
@@ -440,7 +440,7 @@ def list_templates_mcp() -> Dict[str, Any]:
     """
     List maintained templates with checksums.
 
-    Thin MCP wrapper around :func:`gnn.cli.templates.list_templates`.
+    Thin MCP wrapper around :func:`gnn.operations.templates.list_templates`.
 
     Returns:
         Dictionary with ``success`` set to True plus the template records
@@ -449,7 +449,7 @@ def list_templates_mcp() -> Dict[str, Any]:
     """
 
     def _build() -> Dict[str, Any]:
-        from gnn.cli.templates import list_templates as _list_templates
+        from gnn.operations.templates import list_templates as _list_templates
 
         records = _list_templates()
         return {"success": True, "templates": records, "total": len(records)}
@@ -465,7 +465,7 @@ def show_template_mcp(name: str) -> Dict[str, Any]:
     """
     Show one maintained template record with checksum metadata.
 
-    Thin MCP wrapper around :func:`gnn.cli.templates.show_template`.
+    Thin MCP wrapper around :func:`gnn.operations.templates.show_template`.
 
     Args:
         name: Name of the maintained template to show. The CLI parity
@@ -478,7 +478,7 @@ def show_template_mcp(name: str) -> Dict[str, Any]:
     """
 
     def _build() -> Dict[str, Any]:
-        from gnn.cli.templates import show_template as _show_template
+        from gnn.operations.templates import show_template as _show_template
 
         return {"success": True, "template": _show_template(name)}
 
