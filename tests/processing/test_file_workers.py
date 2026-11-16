@@ -409,14 +409,14 @@ def test_parent_write_failure_keeps_healthy_selected_sibling(
     context.write(context_file)
     monkeypatch.setenv("GNN_RUN_CONTEXT_FILE", str(context_file))
     monkeypatch.setenv("GNN_RUN_ID", context.run_id)
-    write = Path.write_text
+    write = Path.write_bytes
 
     def fail_first(path: Path, *args: Any, **kwargs: Any) -> int:
         if path.name == "first_parsed.json":
             raise OSError("injected parent write failure")
         return write(path, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "write_text", fail_first)
+    monkeypatch.setattr(Path, "write_bytes", fail_first)
     assert not process_gnn_multi_format(
         source,
         output,

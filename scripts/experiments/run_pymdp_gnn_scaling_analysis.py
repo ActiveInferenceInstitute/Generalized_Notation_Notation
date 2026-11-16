@@ -23,13 +23,17 @@ from __future__ import annotations
 
 import argparse
 import errno
+import hashlib
 import json
 import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
+from contextlib import suppress
 from datetime import datetime, timezone
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -86,6 +90,7 @@ _STEP5_REF_SHORT = "Same policy role as Pipeline Step 5 (type_checker: resource_
 # Last written preflight payload (pretty JSON; avoids multi-KiB lines on narrow terminals).
 LAST_RESOURCE_GATE_JSON = CONFIG_FILE.parent / "pymdp_scaling_last_resource_gate.json"
 RUN_MANIFEST_FILENAME = "pymdp_scaling_run_manifest.json"
+RUN_MANIFEST_SCHEMA = "gnn_pymdp_scaling_manifest_v1"
 
 # Initialize Visual Logger
 logger = create_visual_logger("scaling_orchestrator")
@@ -180,6 +185,7 @@ class SweepPlan(NamedTuple):
     total_estimated_bytes: int
     skip_lines: list[str]
     grid_pairs: int
+    skipped: list[tuple[int, int, str]]
 
 
 def build_sweep_plan(
@@ -196,6 +202,7 @@ def build_sweep_plan(
     """Compute which grid cells are written and total estimated UTF-8 bytes (conservative)."""
     skip_lines: list[str] = []
     planned: list[tuple[int, int]] = []
+    skipped: list[tuple[int, int, str]] = []
     total_est = 0
     for n in n_values:
         for t in t_values:
@@ -212,7 +219,9 @@ def build_sweep_plan(
             if reason is None:
                 total_est += estimate_gnn_file_bytes(n, t, a_signal, b_signal)
                 planned.append((n, t))
-            elif reason == "max_n":
+                continue
+            skipped.append((n, t, reason))
+            if reason == "max_n":
                 skip_lines.append(
                     f"  [SKIP] N={n}, T={t} (N > max_n={max_n}; dense B is O(n^3) bytes)"
                 )
@@ -230,6 +239,7 @@ def build_sweep_plan(
         total_estimated_bytes=total_est,
         skip_lines=skip_lines,
         grid_pairs=len(n_values) * len(t_values),
+        skipped=skipped,
     )
 
 
@@ -393,11 +403,35 @@ def _build_run_manifest(
     pipeline_output_dir: Path,
     config: dict[str, object],
     phases: list[dict[str, object]] | None = None,
+    fixtures: list[dict[str, object]] | None = None,
 ) -> dict[str, object]:
     """Build a reproducibility manifest for a scaling experiment."""
+    versions: dict[str, str | None] = {}
+    for name in (
+        "generalized-notation-notation",
+        "inferactively-pymdp",
+        "jax",
+        "jaxlib",
+    ):
+        try:
+            versions[name] = version(name)
+        except PackageNotFoundError:
+            versions[name] = None
     return {
+        "schema_version": RUN_MANIFEST_SCHEMA,
         "status": status,
         "updated_at": datetime.now(timezone.utc).isoformat(),
+        "producer": {
+            "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "generator_sha256": hashlib.sha256(
+                (PROJECT_ROOT / "scripts/pymdp_spec_generator.py").read_bytes()
+            ).hexdigest(),
+            "python": sys.version.split()[0],
+            "distribution_versions": versions,
+        },
+        "axes": {"num_states": "count", "num_timesteps": "steps"},
+        "execution_time_unit": "seconds",
+        "fixtures": fixtures or [],
         "configuration": config,
         "paths": {
             "generated_specs": str(out_dir),
@@ -409,6 +443,10 @@ def _build_run_manifest(
         "grid_pairs": plan.grid_pairs,
         "planned_count": len(plan.planned),
         "planned_pairs": [[n, t] for n, t in plan.planned],
+        "skipped_pairs": [
+            {"num_states": n, "num_timesteps": t, "reason": reason}
+            for n, t, reason in plan.skipped
+        ],
         "skip_lines": plan.skip_lines,
         "estimated_spec_bytes": plan.total_estimated_bytes,
         "estimated_spec_mib": round(plan.total_estimated_bytes / (1024**2), 3),
@@ -420,7 +458,12 @@ def _write_run_manifest(pipeline_output_dir: Path, manifest: dict[str, object]) 
     """Write the scaling run manifest into the isolated pipeline output."""
     pipeline_output_dir.mkdir(parents=True, exist_ok=True)
     path = pipeline_output_dir / RUN_MANIFEST_FILENAME
-    path.write_text(json.dumps(manifest, indent=2, sort_keys=False) + "\n")
+    with tempfile.TemporaryDirectory(dir=pipeline_output_dir) as staging:
+        candidate = Path(staging) / RUN_MANIFEST_FILENAME
+        candidate.write_text(
+            json.dumps(manifest, indent=2, sort_keys=False) + "\n", encoding="utf-8"
+        )
+        candidate.replace(path)
     return path
 
 
@@ -1049,6 +1092,9 @@ def main() -> int:
     args.pipeline_steps = ",".join(pipeline_steps_list)
 
     # Execution Flow
+    run_config = vars(args)
+    fixtures: list[dict[str, object]] = []
+    phase_results: list[dict[str, object]] = []
     try:
         # 1. Cleanup
         if args.clear:
@@ -1063,7 +1109,6 @@ def main() -> int:
         out_dir.mkdir(parents=True, exist_ok=True)
         pipeline_output_dir.mkdir(parents=True, exist_ok=True)
 
-        run_config = vars(args)
         manifest_path = _write_run_manifest(
             pipeline_output_dir,
             _build_run_manifest(
@@ -1086,13 +1131,37 @@ def main() -> int:
         count = 0
         for n, t in plan.planned:
             filepath = out_dir / f"pymdp_scaling_N{n}_T{t}.md"
-            filepath.write_text(generate_gnn_file(n, t, args.a_signal, args.b_signal))
+            source = generate_gnn_file(n, t, args.a_signal, args.b_signal).encode(
+                "utf-8"
+            )
+            filepath.write_bytes(source)
+            fixtures.append(
+                {
+                    "path": filepath.name,
+                    "num_states": n,
+                    "num_timesteps": t,
+                    "sha256": hashlib.sha256(source).hexdigest(),
+                    "bytes": len(source),
+                    "source_seed": None,
+                }
+            )
             count += 1
         logger.print_status(
             f"Generated {count} GNN spec files in {args.output_dir}", "success"
         )
 
         if args.skip_pipeline:
+            _write_run_manifest(
+                pipeline_output_dir,
+                _build_run_manifest(
+                    status="generated",
+                    plan=plan,
+                    out_dir=out_dir,
+                    pipeline_output_dir=pipeline_output_dir,
+                    config=run_config,
+                    fixtures=fixtures,
+                ),
+            )
             logger.print_status(
                 "Skipping pipeline execution (--skip-pipeline passed).", "info"
             )
@@ -1114,7 +1183,6 @@ def main() -> int:
             execution_benchmark_repeats=max(1, int(args.execution_benchmark_repeats)),
         )
 
-        phase_results = []
         for phase in phases:
             logger.print_status(
                 f"Pipeline phase '{phase.label}': Steps {phase.cmd[phase.cmd.index('--only-steps') + 1]}",
@@ -1145,6 +1213,7 @@ def main() -> int:
                         pipeline_output_dir=pipeline_output_dir,
                         config=run_config,
                         phases=phase_results,
+                        fixtures=fixtures,
                     ),
                 )
                 logger.print_status(
@@ -1164,6 +1233,7 @@ def main() -> int:
                 pipeline_output_dir=pipeline_output_dir,
                 config=run_config,
                 phases=phase_results,
+                fixtures=fixtures,
             ),
         )
 
@@ -1194,11 +1264,26 @@ def main() -> int:
                 out_dir=out_dir,
                 pipeline_output_dir=pipeline_output_dir,
                 config=run_config,
+                fixtures=fixtures,
+                phases=phase_results,
             ),
         )
         return 130
     except Exception as e:
         logger.print_status(f"Unexpected error: {e}", "error")
+        with suppress(OSError):
+            _write_run_manifest(
+                pipeline_output_dir,
+                _build_run_manifest(
+                    status="failed",
+                    plan=plan,
+                    out_dir=out_dir,
+                    pipeline_output_dir=pipeline_output_dir,
+                    config=run_config,
+                    fixtures=fixtures,
+                    phases=phase_results,
+                ),
+            )
         return 1
 
 

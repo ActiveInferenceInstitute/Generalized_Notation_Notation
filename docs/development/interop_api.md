@@ -35,6 +35,23 @@ It prints `gnn.types.definitions`, the module that owns the dataclass.
 passes `success` explicitly. Importing it from `gnn.types` or `gnn.parsers.common`
 yields the same class, so neither surface can silently change the contract.
 
+## Validation depth
+
+`GNNParsingSystem.parse_file` and `GNNParsingSystem.parse_string` preserve the
+format parser's `ParseResult.success`. With `strict_validation=True`, either
+entry point attaches `ParseResult.validation_result` after a successful parse.
+Inspect its `is_valid`, `errors`, `warnings` and `metadata["available"]` to
+distinguish an invalid model from a check that could not run. These diagnostics
+cover the parser's internal model semantics. Normative Markdown section
+compliance is a separate [importer check](interop.md#importer-conformance).
+
+For a parsed object, `gnn.schema.check_gnn_object` returns `mode` and `errors`.
+`draft-2020-12` runs the full JSON Schema. `required-keys` checks that the root
+keys are present when the optional `jsonschema` library is unavailable.
+Consumers that require field-type validation should check for the full mode
+before accepting an empty error list. `validate_gnn_object` still returns an
+error list for callers using the existing API.
+
 ## HTTP applications
 
 `gnn serve --surface` selects the factory. Both factories are in the `api` extra

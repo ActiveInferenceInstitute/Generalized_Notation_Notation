@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from .parameter_dimensions import (
     validate_matrix_dimensions as validate_matrix_dimensions,
 )
-from .types import GNNConnectionEdge, GNNParseError, GNNVariable
+from .types import GNNConnectionEdge, GNNObjectValidation, GNNParseError, GNNVariable
 
 logger = logging.getLogger(__name__)
 
@@ -280,24 +280,29 @@ GNN_MODEL_SCHEMA: Dict[str, Any] = {
 }
 
 
-def validate_gnn_object(obj: Dict[str, Any]) -> List[str]:
-    """
-    Validate a parsed GNN model dict against the JSON Schema.
-
-    Uses jsonschema if available, otherwise performs basic key checks.
-
-    Returns:
-        List of validation error messages (empty = valid).
-    """
+def check_gnn_object(obj: Dict[str, Any]) -> GNNObjectValidation:
+    """Validate a model object and report whether JSON Schema was available."""
     try:
         import jsonschema
-
-        validator = jsonschema.Draft202012Validator(GNN_MODEL_SCHEMA)
-        return [e.message for e in sorted(validator.iter_errors(obj), key=str)]
     except ImportError:
-        logger.debug("jsonschema not installed — using basic validation")
-        missing = [k for k in GNN_MODEL_SCHEMA["required"] if k not in obj]
-        return [f"Missing required key: '{k}'" for k in missing]
+        missing = [key for key in GNN_MODEL_SCHEMA["required"] if key not in obj]
+        return GNNObjectValidation(
+            "required-keys", [f"Missing required key: '{key}'" for key in missing]
+        )
+
+    validator = jsonschema.Draft202012Validator(GNN_MODEL_SCHEMA)
+    return GNNObjectValidation(
+        "draft-2020-12",
+        [error.message for error in sorted(validator.iter_errors(obj), key=str)],
+    )
+
+
+def validate_gnn_object(obj: Dict[str, Any]) -> List[str]:
+    """Return validation errors. Use check_gnn_object to inspect validation depth."""
+    report = check_gnn_object(obj)
+    if report.mode == "required-keys":
+        logger.warning("jsonschema unavailable; checked required GNN model keys only")
+    return report.errors
 
 
 # ─── Required Sections Validation ────────────────────────────────────────────────

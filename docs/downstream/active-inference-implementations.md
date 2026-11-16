@@ -22,16 +22,14 @@ notebook derives.
 
 ## Conformance and validation evidence
 
-- `.github/workflows/ci.yml` job `gnn-conformance` (display name
-  "gnn conformance (pinned)") provisions the pinned parser runtime and
-  runs the step "Validate the GNN specification against the pinned parser",
-  which calls `scripts/validate_gnn_spec.py` against `specs/normal_vmp.gnn.md`.
-  The check name carries no version: the pinned revision is recorded in
-  `specs/gnn-pin.json`.
+- `.github/workflows/ci.yml` runs `./run.sh gnn` in the `GNN conformance`
+  step of its `gate` job. That arm calls `scripts/validate_gnn_spec.py`
+  against `specs/normal_vmp.gnn.md` using the pinned parser and checks the
+  parsed model against the Julia reader. [Workflow at 6cb731e](https://github.com/ActiveInferenceInstitute/ActiveInferenceImplementations/blob/6cb731e74aa2d6addf942e5348649e1771bc2f2d/.github/workflows/ci.yml)
 - `scripts/gnn_parser_probe.py` probes the provisioned parser runtime.
 
 ## Verification limits
 
-Not verified: that the current `main` run is green. The pin file, specification
-and workflow definition were read at `main` on 2026-11-02; the check name and
-the pin file path were re-read at `main` on 2026-11-05.
+The pin file and specification were read at `main` on 2026-11-02. The workflow
+was re-read at the linked revision on 2026-11-15. Current CI results require
+separate verification.

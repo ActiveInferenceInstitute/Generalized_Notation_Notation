@@ -7,8 +7,9 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
-if TYPE_CHECKING:  # runtime re-export lives in gnn/types/__init__.py
+if TYPE_CHECKING:
     from gnn.parsers.common import GNNFormat, GNNInternalRepresentation
+    from gnn.parsers.common import ParseResult as ParseResult
 
 
 class ValidationLevel(Enum):
@@ -132,16 +133,6 @@ class ParsedGNN:
     round_trip_verified: bool = False
 
 
-# ``ParseResult`` has one declaration, in ``gnn.parsers.common``: the parser
-# fleet constructs it with a model, and this module re-exports the same class
-# object so typed consumers and parser consumers cannot diverge. Importing the
-# implementation module (never the ``gnn.types`` facade) keeps the runtime
-# import graph acyclic.
-from gnn.parsers.common import (  # noqa: E402  single-declaration re-export
-    ParseResult as ParseResult,
-)
-
-
 @dataclass
 class RoundTripResult:
     """Provide RoundTripResult behavior."""
@@ -225,3 +216,20 @@ class ComprehensiveTestReport:
             else:
                 format_summary[fmt]["failure"] += 1
         return format_summary
+
+
+def __getattr__(name: str) -> Any:
+    if name != "ParseResult":
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    from gnn.parsers.common import ParseResult
+
+    globals()[name] = ParseResult
+    return ParseResult
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | {"ParseResult"})
+
+
+# Preserve the previous wildcard import surface, including the lazy alias.
+__all__ = [name for name in globals() if not name.startswith("_")] + ["ParseResult"]

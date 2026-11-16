@@ -6,6 +6,7 @@ import itertools
 import json
 import os
 import sys
+import tomllib
 from pathlib import Path
 from typing import Any
 
@@ -72,12 +73,28 @@ def test_admission_matches_conservative_formula_and_rejects_before_write(
         admit_search(2, 1, 2, 5, 1, True, max_policies=4097)
 
 
-def test_backend_requires_explicit_selection(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_backend_requires_explicit_selection(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     from gnn.render.execution_contracts import unsupported_contract
     from gnn.render.framework_registry import FRAMEWORK_REGISTRY, get_default_frameworks
+    from gnn.utils.runtime_safety.framework_availability import (
+        FRAMEWORK_REQUIRED_VERSIONS,
+    )
 
     assert FRAMEWORK_REGISTRY["cpomdp"]["experimental"]
     assert "cpomdp" not in get_default_frameworks()
+    project = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    extras = tomllib.loads(project.read_text(encoding="utf-8"))["project"][
+        "optional-dependencies"
+    ]
+    version = FRAMEWORK_REQUIRED_VERSIONS["cpomdp"]
+    assert extras["cpomdp"] == [f"cpomdp=={version}"]
+    script = tmp_path / "model.py"
+    assert render_gnn_to_cpomdp(_spec(), script)[0]
+    assert f"REQUIRED_CPOMDP_VERSION = {json.dumps(version)}" in script.read_text(
+        encoding="utf-8"
+    )
     # The control contract is the declaration that admits source-declared
     # finite controls: the gate reads it instead of the frame name, so moving
     # the declaration moves the admission with it.
@@ -153,7 +170,7 @@ def test_released_wheel_native_filter_and_policy_scores(
     )
     assert envelope["success"], envelope
     results = json.loads((output / "simulation_results.json").read_text())
-    assert results["cpomdp_version"] == "0.5.0"
+    assert results["cpomdp_version"] == "0.5.1"
     assert results["validation"]["all_valid"]
     assert results["source_identity"]["model_contract_sha256"]
     assert results["measured_resources"]["process_peak_rss_bytes"] > 0

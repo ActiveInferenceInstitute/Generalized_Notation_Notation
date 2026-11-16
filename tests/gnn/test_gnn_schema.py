@@ -347,3 +347,45 @@ class TestValidateGnnObject:
 
         errors = validate_gnn_object({})
         assert isinstance(errors, list)
+
+    def test_schema_reports_the_runtime_validation_mode(self) -> None:
+        from importlib.util import find_spec
+
+        from gnn.schema import check_gnn_object
+
+        result = check_gnn_object(
+            {
+                "gnn_section": "ActInfPOMDP",
+                "gnn_version": "1",
+                "model_name": 42,
+                "state_space": {},
+                "connections": [],
+            }
+        )
+        if find_spec("jsonschema") is not None:
+            assert result.mode == "draft-2020-12"
+            assert any("42 is not of type" in error for error in result.errors)
+        else:
+            assert result.mode == "required-keys"
+            assert not result.errors
+
+    def test_schema_reports_required_keys_when_jsonschema_is_unavailable(self) -> None:
+        from unittest.mock import patch
+
+        from gnn.schema import check_gnn_object, validate_gnn_object
+
+        invalid_schema = {
+            "gnn_section": "ActInfPOMDP",
+            "gnn_version": "1",
+            "model_name": 42,
+            "state_space": {},
+            "connections": [],
+        }
+        with patch.dict(sys.modules, {"jsonschema": None}):
+            result = check_gnn_object(invalid_schema)
+            assert result.mode == "required-keys"
+            assert not result.errors
+            assert validate_gnn_object(invalid_schema) == result.errors
+            missing = check_gnn_object({})
+            assert missing.mode == result.mode
+            assert "Missing required key: 'model_name'" in missing.errors

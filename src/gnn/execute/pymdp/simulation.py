@@ -965,6 +965,9 @@ def run_pymdp_simulation(
     # Assemble results (pymdp_simulation_v1 schema consumed by analysis).
     # ---------------------------------------------------------------------
     model_name = gnn_spec.get("model_name") or gnn_spec.get("name") or "pymdp_model"
+    agent_type = type(agent)
+    likelihood = agent.A[0]
+    likelihood_devices = likelihood.devices()
 
     results: Dict[str, Any] = {
         "schema_version": "pymdp_simulation_v1",
@@ -1019,6 +1022,15 @@ def run_pymdp_simulation(
             "output_dir": str(output_dir),
             "random_seed": seed,
             "schema_version": "pymdp_simulation_v1",
+            "native_agent": {
+                "schema_version": "pymdp_native_agent_v1",
+                "agent": f"{agent_type.__module__}.{agent_type.__qualname__}",
+                "dtype": str(likelihood.dtype),
+                "devices": sorted(str(device) for device in likelihood_devices),
+                "platforms": sorted({device.platform for device in likelihood_devices}),
+                "batch_size": int(likelihood.shape[0]),
+                "policy_horizon": int(agent.policy_len),
+            },
         },
         "metrics": {
             "expected_free_energy": efe_history,

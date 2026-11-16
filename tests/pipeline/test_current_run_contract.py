@@ -355,6 +355,117 @@ def test_current_parser_failure_does_not_claim_complete_selected_coverage(
     }
 
 
+@pytest.mark.parametrize("mode", ["current", "tampered", "mixed-run"])
+def test_step3_to_step6_versioned_model_handoff(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mode: str
+) -> None:
+    from gnn.pipeline.parse_receipt import PARSED_MODEL_SCHEMA
+    from gnn.processing.multi_format_processor import process_gnn_multi_format
+    from gnn.validation import process_validation
+
+    source = tmp_path / "input"
+    source.mkdir()
+    exemplar = Path(__file__).parents[2] / "input/gnn_files/discrete/simple_mdp.md"
+    (source / "model.md").write_bytes(exemplar.read_bytes())
+    output = tmp_path / "output"
+    context = build_run_context(source, output, "handoff-run", [3, 6], {})
+    _activate(context, monkeypatch)
+
+    step3_dir = output / "3_gnn_output"
+    assert process_gnn_multi_format(
+        context.input_view(3),
+        output,
+        logging.getLogger(__name__),
+        serialize_preset="minimal",
+    )
+    manifest_path = step3_dir / "gnn_processing_results.json"
+    manifest = json.loads(manifest_path.read_bytes())
+    assert manifest["parsed_model_schema"] == PARSED_MODEL_SCHEMA
+    (record,) = manifest["processed_files"]
+    artifact = Path(record["parsed_model_file"])
+    payload = json.loads(artifact.read_bytes())
+    (model,) = context.selected_models(3)
+    assert payload["_gnn_provenance"]["source_sha256"] == model.sha256
+    assert (
+        record["parsed_model_sha256"]
+        == hashlib.sha256(artifact.read_bytes()).hexdigest()
+    )
+
+    if mode == "mixed-run":
+        payload["_gnn_provenance"]["run_id"] = "another-run"
+        artifact.write_text(json.dumps(payload), encoding="utf-8")
+        record["parsed_model_sha256"] = hashlib.sha256(
+            artifact.read_bytes()
+        ).hexdigest()
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    summary_path = output / "00_pipeline_summary" / "current_summary.json"
+    summary_path.parent.mkdir(exist_ok=True)
+    summary_path.write_text(
+        json.dumps(
+            {
+                "run_id": context.run_id,
+                "steps": [{"artifacts": changed_artifacts(step3_dir, output, {})}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    if mode == "tampered":
+        payload["model_name"] = "Different model"
+        artifact.write_text(json.dumps(payload), encoding="utf-8")
+
+    results_dir = output / "6_validation_output"
+    validated = process_validation(context.input_view(6), results_dir)
+    (result,) = json.loads((results_dir / "validation_results.json").read_bytes())[
+        "files_validated"
+    ]
+    if mode == "current":
+        assert validated, result
+        assert result["parsed_input"] == {
+            **payload["_gnn_provenance"],
+            "parsed_model_sha256": record["parsed_model_sha256"],
+        }
+        assert set(result["validations"]) == {
+            "semantic",
+            "performance",
+            "consistency",
+            "orientation",
+        }
+    else:
+        assert not validated
+        assert not result["validations"]
+        assert ("checksum" if mode == "tampered" else "identity") in " ".join(
+            result["errors"]
+        )
+
+
+def test_standalone_versioned_handoff_refuses_changed_source_bytes(
+    tmp_path: Path,
+) -> None:
+    from gnn.processing.multi_format_processor import process_gnn_multi_format
+    from gnn.validation import process_validation
+
+    source = tmp_path / "input"
+    source.mkdir()
+    exemplar = Path(__file__).parents[2] / "input/gnn_files/discrete/simple_mdp.md"
+    model = source / "model.md"
+    model.write_bytes(exemplar.read_bytes())
+    output = tmp_path / "output"
+    assert process_gnn_multi_format(
+        source, output, logging.getLogger(__name__), serialize_preset="minimal"
+    )
+
+    original = model.stat()
+    model.write_bytes(model.read_bytes() + b"\nChanges after parsing.\n")
+    os.utime(model, ns=(original.st_atime_ns, original.st_mtime_ns))
+    result_dir = output / "6_validation_output"
+    assert not process_validation(source, result_dir)
+    receipt = json.loads((result_dir / "validation_results.json").read_bytes())
+    (result,) = receipt["files_validated"]
+    assert not result["validations"]
+    assert "Model source changed after Step 3 parsing" in " ".join(result["errors"])
+
+
 def test_deserialized_context_rejects_a_source_symlink_escape(tmp_path: Path) -> None:
     from gnn.pipeline.run_context import RunContext
 

@@ -27,7 +27,7 @@
 
 `tests/render/test_cpomdp_contracts.py` compares real released-wheel runs against an independent NumPy Kalman and EFE implementation on both supported JAX lock splits. It checks admission caps, malformed options and all-invalid policy scores.
 
-`admission.py` rejects searches before enumeration: at most 4,096 policies, 32,768 step evaluations and 128 MiB estimated allocation. The estimate excludes runtime/JIT overhead; the process watchdog remains authoritative. The optional dependency is exactly `cpomdp==0.5.0`; no Git source override is used.
+`admission.py` rejects searches before enumeration: at most 4,096 policies, 32,768 step evaluations and 128 MiB estimated allocation. The estimate excludes runtime/JIT overhead; the process watchdog remains authoritative. The optional dependency is exactly `cpomdp==0.5.1`; no Git source override is used.
 
 ## Documentation
 

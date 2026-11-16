@@ -90,7 +90,7 @@ def test_actual_wrong_cpomdp_version_is_diagnosed(
     monkeypatch.setenv("PYTHONPATH", str(tmp_path))
     status = availability.check_framework("cpomdp")
     assert status.reason_code == "unsupported_version"
-    assert "0.5.0" in status.reason and "0.4.4" in status.reason
+    assert "0.5.1" in status.reason and "0.4.4" in status.reason
     assert status.missing_module is None
 
 

@@ -113,7 +113,8 @@ def validate_gnn_content(
         validation_level: Validation strictness level (ValidationLevel enum or
             equivalent string value, e.g. "basic", "standard", "strict")
         enable_round_trip: Whether to enable round-trip testing
-        format_hint: Optional format hint for content detection
+        format_hint: Require Markdown, JSON, XML, or YAML validation.
+            Omit to retain the default Markdown checks and parser detection.
 
     Returns:
         Dictionary containing enhanced validation results
@@ -125,47 +126,28 @@ def validate_gnn_content(
         }
 
     try:
-        if isinstance(validation_level, ValidationLevel):
-            val_level = validation_level
-        else:
-            try:
-                val_level = ValidationLevel(validation_level)
-            except ValueError:
-                val_level = ValidationLevel.STANDARD
-
-        # Create temporary file for validation
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
-            f.write(content)
-            temp_file = Path(f.name)
-
-        try:
-            # Initialize enhanced validator
-            validator = GNNValidator(
-                validation_level=val_level, enable_round_trip_testing=enable_round_trip
+        validator = GNNValidator(enable_round_trip_testing=enable_round_trip)
+        with tempfile.TemporaryDirectory() as directory:
+            temp_file = Path(directory) / "model.md"
+            temp_file.write_text(content, encoding="utf-8")
+            result = validator.validate_file(
+                temp_file, validation_level, format_hint=format_hint
             )
 
-            # Perform validation
-            result = validator.validate_file(temp_file, val_level)
-
-            # Convert result to JSON-serializable format
-            return {
-                "success": True,
-                "is_valid": result.is_valid,
-                "validation_level": result.validation_level.value,
-                "format_tested": result.format_tested,
-                "errors": result.errors,
-                "warnings": result.warnings,
-                "suggestions": result.suggestions,
-                "metadata": result.metadata,
-                "semantic_checksum": result.semantic_checksum,
-                "cross_format_consistent": result.cross_format_consistent,
-                "round_trip_success_rate": result.get_round_trip_success_rate(),
-                "performance_metrics": result.performance_metrics,
-            }
-
-        finally:
-            # Clean up temporary file
-            temp_file.unlink(missing_ok=True)
+        return {
+            "success": True,
+            "is_valid": result.is_valid,
+            "validation_level": result.validation_level.value,
+            "format_tested": result.format_tested,
+            "errors": result.errors,
+            "warnings": result.warnings,
+            "suggestions": result.suggestions,
+            "metadata": result.metadata,
+            "semantic_checksum": result.semantic_checksum,
+            "cross_format_consistent": result.cross_format_consistent,
+            "round_trip_success_rate": result.get_round_trip_success_rate(),
+            "performance_metrics": result.performance_metrics,
+        }
 
     except Exception as e:
         logger.error(f"validate_gnn_content: {str(e)}", exc_info=True)
@@ -710,8 +692,8 @@ def register_tools(mcp_instance: Any) -> Any:
             },
             "format_hint": {
                 "type": "string",
-                "description": "Optional format hint for content detection",
-                "enum": ["markdown", "json", "xml", "yaml", "binary"],
+                "description": "Require this text format for parsing and validation",
+                "enum": ["markdown", "json", "xml", "yaml"],
             },
         },
         "Enhanced validation of GNN file content with comprehensive testing capabilities.",

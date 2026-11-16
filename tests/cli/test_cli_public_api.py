@@ -275,9 +275,10 @@ class TestFindRenderArtifact:
         assert result is None
 
     def test_finds_from_summary_json(self, tmp_path: Path) -> None:
-        import json
+        import hashlib
 
-        from gnn.cli.commands import find_render_artifact
+        from gnn.cli.commands import find_render_artifact as legacy_find_artifact
+        from gnn.render import find_render_artifact
 
         summary = tmp_path / "render_processing_summary.json"
         output_file = tmp_path / "pymdp" / "model.py"
@@ -289,12 +290,27 @@ class TestFindRenderArtifact:
                     "file_results": {
                         "model.md": {
                             "framework_results": {
-                                "pymdp": {"output_files": [str(output_file)]}
+                                "pymdp": {
+                                    "success": True,
+                                    "output_files": [str(output_file)],
+                                    "artifact_identities": [
+                                        {
+                                            "path": str(output_file.resolve()),
+                                            "sha256": hashlib.sha256(
+                                                output_file.read_bytes()
+                                            ).hexdigest(),
+                                        }
+                                    ],
+                                }
                             }
                         }
                     }
                 }
             )
         )
-        result = find_render_artifact(tmp_path, "pymdp")
-        assert result == output_file
+        for find_artifact in (find_render_artifact, legacy_find_artifact):
+            assert find_artifact(tmp_path, "pymdp", require_current=True) == output_file
+        output_file.write_text("changed after receipt")
+        for find_artifact in (find_render_artifact, legacy_find_artifact):
+            assert find_artifact(tmp_path, "pymdp", require_current=True) is None
+        assert legacy_find_artifact(tmp_path, "pymdp") == output_file

@@ -40,7 +40,7 @@ covers module-wide usage.
 | `__init__.py` | Facade re-export groups (`__init__.py`), numpy soft-dependency flag (`__init__.py`), `sys.path` bootstrap (`__init__.py`) |
 | `metadata.py` | Capability metadata: `get_module_info` (metadata.py), `get_available_renderers` (metadata.py) |
 | `parsing.py` | Spec adaptation/normalization: `_safe_output_stem` (parsing.py), `_node_to_mapping` (parsing.py), `_internal_representation_to_mapping` (parsing.py), `_rehydrate_file_backed_parse_summary` (parsing.py), `_normalize_initial_vectors` (parsing.py), `_render_succeeded` (parsing.py), `validate_pomdp_for_rendering` (parsing.py), `normalize_matrices` (parsing.py) |
-| `receipts.py` | Receipt persistence: `_load_prior_render_summary` (receipts.py), `_render_file_identity` (receipts.py), `_atomic_render_json` (receipts.py), `_write_render_receipt` (receipts.py), `parse_frameworks_selection` (receipts.py) |
+| `receipts.py` | Receipt persistence, framework selection, and single-render result and artifact lookup for CLI, HTTP, and MCP |
 | `pipeline.py` | Orchestration: `process_render` (pipeline.py), `_process_single_gnn_file_basic` (pipeline.py), `_create_overview_documentation` (pipeline.py) |
 | `rendering.py` | Single-spec dispatch: `_render_continuous_target` (rendering.py), `render_gnn_spec` (rendering.py) |
 
@@ -60,7 +60,7 @@ the parent package and tests.
 | `gnn.render.processor.metadata` | `get_available_renderers`, `get_module_info` | `__init__.py` |
 | `gnn.render.processor.parsing` | `_internal_representation_to_mapping`, `_node_to_mapping`, `_normalize_initial_vectors`, `_rehydrate_file_backed_parse_summary`, `_render_succeeded`, `_safe_output_stem`, `normalize_matrices`, `validate_pomdp_for_rendering` | `__init__.py` |
 | `gnn.render.processor.pipeline` | `_create_overview_documentation`, `_process_single_gnn_file_basic`, `process_render` | `__init__.py` |
-| `gnn.render.processor.receipts` | `_atomic_render_json`, `_load_prior_render_summary`, `_render_file_identity`, `_write_render_receipt`, `parse_frameworks_selection` | `__init__.py` |
+| `gnn.render.processor.receipts` | `_atomic_render_json`, `_load_prior_render_summary`, `_render_file_identity`, `_write_render_receipt`, `find_render_artifact`, `parse_frameworks_selection`, `render_processing_succeeded` | `__init__.py` |
 | `gnn.render.processor.rendering` | `_render_continuous_target`, `render_gnn_spec` | `__init__.py` |
 
 Note the two `get_available_renderers` bindings: the registry variant is aliased

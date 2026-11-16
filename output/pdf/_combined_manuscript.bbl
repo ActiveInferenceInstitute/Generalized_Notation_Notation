@@ -10,13 +10,18 @@ Dmitry Bagaev and Bert de~Vries.
 \newblock Reactive message passing for scalable bayesian inference, 2021.
 \newblock URL \url{https://arxiv.org/abs/2112.13251}.
 
-\bibitem[Champion et~al.(2024)Champion, Bowman, Markovi{\'c}, and Grze{\'s}]{champion2024reframingEfe}
-Th{\'e}ophile Champion, Howard Bowman, Dimitrije Markovi{\'c}, and Marek Grze{\'s}.
-\newblock Reframing the expected free energy: Four formulations and a unification, 2024.
+\bibitem[Champion et~al.(2024)Champion, Bowman, Markovi{\'c}, and
+  Grze{\'s}]{champion2024reframingEfe}
+Th{\'e}ophile Champion, Howard Bowman, Dimitrije Markovi{\'c}, and Marek
+  Grze{\'s}.
+\newblock Reframing the expected free energy: Four formulations and a
+  unification, 2024.
 \newblock URL \url{https://arxiv.org/abs/2402.14460}.
 
-\bibitem[Da~Costa et~al.(2020)Da~Costa, Parr, Sajid, Veselic, Neacsu, and Friston]{dacosta2020}
-Lancelot Da~Costa, Thomas Parr, Noor Sajid, Sebastijan Veselic, Victorita Neacsu, and Karl Friston.
+\bibitem[Da~Costa et~al.(2020)Da~Costa, Parr, Sajid, Veselic, Neacsu, and
+  Friston]{dacosta2020}
+Lancelot Da~Costa, Thomas Parr, Noor Sajid, Sebastijan Veselic, Victorita
+  Neacsu, and Karl Friston.
 \newblock Active inference on discrete state-spaces: A synthesis.
 \newblock \emph{Journal of Mathematical Psychology}, 99:\penalty0 102447, 2020.
 \newblock \doi{10.1016/j.jmp.2020.102447}.
@@ -24,32 +29,42 @@ Lancelot Da~Costa, Thomas Parr, Noor Sajid, Sebastijan Veselic, Victorita Neacsu
 \bibitem[de~Felice et~al.(2021)de~Felice, Toumi, and Coecke]{defelice2021}
 Giovanni de~Felice, Alexis Toumi, and Bob Coecke.
 \newblock Discopy: Monoidal categories in python.
-\newblock \emph{Electronic Proceedings in Theoretical Computer Science}, 333:\penalty0 183--197, 2021.
+\newblock \emph{Electronic Proceedings in Theoretical Computer Science},
+  333:\penalty0 183--197, 2021.
 \newblock \doi{10.4204/EPTCS.333.13}.
 
 \bibitem[Friston(2010)]{friston2010}
 Karl Friston.
 \newblock The free-energy principle: a unified brain theory?
-\newblock \emph{Nature Reviews Neuroscience}, 11\penalty0 (2):\penalty0 127--138, 2010.
+\newblock \emph{Nature Reviews Neuroscience}, 11\penalty0 (2):\penalty0
+  127--138, 2010.
 \newblock \doi{10.1038/nrn2787}.
 
-\bibitem[Heins et~al.(2022)Heins, Millidge, Demekas, Klein, Friston, Couzin, and Tschantz]{heins2022}
-Conor Heins, Beren Millidge, Daphne Demekas, Brennan Klein, Karl Friston, Iain~D. Couzin, and Alexander Tschantz.
-\newblock pymdp: A python library for active inference in discrete state spaces.
-\newblock \emph{Journal of Open Source Software}, 7\penalty0 (73):\penalty0 4098, 2022.
+\bibitem[Heins et~al.(2022)Heins, Millidge, Demekas, Klein, Friston, Couzin,
+  and Tschantz]{heins2022}
+Conor Heins, Beren Millidge, Daphne Demekas, Brennan Klein, Karl Friston,
+  Iain~D. Couzin, and Alexander Tschantz.
+\newblock pymdp: A python library for active inference in discrete state
+  spaces.
+\newblock \emph{Journal of Open Source Software}, 7\penalty0 (73):\penalty0
+  4098, 2022.
 \newblock \doi{10.21105/joss.04098}.
 
-\bibitem[Koudahl et~al.(2023)Koudahl, van~de Laar, and de~Vries]{koudahl2023syntheticAgents1}
+\bibitem[Koudahl et~al.(2023)Koudahl, van~de Laar, and
+  de~Vries]{koudahl2023syntheticAgents1}
 Magnus Koudahl, Thijs van~de Laar, and Bert de~Vries.
-\newblock Realising synthetic active inference agents, part i: Epistemic objectives and graphical specification language, 2023.
+\newblock Realising synthetic active inference agents, part i: Epistemic
+  objectives and graphical specification language, 2023.
 \newblock URL \url{https://arxiv.org/abs/2306.08014}.
 
-\bibitem[Nuijten et~al.(2026{\natexlab{a}})Nuijten, Lukashchuk, van~de Laar, and de~Vries]{nuijten2026typeInference}
+\bibitem[Nuijten et~al.(2026{\natexlab{a}})Nuijten, Lukashchuk, van~de Laar,
+  and de~Vries]{nuijten2026typeInference}
 Wouter W.~L. Nuijten, Mykola Lukashchuk, Thijs van~de Laar, and Bert de~Vries.
 \newblock What type of inference is active inference?, 2026{\natexlab{a}}.
 \newblock URL \url{https://arxiv.org/abs/2606.04935}.
 
-\bibitem[Nuijten et~al.(2026{\natexlab{b}})Nuijten, van~de Laar, and de~Vries]{nuijten2026efePlanningVariational}
+\bibitem[Nuijten et~al.(2026{\natexlab{b}})Nuijten, van~de Laar, and
+  de~Vries]{nuijten2026efePlanningVariational}
 Wouter W.~L. Nuijten, Thijs van~de Laar, and Bert de~Vries.
 \newblock Expected free energy-based planning as variational inference.
 \newblock \emph{Transactions on Machine Learning Research}, 2026{\natexlab{b}}.
@@ -57,7 +72,8 @@ Wouter W.~L. Nuijten, Thijs van~de Laar, and Bert de~Vries.
 
 \bibitem[Parr et~al.(2022)Parr, Pezzulo, and Friston]{parr2022}
 Thomas Parr, Giovanni Pezzulo, and Karl~J. Friston.
-\newblock \emph{Active Inference: The Free Energy Principle in Mind, Brain, and Behavior}.
+\newblock \emph{Active Inference: The Free Energy Principle in Mind, Brain, and
+  Behavior}.
 \newblock MIT Press, 2022.
 \newblock \doi{10.7551/mitpress/12441.001.0001}.
 
@@ -76,13 +92,17 @@ Jakub Sm{\'e}kal and Daniel~Ari Friedman.
 
 \bibitem[Smith et~al.(2022)Smith, Friston, and Whyte]{smith2022}
 Ryan Smith, Karl~J. Friston, and Christopher~J. Whyte.
-\newblock A step-by-step tutorial on active inference and its application to empirical data.
-\newblock \emph{Journal of Mathematical Psychology}, 107:\penalty0 102632, 2022.
+\newblock A step-by-step tutorial on active inference and its application to
+  empirical data.
+\newblock \emph{Journal of Mathematical Psychology}, 107:\penalty0 102632,
+  2022.
 \newblock \doi{10.1016/j.jmp.2021.102632}.
 
-\bibitem[van~de Laar et~al.(2023)van~de Laar, Koudahl, and de~Vries]{vandelaaar2023syntheticAgents2}
+\bibitem[van~de Laar et~al.(2023)van~de Laar, Koudahl, and
+  de~Vries]{vandelaaar2023syntheticAgents2}
 Thijs van~de Laar, Magnus Koudahl, and Bert de~Vries.
-\newblock Realising synthetic active inference agents, part ii: Variational message updates, 2023.
+\newblock Realising synthetic active inference agents, part ii: Variational
+  message updates, 2023.
 \newblock URL \url{https://arxiv.org/abs/2306.02733}.
 
 \end{thebibliography}

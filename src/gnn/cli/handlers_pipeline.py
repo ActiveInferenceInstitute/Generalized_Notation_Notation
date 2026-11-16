@@ -24,8 +24,6 @@ from .commands import (
     EXTRACT_DEFECT_ERROR_STATUS,
     build_parse_payload,
     extract_payload_defect,
-    find_render_artifact,
-    render_processing_succeeded,
     run_validation_checks,
 )
 from .helpers import (
@@ -340,7 +338,11 @@ def _cmd_render(args: argparse.Namespace) -> int:
             )
         return EXIT_ERROR
 
-    from gnn.render import process_render
+    from gnn.render import (
+        find_render_artifact,
+        process_render,
+        render_processing_succeeded,
+    )
 
     framework = str(args.framework)
     options = json.loads(getattr(args, "options", "{}"))

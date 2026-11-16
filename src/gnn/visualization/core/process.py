@@ -21,7 +21,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from gnn.processing.discovery import is_model_source_path
+from gnn.processing.discovery import is_model_source_path, model_artifact_stems
 from gnn.utils.logging_utils import (
     log_step_error,
     log_step_start,
@@ -34,6 +34,7 @@ from ..analysis.combined_analysis import (
     generate_combined_visualizations,
 )
 from ..core.parsed_model import (
+    load_parse_artifact_stems,
     load_visualization_model,
     write_stale_json_note_if_needed,
 )
@@ -171,6 +172,18 @@ def process_visualization(
 
         all_visualizations: List[str] = []
         processing_errors: List[str] = []
+        from gnn.pipeline.run_context import current_run_context
+
+        if current_run_context() is None:
+            artifact_stems = model_artifact_stems(target_dir, gnn_files)
+            overrides = load_parse_artifact_stems(results_dir)
+        else:
+            artifact_stems = {path: path.stem for path in gnn_files}
+            overrides = {}
+        parse_stems = {
+            path: overrides.get(path.absolute(), artifact_stems[path])
+            for path in gnn_files
+        }
         for gnn_file in gnn_files:
             figure_failures: List[str] = []
             try:
@@ -179,8 +192,12 @@ def process_visualization(
                         gnn_file,
                         results_dir,
                         verbose,
+                        artifact_stem=artifact_stems[gnn_file],
+                        parsed_artifact_stem=parse_stems[gnn_file],
                         parsed_model=(
-                            parsed_models.get(gnn_file.stem) if parsed_models else None
+                            parsed_models.get(parse_stems[gnn_file])
+                            if parsed_models
+                            else None
                         ),
                         failures=figure_failures,
                     )
@@ -195,7 +212,12 @@ def process_visualization(
             try:
                 all_visualizations.extend(
                     generate_combined_visualizations(
-                        gnn_files, results_dir, verbose, parsed_models=parsed_models
+                        gnn_files,
+                        results_dir,
+                        verbose,
+                        parsed_models=parsed_models,
+                        artifact_stems=artifact_stems,
+                        parse_stems=parse_stems,
                     )
                 )
             except Exception as e:
@@ -391,6 +413,8 @@ def process_single_gnn_file(
     verbose: bool = False,
     *,
     parsed_model: Optional[Dict[str, Any]] = None,
+    artifact_stem: Optional[str] = None,
+    parsed_artifact_stem: Optional[str] = None,
     failures: Optional[List[str]] = None,
 ) -> List[str]:
     """Process a single GNN file into per-model PNG/JSON/HTML artifacts.
@@ -405,7 +429,13 @@ def process_single_gnn_file(
     with open(gnn_file, encoding="utf-8") as f:
         content = f.read()
 
-    model_name = gnn_file.stem
+    if artifact_stem is None:
+        artifact_stem = load_parse_artifact_stems(results_dir).get(
+            gnn_file.absolute(), gnn_file.stem
+        )
+    model_name = artifact_stem
+    if Path(model_name).name != model_name or model_name in {".", ".."}:
+        raise ValueError("Visualization artifact stem must be a single directory name")
     model_dir = results_dir / model_name
     model_dir.mkdir(exist_ok=True)
 
@@ -421,7 +451,12 @@ def process_single_gnn_file(
         return cached
 
     parsed_data = load_visualization_model(
-        gnn_file, content, results_dir, verbose, parsed_model=parsed_model
+        gnn_file,
+        content,
+        results_dir,
+        verbose,
+        parsed_model=parsed_model,
+        parsed_artifact_stem=parsed_artifact_stem or model_name,
     )
     write_stale_json_note_if_needed(parsed_data, model_dir, model_name, gnn_file)
     sampled = sample_parsed_data(parsed_data)

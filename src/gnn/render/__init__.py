@@ -22,10 +22,12 @@ from .generators import (
 from .numpyro import render_gnn_to_numpyro
 from .pomdp_processor import POMDPRenderProcessor, process_pomdp_for_frameworks
 from .processor import (
+    find_render_artifact,
     get_available_renderers,
     get_module_info,
     process_render,
     render_gnn_spec,
+    render_processing_succeeded,
 )
 from .pymdp import render_gnn_to_pymdp
 from .pymdp.pymdp_renderer import PyMDPRenderer
@@ -97,6 +99,8 @@ __all__: list[Any] = [
     "POMDPRenderProcessor",
     "process_pomdp_for_frameworks",
     # Utility functions
+    "find_render_artifact",
+    "render_processing_succeeded",
     "get_supported_frameworks",
     "validate_render",
 ]

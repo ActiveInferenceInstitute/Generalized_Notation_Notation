@@ -19,7 +19,7 @@ from gnn.render.admission import (
 )
 from gnn.utils.mcp.dispatch import run_pipeline_step_mcp
 
-from . import process_render
+from . import find_render_artifact, process_render, render_processing_succeeded
 from .framework_registry import get_available_renderers, get_supported_frameworks
 
 
@@ -124,8 +124,6 @@ def render_gnn_to_format_mcp(
         Dictionary with success status, output file path, and any errors.
     """
     try:
-        from gnn.cli.commands import find_render_artifact, render_processing_succeeded
-
         validate_boolean(verbose, field_name="verbose")
         options = validate_render_options(framework, options)
         gnn_path = Path(gnn_file_path)

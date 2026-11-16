@@ -49,6 +49,21 @@ retain theirs. Each receipt records actual installed distribution versions.
 The committed lock remains the authority; do not manually substitute a newer
 JAX, Matplotlib or upstream THRML checkout to make a candidate pass.
 
+## Base wheel acceptance
+
+Each platform lane also installs the same built wheel into a separate clean
+environment. Its hashed export excludes default dependency groups and
+optional extras. This environment runs the installed CLI validate and extract commands,
+checks the distribution's `gnn` console entry point and exercises an
+initialize/shutdown exchange through the LSP fallback. The API command must
+diagnose its missing extra and the THRML readiness probe must report that its
+module is missing. The acceptance script verifies that the API, THRML, pygls
+and development test packages are absent and exercises an invalid model-object
+field against the installed schema mode. It records distribution versions
+and binds the result to the tested source, wheel, lock and base
+export. Each lane retains both its base profile and its extended native
+profile evidence.
+
 ## Public and numerical acceptance
 
 [`run_installed_platform_acceptance.py`](../../scripts/run_installed_platform_acceptance.py)

@@ -1,7 +1,7 @@
 # active_fractal_rabbit
 
 **Repository**: [`ActiveInferenceInstitute/active_fractal_rabbit`](https://github.com/ActiveInferenceInstitute/active_fractal_rabbit)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
+· **Default branch**: `main` · **Verified**: pin, pointer and workflow read on 2026-11-15 at [5ae8174](https://github.com/ActiveInferenceInstitute/active_fractal_rabbit/tree/5ae81747573f3291bde8c02d7cccc323606c0128).
 
 ## What it models
 
@@ -21,23 +21,20 @@ Both are listed in the pin file's `spec_files`.
 
 ## Pinned GNN revision
 
-`.github/gnn-pin.json` (schema `active-fractal-rabbit-gnn-pin-v1`) records tag
-`v5.0.3`, revision `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, version 5.0.3,
-`pinned_on` 2026-11-01, and the claim boundary `synthetic-only`.
+`.github/gnn-pin.json` (schema `gnn-importer-pin/v1`) records tag
+`v5.1.0`, revision `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`, version 5.1.0,
+`pinned_on` 2026-11-12, and the claim boundary `synthetic-only`.
 
 ## Conformance and validation evidence
 
-- `.github/workflows/ci.yml` job key `gnn-conformance`, display
-  `gnn conformance (pinned)` (re-read 2026-11-06), reads the revision from
-  `.github/gnn-pin.json`, fetches it, and validates the specifications with the
-  pinned parser. The `tests` job remains the general suite and runs the
-  documented gate, `pytest tests/` with the 90% coverage floor, where the
-  checkout-dependent GNN checks skip with an explicit reason; the
-  `gnn-conformance` job runs `pytest tests/test_gnn_spec.py -q` with
-  `GNN_CHECKOUT` set.
+- `.github/workflows/ci.yml` job key `gnn-conformance` invokes `./run.sh gnn`.
+  The arm validates the pin, pointer and the two specifications with
+  `python -m gnn.importers check`, then requires a nonempty, zero-skip run of
+  `tests/test_gnn_spec.py` against the pinned parser. The project documents
+  the separately published `gnn conformance (local)` status as required on `main`.
 - `src/active_fractal_rabbit/gnn_spec.py` implements the spec surface.
 
 ## Verification limits
 
-The CI step emits a warning and skips pin re-verification when the pinned
-checkout is unavailable. Not verified: that the current `main` run is green.
+The source declares both checks. Current CI results and branch protection
+require separate verification.

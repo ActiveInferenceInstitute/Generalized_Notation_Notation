@@ -64,13 +64,12 @@ from gnn.cli.commands import (
     EXTRACT_DEFECT_ERROR_STATUS,
     build_parse_payload,
     extract_payload_defect,
-    find_render_artifact,
     preflight_severities,
     publish_pipeline_report,
-    render_processing_succeeded,
     run_validation_checks,
 )
 from gnn.frameworks import RENDER_FRAMEWORKS
+from gnn.render import find_render_artifact, render_processing_succeeded
 from gnn.render.admission import render_options_inventory
 
 logger = logging.getLogger(__name__)

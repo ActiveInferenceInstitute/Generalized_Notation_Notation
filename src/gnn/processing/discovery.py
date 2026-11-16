@@ -6,8 +6,13 @@ This module provides intelligent file discovery with content analysis
 and validation for GNN models.
 """
 
+import hashlib
 import logging
+import re
 import time
+import unicodedata
+from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -34,6 +39,43 @@ def is_model_source_path(file_path: Path) -> bool:
     if name in NON_MODEL_MARKDOWN_FILENAMES:
         return False
     return not any(name.endswith(suffix) for suffix in NON_MODEL_MARKDOWN_SUFFIXES)
+
+
+def model_artifact_stems(root: Path, sources: Iterable[Path]) -> dict[Path, str]:
+    """Keep unique stems and distinguish colliding source paths on any platform."""
+
+    def portable_key(stem: str) -> str:
+        return unicodedata.normalize("NFC", stem).casefold()
+
+    paths = sorted(sources)
+    counts = Counter(portable_key(path.stem) for path in paths)
+    stems = {
+        path: path.stem
+        for path in paths
+        if counts[portable_key(path.stem)] == 1 and path.stem not in {".", ".."}
+    }
+    reserved = {portable_key(stem) for stem in stems.values()}
+    for path in paths:
+        if path in stems:
+            continue
+        relative = path.relative_to(root).as_posix()
+        digest = hashlib.sha256(relative.encode()).hexdigest()[:12]
+        label = re.sub(r"[^A-Za-z0-9_-]", "_", path.stem)[:48]
+        stem = f"{label}-{digest}"
+        suffix = 1
+        while portable_key(stem) in reserved:
+            stem = f"{label}-{digest}-{suffix}"
+            suffix += 1
+        stems[path] = stem
+        reserved.add(portable_key(stem))
+    return stems
+
+
+def recorded_artifact_stem(value: Any) -> Optional[str]:
+    """Accept the portable override stored for colliding standalone sources."""
+    if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_-]+", value):
+        return value
+    return None
 
 
 @dataclass

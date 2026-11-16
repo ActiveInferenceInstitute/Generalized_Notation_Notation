@@ -1,31 +1,50 @@
-"""Shared dataclass types for the GNN module (circular-import safe).
+"""Shared dataclass types and lazy aliases for parser-owned types.
 
-Public re-exports live here; definitions live in :mod:`gnn.types.definitions`.
-``GNNFormat`` and ``GNNInternalRepresentation`` are re-exported from
-:mod:`gnn.parsers.common`, their single authoritative definition.
-
-The import graph is acyclic at runtime: ``gnn.parsers.basic`` imports the
-names it needs from :mod:`gnn.types.definitions` (the implementation module)
-rather than from this package facade, so no import order between this package
-and ``gnn.parsers`` can produce a partially-initialized cycle.
+The shared dataclasses load independently of the parsers. ``GNNFormat``,
+``GNNInternalRepresentation`` and ``ParseResult`` resolve to their original
+classes in :mod:`gnn.parsers.common` when requested.
 """
 
-# Single authoritative definitions live in parsers/common.py.
-from gnn.parsers.common import (  # noqa: E402  re-export for types consumers
-    GNNFormat,
-    GNNInternalRepresentation,
-)
+from typing import TYPE_CHECKING, Any
+
 from gnn.types.definitions import (
     ComprehensiveTestReport,
     GNNConnection,
     GNNSyntaxError,
     GNNVariable,
     ParsedGNN,
-    ParseResult,
     RoundTripResult,
     ValidationLevel,
     ValidationResult,
 )
+
+if TYPE_CHECKING:
+    from gnn.parsers.common import (
+        GNNFormat as GNNFormat,
+    )
+    from gnn.parsers.common import (
+        GNNInternalRepresentation as GNNInternalRepresentation,
+    )
+    from gnn.parsers.common import (
+        ParseResult as ParseResult,
+    )
+
+_PARSER_EXPORTS = frozenset({"GNNFormat", "GNNInternalRepresentation", "ParseResult"})
+
+
+def __getattr__(name: str) -> Any:
+    if name not in _PARSER_EXPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    from gnn.parsers import common
+
+    value = getattr(common, name)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | _PARSER_EXPORTS)
+
 
 __all__ = [
     "ComprehensiveTestReport",

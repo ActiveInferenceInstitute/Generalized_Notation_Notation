@@ -19,6 +19,8 @@ from __future__ import annotations
 
 from typing import Final
 
+CPOMDP_REQUIRED_VERSION: Final = "0.5.1"
+
 #: Every backend the pipeline can render or execute, in render order
 #: (matching ``FRAMEWORK_REGISTRY`` keys) with the execution-only ``lean``
 #: backend appended. ``lean`` runs through the executor registry-runner path

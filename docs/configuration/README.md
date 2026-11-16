@@ -170,9 +170,8 @@ and LLM documentation for provider-specific behavior.
 
 ## Configuration validation
 
-There is no `main.py --validate-config`, `--show-config`, `--profile`, or generic
-dry-run command. To check YAML syntax and the top-level sections that the runtime
-consumes, load the checked-in file directly:
+Load the checked-in configuration to check its YAML syntax and the top-level
+sections that the runtime consumes:
 
 ```bash
 uv run --frozen --no-sync python - <<'PY'

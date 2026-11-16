@@ -31,17 +31,16 @@ schema validator).
 
 ## Module Structure
 
-- `__init__.py` — public re-export surface (`__all__`), order-agnostic:
-  `gnn.parsers.basic` imports from `definitions.py` directly, keeping the
-  parsers ↔ types import graph acyclic at runtime.
-- `definitions.py` — the dataclass definitions themselves; parser names appear
-  only under `TYPE_CHECKING` (annotations are quoted strings).
+- `__init__.py` — public re-export surface (`__all__`), with lazy aliases for
+  the parser-owned classes. The shared types load independently of the parsers.
+- `definitions.py` — the dataclass definitions and the lazy `ParseResult`
+  re-export. Parser-owned types used in annotations are quoted.
 
 ## Dependencies
 
-- Stdlib only at runtime (`dataclasses`, `datetime`, `enum`, `typing`).
-- `gnn.parsers.common` (runtime re-export only, resolved after definitions
-  bind; `common` is stdlib-light and never runtime-imports back).
+- The shared dataclasses use the standard library (`dataclasses`, `datetime`,
+  `enum`, `typing`).
+- `gnn.parsers.common` supplies parser-owned classes on explicit access.
 
 ## Testing
 

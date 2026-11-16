@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import importlib
 import importlib.metadata
+import importlib.util
 import json
 import os
 import platform
@@ -30,6 +31,195 @@ def _digest(path: Path) -> str:
 def _require(value: bool, message: str) -> None:
     if not value:
         raise RuntimeError(message)
+
+
+def _base_lsp_exchange(root: Path) -> None:
+    """Exercise the pygls-free CLI session over the real stdio transport."""
+    requests = (
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {"processId": None, "rootUri": None, "capabilities": {}},
+        },
+        {"jsonrpc": "2.0", "method": "initialized", "params": {}},
+        {"jsonrpc": "2.0", "id": 2, "method": "shutdown"},
+        {"jsonrpc": "2.0", "method": "exit"},
+    )
+    wire = bytearray()
+    for request in requests:
+        body = json.dumps(request).encode("utf-8")
+        wire.extend(f"Content-Length: {len(body)}\r\n\r\n".encode("ascii"))
+        wire.extend(body)
+
+    child = subprocess.run(
+        [sys.executable, "-I", "-m", "gnn.cli", "lsp"],
+        cwd=root,
+        input=bytes(wire),
+        capture_output=True,
+        timeout=30,
+        check=False,
+    )
+    (root / "cli-lsp.log").write_bytes(child.stdout + child.stderr)
+    _require(child.returncode == 0, "installed LSP command failed")
+    responses: dict[int, Any] = {}
+    remainder = child.stdout
+    while remainder:
+        header, boundary, body = remainder.partition(b"\r\n\r\n")
+        name, separator, value = header.partition(b":")
+        _require(
+            bool(boundary and separator) and name.lower() == b"content-length",
+            "invalid installed LSP framing",
+        )
+        length = int(value.strip())
+        response = json.loads(body[:length])
+        responses[response["id"]] = response
+        remainder = body[length:]
+    _require(
+        responses.get(1, {}).get("result", {}).get("serverInfo", {}).get("name")
+        == "gnn-lsp",
+        "installed LSP fallback did not initialize",
+    )
+    _require(
+        responses.get(2) == {"jsonrpc": "2.0", "id": 2, "result": None},
+        "installed LSP fallback did not acknowledge shutdown",
+    )
+
+
+def accept_base(checkout: Path, root: Path, model: Path) -> dict[str, Any]:
+    """Prove an ordinary base wheel works without extras or development tools."""
+    import gnn
+    from gnn.api import FASTAPI_AVAILABLE
+    from gnn.lsp import PYGLS_AVAILABLE
+    from gnn.schema import check_gnn_object
+    from gnn.utils.runtime_safety.framework_availability import check_framework
+
+    installed = Path(gnn.__file__).resolve()
+    environment = Path(sys.prefix).resolve()
+    _require(bool(sys.flags.isolated), "base-wheel acceptance requires python -I")
+    _require(
+        installed.is_relative_to(environment), "GNN did not load from this environment"
+    )
+    _require(
+        not (
+            installed.is_relative_to(checkout)
+            or Path.cwd().resolve().is_relative_to(checkout)
+            or root.is_relative_to(checkout)
+        ),
+        "checkout could shadow the installed wheel",
+    )
+    distribution = importlib.metadata.distribution("generalized-notation-notation")
+    entrypoints = [
+        entry.value
+        for entry in distribution.entry_points
+        if entry.group == "console_scripts" and entry.name == "gnn"
+    ]
+    _require(
+        entrypoints == ["gnn.cli:main"], "installed GNN console entry point differs"
+    )
+
+    absent_modules = ("fastapi", "uvicorn", "thrml", "pytest", "pygls")
+    present = [name for name in absent_modules if importlib.util.find_spec(name)]
+    _require(
+        not present, f"base wheel environment contains optional modules: {present}"
+    )
+    _require(
+        not FASTAPI_AVAILABLE and not PYGLS_AVAILABLE,
+        "base dependency discovery differs",
+    )
+    # These public core modules exercise two dependencies that currently arrive
+    # through other declarations in the frozen environment.
+    importlib.import_module("gnn.pipeline.schemas")
+    importlib.import_module("gnn.utils.observability.visual_logging")
+
+    cli: dict[str, int] = {}
+    commands = (
+        ("validate", (str(model),), 0),
+        ("extract", (str(model), "--compact"), 0),
+        ("serve", (), 1),
+    )
+    for operation, arguments, expected in commands:
+        child = subprocess.run(
+            [sys.executable, "-I", "-m", "gnn.cli", operation, *arguments],
+            cwd=root,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=45,
+            check=False,
+        )
+        output = child.stdout + child.stderr
+        (root / f"cli-{operation}.log").write_text(output, encoding="utf-8")
+        _require(
+            child.returncode == expected,
+            f"base CLI {operation} returned {child.returncode}",
+        )
+        if operation == "serve":
+            _require("uv sync --extra api" in output, "missing API install hint")
+        cli[operation] = child.returncode
+
+    thrml = check_framework("thrml", executor=sys.executable)
+    _require(
+        not thrml.available
+        and thrml.reason_code == "missing_module"
+        and thrml.missing_module == "thrml"
+        and thrml.install_hint == "uv sync --extra thrml",
+        f"base THRML readiness differs: {thrml}",
+    )
+    _base_lsp_exchange(root)
+    schema = check_gnn_object(
+        {
+            "gnn_section": "ActInfPOMDP",
+            "gnn_version": "1",
+            "model_name": 42,
+            "state_space": {},
+            "connections": [],
+        }
+    )
+    full_schema = schema.mode == "draft-2020-12"
+    _require(
+        full_schema == bool(importlib.util.find_spec("jsonschema")),
+        "base wheel did not report the available schema validation mode",
+    )
+    _require(
+        full_schema == any("42 is not of type" in error for error in schema.errors),
+        "base wheel schema type-check result differs from its reported mode",
+    )
+
+    _require(
+        all(
+            Path(module.__file__).resolve().is_relative_to(environment)
+            for name, module in sys.modules.items()
+            if (name == "gnn" or name.startswith("gnn."))
+            and getattr(module, "__file__", None)
+        ),
+        "a base-wheel import escaped the installed environment",
+    )
+    return {
+        "profile": "base-wheel",
+        "complete_acceptance": True,
+        "python": sys.version,
+        "platform": platform.platform(),
+        "architecture": platform.machine(),
+        "gnn_version": distribution.version,
+        "installed_package": str(installed),
+        "console_entrypoint": entrypoints[0],
+        "distributions": {
+            item.metadata["Name"]: item.version
+            for item in importlib.metadata.distributions()
+        },
+        "absent_modules": list(absent_modules),
+        "cli": cli,
+        "api": {"available": False, "install_hint": "uv sync --extra api"},
+        "thrml": {
+            "available": False,
+            "reason_code": thrml.reason_code,
+            "install_hint": thrml.install_hint,
+        },
+        "lsp": {"implementation": "fallback", "initialize_and_shutdown": True},
+        "json_schema": {"mode": schema.mode, "invalid_type_detected": full_schema},
+    }
 
 
 def accept(
@@ -398,17 +588,23 @@ def main() -> int:
     parser.add_argument("--root", required=True, type=Path)
     parser.add_argument("--model", required=True, type=Path)
     parser.add_argument("--receipt", required=True, type=Path)
-    parser.add_argument(
+    profile = parser.add_mutually_exclusive_group()
+    profile.add_argument(
+        "--base-wheel",
+        action="store_true",
+        help="Accept a separate core wheel environment without extras or development tools",
+    )
+    profile.add_argument(
         "--omit-api",
         action="store_true",
         help="Local pre-integration witness only; never used by the required hosted lane",
     )
     args = parser.parse_args()
-    receipt = accept(
-        args.checkout.resolve(),
-        args.root.resolve(),
-        args.model.resolve(),
-        api=not args.omit_api,
+    paths = (args.checkout.resolve(), args.root.resolve(), args.model.resolve())
+    receipt = (
+        accept_base(*paths)
+        if args.base_wheel
+        else accept(*paths, api=not args.omit_api)
     )
     args.receipt.write_text(json.dumps(receipt, indent=2) + "\n")
     print(

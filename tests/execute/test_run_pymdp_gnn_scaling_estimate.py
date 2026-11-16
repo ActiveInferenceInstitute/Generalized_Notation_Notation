@@ -179,7 +179,14 @@ def test_run_manifest_records_config_and_planned_pairs(
     )
 
     assert manifest["status"] == "planned"
+    assert manifest["schema_version"] == "gnn_pymdp_scaling_manifest_v1"
+    assert manifest["axes"] == {"num_states": "count", "num_timesteps": "steps"}
+    assert manifest["execution_time_unit"] == "seconds"
+    assert manifest["fixtures"] == []
+    assert len(manifest["producer"]["runner_sha256"]) == 64
+    assert len(manifest["producer"]["generator_sha256"]) == 64
     assert manifest["planned_pairs"] == [[2, 10], [4, 10]]
+    assert manifest["skipped_pairs"] == []
     assert manifest["configuration"]["execution_workers"] == 2
     assert manifest["configuration"]["distributed"] is False
     assert manifest["configuration"]["backend"] == "ray"

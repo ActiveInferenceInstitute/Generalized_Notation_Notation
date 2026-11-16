@@ -188,6 +188,14 @@ contract; twenty-one is the migration.
 | `AEOS` | `scripts/check_gnn.py:28`, `:142` |
 | `Active_Inference_Ontology` | `scripts/validate_gnn_conformance.py:25`, `:91`–`:96` |
 
+## Importer check options
+
+Use `--expected-commit` and `--expected-tag` to compare the pin with a reviewed
+release. `--expected-repository` compares the repository named by the pin with
+the supplied name. `--no-validate` reads the pin and lists the specifications
+without running their syntax checks. `--allow-missing-pin` reports a missing
+discovered pin as a warning and still checks the specifications.
+
 ## The pointer contract
 
 Every importer publishes `.github/GNN.md`, and it is what the estate's online
