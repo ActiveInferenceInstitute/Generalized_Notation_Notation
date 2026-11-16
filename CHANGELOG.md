@@ -7,6 +7,45 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Package boundaries and compatibility
+
+- The installed LSP guide uses `gnn lsp`. Local wheel checks exercised
+  initialize/shutdown in pygls and fallback modes. The base-wheel lane runs the
+  fallback and checks API and THRML missing-extra diagnostics.
+  [Installed platforms](docs/development/installed_platform_acceptance.md)
+- The generated cpomdp runner and native tests use the locked 0.5.1 runtime.
+  Local render-to-execute checks covered passive, parity and EFE policies.
+  The readiness check refused an incompatible runtime. E3 retains its search criteria.
+  [cpomdp adapter](docs/gnn/implementations/cpomdp.md)
+- MCP validation honors explicit format and level options. Markdown, JSON and
+  YAML checks cover matching and conflicting hints and invalid options.
+  [MCP validation tests](tests/mcp/test_mcp_tools.py)
+- Standalone Steps 3, 7 and 8 keep same-stem nested sources distinct, preserve
+  unique-stem paths and bind artifacts to source identities. The versioned
+  Step 3 receipt also checks parsed bytes and run identity in Step 6 and
+  retains a reader for historical receipts.
+  [Current-run tests](tests/pipeline/test_current_run_contract.py) ·
+  [Run ownership guide](docs/development/run_ownership_migration.md)
+- File and string parsing attach the same structured diagnostics in strict
+  mode. The schema API reports Draft 2020-12 or required-key depth, and the
+  base-wheel check exercises an invalid field type.
+  [Validation contract](docs/development/interop_api.md#validation-depth)
+- The renderer owns shared artifact lookup. Parser-owned type aliases load on
+  demand and preserve their public class identity. The importer registry
+  refreshes the `active_fractal_rabbit` and `COGANT` pins and the
+  `ActiveInferenceJournal` workflow path, and binds successful online reads to
+  exact public revisions.
+  [Package changes in #397](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/pull/397)
+- GNN produces a versioned PyMDP scaling manifest that binds generated fixtures
+  to their axes, units, producer sources and SHA-256 digests. The direct PyMDP
+  simulation records the native agent, dtype and devices used in that execution.
+  [Research artifacts](docs/development/interop_research.md) ·
+  [PyMDP simulation contract](src/gnn/execute/pymdp/SPEC.md)
+- The model-family acceptance producer renders its Markdown ledger and
+  preserves the existing report import. Focused checks matched Markdown
+  fixture bytes and verified that importing the producer leaves reports unloaded.
+  [Acceptance producer](src/gnn/pipeline/model_family_acceptance.py)
+
 ### soupsieve marker split keeps beautifulsoup4 4.15.0 on every interpreter
 
 - The soupsieve 4.0 bump (Dependabot #390) left `uv.lock` holding one
