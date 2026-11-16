@@ -993,7 +993,8 @@ class TestParsedModelCarrier:
             exported = Path(entry["exports"]["json"]["export_file"])
             assert json.loads(exported.read_text()) == json.loads(parsed.read_text())
         exported_paths = {
-            entry["exports"]["json"]["export_file"] for entry in exports["files_exported"]
+            entry["exports"]["json"]["export_file"]
+            for entry in exports["files_exported"]
         }
         assert len(exported_paths) == 3
         for rel in on_files:
