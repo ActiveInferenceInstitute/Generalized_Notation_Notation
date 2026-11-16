@@ -79,6 +79,20 @@ def run_meta_analysis(
     )
     records = collector.collect()
 
+    if collector.handoff_refusal is not None:
+        # Fail closed: stale or mixed-run execution results must not feed
+        # sweep statistics. Leave a durable refusal receipt for review.
+        (output_dir / "execution_handoff.json").write_text(
+            json.dumps(
+                {"status": "refused", "reason": collector.handoff_refusal}, indent=2
+            ),
+            encoding="utf-8",
+        )
+        logger.error(
+            "Meta-analysis refused execution handoff: %s", collector.handoff_refusal
+        )
+        return None
+
     if not records:
         logger.warning("No sweep records found — skipping meta-analysis")
         return None
@@ -140,4 +154,5 @@ def run_meta_analysis(
         "report": str(report_path),
         "validation_json": str(validation_path),
         "statistics_json": str(statistics_path),
+        "execution_handoff": collector.handoff,
     }

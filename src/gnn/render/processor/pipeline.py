@@ -153,6 +153,39 @@ def process_render(
             str(path): _render_file_identity(path) for path in gnn_files
         }
 
+        # Versioned Step 3 handoff: bind each source to its admitted parsed
+        # model. Stale or mixed-run handoffs refuse the source before render.
+        from gnn.pipeline.config import resolve_step_output_dir
+        from gnn.pipeline.parse_receipt import (
+            parsed_inputs_by_source,
+            step3_handoff_receipt,
+        )
+
+        step3_receipt = step3_handoff_receipt(
+            resolve_step_output_dir("3_gnn", Path(output_dir))
+            / "gnn_processing_results.json",
+            11,
+        )
+        parsed_inputs = (
+            parsed_inputs_by_source(step3_receipt)
+            if step3_receipt is not None
+            and step3_receipt.get("parsed_model_schema") is not None
+            else {}
+        )
+        refused_handoffs: dict[str, dict[str, Any]] = {}
+        for path in gnn_files:
+            admitted = parsed_inputs.get(str(path.resolve()))
+            if isinstance(admitted, Exception):
+                logger.error(f"Refused Step 3 handoff for {path}: {admitted}")
+                refused_handoffs[str(path)] = {
+                    "overall_success": False,
+                    "framework_results": {},
+                    "error": f"Step 3 handoff refused: {admitted}",
+                    "handoff_refused": True,
+                }
+        total_sources = len(gnn_files)
+        gnn_files = [path for path in gnn_files if str(path) not in refused_handoffs]
+
         logger.info(f"Found {len(gnn_files)} GNN files to process")
 
         # Framework selection already normalized by parse_frameworks_selection.
@@ -300,8 +333,19 @@ def process_render(
                     logger.error(error_msg)
                     results[str(gnn_file)] = {"success": False, "error": error_msg}
 
+        results.update(refused_handoffs)
         for source, record in results.items():
             record["source_identity"] = source_identities[source]
+            admitted = parsed_inputs.get(str(Path(source).resolve()))
+            if isinstance(admitted, dict):
+                if admitted["source_sha256"] != source_identities[source]["sha256"]:
+                    record.update(
+                        overall_success=False,
+                        error="Source changed after Step 3 parsing",
+                        handoff_refused=True,
+                    )
+                    refused_handoffs[source] = record
+                record["parsed_input"] = admitted
         summary_file = output_dir / "render_processing_summary.json"
         summary = _write_render_receipt(
             output_dir,
@@ -316,7 +360,7 @@ def process_render(
         _create_overview_documentation(output_dir, summary)
 
         logger.info("Render processing completed")
-        logger.info(f"Files: {success_count}/{len(gnn_files)} successful")
+        logger.info(f"Files: {success_count}/{total_sources} successful")
         if pomdp_available:
             logger.info(
                 f"Framework renderings: {total_framework_successes}/{total_framework_attempts} successful ({summary['framework_success_rate']:.1f}%)"
@@ -343,9 +387,12 @@ def process_render(
                     )
         logger.info(f"Summary saved to: {summary_file}")
 
+        if refused_handoffs:
+            # A refused versioned handoff is a hard failure, not partial work.
+            return False
         return _render_succeeded(
             success_count=success_count,
-            total_files=len(gnn_files),
+            total_files=total_sources,
             total_framework_successes=total_framework_successes,
             total_framework_attempts=total_framework_attempts,
             strict_framework_success=strict_framework_success,

@@ -54,6 +54,9 @@ class SweepRecord:
     # Source paths
     simulation_results_path: str | None = None
 
+    # Admitted gnn_execution_handoff_v1 identity (None for unversioned summaries)
+    provenance: dict[str, Any] | None = None
+
     @property
     def sweep_label(self) -> str:
         """Human-readable label for this sweep cell."""
@@ -97,6 +100,10 @@ class SweepDataCollector:
         self.execute_output_dir = Path(execute_output_dir)
         self.render_output_dir = Path(render_output_dir) if render_output_dir else None
         self.logger = logger or logging.getLogger(__name__)
+        # Admission receipt of a versioned Step 12 handoff (None when unversioned)
+        # and the refusal reason when versioned input was stale or mixed-run.
+        self.handoff: dict[str, Any] | None = None
+        self.handoff_refusal: str | None = None
 
     def collect(self) -> list[SweepRecord]:
         """Scan execution outputs and return sweep records.
@@ -105,23 +112,42 @@ class SweepDataCollector:
         1. Load execution_summary.json for runtime data per (model, framework).
         2. Walk model directories for simulation_results.json for metric data.
         3. Merge by (model_name, framework).
+
+        A versioned (``gnn_execution_handoff_v1``) summary governs the whole
+        collection: it must admit against the current run, historical
+        execution logs are not mined, and simulation results are restricted
+        to admitted (model, framework) cells. A refused handoff collects
+        nothing. Unversioned summaries keep their historical behaviour when no run
+        context governs them.
         """
+        from gnn.pipeline.run_context import current_run_context
+
         records: dict[tuple[str, str], SweepRecord] = {}
+        self.handoff = None
+        self.handoff_refusal = None
 
         # Phase 1: execution summary (aggregate timing data)
         summary_path = self.execute_output_dir / "summaries" / "execution_summary.json"
         if summary_path.exists():
             self._collect_from_summary(summary_path, records)
+        elif current_run_context() is not None:
+            self.handoff_refusal = "Current run has no Step 12 execution summary"
+        if self.handoff_refusal is not None:
+            self.logger.error(f"Execution handoff refused: {self.handoff_refusal}")
+            return []
+        admitted_cells = set(records) if self.handoff is not None else None
 
-        # Phase 2: per-script execution logs (fills in runtime gaps)
-        self._collect_from_execution_logs(records)
+        # Phase 2: per-script execution logs (fills in runtime gaps). Unversioned
+        # only: the logs outlive their run and cannot be bound to a handoff.
+        if admitted_cells is None:
+            self._collect_from_execution_logs(records)
 
         # Phase 3: render metrics (LOC, etc.)
         if self.render_output_dir:
             self._collect_render_metrics(records)
 
         # Phase 4: simulation results (metric data)
-        self._collect_simulation_results(records)
+        self._collect_simulation_results(records, admitted_cells)
 
         result = list(records.values())
         self.logger.info(
@@ -135,10 +161,42 @@ class SweepDataCollector:
         self, summary_path: Path, records: dict[tuple[str, str], SweepRecord]
     ) -> None:
         """Extract runtime data from the execution summary."""
+        import hashlib
+
+        from gnn.pipeline.artifact_ownership import (
+            admit_execution_summary,
+            owned_artifact_checksums,
+        )
+        from gnn.pipeline.run_context import current_run_context
+
         try:
-            data = json.loads(summary_path.read_text())
+            raw = summary_path.read_bytes()
+            data = json.loads(raw)
         except (json.JSONDecodeError, OSError) as e:
+            if current_run_context() is not None:
+                self.handoff_refusal = f"Unreadable execution summary: {e}"
             self.logger.warning(f"Failed to read execution summary: {e}")
+            return
+        try:
+            if not isinstance(data, dict):
+                raise ValueError("Execution summary must be a JSON object")
+            context = current_run_context()
+            if context is not None:
+                root = Path(context.output_root).resolve()
+                checksums = owned_artifact_checksums(root) or {}
+                try:
+                    relative = summary_path.resolve().relative_to(root).as_posix()
+                except ValueError:
+                    relative = None
+                if checksums and checksums.get(relative or "") != (
+                    hashlib.sha256(raw).hexdigest()
+                ):
+                    raise ValueError(
+                        "Execution summary is not the current-run inventory artifact"
+                    )
+            self.handoff = admit_execution_summary(data)
+        except (KeyError, OSError, TypeError, ValueError) as e:
+            self.handoff_refusal = str(e)
             return
 
         for detail in data.get("execution_details", []):
@@ -157,6 +215,19 @@ class SweepDataCollector:
                     num_timesteps=t,
                 ),
             )
+            if self.handoff is not None:
+                handoff = detail["_gnn_provenance"]
+                record.provenance = {
+                    field: handoff.get(field)
+                    for field in (
+                        "run_id",
+                        "model_id",
+                        "artifact_stem",
+                        "source_relative_path",
+                        "source_sha256",
+                        "rendered_artifact_sha256",
+                    )
+                }
 
             record.execution_time = float(detail.get("execution_time", 0.0))
             record.execution_time_std = detail.get("execution_time_std")
@@ -272,15 +343,30 @@ class SweepDataCollector:
                             break
 
     def _collect_simulation_results(
-        self, records: dict[tuple[str, str], SweepRecord]
+        self,
+        records: dict[tuple[str, str], SweepRecord],
+        admitted_cells: set[tuple[str, str]] | None = None,
     ) -> None:
         """Walk the output tree for *simulation_results.json files.
 
         Matches both the exact name ``simulation_results.json`` and the
         prefixed variant ``<ModelName>_simulation_results.json`` that the
-        execute step may produce when multiple results coexist.
+        execute step may produce when multiple results coexist. With a
+        versioned handoff only admitted (model, framework) cells are read, and
+        under a run context only current-run inventory files.
         """
-        for sim_file in self.execute_output_dir.rglob("*simulation_results.json"):
+        from gnn.pipeline.artifact_ownership import current_artifact_files
+        from gnn.pipeline.run_context import current_run_context
+
+        if admitted_cells is not None and current_run_context() is not None:
+            sim_files = current_artifact_files(
+                self.execute_output_dir, "*simulation_results.json"
+            )
+        else:
+            sim_files = sorted(
+                self.execute_output_dir.rglob("*simulation_results.json")
+            )
+        for sim_file in sim_files:
             try:
                 data = json.loads(sim_file.read_text())
             except (json.JSONDecodeError, OSError):
@@ -288,7 +374,14 @@ class SweepDataCollector:
 
             # Determine model_name and framework from path
             # Expected: .../12_execute_output/model_name/framework/simulation_data/simulation_results.json
-            parts = sim_file.relative_to(self.execute_output_dir).parts
+            try:
+                parts = sim_file.relative_to(self.execute_output_dir).parts
+            except ValueError:
+                parts = (
+                    sim_file.resolve()
+                    .relative_to(self.execute_output_dir.resolve())
+                    .parts
+                )
             if len(parts) >= 3:
                 model_name = parts[0]
                 framework = parts[1]
@@ -297,6 +390,8 @@ class SweepDataCollector:
                 framework = data.get("framework", sim_file.parent.name)
 
             key = (model_name, framework)
+            if admitted_cells is not None and key not in admitted_cells:
+                continue
             n, t = _parse_sweep_params(model_name)
 
             record = records.setdefault(

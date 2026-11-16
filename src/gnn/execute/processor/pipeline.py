@@ -385,7 +385,15 @@ def process_execute(
         # prior summary, writes the slim + optional detail artifacts, regenerates
         # the report, and restores full details on ``execution_results``.
         _write_execution_summaries(
-            results_dir, execution_results, execution_summary_detail, logger
+            results_dir,
+            execution_results,
+            execution_summary_detail,
+            logger,
+            render_summary=(
+                render_output_dir / "render_processing_summary.json"
+                if render_output_dir is not None
+                else None
+            ),
         )
 
         if reason == "requested_framework_render_failure":

@@ -166,11 +166,15 @@ def _write_execution_summaries(
     execution_results: Dict[str, Any],
     execution_summary_detail: bool,
     logger: Any,
+    render_summary: Optional[Path] = None,
 ) -> None:
     """Persist the slim aggregate (+ optional detail) and regenerate the report.
 
     The slim aggregate is what lands on disk; full per-script payloads are
     restored on ``execution_results`` afterwards for in-memory consumers.
+    Every detail carries a deterministic ``gnn_execution_handoff_v1``
+    ``_gnn_provenance`` binding run, model, source and rendered-script bytes,
+    so Step 15/16 consumers can refuse stale or mixed-run results.
     """
     summaries_dir = results_dir / "summaries"
     summaries_dir.mkdir(parents=True, exist_ok=True)
@@ -195,9 +199,23 @@ def _write_execution_summaries(
                 model_provenance(Path(str(detail.get("script_path", ""))), 12)
             )
 
+    from gnn.pipeline.artifact_ownership import (
+        EXECUTION_HANDOFF_SCHEMA,
+        execution_handoff,
+        render_handoff_index,
+    )
+
+    render_index = render_handoff_index(render_summary)
+    for detail in execution_results["execution_details"]:
+        detail["_gnn_provenance"] = execution_handoff(
+            detail, execution_results.get("run_id"), render_index
+        )
+    execution_results["execution_handoff_schema"] = EXECUTION_HANDOFF_SCHEMA
+
     full_details_snapshot = copy.deepcopy(execution_results["execution_details"])
     execution_results["execution_details"] = [
-        _slim_execution_detail(d) for d in full_details_snapshot
+        {**_slim_execution_detail(d), "_gnn_provenance": d["_gnn_provenance"]}
+        for d in full_details_snapshot
     ]
     execution_results["execution_summary_format"] = "slim_v1"
 

@@ -163,6 +163,8 @@ class AdvancedVisualizationResults:
     output_files: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
+    parsed_model_schema: Optional[str] = None
+    parsed_inputs: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
 
 def record_attempt(
