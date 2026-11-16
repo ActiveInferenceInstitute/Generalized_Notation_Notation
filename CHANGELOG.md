@@ -7,6 +7,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Frozen importer resources
+
+- Publish the independently qualified standalone pre-import bootstrap and the
+  complete v5.1.0 package-source manifest as byte-preserved source resources.
+  They are separate from the current installed importer, retain their original
+  SHA-256 identities and license, and do not change any release tag, consumer
+  pin, scientific artifact or installed-runtime acceptance.
+  [Consumer contract](docs/development/interop.md#frozen-pre-import-resources)
+
 ### fep_formal pair pin
 
 - `.github/fep-lean-pair.json` moves from `fep_formal` `48206d6d` to

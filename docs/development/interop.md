@@ -39,6 +39,47 @@ its machine-readable mirror
 keeps those two forms one artifact offline; `--online` re-reads origin and is
 report-only.
 
+### Frozen pre-import resources
+
+The standalone [bootstrap](../../interop/gnn_bootstrap.py) and
+[v5.1.0 source manifest](../../interop/v5.1.0-source-manifest.json) are
+independently qualified, byte-preserved consumer resources, not a replacement
+for the current installed `gnn.importers` module. Fetch them from the same
+reviewed immutable source commit, not a moving branch or an invented release
+asset. This source publication neither changes the v5.1.0 tag/release nor
+rebuilds its package.
+
+| Resource | SHA-256 |
+| --- | --- |
+| `interop/gnn_bootstrap.py` | `f638d4c01fe7de31e43d793e59bf382d0c3d1a82f365c59238334a2b40adfb37` |
+| `interop/v5.1.0-source-manifest.json` | `43b33c0b2b40386afa3f306fec4cc13bc1fd7c3b570fbf11d5008bad5c8e6b51` |
+
+The manifest binds all 1,232 package files at
+`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`; do not regenerate it from the
+installation being checked or change a consumer pin to match a different
+resource. Verify the independently trusted bootstrap digest, then compile and
+execute those exact checked bytes before **any** `gnn` import. Bind the frozen
+manifest bytes and digest, and keep `qualified_source` around the actual
+parser/verdict imports and execution, not just an earlier static check.
+
+The retained qualification covers complete Git-source content and guarded
+syntax verdicts. It does not establish installed-wheel identity, dependency
+integrity, scientific semantics, publication consent or a native simulation
+result. Installed mode still requires its genuine matching Git origin and
+complete content; an installed-admission failure does not authorize a source
+fallback. Consumers retain their own runtime and acceptance obligations.
+
+Known API limitation of these frozen bytes: when `check_importer()` runs inside
+an externally managed `qualified_source()` context, its top-level `qualified`
+flag remains false after successful context exit. The shared guard receipt
+does finalize after exit. The retained qualification demonstrates direct parser
+execution within the guard, not finalized qualification through this nested-report
+API. A code repair requires a separately reviewed resource identity; do not
+replace these immutable bytes or silently rebind their digest.
+These GNN resources retain the repository's
+[CC BY-NC-SA 4.0 license](../../LICENSE.md), attribution and noncommercial/
+share-alike terms; this publication does not grant a different license.
+
 ## Ownership boundaries
 
 GNN declares its own typed models, artifacts and identifiers. It does not copy
