@@ -2,10 +2,9 @@
 """Shared command semantics for the ``gnn`` CLI and its API parity surface.
 
 The CLI dispatcher (:mod:`gnn.cli`) and the API parity adapters
-(:mod:`gnn.api.parity`) previously carried near-identical copies of the same
-command bodies. This module is the single home for those semantics; both
-surfaces call into it and keep only their own presentation layer (CLI
-envelopes/exit codes, HTTP envelopes/status codes).
+(:mod:`gnn.api.parity`) share parsing, validation, extraction, preflight,
+and report helpers here. The legacy render helpers delegate to the renderer,
+which owns single-framework result and artifact selection for all callers.
 
 Import policy: module scope imports only the standard library, and every
 heavy backend module (``gnn.schema``, ``gnn.validation``, ``gnn.extract``,
@@ -17,8 +16,6 @@ module at module scope. This module must never import ``gnn.api``.
 
 from __future__ import annotations
 
-import hashlib
-import json
 import logging
 import os
 import tempfile
@@ -47,8 +44,10 @@ logger = logging.getLogger(__name__)
 
 
 def render_processing_succeeded(value: bool | int) -> bool:
-    """Distinguish Boolean failure from the integer zero exit-code contract."""
-    return value is True or (not isinstance(value, bool) and value == 0)
+    """Classify the renderer result through the compatibility import."""
+    from gnn.render import render_processing_succeeded as succeeded
+
+    return succeeded(value)
 
 
 #: ``extract_payload_defect`` verdict: the extractor returned its failure
@@ -58,27 +57,6 @@ EXTRACT_DEFECT_ERROR_STATUS = "error-status"
 #: ``extract_payload_defect`` verdict: lenient extraction fabricated a default
 #: skeleton because the file had no GNN state-space content at all.
 EXTRACT_DEFECT_EMPTY_SKELETON = "empty-skeleton"
-
-#: Accepted artifact suffixes per render framework (empty set = any suffix).
-_RENDER_ARTIFACT_SUFFIXES: dict[str, frozenset[str]] = {
-    "pymdp": frozenset({".py"}),
-    "jax": frozenset({".py"}),
-    "numpyro": frozenset({".py"}),
-    "pytorch": frozenset({".py"}),
-    "discopy": frozenset({".py"}),
-    "bnlearn": frozenset({".py"}),
-    "ngclearn": frozenset({".py"}),
-    "cpomdp": frozenset({".py"}),
-    "thrml": frozenset({".py"}),
-    "rxinfer": frozenset({".jl", ".toml"}),
-    "activeinference_jl": frozenset({".jl"}),
-    "stan": frozenset({".stan"}),
-}
-
-#: Known non-artifact files excluded from render artifact discovery.
-_RENDER_EXCLUDED_FILES: frozenset[str] = frozenset(
-    {"README.md", "processing_summary.json", "render_processing_summary.json"}
-)
 
 
 @dataclass
@@ -282,79 +260,10 @@ def publish_pipeline_report(output_dir: Path) -> tuple[str, Path]:
     return report, report_path
 
 
-def _is_render_artifact(path: Path, framework: str) -> bool:
-    """Return whether ``path`` is a candidate artifact for ``framework``."""
-    suffixes = _RENDER_ARTIFACT_SUFFIXES.get(framework, frozenset())
-    return (
-        path.is_file()
-        and (not suffixes or path.suffix in suffixes)
-        and path.name not in _RENDER_EXCLUDED_FILES
-    )
-
-
 def find_render_artifact(
     render_dir: Path, framework: str, *, require_current: bool = False
 ) -> Path | None:
-    """Locate the primary artifact of a single-framework render.
+    """Locate a render artifact through the compatibility import."""
+    from gnn.render import find_render_artifact as find_artifact
 
-    Mirrors the CLI ``gnn render`` artifact discovery: prefer outputs declared
-    in the render processing summary, then fall back to a framework-scoped
-    recursive scan. Returns ``None`` when nothing was produced (reported as
-    ``artifact: null`` rather than guessed).
-    """
-    summary_path = render_dir / "render_processing_summary.json"
-    if summary_path.exists():
-        try:
-            summary = json.loads(summary_path.read_text(encoding="utf-8"))
-            for result in summary.get("file_results", {}).values():
-                framework_result = result.get("framework_results", {}).get(framework)
-                if framework_result and framework_result.get("success") is True:
-                    for item in framework_result.get("output_files", []):
-                        candidate = Path(item)
-                        if require_current:
-                            identities = framework_result.get("artifact_identities", [])
-                            identity = next(
-                                (
-                                    entry
-                                    for entry in identities
-                                    if entry.get("path") == str(candidate.resolve())
-                                ),
-                                None,
-                            )
-                            if (
-                                candidate.is_symlink()
-                                or not candidate.resolve().is_relative_to(
-                                    render_dir.resolve()
-                                )
-                                or not candidate.is_file()
-                                or identity is None
-                                or hashlib.sha256(candidate.read_bytes()).hexdigest()
-                                != identity.get("sha256")
-                            ):
-                                continue
-                        if candidate.exists() and _is_render_artifact(
-                            candidate, framework
-                        ):
-                            return candidate
-                for item in result.get("generated_files", []):
-                    if require_current:
-                        continue
-                    candidate = Path(item)
-                    if (
-                        candidate.exists()
-                        and framework in str(candidate)
-                        and _is_render_artifact(candidate, framework)
-                    ):
-                        return candidate
-        except (json.JSONDecodeError, OSError, TypeError):
-            logger.debug("Could not parse render summary at %s", summary_path)
-
-    if require_current:
-        return None
-
-    candidates = sorted(
-        path
-        for path in render_dir.rglob("*")
-        if framework in str(path.parent) and _is_render_artifact(path, framework)
-    )
-    return candidates[0] if candidates else None
+    return find_artifact(render_dir, framework, require_current=require_current)

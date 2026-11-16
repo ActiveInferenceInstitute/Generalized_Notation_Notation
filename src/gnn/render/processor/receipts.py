@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render receipt persistence and framework selection.
+"""Render receipt persistence, artifact lookup, and framework selection.
 
 Atomic JSON receipt writing with same-run carry-forward, source and
 artifact identity digests, and normalization of the ``frameworks``
@@ -19,6 +19,110 @@ from gnn.frameworks import RENDER_FRAMEWORKS
 from gnn.render.framework_registry import get_lite_frameworks
 
 logger = logging.getLogger(__name__)
+
+
+#: Accepted artifact suffixes per render framework (empty set = any suffix).
+_RENDER_ARTIFACT_SUFFIXES: dict[str, frozenset[str]] = {
+    "pymdp": frozenset({".py"}),
+    "jax": frozenset({".py"}),
+    "numpyro": frozenset({".py"}),
+    "pytorch": frozenset({".py"}),
+    "discopy": frozenset({".py"}),
+    "bnlearn": frozenset({".py"}),
+    "ngclearn": frozenset({".py"}),
+    "cpomdp": frozenset({".py"}),
+    "thrml": frozenset({".py"}),
+    "rxinfer": frozenset({".jl", ".toml"}),
+    "activeinference_jl": frozenset({".jl"}),
+    "stan": frozenset({".stan"}),
+}
+
+#: Known non-artifact files excluded from render artifact discovery.
+_RENDER_EXCLUDED_FILES: frozenset[str] = frozenset(
+    {"README.md", "processing_summary.json", "render_processing_summary.json"}
+)
+
+
+def render_processing_succeeded(value: bool | int) -> bool:
+    """Distinguish Boolean failure from the integer zero exit-code contract."""
+    return value is True or (not isinstance(value, bool) and value == 0)
+
+
+def _is_render_artifact(path: Path, framework: str) -> bool:
+    """Return whether ``path`` is a candidate artifact for ``framework``."""
+    suffixes = _RENDER_ARTIFACT_SUFFIXES.get(framework, frozenset())
+    return (
+        path.is_file()
+        and (not suffixes or path.suffix in suffixes)
+        and path.name not in _RENDER_EXCLUDED_FILES
+    )
+
+
+def find_render_artifact(
+    render_dir: Path, framework: str, *, require_current: bool = False
+) -> Path | None:
+    """Locate the primary artifact of a single-framework render.
+
+    Prefer the render receipt's declared outputs. Current lookup verifies
+    artifact containment and SHA-256. Historical lookup also scans the
+    framework's output tree.
+    """
+    summary_path = render_dir / "render_processing_summary.json"
+    if summary_path.exists():
+        try:
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            for result in summary.get("file_results", {}).values():
+                framework_result = result.get("framework_results", {}).get(framework)
+                if framework_result and framework_result.get("success") is True:
+                    for item in framework_result.get("output_files", []):
+                        candidate = Path(item)
+                        if require_current:
+                            identities = framework_result.get("artifact_identities", [])
+                            identity = next(
+                                (
+                                    entry
+                                    for entry in identities
+                                    if entry.get("path") == str(candidate.resolve())
+                                ),
+                                None,
+                            )
+                            if (
+                                candidate.is_symlink()
+                                or not candidate.resolve().is_relative_to(
+                                    render_dir.resolve()
+                                )
+                                or not candidate.is_file()
+                                or identity is None
+                                or hashlib.sha256(candidate.read_bytes()).hexdigest()
+                                != identity.get("sha256")
+                            ):
+                                continue
+                        if candidate.exists() and _is_render_artifact(
+                            candidate, framework
+                        ):
+                            return candidate
+                for item in result.get("generated_files", []):
+                    if require_current:
+                        continue
+                    candidate = Path(item)
+                    if (
+                        candidate.exists()
+                        and framework in str(candidate)
+                        and _is_render_artifact(candidate, framework)
+                    ):
+                        return candidate
+        except (json.JSONDecodeError, OSError, TypeError):
+            logger.debug("Could not parse render summary at %s", summary_path)
+
+    if require_current:
+        return None
+
+    candidates = sorted(
+        path
+        for path in render_dir.rglob("*")
+        if framework in str(path.parent) and _is_render_artifact(path, framework)
+    )
+    return candidates[0] if candidates else None
 
 
 def _load_prior_render_summary(summary_file: Path) -> Dict[str, Any]:

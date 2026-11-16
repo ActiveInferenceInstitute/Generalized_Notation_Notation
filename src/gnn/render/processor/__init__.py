@@ -69,7 +69,9 @@ from gnn.render.processor.receipts import (
     _load_prior_render_summary,
     _render_file_identity,
     _write_render_receipt,
+    find_render_artifact,
     parse_frameworks_selection,
+    render_processing_succeeded,
 )
 from gnn.render.processor.rendering import (
     _render_continuous_target,
