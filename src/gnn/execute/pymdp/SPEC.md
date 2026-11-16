@@ -37,6 +37,12 @@ pymdp/
   and runtime metadata
 - Execution logs and timing data
 
+The direct flat simulation records `runtime_metadata.native_agent` under
+schema `pymdp_native_agent_v1`. The record reports the class and policy
+horizon of the agent used for the final update, and the dtype, batch size,
+devices and platforms of its likelihood array. Callers can read these
+observations from the saved result or the returned payload.
+
 ## Dependencies
 
 - `inferactively-pymdp>=1.0.0`

@@ -89,6 +89,19 @@ def test_render_execute_contract_pymdp(tmp_path: Path) -> None:
     assert isinstance(results.get("actions"), list)
     assert isinstance(results.get("beliefs"), list)
     assert len(results["observations"]) == gnn_spec["model_parameters"]["num_timesteps"]
+    native_agent = results["runtime_metadata"]["native_agent"]
+    assert native_agent["schema_version"] == "pymdp_native_agent_v1"
+    assert native_agent["agent"] == "pymdp.agent.Agent"
+    assert native_agent["dtype"] in {"float32", "float64"}
+    assert native_agent["batch_size"] == results["model_parameters"]["batch_size"] == 1
+    assert (
+        native_agent["policy_horizon"] == results["model_parameters"]["policy_len"] == 1
+    )
+    assert native_agent["devices"] and native_agent["platforms"]
+    saved = json.loads(
+        (exec_dir / "simulation_results.json").read_text(encoding="utf-8")
+    )
+    assert saved["runtime_metadata"]["native_agent"] == native_agent
 
 
 @pytest.mark.integration
