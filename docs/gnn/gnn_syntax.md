@@ -327,6 +327,8 @@ by Step 10. Note the conventional binding: `A` is the **likelihood**
 | `GNN-E003` | Unknown variable in connection (**reserved, not yet enforced** — `src/gnn/schema/parser.py` reports this condition as the `GNN-W002` warning instead) |
 | `GNN-E004` | Duplicate variable declaration |
 | `GNN-E005` | Unparseable connection syntax |
+| `GNN-E006` | Unparseable POMDP parameter value (`src/gnn/extract`; recorded, never silently dropped) |
+| `GNN-E007` | Non-stochastic, negative or non-finite POMDP probability tensor (opt-in `strict_probabilities` / `--strict-probabilities` in `src/gnn/extract`; requires strict validation) |
 
 | Warning Code | Meaning |
 |--------------|---------|

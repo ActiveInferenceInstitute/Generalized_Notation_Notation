@@ -18,8 +18,9 @@ This gate verifies, deterministically and offline:
    carry none.
 
 Point 5 is the substance of the pin: the bridge maps the 64 declared GNN labels
-to release-v5 identifiers where a counterpart exists (12 today) and records the
-remainder as unresolved. The ``obo:ACTO_*`` / ``obo:TEMP_*`` values in the
+to release-v5 identifiers where a counterpart exists (15 at ontology commit
+``ad808b12d51ec990227d52c528f62db36dfd54bc``) and records the other 49 as
+unresolved. The ``obo:ACTO_*`` / ``obo:TEMP_*`` values in the
 bundled vocabulary stay declared metadata and are never used as identifiers.
 
 Verification lives in ``gnn.ontology.bridge.verify_ontology_pin`` so this gate,

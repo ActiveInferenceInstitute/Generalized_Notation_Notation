@@ -460,6 +460,21 @@ def test_extract_to_json_and_cli_surface_the_opt_in(
     assert exit_info.value.code == 2
 
 
+def test_cli_default_branch_keeps_prior_behavior_without_the_opt_in(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Without ``--strict-probabilities`` the CLI keeps lenient extraction."""
+    bad = tmp_path / "bad.md"
+    bad.write_text(_content(**NEGATIVE_CONTROLS["B_next_state_sums_6"][0]))
+
+    assert main([str(bad)]) == 0
+    assert json.loads(capsys.readouterr().out)["model_name"] == "Strict Probe"
+    assert main([str(bad), "--no-strict", "--compact"]) == 0
+    out = capsys.readouterr().out
+    assert "\n" not in out.strip()
+    assert "status" not in json.loads(out)
+
+
 # --- shipped fixture census --------------------------------------------------
 
 # Shipped discrete fixtures that the opt-in contract rejects, pinned so a fix

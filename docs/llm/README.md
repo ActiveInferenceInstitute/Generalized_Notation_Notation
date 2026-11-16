@@ -159,8 +159,9 @@ ledger and `.native.json` response under `prompts_<id>/synthesis/`.
 
 [`request_plan.py`](../../src/gnn/llm/request_plan.py) is the standalone S1
 admission and checkpoint layer. `admit_request_plan(source_bytes, ...)` freezes
-one plan before any provider call; it is not yet connected to `process_llm` or
-the corpus scheduler, so it changes no current run, cache or checkpoint format.
+one plan before any provider call. On its own it changes no current run, cache
+or checkpoint format; the corpus scheduler uses it only through the opt-in
+`request_plan` option described below.
 
 A plan records:
 
@@ -196,6 +197,47 @@ deadline as unfinished.
 
 The tests in `tests/llm/test_request_plan.py` use injected outcome records.
 They validate admission and scheduling only, not native provider behaviour.
+
+#### Opt-in corpus `request_plan` option
+
+`process_llm(..., request_plan={...})` (or `llm.request_plan` in the resolved
+configuration) runs one `gnn_llm_request_plan_v1` plan per selected source
+through [`plan_scheduler.py`](../../src/gnn/llm/plan_scheduler.py). It is off by
+default: when it is absent or `None`, every existing option, binding and
+checkpoint fingerprint is unchanged. The mapping takes:
+
+- `segment_max_bytes` (integer, at least 4) and `reservations` with `system`,
+  `task`, `prior_receipts` and `output` token counts (required);
+- `mode`: `part_evidence` (default). `joint_source` refuses at admission on
+  this path because no native full-source tokenizer count is available;
+- `prompt`: one selected prompt label (default: the first selected label);
+- optional `deadline_seconds` and `request_timeout_seconds` (default: the
+  corpus budget and the prompt ceiling).
+
+It requires `provider="ollama"` and an explicit `ollama_options.num_ctx`;
+context capacity and the model digest come only from the verified runtime
+identity. When set, the settings enter the checkpoint binding, each plan is
+retained under `request_plans/<stem>/<label>/` (`plan.json`, per-segment
+checkpoints and request ledgers, `synthesis.json`, `receipt.json` with schema
+`gnn_llm_plan_run_v1`), and the run reports `request_plans_required` and
+`request_plans_completed` in its coverage. The run succeeds only when every
+plan receipt is complete. For example:
+
+```python
+process_llm(
+    target_dir, output_dir, verbose=False,
+    provider="ollama", model="...",
+    llm_config={"ollama_options": {"num_ctx": 8192, "seed": 42}},
+    request_plan={
+        "segment_max_bytes": 16384,
+        "reservations": {"system": 256, "task": 256,
+                         "prior_receipts": 512, "output": 512},
+    },
+)
+```
+
+`tests/llm/test_plan_scheduler.py` exercises this path offline with injected
+replies; it is not live provider evidence.
 
 ## Context, completion and evidence
 
