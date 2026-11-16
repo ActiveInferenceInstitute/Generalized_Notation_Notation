@@ -17,13 +17,14 @@ records canonical models, input/output shapes, errors, and version limits.
 `gnn.api.mcp.register_tools(mcp)` registers the six entries in
 `_MCP_TOOL_DEFINITIONS`:
 
-- `gnn_submit_job` → `gnn_submit_job_mcp`
-- `gnn_get_job_status` → `gnn_get_job_status_mcp`
-- `gnn_cancel_job` → `gnn_cancel_job_mcp`
-- `gnn_delete_run` → `gnn_delete_run_mcp`
-- `gnn_list_jobs` → `gnn_list_jobs_mcp`
-- `gnn_get_pipeline_tools` → `gnn_get_pipeline_tools_mcp`
+- `gnn_submit_job`
+- `gnn_get_job_status`
+- `gnn_cancel_job`
+- `gnn_delete_run`
+- `gnn_list_jobs`
+- `gnn_get_pipeline_tools`
 
+The Python handlers in `gnn.api.mcp` append the `_mcp` suffix to these names.
 `register_mcp_tools()` serializes those same definitions and adds its own
 `version` field, currently the literal `1.0.0` rather than the package version.
 The submit wrapper creates a pending record without scheduling execution;

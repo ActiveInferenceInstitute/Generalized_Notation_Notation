@@ -287,7 +287,8 @@ The MCP implementation provides comprehensive error handling:
 JSON-RPC reserved codes are used where the spec defines them:
 - `-32601` (Method not found) is raised for an unknown tool AND for a
   missing resource (`MCPResourceNotFoundError`), not `-32002`.
-- `-32602` (Invalid params) covers invalid tool arguments.
+- `-32602` (Invalid params) covers invalid tool arguments. The module CLI's
+  `execute` subcommand accepts `--validate` to check arguments against the schema.
 - `-32603` (Internal error) covers unhandled execution failures.
 
 ### Error Response Format
