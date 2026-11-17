@@ -59,7 +59,7 @@ def run_session_path(output_dir: Union[str, Path]) -> Path:
 
 
 def open_run_session(
-    args: "PipelineArguments",
+    args: PipelineArguments,
     steps_to_execute: List[Any],
     pipeline_summary: Dict[str, Any],
 ) -> RunSession:
@@ -238,7 +238,7 @@ def close_run_session(
 
 
 def open_run_session_guarded(
-    args: "PipelineArguments",
+    args: PipelineArguments,
     steps_to_execute: List[Any],
     pipeline_summary: Dict[str, Any],
     logger: logging.Logger,
@@ -264,7 +264,7 @@ def open_run_session_guarded(
 def mark_units_running_guarded(
     session: Optional[RunSession],
     script_names: Iterable[str],
-    args: "PipelineArguments",
+    args: PipelineArguments,
     logger: logging.Logger,
 ) -> Optional[RunSession]:
     """Mark units RUNNING; invocation errors propagate, standalone errors warn."""
@@ -285,7 +285,7 @@ def record_step_result_guarded(
     session: Optional[RunSession],
     script_name: str,
     step_result: Dict[str, Any],
-    args: "PipelineArguments",
+    args: PipelineArguments,
     logger: logging.Logger,
 ) -> Optional[RunSession]:
     """Bind a step receipt; invocation errors propagate, standalone errors warn."""
@@ -304,7 +304,7 @@ def record_step_result_guarded(
 
 def close_run_session_guarded(
     session: Optional[RunSession],
-    args: "PipelineArguments",
+    args: PipelineArguments,
     logger: logging.Logger,
 ) -> Optional[RunSession]:
     """Close a session; invocation errors propagate, standalone errors warn."""

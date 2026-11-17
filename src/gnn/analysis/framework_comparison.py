@@ -148,7 +148,7 @@ def analyze_framework_outputs(
         return results
 
     try:
-        with open(execution_summary_file, "r") as f:
+        with open(execution_summary_file) as f:
             execution_summary = json.load(f)
 
         execution_details = execution_summary.get("execution_details", [])
@@ -417,7 +417,7 @@ def _extract_execution_metrics(
                 sp = _resolve_current_output_path(sr)
                 if sp and sp.is_file():
                     try:
-                        with open(sp, "r", encoding="utf-8") as handle:
+                        with open(sp, encoding="utf-8") as handle:
                             structured = json.load(handle)
                         for collected_path in structured.get(
                             "collected_outputs", {}
@@ -482,7 +482,7 @@ def _extract_execution_metrics(
             output_file = resolved_file
             if output_file.is_file():
                 try:
-                    with open(output_file, "r") as f:
+                    with open(output_file) as f:
                         data = json.load(f)
 
                     if framework_key == "pymdp":
@@ -660,7 +660,7 @@ def _extract_execution_metrics(
                         actions = []
                         observations = []
 
-                        with open(csv_file, "r") as f:
+                        with open(csv_file) as f:
                             # Skip comment lines (lines starting with #)
                             lines = [line for line in f if not line.startswith("#")]
 
@@ -745,7 +745,7 @@ def _extract_execution_metrics(
                 params_file = resolved_params
                 if params_file.is_file():
                     try:
-                        with open(params_file, "r") as f:
+                        with open(params_file) as f:
                             params_data = json.load(f)
                         metrics["model_parameters"] = {
                             "num_states": params_data.get(
@@ -790,7 +790,7 @@ def _extract_execution_metrics(
                 circuit_file = resolved_circuit
                 if circuit_file.is_file():
                     try:
-                        with open(circuit_file, "r") as f:
+                        with open(circuit_file) as f:
                             circuit_data = json.load(f)
                         if not metrics.get("data_source"):
                             metrics["data_source"] = str(circuit_file)

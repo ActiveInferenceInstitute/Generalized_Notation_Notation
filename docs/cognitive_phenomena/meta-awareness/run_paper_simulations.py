@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Complete reproduction of Sandved-Smith et al. (2021) computational phenomenology results
 

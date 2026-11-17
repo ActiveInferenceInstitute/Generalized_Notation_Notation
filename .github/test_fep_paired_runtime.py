@@ -58,7 +58,7 @@ class WorkflowConfigurationTests(unittest.TestCase):
         self.assertIn("for stage in installed status finite continuous final", workflow)
         self.assertIn("fep_paired_runtime.py q7-source", workflow)
         self.assertIn("if: matrix.python == '3.14'", workflow)
-        self.assertIn('python: ["3.11", "3.12", "3.14"]', workflow)
+        self.assertIn('python: ["3.12", "3.14"]', workflow)
         self.assertIn("--frozen --no-sync --python", workflow)
         self.assertIn("if: always()", workflow)
         self.assertFalse((root / ".github/fep-release-baseline.json").exists())
@@ -375,7 +375,7 @@ class RuntimeCustodyTests(unittest.TestCase):
     def test_wrong_requested_interpreter_rejected(self):
         self.run_stage(
             "installed",
-            version="3.12" if self.version == "3.11" else "3.11",
+            version="3.14" if self.version == "3.12" else "3.12",
             success=False,
         )
 

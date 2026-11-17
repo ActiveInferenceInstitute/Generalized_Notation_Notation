@@ -74,7 +74,7 @@ def calculate_complexity_metrics(
 ) -> Dict[str, Any]:
     """Calculate comprehensive complexity metrics for a GNN file."""
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         variables = extract_variables(content)

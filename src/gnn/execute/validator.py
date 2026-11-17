@@ -64,23 +64,18 @@ class EnvironmentValidation:
 def check_python_environment() -> ValidationResult:
     """Validate Python environment and version."""
     try:
+        from gnn.setup.constants import MIN_PYTHON_VERSION
+
         version = sys.version_info
 
-        if version.major < 3 or (version.major == 3 and version.minor < 8):
+        if version[:2] < MIN_PYTHON_VERSION:
+            floor = ".".join(str(part) for part in MIN_PYTHON_VERSION)
             return ValidationResult(
                 component="python_version",
                 status="fail",
                 message=f"Python {version.major}.{version.minor} is too old",
                 details={"version": f"{version.major}.{version.minor}.{version.micro}"},
-                suggestion="Upgrade to Python 3.8 or later",
-            )
-        elif version.minor < 9:
-            return ValidationResult(
-                component="python_version",
-                status="warn",
-                message=f"Python {version.major}.{version.minor} is supported but not optimal",
-                details={"version": f"{version.major}.{version.minor}.{version.micro}"},
-                suggestion="Consider upgrading to Python 3.9+ for better performance",
+                suggestion=f"Upgrade to Python {floor} or later",
             )
         else:
             return ValidationResult(

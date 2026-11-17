@@ -31,7 +31,7 @@ Before seeking direct support, please check the extensive documentation provided
 uv run --frozen --no-sync python --version
 ```
 
-The supported package range is CPython 3.11–3.14. Use Python 3.14 for the
+The supported package range is CPython 3.12–3.14. Use Python 3.14 for the
 [default frozen profile](README.md#runtime-defaults-and-required-profiles).
 
 **📦 Dependency Issues**

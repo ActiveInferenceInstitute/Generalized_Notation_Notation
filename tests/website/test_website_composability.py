@@ -117,9 +117,9 @@ class TestWebsiteDataFromDict:
         from gnn.website.collection import website_data_from_dict
 
         assert website_data_from_dict({})["output_dir"] is None
-        assert website_data_from_dict({}, output_dir=str("/tmp/x"))[
-            "output_dir"
-        ] == Path("/tmp/x")
+        assert website_data_from_dict({}, output_dir="/tmp/x")["output_dir"] == Path(
+            "/tmp/x"
+        )
 
     def test_no_filesystem_access(self, monkeypatch: Any) -> None:
         calls = {"n": 0}

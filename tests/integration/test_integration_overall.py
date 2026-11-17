@@ -53,7 +53,7 @@ class TestIntegrationOverall:
         results_file = output_dir / "integration_results/integration_results.json"
         assert results_file.exists()
 
-        with open(results_file, "r") as f:
+        with open(results_file) as f:
             data = json.load(f)
 
         assert data["success"] is True
@@ -91,7 +91,7 @@ class TestIntegrationOverall:
         process_integration(safe_filesystem.temp_dir, output_dir)
 
         results_file = output_dir / "integration_results/integration_results.json"
-        with open(results_file, "r") as f:
+        with open(results_file) as f:
             data = json.load(f)
 
         # If networkx is present, it might list issues.

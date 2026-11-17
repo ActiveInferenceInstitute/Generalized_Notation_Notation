@@ -91,8 +91,13 @@ def test_compliance_surface_uses_contract_for_signature_time_fixture() -> None:
 def test_schema_validator_uses_shared_required_table() -> None:
     import inspect
 
+    from gnn.schema_validator import structural_checks
     from gnn.schema_validator import validator as sv
 
-    source = inspect.getsource(sv)
-    assert "REQUIRED_SECTIONS" in source
-    assert '"InitialParameterization"' not in source
+    # GNNValidator's required-section check lives in StructuralChecksMixin,
+    # which must read the shared table; neither module may hardcode it.
+    assert issubclass(sv.GNNValidator, structural_checks.StructuralChecksMixin)
+    checks_source = inspect.getsource(structural_checks)
+    assert "REQUIRED_SECTIONS" in checks_source
+    for source in (checks_source, inspect.getsource(sv)):
+        assert '"InitialParameterization"' not in source

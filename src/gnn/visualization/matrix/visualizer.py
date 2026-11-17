@@ -1039,7 +1039,7 @@ Range: [{min_val:.3f}, {max_val:.3f}]"""
                     file_output_dir.mkdir(parents=True, exist_ok=True)
 
                     # Read and parse the GNN file
-                    with open(gnn_file, "r", encoding="utf-8") as f:
+                    with open(gnn_file, encoding="utf-8") as f:
                         content = f.read()
 
                     # Parse GNN content to extract parameters

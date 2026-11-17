@@ -4,8 +4,9 @@ Analysis analyzer module for GNN statistical analysis.
 
 Mechanical split facade: implementations live in ``analysis_*``,
 ``simulation_visualizations``, and ``framework_comparison`` sibling
-modules; every previously public and private name is re-exported here
-so consumer import paths are unchanged.
+modules. Only names with live consumers (``__all__`` plus the pinned
+``parse_matrix_data`` alias) are re-exported; private helpers are imported
+from their sibling module.
 """
 
 import hashlib
@@ -37,7 +38,6 @@ from .analysis_extraction import (
     extract_variables,
 )
 from .analysis_statistics import (
-    SCIPY_AVAILABLE,
     analyze_distributions,
     calculate_connection_statistics,
     calculate_correlations,
@@ -45,19 +45,18 @@ from .analysis_statistics import (
     calculate_variable_statistics,
 )
 from .framework_comparison import (
-    _calculate_aggregate_metrics,
-    _compare_framework_results,
-    _discopy_inline_circuit_from_structured,
-    _extract_simulation_metrics,
     analyze_framework_outputs,
     generate_framework_comparison_report,
 )
 from .simulation_visualizations import (
-    SEABORN_AVAILABLE,
     generate_matrix_visualizations,
-    parse_matrix_data,
     visualize_cross_framework_metrics,
     visualize_simulation_results,
+)
+from .simulation_visualizations import (
+    # Retained public alias: test_visualization_matrix_compat pins
+    # ``gnn.analysis.analyzer.parse_matrix_data`` as shared surface.
+    parse_matrix_data as parse_matrix_data,
 )
 
 logger = logging.getLogger(__name__)
@@ -97,7 +96,7 @@ def perform_statistical_analysis(
 ) -> Dict[str, Any]:
     """Perform comprehensive statistical analysis on a GNN file."""
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         # Extract structural elements

@@ -20,7 +20,7 @@ The workflow system must:
 ## Components
 The module defines strict automation routines via YAML configuration:
 
-1. **`ci.yml`**: The primary test matrix (Python 3.12, 3.13, 3.14 on pull requests; 3.11 added on tags, weekly and dispatch) that executes the Pytest suite, Ruff linting, MCP tool count assertions, and Bandit security scans, halting on critical code health violations.
+1. **`ci.yml`**: The primary test matrix (Python 3.12, 3.13, 3.14) that executes the Pytest suite, Ruff linting, MCP tool count assertions, and Bandit security scans, halting on critical code health violations.
 2. **`actionlint.yml`**: Safeguards workflow logic by running static analysis on the YAML files themselves before integration.
 3. **`codeql.yml`**: Triggers GitHub's advanced CodeQL semantic scanning engine for deep security auditing.
 4. **`dependency-review.yml`**: A supply chain guardrail enforcing license compliance (denying AGPL) and halting high-severity CVE introductions on Pull Requests.

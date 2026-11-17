@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
 from typing import Any, Dict, Literal
 
@@ -55,7 +55,7 @@ class APIEnvelope(BaseModel):
 def response_meta(**extra: Any) -> Dict[str, Any]:
     """Return standard response metadata with a timezone-aware timestamp."""
     return {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         **extra,
     }
 

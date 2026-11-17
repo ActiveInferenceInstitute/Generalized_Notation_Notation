@@ -121,7 +121,7 @@ def load_simulation_results_json(jax_dir: Path) -> Optional[Dict[str, Any]]:
     for path in possible_paths:
         if path.exists():
             try:
-                with open(path, "r") as f:
+                with open(path) as f:
                     data = json.load(f)
                     logger.info(f"Loaded JAX simulation results from {path}")
                     return cast("dict[str, Any] | None", data)
@@ -171,7 +171,7 @@ def generate_analysis_from_logs(
                 results_files = list(exec_logs_dir.glob("*_results.json"))
                 for results_file in results_files:
                     try:
-                        with open(results_file, "r") as f:
+                        with open(results_file) as f:
                             data = json.load(f)
 
                         viz_files = create_jax_visualizations(
@@ -784,7 +784,7 @@ def extract_simulation_data(
         if exec_logs_dir.exists():
             results_files = list(exec_logs_dir.glob("*_results.json"))
             if results_files:
-                with open(results_files[0], "r") as f:
+                with open(results_files[0]) as f:
                     results = json.load(f)
                 sim_data = results.get("simulation_data", {})
                 data.update(sim_data)

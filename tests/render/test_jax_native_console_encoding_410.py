@@ -48,7 +48,7 @@ def _render(tmp_path: Path, name: str) -> Path:
     assert success, message
     assert paths == [str(script)]
     assert json.dumps(source, ensure_ascii=False, sort_keys=True) == original
-    assert "P(s|o) ∝".encode("utf-8") in script.read_bytes()
+    assert "P(s|o) ∝".encode() in script.read_bytes()
     return script
 
 
@@ -136,7 +136,7 @@ def test_native_isolated_generated_program_preserves_unicode(tmp_path: Path) -> 
     assert child.returncode == 0, child.stderr.decode("utf-8", errors="strict")
     assert name.encode("utf-8") in child.stdout
     assert str(output).encode("utf-8") in child.stdout
-    assert "✅".encode("utf-8") in child.stdout
+    assert "✅".encode() in child.stdout
     child.stdout.decode("utf-8", errors="strict")
     child.stderr.decode("utf-8", errors="strict")
     (tmp_path / "native_stdout.bin").write_bytes(child.stdout)

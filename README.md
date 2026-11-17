@@ -5,7 +5,7 @@ framework-specific code, and inspect the evidence from its execution.**
 
 [![Version: 5.1.0](https://img.shields.io/badge/version-5.1.0-00a6b8.svg)](pyproject.toml)
 [![CI](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml)
-[![Python 3.11–3.14](https://img.shields.io/badge/python-3.11%E2%80%933.14-blue.svg)](pyproject.toml)
+[![Python 3.12–3.14](https://img.shields.io/badge/python-3.12%E2%80%933.14-blue.svg)](pyproject.toml)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](LICENSE.md)
 [![Project DOI](https://img.shields.io/badge/Project%20DOI-10.5281%2Fzenodo.7803313-blue.svg)](https://doi.org/10.5281/zenodo.7803313)
 [![Software archive](https://img.shields.io/badge/Software%20archive-10.5281%2Fzenodo.23631909-blue.svg)](https://doi.org/10.5281/zenodo.23631909)
@@ -291,16 +291,14 @@ GNN-owned environments use uv **0.13.6**: [uv.toml](uv.toml) sets
 `required-version = ">=0.13.6,<0.14"`, the GNN-owned `astral-sh/setup-uv` steps
 pin `version: "0.13.6"`, and the [Dockerfile](Dockerfile) pins
 `ARG UV_VERSION=0.13.6`. The [package metadata](pyproject.toml)
-supports CPython 3.11 through 3.14, and the frozen scientific profile defaults to
+supports CPython 3.12 through 3.14, and the frozen scientific profile defaults to
 the latest 3.14 patch. Python 3.15 qualification remains outside the current
 profile. The macOS probe reached h5py's source build and required a native HDF5
 installation.
 
-The scientific stack admits JAX 0.12 and keeps the Python-specific Flax
-compatibility split in `pyproject.toml`. Python 3.11 resolves JAX 0.10.2,
-PyMDP 1.0.5 and Flax 0.12.8; newer supported Python profiles resolve JAX
-0.12.0.1, PyMDP 1.0.5 and Flax 0.12.10. PyMDP 1.0.5 carries no JAX upper
-bound, so its requirement needs no split. ActiveInference.jl retains its
+The scientific stack admits JAX 0.12. Every supported Python resolves one
+split: JAX 0.12.0.1, PyMDP 1.0.5 and Flax 0.12.10. PyMDP 1.0.5 carries no
+JAX upper bound, so its requirement needs no split. ActiveInference.jl retains its
 Distributions ceiling because DistributionsAD's extension fails with the newer
 `@check_args` API; its committed Project documents that exception. RxInfer
 resolves 6.1.0 on Julia 1.13.2. The separate FEP companion still requires its
@@ -331,8 +329,7 @@ To remove the Python exception, provision/review native HDF5 and remaining build
 prerequisites, qualify the exact default dependency profile on 3.15, and
 review any producer-range change through the documented paired re-pin ritual.
 Then run the selected source/native gates before changing the default pin.
-Python 3.11/3.12/3.13 tests remain compatibility lanes (3.11 on tags, the
-weekly schedule and manual dispatch). The exact native coverage, paired-revision, manuscript,
+Python 3.12/3.13 tests remain compatibility lanes. The exact native coverage, paired-revision, manuscript,
 GridWorld and all-extras/GUI profiles retain their declared runtimes and evidence
 contracts. This bounded default-profile check does not establish all-extras,
 GUI, Docker, hosted, paired, or scientific publication acceptance.
@@ -397,8 +394,7 @@ uv run --frozen --no-sync python scripts/check_maintained_doc_terms.py --strict
 ```
 
 Preflight catches deterministic mistakes before expensive hosted qualification.
-The ordinary test matrix covers Python 3.12–3.14 on pull requests and adds 3.11
-on tags, the weekly schedule and manual dispatch. Core coverage is enforced
+The ordinary test matrix covers Python 3.12–3.14 on every event. Core coverage is enforced
 inside the gate, not reported to a service and not shown as a badge:
 `[tool.coverage.report] fail_under = 60` in [pyproject.toml](pyproject.toml)
 fails `./run.sh gates` below 60 %; comprehensive native coverage requires

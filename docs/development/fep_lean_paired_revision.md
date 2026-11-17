@@ -75,7 +75,7 @@ In the mirror direction, GEO_INFER pins GNN from its own checkout via its
 2. Checks out FEP_Formal at exactly the pinned SHA.
 3. Records both checkout revisions plus the pin file as receipts, retained as
    workflow artifacts (`if: always()`, mirroring GEO's receipt semantics).
-4. Installs each Python 3.11/3.12/3.14 row once with `uv sync --frozen`, explicit
+4. Installs each Python 3.12/3.14 row once with `uv sync --frozen`, explicit
    `UV_PYTHON` and `UV_PROJECT_ENVIRONMENT`. Every subsequent invocation uses
    the workflow's frozen, no-sync uv command and explicit matrix Python.
    Unqualified `uv run` can select the companion's local `.python-version`
@@ -109,7 +109,7 @@ their fixture paths. They reject wrong interpreters/environments, replacement
 or modified environments, source revision/byte drift, changes during execution,
 nonzero CLI exits, missing/wrong receipts and changed output bytes. The fixture
 CLI checks the custody mechanism; the subsequent hosted stages execute the
-actual pinned bridge. Run the controls with Python 3.11, 3.12 or 3.14 and place
+actual pinned bridge. Run the controls with Python 3.12 or 3.14 and place
 `TMPDIR` on the storage volume being qualified.
 
 The Python 3.14 row then runs the pinned Q7 verifier's read-only
@@ -120,7 +120,7 @@ installed-environment and tracked-source baseline before and after execution.
 The source snapshot and failure diagnostics are retained with the pair receipts.
 This closes the gap where a source-pin/emission refresh could leave Q7's current
 render metadata stale while ordinary bridge status and emission checks passed.
-The Q7 parser accepts CPython 3.14; the 3.11/3.12 bridge compatibility rows remain.
+The Q7 parser accepts CPython 3.14; the 3.12 bridge compatibility row remains.
 This additional gate performs no Lean compilation or generated-runner execution
 and keeps `native_claim_ready: false`.
 

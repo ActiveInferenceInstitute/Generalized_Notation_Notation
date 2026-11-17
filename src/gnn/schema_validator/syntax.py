@@ -120,7 +120,7 @@ class GNNParser(FormatDetectionMixin, SectionParsersMixin):
         else:
             # Read as text
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read()
             except UnicodeDecodeError:
                 # Try as binary if UTF-8 fails

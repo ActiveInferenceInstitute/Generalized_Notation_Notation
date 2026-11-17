@@ -193,7 +193,7 @@ def process_report(
 
         if summary_file_path.exists():
             try:
-                with open(summary_file_path, "r") as f:
+                with open(summary_file_path) as f:
                     json.load(f)
             except Exception as e:
                 logger.debug(f"Could not read report generation summary: {e}")
@@ -206,7 +206,7 @@ def process_report(
             if html_file_path.exists():
                 try:
                     # Basic HTML validation - check if file contains valid HTML structure
-                    with open(html_file_path, "r", encoding="utf-8") as f:
+                    with open(html_file_path, encoding="utf-8") as f:
                         content = f.read()
                         # Check for basic HTML structure
                         if (
@@ -264,7 +264,7 @@ def process_report(
         try:
             json_report_file = output_dir / "report_summary.json"
             if json_report_file.exists():
-                with open(json_report_file, "r", encoding="utf-8") as f:
+                with open(json_report_file, encoding="utf-8") as f:
                     pipeline_data = json.load(f)
                     visualizations = pipeline_data.get("visualizations", {})
                     visualization_count = visualizations.get("total_count", 0)

@@ -541,7 +541,7 @@ async def _execute_prompt(
         if time.monotonic() >= prompt_deadline or (
             remaining_budget is not None and remaining_budget() <= 0
         ):
-            raise asyncio.TimeoutError("Required prompt work exceeded its deadline")
+            raise TimeoutError("Required prompt work exceeded its deadline")
 
     if provider_type and provider_type.value in failed_auth_providers:
         return _prompt_fallback_text(label, custom)
@@ -831,7 +831,7 @@ async def _execute_prompt(
             }
         logger.error("Ollama runtime/model identity changed; response not admitted")
         return "Ollama runtime/model identity changed; response not admitted"
-    except asyncio.TimeoutError:
+    except TimeoutError:
         if outcomes is not None:
             outcomes[label] = {"status": "timed_out"}
         error_msg = f"Prompt execution timed out after {max_prompt_timeout} seconds"

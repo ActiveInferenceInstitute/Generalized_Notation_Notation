@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from gnn.testing.round_trip_availability import GNNInternalRepresentation
+from gnn.parsers.common import GNNInternalRepresentation
 from gnn.testing.round_trip_markdown_parser import _DirectMarkdownParser
 
 PARSER_GNN = """## ModelName

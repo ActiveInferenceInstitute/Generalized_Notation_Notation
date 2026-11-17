@@ -63,7 +63,7 @@ class OutputRootNotFoundError(WebsiteServerError):
 
 def _digest_hex(file_count: int, max_mtime_ns: int) -> str:
     """Return the live-reload digest over the file-count/mtime fingerprint."""
-    return hashlib.sha256(f"{file_count}:{max_mtime_ns}".encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"{file_count}:{max_mtime_ns}".encode()).hexdigest()
 
 
 def _compute_livereload_digest(root: Path) -> str:

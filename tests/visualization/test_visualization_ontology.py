@@ -22,7 +22,7 @@ class TestOntologyVisualizer:
     def test_extract_ontology_mappings(self, sample_gnn_file: Path) -> None:
         """Test ontology mapping extraction from GNN file."""
         # Read test file
-        with open(sample_gnn_file, "r") as f:
+        with open(sample_gnn_file) as f:
             content = f.read()
 
         # Extract ontology section

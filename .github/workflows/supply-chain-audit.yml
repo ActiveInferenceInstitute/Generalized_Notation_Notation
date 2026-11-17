@@ -82,7 +82,7 @@ jobs:
         id: audit
         run: |
           set -euo pipefail
-          uv tool run --python 3.12 pip-audit -r /tmp/requirements-all-extras.txt --no-deps --disable-pip --require-hashes --vulnerability-service osv --desc on
+          uv tool run --python 3.14 pip-audit -r /tmp/requirements-all-extras.txt --no-deps --disable-pip --require-hashes --vulnerability-service osv --desc on
 
       - name: Summary
         if: always()

@@ -6,7 +6,7 @@ Shared utility modules for scripts under `scripts/`. `shared.py` provides common
 
 ## Dependencies
 
-- **Runtime**: Python 3.11+ standard library (`pathlib`, `argparse`, `typing`)
+- **Runtime**: Python 3.12+ standard library (`pathlib`, `argparse`, `typing`)
 - **No external dependencies** — zero install footprint
 
 ## Exports

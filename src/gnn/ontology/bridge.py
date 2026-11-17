@@ -128,7 +128,7 @@ def load_ontology_bridge(path: Optional[str] = None) -> Dict[str, Any]:
             "ontology bridge not found: " + ", ".join(str(c) for c in candidates)
         )
 
-    with open(source, "r", encoding="utf-8") as handle:
+    with open(source, encoding="utf-8") as handle:
         document = json.load(handle)
 
     if not isinstance(document, dict):
@@ -162,7 +162,7 @@ def load_ontology_pin(path: Optional[str] = None) -> Dict[str, Any]:
     source = Path(path) if path is not None else ontology_pin_path()
     if not source.exists():
         raise FileNotFoundError(f"ontology pin not found: {source}")
-    with open(source, "r", encoding="utf-8") as handle:
+    with open(source, encoding="utf-8") as handle:
         pin = json.load(handle)
     if not isinstance(pin, dict):
         raise ValueError("ontology pin must be a JSON object")

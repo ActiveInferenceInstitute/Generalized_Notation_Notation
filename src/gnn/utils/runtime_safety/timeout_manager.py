@@ -268,7 +268,7 @@ class TimeoutManager:
                 result.total_time = time.time() - start_time
                 return result
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 result.timed_out = True
                 result.error = f"Operation timed out after {current_timeout:.1f}s"
 

@@ -186,9 +186,9 @@ class TestDependencyValidationImprovements:
         assert "pymdp" in validator.dependencies
         pymdp_deps = validator.dependencies["pymdp"]
         dep_names = [dep.name for dep in pymdp_deps]
-        has_pymdp = any(("pymdp" in name.lower() for name in dep_names))
+        has_pymdp = any("pymdp" in name.lower() for name in dep_names)
         assert has_pymdp, f"Expected pymdp dependency, got: {dep_names}"
-        pymdp_dep = next((dep for dep in pymdp_deps if "pymdp" in dep.name.lower()))
+        pymdp_dep = next(dep for dep in pymdp_deps if "pymdp" in dep.name.lower())
         assert pymdp_dep.is_optional, "pymdp dependency should be marked optional"
 
     @pytest.mark.unit
@@ -239,7 +239,7 @@ class TestLoggingImprovements:
     def test_setup_step_logging_returns_logger(self) -> None:
         import logging as _logging
 
-        from gnn.utils.logging.logging_utils import setup_step_logging
+        from gnn.utils.logging_utils import setup_step_logging
 
         logger = setup_step_logging("test_step", verbose=False)
         assert isinstance(logger, _logging.Logger)

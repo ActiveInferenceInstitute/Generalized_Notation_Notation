@@ -811,7 +811,7 @@ def process_analysis(
         try:
             with open(results_file, "w") as f:
                 json.dump(results, f, indent=2, default=convert_numpy_types)
-        except (OSError, IOError) as e:
+        except OSError as e:
             logger.error(f"Failed to write analysis results: {e}")
 
         # Generate summary report
@@ -820,7 +820,7 @@ def process_analysis(
         try:
             with open(summary_file, "w") as f:
                 f.write(summary)
-        except (OSError, IOError) as e:
+        except OSError as e:
             logger.error(f"Failed to write analysis summary: {e}")
 
         if results["success"]:

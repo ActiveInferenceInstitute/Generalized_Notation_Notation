@@ -15,13 +15,9 @@ from __future__ import annotations
 import ast
 import json
 import re
+import tomllib
 from collections.abc import Sequence
 from pathlib import Path
-
-try:  # Python 3.11+
-    import tomllib as _toml
-except ModuleNotFoundError:  # pragma: no cover - exercised only on <3.11
-    _toml = None  # type: ignore[assignment]
 
 from gnn.manuscript.snapshot import RepositorySnapshot
 
@@ -35,11 +31,9 @@ def _line_count(text: str) -> int:
 
 def _read_pyproject_version(snapshot: RepositorySnapshot) -> str:
     text = snapshot.read_text("pyproject.toml")
-    if _toml is not None:
-        data = _toml.loads(text)
-        version = data.get("project", {}).get("version")
-        if version:
-            return str(version)
+    version = tomllib.loads(text).get("project", {}).get("version")
+    if version:
+        return str(version)
     # Fallback: regex the [project] version line.
     match = re.search(r'^\s*version\s*=\s*"([^"]+)"', text, re.MULTILINE)
     return match.group(1) if match else "0.0.0"

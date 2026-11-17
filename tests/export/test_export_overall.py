@@ -120,7 +120,7 @@ class TestExportIntegration:
 
         exporter = Exporter()
         gnn_file = list(sample_gnn_files.values())[0]
-        with open(gnn_file, "r") as f:
+        with open(gnn_file) as f:
             gnn_content = f.read()
         result = exporter.export_gnn_model(gnn_content, "json")
         assert result is not None

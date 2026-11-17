@@ -28,7 +28,9 @@ if sys.platform == "win32":
 else:
     VENV_PYTHON = VENV_PATH / "bin" / "python"
 
-MIN_PYTHON_VERSION = (3, 11)
+# The single interpreter floor shared by setup, preflight and execute
+# validation; it matches pyproject.toml requires-python (>=3.12,<3.15).
+MIN_PYTHON_VERSION = (3, 12)
 
 # Extra ``uv sync --extra …`` groups for step 1 when non-empty. Core Step 12
 # backends, LLM clients, and interactive visualization are default dependencies;

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Utility functions for Sandved-Smith et al. (2021) computational phenomenology model.
 Mathematical operations for active inference with hierarchical precision control.

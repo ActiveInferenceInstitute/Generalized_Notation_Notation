@@ -212,7 +212,7 @@ class PyMDPRenderer:
     def render_file(self, gnn_file_path: Path, output_path: Path) -> Tuple[bool, str]:
         """Render file."""
         try:
-            with open(gnn_file_path, "r", encoding="utf-8") as f:
+            with open(gnn_file_path, encoding="utf-8") as f:
                 content = f.read()
 
             gnn_spec = parse_gnn_markdown(content, gnn_file_path)

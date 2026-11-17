@@ -7,7 +7,7 @@ name = "generalized-notation-notation"
 version = "5.1.0"
 description = "A text-based language for standardizing Active Inference generative models"
 readme = "README.md"
-requires-python = ">=3.11,<3.15"
+requires-python = ">=3.12,<3.15"
 license = {text = "CC-BY-NC-SA-4.0"}
 authors = [
     {name = "Active Inference Institute", email = "contact@activeinference.org"}
@@ -17,12 +17,11 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    # Ordinary source tests cover Python 3.11-3.14; comprehensive native
-    # coverage retains 3.11-3.13. Wheel/platform support separately requires
-    # the exact installed-platform release lane to pass.
+    # Ordinary source tests and comprehensive native coverage cover Python
+    # 3.12-3.14. Wheel/platform support separately requires the exact
+    # installed-platform release lane to pass.
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Information Analysis",
@@ -59,10 +58,9 @@ dependencies = [
     # (see docs/pymdp/pymdp_1_0_0_alignment_matrix.md). Step 12 uses the new
     # Agent API: list[jax.Array] models, infer_states(empirical_prior=...),
     # infer_policies(qs), sample_action(q_pi, rng_key=...).
-    # 1.0.5 is the supported release: it lifts the jax<0.11.1 cap that forced
-    # 1.0.4 on the py3.11 splits (jax 0.10.2) and 1.0.3 on the py>=3.12 splits
-    # that need jax>=0.11.1 for flax>=0.12.9 and ngclearn, so one requirement
-    # now serves every supported interpreter.
+    # 1.0.5 is the supported release: it carries no jax upper bound, so one
+    # requirement serves every supported interpreter alongside the
+    # jax>=0.11.1 floor that flax>=0.12.9 and ngclearn need.
     "inferactively-pymdp>=1.0.5",
     "equinox>=0.11.0",  # pymdp 1.0.0 Agent is an equinox Module
     "multimethod>=1.11",  # pymdp 1.0.0 dispatch
@@ -72,17 +70,13 @@ dependencies = [
     # package remains omitted from the default lock because its pgmpy
     # dependency pulls torch transitively.
     # JAX 0.12 admitted 2026-10-20 after PyMDP/factorized/continuous checks.
-    # ngclearn>=3.2.2 requires jax>=0.11.1; the current lock also resolves
-    # numpyro 0.22.0 + flax 0.12.x + equinox 0.13.x on jax 0.12.0
-    # (py3.12) and jax 0.10.2 (py3.11). pymdp>=1.0.5 carries no jax upper
-    # bound, so the pymdp requirement above resolves 1.0.5 on every split.
+    # ngclearn>=3.2.2 requires jax>=0.11.1; the lock resolves numpyro 0.22.0 +
+    # flax 0.12.x + equinox 0.13.x on jax 0.12.0 for every supported
+    # interpreter (Python >=3.12 has one resolution split).
     "jax[cpu]>=0.7.0,<0.13",
     "jaxlib>=0.7.0,<0.13",
-    # Flax 0.12.8 uses the supported jax.extend.core tracing API with
-    # Python 3.11/JAX 0.10.2. Flax >=0.12.9 requires Python
-    # >=3.12 and JAX >=0.11.1, so retain the explicit runtime split.
-    "flax>=0.12.8; python_full_version < '3.12'",
-    "flax>=0.12.9; python_full_version >= '3.12'",
+    # Flax >=0.12.9 requires Python >=3.12 and JAX >=0.11.1.
+    "flax>=0.12.9",
     "optax>=0.1.0",
     "msgpack>=1.2.1",
     "numpyro>=0.22",  # 0.22.0 carries the jax-0.11.x compat fix; 0.20.x breaks on jax>=0.11
@@ -200,15 +194,12 @@ bnlearn = [
 ]
 
 # ngc-learn backend (continuous linear-Gaussian LGSSM render + Step 12
-# execution via src/gnn/execute/ngclearn/). ngclearn requires jax>=0.11.1,
-# which only publishes for Python>=3.12 — the extra is marker-gated to
-# py3.12+. On py3.11 the extra resolves empty and the backend is gated at
-# run time by the shared availability probe (skip, never fail), following
-# the bnlearn non-default-extra precedent. Probe receipts in the jax
-# dependency comment above.
+# execution via src/gnn/execute/ngclearn/). ngclearn requires jax>=0.11.1
+# (Python >=3.12, the package floor). As a non-default extra (the bnlearn
+# precedent) its absence is reported by the shared availability probe.
 ngclearn = [
-    "ngclearn>=3.2.2; python_version >= '3.12'",
-    "ngcsimlib>=3.1.1; python_version >= '3.12'",
+    "ngclearn>=3.2.2",
+    "ngcsimlib>=3.1.1",
 ]
 
 # All optional dependencies (install everything).
@@ -231,8 +222,8 @@ all = [
     "jupyterlab>=4.6.4",
     "librosa>=0.10.0",
     "lsprotocol>=2023.0.0",
-    "ngclearn>=3.2.2; python_version >= '3.12'",
-    "ngcsimlib>=3.1.1; python_version >= '3.12'",
+    "ngclearn>=3.2.2",
+    "ngcsimlib>=3.1.1",
     "numba>=0.57.0",
     "pedalboard>=0.7.0",
     "pygls>=1.3.1",
@@ -265,7 +256,6 @@ dev = [
     "pytest-cov>=3.0.0",
     "pytest-json-report>=1.5.0",
     "pytest-benchmark>=4.0.0",
-    "pytest-sugar>=0.9.0",
     "pytest-timeout>=2.1.0",
     "pytest-xdist>=3.0.0",
 
@@ -338,18 +328,9 @@ constraint-dependencies = [
     "opentelemetry-api>=1.45.2",
     "ray>=2.56.0",
     "setuptools>=83.0.0",
-    # soupsieve is reached transitively through nbconvert -> beautifulsoup4.
-    # soupsieve 3.0.2+ (and 4.x) requires Python >=3.11.5, so an unmarked
-    # floor let the resolver hold one soupsieve version for every interpreter:
-    # >=3.11.5 took 4.0 while 3.11.0-3.11.4 had no candidate, and uv
-    # backtracked beautifulsoup4 to its 2018 4.6.3 release (no soupsieve
-    # dependency at all) for those interpreters. beautifulsoup4 4.15.0 needs
-    # only soupsieve>=1.6.1, so split the branch by marker: the modern
-    # interpreter keeps the 4.x bump, and 3.11.0-3.11.4 stays on soupsieve 2.10
-    # (2026 release, >=3.10). soupsieve 3.0/3.0.1 are the only 3.x releases
-    # that admit <3.11.5 and both are yanked on PyPI.
-    "soupsieve>=4; python_full_version >= '3.11.5'",
-    "soupsieve>=2.8.4,<4; python_full_version < '3.11.5'",
+    # soupsieve is reached transitively through nbconvert -> beautifulsoup4;
+    # the Python >=3.12 floor admits the 4.x line on every interpreter.
+    "soupsieve>=4",
     "starlette>=1.0.1",
     "tornado>=6.6.1",  # GHSA-c2m8-h5v5-343r, GHSA-chx6-46f5-w4vp, GHSA-3hv7-mjh2-fv65
     "virtualenv>=21.14.13",  # GHSA-cx6f-vjhg-g3cc: unescaped --prompt in the bash activator
@@ -360,8 +341,7 @@ constraint-dependencies = [
 packages = ["src/gnn"]
 
 [tool.mypy]
-# numpy 2.4.x pyi requires a 3.12 mypy target (the 3.11 target failed on
-# the CI leg).
+# Matches the requires-python floor.
 python_version = "3.12"
 mypy_path = "src"
 explicit_package_bases = true
@@ -404,7 +384,6 @@ module = [
     "plotly.*",
     "psutil.*",
     "pygls.*",
-    "pkg_resources.*",
     "discopy.*",
     "pymdp.*",
     "ray.*",
@@ -412,7 +391,6 @@ module = [
     "seaborn.*",
     "sklearn.*",
     "soundfile.*",
-    "tensorflow.*",
     "torch.*",
     "numpyro.*",
     "uvicorn.*",
@@ -455,12 +433,13 @@ skips = ["B101"]
 [tool.ruff]
 # Keep Python lint/format scope stable when Ruff adds Markdown formatting.
 include = ["*.py", "*.pyi", "*.ipynb", "**/pyproject.toml"]
-target-version = "py311"
+target-version = "py312"
 line-length = 88
 extend-exclude = ["output", "cache", "temp", "tmp"]
 
-# Lint rules: omit ``W`` (mass whitespace noise) and ``UP`` (pyupgrade churn on a large
-# tree). CI runs ``ruff check src/``; keep the set aligned with what the repo can sustain.
+# Lint rules: omit ``W`` (mass whitespace noise). ``UP`` (pyupgrade, py312 target)
+# is enforced except the families below. CI runs ``ruff check src/``; keep the set
+# aligned with what the repo can sustain.
 [tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
@@ -468,8 +447,23 @@ select = [
     "I",  # isort
     "B",  # flake8-bugbear
     "C4", # flake8-comprehensions
+    "UP", # pyupgrade
 ]
 ignore = [
+    # pyupgrade families deferred: annotation spelling (List/Optional/Union and
+    # typing imports) is ~7.6k mechanical lines across in-flight branches; PEP 695
+    # aliases/generics and StrEnum change runtime objects or str() behaviour; the
+    # printf rewrites need manual review.
+    "UP006",  # non-pep585-annotation
+    "UP007",  # non-pep604-annotation-union
+    "UP031",  # printf-string-formatting
+    "UP035",  # typing-module import relocation
+    "UP040",  # non-pep695-type-alias
+    "UP042",  # replace-str-enum
+    "UP045",  # non-pep604-annotation-optional
+    "UP046",  # non-pep695-generic-class
+    "UP047",  # non-pep695-generic-function
+    "UP049",  # private-type-parameter
     "E501",  # line too long, handled by the formatter
     "E402",  # module import not at top (sys.path bootstrap in orchestrators)
     "B008",  # do not perform function calls in argument defaults
@@ -497,17 +491,11 @@ ignore = [
 "__init__.py" = ["F401"]
 "tests/**" = ["F401"]
 
-# Facade re-export surfaces (MAJ-04 mechanical splits): these modules import
-# moved names purely to preserve consumer import paths. Every name in each
-# facade's re-export block is part of the module's public surface.
-"src/gnn/analysis/visualizations.py" = ["F401"]
-"src/gnn/analysis/analyzer.py" = ["F401"]
-"src/gnn/render/jax/jax_renderer.py" = ["F401"]
-"src/gnn/render/discopy/translator.py" = ["F401"]
-"src/gnn/integration/meta_analysis/visualizer.py" = ["F401"]
+# Shared style hub (MAJ-04 split): sibling ``visualizer_*`` plot modules import
+# ``plt``/``np``/``mcolors``/``Axes3D`` from here; the probe binds them under the
+# matplotlib availability guard. The other seven MAJ-04 facades were retired to
+# explicit ``__all__`` / ``name as name`` surfaces (Wave 6C) and need no ignore.
 "src/gnn/integration/meta_analysis/visualizer_style.py" = ["F401"]
-"src/gnn/testing/round_trip_availability.py" = ["F401"]
-"src/gnn/schema_validator/validator.py" = ["F401"]
 
 # Guarded optional-dependency probes: parsers import serialization backends
 # inside try/except to test availability; the binding itself is intentionally

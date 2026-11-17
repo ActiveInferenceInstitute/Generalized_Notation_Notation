@@ -118,7 +118,7 @@ class GNNResourceEstimator:
 
         if type_check_data:
             try:
-                with open(type_check_data, "r") as f:
+                with open(type_check_data) as f:
                     self.type_check_data = json.load(f)
             except (FileNotFoundError, json.JSONDecodeError) as e:
                 logger.warning(f"Could not load type check data: {e}")
@@ -144,7 +144,7 @@ class GNNResourceEstimator:
         )
 
         try:
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 content_str = f.read()
 
             # Build the parser-style dictionary consumed by estimation strategies.

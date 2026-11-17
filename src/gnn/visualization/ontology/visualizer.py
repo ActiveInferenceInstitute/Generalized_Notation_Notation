@@ -67,7 +67,7 @@ class OntologyVisualizer:
                     file_output_dir.mkdir(parents=True, exist_ok=True)
 
                     # Read and parse file content
-                    with open(gnn_file, "r", encoding="utf-8") as f:
+                    with open(gnn_file, encoding="utf-8") as f:
                         content = f.read()
 
                     # Extract ontology section

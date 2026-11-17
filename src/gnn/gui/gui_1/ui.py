@@ -64,7 +64,7 @@ def parse_dims_csv(raw: str) -> tuple[list[int], str | None]:
 
 def build_gui(
     markdown_text: str, export_path: Path, logger: Optional[logging.Logger] = None
-) -> "gr.Blocks":
+) -> gr.Blocks:
     """Build gui."""
     if gr is None:
         raise RuntimeError("Gradio not available")

@@ -22,7 +22,7 @@ class TestPythonVersion:
     @pytest.mark.fast
     def test_python_version_minimum(self) -> Any:
         """Test Python version meets minimum requirements."""
-        assert sys.version_info >= (3, 11), f"Python 3.11+ required, got {sys.version}"
+        assert sys.version_info >= (3, 12), f"Python 3.12+ required, got {sys.version}"
 
     @pytest.mark.fast
     def test_python_version_compatible(self) -> Any:

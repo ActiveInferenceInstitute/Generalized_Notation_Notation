@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_installed_python_range_remains_qualified():
     metadata = tomllib.loads((ROOT / "pyproject.toml").read_text())
-    assert metadata["project"]["requires-python"] == ">=3.11,<3.15"
+    assert metadata["project"]["requires-python"] == ">=3.12,<3.15"
 
 
 @pytest.mark.needs_python315

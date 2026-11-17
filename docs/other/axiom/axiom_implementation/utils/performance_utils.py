@@ -306,7 +306,7 @@ class PerformanceTracker:
     def load_report(self, filepath: Path):
         """Load performance report from file."""
 
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             report = json.load(f)
 
         # Restore data structures

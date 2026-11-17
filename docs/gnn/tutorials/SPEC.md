@@ -13,7 +13,7 @@ should work end-to-end on a fresh clone + `uv sync`.
 
 ## Tutorial Contract
 Every tutorial must:
-1. Open with a prerequisites block (Python 3.11+, `uv`, repo clone)
+1. Open with a prerequisites block (Python 3.12+, `uv`, repo clone)
 2. Reference real files from `input/gnn_files/` (no invented examples)
 3. Include expected output snippets so the reader can verify each step
 4. End with a "Next steps" section linking further learning paths

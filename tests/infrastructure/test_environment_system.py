@@ -7,6 +7,7 @@ Tests system-level requirements, filesystem, and OS configuration.
 
 import os
 import sys
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -190,7 +191,7 @@ class TestSystemTime:
         """Test timezone functionality works."""
         from datetime import datetime, timezone
 
-        utc_now = datetime.now(timezone.utc)
+        utc_now = datetime.now(UTC)
         assert utc_now.tzinfo is not None
 
 

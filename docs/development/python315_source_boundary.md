@@ -1,6 +1,6 @@
 # Python 3.15 source-integration boundary
 
-Installed-package support remains `>=3.11,<3.15` in
+Installed-package support remains `>=3.12,<3.15` in
 [pyproject.toml](../../pyproject.toml). Python 3.15 is excluded from ordinary
 wheel installation until the complete wheel profiles and suite qualify it.
 Passing a source check does not expand that range.
@@ -30,8 +30,8 @@ that interpreter, the marker's probe skips the source probe; the installed-range
 contract still runs. This is a lightweight source boundary, not full Python
 3.15 package, NumPy, or numerical-runtime qualification.
 
-The GEO/GNN paired workflow independently keeps its existing Python 3.11/3.12
-matrix and frozen package selections. It reclaims unused hosted toolchains
+The GEO/GNN paired workflow independently keeps its Python 3.12 row (the GEO
+numpy<2 wheel ceiling) and frozen package selections. It reclaims unused hosted toolchains
 before installing GEO, disables setup-uv archive caching, uses `uv sync
 --no-cache` for both runtimes and prunes between installations. The workflow
 contract prevents archive double-buffering from returning; actual hosted free

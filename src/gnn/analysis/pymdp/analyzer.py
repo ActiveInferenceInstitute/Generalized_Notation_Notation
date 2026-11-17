@@ -37,7 +37,7 @@ def _first_sequence(mapping: Dict[str, Any], preferred_key: str) -> List[Any]:
 def _load_json(path: Path) -> Dict[str, Any] | None:
     """Load json."""
     try:
-        with open(path, "r", encoding="utf-8") as handle:
+        with open(path, encoding="utf-8") as handle:
             data = json.load(handle)
     except json.JSONDecodeError as exc:
         logger.error("Failed to parse %s: %s", path, exc)

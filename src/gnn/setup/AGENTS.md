@@ -143,7 +143,7 @@ Step 22 (GUI) additionally needs `uv sync --extra gui` to pull Gradio.
 
 ### Required Dependencies
 - `uv` - Python package manager (required, native commands used)
-- `python` - Python interpreter (>=3.11)
+- `python` - Python interpreter (>=3.12)
 - `pyproject.toml` - Project dependencies configuration
 
 ### Optional Dependencies
@@ -162,7 +162,7 @@ Defined in `setup/constants.py`:
 
 ```python
 VENV_DIR = ".venv"                 # Managed virtual environment location
-MIN_PYTHON_VERSION = (3, 11)       # Enforced by check_system_requirements
+MIN_PYTHON_VERSION = (3, 12)       # Shared floor: setup, preflight, execute validator
 SETUP_DEFAULT_PIPELINE_EXTRAS: tuple[str, ...] = ()  # No extras needed by default
 ```
 

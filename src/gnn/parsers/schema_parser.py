@@ -201,7 +201,7 @@ class XSDParser(BaseGNNParser):
         """Parse file."""
         try:
             # Read the file content first to check for embedded data
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
             return self.parse_string(content)
         except Exception as e:
@@ -409,7 +409,7 @@ class ASN1Parser(BaseGNNParser):
     def parse_file(self, file_path: str) -> ParseResult:
         """Parse file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
             return self.parse_string(content)
         except Exception as e:
@@ -622,7 +622,7 @@ class PKLParser(BaseGNNParser):
     def parse_file(self, file_path: str) -> ParseResult:
         """Parse file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
             return self.parse_string(content)
         except Exception as e:
@@ -1339,7 +1339,7 @@ class AlloyParser(BaseGNNParser):
     def parse_file(self, file_path: str) -> ParseResult:
         """Parse file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
             return self.parse_string(content)
         except Exception as e:
@@ -1494,7 +1494,7 @@ class ZNotationParser(BaseGNNParser):
     def parse_file(self, file_path: str) -> ParseResult:
         """Parse file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
             return self.parse_string(content)
         except Exception as e:

@@ -200,7 +200,7 @@ def collect_pipeline_data(
         raise ValueError("Current-run report snapshot is unavailable")
     if pipeline_summary_file is not None:
         try:
-            with open(pipeline_summary_file, "r", encoding="utf-8") as f:
+            with open(pipeline_summary_file, encoding="utf-8") as f:
                 pipeline_data["pipeline_summary"] = json.load(f)
             if (
                 context is not None
@@ -430,7 +430,7 @@ def analyze_step_directory(
         # Convert timestamp to ISO format
         if step_data["last_modified"]:
             step_data["last_modified"] = datetime.datetime.fromtimestamp(
-                step_data["last_modified"], tz=datetime.timezone.utc
+                step_data["last_modified"], tz=datetime.UTC
             ).isoformat()
 
         # Round size to 2 decimal places
@@ -472,7 +472,7 @@ def analyze_step_specific_data(
         ) + current_artifact_files(step_path, "*metrics*.json")
         for perf_file in perf_files:
             try:
-                with open(perf_file, "r", encoding="utf-8") as f:
+                with open(perf_file, encoding="utf-8") as f:
                     step_data["performance_metrics"] = json.load(f)
                 break
             except Exception as e:
@@ -485,7 +485,7 @@ def analyze_step_specific_data(
         error_logs: list[Any] = []
         for log_file in log_files:
             try:
-                with open(log_file, "r", encoding="utf-8") as f:
+                with open(log_file, encoding="utf-8") as f:
                     content = f.read()
                     if "error" in content.lower() or "warning" in content.lower():
                         error_logs.append(

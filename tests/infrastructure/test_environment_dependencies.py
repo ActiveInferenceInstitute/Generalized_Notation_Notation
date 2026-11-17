@@ -152,7 +152,7 @@ class TestDependencyVersions:
     def test_python_version(self) -> Any:
         """Test Python version meets requirements."""
 
-        assert sys.version_info >= (3, 9)
+        assert sys.version_info >= (3, 12)
 
     @pytest.mark.fast
     def test_numpy_version(self) -> Any:

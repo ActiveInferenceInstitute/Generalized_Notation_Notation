@@ -17,15 +17,20 @@ if str(SRC) not in sys.path:
 
 
 def test_check_python_version_respects_current_interpreter() -> Any:
-    """check_python_version must report True on Python 3.11+ (our minimum).
-    If this test ever fails, either the interpreter is too old OR the
-    requirements in pyproject.toml were silently relaxed."""
-    from gnn.setup import check_python_version
+    """check_python_version applies the shared MIN_PYTHON_VERSION floor, which
+    must equal the pyproject.toml requires-python lower bound."""
+    import tomllib
 
+    from gnn.setup import check_python_version
+    from gnn.setup.constants import MIN_PYTHON_VERSION
+
+    requires = tomllib.loads((SRC / "pyproject.toml").read_text())["project"][
+        "requires-python"
+    ]
+    floor = ".".join(str(part) for part in MIN_PYTHON_VERSION)
+    assert requires.startswith(f">={floor},"), (requires, MIN_PYTHON_VERSION)
     result = check_python_version()
-    assert isinstance(result, bool)
-    if sys.version_info >= (3, 11):
-        assert result is True, f"check_python_version rejected {sys.version_info}"
+    assert result is (sys.version_info[:2] >= MIN_PYTHON_VERSION)
 
 
 def test_validate_environment_returns_dict() -> Any:

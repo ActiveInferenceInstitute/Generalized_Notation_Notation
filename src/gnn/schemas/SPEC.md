@@ -17,4 +17,4 @@ Runtime parsing and validation use **`src/gnn/parsers/schema_parser.py`**, **`sc
 
 ## Requirements
 
-- **Python** >= 3.11 (see repo `pyproject.toml`).
+- **Python** >= 3.12 (see repo `pyproject.toml`).

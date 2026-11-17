@@ -87,7 +87,7 @@ def _pipeline_geo_options(geo_options: Dict[str, Any]) -> Dict[str, Any]:
     options: Dict[str, Any] = dict(geo_options)
     state_ids_path = options.pop("state_ids_path", None)
     if state_ids_path is not None:
-        with open(state_ids_path, "r", encoding="utf-8") as f:
+        with open(state_ids_path, encoding="utf-8") as f:
             state_ids = json.load(f)
         if not isinstance(state_ids, list):
             raise ValueError("geo_infer state_ids_path must point to a JSON array")
@@ -182,7 +182,7 @@ def export_single_gnn_file(gnn_file: Path, exports_dir: Path) -> Dict[str, Any]:
     """
     try:
         # Read file content
-        with open(gnn_file, "r", encoding="utf-8") as f:
+        with open(gnn_file, encoding="utf-8") as f:
             content = f.read()
 
         # Parse GNN content
@@ -726,7 +726,7 @@ def process_export(
                 parsed_model_file = file_result.get("parsed_model_file")
                 if parsed_model_file and Path(parsed_model_file).exists():
                     try:
-                        with open(parsed_model_file, "r") as f:
+                        with open(parsed_model_file) as f:
                             actual_gnn_spec = json.load(f)
                         logger.info(
                             f"Loaded parsed GNN specification from {parsed_model_file}"
@@ -1005,7 +1005,7 @@ def validate_export_outputs(
         result["missing"].append(str(manifest_path))
         return result
     try:
-        with open(manifest_path, "r", encoding="utf-8") as f:
+        with open(manifest_path, encoding="utf-8") as f:
             manifest = json.load(f)
     except Exception as e:
         result["success"] = False
