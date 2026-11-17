@@ -471,8 +471,7 @@ def test_expired_verified_cache_publication_preserves_only_finished_prefix(
 ):
     from types import SimpleNamespace
 
-    from gnn.llm import corpus_runner
-    from gnn.llm import context_admission
+    from gnn.llm import context_admission, corpus_runner
 
     root, output, _, calls, _, options = synthesis_corpus
     clock = {"now": 100.0, "puts": 0}

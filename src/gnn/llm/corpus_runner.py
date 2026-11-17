@@ -963,7 +963,11 @@ async def run_corpus(
                             return text, outcome
 
                         def validate_synthesis(
-                            plan: Any, outcome: dict[str, Any]
+                            plan: Any,
+                            outcome: dict[str, Any],
+                            *,
+                            source_content: str = content,
+                            output_label: str = label,
                         ) -> None:
                             validate_context_receipt(
                                 outcome.get("context_admission"),
@@ -973,7 +977,7 @@ async def run_corpus(
                                 native=isolated,
                             )
                             definition, _ = api._prompt_request_definition(
-                                cache_content=content,
+                                cache_content=source_content,
                                 model_name=model,
                                 messages=[api.LLMMessage(**m) for m in plan.messages],
                                 prompt_text=plan.user_prompt,
@@ -982,7 +986,7 @@ async def run_corpus(
                                 isolated=isolated,
                                 generation_options=generation_options,
                                 runtime_identity=runtime_identity,
-                                output_fields=[label],
+                                output_fields=[output_label],
                                 answer_max_chars=answer_max_chars,
                                 context_admission=True,
                                 synthesis_plan_sha256=plan.sha256,
