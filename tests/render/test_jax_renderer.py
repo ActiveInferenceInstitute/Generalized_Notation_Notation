@@ -52,68 +52,76 @@ def mod() -> Any:
         raise AssertionError("gnn.render.jax.jax_renderer not importable")
 
 
+@pytest.fixture(scope="module")
+def spec_mod() -> Any:
+    """Canonical home of the matrix-string parsers and spec extraction."""
+    import gnn.render.jax.jax_spec_extract as m
+
+    return m
+
+
 class TestParseGnnMatrixString:
-    def test_3x3_matrix_with_braces(self, mod: Any) -> Any:
-        matrix = mod._parse_gnn_matrix_string(
+    def test_3x3_matrix_with_braces(self, spec_mod: Any) -> Any:
+        matrix = spec_mod._parse_gnn_matrix_string(
             "{(0.9,0.05,0.05),(0.05,0.9,0.05),(0.05,0.05,0.9)}"
         )
         assert matrix.shape == (3, 3)
         assert abs(matrix[0, 0] - 0.9) < 1e-6
 
-    def test_returns_numpy_array(self, mod: Any) -> Any:
-        result = mod._parse_gnn_matrix_string("{(0.5,0.5)}")
+    def test_returns_numpy_array(self, spec_mod: Any) -> Any:
+        result = spec_mod._parse_gnn_matrix_string("{(0.5,0.5)}")
         assert isinstance(result, np.ndarray)
 
-    def test_invalid_returns_fallback_array(self, mod: Any) -> Any:
-        result = mod._parse_gnn_matrix_string("NOT_A_MATRIX")
+    def test_invalid_returns_fallback_array(self, spec_mod: Any) -> Any:
+        result = spec_mod._parse_gnn_matrix_string("NOT_A_MATRIX")
         assert isinstance(result, np.ndarray)
 
 
 class TestParseMatrixString:
-    def test_semicolon_separated_rows(self, mod: Any) -> Any:
-        matrix = mod._parse_matrix_string("0.9,0.1;0.1,0.9")
+    def test_semicolon_separated_rows(self, spec_mod: Any) -> Any:
+        matrix = spec_mod._parse_matrix_string("0.9,0.1;0.1,0.9")
         assert matrix.shape == (2, 2)
         assert abs(matrix[0, 0] - 0.9) < 1e-6
 
-    def test_single_row(self, mod: Any) -> Any:
-        matrix = mod._parse_matrix_string("0.5,0.3,0.2")
+    def test_single_row(self, spec_mod: Any) -> Any:
+        matrix = spec_mod._parse_matrix_string("0.5,0.3,0.2")
         assert matrix.ndim >= 1
         assert matrix.shape[-1] == 3
 
-    def test_empty_string_returns_array(self, mod: Any) -> Any:
-        result = mod._parse_matrix_string("")
+    def test_empty_string_returns_array(self, spec_mod: Any) -> Any:
+        result = spec_mod._parse_matrix_string("")
         assert isinstance(result, np.ndarray)
 
 
 class TestParseVectorString:
-    def test_basic_vector(self, mod: Any) -> Any:
-        vec = mod._parse_vector_string("0.5,0.3,0.2")
+    def test_basic_vector(self, spec_mod: Any) -> Any:
+        vec = spec_mod._parse_vector_string("0.5,0.3,0.2")
         assert vec.shape == (3,)
         assert abs(vec.sum() - 1.0) < 1e-6
 
-    def test_returns_numpy_array(self, mod: Any) -> Any:
-        result = mod._parse_vector_string("0.5,0.5")
+    def test_returns_numpy_array(self, spec_mod: Any) -> Any:
+        result = spec_mod._parse_vector_string("0.5,0.5")
         assert isinstance(result, np.ndarray)
 
-    def test_invalid_falls_back(self, mod: Any) -> Any:
-        result = mod._parse_vector_string("INVALID")
+    def test_invalid_falls_back(self, spec_mod: Any) -> Any:
+        result = spec_mod._parse_vector_string("INVALID")
         assert isinstance(result, np.ndarray)
 
 
 class TestExtractGnnMatrices:
-    def test_empty_spec_returns_dict(self, mod: Any) -> Any:
-        result = mod._extract_gnn_matrices({})
+    def test_empty_spec_returns_dict(self, spec_mod: Any) -> Any:
+        result = spec_mod._extract_gnn_matrices({})
         assert isinstance(result, dict)
 
-    def test_spec_with_parameters_returns_dict(self, mod: Any) -> Any:
+    def test_spec_with_parameters_returns_dict(self, spec_mod: Any) -> Any:
         spec: dict[str, Any] = {
             "parameters": {"A": "{(0.9,0.1),(0.1,0.9)}"},
             "state_space": {"A": {"dimensions": [2, 2], "type": "float"}},
         }
-        result = mod._extract_gnn_matrices(spec)
+        result = spec_mod._extract_gnn_matrices(spec)
         assert isinstance(result, dict)
 
-    def test_passive_pomdp_b_stays_canonical_single_action(self, mod: Any) -> Any:
+    def test_passive_pomdp_b_stays_canonical_single_action(self, spec_mod: Any) -> Any:
         spec: dict[str, Any] = {
             "model_name": "passive_chain",
             "model_parameters": {
@@ -129,12 +137,12 @@ class TestExtractGnnMatrices:
             },
         }
 
-        result = mod._extract_gnn_matrices(spec)
+        result = spec_mod._extract_gnn_matrices(spec)
 
         assert result["B"].shape == (3, 3, 1)
         np.testing.assert_allclose(result["B"][:, :, 0], np.eye(3))
 
-    def test_controlled_canonical_b_is_not_transposed(self, mod: Any) -> Any:
+    def test_controlled_canonical_b_is_not_transposed(self, spec_mod: Any) -> Any:
         b_matrix = np.zeros((3, 3, 3))
         for action in range(3):
             b_matrix[:, :, action] = np.roll(np.eye(3), action, axis=0)
@@ -154,7 +162,7 @@ class TestExtractGnnMatrices:
             },
         }
 
-        result = mod._extract_gnn_matrices(spec)
+        result = spec_mod._extract_gnn_matrices(spec)
 
         assert result["B"].shape == (3, 3, 3)
         np.testing.assert_allclose(result["B"], b_matrix)

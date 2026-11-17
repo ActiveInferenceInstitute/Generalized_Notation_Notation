@@ -598,7 +598,7 @@ def process_gnn_ontology(
         if not file_path.exists():
             return {"success": False, "error": f"File not found: {gnn_file}"}
 
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         analysis = analyze_ontology_content(content, ontology_terms)
@@ -753,7 +753,7 @@ def load_defined_ontology_terms(
                 )
             continue
         try:
-            with open(ontology_file, "r", encoding="utf-8") as f:
+            with open(ontology_file, encoding="utf-8") as f:
                 data = json.load(f)
             terms = _normalise_ontology_terms(data)
             logger.info(

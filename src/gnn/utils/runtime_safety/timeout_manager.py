@@ -9,6 +9,7 @@ retry strategies and graceful degradation.
 
 import asyncio
 import functools
+import inspect
 import logging
 import signal
 import subprocess  # nosec B404
@@ -268,7 +269,7 @@ class TimeoutManager:
                 result.total_time = time.time() - start_time
                 return result
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 result.timed_out = True
                 result.error = f"Operation timed out after {current_timeout:.1f}s"
 
@@ -316,7 +317,7 @@ class TimeoutManager:
         ):
             try:
                 self.logger.info(f"Using graceful recovery for {operation_name}")
-                if asyncio.iscoroutinefunction(config.graceful_fallback):
+                if inspect.iscoroutinefunction(config.graceful_fallback):
                     fallback_result = await config.graceful_fallback(*args, **kwargs)
                 else:
                     fallback_result = config.graceful_fallback(*args, **kwargs)

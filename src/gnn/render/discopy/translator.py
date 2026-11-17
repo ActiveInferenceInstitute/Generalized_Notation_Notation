@@ -6,9 +6,9 @@ and convert them into DisCoPy diagrams.
 
 Mechanical split facade: implementations live in ``bootstrap``,
 ``gnn_parsing``, ``diagram_builders``, ``matrix_builders``,
-``file_translation``, and ``code_templates`` sibling modules; every
-previously public and private name is re-exported here so consumer
-import paths are unchanged. The standalone __main__ smoke harness is
+``file_translation``, and ``code_templates`` sibling modules. Only the
+names this module uses are imported; availability and setup reporting
+(``check_discopy_availability`` and friends) live in ``bootstrap``. The standalone __main__ smoke harness is
 retained as a diagnostic. The file-level JAX-backed MatrixDiagram utility
 is experimental and unsupported for numerical evaluation; see the sibling
 README support boundary. Abstract tensor diagrams and the supported package
@@ -23,34 +23,10 @@ import numpy
 from .bootstrap import (
     DISCOPY_MATRIX_MODULE_AVAILABLE,
     JAX_AVAILABLE,
-    JAX_CORE_AVAILABLE,
     TENSOR_COMPONENTS_AVAILABLE,
     TY_AVAILABLE,
-    Box,
-    Cap,
-    Cup,
-    Diagram,
-    Dim,
-    DisCoPySetupError,
-    Functor,
-    Id,
-    Matrix,
-    Spider,
-    Swap,
-    Ty,
-    Word,
-    _discopy_initialized,
-    check_discopy_availability,
-    create_discopy_error_report,
     discopy_backend,
-    generate_setup_report,
-    initialize_discopy_components,
-    jax,
     jnp,
-)
-from .code_templates import (
-    gnn_spec_to_discopy_code,
-    gnn_spec_to_discopy_jax_code,
 )
 from .diagram_builders import (
     gnn_connections_to_discopy_diagram,
@@ -61,12 +37,7 @@ from .file_translation import (
     gnn_file_to_discopy_matrix_diagram,
 )
 from .gnn_parsing import (
-    _convert_json_to_complex_array,
-    _parse_dims_str,
     parse_gnn_content,
-)
-from .matrix_builders import (
-    gnn_connections_to_discopy_matrix_diagram,
 )
 
 logger = logging.getLogger(__name__)

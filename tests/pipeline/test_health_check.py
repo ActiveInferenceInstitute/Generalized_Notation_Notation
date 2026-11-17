@@ -259,7 +259,7 @@ def test_pipeline_integration_partial_on_probe_failure(
     target is the module-local name, not the canonical ``gnn.pipeline.config``.
     """
 
-    def boom(*args: Any, **kwargs: Any) -> "dict[str, Any]":
+    def boom(*args: Any, **kwargs: Any) -> dict[str, Any]:
         raise RuntimeError("probe failure")
 
     monkeypatch.setattr(health_check_module, "get_pipeline_config", boom)
@@ -315,7 +315,7 @@ def test_calculate_overall_health_scoring_tiers() -> None:
 
 
 def test_main_exit_code_maps_rating_to_status(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: "Any"
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:
     """main() returns 0 for good/excellent, 1 for fair, 2 for poor; --json
     emits a JSON document to stdout."""
@@ -377,7 +377,7 @@ def test_optional_dependencies_julia_timeout_is_missing(
 
 
 def test_pipeline_structure_detects_scripts_and_module_dirs(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: "Path"
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """The structure check resolves both ``{step}_*.py`` scripts and
     ``{step}_*/`` module directories; a full script set plus one module
@@ -532,7 +532,7 @@ def test_main_good_rating_exits_zero_with_summary_output(
 
 
 def test_main_output_file_writes_json_report(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: "Path"
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """--output-file serialises the full report to disk as JSON."""
     import io
@@ -564,12 +564,12 @@ def test_verbose_flag_controls_report_printing(
     verbose is requested, and returns the check results either way."""
 
     class _FakeChecker:
-        calls: "list[bool]" = []
+        calls: list[bool] = []
 
         def __init__(self, verbose: bool = False) -> None:
             self.verbose = verbose
 
-        def run_enhanced_health_check(self) -> "dict[str, Any]":
+        def run_enhanced_health_check(self) -> dict[str, Any]:
             return {"health_score": {"rating": "good", "score": 86.5}}
 
         def print_enhanced_report(self) -> None:
@@ -592,8 +592,8 @@ def test_print_enhanced_report_logs_rating_and_recommendations() -> None:
 
     class _Recorder:
         def __init__(self) -> None:
-            self.infos: "list[str]" = []
-            self.warnings: "list[str]" = []
+            self.infos: list[str] = []
+            self.warnings: list[str] = []
 
         def info(self, msg: Any) -> None:
             self.infos.append(str(msg))

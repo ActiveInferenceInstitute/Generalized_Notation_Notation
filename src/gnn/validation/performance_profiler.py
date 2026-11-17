@@ -327,7 +327,7 @@ def profile_performance(
             model_path_str = str(model_path)
 
             # Read model content
-            with open(model_path, "r", encoding="utf-8") as f:
+            with open(model_path, encoding="utf-8") as f:
                 content = f.read()
 
         # Performance profiling

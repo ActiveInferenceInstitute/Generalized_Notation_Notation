@@ -268,7 +268,7 @@ def create_trace_reconstruction(csv_path: Path, output_dir: Path) -> List[str]:
     # Parse CSV (has comment header lines starting with #)
     steps, observations, actions, belief_s1 = [], [], [], []
     try:
-        with open(csv_path, "r") as f:
+        with open(csv_path) as f:
             for line_number, line in enumerate(f, start=1):
                 line = line.strip()
                 if not line or line.startswith("#"):
@@ -360,7 +360,7 @@ def create_model_matrix_heatmaps(param_path: Path, output_dir: Path) -> List[str
         return []
 
     try:
-        with open(param_path, "r") as f:
+        with open(param_path) as f:
             params = json.load(f)
     except Exception as e:
         logger.warning(f"Failed to load model parameters: {e}")

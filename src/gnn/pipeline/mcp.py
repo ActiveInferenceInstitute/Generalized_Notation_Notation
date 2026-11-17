@@ -87,7 +87,7 @@ def get_pipeline_status(mcp_instance_ref: Any) -> Dict[str, Any]:
         for summary_file in summary_candidates:
             if summary_file.exists():
                 try:
-                    with open(summary_file, "r") as f:
+                    with open(summary_file) as f:
                         summary = json.load(f)
                     break
                 except (json.JSONDecodeError, OSError) as e:

@@ -177,7 +177,7 @@ class DisCoPyRenderer:
         """
         try:
             # Read GNN file
-            with open(gnn_file_path, "r", encoding="utf-8") as f:
+            with open(gnn_file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Parse GNN content (simplified for now)

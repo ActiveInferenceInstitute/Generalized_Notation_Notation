@@ -166,7 +166,7 @@ def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None
         )
     )
     job = workflow["jobs"]["geo-infer-interchange"]
-    assert job["strategy"]["matrix"]["python"] == ["3.11", "3.12"]
+    assert job["strategy"]["matrix"]["python"] == ["3.12"]
     uv_requirement = tomllib.loads((ROOT / "uv.toml").read_text())["required-version"]
     # uv.toml declares a floor with a minor ceiling (>=0.13.6,<0.14); the hosted
     # pin stays exact and must satisfy it.
@@ -194,7 +194,13 @@ def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None
                 assert step["working-directory"] == "gnn"
                 assert active_uv == expected_versions["gnn"]
                 assert _satisfies(active_uv, uv_requirement)
-                assert command[2:5] == ["--frozen", "--no-sync", "--python"]
+                assert command[2:6] == [
+                    "--frozen",
+                    "--no-sync",
+                    "--python",
+                    "$GNN_PYTHON",
+                ]
+                assert step["env"]["GNN_PYTHON"] == "${{ matrix.python }}"
                 qualification_checked = True
     assert setup_versions == ["0.13.1", expected_versions["gnn"]]
     assert list(installs) == ["geo-infer", "gnn"]
@@ -206,7 +212,7 @@ def test_workflow_installs_each_repository_with_its_exact_uv_toolchain() -> None
         "gnn",
         "--locked",
         "--python",
-        "3.11",
+        "$GNN_PYTHON",
         "--extra",
         "dev",
         "--extra",

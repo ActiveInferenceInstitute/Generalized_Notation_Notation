@@ -39,7 +39,7 @@ class GUIWebSocketMessage:
         return json.dumps(data, sort_keys=True)
 
     @classmethod
-    def from_json(cls, raw: str) -> "GUIWebSocketMessage":
+    def from_json(cls, raw: str) -> GUIWebSocketMessage:
         """Parse and validate a JSON message."""
         data = json.loads(raw)
         if not isinstance(data, dict):

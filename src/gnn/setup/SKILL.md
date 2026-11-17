@@ -54,7 +54,7 @@ installed `Provides-Extra` metadata, with a source-manifest fallback;
 
 ## Environment Requirements
 
-- **Python**: `>=3.11,<3.15`; default 3.14.8, with named compatibility profiles in the root README
+- **Python**: `>=3.12,<3.15`; default 3.14.8, with named compatibility profiles in the root README
 - **Package manager**: uv 0.13.6 (required by `uv.toml`)
 - **Core deps**: the scientific/backend/client requirements in `pyproject.toml`; the frozen lock selects their versions
 

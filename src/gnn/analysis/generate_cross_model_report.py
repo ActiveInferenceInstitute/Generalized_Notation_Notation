@@ -55,7 +55,7 @@ def _collect_simulation_data(
 
     for sim_file in sorted(execution_dir.rglob("*simulation_results.json")):
         try:
-            with open(sim_file, "r") as f:
+            with open(sim_file) as f:
                 result = json.load(f)
 
             # Determine framework from path parts
@@ -106,7 +106,7 @@ def _collect_execution_times(
         return times
 
     try:
-        with open(summary_file, "r") as f:
+        with open(summary_file) as f:
             summary = json.load(f)
 
         for entry in summary.get("execution_results", summary.get("results", [])):

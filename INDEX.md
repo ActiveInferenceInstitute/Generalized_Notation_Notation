@@ -25,7 +25,7 @@ count. `just test` runs the default pytest selection; `just test-cov` reports
 coverage against the same floor.
 
 [.github/workflows/ci.yml](.github/workflows/ci.yml) runs the same surfaces as
-the `quality (3.12)` and `pytest (3.12)` arms, plus the Python 3.11/3.13/3.14
+the `quality (3.12)` and `pytest (3.12)` arms, plus the Python 3.13/3.14
 test matrix.
 
 ## Root documents

@@ -390,7 +390,7 @@ def extract_pymdp_data_from_files(
             if results_files:
                 results_file = results_files[0]
                 try:
-                    with open(results_file, "r") as f:
+                    with open(results_file) as f:
                         results = json.load(f)
 
                     # Extract beliefs, actions, observations
@@ -437,7 +437,7 @@ def extract_pymdp_like_data_from_files(
             if results_files:
                 results_file = results_files[0]
                 try:
-                    with open(results_file, "r") as f:
+                    with open(results_file) as f:
                         results = json.load(f)
                     for key in (
                         "schema_version",
@@ -472,7 +472,7 @@ def extract_rxinfer_data_from_files(
             results_files = list(sim_data_dir.glob("*simulation_results.json"))
             if results_files:
                 results_file = results_files[0]
-                with open(results_file, "r", encoding="utf-8") as f:
+                with open(results_file, encoding="utf-8") as f:
                     results = json.load(f)
                 from gnn.analysis.result_adapter import structured_result_data
 
@@ -488,7 +488,7 @@ def extract_rxinfer_data_from_files(
             json_files = list(data_dir.glob("*.json"))
             for json_file in json_files:
                 try:
-                    with open(json_file, "r") as f:
+                    with open(json_file) as f:
                         inference_data = json.load(f)
                         if "posterior" in inference_data:
                             data["posterior"] = inference_data["posterior"]
@@ -531,7 +531,7 @@ def extract_activeinference_jl_data_from_files(
             params_file = latest_output / "model_parameters.json"
             if params_file.exists():
                 try:
-                    with open(params_file, "r") as f:
+                    with open(params_file) as f:
                         params = json.load(f)
                         data["model_name"] = params.get("model_name")
                         data["n_states"] = params.get("n_states")
@@ -548,7 +548,7 @@ def extract_activeinference_jl_data_from_files(
                 try:
                     import csv
 
-                    with open(results_csv, "r") as f:
+                    with open(results_csv) as f:
                         reader = csv.DictReader(f)
                         rows = list(reader)
                         if rows:
@@ -576,7 +576,7 @@ def extract_activeinference_jl_data_from_files(
             summary_file = latest_output / "summary.txt"
             if summary_file.exists():
                 try:
-                    with open(summary_file, "r") as f:
+                    with open(summary_file) as f:
                         summary_text = f.read()
                         data["validation_passed"] = "PASSED" in summary_text
                         logger.debug(f"Read summary from {summary_file}")
@@ -597,7 +597,7 @@ def extract_activeinference_jl_data_from_files(
             )
             for json_file in json_files:
                 try:
-                    with open(json_file, "r") as f:
+                    with open(json_file) as f:
                         sim_data = json.load(f)
                         for key in (
                             "schema_version",
@@ -660,7 +660,7 @@ def extract_discopy_data_from_files(
                 )
                 for json_file in json_files:
                     try:
-                        with open(json_file, "r") as f:
+                        with open(json_file) as f:
                             circuit_data = json.load(f)
                             if "circuit" in circuit_data:
                                 data["circuit"] = circuit_data["circuit"]

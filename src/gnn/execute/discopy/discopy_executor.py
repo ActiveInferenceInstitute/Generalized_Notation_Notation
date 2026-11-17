@@ -108,7 +108,7 @@ def execute_discopy_script(
 
     # Validate Python syntax before execution
     try:
-        with open(script_path, "r") as f:
+        with open(script_path) as f:
             content = f.read()
         compile(content, script_path.name, "exec")
         logger.debug(f"✅ Script syntax valid: {script_path.name}")

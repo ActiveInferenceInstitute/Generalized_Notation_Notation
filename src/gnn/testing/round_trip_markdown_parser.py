@@ -15,9 +15,7 @@ from typing import (
     List,
 )
 
-from gnn.parsers.common import canonical_section_heading
-
-from .round_trip_availability import GNNInternalRepresentation
+from gnn.parsers.common import GNNInternalRepresentation, canonical_section_heading
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +25,7 @@ class _DirectMarkdownParser:
 
     def parse_file(self, file_path: Path) -> "GNNInternalRepresentation":
         """Parse a GNN markdown file directly."""
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
         return self.parse_content(content)
 

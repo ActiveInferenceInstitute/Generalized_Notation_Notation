@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
-- **Python `>=3.11,<3.15`** installed (default 3.14.8; see the root README for named compatibility exceptions)
+- **Python `>=3.12,<3.15`** installed (default 3.14.8; see the root README for named compatibility exceptions)
 - **uv `>=0.13.6,<0.14`** installed. CI pins 0.13.6. See the
   [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
@@ -150,9 +150,8 @@ with `uv sync --extra <group>` or together with `uv sync --all-extras`):
 
 ### 14. **ngclearn** - Experimental Neural Simulation
 
-- **Packages**: `ngclearn`, `ngcsimlib` on Python >=3.12.
-- **Installation**: `uv sync --extra ngclearn`; its requirements are inactive
-  on Python 3.11, so that interpreter does not establish ngclearn readiness.
+- **Packages**: `ngclearn`, `ngcsimlib` (Python >=3.12, the package floor).
+- **Installation**: `uv sync --extra ngclearn`.
 
 ### 15. **geo-infer** - Geospatial Indexing
 
@@ -303,7 +302,7 @@ constraints. Notable floors as of 2026-10-20:
 
 ### Core Dependencies
 
-- Python: 3.11+ (`>=3.11,<3.15`)
+- Python: 3.12+ (`>=3.12,<3.15`)
 - `inferactively-pymdp>=1.0.5` on every supported Python (JAX-first rewrite; 1.0.5 lifts the `jax<0.11.1` cap that split 1.0.4/1.0.3 by interpreter)
 - `jax[cpu]>=0.7.0,<0.13`, `jaxlib>=0.7.0,<0.13`, `flax`, `optax`, `numpyro>=0.22` (0.22 carries the jax 0.11 compatibility fix)
 - `pillow>=13.0.0` and `aiohttp>=3.14.4` (lock: 13.0.0 and 3.14.5).

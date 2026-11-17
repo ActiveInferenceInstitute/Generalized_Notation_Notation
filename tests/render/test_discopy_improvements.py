@@ -9,10 +9,12 @@ from pathlib import Path
 import pytest
 
 from gnn.render.discopy import file_translation
-from gnn.render.discopy.translator import (
+from gnn.render.discopy.bootstrap import (
     check_discopy_availability,
     create_discopy_error_report,
     generate_setup_report,
+)
+from gnn.render.discopy.translator import (
     gnn_file_to_discopy_diagram,
     gnn_file_to_discopy_matrix_diagram,
 )

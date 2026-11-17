@@ -115,7 +115,7 @@ class TestReportIntegration:
 
         generator = ReportGenerator()
         gnn_file = list(sample_gnn_files.values())[0]
-        with open(gnn_file, "r") as f:
+        with open(gnn_file) as f:
             gnn_content = f.read()
         result = generator.generate_report({"gnn_content": gnn_content})
         assert result is not None

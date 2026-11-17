@@ -42,7 +42,7 @@ class JSONGNNParser(BaseGNNParser):
     def parse_file(self, file_path: str) -> ParseResult:
         """Parse a JSON file containing GNN specifications."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             return self._parse_json_data(data)

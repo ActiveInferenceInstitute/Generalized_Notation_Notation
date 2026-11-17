@@ -329,7 +329,7 @@ uv run --extra dev python -m pytest tests/
 
 ```dockerfile
 # Dockerfile example
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 COPY . /app

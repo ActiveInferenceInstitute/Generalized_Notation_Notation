@@ -27,7 +27,7 @@ class TestMLIntegrationOverall:
         results_file = output_dir / "ml_integration_results.json"
         assert results_file.exists()
 
-        with open(results_file, "r") as f:
+        with open(results_file) as f:
             data = json.load(f)
 
         assert data["status"] == "completed"
@@ -58,6 +58,6 @@ class TestMLIntegrationOverall:
 
         results_file = output_dir / "ml_integration_results.json"
         assert results_file.exists()
-        with open(results_file, "r") as f:
+        with open(results_file) as f:
             data = json.load(f)
         assert len(data["models_trained"]) == 0

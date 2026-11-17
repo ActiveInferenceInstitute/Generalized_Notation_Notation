@@ -45,7 +45,7 @@ never allocated. The script resolves the repository root via
 
 The renderer expects `gnn_spec` as a parsed dictionary, typically produced by earlier pipeline steps.
 
-It supports multiple internal shapes for extracting \(A, B, C, D\) via `jax_renderer._extract_gnn_matrices`, including:
+It supports multiple internal shapes for extracting \(A, B, C, D\) via `jax_spec_extract._extract_gnn_matrices`, including:
 
 - POMDP-extractor style dicts with `model_parameters` and `initialparameterization`
 - JSON export style dicts with `statespaceblock` and `raw_sections["InitialParameterization"]`
@@ -111,7 +111,7 @@ Step 11 may place these scripts under:
 
 ### Module runtime (render-time)
 
-- Python: **3.11+** (repo policy)
+- Python: **3.12+** (repo policy)
 - `numpy`
 
 ### Generated script runtime

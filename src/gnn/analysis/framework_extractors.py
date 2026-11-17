@@ -128,7 +128,7 @@ def extract_pymdp_data(execution_result: Dict[str, Any]) -> Dict[str, Any]:
                     logger.info(
                         f"Reading PyMDP simulation data from {results_files[0].name}"
                     )
-                    with open(results_files[0], "r") as f:
+                    with open(results_files[0]) as f:
                         payload = json.load(f)
 
             # Count visualizations
@@ -231,7 +231,7 @@ def extract_rxinfer_data(execution_result: Dict[str, Any]) -> Dict[str, Any]:
 
             if results_file:
                 logger.info(f"Reading RxInfer simulation data from {results_file.name}")
-                with open(results_file, "r") as f:
+                with open(results_file) as f:
                     file_data = json.load(f)
                     if "beliefs" in file_data:
                         simulation_data["beliefs"] = file_data["beliefs"]
@@ -330,7 +330,7 @@ def extract_activeinference_jl_data(execution_result: Dict[str, Any]) -> Dict[st
                     actions: list[Any] = []
                     beliefs: list[Any] = []
 
-                    with open(results_file, "r") as f:
+                    with open(results_file) as f:
                         # Skip comments
                         lines = [line for line in f if not line.startswith("#")]
 
@@ -382,7 +382,7 @@ def extract_activeinference_jl_data(execution_result: Dict[str, Any]) -> Dict[st
                     results_files = list(sim_data_dir.glob("*simulation_results.json"))
                     for rf in results_files:
                         try:
-                            with open(rf, "r") as f:
+                            with open(rf) as f:
                                 file_data = json.load(f)
                             if "beliefs" in file_data:
                                 simulation_data["beliefs"] = file_data["beliefs"]
@@ -578,7 +578,7 @@ def extract_discopy_data(execution_result: Dict[str, Any]) -> Dict[str, Any]:
 
             for report_file in possible_reports:
                 if report_file.exists():
-                    with open(report_file, "r") as f:
+                    with open(report_file) as f:
                         report_data = json.load(f)
 
                         # Use analysis summary to populate data

@@ -213,7 +213,7 @@ class TestExecutePOMDP:
         safe_json_dump(results, output_file)
         assert output_file.exists()
 
-        with open(output_file, "r") as f:
+        with open(output_file) as f:
             loaded = json.load(f)
         assert "observations" in loaded
         assert "actions" in loaded

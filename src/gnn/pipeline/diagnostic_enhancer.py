@@ -59,7 +59,7 @@ class PipelineDiagnosticEnhancer:
             Enhanced summary dictionary with diagnostic insights
         """
         try:
-            with open(summary_path, "r") as f:
+            with open(summary_path) as f:
                 summary = json.load(f)
 
             # Add diagnostic analysis

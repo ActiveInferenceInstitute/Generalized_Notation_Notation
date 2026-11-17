@@ -249,7 +249,7 @@ def test_exhaustion_preserves_full_structural_coverage_and_partial_receipt(
         async def get_response(self, **_: Any) -> Any:
             events.append("request")
             clock["now"] += budget + 1
-            raise asyncio.TimeoutError("controlled corpus exhaustion")
+            raise TimeoutError("controlled corpus exhaustion")
 
         async def close(self) -> None:
             pass

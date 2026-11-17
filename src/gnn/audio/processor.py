@@ -390,7 +390,7 @@ def generate_audio_from_gnn(
             file_path = Path("gnn_input.md")
         else:
             file_path = Path(file_path_or_content)
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 content = f.read()
 
         # Extract model structure for audio generation
@@ -595,7 +595,7 @@ def create_sonification(
     """Create sonification of the GNN model."""
     try:
         file_path = Path(file_path)
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         # Extract model dynamics

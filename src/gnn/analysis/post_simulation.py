@@ -148,7 +148,7 @@ def analyze_execution_results(
 
         for result_file in result_files:
             try:
-                with open(result_file, "r") as f:
+                with open(result_file) as f:
                     result_data = json.load(f)
 
                 framework = result_data.get("framework", "unknown")
@@ -228,7 +228,7 @@ def analyze_execution_results(
                                         )
                                         for results_file in results_files:
                                             try:
-                                                with open(results_file, "r") as f:
+                                                with open(results_file) as f:
                                                     file_data = json.load(f)
                                                     if isinstance(file_data, dict):
                                                         if (

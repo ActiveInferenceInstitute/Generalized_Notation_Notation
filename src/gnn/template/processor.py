@@ -419,7 +419,7 @@ def process_single_file(
         logger.debug(f"Processing file: {input_file}")
 
         # Read file content
-        with open(input_file, "r", encoding="utf-8") as f:
+        with open(input_file, encoding="utf-8") as f:
             content = f.read()
 
         # Create file-specific output directory
@@ -496,7 +496,7 @@ def validate_file(input_file: Path) -> Dict[str, Any]:
 
         # Read file content for validation
         try:
-            with open(input_file, "r", encoding="utf-8") as f:
+            with open(input_file, encoding="utf-8") as f:
                 f.read(1024)  # Read first 1KB for validation
         except Exception as e:
             return {

@@ -35,9 +35,11 @@ jobs:
       contents: read
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 4
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        # Every event covers the supported range: the 3.12 floor, 3.13 and the
+        # default 3.14 runtime.
+        python-version: ["3.12", "3.13", "3.14"]
     env:
       UV_PYTHON: ${{ matrix.python-version }}
       NATIVE_COVERAGE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}

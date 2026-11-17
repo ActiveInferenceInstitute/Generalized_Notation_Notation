@@ -425,7 +425,7 @@ class TestDiskIOPerformance:
         model_file = create_model_file("medium")
 
         # Read the model file content and create model data
-        with open(model_file, "r") as f:
+        with open(model_file) as f:
             model_content = f.read()
 
         # Create model data dictionary

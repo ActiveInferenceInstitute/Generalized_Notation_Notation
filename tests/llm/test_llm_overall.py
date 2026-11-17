@@ -114,7 +114,7 @@ class TestLLMIntegration:
 
         processor = LLMProcessor()
         gnn_file = list(sample_gnn_files.values())[0]
-        with open(gnn_file, "r") as f:
+        with open(gnn_file) as f:
             gnn_content = f.read()
         result = processor.analyze_model({"content": gnn_content})
         assert result is not None

@@ -501,7 +501,7 @@ class GNNTypeChecker:
         """
         if content is None:
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read()
             except Exception as e:
                 return self._invalid_file_result(file_path, str(e))
@@ -639,7 +639,7 @@ class GNNTypeChecker:
         """
         try:
             if content is None:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read()
 
             types_found = extract_types_from_content(content)

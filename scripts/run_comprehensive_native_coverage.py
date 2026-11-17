@@ -684,7 +684,7 @@ def main() -> int:
     parser.add_argument("--checkout", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
-        "--python-version", choices=("3.11", "3.12", "3.13"), required=True
+        "--python-version", choices=("3.12", "3.13", "3.14"), required=True
     )
     parser.add_argument("--lane", choices=tuple(LANES), action="append")
     parser.add_argument(

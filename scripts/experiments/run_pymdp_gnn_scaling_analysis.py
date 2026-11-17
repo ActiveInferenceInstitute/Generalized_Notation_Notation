@@ -32,7 +32,7 @@ import sys
 import tempfile
 import time
 from contextlib import suppress
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -420,7 +420,7 @@ def _build_run_manifest(
     return {
         "schema_version": RUN_MANIFEST_SCHEMA,
         "status": status,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(UTC).isoformat(),
         "producer": {
             "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "generator_sha256": hashlib.sha256(
@@ -691,7 +691,7 @@ def _load_and_validate_config() -> dict:
         return default_config
 
     try:
-        with open(CONFIG_FILE, "r") as f:
+        with open(CONFIG_FILE) as f:
             config = yaml.safe_load(f)
             if not isinstance(config, dict):
                 config = {}
@@ -1007,7 +1007,7 @@ def _run_factorized_sweep(args: argparse.Namespace) -> int:
         "joint_state_space_size": joint_size,
         "backend": "jax-mean-field",
         "executor": "gnn.execute.jax.kronecker_executor.execute_kronecker_factorized",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "runs": runs,
     }
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
@@ -1018,7 +1018,7 @@ def _run_factorized_sweep(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
-    start_time = datetime.now(timezone.utc)
+    start_time = datetime.now(UTC)
     config = _load_and_validate_config()
     parser = _get_parser(config)
     args = parser.parse_args()
@@ -1223,7 +1223,7 @@ def main() -> int:
                 return e.returncode
 
         # 4. Completion
-        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+        duration = (datetime.now(UTC) - start_time).total_seconds()
         _write_run_manifest(
             pipeline_output_dir,
             _build_run_manifest(

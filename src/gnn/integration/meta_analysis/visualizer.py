@@ -16,9 +16,9 @@ Fixes and improvements over v1:
 - CSV plaintext export alongside every visualization
 
 Mechanical split facade: plotting methods live in ``visualizer_*`` sibling
-modules as mixins of ``SweepVisualizer``; every previously module-level
-name is re-exported here so consumer import paths (and the
-``_MPL_AVAILABLE`` monkeypatch target) are unchanged.
+modules as mixins of ``SweepVisualizer``. Shared style state lives in
+``visualizer_style``; ``_MPL_AVAILABLE`` stays importable here as the
+monkeypatch target.
 """
 
 from __future__ import annotations
@@ -32,19 +32,7 @@ from .visualizer_export import SweepExportMixin
 from .visualizer_metric_plots import SweepMetricPlotMixin
 from .visualizer_runtime_plots import SweepRuntimePlotMixin
 from .visualizer_style import (
-    _FRAMEWORK_COLORS,
     _MPL_AVAILABLE,
-    _STYLE,
-    Axes3D,
-    _add_watermark,
-    _fmt_time,
-    _get_color,
-    matplotlib,
-    mcolors,
-    mticker,
-    np,
-    os,
-    plt,
 )
 from .visualizer_summary_plots import SweepSummaryPlotMixin
 

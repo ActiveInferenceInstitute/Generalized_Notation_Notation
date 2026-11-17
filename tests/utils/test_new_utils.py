@@ -33,7 +33,7 @@ class TestStepLogging:
 
     def test_setup_step_logging_returns_logger(self) -> None:
         """Test that setup_step_logging returns a logger."""
-        from gnn.utils.logging.logging_utils import setup_step_logging
+        from gnn.utils.logging_utils import setup_step_logging
 
         logger = setup_step_logging("test_step")
         assert isinstance(logger, logging.Logger)
@@ -41,7 +41,7 @@ class TestStepLogging:
 
     def test_setup_step_logging_verbose(self) -> None:
         """Test verbose mode sets DEBUG level."""
-        from gnn.utils.logging.logging_utils import setup_step_logging
+        from gnn.utils.logging_utils import setup_step_logging
 
         logger = setup_step_logging("test_verbose", verbose=True)
         assert logger.getEffectiveLevel() <= logging.DEBUG
@@ -147,7 +147,7 @@ class TestBaseProcessor:
             (tmppath / "test3.txt").write_text("Not markdown")
             files = processor.find_files(tmppath, extensions=[".md"])
             assert len(files) == 2
-            assert all((f.suffix == ".md" for f in files))
+            assert all(f.suffix == ".md" for f in files)
 
 
 class TestModuleIntegration:

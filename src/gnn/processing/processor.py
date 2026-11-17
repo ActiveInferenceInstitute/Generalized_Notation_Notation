@@ -300,7 +300,7 @@ def parse_gnn_file(
 
     try:
         if content is None:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
         # Extract basic information
@@ -362,7 +362,7 @@ def check_gnn_file_structure(
 
     try:
         if content is None:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
         return _check_content_structure(

@@ -40,7 +40,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.12", "3.14"]
+        python: ["3.12", "3.14"]
     env:
       UV_PYTHON: ${{ matrix.python }}
       UV_PROJECT_ENVIRONMENT: ${{ github.workspace }}/fep-lean/.venv

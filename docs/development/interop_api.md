@@ -1,7 +1,7 @@
 # Typed models and API consumer contract
 
 The distribution is `generalized-notation-notation`; [pyproject.toml](../../pyproject.toml)
-is authoritative for its version (`5.1.0`), its Python floor (`>=3.11,<3.15`) and its
+is authoritative for its version (`5.1.0`), its Python floor (`>=3.12,<3.15`) and its
 only console script (`gnn = gnn.cli:main`). `gnn.__version__` mirrors the pyproject
 version, and `gnn.api.MODULE_VERSION` re-exports it. Other version strings in the tree
 — for example the LSP fallback's `serverInfo` block — are separate identities and do
@@ -125,7 +125,7 @@ string does not hide it.
 
 ## Version limits
 
-- Python `>=3.11,<3.15`, declared once in [pyproject.toml](../../pyproject.toml).
+- Python `>=3.12,<3.15`, declared once in [pyproject.toml](../../pyproject.toml).
 - uv `>=0.13.6,<0.14` ([uv.toml](../../uv.toml) `required-version`); CI and the
   Dockerfile install the exact `0.13.6`.
 - The HTTP surfaces are an optional group; install the `api` extra before importing

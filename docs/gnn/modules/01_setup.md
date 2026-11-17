@@ -184,7 +184,7 @@ graph TD
 
 ### Required Dependencies
 - `uv` - Python package manager (required, native commands used)
-- `python` - Python interpreter (>=3.11, <3.15 per `pyproject.toml`; native acceptance depends on the selected environment)
+- `python` - Python interpreter (>=3.12, <3.15 per `pyproject.toml`; native acceptance depends on the selected environment)
 - `pyproject.toml` - Project dependencies configuration
 
 ### Optional Dependencies
@@ -200,7 +200,7 @@ graph TD
 ### Environment Settings
 ```python
 UV_CONFIG = {
-    "python_version": "3.11",
+    "python_version": "3.14",
     "environment_name": "gnn-pipeline",
     "dependency_source": "pyproject.toml",  # Primary source
     "lock_file": "uv.lock",  # Dependency lock file
@@ -213,7 +213,7 @@ UV_CONFIG = {
 ### System Requirements
 ```python
 SYSTEM_REQUIREMENTS = {
-    "python_version_min": "3.11",
+    "python_version_min": "3.12",
     "memory_min_gb": 4,
     "disk_space_min_gb": 2,
     "cpu_cores_min": 2,

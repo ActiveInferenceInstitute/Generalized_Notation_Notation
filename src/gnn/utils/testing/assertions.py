@@ -16,7 +16,7 @@ def assert_file_exists(file_path: Path, message: str = "") -> None:
 def assert_valid_json(file_path: Path) -> None:
     """Assert that a file contains valid JSON."""
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             json.load(f)
     except (json.JSONDecodeError, FileNotFoundError) as e:
         raise AssertionError(

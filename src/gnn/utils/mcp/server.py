@@ -157,20 +157,18 @@ def get_environment_info(mcp_instance_ref: Any) -> Dict[str, Any]:
             env_vars[key] = value
 
         # Python packages
-        try:
-            import pkg_resources
+        # importlib.metadata enumerates installed distributions (pkg_resources is retired).
+        from importlib import metadata
 
-            installed_packages: list[Any] = []
-            for dist in pkg_resources.working_set:
-                installed_packages.append(
-                    {
-                        "name": dist.project_name,
-                        "version": dist.version,
-                        "location": dist.location,
-                    }
-                )
-        except ImportError:
-            installed_packages = []
+        installed_packages: list[Any] = []
+        for dist in metadata.distributions():
+            installed_packages.append(
+                {
+                    "name": dist.metadata["Name"],
+                    "version": dist.version,
+                    "location": str(dist.locate_file("")),
+                }
+            )
 
         # Working directory and paths
         current_dir = Path.cwd()

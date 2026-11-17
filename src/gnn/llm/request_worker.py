@@ -47,7 +47,7 @@ async def isolated_request(**payload: Any) -> LLMResponse:
         raise
     if not envelope["success"]:
         if envelope.get("error_type") == "TimeoutExpired":
-            raise asyncio.TimeoutError
+            raise TimeoutError
         try:
             diagnostic = json.loads(envelope.get("stdout", ""))
         except (ValueError, TypeError):
@@ -56,7 +56,7 @@ async def isolated_request(**payload: Any) -> LLMResponse:
         if category == "authentication":
             raise RuntimeError(f"{payload['provider']}: 401 authentication failed")
         if category == "timeout":
-            raise asyncio.TimeoutError
+            raise TimeoutError
         if category == "runtime_changed":
             from .providers.ollama_provider import RuntimeIdentityChanged
 
@@ -80,7 +80,7 @@ async def isolated_request(**payload: Any) -> LLMResponse:
 
     def verify_remaining() -> None:
         if time.monotonic() >= request_deadline:
-            raise asyncio.TimeoutError
+            raise TimeoutError
 
     verify_remaining()
     response = json.loads(envelope["stdout"])

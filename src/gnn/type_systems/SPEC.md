@@ -13,5 +13,5 @@ These support documentation and cross-language alignment; the production parser 
 
 ## Requirements
 
-- **Python** >= 3.11 for repository tooling that ships alongside this repo (see `pyproject.toml`).
+- **Python** >= 3.12 for repository tooling that ships alongside this repo (see `pyproject.toml`).
 - Scala / Haskell artifacts assume their respective toolchains when type-checking outside Python.

@@ -5,7 +5,7 @@ render framework-specific code, execute admitted models and inspect the evidence
 
 [![Version: 5.1.0](https://img.shields.io/badge/version-5.1.0-00a6b8.svg)](../CHANGELOG.md#510---2026-11-12)
 [![CI](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/workflows/ci.yml)
-[![CI Python: 3.11–3.14](https://img.shields.io/badge/CI%20Python-3.11%E2%80%933.14-3776ab.svg)](workflows/ci.yml)
+[![CI Python: 3.12–3.14](https://img.shields.io/badge/CI%20Python-3.12%E2%80%933.14-3776ab.svg)](workflows/ci.yml)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-lightgrey.svg)](../LICENSE.md)
 
 GNN is a human-readable, machine-parsable **Markdown notation** for
@@ -55,10 +55,10 @@ Version metadata does not establish publication or a passing member gate.
 ## Quick start
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) **0.13.6** and use
-Python **3.14** for the frozen default. Ordinary CI also tests Python 3.11–3.13.
+Python **3.14** for the frozen default. CI also tests Python 3.12–3.13.
 See the [runtime exceptions and required profiles](../README.md#runtime-defaults-and-required-profiles)
 for the Python 3.15 HDF5 constraint, Python-specific scientific stack and the
-supported uv-only Gradio/Pillow override. Native GUI callbacks use Python 3.11–3.13.
+supported uv-only Gradio/Pillow override. Native GUI callbacks use Python 3.12–3.13.
 
 ### Install the released source
 
@@ -409,9 +409,9 @@ retains its original release identity.
 
 | Workflow or configuration | Purpose |
 | --- | --- |
-| [comprehensive-native-coverage.yml](workflows/comprehensive-native-coverage.yml) | Separate exact-source Python 3.11/3.12/3.13 native coverage reports with original scope and floor, process provenance and exact line unions; [procedure and limits](../docs/development/native_comprehensive_coverage.md) |
-| [ci.yml](workflows/ci.yml) | Python 3.11/3.12/3.13/3.14 tests; 3.12 lint/types/docs/capability checks; pipeline contracts; optional-dependency and Bandit lanes |
-| [installed-platforms.yml](workflows/installed-platforms.yml) | Ordinary installed-wheel native acceptance outside the checkout: Linux 3.11/3.12/3.14, macOS 3.14 and Windows 3.14; [acceptance scope and limits](../docs/development/installed_platform_acceptance.md) |
+| [comprehensive-native-coverage.yml](workflows/comprehensive-native-coverage.yml) | Separate exact-source Python 3.12/3.13/3.14 native coverage reports with original scope and floor, process provenance and exact line unions; [procedure and limits](../docs/development/native_comprehensive_coverage.md) |
+| [ci.yml](workflows/ci.yml) | Python 3.12/3.13/3.14 tests; 3.12 lint/types/docs/capability checks; pipeline contracts; optional-dependency and Bandit lanes |
+| [installed-platforms.yml](workflows/installed-platforms.yml) | Ordinary installed-wheel native acceptance outside the checkout: Linux 3.12/3.14, macOS 3.14 and Windows 3.14; [acceptance scope and limits](../docs/development/installed_platform_acceptance.md) |
 | [local-gates.yml](workflows/local-gates.yml) | Repository, manuscript-token and hydration gates |
 | [docs-audit.yml](workflows/docs-audit.yml) | Focused strict documentation and terminology audits |
 | [mcp-audit.yml](workflows/mcp-audit.yml) | MCP inventory regression gate |

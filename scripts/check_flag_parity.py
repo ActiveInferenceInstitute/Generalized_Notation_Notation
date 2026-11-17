@@ -293,6 +293,23 @@ def registered_flags() -> set[str]:
         ("src/gnn/render/thrml/runtime.py", None),
         ("src/gnn/analysis/performance_benchmark.py", None),
         ("src/gnn/render/bnlearn/source_program.py", "_PROGRAM"),
+        # Maintained operator scripts and module entry points whose flags the
+        # docs cite (Wave 6C reconciliation; every flag below is documented).
+        ("docs/development/docs_audit.py", None),
+        ("scripts/emit_run_manifest.py", None),
+        ("scripts/run_backend_profile.py", None),
+        ("scripts/run_cross_framework_reliability.py", None),
+        ("scripts/run_exporter_determinism_receipt.py", None),
+        ("scripts/run_installed_platform_acceptance.py", None),
+        ("scripts/run_model_family_acceptance.py", None),
+        ("scripts/run_semantic_fidelity_gate.py", None),
+        ("scripts/run_session_acceptance.py", None),
+        ("scripts/run_v3_orchestration_acceptance.py", None),
+        ("src/gnn/execute/jax/jax_runner.py", None),
+        ("src/gnn/execute/pytorch/pytorch_runner.py", None),
+        ("src/gnn/extract/__init__.py", None),
+        ("src/gnn/mcp/validate_tools.py", None),
+        ("src/gnn/processing/__main__.py", None),
     ):
         tree = ast.parse((ROOT / relative).read_text(encoding="utf-8"))
         if program_literal is not None:
@@ -355,7 +372,7 @@ def cli_parser_flags() -> set[str]:
 
     flags: set[str] = set()
 
-    def _walk(parser: "argparse.ArgumentParser", seen: set[int]) -> None:
+    def _walk(parser: argparse.ArgumentParser, seen: set[int]) -> None:
         if id(parser) in seen:
             return
         seen.add(id(parser))

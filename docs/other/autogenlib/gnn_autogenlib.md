@@ -45,7 +45,7 @@ GNN provides a structured textual format for describing complex probabilistic mo
 * **No Default Caching:** By default, code is regenerated on each import, allowing for varied implementations. Caching to `~/.autogenlib_cache` can be enabled for consistency and to reduce API calls.
 * **Automatic Exception Handling:** Exceptions from generated code are caught, and the LLM is prompted to explain the error and suggest a fix.
 * **Intended Use:** Primarily for prototyping, experimentation, and exploring LLM-driven code generation. It's explicitly *not* recommended for production-critical code without thorough human review.
-* **Requirements (AutoGenLib):** Upstream documents Python 3.12+; the GNN repository core supports **Python >= 3.11** per root `pyproject.toml`. Using OpenAI requires an `OPENAI_API_KEY` (or provider-specific configuration).
+* **Requirements (AutoGenLib):** Upstream documents Python 3.12+; the GNN repository core supports **Python >= 3.12** per root `pyproject.toml`. Using OpenAI requires an `OPENAI_API_KEY` (or provider-specific configuration).
 
 ## 3. Potential Applications of AutoGenLib in the GNN Workflow
 

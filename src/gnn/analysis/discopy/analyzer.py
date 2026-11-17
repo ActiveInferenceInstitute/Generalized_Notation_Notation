@@ -54,7 +54,7 @@ def generate_analysis_from_logs(
 
                 for analysis_file in analysis_files:
                     try:
-                        with open(analysis_file, "r") as f:
+                        with open(analysis_file) as f:
                             data = json.load(f)
 
                         # Add metadata from file
@@ -465,7 +465,7 @@ def extract_circuit_data(
         if sim_data_dir.exists():
             analysis_files = list(sim_data_dir.glob("*circuit*.json"))
             if analysis_files:
-                with open(analysis_files[0], "r") as f:
+                with open(analysis_files[0]) as f:
                     results = json.load(f)
                 data.update(results)
 

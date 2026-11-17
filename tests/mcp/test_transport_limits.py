@@ -408,7 +408,7 @@ def test_transports_emit_identical_non_ascii_bytes(
 
     assert http_body == stdio_bytes
     # ensure_ascii=False: real UTF-8 on the wire, no \\u escapes.
-    assert "héllo ☃".encode("utf-8") in http_body
+    assert "héllo ☃".encode() in http_body
     assert b"\\u00e9" not in http_body
     assert (
         serialize_response(envelope, separators=(",", ":")).encode("utf-8") == http_body

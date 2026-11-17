@@ -63,7 +63,7 @@ class XMLGNNParser(BaseGNNParser):
         """Parse an XML file containing GNN specifications."""
         try:
             # Read file content first to check for embedded data
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # First try to extract embedded JSON data for perfect round-trip

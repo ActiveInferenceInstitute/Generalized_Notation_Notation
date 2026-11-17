@@ -1,5 +1,5 @@
 # /// script
-# requires-python = ">=3.11"
+# requires-python = ">=3.12"
 # dependencies = []
 # ///
 # How to run: uv run python docs/other/geo_infer/qualify_export.py CONDITION --step-seconds 21600

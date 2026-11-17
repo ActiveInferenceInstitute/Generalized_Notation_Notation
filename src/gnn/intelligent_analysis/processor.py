@@ -895,7 +895,7 @@ def process_intelligent_analysis(
         return True
 
     try:
-        with open(summary_path, "r") as f:
+        with open(summary_path) as f:
             summary_data = json.load(f)
     except Exception as e:
         log_step_error(logger, f"Failed to load pipeline summary: {e}")

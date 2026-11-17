@@ -91,7 +91,7 @@ class LLMCache:
 
         if path.exists():
             try:
-                with open(path, "r") as f:
+                with open(path) as f:
                     entry = json.load(f)
                 if not isinstance(entry, dict):
                     raise ValueError("Cache record is not an object")

@@ -4,9 +4,10 @@ The [native coverage observer](../../scripts/run_comprehensive_native_coverage.p
 produces a separate comprehensive report for each supported Python environment.
 The existing core CI selector, its report, all coverage source/omit/exclude rules,
 and the enforced core 60% floor remain unchanged. Comprehensive acceptance enforces an 80% floor plus the strict
-**>80%** integer comparison independently on Python 3.11, 3.12 and 3.13.
+**>80%** integer comparison independently on Python 3.12, 3.13 and 3.14.
 The [hosted workflow](../../.github/workflows/comprehensive-native-coverage.yml)
-uses three independent jobs, checking out each exact candidate revision.
+uses independent jobs, checking out each exact candidate revision; every event
+runs 3.12, 3.13 and 3.14.
 
 ## Version 4.1.0 native evidence
 
@@ -44,7 +45,7 @@ UV_PYTHON=3.12 uv run --frozen --no-sync python \
   --python-version 3.12 --workers 4 --lane-timeout 1800
 ```
 
-Repeat independently with Python 3.11 and 3.13. `--workers` is an explicit core
+Repeat independently with Python 3.13 and 3.14. `--workers` is an explicit core
 worker count; zero keeps core serial. MCP and pipeline run serially. An active
 owned environment elsewhere requires `--owned-environment` with its actual
 path. The script verifies that environment's purelib before instrumentation.

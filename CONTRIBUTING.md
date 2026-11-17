@@ -6,7 +6,7 @@ Thank you for your interest in contributing to GNN! This project benefits from c
 
 ### Prerequisites
 
-- **Python 3.11–3.14** for the package. Use Python 3.14 for the default development profile.
+- **Python 3.12–3.14** for the package. Use Python 3.14 for the default development profile.
 - **uv 0.13.6** to reproduce CI's package-manager version. See the [setup guide](SETUP_GUIDE.md) for installation.
 - **Git** for version control
 - **just** for the recipe examples. The [manual commands](#ci-and-automation) use uv directly.

@@ -36,7 +36,7 @@ MODEL_DIGEST = "a" * 64
 SOURCE = (
     "﻿## GNNSection\r\nActInfPOMDP\r\n## StateSpaceBlock\r\n"
     "s[2,1,type=int] # état μ ≥ 0 🧠\r\n## Notes\nmixed endings\rno final newline"
-).encode("utf-8")
+).encode()
 PROMPT = ps.prompt_definition("summary", "Analyze GNN.", "Summarize the model.")
 RESERVATIONS = {"system": 64, "task": 64, "prior_receipts": 256, "output": 128}
 
@@ -471,7 +471,7 @@ def plan_corpus(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, An
     raw = (
         "## GNNSection\r\nActInfPOMDP\r\n## ModelName\r\nFIRST=alpha é\r\n"
         "## Notes\r\nLAST=omega 🧠\r\n"
-    ).encode("utf-8")
+    ).encode()
     (root / "model.md").write_bytes(raw)
     runtime: dict[str, Any] = {
         "model": "fixture:exact",

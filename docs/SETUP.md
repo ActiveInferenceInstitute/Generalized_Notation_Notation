@@ -35,7 +35,7 @@ The checked-in `input/config.yaml` is loaded automatically by `src/gnn/main.py`;
 
 ## Requirements
 
-- Python `>=3.11,<3.15` is the declared package range. See the current
+- Python `>=3.12,<3.15` is the declared package range. See the current
   [CI workflow](../.github/workflows/ci.yml) for tested interpreter splits;
   a compatible dependency install does not establish every native backend's
   readiness on that interpreter or OS.

@@ -13,10 +13,11 @@ work cannot establish success.
 
 ## Preserve integrity while scheduling
 
-Standard Python 3.12 tests and quality run independently. `test (3.12)` uses
-`always()` and accepts only successful `pytest (3.12)` and `quality (3.12)`.
-Preserve coupling and 3.11/3.13 statuses. Aggregates reject missing/failed/skipped
-or cancelled dependencies.
+Standard Python 3.12 tests and quality run independently as `pytest (3.12)` and
+`quality (3.12)`; the retired `test (3.12)` alias is not required by any ruleset
+(only `gitvault/gnn-repo-gates` is). Every event runs `test (3.13)`/`test (3.14)`
+across the supported CPython 3.12–3.14 range. Aggregates reject
+missing/failed/skipped or cancelled dependencies.
 
 Install each runner's frozen environment once; subsequent commands use
 `uv run --frozen --no-sync`. Preserve markers, extras, membership, JUnit/coverage,

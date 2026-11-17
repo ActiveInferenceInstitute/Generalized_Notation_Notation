@@ -161,7 +161,7 @@ class SecureMCPServer:
 
 ```dockerfile
 # Secure Dockerfile for GNN services
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Create non-root user
 RUN groupadd -r gnn && useradd -r -g gnn gnn

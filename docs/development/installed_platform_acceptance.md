@@ -1,12 +1,13 @@
 # Installed-package and native platform acceptance
 
 The [installed-platform workflow](../../.github/workflows/installed-platforms.yml)
-accepts an ordinary wheel outside the source checkout. Its candidate matrix is
-Linux/Python 3.11, 3.12 and 3.14, macOS/Python 3.14, and Windows/Python 3.14.
+accepts an ordinary wheel outside the source checkout. Its matrix is
+Linux/Python 3.12 and 3.14, macOS/Python 3.14, and Windows/Python 3.14 on every
+event.
 A supported release must have successful native receipts for its exact source;
 a resolvable wheel plan or classifier alone does not establish support.
-The ordinary source test suite has a separate Python 3.11–3.14 matrix;
-comprehensive native coverage retains its Python 3.11–3.13 matrix.
+The ordinary source test suite has a separate Python 3.12–3.14 matrix, and
+comprehensive native coverage runs Python 3.12–3.14.
 
 ## Version 4.1.0 installed evidence
 
@@ -44,8 +45,8 @@ from that lock. No editable install or source `PYTHONPATH` is used. Dependency
 installation runs outside the checkout with uv configuration discovery disabled, so unrelated local
 resolver settings cannot alter the frozen exported requirements.
 
-The Python 3.11 lane retains its JAX/Matplotlib split; Python 3.12 and newer
-retain theirs. Each receipt records actual installed distribution versions.
+Every supported Python (3.12 and newer) shares one JAX/Matplotlib resolution
+split. Each receipt records actual installed distribution versions.
 The committed lock remains the authority; do not manually substitute a newer
 JAX, Matplotlib or upstream THRML checkout to make a candidate pass.
 
@@ -72,7 +73,9 @@ scientific imports, the actual PyMDP/JAX stack probe, a native JIT operation,
 and a generated JAX simulation with finite normalized posterior arrays.
 Installed CLI validation/extraction and template list/show/copy exercise
 packaged resources; template CLI commands treat deprecation warnings as errors.
-A missing model is a required negative case.
+A missing model is a required negative case. Every run writes its JSON witness
+to `--receipt PATH`; `--base-wheel` selects the core-wheel profile and
+`--omit-api` is a local pre-integration witness that the hosted lane never uses.
 
 Set `GNN_API_ROOT` to an absolute existing trusted data directory **before API
 imports**. This operator setting separates installed code from model/output

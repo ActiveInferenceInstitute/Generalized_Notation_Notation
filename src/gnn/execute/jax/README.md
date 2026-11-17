@@ -17,7 +17,7 @@ executor for sparse factor-separable active inference.
 Pinned in `pyproject.toml` and installed by a plain `uv sync`:
 
 - `jax[cpu]>=0.7.0,<0.12` and `jaxlib>=0.7.0,<0.12`
-- `flax>=0.7.0,<0.12.7` on Python 3.11; `flax>=0.12.9` on Python 3.12 and later; `optax>=0.1.0` (used by the combined JAX template)
+- `flax>=0.12.9` (Python 3.12 and later); `optax>=0.1.0` (used by the combined JAX template)
 - `numpy`
 
 GPU/TPU builds of `jaxlib` are a user-side install; the pipeline only requires the CPU build.

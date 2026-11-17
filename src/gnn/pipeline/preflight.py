@@ -224,17 +224,20 @@ def check_environment() -> PreflightReport:
     # Python version
     import sys
 
+    from gnn.setup.constants import MIN_PYTHON_VERSION
+
     py_version = (
         f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     )
-    if sys.version_info >= (3, 11):
+    floor = ".".join(str(part) for part in MIN_PYTHON_VERSION)
+    if sys.version_info >= MIN_PYTHON_VERSION:
         report.add_pass(f"Python {py_version}")
     else:
         report.add_issue(
             "environment",
             "error",
-            f"Python {py_version} — requires ≥3.11",
-            fix="pyenv install 3.11",
+            f"Python {py_version} — requires ≥{floor}",
+            fix=f"uv python install {floor}",
         )
 
     # Required packages

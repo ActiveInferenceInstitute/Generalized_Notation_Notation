@@ -38,7 +38,7 @@ async def _analyze_gnn_file_with_llm(
         Dictionary containing analysis results
     """
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         # Extract GNN structure

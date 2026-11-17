@@ -129,7 +129,7 @@ class TestVirtualEnvironment:
         assert "Python" in result.stdout, "Unexpected Python version output"
 
     def test_venv_python_version_compatible(self) -> Any:
-        """Test that Python version is >= 3.11 as per pyproject.toml."""
+        """Test that Python version is >= 3.12 as per pyproject.toml."""
         result = subprocess.run(  # nosec B603
             [
                 str(VENV_PYTHON),
@@ -143,8 +143,8 @@ class TestVirtualEnvironment:
         assert result.returncode == 0
         version = result.stdout.strip()
         major, minor = map(int, version.split("."))
-        assert major >= 3 and minor >= 11, (
-            f"Python version should be >= 3.11, got {version}"
+        assert (major, minor) >= (3, 12), (
+            f"Python version should be >= 3.12, got {version}"
         )
 
 

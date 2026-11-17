@@ -15,4 +15,4 @@ Grammars include Unicode support (e.g. π in policy names) and comment rules ali
 
 ## Requirements
 
-- **Python** >= 3.11 for any tooling that loads these alongside the GNN package (see repo `pyproject.toml`).
+- **Python** >= 3.12 for any tooling that loads these alongside the GNN package (see repo `pyproject.toml`).

@@ -178,17 +178,15 @@ class TestResourceConstraintScenarios:
             raise AssertionError("Parser interface not available")
         except Exception as e:
             assert any(
-                (
-                    word in str(e).lower()
-                    for word in [
-                        "memory",
-                        "timeout",
-                        "resource",
-                        "size",
-                        "parse",
-                        "invalid",
-                    ]
-                )
+                word in str(e).lower()
+                for word in [
+                    "memory",
+                    "timeout",
+                    "resource",
+                    "size",
+                    "parse",
+                    "invalid",
+                ]
             )
 
     @pytest.mark.unit

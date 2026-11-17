@@ -59,6 +59,9 @@ uv run --frozen --no-sync python scripts/check_maintained_doc_terms.py --strict
 uv run --frozen --no-sync python scripts/check_doc_path_references.py
 ```
 
+Without `--no-write` the audit writes `docs_audit_report.md`; `--report-path PATH`
+redirects that report.
+
 The [audit](docs_audit.py) checks relative destinations, repository escapes,
 same-page and cross-file anchors, heading duplicates, document pairing and owner
 claims. Registry-bound claims are judged against source declarations: render-engine
