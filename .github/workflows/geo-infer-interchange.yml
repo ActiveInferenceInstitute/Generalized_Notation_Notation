@@ -122,12 +122,18 @@ jobs:
           enable-cache: false
           cache-dependency-glob: gnn/uv.lock
       - name: Install GNN locked runtime
+        env:
+          # GNN follows the matrix interpreter so each leg pairs both sides on
+          # the same Python; GEO_INFER stays <=3.12 (numpy<2 wheel ceiling).
+          GNN_PYTHON: ${{ matrix.python }}
         run: |
-          uv sync --no-cache --project gnn --locked --python 3.11 --extra dev --extra geo-infer
+          uv sync --no-cache --project gnn --locked --python "$GNN_PYTHON" --extra dev --extra geo-infer
           uv cache prune
       - name: Cascadia export qualification controls
         working-directory: gnn
-        run: uv run --frozen --no-sync --python 3.11 python -m pytest docs/other/geo_infer/test_qualify_export.py -q --no-cov
+        env:
+          GNN_PYTHON: ${{ matrix.python }}
+        run: uv run --frozen --no-sync --python "$GNN_PYTHON" python -m pytest docs/other/geo_infer/test_qualify_export.py -q --no-cov
       - name: Paired categorical, H3, Gaussian and factored round trips
         run: |
           gnn/.venv/bin/python gnn/scripts/run_geo_interchange_checks.py \

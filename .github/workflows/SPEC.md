@@ -20,7 +20,7 @@ The workflow system must:
 ## Components
 The module defines strict automation routines via YAML configuration:
 
-1. **`ci.yml`**: The primary test matrix (Python 3.11, 3.12, 3.13, 3.14) that executes the Pytest suite, Ruff linting, MCP tool count assertions, and Bandit security scans, halting on critical code health violations.
+1. **`ci.yml`**: The primary test matrix (Python 3.12, 3.13, 3.14 on pull requests; 3.11 added on tags, weekly and dispatch) that executes the Pytest suite, Ruff linting, MCP tool count assertions, and Bandit security scans, halting on critical code health violations.
 2. **`actionlint.yml`**: Safeguards workflow logic by running static analysis on the YAML files themselves before integration.
 3. **`codeql.yml`**: Triggers GitHub's advanced CodeQL semantic scanning engine for deep security auditing.
 4. **`dependency-review.yml`**: A supply chain guardrail enforcing license compliance (denying AGPL) and halting high-severity CVE introductions on Pull Requests.
@@ -52,8 +52,8 @@ External 403/429, network and timeout observations are inconclusive, never proof
 that a URL is valid. `--strict` remains available to fail on every finding.
 
 The ordinary test matrix owns the PyMDP contract, discrete-model and matrix
-visualization suites. Quality does not rerun these three files: `test (3.12)`
-already requires their complete ordinary-suite execution alongside quality.
+visualization suites. Quality does not rerun these three files: `pytest (3.12)`
+and the other `test` legs already run them in the complete ordinary suite.
 
 Gridworld warms actual Julia imports before the bounded readiness probes. Its
 explicit LLM profile uses `gemma3:1b`, 8,192 context tokens, seed 42,

@@ -12,7 +12,7 @@ The GEO pair installs each repository with its own exact tool: uv 0.13.1 is
 a companion-only exception for GEO_INFER, while GNN retains uv 0.13.6.
 Separate pinned setup steps install GEO first and GNN last, so the later GNN
 qualification controls also use uv 0.13.6. These controls reuse the installed
-Python 3.11 environment with `--frozen --no-sync`; the local default does not
+matrix-Python environment (`$GNN_PYTHON`) with `--frozen --no-sync`; the local default does not
 replace its H3-enabled runtime. The [local paired-runtime procedure](../../docs/development/geo_infer_2026_09.md#independent-uv-toolchains)
 uses the same split. Manuscript audit artifacts retain the full render output and the render
 step outcome even when strict comparison rejects the older committed chain.
@@ -44,12 +44,12 @@ schedule, and manual runs in addition to any release behavior called out in a ro
 
 | File | Triggers | Jobs / behavior |
 |------|----------|-----------------|
-| [comprehensive-native-coverage.yml](comprehensive-native-coverage.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Separate Python 3.11/3.12/3.13 reports from the exact source revision. The five frozen core, MCP, pipeline, THRML and Gradio native selections retain process/source identities, unchanged statement/exclusion scope, actual raw line-set unions, JUnit and hook-restoration receipts. The original core 60% gate remains; comprehensive acceptance enforces an 80% floor and the strict integer >80% comparison separately in each environment. |
-| [ci.yml](ci.yml) | Main/tag pushes, main pull requests, weekly Saturday 06:17 UTC, manual dispatch | Python 3.11/3.12/3.13/3.14 unit selections with JUnit and coverage via `./run.sh coverage`. Main branch pushes retain the deterministic quality/pipeline/security subset. Quality delegates lint, types, MCP tests, collection and v3 acceptance to `run.sh`; deterministic docs audits belong to `docs-audit.yml`. Required status names, test aggregation, separate pipeline/extras lanes and Bandit evidence are preserved. PRs cancel superseded heads; other runs remain commit-keyed. |
-| [installed-platforms.yml](installed-platforms.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Five native installed-wheel lanes: Linux/Python 3.11, 3.12, 3.14; macOS/3.14; Windows/3.14. Frozen hashed binary runtime installation outside the checkout, native JAX/THRML, CLI/templates, API scratch concurrency, owned worker cancellation/RSS and platform boundary tests. A separate base installation in each lane checks installed CLI and LSP behavior with named extras absent. Selected skips prevent acceptance; receipts retain exact source, wheel, lock and platform identities. |
+| [comprehensive-native-coverage.yml](comprehensive-native-coverage.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Separate Python 3.12/3.13/3.14 reports from the exact source revision on pull requests and main; tags and manual dispatch add Python 3.11. The five frozen core, MCP, pipeline, THRML and Gradio native selections retain process/source identities, unchanged statement/exclusion scope, actual raw line-set unions, JUnit and hook-restoration receipts. The original core 60% gate remains; comprehensive acceptance enforces an 80% floor and the strict integer >80% comparison separately in each environment. |
+| [ci.yml](ci.yml) | Main/tag pushes, main pull requests, weekly Saturday 06:17 UTC, manual dispatch | Python 3.12/3.13/3.14 unit selections on pull requests, plus Python 3.11 on tags, the weekly schedule and manual dispatch, with JUnit and coverage via `./run.sh coverage`. Main branch pushes retain the deterministic quality/pipeline/security subset. Quality delegates lint, types, MCP tests, collection and v3 acceptance to `run.sh`; deterministic docs audits belong to `docs-audit.yml`. Separate pipeline/extras lanes and Bandit evidence are preserved. PRs cancel superseded heads; other runs remain commit-keyed. |
+| [installed-platforms.yml](installed-platforms.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Native installed-wheel lanes: Linux/Python 3.12, 3.14; macOS/3.14; Windows/3.14; tags and manual dispatch add Linux/Python 3.11. Frozen hashed binary runtime installation outside the checkout, native JAX/THRML, CLI/templates, API scratch concurrency, owned worker cancellation/RSS and platform boundary tests. A separate base installation in each lane checks installed CLI and LSP behavior with named extras absent. Selected skips prevent acceptance; receipts retain exact source, wheel, lock and platform identities. |
 | [local-gates.yml](local-gates.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Repository gates for manuscript tokens, hydrated prose, figure freshness, MCP/skills, import boundaries, numbered orchestrators, flags, dependency consumers, validation surfaces and documentation paths. The doc-pattern audit belongs to `docs-audit.yml`. |
 | [fep-lean-paired-revision.yml](fep-lean-paired-revision.yml) | tags; `workflow_dispatch` (release-time only) | Strict current-source bridge and Q7 checks on Python 3.11/3.12/3.14 against the exact pinned FEP companion, retaining both revisions and runtime/source bookends. GNN owns its implementation source; the bridge binds only the declared notation contract, so ordinary PR/main development is not gated on the pair. Historical fixed-baseline receipts cannot admit GNN 5.0; native proof and release acceptance remain separate. [Policy](../../docs/development/fep_lean_paired_revision.md#current-source-qualification-for-gnn-50x). |
-| [geo-infer-interchange.yml](geo-infer-interchange.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Python 3.11/3.12 categorical, Gaussian and factored interchange with the pinned GEO companion, deterministic replay and artifact digests. H3 state labels alone do not establish geographic or inference claims. |
+| [geo-infer-interchange.yml](geo-infer-interchange.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | Python 3.11/3.12 (GNN and GEO on the same matrix interpreter) categorical, Gaussian and factored interchange with the pinned GEO companion, deterministic replay and artifact digests. H3 state labels alone do not establish geographic or inference claims. |
 | [mcp-audit.yml](mcp-audit.yml) | `push` / `pull_request` → `main`; `workflow_dispatch` | MCP tool count ≥ 140 via `tests.mcp.test_mcp_audit.count_mcp_tools`. |
 | [full-extras.yml](full-extras.yml) | Weekly cron Sunday 06:00 UTC (`0 6 * * 0`); `workflow_dispatch` | `uv sync --frozen --all-extras`, optional-import checks (audio, GUI, research/scaling), full pytest suite under all extras (Python 3.12). |
 | [docs-audit.yml](docs-audit.yml) | `push` / `pull_request` → `main`; weekly Monday 06:00 UTC; `workflow_dispatch` | `./run.sh docs`: strict links/anchors, terminology, doc-pattern, documentation-contract and capability audits. Scheduled, version-tag and opt-in manual runs also check external URLs. HTTP 404/410 fail; inconclusive responses are retained. |
@@ -67,24 +67,20 @@ schedule, and manual runs in addition to any release behavior called out in a ro
 
 ### Scheduling and evidence
 
-The four Python test environments keep the same marker selection, coverage
+The Python test environments keep the same marker selection, coverage
 reports and `pytest-junit-<version>` artifacts. The quality lane emits the
 existing `mcp-capabilities` artifact; the pipeline lane emits its JUnit and
-source-bound count receipt. The required statuses `test (3.11)`, `test (3.12)`
-and `test (3.13)` retain their names.
+source-bound count receipt. Pull requests run `test (3.13)`, `test (3.14)` and
+`pytest (3.12)`; version tags, the weekly schedule and manual dispatch add
+`test (3.11)` while `requires-python` still admits Python 3.11. No hosted test
+context is required by a ruleset: the only required context is
+`gitvault/gnn-repo-gates`.
 
-Python 3.12 quality checks and its main test suite run on separate runners.
-The aggregate `test (3.12)` job uses `always() && !cancelled()` and requires
-both lane results to be `success`; failure, cancellation, skipping or a missing
-result prevents acceptance. `always()` keeps a genuinely failed prerequisite
-failing the gate; `!cancelled()` only skips the guard when the run itself was
-cancelled (a superseded pull-request head), so a late-scheduled guard does not
-record a permanent "cancelled != success" failure on the merge commit.
-Cancellation inside a non-cancelled run — matrix `fail-fast` cancelling sibling
-legs — still fails, because the prerequisite's own result is `cancelled`, not
-`success`. A branch push to `main` skips the aggregate outright, because the
-lanes it couples are deliberately not run there; the weekly schedule re-runs the
-full matrix on the current tip, and commit-keyed concurrency keeps each non-PR
+Python 3.12 quality checks and its main test suite run on separate runners and
+report as `quality (3.12)` and `pytest (3.12)`. The former `test (3.12)`
+aggregate alias was retired once no ruleset required it.
+A branch push to `main` skips the unit-matrix lanes outright; the weekly
+schedule re-runs the full matrix on the current tip, and commit-keyed concurrency keeps each non-PR
 run independent instead of superseding an earlier tip's verdict. Every
 workflow triggered by a push to `main` carries that shape: non-PR runs are
 keyed by commit and only a superseded pull-request head cancels, so a merge no
@@ -142,8 +138,8 @@ External 403/429, network and timeout observations are inconclusive, never proof
 that a URL is valid. `--strict` remains available to fail on every finding.
 
 The ordinary test matrix owns the PyMDP contract, discrete-model and matrix
-visualization suites. Quality does not rerun these three files: `test (3.12)`
-already requires their complete ordinary-suite execution alongside quality.
+visualization suites. Quality does not rerun these three files: `pytest (3.12)`
+and the other `test` legs already run them in the complete ordinary suite.
 
 Gridworld warms actual Julia imports before the bounded readiness probes. Its
 explicit LLM profile uses `gemma3:1b`, 8,192 context tokens, seed 42,

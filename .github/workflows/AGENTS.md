@@ -16,9 +16,9 @@ Defines behavior and guardrails for workflows in this directory. Human index of 
 
 | File | Role |
 |------|------|
-| `comprehensive-native-coverage.yml` | Separate exact-source Python 3.11/3.12/3.13 full-source coverage with native child provenance and exact raw/lane/combined unions. The original core selectors, reports and 60% floor remain intact. All five declared native lanes, clean identities, successful JUnit, raw integrity and hook restoration are required. Comprehensive acceptance separately enforces an 80% floor and `5 * covered_lines > 4 * num_statements` in each environment. |
-| `ci.yml` | Triggers: `push` → `main` (deterministic post-merge subset: `quality (3.12)`, `pipeline-contracts`, `security`), `v[0-9]*` tags, pull requests, weekly Saturday 06:17 UTC, `workflow_dispatch`; tags, pull requests, schedules and manual dispatch run the full Python 3.11/3.12/3.13/3.14 matrix at their own head. Independent 3.12 quality checks run in parallel; the existing `test (3.12)` status requires both the native test lane and the quality lane to succeed, and is skipped where those lanes deliberately do not run. Quality includes Ruff/mypy/public contracts, functional MCP/capability evidence, v3 orchestration acceptance. MCP tool count ≥ `MCP_TOOL_FLOOR` (140, defined in `tests/mcp/test_mcp_audit.py`). Bandit retains SARIF upload and failure on findings. No path filter — runs on doc-only changes too. Non-PR runs are commit-keyed and never cancel in progress; PR runs cancel their superseded head. |
-| `installed-platforms.yml` | Frozen ordinary installed-wheel acceptance outside the checkout in five native lanes: Linux/Python 3.11, 3.12, 3.14; macOS/3.14; Windows/3.14. CLI/API/resources, JAX/THRML numerical witnesses and native filesystem/worker boundaries retain source/lock/wheel identities. Selected skips fail acceptance; platform support is limited to accepted native guarantees. |
+| `comprehensive-native-coverage.yml` | Separate exact-source Python 3.12/3.13/3.14 full-source coverage on pull requests and main (3.11 added on tags and manual dispatch) with native child provenance and exact raw/lane/combined unions. The original core selectors, reports and 60% floor remain intact. All five declared native lanes, clean identities, successful JUnit, raw integrity and hook restoration are required. Comprehensive acceptance separately enforces an 80% floor and `5 * covered_lines > 4 * num_statements` in each environment. |
+| `ci.yml` | Triggers: `push` → `main` (deterministic post-merge subset: `quality (3.12)`, `pipeline-contracts`, `security`), `v[0-9]*` tags, pull requests, weekly Saturday 06:17 UTC, `workflow_dispatch`; tags, pull requests, schedules and manual dispatch run the Python 3.12/3.13/3.14 matrix at their own head; tags, schedules and manual dispatch add the Python 3.11 leg while `requires-python` still admits it. Independent 3.12 quality checks run in parallel as `quality (3.12)` beside `pytest (3.12)`; the former `test (3.12)` aggregate alias is retired because no ruleset requires it (the only required context is `gitvault/gnn-repo-gates`). Quality includes Ruff/mypy/public contracts, functional MCP/capability evidence, v3 orchestration acceptance. MCP tool count ≥ `MCP_TOOL_FLOOR` (140, defined in `tests/mcp/test_mcp_audit.py`). Bandit retains SARIF upload and failure on findings. No path filter — runs on doc-only changes too. Non-PR runs are commit-keyed and never cancel in progress; PR runs cancel their superseded head. |
+| `installed-platforms.yml` | Frozen ordinary installed-wheel acceptance outside the checkout in native lanes: Linux/Python 3.12, 3.14; macOS/3.14; Windows/3.14, plus Linux/Python 3.11 on tags and manual dispatch. CLI/API/resources, JAX/THRML numerical witnesses and native filesystem/worker boundaries retain source/lock/wheel identities. Selected skips fail acceptance; platform support is limited to accepted native guarantees. |
 | `local-gates.yml` | Repository gates bind manuscript tokens, hydrated prose and figures, then check MCP/skills, imports, thin orchestrators, flags, dependencies, public validation and maintained documentation. PR inherited-drift qualification is limited to byte-identical base evidence; main/manual checks remain strict. |
 | `mcp-audit.yml` | MCP tool count ≥ `MCP_TOOL_FLOOR` audit on push/PR to `main`. |
 | `full-extras.yml` | Weekly all-extras suite: `uv sync --frozen --all-extras`, optional-import validation, full pytest (Python 3.12). |
@@ -29,7 +29,7 @@ Defines behavior and guardrails for workflows in this directory. Human index of 
 | `supply-chain-audit.yml` | Scheduled `pip-audit` on frozen exports (core + all extras, no dev); bash `set -euo pipefail`; job summary. |
 | `custody-re-render.yml` | Daily cron 07:14 UTC + `workflow_dispatch`; report-only (no commit back). Fresh manuscript render via the `docxology/template` checkout (a real directory at `projects/active/`): template `stage_03_render` → record render-custody manifest → strict token gate → `tests/test_manuscript_latex_log.py`; receipts + rendered evidence uploaded as artifact. |
 | `fep-lean-paired-revision.yml` | Release-time (tags/manual) strict current-source bridge and Q7 checks on Python 3.11/3.12/3.14 against the exact pinned FEP companion, with source/runtime bookends and both revisions retained. GNN owns its implementation source; the bridge binds only the declared notation contract, so ordinary PR/main development is not gated on the pair. Historical fixed-baseline receipts cannot admit GNN 5.0; native proof and release acceptance remain separate. [Policy](../../docs/development/fep_lean_paired_revision.md#current-source-qualification-for-gnn-50x). |
-| `geo-infer-interchange.yml` | Blocking pinned GEO/GNN interchange on Python 3.11/3.12, retaining both source revisions, schema contracts, replay and artifact digests. Coordinate companion changes through the same paired-revision procedure. |
+| `geo-infer-interchange.yml` | Blocking pinned GEO/GNN interchange on Python 3.11/3.12 (both sides use the matrix interpreter), retaining both source revisions, schema contracts, replay and artifact digests. Coordinate companion changes through the same paired-revision procedure. |
 | `rxinfer.yml` | Path-scoped native RxInfer 6.1.0/ReactiveMP 7 checks on Julia 1.13.2: exact categorical/Gaussian numerical witnesses, structured model inference, and migrated custom Halfspace rules. Frozen environment drift fails; logs are retained. |
 | `gridworld.yml` | Weekly/manual report-only GridWorld execution with both Julia environments, Ollama and Gemma 3 1B; all 25 steps and the fresh publication contract remain required. Retain summaries, test/LLM observations and daemon logs. |
 | `render-acceptance.yml` | Weekly Saturday full-corpus render acceptance for the four declared Julia/probabilistic-programming backends (ActiveInference.jl, RxInfer.jl, Stan, bnlearn). Every emitted `.jl` is checked by a real Julia front-end, every `.stan` by the pinned stanc3 front-end, every emitted `.py` by `compile()`; the explicit framework selection keeps Step 11's strict all-requested-frameworks policy, while typed `unsupported` refusals stay recorded with a reason and outside the success denominator. A missing toolchain fails and names itself. Report-only: the render tree stays on the runner and the summary plus logs are retained. |
@@ -53,11 +53,11 @@ Defines behavior and guardrails for workflows in this directory. Human index of 
 Install each CI environment once with `uv sync --frozen`; subsequent commands
 in `ci.yml` use `uv run --frozen --no-sync` against that installed environment.
 Keep test marker selections, per-Python coverage/JUnit artifacts and source-bound
-pipeline receipts intact when changing scheduling. The `test (3.12)` aggregate
-runs with `always() && !cancelled()` and rejects failed, cancelled, skipped or
-missing lane results. `!cancelled()` only skips the guard when the run itself
-was cancelled (a superseded pull-request head), so cancellation inside a
-non-cancelled run — matrix `fail-fast` cancelling sibling legs — still fails.
+pipeline receipts intact when changing scheduling. `pytest (3.12)` and
+`quality (3.12)` report independently; the retired `test (3.12)` aggregate is
+not a required context (only `gitvault/gnn-repo-gates` is), so no alias job is
+kept. Event-conditional matrices drop the Python 3.11 legs from pull requests
+and main pushes only; tags, the weekly schedule and manual dispatch keep them.
 A branch push to `main` skips the aggregate outright, because the lanes it
 couples are deliberately not run there; keep that coupling intact for the
 full-matrix triggers. Moving validation into parallel jobs must preserve this
@@ -89,8 +89,8 @@ External 403/429, network and timeout observations are inconclusive, never proof
 that a URL is valid. `--strict` remains available to fail on every finding.
 
 The ordinary test matrix owns the PyMDP contract, discrete-model and matrix
-visualization suites. Quality does not rerun these three files: `test (3.12)`
-already requires their complete ordinary-suite execution alongside quality.
+visualization suites. Quality does not rerun these three files: `pytest (3.12)`
+and the other `test` legs already run them in the complete ordinary suite.
 
 Gridworld warms actual Julia imports before the bounded readiness probes. Its
 explicit LLM profile uses `gemma3:1b`, 8,192 context tokens, seed 42,
