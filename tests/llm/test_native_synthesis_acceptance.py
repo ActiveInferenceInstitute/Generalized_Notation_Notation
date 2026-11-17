@@ -9,10 +9,10 @@ source_chunk_bytes and corpus=[{path, relative_path, sha256}, ...]. Corpus paths
 are absolute owner-selected inputs; relative paths are distinct portable .md
 names, including duplicate stems with different bytes. No source is sampled.
 
-An absent profile skips this opt-in harness, not its qualification requirement.
-Any selected skip is unavailable acceptance. A supplied but unavailable or
-mismatching runtime fails; no model pull/start, fallback, or weakened proof is
-attempted. Native stop/context evidence is not answer-quality or attention proof.
+An absent owner-frozen profile fails this opt-in harness before dispatch.
+A supplied but unavailable or mismatching runtime also fails; no model
+pull/start, fallback, or weakened proof is attempted. Native stop/context
+evidence is not answer-quality or attention proof.
 """
 
 from __future__ import annotations
@@ -42,7 +42,9 @@ RAW = ("FIRST=α\r\n" + "x" * 12 + "\r\nLAST=β").encode("utf-8")
 def native_profile(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     location = os.environ.get("GNN_LLM_NATIVE_PROFILE")
     if not location:
-        pytest.skip("Owner-frozen GNN_LLM_NATIVE_PROFILE required; not qualified")
+        pytest.fail(
+            "FAIL-UNAVAILABLE: owner-frozen GNN_LLM_NATIVE_PROFILE is required"
+        )
     profile = json.loads(Path(location).read_bytes())
     assert profile["provider"] == "ollama"
     identity = profile["runtime_identity"]

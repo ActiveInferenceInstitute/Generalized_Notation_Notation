@@ -22,6 +22,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   publication/rollback with per-key native locks and unique publication identities.
   Native corpus quality, both original cpomdp splits, platform matrices and
   scientific acceptance remain separate obligations.
+- Fail selected native synthesis acceptance before dispatch when its
+  owner-frozen profile is absent; keep default zero-skip checks and all
+  native/scientific approval boundaries unchanged.
 - Provision exact historical Git fixture objects for real archive regressions
   and add the cache publication witness to existing installed platform cells;
   retain current upstream event rosters, runtime metadata and coverage floors.
