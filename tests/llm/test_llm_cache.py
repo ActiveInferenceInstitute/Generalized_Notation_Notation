@@ -323,7 +323,14 @@ def test_same_key_mutations_serialize_with_newer_publications(
                     contended.set,
                     cache if publisher == "same_instance" else None,
                 )
-            assert attempted.wait(10), "The replacement did not attempt publication"
+            # A spawned interpreter re-imports this module before it can attempt
+            # publication; under the parallel coverage gate that start-up alone
+            # can exceed ten seconds. Only the start-up bound differs: the
+            # contention assertion below is unchanged.
+            start_bound = 60 if publisher == "process" else 10
+            assert attempted.wait(start_bound), (
+                "The replacement did not attempt publication"
+            )
             # This is an actual nonblocking native-lock refusal, not a timed
             # guess that the publishing thread/process has not been scheduled.
             assert contended.is_set(), "The publication bypassed the removal's lock"
