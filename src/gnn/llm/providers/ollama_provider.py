@@ -579,6 +579,7 @@ class OllamaProvider(BaseLLMProvider):
             if effective.context_admission
             else None
         )
+        transport.remaining()
         return LLMResponse(
             content=response["message"]["content"],
             model_used=response["model"],

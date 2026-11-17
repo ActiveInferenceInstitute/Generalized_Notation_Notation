@@ -160,6 +160,126 @@ def _reference(initial, result):
 
 
 @pytest.mark.needs_cpomdp
+def test_direct_released_library_matches_independent_finite_control_reference(tmp_path):
+    spec = _spec()
+    script = tmp_path / "direct_native.py"
+    receipt = tmp_path / "direct_native.json"
+    script.write_text(
+        """import itertools
+import json
+import sys
+from pathlib import Path
+
+import jax
+import jax.numpy as jnp
+import numpy as np
+import cpomdp
+from cpomdp import Belief, KalmanBackend, LinearGaussianModel, Preference
+from cpomdp.efe import policy_efe
+from cpomdp.enumeration import EnumeratedEFESearch, FiniteActionSet
+
+jax.config.update("jax_enable_x64", True)
+spec = json.loads(sys.argv[1])
+initial = spec["initialparameterization"]
+declared = initial["cpomdp_control"]
+F, H, Q, R = (jnp.asarray(initial[k], dtype=jnp.float64) for k in ("F", "H", "Q", "R"))
+M = jnp.asarray(declared["control_matrix"], dtype=jnp.float64)
+prior = Belief(jnp.asarray(initial["prior_mean"]), jnp.asarray(initial["prior_cov"]))
+model = LinearGaussianModel(
+    dynamics_matrix=F, observation_matrix=H, dynamics_noise=Q,
+    observation_noise=R, prior=prior, control_matrix=M,
+)
+backend = KalmanBackend(model)
+first = KalmanBackend(LinearGaussianModel(
+    dynamics_matrix=jnp.eye(3), observation_matrix=H, dynamics_noise=jnp.zeros((3, 3)),
+    observation_noise=R, prior=prior,
+))
+search = EnumeratedEFESearch(
+    model, FiniteActionSet(declared["actions"], version=declared["version"]), horizon=2
+)
+preference = Preference(H @ jnp.asarray(initial["goal_mean"]), jnp.eye(2))
+policies = search.policies
+policy_ids = list(itertools.product(declared["action_ids"], repeat=2))
+rng = np.random.default_rng(spec["model_parameters"]["random_seed"])
+state = rng.multivariate_normal(initial["prior_mean"], initial["prior_cov"])
+belief = prior
+action = None
+result = {
+    "cpomdp_version": cpomdp.__version__,
+    "policies": np.asarray(policies).tolist(),
+    "cost_per_cycle": int(search.cost_per_plan),
+    "observations_continuous": [], "beliefs": [], "posterior_cov": [],
+    "controls": [], "control_inputs": [], "scores": [], "selected_policy_index": [],
+    "policy_action_ids": [], "step_evaluations": 0,
+}
+for t in range(spec["model_parameters"]["num_timesteps"]):
+    if t:
+        state = np.asarray(F) @ state + np.asarray(M @ action)
+        state += rng.multivariate_normal(np.zeros(3), np.asarray(Q))
+    reading = np.asarray(H) @ state + rng.multivariate_normal(np.zeros(2), np.asarray(R))
+    belief = first.infer_states(reading, prior) if t == 0 else backend.infer_states(
+        reading, belief, action
+    )
+    scores = []
+    for policy in policies:
+        native = policy_efe(model, belief, policy, preference)
+        scores.append([float(native.g), float(native.pragmatic), float(native.epistemic)])
+        result["step_evaluations"] += len(policy)
+    best = int(np.argmin(np.asarray(scores)[:, 0]))
+    action = policies[best][0]
+    for key, value in (
+        ("observations_continuous", reading), ("beliefs", belief.mean),
+        ("posterior_cov", belief.cov), ("controls", M @ action),
+        ("control_inputs", action),
+    ):
+        result[key].append(np.asarray(value).tolist())
+    result["scores"].append(scores)
+    result["selected_policy_index"].append(best)
+    result["policy_action_ids"].append(list(policy_ids[best]))
+Path(sys.argv[2]).write_text(json.dumps(result), encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
+    envelope = run_subprocess_envelope(
+        [sys.executable, str(script), json.dumps(spec), str(receipt)],
+        timeout=60,
+        env=dict(os.environ),
+    )
+    assert envelope["success"], envelope
+    result = json.loads(receipt.read_text(encoding="utf-8"))
+    assert result["cpomdp_version"] == "0.5.1"
+    declared = spec["initialparameterization"]["cpomdp_control"]
+    expected_policies = np.asarray(
+        list(itertools.product(declared["actions"], repeat=2))
+    )
+    np.testing.assert_array_equal(result["policies"], expected_policies)
+    assert expected_policies.shape == (9, 2, 1)
+    assert result["cost_per_cycle"] == 18
+    assert result["step_evaluations"] == 72
+    means, covs, expected_scores = _reference(spec["initialparameterization"], result)
+    np.testing.assert_allclose(result["beliefs"], means, rtol=1e-9, atol=1e-10)
+    np.testing.assert_allclose(result["posterior_cov"], covs, rtol=1e-9, atol=1e-10)
+    scores = np.asarray(result["scores"])
+    np.testing.assert_allclose(scores, expected_scores, rtol=1e-9, atol=1e-10)
+    np.testing.assert_allclose(scores[:, :, 0], scores[:, :, 1] - scores[:, :, 2])
+    ids = list(itertools.product(declared["action_ids"], repeat=2))
+    for t, index in enumerate(result["selected_policy_index"]):
+        assert index == int(np.argmin(expected_scores[t, :, 0]))
+        assert result["policy_action_ids"][t] == list(ids[index])
+        assert "forward-alias" not in ids[index]
+        np.testing.assert_array_equal(
+            result["control_inputs"][t], expected_policies[index, 0]
+        )
+    for group in ((0, 2, 6, 8), (1, 7), (3, 5)):
+        for index in group[1:]:
+            np.testing.assert_allclose(scores[:, group[0], :], scores[:, index, :])
+    np.testing.assert_allclose(
+        result["controls"],
+        np.asarray(result["control_inputs"]) @ np.asarray(declared["control_matrix"]).T,
+    )
+
+
+@pytest.mark.needs_cpomdp
 def test_native_asymmetric_controls_every_policy_and_authored_tie_order(tmp_path):
     spec = _spec()
     script = tmp_path / "model.py"
@@ -180,6 +300,13 @@ def test_native_asymmetric_controls_every_policy_and_authored_tie_order(tmp_path
     assert result["action_set"] == declared["actions"]
     assert result["n_policies"] == 9
     assert result["action_set_version"] == "thruster-v1"
+    assert result["cost_per_cycle"] == 18
+    assert result["admission"]["total_step_evaluations"] == 90
+    certificate = result["search_certificate"]
+    assert certificate["expected"] == certificate["visited"] == 9
+    assert certificate["action_set_size"] == 3 and certificate["horizon"] == 2
+    assert certificate["action_set_version"] == declared["version"]
+    assert certificate["warrant"]
     means, covs, scores = _reference(spec["initialparameterization"], result)
     np.testing.assert_allclose(result["beliefs"], means, rtol=1e-9, atol=1e-10)
     np.testing.assert_allclose(result["posterior_cov"], covs, rtol=1e-9, atol=1e-10)
@@ -199,6 +326,13 @@ def test_native_asymmetric_controls_every_policy_and_authored_tie_order(tmp_path
         atol=1e-10,
     )
     np.testing.assert_allclose(
+        result["efe_history"],
+        np.asarray(result["policy_score_components"]["pragmatic"])
+        - np.asarray(result["policy_score_components"]["epistemic"]),
+        rtol=1e-9,
+        atol=1e-10,
+    )
+    np.testing.assert_allclose(
         result["controls"],
         np.array(result["control_inputs"]) @ np.array(declared["control_matrix"]).T,
     )
@@ -206,6 +340,8 @@ def test_native_asymmetric_controls_every_policy_and_authored_tie_order(tmp_path
     ids = list(itertools.product(declared["action_ids"], repeat=2))
     for t, index in enumerate(result["selected_policy_index"]):
         assert index == int(np.argmin(scores[t, :, 0]))
+        np.testing.assert_allclose(result["pragmatic_term"][t], scores[t, index, 1])
+        np.testing.assert_allclose(result["epistemic_term"][t], scores[t, index, 2])
         assert "forward-alias" not in result["policy_action_ids"][t]
         assert result["policy_action_ids"][t] == list(ids[index])
         assert result["selected_policy"][t] == list(policies[index])

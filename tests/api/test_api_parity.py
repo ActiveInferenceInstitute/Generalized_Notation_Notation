@@ -26,6 +26,7 @@ policy in ``gnn.api.pipeline_runner``):
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import shutil
@@ -33,6 +34,7 @@ import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 from typing import Any, Callable, Dict, Iterator, List, Optional, Set
 
 import pytest
@@ -437,6 +439,83 @@ def test_render_happy_path_produces_artifact(client: TestClient) -> None:
         assert Path(data["artifact"]).is_file()
     finally:
         shutil.rmtree(Path(output_dir), ignore_errors=True)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("explicit_output", [False, True])
+def test_overlapping_same_stem_renders_retain_their_own_source_and_artifact(
+    client: TestClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    explicit_output: bool,
+) -> None:
+    """Both factories retain request-bound outputs even with a shared parent."""
+    import gnn.render as render_module
+
+    exemplar = Path(VALID_EXEMPLAR).read_text(encoding="utf-8")
+    sources = []
+    for directory, name, preference in (
+        ("first", "First API Model", "3.0"),
+        ("second", "Second API Model", "4.0"),
+    ):
+        source = tmp_path / directory / "model.md"
+        source.parent.mkdir()
+        source.write_text(
+            exemplar.replace("Simple MDP Agent", name).replace(
+                "C={(0.0, 0.0, 0.0, 3.0)}",
+                f"C={{(0.0, 0.0, 0.0, {preference})}}",
+            ),
+            encoding="utf-8",
+        )
+        sources.append(source)
+    originals = {source: source.read_bytes() for source in sources}
+    assert originals[sources[0]] != originals[sources[1]]
+    monkeypatch.setenv("GNN_API_ROOT", str(tmp_path))
+    completed = Barrier(2)
+    actual_render = render_module.process_render
+
+    def overlap(**kwargs: Any) -> bool | int:
+        result = actual_render(**kwargs)
+        completed.wait(timeout=60)
+        return result
+
+    monkeypatch.setattr(render_module, "process_render", overlap)
+
+    def submit(source: Path) -> dict[str, Any]:
+        request = {
+            "file_path": source.relative_to(tmp_path).as_posix(),
+            "framework": "pymdp",
+        }
+        if explicit_output:
+            request["output_dir"] = "shared-render"
+        response = client.post("/api/v1/render", json=request)
+        assert response.status_code == 200, response.text
+        return _assert_envelope(response.json())["data"]
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(submit, sources))
+    assert results[0]["output_dir"] != results[1]["output_dir"]
+    assert results[0]["artifact"] != results[1]["artifact"]
+    for source, data in zip(sources, results, strict=True):
+        render_dir = Path(data["output_dir"])
+        artifact = Path(data["artifact"])
+        snapshot = render_dir / "input" / source.name
+        assert data["file"] == str(source)
+        assert snapshot.read_bytes() == originals[source]
+        assert artifact.is_file() and artifact.is_relative_to(render_dir)
+        receipt = json.loads(
+            (render_dir / "render_processing_summary.json").read_text(encoding="utf-8")
+        )
+        record = receipt["file_results"][str(snapshot.resolve())]
+        assert record["source_identity"] == {
+            "path": str(snapshot.resolve()),
+            "sha256": hashlib.sha256(originals[source]).hexdigest(),
+        }
+        assert {
+            "path": str(artifact.resolve()),
+            "sha256": hashlib.sha256(artifact.read_bytes()).hexdigest(),
+        } in record["framework_results"]["pymdp"]["artifact_identities"]
+        assert source.read_bytes() == originals[source]
 
 
 @pytest.mark.unit

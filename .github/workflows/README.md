@@ -36,6 +36,26 @@ doc-pattern, documentation-contract and capability audits. Selections and
 pytest commands live in `run.sh`; trailing report arguments retain the existing
 JUnit and coverage artifact names. The full local aggregate synchronizes once.
 
+### Historical importer fixture prerequisites
+
+The unmarked real-archive regressions in `tests/gnn/test_importers.py` require
+these exact historical Git objects in the test checkout:
+
+- v5.0.3: `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`
+- v5.1.0: `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`
+
+The `ci.yml` `test` matrix and `pytest312` jobs, plus the `full-extras.yml`
+`full-extras` job, fetch only those commits with `--no-tags --depth=1` from
+the checkout's authenticated `origin` before tests. The comprehensive native
+`core` lane also selects the regressions; its existing `fetch-depth: 0`
+checkout already supplies all branch and tag history, so no extra fetch is
+needed. Installed-platform jobs select other native, CLI and environment
+witnesses, not the importer fixture tests, and need no fixture-object fetch.
+
+This is checkout provisioning, not a scope waiver: historical objects are not
+fetched inside pytest or offline checks, and the real archive tests, selections,
+assertions, coverage floors and native/scientific acceptance remain unchanged.
+
 ## Workflow files
 
 All workflows listed in the [release collector](../release_gate.py) also run on

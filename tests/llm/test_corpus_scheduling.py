@@ -610,6 +610,9 @@ def test_last_cache_publication_cannot_make_exhausted_corpus_success(
     results = json.loads((output / "llm_results.json").read_text())
     assert results["status"] == "timed_out"
     assert results["coverage"]["prompts_completed"] == 17
+    checkpoint = json.loads((output / "llm_checkpoint.json").read_text())
+    assert len(checkpoint["completed_parts"]) == 17
+    assert len(list((output / ".cache").rglob("*.json"))) == 17
 
 
 @pytest.mark.parametrize("finish_reason", ["length", "content_filter", "tool_calls"])

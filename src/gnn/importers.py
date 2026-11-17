@@ -8,9 +8,11 @@ carry its own script for this; the shapes drifted (``commit`` vs ``revision``,
 the estate as a whole.
 
 This module is the single reader for those pins. It accepts the shapes that
-exist, normalizes them to :class:`ImporterPin`, and can validate the
-repository's specifications with the parser that is installed — the same
-parser the pin names.
+exist, normalizes them to :class:`ImporterPin`, and can validate specifications
+with the current installed parser. Matching pin metadata does not authenticate
+the installed source revision. A pin-bound source verdict requires the separate,
+independently reviewed pre-import bootstrap and complete manifest described in
+``docs/development/interop.md``.
 
 Canonical pin (``schema``: :data:`PIN_SCHEMA`)::
 
@@ -58,11 +60,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from urllib.parse import urlsplit
 
 __all__ = [
     "IMPORTER_VARIABLES_SCHEMA",
@@ -158,27 +162,57 @@ class ImporterPin:
     raw: Dict[str, Any] = field(default_factory=dict)
 
 
-def normalize_repository(value: Any) -> Optional[str]:
-    """Return ``org/name`` for a pin's repository field, or ``None``.
+def _normalize_repository(value: Any, *, allow_bare: bool) -> Optional[str]:
+    """Parse an exact repository identity; installed origins require a real URL."""
+    if not isinstance(value, str) or any(
+        ord(char) < 32 or ord(char) == 127 for char in value
+    ):
+        return None
+    text = value.strip() if allow_bare else value
+    if not text or any(char.isspace() for char in text) or "\\" in text:
+        return None
+    if "?" in text or "#" in text:
+        return None
+    if text.startswith("git@"):
+        authority, separator, path = text.partition(":")
+        if not separator or authority[4:].lower() != "github.com":
+            return None
+    elif "://" in text or text.startswith("//"):
+        try:
+            parsed = urlsplit(text)
+            if parsed.hostname != "github.com" or ":" in parsed.netloc:
+                return None
+            if parsed.scheme in ("http", "https"):
+                if parsed.username is not None or parsed.password is not None:
+                    return None
+            elif parsed.scheme == "ssh":
+                if parsed.username != "git" or parsed.password is not None:
+                    return None
+            else:
+                return None
+            if not parsed.path.startswith("/"):
+                return None
+            path = parsed.path[1:]
+        except ValueError:
+            return None
+    elif allow_bare:
+        path = text
+    else:
+        return None
+    if path.endswith("/"):
+        path = path[:-1]
+    if path.endswith(".git"):
+        path = path[:-4]
+    if re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", path) is None:
+        return None
+    if any(part in (".", "..") for part in path.split("/")):
+        return None
+    return path
 
-    Accepts the two forms in use: a bare ``org/name`` and a GitHub URL with or
-    without a ``.git`` suffix.
-    """
-    if not isinstance(value, str) or not value.strip():
-        return None
-    text = value.strip()
-    if text.startswith(("http://", "https://")):
-        text = text.split("://", 1)[1]
-        if text.startswith("github.com/"):
-            text = text[len("github.com/") :]
-    if text.startswith("git@github.com:"):
-        text = text[len("git@github.com:") :]
-    if text.endswith(".git"):
-        text = text[: -len(".git")]
-    parts = [part for part in text.split("/") if part]
-    if len(parts) < 2:
-        return None
-    return f"{parts[0]}/{parts[1]}"
+
+def normalize_repository(value: Any) -> Optional[str]:
+    """Normalize a bare pin identity or a structurally valid GitHub URL."""
+    return _normalize_repository(value, allow_bare=True)
 
 
 def find_pin(repo_root: Path) -> Optional[Path]:
@@ -188,6 +222,42 @@ def find_pin(repo_root: Path) -> Optional[Path]:
         if candidate.is_file():
             return candidate
     return None
+
+
+def _json_object(pairs: List[Tuple[str, Any]]) -> Dict[str, Any]:
+    result: Dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON member {key!r}")
+        result[key] = value
+    return result
+
+
+def _relative_source_name(value: Any) -> str:
+    """Admit a canonical portable filename, never a repository escape."""
+    if (
+        not isinstance(value, str)
+        or not value
+        or "\\" in value
+        or ":" in value
+        or "\0" in value
+    ):
+        raise PinError(f"unsafe relative source path {value!r}")
+    path = PurePosixPath(value)
+    if (
+        path.is_absolute()
+        or any(part in (".", "..") for part in value.split("/"))
+        or str(path) != value
+    ):
+        raise PinError(f"unsafe relative source path {value!r}")
+    return value
+
+
+def _pin_record(pin: ImporterPin) -> Dict[str, Any]:
+    source = pin.raw.get(pin.party) if pin.party is not None else pin.raw
+    if not isinstance(source, dict):
+        raise PinError("pin sub-record is not an object")
+    return source
 
 
 def read_pin(path: Path, *, party: Optional[str] = None) -> ImporterPin:
@@ -203,8 +273,10 @@ def read_pin(path: Path, *, party: Optional[str] = None) -> ImporterPin:
             requested ``party`` sub-record is absent.
     """
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        payload = json.loads(
+            path.read_text(encoding="utf-8"), object_pairs_hook=_json_object
+        )
+    except (OSError, UnicodeError, ValueError) as exc:
         raise PinError(f"{path}: not readable JSON ({exc})") from exc
     if not isinstance(payload, dict):
         raise PinError(f"{path}: pin must be a JSON object")
@@ -222,44 +294,94 @@ def read_pin(path: Path, *, party: Optional[str] = None) -> ImporterPin:
     commit = source.get("commit") or source.get("revision")
     if not isinstance(commit, str) or not commit.strip():
         raise PinError(f"{path}: pin records no commit/revision")
+    if source.get("commit") and source.get("revision"):
+        if source["commit"] != source["revision"]:
+            raise PinError(f"{path}: commit and revision disagree")
     tag = source.get("tag") or source.get("release")
-    spec_files = source.get("spec_files")
+    if source.get("tag") and source.get("release"):
+        if source["tag"] != source["release"]:
+            raise PinError(f"{path}: tag and release disagree")
+    repository = normalize_repository(source.get("repository"))
+    if source.get("repository") is not None and repository is None:
+        raise PinError(f"{path}: repository is not a usable repository identity")
+    spec_files = source.get("spec_files", [])
     if isinstance(spec_files, str):
         spec_files = [spec_files]
     if not isinstance(spec_files, list):
-        spec_files = []
+        raise PinError(f"{path}: spec_files must be a string or list of strings")
+    spec_files = [_relative_source_name(item) for item in spec_files]
+    if len(set(spec_files)) != len(spec_files):
+        raise PinError(f"{path}: spec_files contains duplicate paths")
+    parser_files = source.get("parser_files", {})
+    if not isinstance(parser_files, dict):
+        raise PinError(f"{path}: parser_files must be an object of SHA-256 hashes")
+    for relative, digest in parser_files.items():
+        _relative_source_name(relative)
+        if not relative.startswith(("src/gnn/", "gnn/")):
+            raise PinError(
+                f"{path}: parser file is outside the GNN package: {relative}"
+            )
+        if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise PinError(f"{path}: invalid parser SHA-256 for {relative}")
     return ImporterPin(
         path=path,
         commit=commit.strip(),
         tag=tag.strip() if isinstance(tag, str) and tag.strip() else None,
-        repository=normalize_repository(source.get("repository")),
+        repository=repository,
         schema=source.get("schema") if isinstance(source.get("schema"), str) else None,
         recorded=source.get("recorded")
         if isinstance(source.get("recorded"), str)
         else None,
-        spec_files=tuple(str(item) for item in spec_files),
+        spec_files=tuple(spec_files),
         party=party,
         raw=payload,
     )
 
 
+def _contained_spec(repo_root: Path, relative: str) -> Path:
+    relative = _relative_source_name(relative)
+    candidate = repo_root / relative
+    current = repo_root
+    for part in PurePosixPath(relative).parts:
+        current = current / part
+        if current.is_symlink():
+            raise PinError(f"specification path contains a symlink: {relative}")
+    try:
+        candidate.resolve().relative_to(repo_root.resolve())
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise PinError(
+            f"specification path escapes its repository: {relative}"
+        ) from exc
+    return candidate
+
+
 def _walk_specs(repo_root: Path) -> Iterable[Path]:
-    for path in sorted(repo_root.rglob("*.gnn.md")):
-        if any(part in SKIP_DIRS for part in path.relative_to(repo_root).parts):
-            continue
-        if path.is_file():
-            yield path
+    def fail(error: OSError) -> None:
+        raise PinError(f"cannot discover specifications: {error}") from error
+
+    for directory, directories, filenames in os.walk(repo_root, onerror=fail):
+        directories[:] = sorted(
+            name
+            for name in directories
+            if name not in SKIP_DIRS and not (Path(directory) / name).is_symlink()
+        )
+        for name in sorted(filenames):
+            if name.endswith(".gnn.md"):
+                path = Path(directory) / name
+                yield _contained_spec(repo_root, path.relative_to(repo_root).as_posix())
 
 
 def discover_specs(repo_root: Path, pin: Optional[ImporterPin] = None) -> List[Path]:
-    """Return the specifications this repository declares or carries.
+    """Admit declared or discovered repository-local specification paths.
 
-    A pin that lists ``spec_files`` is authoritative: a missing declared file is
-    reported by :func:`check_importer`, not silently replaced by a glob.
+    Explicit ``spec_files: []`` is authoritative; only an absent declaration
+    enables discovery. Symlinks and noncanonical/outside paths raise PinError
+    before any specification content is read.
     """
-    if pin is not None and pin.spec_files:
-        return [repo_root / relative for relative in pin.spec_files]
-    return list(_walk_specs(repo_root))
+    repo_root = repo_root.resolve()
+    if pin is not None and (pin.spec_files or "spec_files" in _pin_record(pin)):
+        return [_contained_spec(repo_root, relative) for relative in pin.spec_files]
+    return sorted(_walk_specs(repo_root))
 
 
 def _validate_spec(path: Path) -> List[str]:
@@ -539,7 +661,13 @@ def check_importer(
                     }
                 )
 
-    specs = discover_specs(repo_root, pin)
+    try:
+        specs = discover_specs(repo_root, pin)
+    except (PinError, OSError) as exc:
+        specs = []
+        findings.append(
+            {"level": "error", "code": "spec-path-unsafe", "message": str(exc)}
+        )
     report["specs"]["count"] = len(specs)
     report["specs"]["files"] = [str(path.relative_to(repo_root)) for path in specs]
     for spec in specs:
@@ -554,7 +682,14 @@ def check_importer(
             continue
         if not validate_specs:
             continue
-        errors = _validate_spec(spec)
+        try:
+            _contained_spec(repo_root, spec.relative_to(repo_root).as_posix())
+            errors = _validate_spec(spec)
+        except (PinError, OSError) as exc:
+            findings.append(
+                {"level": "error", "code": "spec-path-unsafe", "message": str(exc)}
+            )
+            continue
         if errors:
             report["specs"]["invalid"].append(
                 {"file": str(spec.relative_to(repo_root)), "errors": errors}

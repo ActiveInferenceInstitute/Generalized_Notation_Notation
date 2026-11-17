@@ -24,6 +24,7 @@ import logging
 import os
 import tempfile
 from dataclasses import dataclass
+from datetime import date, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -113,11 +114,23 @@ def run_validation_checks(content: str, file_name: str) -> ValidationOutcome:
     )
 
 
+def _json_frontmatter(value: Any) -> Any:
+    """Lower YAML dates explicitly without stringifying other metadata."""
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {key: _json_frontmatter(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_frontmatter(item) for item in value]
+    return value
+
+
 def build_parse_payload(gnn_file: Path) -> tuple[dict[str, Any], list[GNNParseError]]:
     """Parse one GNN file into the CLI-shaped result dict.
 
     Mirrors the shared ``gnn parse`` body: state-space and connection parsing,
-    best-effort frontmatter, and best-effort POMDP extraction. Non-POMDP files
+    best-effort frontmatter with explicit ISO date/datetime lowering, and
+    best-effort POMDP extraction. Non-POMDP files
     or extraction failures omit the ``pomdp`` key and append a warning note
     (last) to ``warnings``. ``errors`` entries are plain dicts with
     ``code``/``message``/``line``/``file`` keys.
@@ -142,7 +155,7 @@ def build_parse_payload(gnn_file: Path) -> tuple[dict[str, Any], list[GNNParseEr
     try:
         from gnn.parsers.frontmatter import parse_frontmatter
 
-        metadata, _ = parse_frontmatter(content)
+        metadata = _json_frontmatter(parse_frontmatter(content)[0])
     except ImportError as exc:
         logger.debug("Frontmatter parsing not available: %s", exc)
 

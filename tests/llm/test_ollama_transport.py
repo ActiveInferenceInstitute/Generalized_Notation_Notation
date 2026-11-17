@@ -1455,3 +1455,48 @@ def test_s1_context_observations_bind_exact_local_http_request(
     assert any(p.endswith("/api/ps") for p in received.get_paths)
     if expected == "admitted":
         assert response.metadata["context_admission"]["attention_verified"] is False
+
+
+def test_s1_context_receipt_completion_cannot_outlive_original_deadline(
+    daemon: Callable[..., Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    show = {
+        "details": {"format": "gguf"},
+        "model_info": {"general.architecture": "llama", "llama.context_length": 8192},
+        "template": "fixture-template",
+    }
+    host, received, _ = daemon(
+        show_response=show,
+        ps_response={
+            "models": [{"name": MODEL, "digest": DIGEST, "context_length": 8192}]
+        },
+    )
+    provider = _provider(host, generation_options={"num_ctx": 8192})
+    transports = []
+    actual_init = module._ChatRequest.__init__
+    actual_receipt = module.context_receipt
+
+    def track(request: module._ChatRequest, *args: Any) -> None:
+        actual_init(request, *args)
+        transports.append((request, request.deadline))
+
+    def expire_after_receipt(**kwargs: Any) -> dict[str, Any]:
+        receipt = actual_receipt(**kwargs)
+        transports[0][0]._expire()
+        return receipt
+
+    monkeypatch.setattr(module._ChatRequest, "__init__", track)
+    monkeypatch.setattr(module, "context_receipt", expire_after_receipt)
+    with pytest.raises(TimeoutError, match="deadline"):
+        asyncio.run(
+            provider.generate_response(
+                [LLMMessage(role="user", content="α\r\nω")],
+                LLMConfig(
+                    model=MODEL, max_tokens=256, timeout=30, context_admission=True
+                ),
+            )
+        )
+    assert len([row for row in received if row["path"].endswith("/api/chat")]) == 1
+    assert any(path.endswith("/api/ps") for path in received.get_paths)
+    assert all(request.deadline == deadline for request, deadline in transports)
+    assert all(not request._guard.is_alive() for request, _ in transports)

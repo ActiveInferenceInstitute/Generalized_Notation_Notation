@@ -324,7 +324,7 @@ def _cmd_extract(args: argparse.Namespace) -> int:
 
 
 def _cmd_render(args: argparse.Namespace) -> int:
-    """Render a GNN file to framework code."""
+    """Render a GNN file, retaining the input, artifact, and render receipt."""
     is_json = getattr(args, "json", False)
     if not args.file.is_file():
         logger.error("GNN file not found or not a regular file: %s", args.file)
@@ -339,90 +339,91 @@ def _cmd_render(args: argparse.Namespace) -> int:
             )
         return EXIT_ERROR
 
+    from gnn.render.admission import validate_render_options
+
+    framework = str(args.framework)
+    options = json.loads(getattr(args, "options", "{}"))
+    if not isinstance(options, dict):
+        raise ValueError("--options requires a JSON object")
+    options = validate_render_options(framework, options)
+    source = args.file.read_bytes()
+    source.decode("utf-8")
     from gnn.render import (
         find_render_artifact,
         process_render,
         render_processing_succeeded,
     )
 
-    framework = str(args.framework)
-    options = json.loads(getattr(args, "options", "{}"))
-    if not isinstance(options, dict):
-        raise ValueError("--options requires a JSON object")
-    with tempfile.TemporaryDirectory(prefix="gnn-render-") as td:
-        tmp_root = Path(td)
-        input_dir = tmp_root / "input"
-        input_dir.mkdir()
-        shutil.copy2(args.file, input_dir / args.file.name)
+    render_parent = (
+        args.output.parent
+        if args.output is not None
+        else Path("output") / "11_render_output" / args.file.stem
+    )
+    render_parent.mkdir(parents=True, exist_ok=True)
+    render_dir = Path(tempfile.mkdtemp(prefix="gnn-render-", dir=render_parent))
+    input_dir = render_dir / "input"
+    input_dir.mkdir()
+    (input_dir / args.file.name).write_bytes(source)
+    ok = process_render(
+        target_dir=input_dir,
+        output_dir=render_dir,
+        verbose=getattr(args, "verbose", False),
+        frameworks=[framework],
+        strict_validation=False,
+        strict_framework_success=True,
+        backend_options={framework: options},
+    )
 
-        render_dir = (
-            tmp_root / "render_output"
-            if args.output
-            else Path("output") / "11_render_output" / args.file.stem
-        )
-        ok = process_render(
-            target_dir=input_dir,
-            output_dir=render_dir,
-            verbose=getattr(args, "verbose", False),
-            frameworks=[framework],
-            strict_validation=False,
-            strict_framework_success=True,
-            backend_options={framework: options},
-        )
-
-        if not render_processing_succeeded(ok):
-            logger.error(
-                "Render failed for %s using framework %s", args.file, framework
-            )
-            if is_json:
-                _print_envelope(
-                    "error",
-                    error={
-                        "code": "render_error",
-                        "message": (
-                            f"Render failed for {args.file} using framework {framework}"
-                        ),
-                    },
-                    command="render",
-                )
-            return EXIT_ERROR
-
-        artifact = find_render_artifact(render_dir, framework, require_current=True)
-        if artifact is None:
-            logger.error(
-                "Render completed but no %s artifact was found in %s",
-                framework,
-                render_dir,
-            )
-            if is_json:
-                _print_envelope(
-                    "error",
-                    error={
-                        "code": "render_error",
-                        "message": (
-                            f"Render completed but no {framework} artifact "
-                            f"was found in {render_dir}"
-                        ),
-                    },
-                    command="render",
-                )
-            return EXIT_ERROR
-        if args.output:
-            args.output.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(artifact, args.output)
-
-        info: dict[str, Any] = {
-            "file": str(args.file),
-            "framework": framework,
-            "output": str(args.output) if args.output is not None else None,
-            "render_dir": str(render_dir),
-            "artifact": str(artifact) if artifact is not None else None,
-        }
+    if not render_processing_succeeded(ok):
+        logger.error("Render failed for %s using framework %s", args.file, framework)
         if is_json:
-            _print_envelope("success", data=info, command="render")
-        else:
-            destination = args.output if args.output is not None else render_dir
-            print(f"Rendered {args.file} → {framework}: {destination}")
+            _print_envelope(
+                "error",
+                error={
+                    "code": "render_error",
+                    "message": (
+                        f"Render failed for {args.file} using framework {framework}"
+                    ),
+                },
+                command="render",
+            )
+        return EXIT_ERROR
+
+    artifact = find_render_artifact(render_dir, framework, require_current=True)
+    if artifact is None:
+        logger.error(
+            "Render completed but no %s artifact was found in %s",
+            framework,
+            render_dir,
+        )
+        if is_json:
+            _print_envelope(
+                "error",
+                error={
+                    "code": "render_error",
+                    "message": (
+                        f"Render completed but no {framework} artifact "
+                        f"was found in {render_dir}"
+                    ),
+                },
+                command="render",
+            )
+        return EXIT_ERROR
+    if args.output:
+        shutil.copy2(artifact, args.output)
+
+    info: dict[str, Any] = {
+        "file": str(args.file),
+        "framework": framework,
+        "output": str(args.output) if args.output is not None else None,
+        "render_dir": str(render_dir),
+        "artifact": str(artifact),
+    }
+    if is_json:
+        _print_envelope("success", data=info, command="render")
+    else:
+        destination = args.output if args.output is not None else render_dir
+        print(f"Rendered {args.file} → {framework}: {destination}")
     return EXIT_SUCCESS
 
 

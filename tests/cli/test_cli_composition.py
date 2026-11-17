@@ -666,50 +666,10 @@ class TestJsonEnvelopeFlags:
     def test_render_json_envelope_with_output(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
     ) -> None:
-        import gnn.render as render_module
-
+        monkeypatch.chdir(tmp_path)
         source = tmp_path / "model.md"
-        source.write_text("# GNN stub model\n", encoding="utf-8")
+        source.write_bytes(SIMPLE_MDP_EXEMPLAR.read_bytes())
         output = tmp_path / "rendered" / "model.py"
-
-        def fake_process_render(
-            *, target_dir: Path, output_dir: Path, **kwargs: Any
-        ) -> bool:
-            framework_dir = output_dir / "pymdp"
-            framework_dir.mkdir(parents=True, exist_ok=True)
-            (framework_dir / "model.py").write_text(
-                "# stub artifact\n", encoding="utf-8"
-            )
-            import hashlib
-
-            artifact = (framework_dir / "model.py").resolve()
-            (output_dir / "render_processing_summary.json").write_text(
-                json.dumps(
-                    {
-                        "file_results": {
-                            "model": {
-                                "framework_results": {
-                                    "pymdp": {
-                                        "success": True,
-                                        "output_files": [str(artifact)],
-                                        "artifact_identities": [
-                                            {
-                                                "path": str(artifact),
-                                                "sha256": hashlib.sha256(
-                                                    artifact.read_bytes()
-                                                ).hexdigest(),
-                                            }
-                                        ],
-                                    },
-                                }
-                            }
-                        }
-                    }
-                )
-            )
-            return True
-
-        monkeypatch.setattr(render_module, "process_render", fake_process_render)
         assert (
             cli.main(
                 [
@@ -730,8 +690,17 @@ class TestJsonEnvelopeFlags:
         assert envelope["data"]["file"] == str(source)
         assert envelope["data"]["framework"] == "pymdp"
         assert envelope["data"]["output"] == str(output)
-        assert envelope["data"]["render_dir"]
-        assert envelope["data"]["artifact"] is not None
+        render_dir = Path(envelope["data"]["render_dir"])
+        artifact = Path(envelope["data"]["artifact"])
+        assert render_dir.is_dir() and artifact.is_file()
+        assert artifact.read_bytes() == output.read_bytes()
+        snapshot = render_dir / "input" / source.name
+        assert snapshot.read_bytes() == source.read_bytes()
+        receipt = json.loads(
+            (render_dir / "render_processing_summary.json").read_text(encoding="utf-8")
+        )
+        assert str(snapshot.resolve()) in receipt["file_results"]
+        assert receipt["failed_files"] == 0
 
     def test_render_json_error_envelope_on_missing_file(self, capsys: Any) -> None:
         assert (
@@ -741,6 +710,62 @@ class TestJsonEnvelopeFlags:
         assert envelope["status"] == "error"
         assert envelope["meta"]["command"] == "render"
         assert envelope["error"]["code"] == "render_error"
+
+    @pytest.mark.parametrize(
+        "options", ["{bad", "[]", "null", '"string"', '{"unknown":true}']
+    )
+    def test_render_rejects_options_before_destination_mutation(
+        self, tmp_path: Path, capsys: Any, options: str
+    ) -> None:
+        source = tmp_path / "model.md"
+        source.write_bytes(SIMPLE_MDP_EXEMPLAR.read_bytes())
+        output = tmp_path / "rendered" / "model.py"
+        output.parent.mkdir()
+        output.write_bytes(b"caller-owned prior artifact\n")
+        before = {
+            path.relative_to(tmp_path): path.read_bytes()
+            for path in tmp_path.rglob("*")
+            if path.is_file()
+        }
+        assert (
+            cli.main(
+                [
+                    "render",
+                    str(source),
+                    "--output",
+                    str(output),
+                    "--options",
+                    options,
+                    "--json",
+                ]
+            )
+            == cli.EXIT_ERROR
+        )
+        envelope = json.loads(capsys.readouterr().out)
+        assert set(envelope) == {"status", "data", "error", "meta"}
+        assert envelope["status"] == "error"
+        assert envelope["error"]["code"] == "render_error"
+        assert envelope["meta"]["command"] == "render"
+        assert {
+            path.relative_to(tmp_path): path.read_bytes()
+            for path in tmp_path.rglob("*")
+            if path.is_file()
+        } == before
+        assert list(output.parent.iterdir()) == [output]
+
+    @pytest.mark.parametrize("command", ["parse", "validate"])
+    def test_invalid_utf8_read_emits_one_error_envelope(
+        self, tmp_path: Path, capsys: Any, command: str
+    ) -> None:
+        source = tmp_path / "model.md"
+        source.write_bytes(b"\xff")
+        assert cli.main([command, str(source), "--json"]) == cli.EXIT_ERROR
+        envelope = json.loads(capsys.readouterr().out)
+        assert set(envelope) == {"status", "data", "error", "meta"}
+        assert envelope["status"] == "error"
+        assert envelope["error"]["code"] == f"{command}_error"
+        assert envelope["meta"]["command"] == command
+        assert source.read_bytes() == b"\xff"
 
 
 # ---------------------------------------------------------------------------

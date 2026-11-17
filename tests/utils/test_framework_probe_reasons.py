@@ -78,20 +78,36 @@ def test_ngclearn_reports_target_python_gate() -> None:
     assert status.reason_code != "unsupported_python"
 
 
+@pytest.mark.parametrize("version", ["0.4.4", "0.5.0"])
 def test_actual_wrong_cpomdp_version_is_diagnosed(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
+    tmp_path, monkeypatch: pytest.MonkeyPatch, version: str
 ) -> None:
-    (tmp_path / "cpomdp.py").write_text('VERSION = "0.4.4"\n')
-    info = tmp_path / "cpomdp-0.4.4.dist-info"
+    (tmp_path / "cpomdp.py").write_text(f'__version__ = "{version}"\n')
+    info = tmp_path / f"cpomdp-{version}.dist-info"
     info.mkdir()
     (info / "METADATA").write_text(
-        "Metadata-Version: 2.1\nName: cpomdp\nVersion: 0.4.4\n"
+        f"Metadata-Version: 2.1\nName: cpomdp\nVersion: {version}\n"
     )
     monkeypatch.setenv("PYTHONPATH", str(tmp_path))
     status = availability.check_framework("cpomdp")
     assert status.reason_code == "unsupported_version"
-    assert "0.5.1" in status.reason and "0.4.4" in status.reason
+    assert "0.5.1" in status.reason and version in status.reason
     assert status.missing_module is None
+
+
+def test_actual_selected_cpomdp_version_is_admitted_without_native_skip_gate(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "cpomdp.py").write_text('__version__ = "0.5.1"\n')
+    info = tmp_path / "cpomdp-0.5.1.dist-info"
+    info.mkdir()
+    (info / "METADATA").write_text(
+        "Metadata-Version: 2.1\nName: cpomdp\nVersion: 0.5.1\n"
+    )
+    monkeypatch.setenv("PYTHONPATH", str(tmp_path))
+    status = availability.check_framework("cpomdp")
+    assert status.available is True, status
+    assert status.reason_code is None and status.install_hint is None
 
 
 def test_invocation_cache_never_dispatches_after_deadline(
