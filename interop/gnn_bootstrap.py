@@ -71,6 +71,7 @@ import importlib.util
 import json
 import os
 import re
+from urllib.parse import urlsplit
 import stat
 import sys
 from collections.abc import Iterator, Mapping
@@ -192,27 +193,55 @@ class ImporterPin:
     raw: Dict[str, Any] = field(default_factory=dict)
 
 
-def normalize_repository(value: Any) -> Optional[str]:
-    """Return ``org/name`` for a pin's repository field, or ``None``.
+def _normalize_repository(value: Any, *, allow_bare: bool) -> Optional[str]:
+    """Parse an exact repository identity; installed origins require a real URL."""
+    if not isinstance(value, str) or any(ord(char) < 32 or ord(char) == 127 for char in value):
+        return None
+    text = value.strip() if allow_bare else value
+    if not text or any(char.isspace() for char in text) or "\\" in text:
+        return None
+    if "?" in text or "#" in text:
+        return None
+    if text.startswith("git@"):
+        authority, separator, path = text.partition(":")
+        if not separator or authority[4:].lower() != "github.com":
+            return None
+    elif "://" in text or text.startswith("//"):
+        try:
+            parsed = urlsplit(text)
+            if parsed.hostname != "github.com" or ":" in parsed.netloc:
+                return None
+            if parsed.scheme in ("http", "https"):
+                if parsed.username is not None or parsed.password is not None:
+                    return None
+            elif parsed.scheme == "ssh":
+                if parsed.username != "git" or parsed.password is not None:
+                    return None
+            else:
+                return None
+            if not parsed.path.startswith("/"):
+                return None
+            path = parsed.path[1:]
+        except ValueError:
+            return None
+    elif allow_bare:
+        path = text
+    else:
+        return None
+    if path.endswith("/"):
+        path = path[:-1]
+    if path.endswith(".git"):
+        path = path[:-4]
+    if re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", path) is None:
+        return None
+    if any(part in (".", "..") for part in path.split("/")):
+        return None
+    return path
 
-    Accepts the two forms in use: a bare ``org/name`` and a GitHub URL with or
-    without a ``.git`` suffix.
-    """
-    if not isinstance(value, str) or not value.strip():
-        return None
-    text = value.strip()
-    if text.startswith(("http://", "https://")):
-        text = text.split("://", 1)[1]
-        if text.startswith("github.com/"):
-            text = text[len("github.com/") :]
-    if text.startswith("git@github.com:"):
-        text = text[len("git@github.com:") :]
-    if text.endswith(".git"):
-        text = text[: -len(".git")]
-    parts = [part for part in text.split("/") if part]
-    if len(parts) < 2:
-        return None
-    return f"{parts[0]}/{parts[1]}"
+
+def normalize_repository(value: Any) -> Optional[str]:
+    """Normalize a bare pin identity or a structurally valid GitHub URL."""
+    return _normalize_repository(value, allow_bare=True)
 
 
 def find_pin(repo_root: Path) -> Optional[Path]:
@@ -533,7 +562,7 @@ def _source_origin(
             raise _source_error("source-origin-unavailable", "installed origin does not record an exact Git revision")
         if vcs.get("commit_id") != pin.commit:
             raise _source_error("source-origin-mismatch", "installed origin commit differs from the consumer pin")
-        if normalize_repository(origin.get("url")) != UPSTREAM_REPOSITORY:
+        if _normalize_repository(origin.get("url"), allow_bare=False) != UPSTREAM_REPOSITORY:
             raise _source_error("source-origin-mismatch", "installed origin repository differs from the GNN producer")
         return {
             "kind": "installed-vcs",

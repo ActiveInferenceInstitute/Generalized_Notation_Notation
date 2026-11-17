@@ -105,6 +105,46 @@ def _canonical_pin(**overrides: object) -> dict:
 
 
 @pytest.mark.parametrize(
+    "repository",
+    [
+        "https://evil.invalid/ActiveInferenceInstitute/Generalized_Notation_Notation",
+        "https://ActiveInferenceInstitute/Generalized_Notation_Notation",
+        "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/tree/main",
+        "https://user@github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+        "https://github.com:443/ActiveInferenceInstitute/Generalized_Notation_Notation",
+        "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation?ref=main",
+        "",
+        17,
+    ],
+)
+def test_invalid_declared_repository_cannot_become_an_omitted_identity(
+    tmp_path: Path, repository: object
+) -> None:
+    path = _write_pin(tmp_path, _canonical_pin(repository=repository))
+    _write_spec(tmp_path)
+    with pytest.raises(PinError, match="repository"):
+        read_pin(path)
+    report = check_importer(tmp_path)
+    assert report["ok"] is False
+    assert report["specs"]["count"] == 1
+    assert report["specs"]["invalid"] == []
+    assert [item["code"] for item in report["findings"]] == ["pin-unreadable"]
+
+
+def test_genuinely_omitted_legacy_repository_remains_supported(tmp_path: Path) -> None:
+    payload = _canonical_pin()
+    payload.pop("repository")
+    assert read_pin(_write_pin(tmp_path, payload)).repository is None
+    _write_spec(tmp_path)
+    report = check_importer(tmp_path, expected_commit=COMMIT, expected_tag="v5.0.3")
+    assert report["ok"] is True
+    assert report["pin"]["repository"] is None
+    assert report["specs"]["count"] == 1
+    assert report["specs"]["invalid"] == []
+    assert report["findings"] == []
+
+
+@pytest.mark.parametrize(
     ("value", "expected"),
     [
         (
@@ -125,7 +165,7 @@ def _canonical_pin(**overrides: object) -> dict:
         ),
         (
             "ActiveInferenceInstitute/Generalized_Notation_Notation/tree/main",
-            "ActiveInferenceInstitute/Generalized_Notation_Notation",
+            None,
         ),
         ("", None),
         ("not-a-repo", None),

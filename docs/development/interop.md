@@ -32,6 +32,9 @@ contract, not just a parse. Findings carry stable codes (`pin-missing`,
 `pin-schema-unversioned`) and `--json` emits the whole report. The canonical pin
 schema is `gnn-importer-pin/v1`; pins written before the schema are read and reported, never
 rewritten.
+An omitted legacy repository identity remains supported. A present, non-null
+repository declaration that fails normalization is a `pin-unreadable` error,
+never an omitted value that can bypass the repository comparison.
 
 The estate-wide view is [the downstream registry](../downstream/README.md) and
 its machine-readable mirror
@@ -44,16 +47,25 @@ report-only.
 The standalone [bootstrap](../../interop/gnn_bootstrap.py),
 [v5.0.3 source manifest](../../interop/v5.0.3-source-manifest.json) and
 [v5.1.0 source manifest](../../interop/v5.1.0-source-manifest.json) are
-independently qualified, byte-preserved consumer resources, not a replacement
-for the current installed `gnn.importers` module. Fetch them from the same
-reviewed immutable source commit, not a moving branch or an invented release
-asset. This source publication changes no existing tag, release or package.
+consumer source-guard resources, not a replacement for the canonical installed
+`gnn.importers` module. The manifests retain their originally qualified bytes;
+the current bootstrap strictly parses GitHub origins. Use a qualified immutable
+source commit, never a moving branch or invented release asset.
 
 | Resource | SHA-256 |
 | --- | --- |
-| `interop/gnn_bootstrap.py` | `f638d4c01fe7de31e43d793e59bf382d0c3d1a82f365c59238334a2b40adfb37` |
+| `interop/gnn_bootstrap.py` | `e04e9114c860a622f26ee8d323ac44b77c6484f5a29bdc7654fb298a9b58c3b2` |
 | `interop/v5.0.3-source-manifest.json` | `17a35bb2114e76a38119128d290d12377cb641652d70788000482366dca0a14a` |
 | `interop/v5.1.0-source-manifest.json` | `43b33c0b2b40386afa3f306fec4cc13bc1fd7c3b570fbf11d5008bad5c8e6b51` |
+
+Bare `org/repo` identities are valid pin metadata, not installed VCS URLs.
+Installed origin records must name an exact GitHub HTTP(S), Git SSH or SCP
+origin, with the complete repository path and no credentials, port, query,
+fragment or extra path. HTTP metadata matching is not transport authentication.
+Historical delivery `66d491f86895443cf588011cc6f40c37b8bae8fd` retains the
+separate `f638d4c01fe7de31e43d793e59bf382d0c3d1a82f365c59238334a2b40adfb37`
+bootstrap and its observed direct-source/genuine-GitHub-URL proof scope; these
+immutable bytes and the two source manifests are not rewritten or rebaselined.
 
 The v5.0.3 manifest binds all 1,225 package files at
 `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`; the distinct v5.1.0 manifest

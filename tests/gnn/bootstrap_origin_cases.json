@@ -1,0 +1,187 @@
+[
+  {
+    "input": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "installed_url_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation"
+  },
+  {
+    "input": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git",
+    "pin_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "installed_url_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation"
+  },
+  {
+    "input": "http://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "installed_url_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation"
+  },
+  {
+    "input": "git@github.com:ActiveInferenceInstitute/Generalized_Notation_Notation.git",
+    "pin_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "installed_url_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation"
+  },
+  {
+    "input": "ssh://git@github.com/ActiveInferenceInstitute/Generalized_Notation_Notation.git",
+    "pin_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "installed_url_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation"
+  },
+  {
+    "input": "https://GitHub.COM/ActiveInferenceInstitute/Generalized_Notation_Notation.git/",
+    "pin_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "installed_url_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation"
+  },
+  {
+    "input": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "installed_url_expected": null
+  },
+  {
+    "input": " ActiveInferenceInstitute/Generalized_Notation_Notation ",
+    "pin_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "installed_url_expected": null
+  },
+  {
+    "input": " https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com.evil.invalid/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://evilgithub.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com@evil.invalid/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://evil.invalid/github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://user@github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://git:unit-negative@github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com:443/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com:/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com//ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/tree/main",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation?x=1",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation?",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation#fragment",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation#",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation%2fextra",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https:///github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "file:///ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "git://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "ssh://root@github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "ssh://git@github.com:22/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "git@evil.invalid:ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "ActiveInferenceInstitute/Generalized_Notation_Notation/tree/main",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "//github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation\n",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation\\extra",
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": null,
+    "pin_expected": null,
+    "installed_url_expected": null
+  },
+  {
+    "input": "not-a-repo",
+    "pin_expected": null,
+    "installed_url_expected": null
+  }
+]

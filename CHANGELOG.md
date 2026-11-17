@@ -16,6 +16,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   pin, scientific artifact or installed-runtime acceptance.
   [Consumer contract](docs/development/interop.md#frozen-pre-import-resources)
 
+### Strict repository origins
+
+- Distinguish bare repository pin metadata from genuine installed GitHub-origin
+  URLs. Reject malformed hosts, credentials, ports and extra path components
+  without weakening complete package inventories or import-lifetime guards.
+  Historical resource identities and their observed proof scopes remain intact;
+  the strict bootstrap has its own digest and qualification boundary.
+- Reject present invalid repository declarations in the canonical pin reader
+  instead of treating normalization failure as an omitted legacy identity;
+  exercise both refusal and genuine omitted-pin conformance with real specs.
+
 ### fep_formal pair pin
 
 - `.github/fep-lean-pair.json` moves from `fep_formal` `48206d6d` to
