@@ -52,6 +52,13 @@ Consumers that require field-type validation should check for the full mode
 before accepting an empty error list. `validate_gnn_object` still returns an
 error list for callers using the existing API.
 
+`gnn parse --json` and `POST /api/v1/parse` distinguish graph structure
+from optional probabilistic parameters. A valid interface declaration can
+return variables and connections without `pomdp`. That key requires at
+least one parsed parameter with `InitialParameterization` provenance.
+A `pomdp` object can still be incomplete. Use `gnn extract --strict` and
+check the intended backend before treating a model as executable.
+
 ## HTTP applications
 
 `gnn serve --surface` selects the factory. Both factories are in the `api` extra

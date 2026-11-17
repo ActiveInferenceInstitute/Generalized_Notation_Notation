@@ -58,6 +58,45 @@ class TestCmdHandlers:
         result = _cmd_parse(args)
         assert result == 1  # Error exit code
 
+    def test_cmd_parse_keeps_interface_separate_from_pomdp(
+        self, tmp_path: Path, capsys: Any
+    ) -> None:
+        from gnn.cli import _cmd_parse
+
+        model = tmp_path / "interface.gnn.md"
+        model.write_text(
+            "## GNNSection\nGNN\n## ModelName\nWeather interface\n"
+            "## StateSpaceBlock\nexternal_temperature[1,type=float]\n"
+            "observed_temperature[1,type=float]\n## Connections\n"
+            "external_temperature>observed_temperature\n"
+            "## InitialParameterization\nthreshold = {2}\n",
+            encoding="utf-8",
+        )
+        assert _cmd_parse(argparse.Namespace(file=model, format="json", json=True)) == 0
+        envelope = json.loads(capsys.readouterr().out)
+        assert envelope["status"] == "success"
+        payload = envelope["data"]
+        assert len(payload["variables"]) == 2
+        assert len(payload["connections"]) == 1
+        assert payload["errors"] == []
+        assert "pomdp" not in payload
+        assert "source-declared" in payload["warnings"][-1]
+
+    def test_cmd_parse_preserves_source_declared_pomdp(self, capsys: Any) -> None:
+        from gnn.cli import _cmd_parse
+
+        model = (
+            Path(__file__).resolve().parents[2]
+            / "input/gnn_files/discrete/two_state_bistable.md"
+        )
+        assert _cmd_parse(argparse.Namespace(file=model, format="json", json=True)) == 0
+        payload = json.loads(capsys.readouterr().out)["data"]
+        assert (
+            payload["pomdp"]["matrix_provenance"]["A"]["source"]
+            == "InitialParameterization"
+        )
+        assert payload["pomdp"]["num_states"] == 2
+
     def test_cmd_validate_warning_uses_exit_code_two(
         self, tmp_path: Path, capsys: Any
     ) -> None:
