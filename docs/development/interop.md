@@ -32,7 +32,7 @@ contract, not just a parse. Findings carry stable codes (`pin-missing`,
 `pin-schema-unversioned`) and `--json` emits the whole report. The canonical pin
 schema is `gnn-importer-pin/v1`; pins written before the schema are read and reported, never
 rewritten.
-An omitted legacy repository identity remains supported. A present, non-null
+Pins that omit a repository identity remain supported. A present, non-null
 repository declaration that fails normalization is a `pin-unreadable` error,
 never an omitted value that can bypass the repository comparison.
 
