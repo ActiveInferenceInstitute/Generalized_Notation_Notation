@@ -310,6 +310,10 @@ def registered_flags() -> set[str]:
         ("src/gnn/extract/__init__.py", None),
         ("src/gnn/mcp/validate_tools.py", None),
         ("src/gnn/processing/__main__.py", None),
+        # Consumer bootstrap and importer-registry gate; docs/development/
+        # interop.md documents their origin/manifest flags.
+        ("interop/gnn_bootstrap.py", None),
+        ("scripts/check_importer_registry.py", None),
     ):
         tree = ast.parse((ROOT / relative).read_text(encoding="utf-8"))
         if program_literal is not None:

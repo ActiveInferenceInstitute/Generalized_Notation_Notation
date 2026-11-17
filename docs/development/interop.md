@@ -73,6 +73,9 @@ The v5.0.3 manifest binds all 1,225 package files at
 Select the manifest matching the consumer's original pin; in particular, the
 v5.1.0 manifest does not admit a v5.0.3 consumer. Do not regenerate either
 manifest from the installation being checked or change a pin to fit a resource.
+A manifest is produced only by the bootstrap's `source-manifest` command
+from an independently qualified exact-revision package: `--package-root`,
+its `--commit` and each guarded `--verdict-module`.
 Verify the independently trusted bootstrap digest, then compile and
 execute those exact checked bytes before **any** `gnn` import. Bind the frozen
 manifest bytes and digest, and keep `qualified_source` around the actual
@@ -99,7 +102,8 @@ share-alike terms; this publication does not grant a different license.
 
 ### Local registry validation
 
-`scripts/check_importer_registry.py --repo` delegates to the frozen bootstrap
+`scripts/check_importer_registry.py --repo` (with `--name` giving that
+checkout's registry row) delegates to the frozen bootstrap
 in a fresh target process selected with `--importer-python`. It compares the
 checkout with that member row's own pin, not the registry's general upstream
 release. Supply `--source-manifest` and its independently trusted
