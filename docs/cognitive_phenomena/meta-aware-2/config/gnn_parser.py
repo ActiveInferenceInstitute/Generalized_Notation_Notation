@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 GNN Configuration Parser for Meta-Awareness Active Inference Model
 

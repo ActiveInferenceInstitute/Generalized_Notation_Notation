@@ -85,7 +85,7 @@ def test_json_formatter_includes_exception_info() -> None:
 
 
 def test_rotate_logs_compresses_and_prunes(tmp_path: object) -> None:
-    from gnn.utils.logging.logging_utils import rotate_logs
+    from gnn.utils.logging_utils import rotate_logs
 
     log_dir = tmp_path / "logs"  # type: ignore[attr-defined]
     log_dir.mkdir()
@@ -107,7 +107,7 @@ def test_rotate_logs_compresses_and_prunes(tmp_path: object) -> None:
 
 
 def test_rotate_logs_noop_without_current_log(tmp_path: object) -> None:
-    from gnn.utils.logging.logging_utils import rotate_logs
+    from gnn.utils.logging_utils import rotate_logs
 
     rotate_logs(tmp_path, max_files=2, compress=True)  # type: ignore[attr-defined]
 

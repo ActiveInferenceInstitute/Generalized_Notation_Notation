@@ -215,7 +215,7 @@ class TestProcessorFunctions:
         bottlenecks = identify_bottlenecks(SAMPLE_PIPELINE_SUMMARY)
         assert isinstance(bottlenecks, list)
         if bottlenecks:
-            assert any((b["step"] == "2_tests.py" for b in bottlenecks))
+            assert any(b["step"] == "2_tests.py" for b in bottlenecks)
 
     @pytest.mark.unit
     def test_identify_bottlenecks_custom_threshold(self) -> Any:
@@ -258,10 +258,8 @@ class TestProcessorFunctions:
         assert isinstance(recommendations, list)
         assert len(recommendations) > 0
         assert any(
-            (
-                "critical" in r.lower() or "red" in r.lower() or "failed" in r.lower()
-                for r in recommendations
-            )
+            "critical" in r.lower() or "red" in r.lower() or "failed" in r.lower()
+            for r in recommendations
         )
 
     @pytest.mark.unit

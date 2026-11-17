@@ -31,11 +31,10 @@ defaults:
 
 jobs:
   test:
-    # Full matrix on schedules, manual dispatch and version tags. Pull requests
-    # run the same lanes without the Python 3.11 floor leg: while
-    # requires-python still admits 3.11, release support evidence for it comes
-    # from tags, the weekly schedule and manual dispatch, not every PR push.
-    # A branch push to main runs only the deterministic subset below.
+    # Python 3.14 (default runtime) and 3.13 on pull requests, version tags,
+    # the weekly schedule and manual dispatch; the 3.12 floor runs in the
+    # separate pytest (3.12) job. A branch push to main runs only the
+    # deterministic subset below.
     if: github.event_name != 'push' || github.ref_type == 'tag'
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -43,7 +42,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        python-version: ${{ fromJSON(github.event_name == 'pull_request' && '["3.14", "3.13"]' || '["3.14", "3.11", "3.13"]') }}
+        python-version: ["3.14", "3.13"]
       fail-fast: false
     env:
       PYTHONPATH: src

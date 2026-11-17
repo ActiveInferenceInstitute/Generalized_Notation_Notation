@@ -351,7 +351,7 @@ def process_directory(
         if summary_file.exists():
             import json
 
-            with open(summary_file, "r") as f:
+            with open(summary_file) as f:
                 summary = json.load(f)
 
             result["summary"] = summary

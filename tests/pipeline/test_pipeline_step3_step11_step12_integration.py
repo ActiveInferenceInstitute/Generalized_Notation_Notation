@@ -120,11 +120,11 @@ class TestStep11RenderConsumesParseOutput:
         }
 
     def test_jax_extract_matrices_accepts_spec(self) -> Any:
-        """jax_renderer._extract_gnn_matrices accepts a well-formed spec."""
+        """jax_spec_extract._extract_gnn_matrices accepts a well-formed spec."""
         try:
-            from gnn.render.jax.jax_renderer import _extract_gnn_matrices
+            from gnn.render.jax.jax_spec_extract import _extract_gnn_matrices
         except ImportError:
-            raise AssertionError("jax_renderer not available")
+            raise AssertionError("jax_spec_extract not available")
         result = _extract_gnn_matrices(self._minimal_spec())
         assert isinstance(result, dict)
 
@@ -133,7 +133,7 @@ class TestStep11RenderConsumesParseOutput:
         try:
             from gnn.render.jax.jax_renderer import render_gnn_to_jax
         except ImportError:
-            raise AssertionError("jax_renderer not available")
+            raise AssertionError("jax_spec_extract not available")
         out_file = tmp_path / "integration_test_model_jax.py"
         success, message, artifacts = render_gnn_to_jax(self._minimal_spec(), out_file)
         if success:

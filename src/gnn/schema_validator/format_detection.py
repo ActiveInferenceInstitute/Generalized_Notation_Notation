@@ -52,7 +52,7 @@ class FormatDetectionMixin:
         """Detect format from file content analysis."""
         try:
             # Try reading as text first
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(file_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read(2000)  # Read first 2KB
 
             content.lower()

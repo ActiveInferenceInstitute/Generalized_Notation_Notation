@@ -42,7 +42,7 @@ def parse_jax_output(output_path: Path) -> Optional[Dict[str, Any]]:
         return None
 
     try:
-        with open(output_path, "r") as f:
+        with open(output_path) as f:
             raw = json.load(f)
 
         normalized: dict[str, Any] = {

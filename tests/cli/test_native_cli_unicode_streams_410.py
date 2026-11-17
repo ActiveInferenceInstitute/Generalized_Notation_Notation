@@ -172,7 +172,7 @@ def test_native_python_main_restores_stream_settings_after_success_or_argument_e
     if malformed:
         assert "unknown_μ_状态" in child.stderr.decode("utf-8", errors="strict")
     else:
-        assert "✅".encode("utf-8") in child.stdout
+        assert "✅".encode() in child.stdout
 
 
 def test_native_python_main_preserves_stringio_and_existing_closed_capture_error(

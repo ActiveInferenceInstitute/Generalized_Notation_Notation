@@ -194,7 +194,7 @@ def main() -> int:
         "repository": REPOSITORY,
         "revision": args.revision,
         "ref": args.ref,
-        "observed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "observed_at": datetime.datetime.now(datetime.UTC).isoformat(),
         "event": args.event,
         "ready": ready,
         "workflows": observations,

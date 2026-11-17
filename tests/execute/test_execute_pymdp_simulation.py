@@ -194,7 +194,7 @@ class TestPyMDPSimulation(unittest.TestCase):
         self.assertTrue(json_file.exists())
 
         # Load and verify
-        with open(json_file, "r") as f:
+        with open(json_file) as f:
             loaded_results = json.load(f)
 
         self.assertIn("observations", loaded_results)

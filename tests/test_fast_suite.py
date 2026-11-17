@@ -36,7 +36,7 @@ class TestFastEnvironment:
     @pytest.mark.unit
     def test_python_environment(self) -> Any:
         """Test basic Python environment."""
-        assert sys.version_info >= (3, 8), "Python 3.8+ required"
+        assert sys.version_info >= (3, 12), "Python 3.12+ required"
         assert str(SRC_DIR) in sys.path, "Source directory in Python path"
 
     @pytest.mark.unit

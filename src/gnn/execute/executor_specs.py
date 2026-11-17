@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from gnn.utils.runtime_safety.framework_availability import FrameworkStatus
 
 
-def _runner_state(framework_dir_key: str) -> "_RunnerState":
+def _runner_state(framework_dir_key: str) -> _RunnerState:
     """Resolve through ``gnn.execute.executor`` (call-time indirection)."""
     from gnn.execute import executor
 
@@ -58,7 +58,7 @@ class ExecutorFrameworkSpec:
     unavailable_message: str
     success_log: str
     warning_log_prefix: str
-    diagnosis: "FrameworkStatus | None" = None
+    diagnosis: FrameworkStatus | None = None
     readiness_pending: bool = False
 
 

@@ -114,7 +114,7 @@ class TestAudioIntegration:
 
         generator = AudioGenerator()
         gnn_file = list(sample_gnn_files.values())[0]
-        with open(gnn_file, "r") as f:
+        with open(gnn_file) as f:
             gnn_content = f.read()
         result = generator.process_gnn_to_audio(gnn_content)
         assert result is not None

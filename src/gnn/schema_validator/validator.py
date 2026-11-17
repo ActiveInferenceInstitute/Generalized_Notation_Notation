@@ -25,7 +25,6 @@ from gnn.schema_validator.semantic_checks import SemanticChecksMixin
 from gnn.schema_validator.structural_checks import StructuralChecksMixin
 from gnn.schema_validator.syntax import ROUND_TRIP_AVAILABLE, GNNParser
 from gnn.schema_validator.validation_levels import LevelResolverMixin
-from gnn.schemas.section_contract import REQUIRED_SECTIONS
 from gnn.types import (
     ValidationLevel,
     ValidationResult,
@@ -137,7 +136,7 @@ class GNNValidator(
 
             # Read text content
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read()
             except UnicodeDecodeError as e:
                 result.errors.append(f"File encoding error: {e}")

@@ -204,13 +204,15 @@ class TestRenderDisCoPyTranslator:
         self._import_translator()
 
     def test_check_discopy_availability(self) -> Any:
-        translator = self._import_translator()
-        result = translator.check_discopy_availability()
+        from gnn.render.discopy import bootstrap
+
+        result = bootstrap.check_discopy_availability()
         assert isinstance(result, dict)
 
     def test_generate_setup_report(self) -> Any:
-        translator = self._import_translator()
-        result = translator.generate_setup_report()
+        from gnn.render.discopy import bootstrap
+
+        result = bootstrap.generate_setup_report()
         assert isinstance(result, str)
 
     def test_parse_gnn_content_empty(self) -> Any:

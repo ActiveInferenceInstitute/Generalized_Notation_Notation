@@ -259,7 +259,7 @@ class StdioServer:
                         logger.warning("Request queue full, dropping message")
                         self._connection_errors += 1
 
-                except (IOError, OSError) as e:
+                except OSError as e:
                     logger.error(f"IO error in reader thread: {e}")
                     self._connection_errors += 1
                     if self._connection_errors > self._max_connection_errors:
@@ -334,7 +334,7 @@ class StdioServer:
                         logger.debug(f"STDIO OUT: {json_str}")
                         sys.stdout.write(json_str + "\n")
                         sys.stdout.flush()
-                    except (BrokenPipeError, IOError) as e:
+                    except (OSError, BrokenPipeError) as e:
                         logger.error(f"IO error writing response: {e}")
                         self._connection_errors += 1
                         if self._connection_errors > self._max_connection_errors:

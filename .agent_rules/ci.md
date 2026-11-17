@@ -15,9 +15,8 @@ work cannot establish success.
 
 Standard Python 3.12 tests and quality run independently as `pytest (3.12)` and
 `quality (3.12)`; the retired `test (3.12)` alias is not required by any ruleset
-(only `gitvault/gnn-repo-gates` is). Pull requests run `test (3.13)`/`test (3.14)`;
-the Python 3.11 legs run on version tags, the weekly schedule and manual dispatch
-while `requires-python` still admits 3.11. Aggregates reject
+(only `gitvault/gnn-repo-gates` is). Every event runs `test (3.13)`/`test (3.14)`
+across the supported CPython 3.12–3.14 range. Aggregates reject
 missing/failed/skipped or cancelled dependencies.
 
 Install each runner's frozen environment once; subsequent commands use

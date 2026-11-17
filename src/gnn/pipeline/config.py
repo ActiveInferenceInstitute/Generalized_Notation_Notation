@@ -63,7 +63,7 @@ class PipelineConfig:
         """Load pipeline settings dict from ``config_path`` (YAML or JSON)."""
         if self.config_path.exists():
             try:
-                with open(self.config_path, "r") as f:
+                with open(self.config_path) as f:
                     if self.config_path.suffix in (".yaml", ".yml"):
                         return yaml.safe_load(f) or {}
                     else:

@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """ngc-learn executor: discovery, envelope wiring, env routing, skip semantics.
 
-The shared environment is py3.11, where the marker-gated ``ngclearn`` extra
-resolves empty, so every runtime path must skip (never fail). Tests that need
-the "installed" state simulate it with monkeypatching to stay deterministic on
-both python splits.
+``ngclearn`` is a non-default extra, so the shared environment usually lacks it
+and every runtime path must skip (never fail). Tests that need the "installed"
+state simulate it with monkeypatching to stay deterministic either way.
 """
 
 import json

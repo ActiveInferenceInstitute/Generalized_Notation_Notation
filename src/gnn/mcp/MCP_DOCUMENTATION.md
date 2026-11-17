@@ -202,7 +202,7 @@ module discovery.
 ## Installation and Setup
 
 ### Prerequisites
-- Python 3.11 through 3.14, matching `pyproject.toml`
+- Python 3.12 through 3.14, matching `pyproject.toml`
 - Required dependencies resolved from `pyproject.toml` / `uv.lock` with `uv sync`
 
 ### Installation

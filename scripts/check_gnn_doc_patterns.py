@@ -59,8 +59,8 @@ PATTERNS: list[tuple[re.Pattern[str], str]] = [
     ),
     (re.compile(r"lark_parser\.py"), "stale filename unless reintroduced"),
     (
-        re.compile(r"- Python 3\.12\+"),
-        "use Python >= 3.11 to match pyproject.toml in SPEC examples",
+        re.compile(r"Python[*:\s]*(?:>=\s*3\.11\b|3\.11\+)|>=3\.11,<3\.1\d"),
+        "stale Python floor: pyproject.toml requires-python is >=3.12,<3.15",
     ),
     # Stale doc paths (canonical: docs/gnn/reference/gnn_file_structure_doc.md; punctuation: src/gnn/documentation/punctuation.md)
     (

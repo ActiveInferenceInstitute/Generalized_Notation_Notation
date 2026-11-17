@@ -17,7 +17,8 @@ from typing import Any
 # effect); it was removed at 31b3e03e0, and the guard below now simply
 # preserves the interpreter default after the tester imports.
 _prev_recursion_limit = sys.getrecursionlimit()
-from gnn.testing.round_trip_availability import GNN_AVAILABLE, GNNFormat
+from gnn.parsers.common import GNNFormat
+from gnn.testing.round_trip_availability import GNN_AVAILABLE
 from gnn.testing.round_trip_tester import GNNRoundTripTester
 
 sys.setrecursionlimit(max(_prev_recursion_limit, 1000))

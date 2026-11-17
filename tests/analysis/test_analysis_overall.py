@@ -177,7 +177,7 @@ class TestAnalysisOverall:
             assert results_dir.exists()
             assert (results_dir / "analysis_results.json").exists()
             assert (results_dir / "analysis_summary.md").exists()
-            with open(results_dir / "analysis_results.json", "r") as f:
+            with open(results_dir / "analysis_results.json") as f:
                 data = json.load(f)
             assert data["processed_files"] == 1
             assert len(data["statistical_analysis"]) == 1
@@ -675,7 +675,7 @@ class TestAnalyzerSimulationMetrics:
 
     def test_extract_simulation_metrics_returns_dict(self, tmp_path: Any) -> Any:
         """_extract_simulation_metrics returns a dict with expected keys."""
-        from gnn.analysis.analyzer import _extract_simulation_metrics
+        from gnn.analysis.framework_comparison import _extract_simulation_metrics
 
         logger = self._make_logger()
         result = _extract_simulation_metrics("pymdp", [], tmp_path, logger)
@@ -690,7 +690,7 @@ class TestAnalyzerSimulationMetrics:
         """_extract_simulation_metrics loads current PyMDP schema when present."""
         import json
 
-        from gnn.analysis.analyzer import _extract_simulation_metrics
+        from gnn.analysis.framework_comparison import _extract_simulation_metrics
 
         sim_dir = tmp_path / "sim_data"
         sim_dir.mkdir()
@@ -723,7 +723,7 @@ class TestAnalyzerSimulationMetrics:
         """PyMDP cross-framework metrics should not consume older JSON shapes."""
         import json
 
-        from gnn.analysis.analyzer import _extract_simulation_metrics
+        from gnn.analysis.framework_comparison import _extract_simulation_metrics
 
         sim_dir = tmp_path / "sim_data"
         sim_dir.mkdir()
@@ -742,7 +742,7 @@ class TestAnalyzerSimulationMetrics:
 
     def test_extract_simulation_metrics_missing_dir(self, tmp_path: Any) -> Any:
         """_extract_simulation_metrics handles nonexistent impl_dir gracefully."""
-        from gnn.analysis.analyzer import _extract_simulation_metrics
+        from gnn.analysis.framework_comparison import _extract_simulation_metrics
 
         logger = self._make_logger()
         detail: dict[str, Any] = {
@@ -759,7 +759,7 @@ class TestAnalyzerSimulationMetrics:
         """Skipped details must not scan repo-root output from an isolated run."""
         import json
 
-        from gnn.analysis.analyzer import _extract_simulation_metrics
+        from gnn.analysis.framework_comparison import _extract_simulation_metrics
 
         checkout = tmp_path / "checkout"
         stale_dir = checkout / "output" / "11_render_output" / "simple_mdp" / "rxinfer"
@@ -791,7 +791,7 @@ class TestAnalyzerSimulationMetrics:
         """bnlearn writes execution_logs/*_results.json; metrics should still record completion."""
         import json
 
-        from gnn.analysis.analyzer import _extract_simulation_metrics
+        from gnn.analysis.framework_comparison import _extract_simulation_metrics
 
         impl = tmp_path / "markov_chain" / "bnlearn"
         el = impl / "execution_logs"
@@ -819,7 +819,7 @@ class TestAnalyzerSimulationMetrics:
         """simulation_data/simulation_results.json must win over sparse execution_logs."""
         import json
 
-        from gnn.analysis.analyzer import _extract_simulation_metrics
+        from gnn.analysis.framework_comparison import _extract_simulation_metrics
 
         impl = tmp_path / "rx" / "rxinfer"
         el = impl / "execution_logs"
@@ -856,7 +856,7 @@ class TestAnalyzerSimulationMetrics:
         """DisCoPy: execution log plus circuit_info.json yields circuit metrics (no empty extract)."""
         import json
 
-        from gnn.analysis.analyzer import _extract_simulation_metrics
+        from gnn.analysis.framework_comparison import _extract_simulation_metrics
 
         impl = tmp_path / "m" / "discopy"
         el = impl / "execution_logs"
@@ -894,7 +894,7 @@ class TestAnalyzerSimulationMetrics:
 
     def test_compare_framework_results_empty_input(self) -> Any:
         """_compare_framework_results returns dict with expected keys for empty input."""
-        from gnn.analysis.analyzer import _compare_framework_results
+        from gnn.analysis.framework_comparison import _compare_framework_results
 
         logger = self._make_logger()
         result = _compare_framework_results({}, logger)
@@ -906,7 +906,7 @@ class TestAnalyzerSimulationMetrics:
 
     def test_compare_framework_results_success_rates(self) -> Any:
         """_compare_framework_results computes success rates correctly."""
-        from gnn.analysis.analyzer import _compare_framework_results
+        from gnn.analysis.framework_comparison import _compare_framework_results
 
         logger = self._make_logger()
         framework_data: dict[str, Any] = {
@@ -919,7 +919,7 @@ class TestAnalyzerSimulationMetrics:
 
     def test_compare_framework_results_execution_times(self) -> Any:
         """_compare_framework_results computes perf stats when times present."""
-        from gnn.analysis.analyzer import _compare_framework_results
+        from gnn.analysis.framework_comparison import _compare_framework_results
 
         logger = self._make_logger()
         framework_data: dict[str, Any] = {

@@ -32,7 +32,7 @@ MODEL_DIGEST = "sha256:" + "a" * 64
 SOURCE = (
     "﻿# GNN model\r\n## StateSpaceBlock\r\ns[2,1,type=int] # état\r\n"
     "## Notes\nμ-precision ≥ 0 — 🧠 mixed endings\r\nno trailing newline"
-).encode("utf-8")
+).encode()
 
 
 def capacity(num_ctx: int = 4096, template: str = "{{ .Prompt }}") -> dict:

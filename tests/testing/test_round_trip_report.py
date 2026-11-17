@@ -7,7 +7,7 @@ differences and warnings sections, and semantic-checksum verdict lines.
 
 from __future__ import annotations
 
-from gnn.testing.round_trip_availability import GNNFormat
+from gnn.parsers.common import GNNFormat
 from gnn.testing.round_trip_report import RoundTripReportMixin
 from gnn.testing.round_trip_results import ComprehensiveTestReport, RoundTripResult
 

@@ -182,7 +182,7 @@ def test_process_execute_records_local_worker_pool_failure(
         def __init__(self, max_workers: int) -> None:
             self.max_workers = max_workers
 
-        def __enter__(self) -> "BrokenPool":
+        def __enter__(self) -> BrokenPool:
             return self
 
         def __exit__(self, *args: object) -> None:

@@ -536,7 +536,7 @@ def get_gnn_schema_info() -> Dict[str, Any]:
         # Load schema info from YAML if available
         yaml_path = base_path / "schemas/yaml.yaml"
         if yaml_path.exists():
-            with open(yaml_path, "r") as f:
+            with open(yaml_path) as f:
                 schema_data = yaml.safe_load(f)
 
             return {

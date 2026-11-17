@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Visualization functions for Sandved-Smith et al. (2021) computational phenomenology model.
 Generates Figures 7, 10, and 11 from the paper.

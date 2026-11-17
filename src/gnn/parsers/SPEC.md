@@ -23,7 +23,7 @@
 
 ## Requirements
 
-- **Python** >= 3.11 (project `requires-python`; see repo root `pyproject.toml`).
+- **Python** >= 3.12 (project `requires-python`; see repo root `pyproject.toml`).
 - Optional extras (e.g. protobuf) may be required for some formats at runtime.
 - Installed PyYAML reads leading comments normally and reports malformed or
   unsupported-tag input as a failed parse. Loader failure cannot become apparent

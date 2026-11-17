@@ -14,7 +14,7 @@ import colorsys
 import hashlib
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -776,7 +776,7 @@ def generate_gif_animation(
         "uses_real_rxinfer": rt.get("uses_real_rxinfer"),
         "model_kind": rt.get("model_kind", "unknown"),
         "num_states": data.get("model_parameters", {}).get("num_states"),
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "generator": "gif_animator.py",
     }
     manifest_path = output_path.with_suffix(".manifest.json")

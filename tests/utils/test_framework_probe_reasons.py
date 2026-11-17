@@ -72,10 +72,10 @@ def test_actual_missing_executor_is_distinct() -> None:
 
 
 def test_ngclearn_reports_target_python_gate() -> None:
+    # The package floor is 3.12, so the host interpreter never trips the
+    # ngc-learn Python gate; the gate remains for older external executors.
     status = availability.check_framework("ngclearn", executor=sys.executable)
-    if sys.version_info < (3, 12):
-        assert status.reason_code == "unsupported_python"
-        assert "3.12" in status.reason
+    assert status.reason_code != "unsupported_python"
 
 
 def test_actual_wrong_cpomdp_version_is_diagnosed(

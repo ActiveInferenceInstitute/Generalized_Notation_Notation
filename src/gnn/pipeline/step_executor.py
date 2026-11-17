@@ -44,7 +44,7 @@ import os
 import sys
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, Generator, Optional, TextIO, Tuple, cast
 
@@ -286,7 +286,7 @@ def _mark_timed_out_artifacts(
         "force_killed": False,
         "containment": "cooperative_only",
         "timeout_seconds": timeout_seconds,
-        "timed_out_at": datetime.now(timezone.utc).isoformat(),
+        "timed_out_at": datetime.now(UTC).isoformat(),
         "possibly_partial": candidates,
         "possibly_partial_truncated": truncated,
         "note": (

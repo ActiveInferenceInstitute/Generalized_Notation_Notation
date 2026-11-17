@@ -92,7 +92,7 @@ def execute_jax_script(
 
     # Validate script syntax
     try:
-        with open(script_path, "r", encoding="utf-8") as f:
+        with open(script_path, encoding="utf-8") as f:
             content = f.read()
             compile(content, script_path.name, "exec")
         logger.debug(f"✅ Script syntax valid: {script_path.name}")

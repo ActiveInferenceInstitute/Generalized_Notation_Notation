@@ -26,7 +26,7 @@ import os
 import platform
 import shutil
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -582,7 +582,7 @@ def _environment_block(
         "backend_versions": backend_versions,
         "repeats": repeats,
         "sandbox_mode": sandbox_mode,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
     }
     if block.keys() != ENVIRONMENT_KEYS:
         raise ValueError(f"environment block key drift: {sorted(block)}")

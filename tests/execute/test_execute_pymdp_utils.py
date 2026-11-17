@@ -96,7 +96,7 @@ class TestNumpySerialization:
             assert test_file.exists(), "JSON file should be created"
 
             # Should be loadable
-            with open(test_file, "r") as f:
+            with open(test_file) as f:
                 loaded_data = json.load(f)
             assert loaded_data is not None
 

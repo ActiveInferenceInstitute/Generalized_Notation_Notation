@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      UV_PYTHON: "3.12"
+      UV_PYTHON: "3.14"
       JULIA_PKG_PRECOMPILE_AUTO: "0"
       JULIA_NUM_PRECOMPILE_TASKS: "2"
       GKSwstype: "100"
@@ -55,10 +55,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Select latest Python 3.12 patch
+      - name: Select latest Python 3.14 patch
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: "3.12"
+          python-version: "3.14"
           check-latest: true
 
       - name: Select fresh run output

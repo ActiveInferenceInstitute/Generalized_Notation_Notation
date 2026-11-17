@@ -887,7 +887,7 @@ def process_gnn_file_with_d2(
 
         if parsed_json.exists():
             try:
-                with open(parsed_json, "r") as f:
+                with open(parsed_json) as f:
                     model_data = json.load(f)
                 logger.info(f"Loaded parsed model data from {parsed_json}")
             except Exception as e:

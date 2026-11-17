@@ -9,8 +9,7 @@ and generate_cross_framework_comparison.
 Extracted from post_simulation.py for maintainability.
 
 Mechanical split facade: implementations live in ``viz_*`` sibling
-modules; every previously public and private name is re-exported here
-so consumer import paths are unchanged.
+modules; ``__all__`` below is the explicit re-export surface.
 """
 
 from .viz_animations import (

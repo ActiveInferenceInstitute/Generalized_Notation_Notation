@@ -82,7 +82,7 @@ class StdioMCPClient:
     ) -> Dict[str, Any]:
         """Handle send request for internal callers."""
         if not self.process.stdin:
-            raise IOError("Server stdin is not available.")
+            raise OSError("Server stdin is not available.")
 
         request_id = f"inspector-{self.request_id_counter}"
         self.request_id_counter += 1

@@ -145,7 +145,7 @@ class PickleGNNParser(BaseGNNParser):
         except Exception as binary_error:
             # If binary fails, try reading as base64-encoded text
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read().strip()
                 return self.parse_string(content)
             except Exception as text_error:

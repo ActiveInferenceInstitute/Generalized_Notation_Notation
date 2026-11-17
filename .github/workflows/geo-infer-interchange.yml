@@ -53,7 +53,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.12"]
+        # GEO_INFER's numpy<2 cap (GEO-INFER-BAYES) has cp312 wheels as its
+        # ceiling and GNN's floor is 3.12, so 3.12 is the one shared interpreter.
+        python: ["3.12"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -123,8 +125,8 @@ jobs:
           cache-dependency-glob: gnn/uv.lock
       - name: Install GNN locked runtime
         env:
-          # GNN follows the matrix interpreter so each leg pairs both sides on
-          # the same Python; GEO_INFER stays <=3.12 (numpy<2 wheel ceiling).
+          # GNN follows the matrix interpreter so both sides pair on the same
+          # Python; GEO_INFER stays <=3.12 (numpy<2 wheel ceiling).
           GNN_PYTHON: ${{ matrix.python }}
         run: |
           uv sync --no-cache --project gnn --locked --python "$GNN_PYTHON" --extra dev --extra geo-infer

@@ -390,9 +390,7 @@ def execute(args: argparse.Namespace) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("stage", choices=(*STAGES, Q7_STAGE))
-    parser.add_argument(
-        "--expected-python", choices=("3.11", "3.12", "3.14"), required=True
-    )
+    parser.add_argument("--expected-python", choices=("3.12", "3.14"), required=True)
     for flag in ("environment", "gnn-root", "fep-root", "receipts"):
         parser.add_argument(f"--{flag}", type=Path, required=True)
     parser.add_argument("--gnn-release-root", type=Path)

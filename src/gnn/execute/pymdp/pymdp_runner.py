@@ -39,7 +39,7 @@ def validate_and_clean_pymdp_script(script_path: Path) -> Path | None:
 
     try:
         # First, try to compile the script as-is
-        with open(script_path, "r") as f:
+        with open(script_path) as f:
             content = f.read()
             compile(content, script_path.name, "exec")
         logger.debug(f"Script {script_path.name} is syntactically valid")

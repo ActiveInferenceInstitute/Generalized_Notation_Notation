@@ -12,11 +12,9 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, List, Optional
 
-from .round_trip_availability import (
-    CROSS_FORMAT_AVAILABLE,
-    GNNFormat,
-    GNNInternalRepresentation,
-)
+from gnn.parsers.common import GNNFormat, GNNInternalRepresentation
+
+from .round_trip_availability import CROSS_FORMAT_AVAILABLE
 from .round_trip_results import ComprehensiveTestReport, RoundTripResult
 
 
@@ -26,7 +24,8 @@ class RoundTripComparisonMixin:
     if TYPE_CHECKING:
         from pathlib import Path
 
-        from .round_trip_availability import CrossFormatValidator, GNNParsingSystem
+        from gnn.parsers import GNNParsingSystem
+        from gnn.schema_validator import CrossFormatValidator
 
         supported_formats: Any
         reference_file: Any

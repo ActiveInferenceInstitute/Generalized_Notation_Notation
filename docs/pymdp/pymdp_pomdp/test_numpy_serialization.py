@@ -77,7 +77,7 @@ def test_numpy_serialization():
             print(f"File size: {test_file.stat().st_size} bytes")
 
             # Try to load it back
-            with open(test_file, "r") as f:
+            with open(test_file) as f:
                 json.load(f)
             print("✓ Successfully loaded back from JSON")
         else:

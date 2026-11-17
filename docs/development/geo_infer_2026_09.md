@@ -56,9 +56,10 @@ GEO_INFER pair:
   this repository, so each side names the other in a same-named file.
 - `.github/workflows/geo-infer-interchange.yml` validates the pin (known
   slug, 40-hex revision), checks out GEO_INFER at exactly the pinned SHA into
-  `geo-infer/`, syncs independent locked runtimes (matrix Python 3.11/3.12
-  for the GEO environment; the GNN environment on 3.11 with the dev and
-  geo-infer extras; the same heavy-package exclusions GEO's own CI uses), and
+  `geo-infer/`, syncs independent locked runtimes (both on Python 3.12, the
+  one interpreter GNN's floor and GEO's numpy<2 wheel ceiling share; GNN with
+  the dev and geo-infer extras; the same heavy-package exclusions GEO's own CI
+  uses), and
   runs `scripts/run_geo_interchange_checks.py`.
 - `scripts/run_geo_interchange_checks.py` refuses a checkout that is not at
   the pinned revision, drives GEO's read-only
@@ -94,9 +95,9 @@ For a local paired run, select both executable paths explicitly and use a real
 GEO checkout of the revision in GNN's committed pair pin. Install the GEO
 workspace with its uv 0.13.1 executable, locked dependencies, all packages and
 extras, and the existing cupy, mayavi, vaex and vaex-core exclusions. Select
-Python 3.11 and 3.12 in separate GEO environments to cover both hosted rows.
-Install GNN with its uv 0.13.6 executable, locked dependencies, the same
-Python as the GEO row (3.11 or 3.12), and the dev and geo-infer extras.
+Python 3.12 to match the hosted row. Install GNN with its uv 0.13.6
+executable, locked dependencies, the same Python 3.12, and the dev and
+geo-infer extras.
 
 The [paired workflow](../../.github/workflows/geo-infer-interchange.yml) owns
 the exact installation and runner command lines. Those options belong to uv

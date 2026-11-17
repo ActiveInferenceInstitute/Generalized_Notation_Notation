@@ -14,8 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from gnn.parsers.common import GNNFormat
-from gnn.testing.round_trip_availability import GNNInternalRepresentation
+from gnn.parsers.common import GNNFormat, GNNInternalRepresentation
 from gnn.testing.round_trip_comparison import RoundTripComparisonMixin
 from gnn.testing.round_trip_markdown_parser import _DirectMarkdownParser
 from gnn.testing.round_trip_report import RoundTripReportMixin

@@ -59,7 +59,7 @@ def gnn_file_to_discopy_diagram(
         return None
 
     try:
-        with open(gnn_file_path, "r", encoding="utf-8") as f:
+        with open(gnn_file_path, encoding="utf-8") as f:
             content = f.read()
 
         parsed_gnn = parse_gnn_content(content)
@@ -133,7 +133,7 @@ def gnn_file_to_discopy_matrix_diagram(
         return None
 
     try:
-        with open(gnn_file_path, "r", encoding="utf-8") as f:
+        with open(gnn_file_path, encoding="utf-8") as f:
             content = f.read()
 
         parsed_gnn = parse_gnn_content(content)

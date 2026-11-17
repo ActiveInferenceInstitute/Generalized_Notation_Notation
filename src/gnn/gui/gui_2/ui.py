@@ -308,7 +308,7 @@ def _select_b_slice(
 
 def build_visual_gui(
     markdown_text: str, export_path: Path, logger: logging.Logger
-) -> "gr.Blocks":
+) -> gr.Blocks:
     """Build the enhanced visual matrix editor interface with real-time heatmaps and dimension controls"""
     if gr is None:
         raise RuntimeError("Gradio not available")
@@ -535,7 +535,7 @@ def build_visual_gui(
             title: str,
             colorscale: str = "Viridis",
             show_values: bool = True,
-        ) -> "go.Figure":
+        ) -> go.Figure:
             """Create an enhanced matrix heatmap with better visualization"""
             if go is None:
                 return None
@@ -625,7 +625,7 @@ def build_visual_gui(
 
         def create_enhanced_vector_plot(
             vector_data: Any, title: str, color: str = "blue"
-        ) -> "go.Figure":
+        ) -> go.Figure:
             """Create an enhanced vector visualization"""
             if go is None:
                 return None

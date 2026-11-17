@@ -332,7 +332,7 @@ Registered by `src/gnn/ontology/mcp.py` `register_tools(mcp_instance)` (4 tools)
 **Solution**:
 - Check term spelling and case sensitivity
 - Verify ontology terms file includes all required terms
-- Use `--strict-validation=False` for lenient validation
+- For lenient parsing in Python, use `GNNParsingSystem(strict_validation=False)` (there is no CLI flag for this)
 - Review ontology terms file structure
 
 #### Issue 3: Semantic mapping incomplete

@@ -90,7 +90,7 @@ def execute_rxinfer_script(
     # E-2: Validate Julia syntax before execution
     if script_path.suffix.lower() == ".jl":
         try:
-            with open(script_path, "r", encoding="utf-8") as f:
+            with open(script_path, encoding="utf-8") as f:
                 content = f.read()
             if not content.strip():
                 logger.error(f"Script file is empty: {script_path}")

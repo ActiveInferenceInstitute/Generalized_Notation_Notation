@@ -51,7 +51,7 @@ class SimpleValidator:
 
         # Check if file is readable
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
         except Exception as e:
             result["is_valid"] = False

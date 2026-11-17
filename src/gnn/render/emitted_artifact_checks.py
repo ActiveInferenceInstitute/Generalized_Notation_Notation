@@ -117,7 +117,7 @@ def first_party_unresolvable_imports(code: str) -> list[tuple[str, int]]:
     return sorted(findings, key=lambda item: (item[1], item[0]))
 
 
-def _literal_shape(node: "object") -> "tuple[int, ...] | None":
+def _literal_shape(node: object) -> tuple[int, ...] | None:
     """Return the rectangular shape of an AST list literal, or None.
 
     Ragged literals, non-numeric leaves, and non-list nodes yield None -
@@ -169,7 +169,7 @@ def _literal_shape(node: "object") -> "tuple[int, ...] | None":
     return tuple(shape)
 
 
-def _shape_from_array_call(call: "object") -> "tuple[int, ...] | None":
+def _shape_from_array_call(call: object) -> tuple[int, ...] | None:
     """Extract the literal shape from ``jnp.array([...])`` / ``torch.tensor([...])``."""
     import ast
 
@@ -178,7 +178,7 @@ def _shape_from_array_call(call: "object") -> "tuple[int, ...] | None":
     return _literal_shape(call.args[0])
 
 
-def matrix_shapes(code: str) -> "dict[str, tuple[int, ...]] | None":
+def matrix_shapes(code: str) -> dict[str, tuple[int, ...]] | None:
     """Extract canonical A/B/C/D matrix shapes from one emitted Python artifact.
 
     Understands the four maintained emission conventions:
@@ -295,7 +295,7 @@ def julia_dimension_constants(code: str) -> dict[str, int]:
     return constants
 
 
-def julia_render_factorization(code: str) -> "str | None":
+def julia_render_factorization(code: str) -> str | None:
     """Extract ``const MODEL_KIND = "..."`` from a .jl artifact, if declared.
 
     ``"hierarchical"`` marks a native per-level factorized render whose

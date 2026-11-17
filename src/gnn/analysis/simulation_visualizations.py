@@ -108,7 +108,7 @@ def visualize_simulation_results(
 
         for trace_file in trace_files:
             try:
-                with open(trace_file, "r") as f:
+                with open(trace_file) as f:
                     data = json.load(f)
 
                 # Local Helper for attaching robust context

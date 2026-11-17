@@ -9,7 +9,7 @@
 
 ## Requirements
 
-- **Python** >= 3.11 (see repo `pyproject.toml`).
+- **Python** >= 3.12 (see repo `pyproject.toml`).
 - The schema validator's round-trip adapter preserves supplied `ParsedGNN`
   parameter names and values, including zero, false and nested containers.
   Each conversion owns independent value copies; it does not normalize,

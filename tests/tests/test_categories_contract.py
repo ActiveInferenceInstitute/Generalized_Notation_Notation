@@ -85,7 +85,7 @@ def test_missing_category_files_with_isolated_categories(
     assert missing_category_files(str(tmp_path)) == {"syn": ["absent.py"]}
 
 
-def _make_runner() -> "_ModularTestRunner":
+def _make_runner() -> _ModularTestRunner:
     """Minimal _ModularTestRunner for warning-contract tests."""
     from tests.test_runner_modular import _ModularTestRunner
 

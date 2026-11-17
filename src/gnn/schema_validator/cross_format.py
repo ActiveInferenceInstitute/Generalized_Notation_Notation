@@ -550,14 +550,14 @@ class CrossFormatValidator:
                 if schema_path.exists():
                     try:
                         if format_name == "json":
-                            with open(schema_path, "r") as f:
+                            with open(schema_path) as f:
                                 schemas[format_name] = json.load(f)
                         elif format_name == "yaml":
-                            with open(schema_path, "r") as f:
+                            with open(schema_path) as f:
                                 schemas[format_name] = yaml.safe_load(f)
                         else:
                             # For other formats, just check if they're readable
-                            with open(schema_path, "r") as f:
+                            with open(schema_path) as f:
                                 content = f.read(1000)  # Read first 1KB
                             schemas[format_name] = {"content_length": len(content)}
 
@@ -702,7 +702,7 @@ if __name__ == "__main__":
                 print(f"  - {warning}")
 
     elif args.file:
-        with open(args.file, "r") as f:
+        with open(args.file) as f:
             content = f.read()
 
         result = validate_cross_format_consistency(content)

@@ -202,7 +202,7 @@ class TestMCPProcessing:
         for filename in expected_files:
             file_path = output_dir / filename
             if file_path.exists():
-                with open(file_path, "r") as f:
+                with open(file_path) as f:
                     data = json.load(f)
                 assert isinstance(data, dict)
 

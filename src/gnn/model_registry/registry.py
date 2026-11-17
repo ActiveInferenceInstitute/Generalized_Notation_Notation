@@ -199,7 +199,7 @@ class ModelRegistry:
         """Load the registry from file."""
         if self.registry_path.exists():
             try:
-                with open(self.registry_path, "r") as f:
+                with open(self.registry_path) as f:
                     data = json.load(f)
 
                 for model_id, model_data in data.get("models", {}).items():
@@ -234,7 +234,7 @@ class ModelRegistry:
         """
         try:
             # Extract model metadata
-            with open(model_path, "r", encoding="utf-8") as f:
+            with open(model_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Extract model ID and name

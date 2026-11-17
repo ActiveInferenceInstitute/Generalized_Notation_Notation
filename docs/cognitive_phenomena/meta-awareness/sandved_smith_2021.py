@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Sandved-Smith et al. (2021) Computational Phenomenology of Mental Action
 

@@ -518,7 +518,7 @@ Tool functions live in `src/gnn/render/mcp.py` and are registered in `register_t
 **Solution**:
 - Ensure GNN model has complete state space, observations, actions
 - Verify connections follow POMDP structure (s->o, s->s, a->s)
-- Use `--strict-validation=False` for lenient validation
+- For lenient parsing in Python, use `GNNParsingSystem(strict_validation=False)` (there is no CLI flag for this)
 - Review POMDP requirements in documentation
 
 #### Issue 3: Generated code doesn't execute

@@ -37,10 +37,9 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        # Pull requests and main pushes cover 3.12 (floor after the 3.11 leg),
-        # 3.13 and the default 3.14 runtime. Version tags and manual dispatch
-        # add the Python 3.11 leg while requires-python still admits it.
-        python-version: ${{ fromJSON((github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type != 'tag')) && '["3.12", "3.13", "3.14"]' || '["3.11", "3.12", "3.13", "3.14"]') }}
+        # Every event covers the supported range: the 3.12 floor, 3.13 and the
+        # default 3.14 runtime.
+        python-version: ["3.12", "3.13", "3.14"]
     env:
       UV_PYTHON: ${{ matrix.python-version }}
       NATIVE_COVERAGE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}

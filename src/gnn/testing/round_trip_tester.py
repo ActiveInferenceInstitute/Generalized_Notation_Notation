@@ -21,39 +21,38 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, List, Optional, cast
 
-from gnn.parsers.common import Parameter
-
-from .round_trip_availability import (
-    CROSS_FORMAT_AVAILABLE,
-    AlloySerializer,
-    ASN1Serializer,
-    BinarySerializer,
+from gnn.parsers import GNNParsingSystem
+from gnn.parsers.alloy_serializer import AlloySerializer
+from gnn.parsers.asn1_serializer import ASN1Serializer
+from gnn.parsers.binary_serializer import BinarySerializer
+from gnn.parsers.common import (
     Connection,
     ConnectionType,
-    CoqSerializer,
-    CrossFormatValidator,
     DataType,
-    FunctionalSerializer,
     GNNFormat,
     GNNInternalRepresentation,
-    GNNParsingSystem,
-    GNNValidator,
-    GrammarSerializer,
-    IsabelleSerializer,
-    JSONSerializer,
-    LeanSerializer,
-    ParsedGNN,
+    Parameter,
     ParseResult,
-    PKLSerializer,
-    ProtobufSerializer,
-    PythonSerializer,
-    ScalaSerializer,
     Variable,
-    XMLSerializer,
-    XSDSerializer,
-    YAMLSerializer,
-    ZNotationSerializer,
 )
+from gnn.parsers.coq_serializer import CoqSerializer
+from gnn.parsers.functional_serializer import FunctionalSerializer
+from gnn.parsers.grammar_serializer import GrammarSerializer
+from gnn.parsers.isabelle_serializer import IsabelleSerializer
+from gnn.parsers.json_serializer import JSONSerializer
+from gnn.parsers.lean_serializer import LeanSerializer
+from gnn.parsers.pkl_serializer import PKLSerializer
+from gnn.parsers.protobuf_serializer import ProtobufSerializer
+from gnn.parsers.python_serializer import PythonSerializer
+from gnn.parsers.scala_serializer import ScalaSerializer
+from gnn.parsers.xml_serializer import XMLSerializer
+from gnn.parsers.xsd_serializer import XSDSerializer
+from gnn.parsers.yaml_serializer import YAMLSerializer
+from gnn.parsers.znotation_serializer import ZNotationSerializer
+from gnn.schema_validator import CrossFormatValidator, GNNValidator
+from gnn.types import ParsedGNN
+
+from .round_trip_availability import CROSS_FORMAT_AVAILABLE
 from .round_trip_comparison import RoundTripComparisonMixin
 from .round_trip_config import (
     ENHANCED_TEST_CONFIG,

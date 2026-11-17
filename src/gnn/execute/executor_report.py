@@ -141,7 +141,7 @@ def _validate_pymdp_script_syntax(
 
     for script in pymdp_dir.glob("*.py"):
         try:
-            with open(script, "r") as f:
+            with open(script) as f:
                 compile(f.read(), script.name, "exec")
             logger.debug(f"✅ PyMDP script syntax valid: {script.name}")
         except SyntaxError as e:

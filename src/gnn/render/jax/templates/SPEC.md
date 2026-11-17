@@ -51,5 +51,5 @@ Generated scripts (depending on template) import:
 
 ## Repo policy
 
-- Python version: **3.11+** (repo policy)
+- Python version: **3.12+** (repo policy)
 - Any future wiring of these templates into `jax_renderer.py` must update the parent docs to reflect the dependency and behavior changes.

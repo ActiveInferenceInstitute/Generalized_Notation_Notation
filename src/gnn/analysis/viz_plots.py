@@ -176,7 +176,7 @@ def visualize_all_framework_outputs(
         if "simulation_data" in result_file.parts:
             continue
         try:
-            with open(result_file, "r") as f:
+            with open(result_file) as f:
                 data = json.load(f)
 
             # Normalize framework name to canonical form
@@ -219,7 +219,7 @@ def visualize_all_framework_outputs(
     # Also search for simulation_results.json files - MERGE into existing keys
     for sim_file in execution_dir.rglob("*simulation_results.json"):
         try:
-            with open(sim_file, "r") as f:
+            with open(sim_file) as f:
                 data = json.load(f)
 
             # Determine framework from path or file content
@@ -319,7 +319,7 @@ def visualize_all_framework_outputs(
                     if sim_data_dir.exists():
                         for json_file in sim_data_dir.glob("*.json"):
                             try:
-                                with open(json_file, "r") as f:
+                                with open(json_file) as f:
                                     file_data = json.load(f)
                                 if isinstance(file_data, dict):
                                     if framework in {
@@ -364,7 +364,7 @@ def visualize_all_framework_outputs(
                                     beliefs: list[Any] = []
                                     actions: list[Any] = []
                                     observations: list[Any] = []
-                                    with open(csv_file, "r") as f:
+                                    with open(csv_file) as f:
                                         lines = [
                                             line
                                             for line in f

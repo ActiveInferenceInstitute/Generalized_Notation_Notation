@@ -176,7 +176,9 @@ def check_python_version() -> bool:
     """Check that the current Python version meets minimum requirements."""
     import sys
 
-    return sys.version_info.major >= 3
+    from .constants import MIN_PYTHON_VERSION
+
+    return sys.version_info[:2] >= MIN_PYTHON_VERSION
 
 
 # Ensure get_module_info exposes environment_types key as tests expect

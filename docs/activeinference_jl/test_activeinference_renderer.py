@@ -85,7 +85,7 @@ def test_activeinference_renderer():
                 print(f"   File size: {output_path.stat().st_size} bytes")
 
                 # Show first few lines
-                with open(output_path, "r") as f:
+                with open(output_path) as f:
                     lines = f.readlines()[:10]
                     print("   First 10 lines:")
                     for i, line in enumerate(lines, 1):
