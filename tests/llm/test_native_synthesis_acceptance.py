@@ -42,9 +42,7 @@ RAW = ("FIRST=α\r\n" + "x" * 12 + "\r\nLAST=β").encode("utf-8")
 def native_profile(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     location = os.environ.get("GNN_LLM_NATIVE_PROFILE")
     if not location:
-        pytest.fail(
-            "FAIL-UNAVAILABLE: owner-frozen GNN_LLM_NATIVE_PROFILE is required"
-        )
+        pytest.fail("FAIL-UNAVAILABLE: owner-frozen GNN_LLM_NATIVE_PROFILE is required")
     profile = json.loads(Path(location).read_bytes())
     assert profile["provider"] == "ollama"
     identity = profile["runtime_identity"]
