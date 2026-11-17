@@ -99,7 +99,12 @@ def error_response(
     payload = error_envelope(
         code,
         message,
-        details=details,
+        details=jsonable_encoder(
+            details,
+            custom_encoder={
+                bytes: lambda value: value.decode("utf-8", errors="backslashreplace")
+            },
+        ),
         status_code=status_code,
         **meta,
     )
@@ -135,7 +140,7 @@ def install_exception_handlers(app: FastAPI) -> None:
             422,
             "validation_error",
             "Request validation failed",
-            details=jsonable_encoder(exc.errors()),
+            details=exc.errors(),
             path=request.url.path,
         )
 

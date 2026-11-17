@@ -7,6 +7,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Source-bound importer resources and original engineering reconciliation
+
+- Publish distinct strict pre-import bootstrap bytes and the unchanged complete
+  v5.0.3/v5.1.0 source manifests, preserving historical delivery identities,
+  consumer pins, attribution and source-only qualification boundaries.
+- Refuse malformed declared repository identities without rejecting pins that
+  omit the identity. Installed origins require exact GitHub URL structure;
+  immutable package inventories and import-lifetime checks remain mandatory.
+- Retain invocation-bound API/CLI render inputs and artifacts, pre-mutation
+  option admission, explicit date metadata lowering and safe invalid-byte errors.
+- Preserve current request-plan scheduling while binding resume and synthesis
+  validators to each source, output label and exact request. Serialize cache
+  publication/rollback with per-key native locks and unique publication identities.
+  Native corpus quality, both original cpomdp splits, platform matrices and
+  scientific acceptance remain separate obligations.
+- Fail selected native synthesis acceptance before dispatch when its
+  owner-frozen profile is absent; keep default zero-skip checks and all
+  native/scientific approval boundaries unchanged.
+- Provision exact historical Git fixture objects for real archive regressions
+  and add the cache publication witness to existing installed platform cells;
+  retain current upstream event rosters, runtime metadata and coverage floors.
+
 ### fep_formal pair pin
 
 - `.github/fep-lean-pair.json` moves from `fep_formal` `ffc6c4d5` to

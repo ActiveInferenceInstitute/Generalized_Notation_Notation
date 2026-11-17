@@ -24,6 +24,7 @@ import logging
 import os
 import tempfile
 from dataclasses import dataclass
+from datetime import date, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -113,13 +114,27 @@ def run_validation_checks(content: str, file_name: str) -> ValidationOutcome:
     )
 
 
+def _json_frontmatter(value: Any) -> Any:
+    """Lower YAML dates explicitly without stringifying other metadata."""
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {key: _json_frontmatter(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_frontmatter(item) for item in value]
+    return value
+
+
 def build_parse_payload(gnn_file: Path) -> tuple[dict[str, Any], list[GNNParseError]]:
     """Parse one GNN file into the CLI-shaped result dict.
 
     Mirrors the shared ``gnn parse`` body: state-space and connection parsing,
-    best-effort frontmatter, and best-effort POMDP extraction. Non-POMDP files
+    best-effort frontmatter with explicit ISO date/datetime lowering, and
+    best-effort POMDP extraction. Non-POMDP files
     or extraction failures omit the ``pomdp`` key and append a warning note
-    (last) to ``warnings``. ``errors`` entries are plain dicts with
+    (last) to ``warnings``. The extraction must identify a parsed model parameter
+    declared in the same document snapshot. Adapter defaults alone cannot
+    turn an interface into a probabilistic model. ``errors`` entries are plain dicts with
     ``code``/``message``/``line``/``file`` keys.
 
     Returns ``(result, parse_errors)`` — the raw parse errors power exit-code
@@ -142,7 +157,7 @@ def build_parse_payload(gnn_file: Path) -> tuple[dict[str, Any], list[GNNParseEr
     try:
         from gnn.parsers.frontmatter import parse_frontmatter
 
-        metadata, _ = parse_frontmatter(content)
+        metadata = _json_frontmatter(parse_frontmatter(content)[0])
     except ImportError as exc:
         logger.debug("Frontmatter parsing not available: %s", exc)
 
@@ -154,18 +169,20 @@ def build_parse_payload(gnn_file: Path) -> tuple[dict[str, Any], list[GNNParseEr
         pomdp_note = "File declares no StateSpaceBlock variables; 'pomdp' key omitted"
     else:
         try:
-            from gnn.extract.pomdp_extractor import extract_pomdp_from_file
+            from gnn.extract.pomdp_extractor import extract_pomdp_from_content
 
-            pomdp_result = extract_pomdp_from_file(gnn_file, strict_validation=False)
-            # on_error="lenient" (default) returns Optional[POMDPStateSpace];
-            # "collect" returns (spec, errors) — tolerate both shapes.
-            pomdp_space = (
-                pomdp_result[0] if isinstance(pomdp_result, tuple) else pomdp_result
-            )
+            pomdp_space = extract_pomdp_from_content(content, strict_validation=False)
             if pomdp_space is None:
                 pomdp_note = "File does not parse as a POMDP; 'pomdp' key omitted"
-            else:
+            elif any(
+                evidence.get("source") == "InitialParameterization"
+                for evidence in (pomdp_space.matrix_provenance or {}).values()
+            ):
                 pomdp_data = pomdp_space.to_dict()
+            else:
+                pomdp_note = (
+                    "No parsed source-declared POMDP parameters; 'pomdp' key omitted"
+                )
         except Exception as exc:
             logger.debug("POMDP extraction unavailable: %s", exc)
             pomdp_note = f"POMDP extraction unavailable: {exc}"

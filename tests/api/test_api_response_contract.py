@@ -10,8 +10,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 from gnn.api import processor as job_mgr
+from gnn.api.app import create_app as create_run_app
 from gnn.api.responses import install_exception_handlers
 from gnn.api.server import app as job_app
+from gnn.api.server import create_app as create_job_app
 
 
 def _assert_envelope(payload: Any, *, status: str) -> dict[str, Any]:
@@ -213,3 +215,23 @@ def test_api_step_surface_is_registry_derived() -> None:
     health = RunHealthResponse()
     assert health.pipeline_steps == PIPELINE_STEP_COUNT
     assert health.version != "2.0.0"
+
+
+@pytest.mark.parametrize("factory", [create_run_app, create_job_app])
+def test_invalid_utf8_request_body_retains_json_safe_validation_details(
+    factory: Any,
+) -> None:
+    response = TestClient(factory()).post(
+        "/api/v1/render",
+        content=b"\xff",
+        headers={"Content-Type": "application/octet-stream"},
+    )
+    assert response.status_code == 422
+    envelope = _assert_envelope(response.json(), status="error")
+    assert envelope["error"]["code"] == "validation_error"
+    details = envelope["error"]["details"]
+    assert isinstance(details, list) and details
+    assert any(
+        entry.get("loc") == ["body"] and entry.get("input") == "\\xff"
+        for entry in details
+    )

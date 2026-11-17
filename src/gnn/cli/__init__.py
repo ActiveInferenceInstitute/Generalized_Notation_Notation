@@ -156,6 +156,15 @@ def main(argv: Optional[List[str]] = None) -> int:
             return cast("int", handler(args))
         except KeyboardInterrupt:
             logger.error("%s command interrupted", args.command)
+            if getattr(args, "json", False):
+                _print_envelope(
+                    "error",
+                    error={
+                        "code": f"{args.command}_interrupted",
+                        "message": "Command interrupted",
+                    },
+                    command=args.command,
+                )
             return EXIT_ERROR
         except Exception as exc:
             logger.error(
@@ -164,6 +173,12 @@ def main(argv: Optional[List[str]] = None) -> int:
                 exc,
                 exc_info=bool(getattr(args, "verbose", False)),
             )
+            if getattr(args, "json", False):
+                _print_envelope(
+                    "error",
+                    error={"code": f"{args.command}_error", "message": str(exc)},
+                    command=args.command,
+                )
             return EXIT_ERROR
 
 

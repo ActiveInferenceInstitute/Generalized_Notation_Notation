@@ -52,3 +52,6 @@ def test_last_cache_publication_cannot_make_an_exhausted_corpus_success(
     results = json.loads((output / "llm_results.json").read_text())
     assert not success, results
     assert results["status"] == "timed_out"
+    checkpoint = json.loads((output / "llm_checkpoint.json").read_text())
+    assert len(checkpoint["completed_parts"]) == 5
+    assert len(list((output / ".cache").rglob("*.json"))) == 5

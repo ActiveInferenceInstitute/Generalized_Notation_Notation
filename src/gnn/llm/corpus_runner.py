@@ -334,9 +334,8 @@ async def run_corpus(
         if plan_settings["prompt"] not in labels:
             raise ValueError("request_plan prompt must name a selected prompt label")
         binding["request_plan"] = plan_settings
-    fingerprint = hashlib.sha256(
-        json.dumps(binding, sort_keys=True).encode()
-    ).hexdigest()
+    binding_text = json.dumps(binding, sort_keys=True)
+    fingerprint = hashlib.sha256(binding_text.encode()).hexdigest()
     checkpoint = output_dir / "llm_checkpoint.json"
     state: dict[str, Any] = {
         "binding": binding,
@@ -347,7 +346,10 @@ async def run_corpus(
     }
     if kwargs.get("resume") and checkpoint.exists():
         prior = json.loads(checkpoint.read_text())
-        if prior.get("fingerprint") != fingerprint:
+        if (
+            prior.get("fingerprint") != fingerprint
+            or json.dumps(prior.get("binding"), sort_keys=True) != binding_text
+        ):
             raise ValueError(
                 "LLM resume identity/configuration does not match checkpoint"
             )
@@ -607,8 +609,15 @@ async def run_corpus(
                             raise ValueError(
                                 "LLM checkpoint response digest is invalid"
                             )
+                        prior_outcome = prior.get("outcome", {})
+                        if isolated and (
+                            prior_outcome.get("status") != "success"
+                            or prior_outcome.get("finish_reason") != "stop"
+                        ):
+                            raise ValueError(
+                                "LLM checkpoint lacks original terminal native completion"
+                            )
                         if isolated and provider == ProviderType.OLLAMA:
-                            prior_outcome = prior.get("outcome", {})
                             if (
                                 prior_outcome.get("runtime_identity")
                                 != runtime_identity
@@ -619,6 +628,35 @@ async def run_corpus(
                             ):
                                 raise ValueError(
                                     "LLM checkpoint lacks verified request runtime identity"
+                                )
+                        if isolated or synthesis_mode != "none":
+                            definition, _ = api._prompt_request_definition(
+                                cache_content=content,
+                                model_name=model,
+                                messages=[
+                                    api.LLMMessage(
+                                        role="system", content=cfg["system_message"]
+                                    ),
+                                    api.LLMMessage(role="user", content=prompt),
+                                ],
+                                prompt_text=prompt,
+                                max_tokens=tokens,
+                                provider_type=provider,
+                                isolated=isolated,
+                                generation_options=generation_options,
+                                runtime_identity=runtime_identity,
+                                output_fields=output_fields,
+                                answer_max_chars=answer_max_chars,
+                                context_admission=synthesis_mode != "none",
+                            )
+                            if (
+                                prior_outcome.get("request_sha256")
+                                != hashlib.sha256(
+                                    definition.encode("utf-8")
+                                ).hexdigest()
+                            ):
+                                raise ValueError(
+                                    "LLM checkpoint request identity differs"
                                 )
                         if synthesis_mode != "none":
                             if type(tokens) is not int or tokens <= 0:
@@ -925,7 +963,11 @@ async def run_corpus(
                             return text, outcome
 
                         def validate_synthesis(
-                            plan: Any, outcome: dict[str, Any]
+                            plan: Any,
+                            outcome: dict[str, Any],
+                            *,
+                            source_content: str = content,
+                            output_label: str = label,
                         ) -> None:
                             validate_context_receipt(
                                 outcome.get("context_admission"),
@@ -934,6 +976,30 @@ async def run_corpus(
                                 max_tokens=synthesis_tokens,
                                 native=isolated,
                             )
+                            definition, _ = api._prompt_request_definition(
+                                cache_content=source_content,
+                                model_name=model,
+                                messages=[api.LLMMessage(**m) for m in plan.messages],
+                                prompt_text=plan.user_prompt,
+                                max_tokens=synthesis_tokens,
+                                provider_type=provider,
+                                isolated=isolated,
+                                generation_options=generation_options,
+                                runtime_identity=runtime_identity,
+                                output_fields=[output_label],
+                                answer_max_chars=answer_max_chars,
+                                context_admission=True,
+                                synthesis_plan_sha256=plan.sha256,
+                            )
+                            if (
+                                outcome.get("request_sha256")
+                                != hashlib.sha256(
+                                    definition.encode("utf-8")
+                                ).hexdigest()
+                            ):
+                                raise ValueError(
+                                    "Synthesis checkpoint request identity differs"
+                                )
                             if isolated and (
                                 outcome.get("runtime_identity") != runtime_identity
                                 or outcome.get("runtime_identity_after")

@@ -122,6 +122,10 @@ jobs:
           python = (scratch / 'python-path.txt').read_text()
           junit = scratch / 'native-thrml.xml'
           subprocess.run([python, '-I', '-m', 'pytest', 'tests/render/test_thrml_native.py', '-q', '--tb=short', '--junitxml=' + str(junit)], cwd=witness, check=True)
+          cache_junit = scratch / 'cache-publication.xml'
+          subprocess.run([python, '-I', '-m', 'pytest', 'tests/llm/test_llm_cache.py', '-q', '--tb=short', '--junitxml=' + str(cache_junit)], cwd=witness, check=True)
+          cache_cases = list(ET.parse(cache_junit).iter('testcase'))
+          assert cache_cases and not any(case.find(kind) is not None for case in cache_cases for kind in ('skipped', 'failure', 'error')), 'installed cache publication witness skipped or failed'
           native_markers = 'not needs_posix' if os.name == 'nt' else ''
           security_junit = scratch / 'native-boundaries.xml'
           subprocess.run([python, '-I', '-m', 'pytest', 'tests/security/test_filesystem_boundaries.py', '-m', native_markers, '--override-ini', 'addopts=', '-q', '--tb=short', '--junitxml=' + str(security_junit)], cwd=witness, check=True)

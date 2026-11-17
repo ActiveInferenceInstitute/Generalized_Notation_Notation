@@ -175,8 +175,8 @@ class RenderRequest(BaseModel):
     output_dir: Optional[str] = Field(
         default=None,
         description=(
-            "Repository-local render output directory "
-            "(defaults to output/11_render_output/<stem>)"
+            "Repository-local parent for a unique retained render invocation "
+            "(defaults to output/11_render_output/<stem>/render-<unique>)"
         ),
     )
 
@@ -747,23 +747,22 @@ def _render_gnn(
 
     ``process_render`` runs the render; ``render_processing_succeeded`` and
     ``find_render_artifact`` classify the outcome and locate the current
-    artifact, which the API maps to a 400 or the response envelope.
+    artifact. The invocation directory retains its input snapshot and receipts.
     """
     from gnn.render import process_render
 
-    with tempfile.TemporaryDirectory(prefix="gnn-api-render-") as temp_dir:
-        input_dir = Path(temp_dir) / "input"
-        input_dir.mkdir()
-        shutil.copy2(gnn_file, input_dir / gnn_file.name)
-        ok = process_render(
-            target_dir=input_dir,
-            output_dir=output_dir,
-            verbose=False,
-            frameworks=[framework],
-            strict_validation=False,
-            strict_framework_success=True,
-            backend_options={framework: options or {}},
-        )
+    input_dir = output_dir / "input"
+    input_dir.mkdir(parents=True)
+    shutil.copy2(gnn_file, input_dir / gnn_file.name)
+    ok = process_render(
+        target_dir=input_dir,
+        output_dir=output_dir,
+        verbose=False,
+        frameworks=[framework],
+        strict_validation=False,
+        strict_framework_success=True,
+        backend_options={framework: options or {}},
+    )
     if not render_processing_succeeded(ok):
         raise HTTPException(
             status_code=400,
@@ -996,6 +995,7 @@ def register_parity_routes(app: FastAPI) -> None:
                 purpose="Output directory",
                 create=True,
             )
+        output_dir = Path(tempfile.mkdtemp(prefix="render-", dir=output_dir))
         response = _run_backend(
             lambda: _render_gnn(
                 gnn_file,

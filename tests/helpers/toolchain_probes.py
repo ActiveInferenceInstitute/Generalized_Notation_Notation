@@ -277,7 +277,10 @@ TOOLCHAIN_MARKERS: dict[str, tuple[Callable[[], bool], str]] = {
         distributed_ready,
         "dask.distributed is not installed (uv sync --extra scaling)",
     ),
-    "needs_cpomdp": (cpomdp_ready, "cpomdp is not installed (uv sync --extra cpomdp)"),
+    "needs_cpomdp": (
+        cpomdp_ready,
+        "cpomdp is not installed or incompatible (uv sync --extra cpomdp)",
+    ),
     "needs_h3": (h3_ready, "h3 is not installed (uv sync --extra geo-infer)"),
     "needs_bnlearn": (
         lambda: _module_available("bnlearn") and _module_available("pgmpy"),

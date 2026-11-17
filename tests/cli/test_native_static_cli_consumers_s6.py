@@ -21,6 +21,7 @@ SOURCES = (
     REPO / "src/gnn/cli/__init__.py",
     REPO / "src/gnn/cli/parser.py",
     REPO / "src/gnn/cli/commands.py",
+    REPO / "src/gnn/operations/commands.py",
     REPO / "src/gnn/cli/handlers_complexity.py",
     REPO / "src/gnn/cli/handlers_pipeline.py",
 )
@@ -241,6 +242,20 @@ def test_parse_summary_matches_independently_saved_json_and_yaml(
     tmp_path: Path,
 ) -> None:
     source = _model(tmp_path)
+    source.write_text(
+        MODEL.replace(
+            "tags: [native, saved]\n",
+            "tags: [native, saved]\n"
+            "released: 2026-11-13\n"
+            "observed_at: 2026-11-13T12:34:56+02:30\n"
+            "nested:\n"
+            "  count: 3\n"
+            "  enabled: false\n"
+            "  ratio: 1.25\n"
+            "  items: [1, true, 2026-11-14]\n",
+        ),
+        encoding="utf-8",
+    )
     before = source.read_bytes()
     structured = _invoke(tmp_path, "parse", str(source), "--json")
     assert structured.returncode == 0, structured
@@ -255,6 +270,14 @@ def test_parse_summary_matches_independently_saved_json_and_yaml(
         "author": "Caller Scientist",
         "version": "caller-v1",
         "tags": ["native", "saved"],
+        "released": "2026-11-13",
+        "observed_at": "2026-11-13T12:34:56+02:30",
+        "nested": {
+            "count": 3,
+            "enabled": False,
+            "ratio": 1.25,
+            "items": [1, True, "2026-11-14"],
+        },
     }
     assert {item["name"] for item in data["variables"]} == {
         "A",
@@ -272,7 +295,7 @@ def test_parse_summary_matches_independently_saved_json_and_yaml(
         "File: caller.md",
         "Variables: 7",
         "Connections: 6",
-        "Metadata: author, version, tags",
+        "Metadata: author, version, tags, released, observed_at, nested",
     ]
     summary_file = tmp_path / "parsed-summary.txt"
     summary_file.write_text(summary.stdout, encoding="utf-8")

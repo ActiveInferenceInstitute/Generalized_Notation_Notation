@@ -51,6 +51,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Fetch pinned historical importer fixtures
+        run: |
+          git fetch --no-tags --depth=1 origin \
+            8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1 \
+            75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
@@ -124,6 +130,12 @@ jobs:
       UV_PYTHON: "3.12"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Fetch pinned historical importer fixtures
+        run: |
+          git fetch --no-tags --depth=1 origin \
+            8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1 \
+            75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf
 
       - name: Set up Python 3.12
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0

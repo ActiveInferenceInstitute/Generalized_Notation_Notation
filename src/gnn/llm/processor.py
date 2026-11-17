@@ -470,6 +470,68 @@ def _prompt_fallback_text(label: str, custom: bool) -> str:
     )
 
 
+def _prompt_request_definition(
+    *,
+    cache_content: str,
+    model_name: str,
+    messages: list[LLMMessage],
+    prompt_text: str,
+    max_tokens: int,
+    provider_type: ProviderType | None,
+    isolated: bool,
+    generation_options: dict[str, Any] | None,
+    runtime_identity: dict[str, Any] | None,
+    output_fields: list[str] | None,
+    answer_max_chars: int | None,
+    context_admission: bool,
+    synthesis_plan_sha256: str | None = None,
+) -> tuple[str, dict[str, Any] | None]:
+    """Construct the same complete request identity for execution and resume."""
+    native_local = isolated and provider_type in (None, ProviderType.OLLAMA)
+    response_format = (
+        response_schema(output_fields, max_chars=answer_max_chars)
+        if output_fields
+        else None
+    )
+    definition = json.dumps(
+        {
+            "schema_version": 6 if context_admission else 5,
+            **(
+                {"synthesis_plan_sha256": synthesis_plan_sha256}
+                if synthesis_plan_sha256 is not None
+                else {}
+            ),
+            **(
+                {"context_admission_policy": "reviewed_ollama_gguf_no_truncation_v1"}
+                if context_admission
+                else {}
+            ),
+            "runtime_validation_policy": OLLAMA_RUNTIME_VALIDATION_POLICY
+            if native_local
+            else None,
+            "completion_policy": "terminal_stop_and_answer_margin_v2"
+            if output_fields and answer_max_chars is not None
+            else "terminal_stop_v1",
+            "provider": provider_type.value if provider_type else "default",
+            "model": model_name,
+            "messages": [
+                {"role": message.role, "content": message.content, "name": message.name}
+                for message in messages
+            ],
+            "prompt_text": prompt_text,
+            "max_tokens": max_tokens,
+            "temperature": 0.2,
+            "generation_options": generation_options or {},
+            "runtime_identity": runtime_identity or {},
+            "output_fields": output_fields,
+            "response_format": response_format,
+            "source_sha256": hashlib.sha256(cache_content.encode("utf-8")).hexdigest(),
+        },
+        sort_keys=True,
+    )
+    return definition, response_format
+
+
 async def _execute_prompt(
     processor: LLMProcessor,
     cache: LLMCache,
@@ -545,46 +607,20 @@ async def _execute_prompt(
 
     if provider_type and provider_type.value in failed_auth_providers:
         return _prompt_fallback_text(label, custom)
-    response_format = (
-        response_schema(output_fields, max_chars=answer_max_chars)
-        if output_fields
-        else None
-    )
-    request_definition = json.dumps(
-        {
-            "schema_version": 6 if context_admission else 5,
-            **(
-                {"synthesis_plan_sha256": synthesis_plan_sha256}
-                if synthesis_plan_sha256 is not None
-                else {}
-            ),
-            **(
-                {"context_admission_policy": "reviewed_ollama_gguf_no_truncation_v1"}
-                if context_admission
-                else {}
-            ),
-            "runtime_validation_policy": OLLAMA_RUNTIME_VALIDATION_POLICY
-            if native_local
-            else None,
-            "completion_policy": "terminal_stop_and_answer_margin_v2"
-            if output_fields and answer_max_chars is not None
-            else "terminal_stop_v1",
-            "provider": provider_type.value if provider_type else "default",
-            "model": model_name,
-            "messages": [
-                {"role": message.role, "content": message.content, "name": message.name}
-                for message in messages
-            ],
-            "prompt_text": prompt_text,
-            "max_tokens": max_tokens,
-            "temperature": 0.2,
-            "generation_options": generation_options or {},
-            "runtime_identity": runtime_identity or {},
-            "output_fields": output_fields,
-            "response_format": response_format,
-            "source_sha256": hashlib.sha256(cache_content.encode("utf-8")).hexdigest(),
-        },
-        sort_keys=True,
+    request_definition, response_format = _prompt_request_definition(
+        cache_content=cache_content,
+        model_name=model_name,
+        messages=messages,
+        prompt_text=prompt_text,
+        max_tokens=max_tokens,
+        provider_type=provider_type,
+        isolated=isolated,
+        generation_options=generation_options,
+        runtime_identity=runtime_identity,
+        output_fields=output_fields,
+        answer_max_chars=answer_max_chars,
+        context_admission=context_admission,
+        synthesis_plan_sha256=synthesis_plan_sha256,
     )
     verified_cache = (
         cache.get_verified(cache_content, model_name, request_definition)
@@ -776,7 +812,9 @@ async def _execute_prompt(
                         "context_error": str(exc),
                     }
                 return content
-            cache.put_verified(
+        check_deadline()
+        if context_admission:
+            publication = cache.put_verified(
                 cache_content,
                 model_name,
                 request_definition,
@@ -784,8 +822,17 @@ async def _execute_prompt(
                 {"context_admission": metadata["context_admission"]},
             )
         else:
-            cache.put(cache_content, model_name, request_definition, content)
-        check_deadline()
+            publication = cache.put(
+                cache_content, model_name, request_definition, content
+            )
+        try:
+            check_deadline()
+        except TimeoutError:
+            if publication is not None:
+                cache.discard_publication(
+                    cache_content, model_name, request_definition, publication
+                )
+            raise
         if outcomes is not None:
             outcomes[label] = {
                 "status": "success",

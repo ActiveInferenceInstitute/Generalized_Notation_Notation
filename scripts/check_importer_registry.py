@@ -33,7 +33,9 @@ Usage::
 
     uv run --frozen --no-sync python scripts/check_importer_registry.py --strict
     uv run --frozen --no-sync python scripts/check_importer_registry.py --online
-    uv run --frozen --no-sync python scripts/check_importer_registry.py --repo ../pymcp --name pymcp
+Local ``--repo`` checks also require an independently trusted source manifest
+and digest; select the prepared target with ``--importer-python``. See the
+interoperability guide for the separate installed/source admission boundaries.
 """
 
 from __future__ import annotations
@@ -49,6 +51,44 @@ from typing import Any, Dict, List, Literal, Optional, Sequence, Set, TypedDict
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "docs" / "downstream" / "importers.json"
 PROSE = ROOT / "docs" / "downstream" / "README.md"
+BOOTSTRAP = ROOT / "interop" / "gnn_bootstrap.py"
+BOOTSTRAP_SHA256 = "e04e9114c860a622f26ee8d323ac44b77c6484f5a29bdc7654fb298a9b58c3b2"
+
+# A fresh target process authenticates and executes the same checked bytes
+# before importing GNN. Source selection exposes only the requested GNN package,
+# never its unadmitted parent directory to general import resolution.
+_BOOTSTRAP_RUNNER = """\
+import hashlib
+import importlib.abc
+import importlib.util
+from pathlib import Path
+import sys
+from types import ModuleType
+path = Path(sys.argv[1])
+payload = path.read_bytes()
+if hashlib.sha256(payload).hexdigest() != sys.argv[2]:
+    raise ValueError("reviewed bootstrap digest mismatch")
+arguments = sys.argv[3:]
+module = ModuleType("_registry_reviewed_gnn_bootstrap")
+module.__file__ = str(path)
+sys.modules[module.__name__] = module
+exec(compile(payload, str(path), "exec", dont_inherit=True), module.__dict__)
+if arguments[arguments.index("--origin-mode") + 1] == "source":
+    root = Path(arguments[arguments.index("--package-root") + 1])
+    class SelectedGnn(importlib.abc.MetaPathFinder):
+        def find_spec(self, fullname, path=None, target=None):
+            if fullname != "gnn":
+                return None
+            return importlib.util.spec_from_file_location(
+                fullname, root / "__init__.py",
+                submodule_search_locations=[str(root)],
+            )
+    sys.meta_path.insert(0, SelectedGnn())
+status = module.main(arguments)
+if path.read_bytes() != payload:
+    raise ValueError("reviewed bootstrap changed during the verdict")
+raise SystemExit(status)
+"""
 
 SCHEMA = "gnn-importer-registry/v1"
 EVIDENCE_CATEGORIES = (
@@ -770,10 +810,41 @@ def _check_public_row_online(
             )
 
 
+def _valid_local_reader_report(report: Any, returncode: int) -> bool:
+    """Require a well-formed child verdict consistent with its error findings."""
+    if (
+        not isinstance(report, dict)
+        or returncode not in (0, 1)
+        or report.get("ok") is not (returncode == 0)
+        or not isinstance(report.get("findings"), list)
+        or not isinstance(report.get("specs"), dict)
+        or type(report["specs"].get("count")) is not int
+        or any(
+            not isinstance(item, dict)
+            or item.get("level") not in ("error", "warning")
+            or not isinstance(item.get("code"), str)
+            or not isinstance(item.get("message"), str)
+            for item in report["findings"]
+        )
+    ):
+        return False
+    has_errors = any(item["level"] == "error" for item in report["findings"])
+    return report["ok"] is (not has_errors)
+
+
 def check_local_repo(
-    registry: Dict[str, Any], name: str, path: Path, findings: Findings
+    registry: Dict[str, Any],
+    name: str,
+    path: Path,
+    findings: Findings,
+    *,
+    importer_python: Optional[Path] = None,
+    source_manifest: Optional[Path] = None,
+    source_manifest_sha256: Optional[str] = None,
+    package_root: Optional[Path] = None,
+    origin_mode: str = "installed",
 ) -> None:
-    """Check one local checkout with the shipped reader and compare it to its row."""
+    """Check the member's own pin in a fresh, independently admitted runtime."""
     rows = {
         row.get("repo"): row
         for row in registry.get("importers") or []
@@ -783,22 +854,77 @@ def check_local_repo(
     if row is None:
         findings.error("local-unknown", f"{name}: not in the registry")
         return
-    from gnn.importers import check_importer
-
-    upstream = registry.get("upstream") or {}
+    if source_manifest is None or source_manifest_sha256 is None:
+        findings.error(
+            "local-source-manifest-required",
+            f"{name}: local validation requires an independently trusted manifest and digest",
+        )
+        return
+    if origin_mode == "source" and package_root is None:
+        findings.error(
+            "local-package-root-required", f"{name}: source mode needs a package root"
+        )
+        return
     pin = row.get("pin") or {}
-    report = check_importer(
-        path,
-        expected_commit=upstream.get("commit")
-        if pin.get("kind") in ("file", "dependency")
-        else None,
-        expected_tag=upstream.get("tag")
-        if pin.get("kind") in ("file", "dependency")
-        else None,
-        require_pin=pin.get("kind") is not None,
-        pin_path=Path(pin["path"]) if pin.get("path") else None,
-        pin_party=pin.get("party"),
-    )
+    command = [
+        str(importer_python or sys.executable),
+        "-I",
+        "-B",
+        "-c",
+        _BOOTSTRAP_RUNNER,
+        str(BOOTSTRAP),
+        BOOTSTRAP_SHA256,
+        "check",
+        "--repo",
+        str(path.resolve()),
+        "--json",
+        "--source-manifest",
+        str(source_manifest.resolve()),
+        "--source-manifest-sha256",
+        source_manifest_sha256,
+        "--origin-mode",
+        origin_mode,
+    ]
+    if pin.get("kind") in ("file", "dependency"):
+        for flag, key in (("--expected-commit", "commit"), ("--expected-tag", "tag")):
+            if pin.get(key) is not None:
+                command.extend((flag, str(pin[key])))
+    if pin.get("kind") is None:
+        command.append("--allow-missing-pin")
+    if pin.get("path"):
+        command.extend(("--pin", str(pin["path"])))
+    if pin.get("party"):
+        command.extend(("--pin-party", str(pin["party"])))
+    if package_root is not None:
+        command.extend(("--package-root", str(package_root.resolve())))
+    try:
+        completed = subprocess.run(
+            command, capture_output=True, timeout=60, check=False
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        findings.error("local-reader-failed", f"{name}: bootstrap failed: {exc}")
+        return
+    try:
+        report = json.loads(completed.stdout)
+    except (UnicodeError, ValueError) as exc:
+        stderr = completed.stderr.decode("utf-8", "replace").strip()
+        findings.error(
+            "local-reader-output",
+            f"{name}: bootstrap exit {completed.returncode}, invalid JSON: {exc}; {stderr}",
+        )
+        return
+    if not _valid_local_reader_report(report, completed.returncode):
+        findings.error("local-reader-output", f"{name}: invalid bootstrap report")
+        return
+    if (
+        report["ok"]
+        and report["specs"]["count"] > 0
+        and report.get("qualified") is not True
+    ):
+        findings.error(
+            "local-reader-unqualified", f"{name}: no finalized source verdict"
+        )
+        return
     for item in report["findings"]:
         if item["level"] == "error":
             findings.error(f"local-{item['code']}", f"{name}: {item['message']}")
@@ -833,6 +959,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument(
         "--name", default=None, help="registry name of the --repo checkout"
     )
+    parser.add_argument(
+        "--importer-python",
+        type=Path,
+        default=None,
+        help="prepared target interpreter for --repo (default: this interpreter)",
+    )
+    parser.add_argument("--source-manifest", type=Path, default=None)
+    parser.add_argument("--source-manifest-sha256", default=None)
+    parser.add_argument("--package-root", type=Path, default=None)
+    parser.add_argument(
+        "--origin-mode", choices=("installed", "source"), default="installed"
+    )
     parser.add_argument("--json", action="store_true", help="emit findings as JSON")
     args = parser.parse_args(argv)
 
@@ -852,7 +990,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if not args.name:
             findings.error("local-name", "--repo requires --name")
         else:
-            check_local_repo(registry, args.name, args.repo, findings)
+            check_local_repo(
+                registry,
+                args.name,
+                args.repo,
+                findings,
+                importer_python=args.importer_python,
+                source_manifest=args.source_manifest,
+                source_manifest_sha256=args.source_manifest_sha256,
+                package_root=args.package_root,
+                origin_mode=args.origin_mode,
+            )
 
     failed = findings.failed or (
         args.strict and any(i["level"] == "warning" for i in findings.items)
