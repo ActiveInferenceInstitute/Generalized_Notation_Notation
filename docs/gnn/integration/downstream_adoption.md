@@ -105,7 +105,7 @@ The commit identifies the reviewed source. If the pin omits `spec_files`,
 the reader discovers `*.gnn.md` files. Run
 `python -m gnn.importers check --repo .` with the pinned distribution
 installed. The [interoperability guide](../../development/interop.md)
-describes legacy pin shapes and independent source verification.
+describes supported pin formats and independent source verification.
 
 Rules that follow from the custody contract:
 
