@@ -1,6 +1,6 @@
 # GNN Type System Guide
 
-**Version**: v3.2.0 Engine (Bundle v2.0.0)  
+**Version**: v2.0.0 documentation bundle\
 **Last Updated**: 2026-04-15  
 **Status**: Maintained
 **Scope**: GNN type declarations and validation. See [framework implementations](../implementations/README.md) for current backend coverage.
@@ -204,4 +204,4 @@ Type checking integrates throughout the pipeline:
 
 **Status**: Maintained
 **Last Updated**: 2026-04-15  
-**Version**: v3.2.0 Engine (Bundle v2.0.0)
+**Version**: v2.0.0 documentation bundle

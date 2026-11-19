@@ -1,6 +1,6 @@
 # GNN Multi-Agent Simulation Specification
 
-**Version**: v3.2.0 Engine (Bundle v2.0.0)  
+**Version**: v2.0.0 documentation bundle\
 **Last Updated**: 2026-04-15  
 **Status**: Implemented mechanism documented below; block syntax in §2-8 is a design proposal (not yet parsed)  
 **Scope**: Multi-agent GNN modeling. See [framework implementations](../implementations/README.md) for current backend coverage.

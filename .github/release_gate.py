@@ -98,6 +98,15 @@ def filter_runs(runs: list[dict], ref: str, event: str | None) -> list[dict]:
     ]
 
 
+def release_ready(observations: dict[str, dict]) -> bool:
+    """Require a successful observation for each workflow in the declared roster."""
+    return (
+        bool(WORKFLOWS)
+        and observations.keys() == set(WORKFLOWS)
+        and all(result["state"] == "success" for result in observations.values())
+    )
+
+
 def inspect(
     workflow: str, revision: str, ref: str, event: str | None
 ) -> tuple[str, dict]:
@@ -189,7 +198,7 @@ def main() -> int:
         raise RuntimeError(
             "remote ref moved during collection; observation cannot qualify the ref"
         )
-    ready = all(result["state"] == "success" for result in observations.values())
+    ready = release_ready(observations)
     receipt = {
         "repository": REPOSITORY,
         "revision": args.revision,

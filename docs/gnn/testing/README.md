@@ -1,6 +1,6 @@
 # GNN Testing Documentation
 
-**Version**: v3.2.0 Engine (Bundle v2.0.0)  
+**Version**: v2.0.0 documentation bundle\
 **Last Updated**: 2026-04-14  
 **Status**: Maintained
 **Scope**: Testing guidance for the GNN pipeline. See the repository test commands for current counts and evidence.

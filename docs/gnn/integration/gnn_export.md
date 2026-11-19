@@ -1,6 +1,6 @@
 # GNN Export Guide
 
-**Version**: v3.2.0 Engine (Bundle v2.0.0)  
+**Version**: v2.0.0 documentation bundle\
 **Last Updated**: 2026-04-15  
 **Modules**: 38+ · **Pipeline steps**: 25 · **Renderers**: registry-defined backends (see [../implementations/README.md](../implementations/README.md)) · **Tests**: see [../../../README.md](../../../README.md)
 
@@ -222,4 +222,4 @@ Export integrates throughout the pipeline:
 ---
 
 **Last Updated**: 2026-04-15  
-**Version**: v3.2.0 Engine (Bundle v2.0.0)
+**Version**: v2.0.0 documentation bundle

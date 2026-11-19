@@ -2,6 +2,9 @@
 
 Copy this template and modify it to create your own GNN models. Replace the bracketed fields with your specific model details.
 
+## GNNSection
+[YourGNNSection]
+
 ## GNNVersionAndFlags
 GNN v1.0
 ProcessingFlags: default

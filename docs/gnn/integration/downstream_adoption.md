@@ -86,30 +86,26 @@ still export artifacts to a downstream consumer (C).
 
 ## 3  Pin discipline
 
-A sibling that consumes GNN records exactly one pin, in a committed file, with:
-
-- the upstream repository URL,
-- the exact 40-hex commit revision that was reviewed,
-- the upstream version string from that revision's `pyproject.toml`,
-- the date the pin was recorded.
-
-One concrete shape for that file:
+A sibling that consumes a GNN release records its upstream revision in a
+committed `gnn-importer-pin/v1` file. Use `.github/gnn-pin.json` for a new
+pin, or the path already registered for the consumer in the
+[downstream registry](../../downstream/README.md).
 
 ```json
 {
-  "repository": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation",
-  "commit": "8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1",
-  "version": "5.0.3",
-  "date_recorded": "2026-11-01",
-  "tag": "v5.0.3",
-  "parser_module": "gnn.parsers.system",
-  "parser_class": "GNNParsingSystem"
+  "schema": "gnn-importer-pin/v1",
+  "repository": "ActiveInferenceInstitute/Generalized_Notation_Notation",
+  "tag": "v5.1.0",
+  "commit": "75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf",
+  "recorded": "2026-11-16"
 }
 ```
 
-The four core keys are what a consumer's check reads; extra keys below them
-(`tag`, `parser_module` and `parser_class` here are optional convenience keys)
-are allowed, and divergent-but-visible pins between siblings are expected.
+The commit identifies the reviewed source. If the pin omits `spec_files`,
+the reader discovers `*.gnn.md` files. Run
+`python -m gnn.importers check --repo .` with the pinned distribution
+installed. The [interoperability guide](../../development/interop.md)
+describes supported pin formats and independent source verification.
 
 Rules that follow from the custody contract:
 

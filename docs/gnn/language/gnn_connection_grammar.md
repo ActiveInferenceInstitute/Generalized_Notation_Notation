@@ -1,6 +1,6 @@
 # GNN Connection Grammar
 
-**Version**: v3.2.0 Engine (Bundle v2.0.0)  
+**Version**: v2.0.0 documentation bundle\
 **Status**: Formal specification
 
 ---

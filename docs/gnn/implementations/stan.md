@@ -2,7 +2,7 @@
 
 > **GNN Integration Layer**: Stan probabilistic programming language
 > **Framework Base**: Stan (CmdStan ≥ 2.33 via `cmdstanpy`)
-> **Documentation Version**: v3.2.0 Engine (Bundle v2.0.0)
+> **Documentation Version**: v2.0.0 documentation bundle
 > **Scope**: Runnable inference programs for both GNN model kinds — a
 > forward-algorithm HMM/POMDP with likelihood learning for discrete models and
 > an explicit Kalman marginal likelihood for continuous linear-Gaussian models —
