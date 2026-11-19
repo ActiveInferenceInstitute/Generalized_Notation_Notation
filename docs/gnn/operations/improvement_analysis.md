@@ -1,6 +1,6 @@
 # GNN Pipeline Improvement Analysis
 
-**Version**: v3.2.0 Engine (Bundle v2.0.0)  
+**Version**: v2.0.0 documentation bundle\
 **Last Reviewed**: 2026-06-12
 **Status**: Historical analysis; use `TO-DO.md` and current verifier output for live release status
 **Scope**: Improvement analysis for the GNN pipeline. See [framework implementations](../implementations/README.md) for current backend coverage.

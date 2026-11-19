@@ -2,6 +2,9 @@
 
 This template provides a starting point for Partially Observable Markov Decision Process (POMDP) models using Active Inference principles.
 
+## GNNSection
+[YourGNNSection]
+
 ## GNNVersionAndFlags
 GNN v1.0
 ProcessingFlags: active_inference,pomdp
@@ -38,8 +41,8 @@ s_f1 > o_m0                     ### Context influences what is seen
 s_f1 > o_m1                     ### Context influences audio (alarms in dangerous areas)
 
 ### Transition Dependencies (Dynamics model)
-s_f0, u_c0 > s_f0               ### Position changes based on movement actions
-s_f1, u_c1 > s_f1               ### Context may change based on communication
+(s_f0, u_c0) > s_f0             ### Position changes based on movement actions
+(s_f1, u_c1) > s_f1             ### Context may change based on communication
 
 ### Policy Dependencies
 π_c0 > u_c0                     ### Movement policy determines movement action

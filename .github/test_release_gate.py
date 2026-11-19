@@ -3,7 +3,7 @@
 import copy
 import unittest
 
-from release_gate import evaluate, filter_runs
+from release_gate import WORKFLOWS, evaluate, filter_runs, release_ready
 
 
 class ReleaseGateControls(unittest.TestCase):
@@ -71,6 +71,20 @@ class ReleaseGateControls(unittest.TestCase):
             jobs = copy.deepcopy(self.jobs)
             jobs.append(dict(status="completed", conclusion=conclusion))
             self.assertEqual(self.state(jobs=jobs), "incomplete_jobs")
+
+
+class ReleaseRosterControls(unittest.TestCase):
+    def test_incomplete_roster_cannot_report_ready(self):
+        observations = {name: {"state": "success"} for name in WORKFLOWS}
+        self.assertTrue(release_ready(observations))
+        self.assertFalse(release_ready({}))
+        for name in WORKFLOWS:
+            with self.subTest(workflow=name):
+                filtered = observations.copy()
+                del filtered[name]
+                self.assertFalse(release_ready(filtered))
+                filtered[name] = {"state": "missing"}
+                self.assertFalse(release_ready(filtered))
 
 
 if __name__ == "__main__":

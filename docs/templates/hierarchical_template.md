@@ -2,6 +2,9 @@
 
 This template provides a framework for hierarchical Active Inference models with multiple temporal and abstraction levels.
 
+## GNNSection
+[YourGNNSection]
+
 ## GNNVersionAndFlags
 GNN v1.0
 ProcessingFlags: active_inference,hierarchical,temporal_abstraction
@@ -58,9 +61,9 @@ u_low_c1[3,1,type=categorical]      ### Execution mode: Normal=0, Careful=1, Fas
 
 ## Connections
 ### Within-Level Dependencies
-s_high_f0, s_high_f1 > o_high_m0   ### High-level observations depend on goals and context
-s_mid_f0, s_mid_f1 > o_mid_m0      ### Mid-level observations depend on sequences and progress
-s_low_f0, s_low_f1 > o_low_m0      ### Low-level observations depend on actions and motor state
+(s_high_f0, s_high_f1) > o_high_m0 ### High-level observations depend on goals and context
+(s_mid_f0, s_mid_f1) > o_mid_m0    ### Mid-level observations depend on sequences and progress
+(s_low_f0, s_low_f1) > o_low_m0    ### Low-level observations depend on actions and motor state
 
 ### Cross-Level Top-Down Dependencies (Higher levels influence lower)
 s_high_f0 > s_mid_f0               ### High-level goals influence mid-level sequences
@@ -71,12 +74,12 @@ s_mid_f2 > s_low_f2                ### Sequence type affects sensory focus
 ### Cross-Level Bottom-Up Dependencies (Lower levels inform higher)
 o_low_m1 > s_mid_f1                ### Low-level feedback updates sequence progress  
 o_mid_m0 > s_high_f0               ### Mid-level progress informs goal states
-s_low_f1, s_mid_f1 > o_high_m0     ### Combined lower-level states create high-level observations
+(s_low_f1, s_mid_f1) > o_high_m0   ### Combined lower-level states create high-level observations
 
 ### Transition Dependencies
-s_high_f0, u_high_c0, o_high_m0 > s_high_f0    ### High-level state transitions
-s_mid_f0, u_mid_c0, s_high_f0 > s_mid_f0        ### Mid-level influenced by high-level
-s_low_f0, u_low_c0, s_mid_f0 > s_low_f0         ### Low-level influenced by mid-level
+(s_high_f0, u_high_c0, o_high_m0) > s_high_f0  ### High-level state transitions
+(s_mid_f0, u_mid_c0, s_high_f0) > s_mid_f0     ### Mid-level influenced by high-level
+(s_low_f0, u_low_c0, s_mid_f0) > s_low_f0      ### Low-level influenced by mid-level
 
 ### Policy Dependencies  
 π_high > u_high_c0                 ### High-level policy determines high-level actions

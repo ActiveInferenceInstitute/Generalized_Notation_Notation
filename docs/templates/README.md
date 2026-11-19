@@ -116,41 +116,43 @@ uv run python src/gnn/0_template.py --target-dir input/gnn_files --output-dir ou
 
 > **📋 Standardized Format**: All templates follow GNN specification structure
 
-All templates follow this standardized structure:
+The following example shows the required sections of a complete GNN document.
+Add optional sections such as `Equations` or `ActInfOntologyAnnotation` when
+your model needs them.
 
-```markdown
-# GNNVersionAndFlags
-GNN-1.0
+```gnn
+## GNNSection
+ObservationModel
 
-# ModelName
-[Template Name] - [Your Model Name]
+## GNNVersionAndFlags
+GNN v1.1
 
-# ModelAnnotation
-[Description of what this model represents and its intended use]
+## ModelName
+Two-state observation model
 
-# StateSpaceBlock
-[Variable definitions with dimensions and types]
+## ModelAnnotation
+The observation identifies the current hidden state.
 
-# Connections
-[Relationships between variables]
+## StateSpaceBlock
+s[2,type=float]
+o[2,type=float]
+A[2,2,type=float]
+D[2,type=float]
 
-# InitialParameterization
-[Starting parameter values and matrices]
+## Connections
+s > o
 
-# Equations
-[Mathematical relationships in LaTeX]
+## InitialParameterization
+A = [[1.0, 0.0], [0.0, 1.0]]
+D = [0.5, 0.5]
 
-# Time
-[Temporal settings]
+## Time
+Static
+DiscreteTime = t
+ModelTimeHorizon = 1
 
-# ActInfOntologyAnnotation
-[Ontology mappings]
-
-# Footer
-[Additional notes]
-
-# Signature
-[Author and creation information]
+## Footer
+Both states have equal prior probability.
 ```
 
 **Cross-References**: 

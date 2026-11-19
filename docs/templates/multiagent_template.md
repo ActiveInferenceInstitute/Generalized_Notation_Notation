@@ -2,6 +2,9 @@
 
 This template provides a framework for modeling multiple interacting Active Inference agents. It supports coordination, communication, and shared environments.
 
+## GNNSection
+[YourGNNSection]
+
 ## GNNVersionAndFlags
 GNN v1.0
 ProcessingFlags: active_inference,multiagent,coordination
@@ -55,29 +58,29 @@ u2_c1[3,1,type=categorical]      ### Agent 2 communication: Silent=0, Broadcast_
 
 ## Connections
 ### Agent 1 Internal Dependencies
-s1_f0, s1_f1 > o1_m0            ### Agent 1 observations depend on position and internal state
-s1_f2, s2_f2 > o1_m1            ### Agent 1 receives communications from Agent 2
+(s1_f0, s1_f1) > o1_m0          ### Agent 1 observations depend on position and internal state
+(s1_f2, s2_f2) > o1_m1          ### Agent 1 receives communications from Agent 2
 
 ### Agent 2 Internal Dependencies  
-s2_f0, s2_f1 > o2_m0            ### Agent 2 observations depend on position and internal state
-s2_f2, s1_f2 > o2_m1            ### Agent 2 receives communications from Agent 1
+(s2_f0, s2_f1) > o2_m0          ### Agent 2 observations depend on position and internal state
+(s2_f2, s1_f2) > o2_m1          ### Agent 2 receives communications from Agent 1
 
 ### Environment Dependencies
-env_f0, env_f1 > o1_m0          ### Environment affects what Agent 1 sees
-env_f0, env_f1 > o2_m0          ### Environment affects what Agent 2 sees
+(env_f0, env_f1) > o1_m0        ### Environment affects what Agent 1 sees
+(env_f0, env_f1) > o2_m0        ### Environment affects what Agent 2 sees
 
 ### Transition Dependencies
-s1_f0, u1_c0, env_f1 > s1_f0    ### Agent 1 movement constrained by environment
-s1_f1, o1_m0, o1_m1 > s1_f1     ### Agent 1 internal state updated by observations
-s1_f2, u1_c1 > s1_f2            ### Agent 1 communication state
+(s1_f0, u1_c0, env_f1) > s1_f0  ### Agent 1 movement constrained by environment
+(s1_f1, o1_m0, o1_m1) > s1_f1   ### Agent 1 internal state updated by observations
+(s1_f2, u1_c1) > s1_f2          ### Agent 1 communication state
 
-s2_f0, u2_c0, env_f1 > s2_f0    ### Agent 2 movement constrained by environment  
-s2_f1, o2_m0, o2_m1 > s2_f1     ### Agent 2 internal state updated by observations
-s2_f2, u2_c1 > s2_f2            ### Agent 2 communication state
+(s2_f0, u2_c0, env_f1) > s2_f0  ### Agent 2 movement constrained by environment
+(s2_f1, o2_m0, o2_m1) > s2_f1   ### Agent 2 internal state updated by observations
+(s2_f2, u2_c1) > s2_f2          ### Agent 2 communication state
 
 ### Cross-Agent Dependencies
-s1_f0, s2_f0 > env_f2           ### Joint exploration updates environment discovery
-s1_f1, s2_f1 > env_f1           ### Collaborative target identification
+(s1_f0, s2_f0) > env_f2         ### Joint exploration updates environment discovery
+(s1_f1, s2_f1) > env_f1         ### Collaborative target identification
 
 ### Policy Dependencies
 π1_c0 > u1_c0                   ### Agent 1 movement policy determines actions

@@ -1,6 +1,6 @@
 # GNN Resource Metrics
 
-**Version**: v3.2.0 Engine (Bundle v2.0.0)  
+**Version**: v2.0.0 documentation bundle\
 **Last Updated**: 2026-04-15  
 **Status**: Maintained
 **Scope**: Resource estimation and model complexity guidance. See [framework implementations](../implementations/README.md) for current backend coverage.
