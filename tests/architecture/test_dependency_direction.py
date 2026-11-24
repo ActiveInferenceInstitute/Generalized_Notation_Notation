@@ -21,10 +21,13 @@ Directions pinned here:
 * producers: ``gnn.pipeline`` never imports ``gnn.report``, ``gnn.cli`` or
   ``gnn.api`` (renderers live with their pipeline producers; the
   ``gnn.report`` modules are re-export facades);
-* execute boundary: ``gnn.pipeline``, ``gnn.setup``, ``gnn.security`` and
-  ``gnn.api`` never import ``gnn.execute`` (cancellation and the julia probe
-  come from standard-library-only leaves that execute re-exports), and
-  ``gnn.execute`` reaches ``gnn.api`` through one listed edge only.
+* execute boundary: ``gnn.pipeline``, ``gnn.setup`` and ``gnn.security``
+  never import ``gnn.execute`` (cancellation and the julia probe come from
+  standard-library-only leaves that execute re-exports), and ``gnn.execute``
+  reaches the ``gnn.api`` transport above it through one listed edge only;
+* reciprocal pairs: the set of top-level packages that import each other is
+  frozen, so a new two-way dependency fails and a removed one must be
+  deleted from the list.
 """
 
 from __future__ import annotations
@@ -205,9 +208,7 @@ def test_template_mcp_uses_shared_operations_not_cli() -> None:
     assert forbidden_edges("gnn.template", ("gnn.cli", "gnn.api")) == []
 
 
-@pytest.mark.parametrize(
-    "package", ["gnn.pipeline", "gnn.setup", "gnn.security", "gnn.api"]
-)
+@pytest.mark.parametrize("package", ["gnn.pipeline", "gnn.setup", "gnn.security"])
 def test_packages_below_execute_never_import_it(package: str) -> None:
     """Shared run vocabulary comes from leaves, not from ``gnn.execute``."""
     assert forbidden_edges(package, ("gnn.execute",)) == []
@@ -241,6 +242,55 @@ def test_shared_run_leaves_import_nothing_from_gnn() -> None:
             assert all(name.split(".")[0] != "gnn" for name in names), (
                 f"{path}:{node.lineno} imports {names}"
             )
+
+
+#: Top-level ``gnn`` packages that import each other today, in either scope.
+#: The list may only shrink: cut a pair, then delete its row.
+KNOWN_RECIPROCAL_PAIRS: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("analysis", "execute"),
+        ("analysis", "pipeline"),
+        ("execute", "utils"),
+        ("extract", "render"),
+        ("main", "pipeline"),
+        ("parsers", "schema_validator"),
+        ("parsers", "types"),
+        ("parsers", "utils"),
+        ("pipeline", "processing"),
+        ("pipeline", "utils"),
+        ("processing", "utils"),
+        ("schema_validator", "testing"),
+    }
+)
+
+
+def _top_level_group(module: str) -> str | None:
+    parts = module.split(".")
+    if parts[0] != "gnn" or len(parts) < 2:
+        return None
+    return parts[1]
+
+
+def reciprocal_package_pairs() -> set[tuple[str, str]]:
+    """Return every unordered pair of top-level groups with edges both ways."""
+    directed: set[tuple[str, str]] = set()
+    for edge in iter_import_edges(GNN_ROOT):
+        source = _top_level_group(edge.source)
+        target = _top_level_group(edge.target)
+        if source and target and source != target:
+            directed.add((source, target))
+    return {
+        (source, target)
+        for source, target in directed
+        if source < target and (target, source) in directed
+    }
+
+
+def test_reciprocal_package_pairs_only_shrink() -> None:
+    """No new two-way package dependency, and no stale row for a cut one."""
+    actual = reciprocal_package_pairs()
+    assert sorted(actual - KNOWN_RECIPROCAL_PAIRS) == [], "new reciprocal pair"
+    assert sorted(KNOWN_RECIPROCAL_PAIRS - actual) == [], "delete the cut pair's row"
 
 
 # ── Compatibility facades keep one implementation ────────────────────────────

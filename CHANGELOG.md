@@ -15,11 +15,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   `gnn.execute.subprocess_envelope.CancelToken` and
   `gnn.execute.julia_setup.julia_executable` remain importable and name the
   same objects.
-- `gnn.pipeline`, `gnn.setup`, `gnn.security` and `gnn.api` no longer import
-  `gnn.execute`, which removes four reciprocal package dependencies. Creating a
-  step cancel token no longer loads the execute package.
-- `lint-imports` enforces two more contracts, eleven in total. The second one
-  holds `gnn.execute` to its single remaining edge into `gnn.api`.
+- `gnn.pipeline`, `gnn.setup` and `gnn.security` no longer import
+  `gnn.execute`, and the `gnn.api` transport's one import of it is gone. This
+  removes four reciprocal package dependencies. Creating a step cancel token
+  no longer loads the execute package.
+- `lint-imports` enforces two more contracts, eleven in total. One keeps
+  `gnn.pipeline`, `gnn.setup` and `gnn.security` below `gnn.execute`. The
+  other holds `gnn.execute` to its single remaining edge into the `gnn.api`
+  transport above it.
+- A test freezes the twelve top-level package pairs that still import each
+  other. A new two-way dependency fails, and a pair that is cut must be
+  removed from the list.
   [Contracts](pyproject.toml) ·
   [Tests](tests/architecture/test_dependency_direction.py)
 
