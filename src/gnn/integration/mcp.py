@@ -134,7 +134,7 @@ def check_integration_dependencies_mcp() -> Dict[str, Any]:
     """
     import importlib.util
 
-    from gnn.execute.julia_setup import julia_available
+    from gnn.utils.runtime_safety.julia_probe import julia_executable
 
     deps: Dict[str, Dict[str, Any]] = {}
     for pkg, label in [
@@ -149,7 +149,7 @@ def check_integration_dependencies_mcp() -> Dict[str, Any]:
             found = False
         deps[label] = {"available": found}
 
-    deps["Julia"] = {"available": julia_available()}
+    deps["Julia"] = {"available": julia_executable() is not None}
     return {"success": True, "dependencies": deps}
 
 

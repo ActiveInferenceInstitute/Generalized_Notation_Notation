@@ -352,17 +352,33 @@ unavailable-observation reporting are recorded in [CHANGELOG.md](CHANGELOG.md).
   [artifact ownership](src/gnn/pipeline/artifact_ownership.py), and accept
   output parity for normal runs, replay and resume with old and new fixtures.
   Keep COGANT's summary reader as an independent compatibility check.
-- [ ] **Reduce the remaining import surface (P2).** `lint-imports` now
-  enforces nine contracts, including `gnn.api` and `gnn.operations` below
-  `gnn.cli`, `gnn.pipeline` below `gnn.report`, and parsers, types and
-  importers below both transports, `gnn.report` and `gnn.execute`
-  ([contracts](pyproject.toml),
-  [direction tests](tests/architecture/test_dependency_direction.py)). Map the
-  remaining reciprocal package dependencies, add a contract for each one cut,
-  and preserve public re-export identity and installed entry points with
-  fresh-process checks for parser-only, CLI, API and scientific consumers.
-  Change extras or distribution boundaries only after the installed profiles
-  and downstream probes pass.
+- [ ] **Reduce the remaining import surface (P2).** `lint-imports`
+  enforces eleven contracts ([contracts](pyproject.toml),
+  [direction tests](tests/architecture/test_dependency_direction.py)):
+  `gnn.api` and `gnn.operations` below `gnn.cli`; `gnn.pipeline` below
+  `gnn.report`; parsers, types and importers below both transports,
+  `gnn.report` and `gnn.execute`; `gnn.pipeline`, `gnn.setup` and
+  `gnn.security` below `gnn.execute`; and `gnn.execute` below `gnn.api`
+  apart from one listed edge. Twelve reciprocal package pairs remain, counting
+  function-scope imports:
+  - `execute`/`api` is held to the single edge
+    `gnn.execute.mcp -> gnn.api.path_utils`. The setup and LLM MCP tools import
+    the same workspace path policy. Move that policy below the transports
+    together with the tests that replace its workspace root.
+  - `execute`/`utils`, `pipeline`/`utils` and `processing`/`utils`: the
+    orchestration helpers under `gnn.utils.pipeline_orchestration` and the
+    call-time runtime bridges reach upward.
+  - `analysis`/`execute`, `analysis`/`pipeline`, `pipeline`/`processing`,
+    `main`/`pipeline`: result adapters, the model-family ledger and run
+    identity cross in both directions.
+  - `parsers`/`types`, `parsers`/`schema_validator`, `parsers`/`utils`,
+    `schema_validator`/`testing`, `extract`/`render`: notation-side pairs,
+    each closed today by a function-scope import.
+
+  Add a contract for each pair cut, and preserve public re-export identity and
+  installed entry points with fresh-process checks for parser-only, CLI, API
+  and scientific consumers. Change extras or distribution boundaries only
+  after the installed profiles and downstream probes pass.
 - [ ] **Share versioned benchmark evidence across projects (P2).** Qualify
   an independent public consumer of the GNN scaling manifest in the
   [research contracts](docs/development/interop_research.md). Record exact

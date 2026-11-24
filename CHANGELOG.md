@@ -7,6 +7,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Execute boundary for orchestration, setup, security and the API
+
+- `CancelToken` and the `julia` executable probe now live in two
+  standard-library-only leaves, `gnn.utils.runtime_safety.cancellation` and
+  `gnn.utils.runtime_safety.julia_probe`.
+  `gnn.execute.subprocess_envelope.CancelToken` and
+  `gnn.execute.julia_setup.julia_executable` remain importable and name the
+  same objects.
+- `gnn.pipeline`, `gnn.setup`, `gnn.security` and `gnn.api` no longer import
+  `gnn.execute`, which removes four reciprocal package dependencies. Creating a
+  step cancel token no longer loads the execute package.
+- `lint-imports` enforces two more contracts, eleven in total. The second one
+  holds `gnn.execute` to its single remaining edge into `gnn.api`.
+  [Contracts](pyproject.toml) ·
+  [Tests](tests/architecture/test_dependency_direction.py)
+
 ### Source-bound importer resources and original engineering reconciliation
 
 - Publish distinct strict pre-import bootstrap bytes and the unchanged complete

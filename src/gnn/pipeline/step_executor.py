@@ -22,7 +22,7 @@ field, so ``main._record_step_result`` treats both modes identically.
 Limits (docs/decisions/0001-consolidated-pipeline-execution.md): testing-matrix
 folder dispatch stays on the subprocess path. Timeout containment is
 cooperative (BC-13): the worker thread is a daemon and observes a
-:class:`~gnn.execute.subprocess_envelope.CancelToken` at its safe points —
+:class:`~gnn.utils.runtime_safety.cancellation.CancelToken` at its safe points —
 the capture tees raise at the step's next console write once the wall-clock
 budget fires, and a thread that reaches no safe point is abandoned after a
 bounded grace window without blocking interpreter exit. The parallel tier
@@ -222,14 +222,13 @@ _TIMEOUT_MARKER_MTIME_SLACK_SECONDS = 2.0
 def _new_cancel_token() -> Any:
     """Create the step's cooperative cancel token (BC-13).
 
-    The type is the subprocess envelope's :class:`CancelToken` — one
-    cancellation vocabulary across the repo, mirroring
-    ``run_subprocess_envelope``'s token. Imported lazily: a module-level
-    import would couple the pipeline import chain to the ``gnn.execute``
-    package init (the same coupling ADR 0001's D2 slice avoids for
+    The type is the repository's one :class:`CancelToken` — the same class
+    ``run_subprocess_envelope`` polls. It comes from the standard-library-only
+    cancellation leaf, so the pipeline import chain never reaches the
+    ``gnn.execute`` package init (the coupling ADR 0001's D2 slice avoids for
     ``advanced_visualization``).
     """
-    from gnn.execute.subprocess_envelope import CancelToken  # lazy: heavy init
+    from gnn.utils.runtime_safety.cancellation import CancelToken
 
     return CancelToken()
 
@@ -581,7 +580,7 @@ def execute_step_in_process(
     ``force_killed`` field (always ``False``: Python threads cannot be killed).
     Timeout receipts explicitly report cooperative containment and whether
     the worker stopped. On timeout the executor cancels the step's cooperative
-    :class:`~gnn.execute.subprocess_envelope.CancelToken` — injected as a
+    :class:`~gnn.utils.runtime_safety.cancellation.CancelToken` — injected as a
     ``cancel_token`` kwarg when the step function declares one, and enforced
     at the step's console-write safe points by the capture tee — then, after
     a bounded grace window, abandons any thread that reached no safe point

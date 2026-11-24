@@ -199,7 +199,7 @@ if FASTAPI_AVAILABLE:
                 "errors": [],
                 "events": [],
             }
-            from gnn.execute.subprocess_envelope import CancelToken
+            from gnn.utils.runtime_safety.cancellation import CancelToken
 
             run_entry["cancel_token"] = CancelToken()
             runs[run_hash] = run_entry

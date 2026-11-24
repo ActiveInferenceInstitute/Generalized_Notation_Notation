@@ -20,7 +20,11 @@ Directions pinned here:
   ``gnn.operations``), and ``gnn.operations`` imports neither transport;
 * producers: ``gnn.pipeline`` never imports ``gnn.report``, ``gnn.cli`` or
   ``gnn.api`` (renderers live with their pipeline producers; the
-  ``gnn.report`` modules are re-export facades).
+  ``gnn.report`` modules are re-export facades);
+* execute boundary: ``gnn.pipeline``, ``gnn.setup``, ``gnn.security`` and
+  ``gnn.api`` never import ``gnn.execute`` (cancellation and the julia probe
+  come from standard-library-only leaves that execute re-exports), and
+  ``gnn.execute`` reaches ``gnn.api`` through one listed edge only.
 """
 
 from __future__ import annotations
@@ -201,6 +205,44 @@ def test_template_mcp_uses_shared_operations_not_cli() -> None:
     assert forbidden_edges("gnn.template", ("gnn.cli", "gnn.api")) == []
 
 
+@pytest.mark.parametrize(
+    "package", ["gnn.pipeline", "gnn.setup", "gnn.security", "gnn.api"]
+)
+def test_packages_below_execute_never_import_it(package: str) -> None:
+    """Shared run vocabulary comes from leaves, not from ``gnn.execute``."""
+    assert forbidden_edges(package, ("gnn.execute",)) == []
+
+
+def test_execute_reaches_api_only_through_its_listed_mcp_edge() -> None:
+    """The one upward edge is named, so a second one cannot arrive unseen."""
+    edges = {
+        (edge.source, edge.target)
+        for edge in iter_import_edges(GNN_ROOT / "execute")
+        if _is_within(edge.target, "gnn.api")
+    }
+    assert {source for source, _ in edges} == {"gnn.execute.mcp"}
+    assert {target.partition("gnn.api.")[2].split(".")[0] for _, target in edges} == {
+        "path_utils"
+    }
+
+
+def test_shared_run_leaves_import_nothing_from_gnn() -> None:
+    """The leaves stay leaves: no ``gnn`` import can re-create the cycle."""
+    for leaf in ("cancellation", "julia_probe"):
+        path = GNN_ROOT / "utils" / "runtime_safety" / f"{leaf}.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                names = ["gnn"] if node.level else [node.module or ""]
+            else:
+                continue
+            assert all(name.split(".")[0] != "gnn" for name in names), (
+                f"{path}:{node.lineno} imports {names}"
+            )
+
+
 # ── Compatibility facades keep one implementation ────────────────────────────
 
 
@@ -249,6 +291,17 @@ def test_report_facades_reexport_pipeline_renderers() -> None:
     )
     assert report_pr.generate_pipeline_report is wiring.generate_pipeline_report
     assert report_pr.PipelineReportContext is wiring.PipelineReportContext
+
+
+def test_execute_reexports_the_shared_run_leaves() -> None:
+    """Old and new import paths name the same objects."""
+    import gnn.execute.julia_setup as julia_setup
+    import gnn.execute.subprocess_envelope as envelope
+    from gnn.utils.runtime_safety import cancellation, julia_probe
+
+    assert envelope.CancelToken is cancellation.CancelToken
+    assert "CancelToken" in envelope.__all__
+    assert julia_setup.julia_executable is julia_probe.julia_executable
 
 
 # ── Fresh-process import surfaces ────────────────────────────────────────────
@@ -354,5 +407,28 @@ def test_api_surfaces_do_not_load_cli(module: str) -> None:
 def test_pipeline_producers_do_not_load_report(module: str) -> None:
     loaded = loaded_after_import(
         [module], prefixes=("gnn.report", "gnn.cli", "gnn.api")
+    )
+    assert loaded == []
+
+
+def test_cancel_token_and_julia_probe_load_without_execute() -> None:
+    """Creating a step token or probing julia never loads ``gnn.execute``."""
+    loaded = loaded_after_import(
+        [
+            "gnn.utils.runtime_safety.cancellation",
+            "gnn.utils.runtime_safety.julia_probe",
+            "gnn.pipeline.step_executor",
+        ],
+        prefixes=("gnn.execute", "gnn.api", "gnn.cli"),
+        then=(
+            "from gnn.pipeline.step_executor import _new_cancel_token\n"
+            "from gnn.utils.runtime_safety.cancellation import CancelToken\n"
+            "token = _new_cancel_token()\n"
+            "assert type(token) is CancelToken and not token.cancelled\n"
+            "token.cancel('first'); token.cancel('second')\n"
+            "assert token.cancelled and token.reason == 'first'\n"
+            "from gnn.utils.runtime_safety.julia_probe import julia_executable\n"
+            "assert julia_executable() is None or isinstance(julia_executable(), str)\n"
+        ),
     )
     assert loaded == []

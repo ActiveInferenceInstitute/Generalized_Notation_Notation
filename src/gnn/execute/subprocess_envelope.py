@@ -34,11 +34,11 @@ import os
 import subprocess
 import sys
 import tempfile
-import threading
 import time
 from pathlib import Path
 from typing import Any, BinaryIO, Dict, List, Optional, Union, cast
 
+from gnn.utils.runtime_safety.cancellation import CancelToken
 from gnn.utils.runtime_safety.process_budget import resolve_process_deadlines
 from gnn.utils.runtime_safety.process_tree import (
     DescendantTracker,
@@ -73,38 +73,6 @@ try:
     import psutil as _psutil_module
 except ImportError:  # pragma: no cover - psutil is core; belt-and-braces
     _psutil_module = cast(Any, None)
-
-
-class CancelToken:
-    """Thread-safe cooperative cancellation flag for in-flight subprocess runs.
-
-    Pass a token to :func:`run_subprocess_envelope` (or the executor helpers
-    built on it) and call :meth:`cancel` from any thread: the in-flight run's
-    poll loop observes the flag within one poll slice (<=0.25s), then runs
-    bounded cleanup and reports ``error_type="Cancelled"`` without raising.
-    A cleanup failure takes precedence and retains cancellation evidence.
-    ``cancel()`` is idempotent; the first ``reason`` wins.
-    """
-
-    def __init__(self) -> None:
-        self._event = threading.Event()
-        self._reason: Optional[str] = None
-
-    def cancel(self, reason: Optional[str] = None) -> None:
-        """Request cancellation (idempotent); the first ``reason`` wins."""
-        if not self._event.is_set():
-            self._reason = reason
-        self._event.set()
-
-    @property
-    def cancelled(self) -> bool:
-        """True once :meth:`cancel` has been called from any thread."""
-        return self._event.is_set()
-
-    @property
-    def reason(self) -> Optional[str]:
-        """Reason recorded by the first :meth:`cancel` call (may be None)."""
-        return self._reason
 
 
 def _warn_invalid_default_timeout(raw: str) -> None:
