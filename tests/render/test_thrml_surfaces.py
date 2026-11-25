@@ -94,7 +94,7 @@ def test_cli_and_mcp_apply_exact_options(tmp_path: Path) -> None:
 def test_rest_schema_and_options_are_composable(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, factory: object
 ) -> None:
-    from gnn.api import path_utils
+    from gnn.utils.runtime_safety import workspace_paths as path_utils
 
     source = _source(tmp_path)
     monkeypatch.setattr(path_utils, "get_repo_root", lambda: tmp_path)

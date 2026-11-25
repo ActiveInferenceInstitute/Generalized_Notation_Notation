@@ -346,7 +346,9 @@ async def execute_job_async(job_id: str) -> None:
 
     # Build the real orchestrator command via the shared pure builder so the
     # job surface and the run surface can never drift on argv shape.
-    from gnn.api.path_utils import get_repo_root
+    # Read at call time from the implementation module, so a replaced
+    # workspace root is the one this launch observes.
+    from gnn.utils.runtime_safety.workspace_paths import get_repo_root
 
     repo_root: Optional[Path] = None
     try:

@@ -358,14 +358,10 @@ unavailable-observation reporting are recorded in [CHANGELOG.md](CHANGELOG.md).
   `gnn.api` and `gnn.operations` below `gnn.cli`; `gnn.pipeline` below
   `gnn.report`; parsers, types and importers below both transports,
   `gnn.report` and `gnn.execute`; `gnn.pipeline`, `gnn.setup` and
-  `gnn.security` below `gnn.execute`; and `gnn.execute` below `gnn.api`
-  apart from one listed edge. Twelve reciprocal package pairs remain, counting
+  `gnn.security` below `gnn.execute`; and `gnn.execute`, `gnn.setup` and
+  `gnn.llm` below `gnn.api`. Twelve reciprocal package pairs remain, counting
   function-scope imports; `KNOWN_RECIPROCAL_PAIRS` in the direction tests
   freezes the set:
-  - `execute`/`api` is no longer reciprocal, but one upward edge remains:
-    `gnn.execute.mcp -> gnn.api.path_utils`. The setup and LLM MCP tools import
-    the same workspace path policy. Move that policy below the transports
-    together with the tests that replace its workspace root.
   - `execute`/`utils`, `pipeline`/`utils` and `processing`/`utils`: the
     orchestration helpers under `gnn.utils.pipeline_orchestration` and the
     call-time runtime bridges reach upward.

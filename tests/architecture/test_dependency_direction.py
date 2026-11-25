@@ -23,8 +23,10 @@ Directions pinned here:
   ``gnn.report`` modules are re-export facades);
 * execute boundary: ``gnn.pipeline``, ``gnn.setup`` and ``gnn.security``
   never import ``gnn.execute`` (cancellation and the julia probe come from
-  standard-library-only leaves that execute re-exports), and ``gnn.execute``
-  reaches the ``gnn.api`` transport above it through one listed edge only;
+  standard-library-only leaves that execute re-exports);
+* transport boundary for steps: ``gnn.execute``, ``gnn.setup`` and ``gnn.llm``
+  never import ``gnn.api`` (the workspace path policy lives in a leaf that
+  the API re-exports);
 * reciprocal pairs: the set of top-level packages that import each other is
   frozen, so a new two-way dependency fails and a removed one must be
   deleted from the list.
@@ -214,17 +216,10 @@ def test_packages_below_execute_never_import_it(package: str) -> None:
     assert forbidden_edges(package, ("gnn.execute",)) == []
 
 
-def test_execute_reaches_api_only_through_its_listed_mcp_edge() -> None:
-    """The one upward edge is named, so a second one cannot arrive unseen."""
-    edges = {
-        (edge.source, edge.target)
-        for edge in iter_import_edges(GNN_ROOT / "execute")
-        if _is_within(edge.target, "gnn.api")
-    }
-    assert {source for source, _ in edges} == {"gnn.execute.mcp"}
-    assert {target.partition("gnn.api.")[2].split(".")[0] for _, target in edges} == {
-        "path_utils"
-    }
+@pytest.mark.parametrize("package", ["gnn.execute", "gnn.setup", "gnn.llm"])
+def test_step_packages_never_import_the_api_transport(package: str) -> None:
+    """Step MCP tools take the workspace path policy from its leaf."""
+    assert forbidden_edges(package, ("gnn.api",)) == []
 
 
 def test_shared_run_leaves_import_nothing_from_gnn() -> None:
@@ -242,6 +237,18 @@ def test_shared_run_leaves_import_nothing_from_gnn() -> None:
             assert all(name.split(".")[0] != "gnn" for name in names), (
                 f"{path}:{node.lineno} imports {names}"
             )
+
+
+def test_workspace_path_policy_stays_inside_runtime_safety() -> None:
+    """The path policy may use its own concern package and nothing above it."""
+    path = GNN_ROOT / "utils" / "runtime_safety" / "workspace_paths.py"
+    edges = {
+        edge.target
+        for edge in iter_import_edges(path.parent)
+        if edge.path == path and edge.target.split(".")[0] == "gnn"
+    }
+    assert edges
+    assert all(_is_within(t, "gnn.utils.runtime_safety") for t in edges), edges
 
 
 #: Top-level ``gnn`` packages that import each other today, in either scope.
@@ -352,6 +359,16 @@ def test_execute_reexports_the_shared_run_leaves() -> None:
     assert envelope.CancelToken is cancellation.CancelToken
     assert "CancelToken" in envelope.__all__
     assert julia_setup.julia_executable is julia_probe.julia_executable
+
+
+def test_api_reexports_the_workspace_path_policy() -> None:
+    """``gnn.api.path_utils`` names the leaf's objects, not copies."""
+    import gnn.api.path_utils as api_paths
+    from gnn.utils.runtime_safety import workspace_paths
+
+    assert set(api_paths.__all__) == set(workspace_paths.__all__)
+    for name in api_paths.__all__:
+        assert getattr(api_paths, name) is getattr(workspace_paths, name), name
 
 
 # ── Fresh-process import surfaces ────────────────────────────────────────────

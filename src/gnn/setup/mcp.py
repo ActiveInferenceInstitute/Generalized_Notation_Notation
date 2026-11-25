@@ -10,7 +10,10 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from gnn.api.path_utils import PathValidationError, resolve_repo_path
+from gnn.utils.runtime_safety.workspace_paths import (
+    PathValidationError,
+    resolve_repo_path,
+)
 
 logger = logging.getLogger(__name__)
 

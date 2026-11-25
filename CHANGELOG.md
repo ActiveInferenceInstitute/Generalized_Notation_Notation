@@ -7,7 +7,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
-### Execute boundary for orchestration, setup, security and the API
+### Execute and transport boundaries for step packages
 
 - `CancelToken` and the `julia` executable probe now live in two
   standard-library-only leaves, `gnn.utils.runtime_safety.cancellation` and
@@ -19,10 +19,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
   `gnn.execute`, and the `gnn.api` transport's one import of it is gone. This
   removes four reciprocal package dependencies. Creating a step cancel token
   no longer loads the execute package.
+- The workspace path policy (`resolve_repo_path`, `get_repo_root`,
+  `PathValidationError`, `resolve_request_paths`) now lives in
+  `gnn.utils.runtime_safety.workspace_paths`. `gnn.api.path_utils` re-exports
+  the same objects, and the execute, setup and LLM MCP tools no longer import
+  the `gnn.api` transport. A test that replaces the workspace root sets
+  `get_repo_root` on the implementation module.
 - `lint-imports` enforces two more contracts, eleven in total. One keeps
   `gnn.pipeline`, `gnn.setup` and `gnn.security` below `gnn.execute`. The
-  other holds `gnn.execute` to its single remaining edge into the `gnn.api`
-  transport above it.
+  other keeps `gnn.execute`, `gnn.setup` and `gnn.llm` below the `gnn.api`
+  transport.
 - A test freezes the twelve top-level package pairs that still import each
   other. A new two-way dependency fails, and a pair that is cut must be
   removed from the list.

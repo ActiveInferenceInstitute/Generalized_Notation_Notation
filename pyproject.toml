@@ -629,15 +629,12 @@ source_modules = ["gnn.pipeline", "gnn.setup", "gnn.security"]
 forbidden_modules = ["gnn.execute"]
 allow_indirect_imports = true
 
-# The execute package sits below the HTTP transport. One edge remains: the
-# execute MCP tools reuse the API workspace path policy. It is listed here so
-# any second edge fails; removing it needs that policy moved below both.
+# Step packages sit below the HTTP transport. Their MCP tools admit caller
+# paths through ``gnn.utils.runtime_safety.workspace_paths`` (re-exported by
+# ``gnn.api.path_utils``), so none of them imports ``gnn.api``.
 [[tool.importlinter.contracts]]
-name = "execute never imports the api transport beyond its MCP path policy"
+name = "execute, setup and llm never import the api transport directly"
 type = "forbidden"
-source_modules = ["gnn.execute"]
+source_modules = ["gnn.execute", "gnn.setup", "gnn.llm"]
 forbidden_modules = ["gnn.api"]
 allow_indirect_imports = true
-ignore_imports = [
-    "gnn.execute.mcp -> gnn.api.path_utils",
-]

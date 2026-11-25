@@ -25,6 +25,10 @@ the `gnn.api` transport;
 same objects. Keep both files free of `gnn` imports
 (`tests/architecture/test_dependency_direction.py`).
 
+`workspace_paths.py` owns the workspace path policy for the HTTP API and the
+MCP tools of `gnn.execute`, `gnn.setup` and `gnn.llm`. It imports only this
+package's `filesystem` leaf; `gnn.api.path_utils` re-exports it.
+
 ## Tests
 
 `tests/tests/test_infrastructure_exports.py` (frozen surface),
