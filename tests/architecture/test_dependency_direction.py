@@ -20,7 +20,16 @@ Directions pinned here:
   ``gnn.operations``), and ``gnn.operations`` imports neither transport;
 * producers: ``gnn.pipeline`` never imports ``gnn.report``, ``gnn.cli`` or
   ``gnn.api`` (renderers live with their pipeline producers; the
-  ``gnn.report`` modules are re-export facades).
+  ``gnn.report`` modules are re-export facades);
+* execute boundary: ``gnn.pipeline``, ``gnn.setup`` and ``gnn.security``
+  never import ``gnn.execute`` (cancellation and the julia probe come from
+  standard-library-only leaves that execute re-exports);
+* transport boundary for steps: ``gnn.execute``, ``gnn.setup`` and ``gnn.llm``
+  never import ``gnn.api`` (the workspace path policy lives in a leaf that
+  the API re-exports);
+* reciprocal pairs: the set of top-level packages that import each other is
+  frozen, so a new two-way dependency fails and a removed one must be
+  deleted from the list.
 """
 
 from __future__ import annotations
@@ -201,6 +210,96 @@ def test_template_mcp_uses_shared_operations_not_cli() -> None:
     assert forbidden_edges("gnn.template", ("gnn.cli", "gnn.api")) == []
 
 
+@pytest.mark.parametrize("package", ["gnn.pipeline", "gnn.setup", "gnn.security"])
+def test_packages_below_execute_never_import_it(package: str) -> None:
+    """Shared run vocabulary comes from leaves, not from ``gnn.execute``."""
+    assert forbidden_edges(package, ("gnn.execute",)) == []
+
+
+@pytest.mark.parametrize("package", ["gnn.execute", "gnn.setup", "gnn.llm"])
+def test_step_packages_never_import_the_api_transport(package: str) -> None:
+    """Step MCP tools take the workspace path policy from its leaf."""
+    assert forbidden_edges(package, ("gnn.api",)) == []
+
+
+def test_shared_run_leaves_import_nothing_from_gnn() -> None:
+    """The leaves stay leaves: no ``gnn`` import can re-create the cycle."""
+    for leaf in ("cancellation", "julia_probe"):
+        path = GNN_ROOT / "utils" / "runtime_safety" / f"{leaf}.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                names = ["gnn"] if node.level else [node.module or ""]
+            else:
+                continue
+            assert all(name.split(".")[0] != "gnn" for name in names), (
+                f"{path}:{node.lineno} imports {names}"
+            )
+
+
+def test_workspace_path_policy_stays_inside_runtime_safety() -> None:
+    """The path policy may use its own concern package and nothing above it."""
+    path = GNN_ROOT / "utils" / "runtime_safety" / "workspace_paths.py"
+    edges = {
+        edge.target
+        for edge in iter_import_edges(path.parent)
+        if edge.path == path and edge.target.split(".")[0] == "gnn"
+    }
+    assert edges
+    assert all(_is_within(t, "gnn.utils.runtime_safety") for t in edges), edges
+
+
+#: Top-level ``gnn`` packages that import each other today, in either scope.
+#: The list may only shrink: cut a pair, then delete its row.
+KNOWN_RECIPROCAL_PAIRS: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("analysis", "execute"),
+        ("analysis", "pipeline"),
+        ("execute", "utils"),
+        ("extract", "render"),
+        ("main", "pipeline"),
+        ("parsers", "schema_validator"),
+        ("parsers", "types"),
+        ("parsers", "utils"),
+        ("pipeline", "processing"),
+        ("pipeline", "utils"),
+        ("processing", "utils"),
+        ("schema_validator", "testing"),
+    }
+)
+
+
+def _top_level_group(module: str) -> str | None:
+    parts = module.split(".")
+    if parts[0] != "gnn" or len(parts) < 2:
+        return None
+    return parts[1]
+
+
+def reciprocal_package_pairs() -> set[tuple[str, str]]:
+    """Return every unordered pair of top-level groups with edges both ways."""
+    directed: set[tuple[str, str]] = set()
+    for edge in iter_import_edges(GNN_ROOT):
+        source = _top_level_group(edge.source)
+        target = _top_level_group(edge.target)
+        if source and target and source != target:
+            directed.add((source, target))
+    return {
+        (source, target)
+        for source, target in directed
+        if source < target and (target, source) in directed
+    }
+
+
+def test_reciprocal_package_pairs_only_shrink() -> None:
+    """No new two-way package dependency, and no stale row for a cut one."""
+    actual = reciprocal_package_pairs()
+    assert sorted(actual - KNOWN_RECIPROCAL_PAIRS) == [], "new reciprocal pair"
+    assert sorted(KNOWN_RECIPROCAL_PAIRS - actual) == [], "delete the cut pair's row"
+
+
 # ── Compatibility facades keep one implementation ────────────────────────────
 
 
@@ -249,6 +348,27 @@ def test_report_facades_reexport_pipeline_renderers() -> None:
     )
     assert report_pr.generate_pipeline_report is wiring.generate_pipeline_report
     assert report_pr.PipelineReportContext is wiring.PipelineReportContext
+
+
+def test_execute_reexports_the_shared_run_leaves() -> None:
+    """Old and new import paths name the same objects."""
+    import gnn.execute.julia_setup as julia_setup
+    import gnn.execute.subprocess_envelope as envelope
+    from gnn.utils.runtime_safety import cancellation, julia_probe
+
+    assert envelope.CancelToken is cancellation.CancelToken
+    assert "CancelToken" in envelope.__all__
+    assert julia_setup.julia_executable is julia_probe.julia_executable
+
+
+def test_api_reexports_the_workspace_path_policy() -> None:
+    """``gnn.api.path_utils`` names the leaf's objects, not copies."""
+    import gnn.api.path_utils as api_paths
+    from gnn.utils.runtime_safety import workspace_paths
+
+    assert set(api_paths.__all__) == set(workspace_paths.__all__)
+    for name in api_paths.__all__:
+        assert getattr(api_paths, name) is getattr(workspace_paths, name), name
 
 
 # ── Fresh-process import surfaces ────────────────────────────────────────────
@@ -354,5 +474,28 @@ def test_api_surfaces_do_not_load_cli(module: str) -> None:
 def test_pipeline_producers_do_not_load_report(module: str) -> None:
     loaded = loaded_after_import(
         [module], prefixes=("gnn.report", "gnn.cli", "gnn.api")
+    )
+    assert loaded == []
+
+
+def test_cancel_token_and_julia_probe_load_without_execute() -> None:
+    """Creating a step token or probing julia never loads ``gnn.execute``."""
+    loaded = loaded_after_import(
+        [
+            "gnn.utils.runtime_safety.cancellation",
+            "gnn.utils.runtime_safety.julia_probe",
+            "gnn.pipeline.step_executor",
+        ],
+        prefixes=("gnn.execute", "gnn.api", "gnn.cli"),
+        then=(
+            "from gnn.pipeline.step_executor import _new_cancel_token\n"
+            "from gnn.utils.runtime_safety.cancellation import CancelToken\n"
+            "token = _new_cancel_token()\n"
+            "assert type(token) is CancelToken and not token.cancelled\n"
+            "token.cancel('first'); token.cancel('second')\n"
+            "assert token.cancelled and token.reason == 'first'\n"
+            "from gnn.utils.runtime_safety.julia_probe import julia_executable\n"
+            "assert julia_executable() is None or isinstance(julia_executable(), str)\n"
+        ),
     )
     assert loaded == []

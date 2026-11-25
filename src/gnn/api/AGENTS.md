@@ -29,7 +29,7 @@ boundaries and invariants.
 | [process_supervision.py](process_supervision.py) | Bounded owned-process supervision and cleanup receipts |
 | [auth.py](auth.py) | Optional `GNN_API_KEY` authentication and non-loopback bind guard |
 | [rate_limit.py](rate_limit.py) | Per-client request rate limiting |
-| [path_utils.py](path_utils.py) | Symlink-safe repository path resolution |
+| [path_utils.py](path_utils.py) | Re-export of the symlink-safe workspace path policy in [`workspace_paths`](../utils/runtime_safety/workspace_paths.py) |
 | [mcp.py](mcp.py) | MCP tool wrappers, executable registration and manifest export |
 | [__init__.py](__init__.py) | Availability/metadata; `MODULE_VERSION` re-exports `gnn.__version__` |
 

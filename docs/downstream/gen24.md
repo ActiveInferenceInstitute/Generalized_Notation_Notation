@@ -19,10 +19,8 @@ that GEN24 does not import GNN at runtime.
 
 ## Pinned GNN revision
 
-`NHIM/gnn-pin.json` records release `v5.0.3`, commit
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, commit subject
-"Merge pull request #292 from ActiveInferenceInstitute/codex/gnn-5-0-3-release-20261031",
-`recorded` 2026-11-01 by the "GEN24 GNN alignment pass", the parser entrypoint,
+`NHIM/gnn-pin.json` records release `v5.1.0`, revision
+`75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`, `recorded` 2026-11-24, the parser entrypoint,
 the validator path and parser file hashes, plus an explicit re-pin procedure.
 
 ## Conformance and validation evidence

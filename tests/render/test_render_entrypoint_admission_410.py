@@ -13,13 +13,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from gnn import parse_gnn_file, render_gnn_spec
-from gnn.api import path_utils
 from gnn.api.app import create_app
 from gnn.frameworks import RENDER_FRAMEWORKS
 from gnn.mcp.mcp import MCP
 from gnn.render import process_render
 from gnn.render.admission import render_options_inventory
 from gnn.render.mcp import register_tools
+from gnn.utils.runtime_safety import workspace_paths as path_utils
 
 ROOT = Path(__file__).resolve().parents[2]
 MODEL = ROOT / "input/gnn_files/discrete/two_state_bistable.md"

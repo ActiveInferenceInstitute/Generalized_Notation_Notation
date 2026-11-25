@@ -14,13 +14,14 @@ import pytest
 from fastapi.testclient import TestClient
 
 from gnn import run_pipeline
-from gnn.api import path_utils, processor
+from gnn.api import processor
 from gnn.api.app import create_app as create_runs_app
 from gnn.api.mcp import register_tools
 from gnn.api.server import create_app
 from gnn.mcp.mcp import MCP
 from gnn.pipeline import execute_pipeline_step, execute_pipeline_steps
 from gnn.utils.arguments.pipeline_arguments import PipelineArguments
+from gnn.utils.runtime_safety import workspace_paths as path_utils
 
 pytestmark = pytest.mark.pipeline
 ROOT = Path(__file__).resolve().parents[2]

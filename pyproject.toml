@@ -612,3 +612,29 @@ name = "parsers, types and importers never import report or execute"
 type = "forbidden"
 source_modules = ["gnn.parsers", "gnn.types", "gnn.importers"]
 forbidden_modules = ["gnn.report", "gnn.execute"]
+
+# Execute boundary. Orchestration, environment setup and security scanning sit
+# below the execute package: they share its cancellation vocabulary and the
+# julia probe through the standard-library-only leaves
+# ``gnn.utils.runtime_safety.cancellation`` and
+# ``gnn.utils.runtime_safety.julia_probe`` (re-exported by execute), so none of
+# them imports ``gnn.execute``. ``allow_indirect_imports`` keeps this a
+# direct-edge rule: lazy call-time bridges below ``gnn.utils`` still reach
+# execute, and tests/architecture/test_dependency_direction.py pins the direct
+# edges including function-scope and TYPE_CHECKING imports.
+[[tool.importlinter.contracts]]
+name = "pipeline, setup and security never import execute directly"
+type = "forbidden"
+source_modules = ["gnn.pipeline", "gnn.setup", "gnn.security"]
+forbidden_modules = ["gnn.execute"]
+allow_indirect_imports = true
+
+# Step packages sit below the HTTP transport. Their MCP tools admit caller
+# paths through ``gnn.utils.runtime_safety.workspace_paths`` (re-exported by
+# ``gnn.api.path_utils``), so none of them imports ``gnn.api``.
+[[tool.importlinter.contracts]]
+name = "execute, setup and llm never import the api transport directly"
+type = "forbidden"
+source_modules = ["gnn.execute", "gnn.setup", "gnn.llm"]
+forbidden_modules = ["gnn.api"]
+allow_indirect_imports = true

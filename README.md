@@ -424,12 +424,9 @@ their documented producer and re-pin procedures.
 [GNN 5.1.0](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.1.0)
 is the first release whose tree contains `src/gnn/importers.py`, the one reader
 the downstream estate calls instead of carrying its own copy. The GitHub release
-record owns the tag, its exact commit and the source archives. Until each
-member's own cutover advances its pin, the
-[downstream registry](docs/downstream/README.md) still records that member
-pinning the previous `v5.0.3` revision at
-`8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, in its pin file, with its
-conformance evidence. For separately
+record owns the tag, its exact commit and the source archives. The
+[downstream registry](docs/downstream/README.md) records each member's pin and
+its conformance evidence. For separately
 uploaded distribution assets, the
 [GNN 5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
 carries the ordinary wheel and sdist, the manuscript PDF, a source archive, the

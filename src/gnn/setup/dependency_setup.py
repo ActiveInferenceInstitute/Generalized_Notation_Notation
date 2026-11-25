@@ -117,7 +117,7 @@ def setup_julia_environment(verbose: bool = False) -> bool:
     """
     logger.info("🔧 Setting up Julia environment for GNN execution")
 
-    from gnn.execute.julia_setup import julia_executable
+    from gnn.utils.runtime_safety.julia_probe import julia_executable
 
     try:
         julia_path = julia_executable()

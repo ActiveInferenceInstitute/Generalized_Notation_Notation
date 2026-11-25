@@ -81,11 +81,10 @@ advance its pin past a release and call that reader. The record names the exact
 commit and uploads no artifacts; the
 [5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
 remains the latest release with uploaded source-bound assets.
-[docs/downstream/importers.json](docs/downstream/importers.json) deliberately
-still records `v5.0.3` at `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1` for every
-member that has not cut over: the new pin and the deletion of that member's local
-reader belong to the member's own change, so refreshing those rows is blocked on
-those repositories rather than on GNN.
+[docs/downstream/importers.json](docs/downstream/importers.json) records
+`v5.1.0` for every member except `act_inf_metaanalysis`, which still pins
+`v5.0.3` at `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`. A member's pin move
+belongs to its own change; refresh its row once that change merges.
 
 [GNN 5.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1),
 [FEP_Formal 2.1.0](https://github.com/ActiveInferenceInstitute/fep_formal/releases/tag/v2.1.0)
@@ -352,17 +351,30 @@ unavailable-observation reporting are recorded in [CHANGELOG.md](CHANGELOG.md).
   [artifact ownership](src/gnn/pipeline/artifact_ownership.py), and accept
   output parity for normal runs, replay and resume with old and new fixtures.
   Keep COGANT's summary reader as an independent compatibility check.
-- [ ] **Reduce the remaining import surface (P2).** `lint-imports` now
-  enforces nine contracts, including `gnn.api` and `gnn.operations` below
-  `gnn.cli`, `gnn.pipeline` below `gnn.report`, and parsers, types and
-  importers below both transports, `gnn.report` and `gnn.execute`
-  ([contracts](pyproject.toml),
-  [direction tests](tests/architecture/test_dependency_direction.py)). Map the
-  remaining reciprocal package dependencies, add a contract for each one cut,
-  and preserve public re-export identity and installed entry points with
-  fresh-process checks for parser-only, CLI, API and scientific consumers.
-  Change extras or distribution boundaries only after the installed profiles
-  and downstream probes pass.
+- [ ] **Reduce the remaining import surface (P2).** `lint-imports`
+  enforces eleven contracts ([contracts](pyproject.toml),
+  [direction tests](tests/architecture/test_dependency_direction.py)):
+  `gnn.api` and `gnn.operations` below `gnn.cli`; `gnn.pipeline` below
+  `gnn.report`; parsers, types and importers below both transports,
+  `gnn.report` and `gnn.execute`; `gnn.pipeline`, `gnn.setup` and
+  `gnn.security` below `gnn.execute`; and `gnn.execute`, `gnn.setup` and
+  `gnn.llm` below `gnn.api`. Twelve reciprocal package pairs remain, counting
+  function-scope imports; `KNOWN_RECIPROCAL_PAIRS` in the direction tests
+  freezes the set:
+  - `execute`/`utils`, `pipeline`/`utils` and `processing`/`utils`: the
+    orchestration helpers under `gnn.utils.pipeline_orchestration` and the
+    call-time runtime bridges reach upward.
+  - `analysis`/`execute`, `analysis`/`pipeline`, `pipeline`/`processing`,
+    `main`/`pipeline`: result adapters, the model-family ledger and run
+    identity cross in both directions.
+  - `parsers`/`types`, `parsers`/`schema_validator`, `parsers`/`utils`,
+    `schema_validator`/`testing`, `extract`/`render`: notation-side pairs,
+    each closed today by a function-scope import.
+
+  Add a contract for each pair cut, and preserve public re-export identity and
+  installed entry points with fresh-process checks for parser-only, CLI, API
+  and scientific consumers. Change extras or distribution boundaries only
+  after the installed profiles and downstream probes pass.
 - [ ] **Share versioned benchmark evidence across projects (P2).** Qualify
   an independent public consumer of the GNN scaling manifest in the
   [research contracts](docs/development/interop_research.md). Record exact

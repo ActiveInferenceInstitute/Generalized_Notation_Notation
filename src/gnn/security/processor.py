@@ -1003,9 +1003,9 @@ def _julia_meta_parseall(content: str) -> Optional[tuple[bool, str]]:
         ``None`` when Julia is not available on PATH (caller should fall back
         to the advisory regex sweep).
     """
-    from gnn.execute.julia_setup import julia_available
+    from gnn.utils.runtime_safety.julia_probe import julia_executable
 
-    if not julia_available():
+    if julia_executable() is None:
         return None
 
     probe = (

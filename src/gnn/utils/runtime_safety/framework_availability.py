@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 from gnn.frameworks import CPOMDP_REQUIRED_VERSION
 
 if TYPE_CHECKING:
-    from gnn.execute.subprocess_envelope import CancelToken
+    from gnn.utils.runtime_safety.cancellation import CancelToken
 
 FRAMEWORK_IMPORT_CHECK: Dict[str, Tuple[str, str]] = {
     "jax": ("jax", "uv sync"),

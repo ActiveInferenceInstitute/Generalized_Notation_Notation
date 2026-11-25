@@ -199,7 +199,7 @@ if FASTAPI_AVAILABLE:
                 "errors": [],
                 "events": [],
             }
-            from gnn.execute.subprocess_envelope import CancelToken
+            from gnn.utils.runtime_safety.cancellation import CancelToken
 
             run_entry["cancel_token"] = CancelToken()
             runs[run_hash] = run_entry
@@ -444,7 +444,9 @@ if FASTAPI_AVAILABLE:
             skipped_steps = set(request.skip_steps)
             if request.skip_llm:
                 skipped_steps.add(13)
-            from gnn.api.path_utils import get_repo_root
+            # Read at call time from the implementation module, so a replaced
+            # workspace root is the one this launch observes.
+            from gnn.utils.runtime_safety.workspace_paths import get_repo_root
 
             repo_root = get_repo_root()
             command = build_pipeline_command(

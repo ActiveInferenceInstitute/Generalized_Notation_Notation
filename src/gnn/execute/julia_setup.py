@@ -7,7 +7,6 @@ for RxInfer.jl and ActiveInference.jl frameworks used in the execution step.
 """
 
 import logging
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -19,18 +18,11 @@ from gnn.execute.subprocess_envelope import (  # nosec B404
     run_subprocess_envelope,
 )
 
+# The probe is owned by the runtime-safety leaf; this module re-exports the
+# same function object so ``julia_setup.julia_executable`` stays importable.
+from gnn.utils.runtime_safety.julia_probe import julia_executable
+
 logger = logging.getLogger(__name__)
-
-
-def julia_executable() -> Optional[str]:
-    """Return the path to the ``julia`` executable, or ``None`` if not on PATH.
-
-    The single canonical ``shutil.which("julia")`` probe for the whole
-    codebase: every availability check routes through this helper (or
-    :func:`julia_available`) so there is exactly one ``which("julia")``
-    call site.
-    """
-    return shutil.which("julia")
 
 
 def julia_available() -> bool:
