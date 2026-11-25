@@ -81,11 +81,10 @@ advance its pin past a release and call that reader. The record names the exact
 commit and uploads no artifacts; the
 [5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
 remains the latest release with uploaded source-bound assets.
-[docs/downstream/importers.json](docs/downstream/importers.json) deliberately
-still records `v5.0.3` at `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1` for every
-member that has not cut over: the new pin and the deletion of that member's local
-reader belong to the member's own change, so refreshing those rows is blocked on
-those repositories rather than on GNN.
+[docs/downstream/importers.json](docs/downstream/importers.json) records
+`v5.1.0` for every member except `act_inf_metaanalysis`, which still pins
+`v5.0.3` at `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`. A member's pin move
+belongs to its own change; refresh its row once that change merges.
 
 [GNN 5.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1),
 [FEP_Formal 2.1.0](https://github.com/ActiveInferenceInstitute/fep_formal/releases/tag/v2.1.0)
