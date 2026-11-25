@@ -110,10 +110,10 @@ DIAGNOSTIC_PROBE_GNN = (
 class TestSectionVocabulary:
     """Section completions mirror gnn.schemas.section_contract exactly."""
 
-    def test_all_thirteen_canonical_sections_offered_in_declared_order(self) -> None:
+    def test_every_canonical_section_offered_in_declared_order(self) -> None:
         items = all_section_completions()
         assert [item["label"] for item in items] == list(CANONICAL_GNN_SECTIONS)
-        assert len(items) == 13
+        assert len(items) == len(CANONICAL_GNN_SECTIONS)
 
     def test_section_detail_matches_compliance_tables(self) -> None:
         for item in all_section_completions():
@@ -283,7 +283,7 @@ class TestPyglsServerCompletion:
         assert items is not None
         labels = [item.label for item in items]
         assert "StateSpaceBlock" in labels
-        assert len(labels) == 13
+        assert len(labels) == len(CANONICAL_GNN_SECTIONS)
 
     def test_completion_adapter_reads_section_context_from_document(self) -> None:
         if _assert_pygls_graceful_when_absent():

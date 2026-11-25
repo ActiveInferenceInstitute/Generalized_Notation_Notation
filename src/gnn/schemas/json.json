@@ -222,6 +222,28 @@
         }
       }
     },
+    "boundary_annotation": {
+      "type": "object",
+      "description": "Declared boundary fields keyed by model variable",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "minProperties": 1,
+        "propertyNames": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*(?:[.][A-Za-z][A-Za-z0-9_-]*)*$"
+        },
+        "properties": {
+          "form": {
+            "enum": ["?", "point", "range", "interval", "distribution", "samples"]
+          }
+        },
+        "additionalProperties": {
+          "type": "string",
+          "pattern": "\\S",
+          "not": {"pattern": "[;\\r\\n]"}
+        }
+      }
+    },
     "model_parameters": {
       "type": "object",
       "description": "Model-specific parameters and metadata",

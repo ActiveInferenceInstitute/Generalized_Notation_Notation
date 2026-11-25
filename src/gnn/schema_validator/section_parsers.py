@@ -80,13 +80,17 @@ class SectionParsersMixin:
             section_match = self.SECTION_PATTERN.match(line)
             if section_match:
                 # Process previous section content
-                if self.current_section and current_content:
+                if self.current_section and (
+                    current_content or self.current_section == "BoundaryAnnotation"
+                ):
                     self._process_section_content(
                         parsed, self.current_section, current_content
                     )
 
                 # Start new section
                 self.current_section = section_match.group(1)
+                if "".join(self.current_section.split()) == "BoundaryAnnotation":
+                    self.current_section = "BoundaryAnnotation"
                 current_content = []
                 continue
 
@@ -97,8 +101,20 @@ class SectionParsersMixin:
             current_content.append(line)
 
         # Process final section
-        if self.current_section and current_content:
+        if self.current_section and (
+            current_content or self.current_section == "BoundaryAnnotation"
+        ):
             self._process_section_content(parsed, self.current_section, current_content)
+
+        if "boundary_annotation" in parsed.metadata:
+            from gnn.parsers.boundary_annotation import read_boundary_annotation
+
+            declarations, warnings = read_boundary_annotation(
+                parsed.metadata["boundary_annotation"], set(parsed.variables)
+            )
+            parsed.metadata["boundary_annotation"] = declarations
+            if warnings:
+                parsed.metadata["boundary_annotation_warnings"] = warnings
 
         return parsed
 
@@ -116,6 +132,14 @@ class SectionParsersMixin:
             parsed.model_name = content_text
         elif section == "ModelAnnotation":
             parsed.model_annotation = content_text
+        elif section == "BoundaryAnnotation":
+            from gnn.parsers.boundary_annotation import parse_boundary_annotation
+
+            if "boundary_annotation" in parsed.metadata:
+                raise ValueError("Duplicate BoundaryAnnotation section")
+            parsed.metadata["boundary_annotation"] = parse_boundary_annotation(
+                content_text
+            )
         elif section == "StateSpaceBlock":
             self._parse_state_space_block(parsed, content)
         elif section == "Connections":

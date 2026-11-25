@@ -26,6 +26,7 @@ CANONICAL_GNN_SECTIONS: tuple[str, ...] = (
     "GNNVersionAndFlags",
     "ModelName",
     "ModelAnnotation",
+    "BoundaryAnnotation",
     "StateSpaceBlock",
     "Connections",
     "InitialParameterization",
@@ -56,6 +57,7 @@ REQUIRED_SECTIONS: tuple[str, ...] = (
 # ``optional_sections`` in schemas/yaml.yaml.
 OPTIONAL_SECTIONS: tuple[str, ...] = (
     "ImageFromPaper",
+    "BoundaryAnnotation",
     "Equations",
     "ActInfOntologyAnnotation",
     "ModelParameters",
@@ -68,6 +70,7 @@ JSON_SECTION_KEYS: dict[str, str] = {
     "GNNVersionAndFlags": "gnn_version_and_flags",
     "ModelName": "model_name",
     "ModelAnnotation": "model_annotation",
+    "BoundaryAnnotation": "boundary_annotation",
     "StateSpaceBlock": "state_space_block",
     "Connections": "connections",
     "InitialParameterization": "initial_parameterization",

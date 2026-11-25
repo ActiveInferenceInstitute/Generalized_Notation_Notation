@@ -254,6 +254,7 @@ class GNNModel {
   timeConfiguration: TimeConfiguration
   ontologyMappings: List<OntologyMapping> = List()
   modelParameters: Mapping<String, Any> = new Mapping {}
+  boundaryAnnotation: Mapping<String, Mapping<String, String>> = new Mapping {}
   
   /// Metadata
   footer: String?

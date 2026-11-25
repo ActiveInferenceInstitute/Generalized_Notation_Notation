@@ -28,6 +28,11 @@ message GNNModel {
   optional ModelParameters model_parameters = 11;
   string footer = 12;
   optional Signature signature = 13;
+  map<string, BoundaryDeclaration> boundary_annotation = 14;
+}
+
+message BoundaryDeclaration {
+  map<string, string> fields = 1;
 }
 
 // GNN version and processing flags

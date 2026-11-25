@@ -20,6 +20,7 @@
         <xs:element ref="gnn:gnn_version_and_flags"/>
         <xs:element ref="gnn:model_name"/>
         <xs:element ref="gnn:model_annotation"/>
+        <xs:element ref="gnn:boundary_annotation" minOccurs="0"/>
         <xs:element ref="gnn:state_space_block"/>
         <xs:element ref="gnn:connections"/>
         <xs:element ref="gnn:initial_parameterization"/>
@@ -294,6 +295,37 @@
       <xs:element name="description" type="xs:string" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
+
+  <xs:element name="boundary_annotation">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="declaration" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="field" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute name="key" type="xs:string" use="required"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="variable" type="xs:string" use="required"/>
+          </xs:complexType>
+          <xs:unique name="boundaryFieldKey">
+            <xs:selector xpath="gnn:field"/>
+            <xs:field xpath="@key"/>
+          </xs:unique>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+    <xs:unique name="boundaryVariable">
+      <xs:selector xpath="gnn:declaration"/>
+      <xs:field xpath="@variable"/>
+    </xs:unique>
+  </xs:element>
 
   <!-- Model Parameters -->
   <xs:element name="model_parameters">

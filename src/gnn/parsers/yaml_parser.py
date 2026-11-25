@@ -10,6 +10,7 @@ License: MIT
 """
 
 import logging
+from collections.abc import Iterator
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
@@ -20,6 +21,11 @@ try:
 except ImportError:
     HAS_YAML = False
 
+from .boundary_annotation import (
+    BoundaryAnnotationError,
+    read_boundary_annotation,
+    reject_boundary_duplicates,
+)
 from .common import (
     BaseGNNParser,
     Connection,
@@ -36,6 +42,41 @@ from .common import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _reject_yaml_boundary_duplicates(content: str) -> None:
+    root = yaml.compose(content, Loader=yaml.SafeLoader)
+    if not isinstance(root, yaml.MappingNode):
+        return
+    sections = [
+        value
+        for key, value in root.value
+        if isinstance(key, yaml.ScalarNode) and key.value == "boundary_annotation"
+    ]
+    if len(sections) > 1:
+        raise BoundaryAnnotationError("Duplicate BoundaryAnnotation section")
+    if not sections:
+        raise BoundaryAnnotationError("BoundaryAnnotation must be declared explicitly")
+    if not isinstance(sections[0], yaml.MappingNode):
+        return
+
+    def items(mapping: yaml.MappingNode) -> Iterator[tuple[str, yaml.Node]]:
+        for key, value in mapping.value:
+            if key.tag == "tag:yaml.org,2002:merge":
+                raise BoundaryAnnotationError(
+                    "BoundaryAnnotation does not allow YAML merge keys"
+                )
+            if not isinstance(key, yaml.ScalarNode):
+                raise BoundaryAnnotationError(
+                    "BoundaryAnnotation keys must be scalar values"
+                )
+            yield key.value, value
+
+    declarations = [
+        (name, list(items(fields)) if isinstance(fields, yaml.MappingNode) else None)
+        for name, fields in items(sections[0])
+    ]
+    reject_boundary_duplicates(declarations)
 
 
 class YAMLGNNParser(BaseGNNParser):
@@ -73,10 +114,16 @@ class YAMLGNNParser(BaseGNNParser):
                 data = yaml.safe_load(content)
                 if not isinstance(data, dict):
                     raise ValueError("YAML content must produce a dictionary")
+                if "boundary_annotation" in data:
+                    _reject_yaml_boundary_duplicates(content)
                 return self._parse_yaml_data(data)
             else:
                 # Use simplified parsing
                 data = self._fallback_yaml_parse(content)
+                if "boundary_annotation" in data:
+                    raise BoundaryAnnotationError(
+                        "BoundaryAnnotation YAML requires PyYAML"
+                    )
                 return self._parse_yaml_data(data)
 
         except Exception as e:
@@ -84,6 +131,8 @@ class YAMLGNNParser(BaseGNNParser):
             result = ParseResult(
                 model=self.create_empty_model("Failed YAML Parse"), success=False
             )
+            if isinstance(e, BoundaryAnnotationError):
+                result.metadata["boundary_annotation_error"] = True
             result.add_error(f"Failed to parse YAML content: {str(e)}")
             return result
 
@@ -177,13 +226,22 @@ class YAMLGNNParser(BaseGNNParser):
         """Parse YAML data into GNN internal representation."""
         try:
             model = self._convert_yaml_to_model(data)
-            return ParseResult(model=model, success=True)
+            result = ParseResult(model=model, success=True)
+            if "boundary_annotation" in data:
+                model.boundary_annotations, warnings = read_boundary_annotation(
+                    data["boundary_annotation"], {var.name for var in model.variables}
+                )
+                for warning in warnings:
+                    result.add_warning(warning)
+            return result
 
         except Exception as e:
             logger.error(f"Error converting YAML to model: {e}")
             result = ParseResult(
                 model=self.create_empty_model("Failed YAML Conversion"), success=False
             )
+            if isinstance(e, BoundaryAnnotationError):
+                result.metadata["boundary_annotation_error"] = True
             result.add_error(f"Failed to convert YAML to model: {e}")
             return result
 
@@ -205,6 +263,16 @@ class YAMLGNNParser(BaseGNNParser):
             model.variables = self._parse_yaml_variables(data["variables"])
         elif "state_space" in data:
             model.variables = self._parse_yaml_variables(data["state_space"])
+        elif "boundary_annotation" in data and isinstance(
+            data.get("state_space_block"), dict
+        ):
+            model.variables = self._parse_yaml_variables(
+                [
+                    {**spec, "name": name, "data_type": spec.get("type", "continuous")}
+                    for name, spec in data["state_space_block"].items()
+                    if isinstance(spec, dict)
+                ]
+            )
 
         # Parse connections
         if "connections" in data:

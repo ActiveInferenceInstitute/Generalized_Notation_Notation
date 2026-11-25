@@ -27,3 +27,6 @@ Current records:
   census (F3).
 
 New ADRs must be listed here.
+
+- [0050-optional-boundary-annotation.md](0050-optional-boundary-annotation.md) — proposes
+  model-local declarations for crossing variables in NEST model wrappers.
