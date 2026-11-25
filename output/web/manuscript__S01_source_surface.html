@@ -818,8 +818,8 @@ version control; the generated artifacts it produces are described
 separately so that the boundary between hand-written source and
 reproducible output stays explicit.</p>
 <p>The <code>src/</code> tree is the executable core of GNN. It is
-organized into 45 Python packages spanning 790 source files and roughly
-240263 lines of code. Alongside these packages sit the 25 top-level step
+organized into 45 Python packages spanning 791 source files and roughly
+240352 lines of code. Alongside these packages sit the 25 top-level step
 modules (0–24) that implement the numbered pipeline as thin
 orchestrators delegating into the packages, each module owning one stage
 of the progression from a parsed GNN text model through visualization,
@@ -871,8 +871,41 @@ their source and environment bindings; the directory location alone does
 not establish current-run evidence. Notably,
 <code>output/data/manuscript_variables.json</code> is where the
 manuscript’s substituted token values are materialized.</p>
-<h2 data-number="8.1" id="authored-source-versus-generated-output"><span
-class="header-section-number">8.1</span> Authored Source Versus
+<h2 data-number="8.1"
+id="package-boundaries-and-downstream-importers"><span
+class="header-section-number">8.1</span> Package Boundaries and
+Downstream Importers</h2>
+<p>The 45 packages are not free to import one another.
+<code>pyproject.toml</code> declares 12 import-linter contracts, each of
+which forbids a named set of imports. Most fix a direction of
+dependency: the shared operations stay below both transports, the
+pipeline below the report step, the parsers, types and importer reader
+below the transports and the execution step, and extraction below
+rendering. <code>tests/architecture/test_dependency_direction.py</code>
+checks the same directions from the syntax tree, counting imports
+written inside functions and type-checking blocks, and it freezes the
+set of package pairs that still depend on each other in both directions,
+so that set can shrink but cannot grow unnoticed. Where an
+implementation moved to satisfy a contract, the earlier import path
+re-exports the same objects, and the tests assert that identity. These
+contracts state which imports are refused. They do not establish that
+the packages behind them can be installed separately.</p>
+<p>A repository that applies GNN records the upstream revision it
+consumes in a pin file, and the released reader
+<code>src/gnn/importers.py</code> normalizes the pin shapes in use and
+validates the member’s specifications with the installed parser.
+<code>docs/downstream/importers.json</code> registers 42 such importers,
+of which 41 pin the v5.1.0 release by tag and commit; any other member
+holds a different recorded identity.
+<code>scripts/check_importer_registry.py</code> checks the registry
+against its prose form and this repository’s tags without network
+access, and with <code>--online</code> compares each row with the pin
+file the member publishes on its default branch. A row is evidence of
+what a member declares. Whether that member’s specifications still parse
+at its pin is decided by the member’s own gate, run in its own
+repository.</p>
+<h2 data-number="8.2" id="authored-source-versus-generated-output"><span
+class="header-section-number">8.2</span> Authored Source Versus
 Generated Output</h2>
 <p><code>src/</code>, <code>scripts/</code>, <code>input/</code>,
 <code>docs/</code> and <code>manuscript/</code> are authored and
@@ -890,7 +923,7 @@ figures, and the template render stage for the PDF. Which values become
 tokens is not a matter of taste: any quantity the producer can derive
 from a source surface is a token,
 <code>scripts/check_manuscript_tokens.py</code> fails the build when a
-section hard-codes one instead, and the resulting 93-entry map is
+section hard-codes one instead, and the resulting 97-entry map is
 committed at <code>output/data/manuscript_variables.json</code> for
 audit. External references are resolved from
 <code>manuscript/references.bib</code>, which the same gate cross-checks

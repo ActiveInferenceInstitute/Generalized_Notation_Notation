@@ -7,6 +7,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Extraction below rendering, and a classifying path-citation gate
+
+- The validated linear-Gaussian, per-factor and per-agent specifications
+  (`ContinuousSpec`, `FactoredContinuousSpec`, `extract_continuous_spec`,
+  `extract_factored_continuous_spec`, `extract_multi_agent_continuous_specs`)
+  now live in `gnn.extract.continuous_spec`. `gnn.render.continuous_common`
+  and `gnn.render.multi_agent_continuous` re-export the same objects.
+  `gnn.extract` no longer imports `gnn.render`, which removes one reciprocal
+  package dependency, and `lint-imports` enforces a twelfth contract for it.
+- `scripts/check_doc_path_references.py` now classifies every unresolved path
+  citation in maintained documentation as a citation, a recorded absence, an
+  illustration, another repository's path or history. Only a citation fails.
+  The recorded residue is `scripts/doc_path_references_baseline.json`; the
+  gate fails on a new entry and on one that disappears without the baseline
+  being regenerated.
+- The documentation audit judges a qualified render-engine count
+  ("categorical backends", "the other N backends") against the population the
+  framework registry declares for that qualifier, and refuses a qualifier it
+  cannot derive.
+- The manuscript's source-surface supplement describes the package contracts
+  and the importer registry from four new producer tokens:
+  `GNN_IMPORT_CONTRACT_COUNT`, `GNN_IMPORTER_COUNT`,
+  `GNN_IMPORTER_RELEASE_TAG` and `GNN_IMPORTER_RELEASE_PIN_COUNT`.
+
 ### Execute and transport boundaries for step packages
 
 - `CancelToken` and the `julia` executable probe now live in two

@@ -63,7 +63,7 @@ class POMDPParametersMixin(POMDPExtractorSupportMixin):
     ) -> Tuple[int, int, int, Optional[int]]:
         """Dimensions of a linear-Gaussian model: n from F, m from H."""
         if any(self._AGENT_CONTINUOUS_KEY.fullmatch(key) for key in initial_params):
-            from gnn.render.multi_agent_continuous import (
+            from gnn.extract.continuous_spec import (
                 extract_multi_agent_continuous_specs,
             )
 
@@ -86,7 +86,7 @@ class POMDPParametersMixin(POMDPExtractorSupportMixin):
                 int(any(agent.has_control for agent in agents.values())),
                 first.num_timesteps,
             )
-        from gnn.render.continuous_common import (
+        from gnn.extract.continuous_spec import (
             extract_continuous_spec,
             extract_factored_continuous_spec,
         )

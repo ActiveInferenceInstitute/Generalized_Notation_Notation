@@ -22,6 +22,7 @@
 src/gnn/extract/
 ├── __init__.py            # JSON envelope facade: extract_to_json, main (schema 1.0.0)
 ├── pomdp_extractor.py     # POMDP/state-space extraction (stdlib-only at module scope)
+├── continuous_spec.py     # Validated linear-Gaussian, per-factor and per-agent specifications (NumPy)
 ├── __main__.py            # python -m gnn.extract FILE [options] entry point
 ├── README.md              # Module documentation
 └── AGENTS.md              # This agent scaffolding documentation

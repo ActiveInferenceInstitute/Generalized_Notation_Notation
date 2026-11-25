@@ -899,7 +899,7 @@ def test_pipeline_integration():
 
 #### Output Directory Conventions
 
-**Enforcement**: Output directory names are enforced via `get_output_dir_for_script()` in `src/config.py`. This function maps script names to standardized output directories.
+**Enforcement**: Output directory names are enforced via `get_output_dir_for_script()` in `src/gnn/pipeline/config.py`. This function maps script names to standardized output directories.
 
 **Standard Pattern**: `N_[module]_output/` where N is the step number and [module] is the module name.
 

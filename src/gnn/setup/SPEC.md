@@ -81,8 +81,7 @@ from gnn.setup import (
 ## Interfaces
 
 - **Called by**: [`src/gnn/1_setup.py`](../1_setup.py) via `setup_orchestrator`.
-- **Imported by**: tests in `tests/setup/`, `tests/test_uv_environment.py`,
-  `tests/test_environment_overall.py`, and any other module that needs environment
+- **Imported by**: tests in `tests/setup/` and any other module that needs environment
   introspection (for example dependency-aware fallbacks).
 - **External tools**: `uv`, `python`, the interpreter under `.venv`.
 

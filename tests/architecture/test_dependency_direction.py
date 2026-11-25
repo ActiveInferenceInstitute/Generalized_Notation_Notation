@@ -222,6 +222,11 @@ def test_step_packages_never_import_the_api_transport(package: str) -> None:
     assert forbidden_edges(package, ("gnn.api",)) == []
 
 
+def test_extract_never_imports_render() -> None:
+    """Extraction validates the source; renderers read what it validated."""
+    assert forbidden_edges("gnn.extract", ("gnn.render",)) == []
+
+
 def test_shared_run_leaves_import_nothing_from_gnn() -> None:
     """The leaves stay leaves: no ``gnn`` import can re-create the cycle."""
     for leaf in ("cancellation", "julia_probe"):
@@ -258,7 +263,6 @@ KNOWN_RECIPROCAL_PAIRS: frozenset[tuple[str, str]] = frozenset(
         ("analysis", "execute"),
         ("analysis", "pipeline"),
         ("execute", "utils"),
-        ("extract", "render"),
         ("main", "pipeline"),
         ("parsers", "schema_validator"),
         ("parsers", "types"),
@@ -369,6 +373,28 @@ def test_api_reexports_the_workspace_path_policy() -> None:
     assert set(api_paths.__all__) == set(workspace_paths.__all__)
     for name in api_paths.__all__:
         assert getattr(api_paths, name) is getattr(workspace_paths, name), name
+
+
+def test_render_reexports_the_continuous_specifications() -> None:
+    """``gnn.render.continuous_common`` names extraction's objects, not copies."""
+    import gnn.extract.continuous_spec as extracted
+    import gnn.render.continuous_common as rendered
+    import gnn.render.multi_agent_continuous as agents
+
+    owned = {
+        name
+        for name, value in vars(extracted).items()
+        if getattr(value, "__module__", None) == extracted.__name__
+        and not name.startswith("_")
+    }
+    assert owned, "extraction defines the specifications"
+    assert owned <= set(rendered.__all__)
+    for name in owned:
+        assert getattr(rendered, name) is getattr(extracted, name), name
+    assert (
+        agents.extract_multi_agent_continuous_specs
+        is extracted.extract_multi_agent_continuous_specs
+    )
 
 
 # ── Fresh-process import surfaces ────────────────────────────────────────────

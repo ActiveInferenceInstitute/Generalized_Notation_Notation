@@ -62,6 +62,16 @@ uv run --frozen --no-sync python scripts/check_doc_path_references.py
 Without `--no-write` the audit writes `docs_audit_report.md`; `--report-path PATH`
 redirects that report.
 
+`scripts/check_doc_path_references.py` classifies every backticked
+`src/`, `tests/` or `scripts/` file citation that does not resolve as
+`citation`, `negative`, `illustrative`, `external-sibling` or `history`; only
+`citation` is a finding. It fails on a new `citation` and on a recorded one that
+disappeared, against `scripts/doc_path_references_baseline.json`. After fixing a
+cited path, regenerate the baseline with the write option named in the
+`scripts/check_doc_path_references.py` docstring so the
+baseline shrinks. A dated record opts out of the scan with the
+`<!-- doc-path-references: historical-record -->` marker.
+
 The [audit](docs_audit.py) checks relative destinations, repository escapes,
 same-page and cross-file anchors, heading duplicates, document pairing and owner
 claims. Registry-bound claims are judged against source declarations: render-engine

@@ -237,6 +237,41 @@ def _families(snapshot: RepositorySnapshot) -> list[dict]:
     return families if isinstance(families, list) else []
 
 
+def _import_contract_count(snapshot: RepositorySnapshot) -> int:
+    """Import-linter contracts declared in ``pyproject.toml``."""
+    tool = tomllib.loads(snapshot.read_text("pyproject.toml")).get("tool", {})
+    contracts = tool.get("importlinter", {}).get("contracts", [])
+    return len(contracts) if isinstance(contracts, list) else 0
+
+
+def _importer_registry(snapshot: RepositorySnapshot) -> tuple[str, int, int]:
+    """Released tag, registered importers and importers pinned to that tag.
+
+    Read from ``docs/downstream/importers.json``. A member counts toward the
+    release only when its recorded pin names both the registry's upstream tag
+    and its upstream commit; a content-hash pin or an older tag does not.
+    """
+    raw = snapshot.read_text("docs/downstream/importers.json")
+    if not raw:
+        return "", 0, 0
+    data = json.loads(raw)
+    upstream = data.get("upstream", {})
+    tag, commit = str(upstream.get("tag", "")), str(upstream.get("commit", ""))
+    importers = data.get("importers", [])
+    if not isinstance(importers, list):
+        return tag, 0, 0
+    pinned = sum(
+        1
+        for member in importers
+        if isinstance(member, dict)
+        and isinstance(member.get("pin"), dict)
+        and tag
+        and member["pin"].get("tag") == tag
+        and member["pin"].get("commit") == commit
+    )
+    return tag, len(importers), pinned
+
+
 def _count_files(snapshot: RepositorySnapshot, prefix: str, pattern: str) -> int:
     return len(snapshot.glob(prefix, pattern))
 

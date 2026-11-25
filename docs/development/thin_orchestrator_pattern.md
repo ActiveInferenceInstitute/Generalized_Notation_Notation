@@ -195,9 +195,9 @@ class TestRenderIntegration:
 
 1. **Create the numbered script** (e.g., `12_new_step.py`): Handle orchestration only
 2. **Create the module directory** (e.g., `src/new_step/`): Organize core functionality
-3. **Create modular files** (e.g., `src/new_step/processor.py`): Implement core logic
+3. **Create modular files** (illustrative: `src/new_step/processor.py`): Implement core logic
 4. **Update module `__init__.py`**: Import and expose functions
-5. **Create tests** (e.g., `tests/new_step/test_new_step_integration.py`): Comprehensive testing
+5. **Create tests** (illustrative: `tests/new_step/test_new_step_integration.py`): Comprehensive testing
 
 ### For Existing Steps
 

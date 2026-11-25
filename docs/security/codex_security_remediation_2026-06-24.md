@@ -1,5 +1,7 @@
 # Codex Security Remediation - 2026-06-24
 
+<!-- doc-path-references: historical-record -->
+
 ## Summary
 
 A Codex Security standard scan reviewed the repository at commit

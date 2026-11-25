@@ -364,8 +364,8 @@ System Check → UV Environment Creation → UV Sync (pyproject.toml → uv.lock
 
 ### Test Files
 - `tests/setup/test_setup_overall.py` - Module-level setup tests
-- `tests/test_uv_environment.py` - UV environment behavior tests
-- `tests/test_environment_overall.py` - Environment-related integration checks
+- `tests/setup/test_setup_validation.py` - Setup validation tests
+- `tests/setup/test_dependency_declarations.py` - Dependency declaration contract witnesses
 
 ### Test Coverage
 - Measure: `uv run --extra dev python -m pytest tests/setup/ --cov=gnn.setup --cov-report=term-missing` (do not treat fixed percentages in this doc as canonical).

@@ -1,0 +1,73 @@
+{
+  "schema": "doc-path-references-baseline/v1",
+  "measured_at_commit": "0c882e9dad1f930a4a6f42d8b1588b45e714b038",
+  "measured_at_date": "2026-11-25",
+  "population": {
+    "documents_scanned": 1193,
+    "unresolved_citations": 149
+  },
+  "classes": {
+    "citation": 11,
+    "negative": 3,
+    "illustrative": 3,
+    "external-sibling": 66,
+    "history": 66
+  },
+  "entries": [
+    {
+      "doc": "docs/RUN_GUIDE.md",
+      "line": 129,
+      "cited": "scripts/pipeline/stage_03_render.py"
+    },
+    {
+      "doc": "docs/workflows/gnn-fep.md",
+      "line": 158,
+      "cited": "scripts/docgen/doc_index.py"
+    },
+    {
+      "doc": "docs/workflows/gnn-fep.md",
+      "line": 100,
+      "cited": "scripts/manuscript_variables.py"
+    },
+    {
+      "doc": "docs/workflows/gnn-fep.md",
+      "line": 104,
+      "cited": "scripts/manuscript_variables.py"
+    },
+    {
+      "doc": "docs/workflows/gnn-fep.md",
+      "line": 401,
+      "cited": "scripts/manuscript_variables.py"
+    },
+    {
+      "doc": "docs/workflows/gnn-fep.md",
+      "line": 106,
+      "cited": "scripts/parse_gnn.py"
+    },
+    {
+      "doc": "docs/workflows/gnn-fep.md",
+      "line": 137,
+      "cited": "scripts/parse_gnn.py"
+    },
+    {
+      "doc": "docs/workflows/gnn-fep.md",
+      "line": 398,
+      "cited": "scripts/parse_gnn.py"
+    },
+    {
+      "doc": "docs/workflows/gnn-fep.md",
+      "line": 440,
+      "cited": "scripts/pipeline/stage_03_render.py"
+    },
+    {
+      "doc": "docs/workflows/gnn-fep.md",
+      "line": 300,
+      "cited": "tests/analysis/test_stage_process.py"
+    },
+    {
+      "doc": "docs/workflows/gnn-fep.md",
+      "line": 306,
+      "cited": "tests/analysis/test_stage_process.py"
+    }
+  ]
+}

@@ -638,3 +638,14 @@ type = "forbidden"
 source_modules = ["gnn.execute", "gnn.setup", "gnn.llm"]
 forbidden_modules = ["gnn.api"]
 allow_indirect_imports = true
+
+# Extraction owns the source contract and renderers consume it. The validated
+# linear-Gaussian, per-factor and per-agent specifications live in
+# ``gnn.extract.continuous_spec`` (re-exported by
+# ``gnn.render.continuous_common``), so extraction never imports ``gnn.render``.
+[[tool.importlinter.contracts]]
+name = "extract never imports render directly"
+type = "forbidden"
+source_modules = ["gnn.extract"]
+forbidden_modules = ["gnn.render"]
+allow_indirect_imports = true
