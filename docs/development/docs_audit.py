@@ -429,14 +429,39 @@ ENGINE_COUNT_WORDS: dict[str, int] = {
 
 _ENGINE_COUNT_NUM = "|".join(ENGINE_COUNT_WORDS) + r"|\d{1,2}"
 
-# "9 backends" / "nine frameworks" / "ten computational engines". A count
-# directly preceded by "other" ("reports it alongside the other nine
-# backends" — implies the total, not a claim of it) or by "Step N" ("Step 12
-# backends remain core deps" — a step number, not a count) is not a claim.
+#: Qualifiers that name a *derivable* subset of the render registry. Each maps to a
+#: population computed from the registry declarations, so a qualified count is
+#: checked against the population it claims rather than being exempt:
+#:
+#: - ``categorical`` — frames that are not ``continuous_only``
+#: - ``continuous`` — frames whose ``supports_continuous`` is true
+#: - ``experimental`` — frames whose ``experimental`` flag is set
+#:
+#: A qualifier outside this map is refused rather than guessed: the gate cannot
+#: invent a population, and silently exempting an unknown qualifier is how a stale
+#: count survived before.
+ENGINE_COUNT_QUALIFIERS = {
+    # Neutral descriptors: they say "engines", not which subset.
+    "computational": "total",
+    "rendering": "total",
+    "categorical": "categorical",
+    "categorical-only": "categorical_only",
+    "continuous": "continuous",
+    "non-experimental": "non_experimental",
+    "experimental": "experimental",
+}
+
+# "9 backends" / "nine frameworks" / "ten computational engines" / "nine categorical
+# backends". ``other N`` is a *peer* claim: "reports it alongside the other nine
+# categorical backends" asserts nine peers plus the subject, so N + 1 must equal the
+# population of the qualified domain. ``Step N`` is a step number, not a count, and
+# stays exempt.
 ENGINE_COUNT_RE = re.compile(
     rf"(?i)\b(?:(?P<idiom>other|step\s+\d{{1,2}})\s+)?"
     rf"(?P<count>{_ENGINE_COUNT_NUM})\s+"
-    r"(?P<noun>(?:computational\s+|rendering\s+)?(?:engines|frameworks|backends))\b"
+    r"(?P<qualifier>(?:categorical|continuous|experimental|computational|rendering)\s+"
+    r"|[A-Za-z]+(?:-[A-Za-z]+)+\s+)?"
+    r"(?P<noun>(?:computational\s+|rendering\s+|render\s+)?(?:engines|frameworks|backends))\b"
 )
 
 # Footer/status metadata lines: the count may sit anywhere after the label.
@@ -448,9 +473,72 @@ ENGINE_COUNT_FOOTER_LABEL_RE = re.compile(r"(?i)\*{0,2}renderers?\*{0,2}\s*:\s*"
 # covers all eleven backends" for the Step-12 execution axis) deliberately
 # do not bind and are never judged against the render registry.
 ENGINE_COUNT_PROSE_BINDING_RE = re.compile(
-    r"(?i)declaration of the\b|declared in\b|registered in\b|wired under\b"
+    r"(?i)declaration of the\b|declared in\b|declares?\b|registered in\b|wired under\b"
     r"|supports\b|renders?\s+to\b|code (?:generation|rendering) for\b"
 )
+
+#: Registry flags that define a derivable population for a qualified count.
+_ENGINE_COUNT_FLAGS = ("continuous_only", "supports_continuous", "experimental")
+
+
+def _registry_flags(node: ast.AST) -> dict[str, object]:
+    """Literal boolean flags of one registry entry, from the parsed dict."""
+    flags: dict[str, object] = {}
+    if not isinstance(node, ast.Dict):
+        return flags
+    for key, value in zip(node.keys, node.values):
+        name = getattr(key, "value", None)
+        if name in _ENGINE_COUNT_FLAGS and isinstance(value, ast.Constant):
+            flags[str(name)] = value.value
+    return flags
+
+
+def _engine_count_populations() -> dict[str, int]:
+    """Populations a qualified engine count is judged against.
+
+    Derived from the registry declaration rather than from prose, so a claim about
+    "the ten categorical backends" is checked against what the registry actually
+    declares: ``total`` (every frame), ``non_experimental`` (the default set),
+    ``categorical`` (not ``continuous_only``), ``categorical_only`` (default-set
+    frames that do not support continuous models, i.e. what prose means by "the
+    four categorical backends"), ``continuous`` (``supports_continuous``) and
+    ``experimental`` (the flag).
+    """
+    literal = _registry_literal("FRAMEWORK_REGISTRY")
+    if literal is None:
+        return {
+            "total": 0,
+            "non_experimental": 0,
+            "categorical": 0,
+            "categorical_only": 0,
+            "continuous": 0,
+            "experimental": 0,
+        }
+    populations = {
+        "total": len(literal.keys),
+        "non_experimental": 0,
+        "categorical": 0,
+        "categorical_only": 0,
+        "continuous": 0,
+        "experimental": 0,
+    }
+    for value in literal.values:
+        flags = _registry_flags(value)
+        experimental = bool(flags.get("experimental", False))
+        supports_continuous = bool(flags.get("supports_continuous", False))
+        if not flags.get("continuous_only", False):
+            populations["categorical"] += 1
+        if not experimental:
+            populations["non_experimental"] += 1
+            # The frames that refuse continuous models in the default set: what
+            # prose means by "the four categorical backends".
+            if not supports_continuous:
+                populations["categorical_only"] += 1
+        if supports_continuous:
+            populations["continuous"] += 1
+        if experimental:
+            populations["experimental"] += 1
+    return populations
 
 
 def engine_count_scan_files() -> list[Path]:
@@ -490,13 +578,36 @@ def audit_engine_count_claims(
       ``Pipeline steps``) are never picked up.
     - **Registry-bound prose**: a count phrase on a line that also binds it
       to the full renderer inventory (``declared in …registry``,
-      ``single declaration of the N frameworks``, ``wired under``,
-      ``Supports N backends``, ``renders to N backends``, ``Code
+      ``single declaration of the N frameworks``, ``declares``, ``wired
+      under``, ``Supports N backends``, ``renders to N backends``, ``Code
       generation/rendering for``). Subset claims ("renders one parsed spec
       to six backends") and execution-axis totals ("the dispatch covers all
       eleven backends") do not bind and are exempt by construction.
 
-    ``other N`` / ``Step N`` idioms adjacent to a count are never claims.
+    Count idioms, and the two holes this check used to have:
+
+    - ``Step N`` is a step number, not a count, and stays exempt.
+    - ``other N`` is a *peer* claim: N peers plus the subject, so ``N + 1``
+      must equal the population of the qualified domain. It was exempt
+      outright before, which is how "the other nine categorical backends"
+      passed a strict audit.
+    - A qualifier is either declared in ``ENGINE_COUNT_QUALIFIERS`` and judged
+      against the registry-derived population it names, or **refused**. Two
+      spellings are captured beyond the declared words: hyphenated compounds
+      generically, because an unknown qualifier must not make a claim
+      invisible — an earlier version matched only declared qualifiers, so
+      ``nine made-up-kind backends`` was never a claim at all. That was this
+      defect one level up.
+    - ``N render backends`` is matched by the noun pattern. It was not, so
+      "the ten render backends" carried an unchecked count past the gate.
+
+    Ambiguity is resolved in the prose, never by relaxing the gate. When a
+    sentence's qualifier matches two populations ("the four categorical
+    backends" is true for categorical-only and false for categorical-capable),
+    the fix is to name the population in the document. A checker taught to
+    accept either reading passes a wrong count whenever the other population
+    happens to match, which makes it blind to exactly the ambiguity that
+    produced the confusion.
     """
     registry_count = _framework_registry_count()
     if registry_count is None:
@@ -510,16 +621,27 @@ def audit_engine_count_claims(
         ]
 
     issues: list[tuple[Path, int, str, str]] = []
+    populations = _engine_count_populations()
 
-    def _claim(count_text: str, noun: str) -> bool:
-        claimed = ENGINE_COUNT_WORDS.get(count_text.lower())
-        claimed = claimed if claimed is not None else int(count_text)
-        return claimed != registry_count
+    def _count_value(count_text: str) -> int | None:
+        value = ENGINE_COUNT_WORDS.get(count_text.lower())
+        if value is not None:
+            return value
+        try:
+            return int(count_text)
+        except ValueError:
+            return None
 
-    def _reason(count_text: str) -> str:
+    def _judged(count_text: str, expected: int, qualifier: str | None) -> str | None:
+        claimed = _count_value(count_text)
+        if claimed is None:
+            return f"unreadable render-engine count {count_text!r}"
+        if claimed == expected:
+            return None
+        domain = f"{qualifier} " if qualifier else ""
         return (
-            f"render-engine count claim != framework_registry "
-            f"({registry_count} frameworks)"
+            f"render-engine count claim {claimed} != {expected} "
+            f"{domain}framework(s) declared by framework_registry"
         )
 
     for path in files:
@@ -539,18 +661,46 @@ def audit_engine_count_claims(
                 if not ENGINE_COUNT_PROSE_BINDING_RE.search(line):
                     continue
             for match in matches:
-                if match.group("idiom"):
+                idiom = match.group("idiom")
+                if idiom and idiom.lower().startswith("step"):
+                    # "Step 12 backends ..." is a step number, not a count.
                     continue
-                count_text = match.group("count")
-                if _claim(count_text, match.group("noun")):
+                qualifier = (match.group("qualifier") or "").strip().lower() or None
+                if qualifier is not None and qualifier not in ENGINE_COUNT_QUALIFIERS:
                     issues.append(
                         (
                             rel,
                             lineno,
-                            count_text,
-                            _reason(count_text),
+                            match.group("count"),
+                            f"qualifier {qualifier!r} has no derivable population; "
+                            "use one of " + ", ".join(sorted(ENGINE_COUNT_QUALIFIERS)),
                         )
                     )
+                    continue
+                domain = ENGINE_COUNT_QUALIFIERS.get(qualifier or "", "total")
+                expected = populations[domain]
+                count_text = match.group("count")
+                if idiom:
+                    # "other N <domain>" asserts N peers plus the subject itself.
+                    claimed = _count_value(count_text)
+                    if claimed is None:
+                        issues.append(
+                            (rel, lineno, count_text, "unreadable render-engine count")
+                        )
+                    elif claimed + 1 != expected:
+                        issues.append(
+                            (
+                                rel,
+                                lineno,
+                                count_text,
+                                f"`other {count_text}` implies {claimed + 1} {domain} "
+                                f"frameworks, framework_registry declares {expected}",
+                            )
+                        )
+                    continue
+                reason = _judged(count_text, expected, qualifier)
+                if reason is not None:
+                    issues.append((rel, lineno, count_text, reason))
     return issues
 
 

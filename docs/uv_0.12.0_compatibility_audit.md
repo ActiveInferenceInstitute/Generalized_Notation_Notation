@@ -9,6 +9,8 @@ status: "complete"
 
 # GNN Repository uv 0.12.0 Compatibility Audit Report
 
+<!-- doc-path-references: historical-record -->
+
 > **Historical record (2026-07-30).** Import-path claims below describe the
 > layout at audit time. Since v3.3.0 the canonical import surface is `gnn.*`;
 > see [VERSION_MAP.md](VERSION_MAP.md).

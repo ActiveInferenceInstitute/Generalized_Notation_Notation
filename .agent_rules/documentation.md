@@ -35,6 +35,9 @@ uv run --frozen --no-sync python scripts/check_flag_parity.py
 uv run --frozen --no-sync python scripts/check_capability_contracts.py --strict
 ```
 
+`check_doc_path_references.py` classifies unresolved file citations and fails only on
+a new or vanished `citation` against `scripts/doc_path_references_baseline.json`; after
+fixing a cited path rerun it with `--write-baseline` so the baseline shrinks.
 `--no-write` preserves the report. Run examples and mandatory hosted gates too.
 Static link checks alone cannot establish repository acceptance.
 

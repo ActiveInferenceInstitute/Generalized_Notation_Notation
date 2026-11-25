@@ -644,3 +644,40 @@ def test_config_date_policy_preserves_authored_epoch_until_release(
     assert config.read_text(encoding="utf-8") == expected
     assert config_metadata_drift(tmp_path, tokens) == []
     assert sync_config_metadata(tmp_path, tokens) == []
+
+
+def test_import_contract_count_matches_declared_tables(
+    variables: dict[str, str], snapshot: RepositorySnapshot
+) -> None:
+    """The contract token equals the contract tables ``pyproject.toml`` opens.
+
+    Counted here from the table headers, not through ``tomllib`` as the
+    producer does, so the two readings are independent.
+    """
+    headers = re.findall(
+        r"^\[\[tool\.importlinter\.contracts\]\]\s*$",
+        snapshot.read_text("pyproject.toml"),
+        re.MULTILINE,
+    )
+    assert headers, "no import-linter contracts declared"
+    assert variables["GNN_IMPORT_CONTRACT_COUNT"] == str(len(headers))
+
+
+def test_importer_tokens_match_the_registry(
+    variables: dict[str, str], snapshot: RepositorySnapshot
+) -> None:
+    """Importer tokens restate the registry; release pins never exceed members."""
+    registry = json.loads(snapshot.read_text("docs/downstream/importers.json"))
+    upstream = registry["upstream"]
+    members = registry["importers"]
+    at_release = [
+        member["repo"]
+        for member in members
+        if (member.get("pin") or {}).get("tag") == upstream["tag"]
+        and (member.get("pin") or {}).get("commit") == upstream["commit"]
+    ]
+    assert len({member["repo"] for member in members}) == len(members)
+    assert variables["GNN_IMPORTER_COUNT"] == str(len(members))
+    assert variables["GNN_IMPORTER_RELEASE_TAG"] == upstream["tag"]
+    assert variables["GNN_IMPORTER_RELEASE_PIN_COUNT"] == str(len(at_release))
+    assert 0 < len(at_release) <= len(members)

@@ -24,9 +24,9 @@ Registered surface = the union of
   importing or executing the generated inference program.
 
 Doc surface = maintained Markdown (``README.md`` + ``docs/**/*.md`` +
-``src/gnn/**/*.md``) with the same exclusions as
-``scripts/check_doc_path_references.py`` (excluded parts, historical files
-``CHANGELOG.md``/``VERSION_MAP.md``, historical prefixes), scanned for
+``src/gnn/**/*.md``) with the same excluded parts and historical prefixes as
+``scripts/check_doc_path_references.py``, and skipping the historical files
+``CHANGELOG.md``/``VERSION_MAP.md``, scanned for
 ``--[a-z0-9][a-z0-9_-]*`` tokens.
 
 Metrics (caps in ``scripts/flag_parity_caps.json``):

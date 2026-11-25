@@ -8,72 +8,11 @@ from __future__ import annotations
 
 import base64
 import json
-import re
 from typing import Any
 
-import numpy as np
-
-from gnn.render.continuous_common import (
-    REQUIRED_KEYS,
-    ContinuousSpec,
-    _scalar,
-    extract_continuous_spec,
+from gnn.extract.continuous_spec import (
+    extract_multi_agent_continuous_specs,
 )
-
-AGENT_CONTINUOUS_KEY = re.compile(
-    r"^(F|H|Q|R|prior_mean|prior_cov|goal_mean|control_gain)_agent([1-9]\d*)$"
-)
-REQUIRED_DECLARATIONS = "declare agent_coupling: independent and complete F_agentN/H_agentN/Q_agentN/R_agentN/prior_mean_agentN/prior_cov_agentN blocks for every agent"
-
-
-def extract_multi_agent_continuous_specs(
-    spec: dict[str, Any],
-) -> dict[str, ContinuousSpec]:
-    """Validate all source agent identities, Gaussian blocks and control pairs."""
-    initial = spec.get("initialparameterization") or spec.get(
-        "initial_parameterization"
-    )
-    params = spec.get("model_parameters") or {}
-    if not isinstance(initial, dict) or params.get("agent_coupling") != "independent":
-        raise ValueError(f"unsupported-composition: {REQUIRED_DECLARATIONS}")
-    if any(key in initial for key in REQUIRED_KEYS):
-        raise ValueError(
-            "unsupported-composition: a shared flat Gaussian block cannot be assigned independent agent semantics"
-        )
-    count = params.get("nr_agents", params.get("num_agents"))
-    if isinstance(count, bool) or not isinstance(count, int) or count < 2:
-        raise ValueError("Independent continuous agents require integer nr_agents >= 2")
-    groups: dict[int, dict[str, Any]] = {}
-    for key, value in initial.items():
-        match = AGENT_CONTINUOUS_KEY.fullmatch(str(key))
-        if match:
-            groups.setdefault(int(match[2]), {})[match[1]] = value
-    if set(groups) != set(range(1, count + 1)):
-        raise ValueError(
-            f"Agent blocks must match contiguous declared identities agent1..agent{count}"
-        )
-    base_seed = _scalar(params.get("random_seed", params.get("seed", 42)))
-    if not np.isfinite(base_seed) or base_seed < 0 or base_seed != int(base_seed):
-        raise ValueError("random_seed must be a nonnegative integer")
-    result = {}
-    for index in range(1, count + 1):
-        agent_params = {
-            **params,
-            "random_seed": params.get(
-                f"random_seed_agent{index}", int(base_seed) + index - 1
-            ),
-        }
-        try:
-            result[f"agent{index}"] = extract_continuous_spec(
-                {
-                    "model_name": f"{spec.get('model_name', 'Continuous agents')}: agent{index}",
-                    "initialparameterization": groups[index],
-                    "model_parameters": agent_params,
-                }
-            )
-        except ValueError as exc:
-            raise ValueError(f"agent{index}: {exc}") from exc
-    return result
 
 
 def agent_result_record(

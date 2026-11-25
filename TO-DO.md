@@ -1,6 +1,6 @@
 # TO-DO — GNN next steps
 
-Updated 2026-11-15.
+Updated 2026-11-25.
 Current software version is owned by [pyproject.toml](pyproject.toml).
 [GitHub release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases)
 own exact tags, accepted sources, checks and public artifacts. Version metadata
@@ -351,13 +351,14 @@ unavailable-observation reporting are recorded in [CHANGELOG.md](CHANGELOG.md).
   output parity for normal runs, replay and resume with old and new fixtures.
   Keep COGANT's summary reader as an independent compatibility check.
 - [ ] **Reduce the remaining import surface (P2).** `lint-imports`
-  enforces eleven contracts ([contracts](pyproject.toml),
+  enforces twelve contracts ([contracts](pyproject.toml),
   [direction tests](tests/architecture/test_dependency_direction.py)):
   `gnn.api` and `gnn.operations` below `gnn.cli`; `gnn.pipeline` below
   `gnn.report`; parsers, types and importers below both transports,
   `gnn.report` and `gnn.execute`; `gnn.pipeline`, `gnn.setup` and
-  `gnn.security` below `gnn.execute`; and `gnn.execute`, `gnn.setup` and
-  `gnn.llm` below `gnn.api`. Twelve reciprocal package pairs remain, counting
+  `gnn.security` below `gnn.execute`; `gnn.execute`, `gnn.setup` and
+  `gnn.llm` below `gnn.api`; and `gnn.extract` below `gnn.render`. Eleven
+  reciprocal package pairs remain, counting
   function-scope imports; `KNOWN_RECIPROCAL_PAIRS` in the direction tests
   freezes the set:
   - `execute`/`utils`, `pipeline`/`utils` and `processing`/`utils`: the
@@ -367,8 +368,11 @@ unavailable-observation reporting are recorded in [CHANGELOG.md](CHANGELOG.md).
     `main`/`pipeline`: result adapters, the model-family ledger and run
     identity cross in both directions.
   - `parsers`/`types`, `parsers`/`schema_validator`, `parsers`/`utils`,
-    `schema_validator`/`testing`, `extract`/`render`: notation-side pairs,
-    each closed today by a function-scope import.
+    `schema_validator`/`testing`: notation-side pairs, each closed today by a
+    function-scope import. `GNNValidator` builds the round-trip tester from
+    `gnn.testing` when a caller enables it, and the MCP validation tools pass
+    that flag through, so cutting `schema_validator`/`testing` needs an
+    injected tester without changing what those tools return.
 
   Add a contract for each pair cut, and preserve public re-export identity and
   installed entry points with fresh-process checks for parser-only, CLI, API

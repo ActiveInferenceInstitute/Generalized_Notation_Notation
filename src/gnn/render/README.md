@@ -176,7 +176,7 @@ src/gnn/render/
 ├── pomdp_math.py                  # Factored-POMDP math helpers
 ├── matrix_utils.py                # Shared matrix normalization/validation
 ├── multi_agent_common.py          # Shared multi-agent detection helpers
-├── continuous_common.py           # Shared linear-Gaussian spec contract
+├── continuous_common.py           # Model-kind routing and script literals; re-exports gnn.extract.continuous_spec
 ├── continuous_script.py           # Continuous (LGSSM) script generation
 ├── naming.py                      # Shared output naming + atomic writes
 ├── spec_matrices.py               # Shared discrete matrix extraction/literals
@@ -264,7 +264,8 @@ execution contracts.
 
 Categorical routes use the shared `A/B/C/D[/E]` contract or a named
 execution contract. Single-block linear-Gaussian models use
-`continuous_common.py` for validation. `continuous_script.py` emits
+`gnn.extract.continuous_spec` for validation, re-exported unchanged by
+`continuous_common.py`. `continuous_script.py` emits
 JAX, NumPyro, PyTorch and ngc-learn scripts, while Stan and RxInfer.jl
 have their own continuous generators.
 

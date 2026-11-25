@@ -183,8 +183,7 @@ Resolved exceptions (each verified in the tree carrying this revision):
   path, and the import-linter contracts moved from unwired to wired (see
   Enforcement).
 - **COMP-009** — `6712c63b7`, same commit as COMP-006.
-  `src/gnn/pipeline/pipeline_step_template.py` and
-  `src/gnn/pipeline/pipeline_validation.py` no longer exist.
+  `src/gnn/pipeline/pipeline_step_template.py` and `src/gnn/pipeline/pipeline_validation.py` no longer exist.
 - **COMP-010** — retired by enforcement: the stdlib-shadowing guard is the
   canonical pattern of Seam A, not a removable duplicate.
   `scripts/check_stdlib_shadow_guard.py` (test:

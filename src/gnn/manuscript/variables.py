@@ -76,6 +76,8 @@ from gnn.manuscript.sources import (
     _count_test_functions,
     _example_models,
     _families,
+    _import_contract_count,
+    _importer_registry,
     _maintained_frameworks,
     _mcp_counts,
     _models_under,
@@ -166,6 +168,8 @@ def generate_variables(
     py_files, py_loc = _count_python(snapshot)
     package_count = _count_packages(snapshot)
     test_file_count, test_func_count = _count_test_functions(snapshot)
+    import_contract_count = _import_contract_count(snapshot)
+    importer_tag, importer_count, importer_release_count = _importer_registry(snapshot)
 
     # --- Derived tables (multi-line tokens) ------------------------------------
     step_table = _render_step_table(steps, purposes)
@@ -282,6 +286,13 @@ def generate_variables(
         "GNN_SRC_PY_FILE_COUNT": str(py_files),
         "GNN_SRC_LOC": str(py_loc),
         "GNN_DOC_FILE_COUNT": str(doc_file_count),
+        # Package boundaries and downstream importers: the import-linter
+        # contracts in pyproject.toml and the importer registry under
+        # docs/downstream/, so prose never types either count.
+        "GNN_IMPORT_CONTRACT_COUNT": str(import_contract_count),
+        "GNN_IMPORTER_COUNT": str(importer_count),
+        "GNN_IMPORTER_RELEASE_TAG": importer_tag,
+        "GNN_IMPORTER_RELEASE_PIN_COUNT": str(importer_release_count),
         # MCP
         "GNN_MCP_TOOL_COUNT": str(mcp["tools"]),
         # Cross-repo manifest alias for the MCP audit ledger's tool count

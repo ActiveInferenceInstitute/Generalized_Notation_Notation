@@ -1,5 +1,7 @@
 # GNN Pipeline Improvement Analysis
 
+<!-- doc-path-references: historical-record -->
+
 **Version**: v2.0.0 documentation bundle\
 **Last Reviewed**: 2026-06-12
 **Status**: Historical analysis; use `TO-DO.md` and current verifier output for live release status
