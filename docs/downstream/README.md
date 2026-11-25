@@ -6,12 +6,12 @@ repository; each row links to a page with the full evidence, except rows marked
 †, whose pages are deferred to the same scheduled count-changing change as the
 contract rows below (their links go to the repository's own evidence).
 
-The registry contains 42 repositories: 23 declare `v5.1.0`, 18 declare
+The registry contains 42 repositories: 34 declare `v5.1.0`, 7 declare
 `v5.0.3`, and one records content custody.
 
 At a glance: twenty-three repositories carry a committed GNN specification or a
-pin in a dependency declaration and record an upstream revision. Seventeen of
-them pin `v5.1.0` at commit `75c834bd`, five still pin `v5.0.3` at `8f293d9b`,
+pin in a dependency declaration and record an upstream revision. Twenty-two of
+them pin `v5.1.0` at commit `75c834bd`,
 and `fep_formal` pins by content hash (its custody record now names `v5.1.0`).
 Four more record the revision in their own contract rather than in a pin file,
 and `pymdp` now records it in `.github/gnn-pin.json`. Fourteen carry a pin file
@@ -28,10 +28,10 @@ and a `gnn conformance (pinned)` job but no GNN specification, listed under
 | [active_fractal_rabbit](active-fractal-rabbit.md) | Closed-loop active inference over synthetic waypoint data (claim boundary: synthetic-only) | `models/single_factor_reference.gnn.md`, `models/factorial_latent_mode.gnn.md` | `v5.1.0` · `75c834bd` in `.github/gnn-pin.json` | CI job `gnn-conformance` invokes `./run.sh gnn`, which runs the shared reader and `tests/test_gnn_spec.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
 | [Active_Cardference](active-cardference.md) | Deck-generic card-game engine with GNN-specified active inference agents | `specs/kuhn_aif_p1.gnn.md` | `v5.1.0` · `75c834bd` in `specs/gnn-pin.json` | CI job `test` (`gnn conformance (pinned)`), step "GNN conformance against the pinned parser" (`./run.sh gnn`); `scripts/validate_gnn_spec.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
 | [fep_formal](fep-formal.md) | Lean 4 catalog of FEP, active inference and Bayesian mechanics theorems | Bridge contract `docs/design/gnn-bridge/bridge-contract.md`; Lean `lean/FepSketches/gnn_document.lean` | Content hashes in `specs/gnn-bridge-w1-bridge-operations/syntax-pin.json` and, in `specs/gnn-bridge-w2-source-custody/source-pin.json`, GNN release `v5.1.0` at commit `75c834bd` with six file hashes | `python` job step "Check the frozen-custody bridge gates"; CI job `gnn-conformance` publishes `gnn conformance (pinned)`; `tests/test_gnn_bridge_operations.py`; pair qualification `source-pair-qualification.yml` is dispatch-only | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
-| [fundamentals](fundamentals.md) | Python companion to *Fundamentals of Active Inference* (Namjoshi, MIT Press 2026) | `specs/weather_pomdp.gnn.md` | `v5.0.3` · `8f293d9b` in `specs/gnn-pin.json` | CI job `gnn-conformance`; `tests/test_gnn_spec.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
-| [cognitive](cognitive.md) | Discrete and continuous active inference package plus a knowledge vault | `specs/discrete_variational.gnn.md` | `v5.0.3` · `8f293d9b` in `specs/gnn-pin.json` | CI job `gnn-conformance`; `code/tests/test_gnn_conformance.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
+| [fundamentals](fundamentals.md) | Python companion to *Fundamentals of Active Inference* (Namjoshi, MIT Press 2026) | `specs/weather_pomdp.gnn.md` | `v5.1.0` · `75c834bd` in `specs/gnn-pin.json` | CI job `gnn-conformance`; `tests/test_gnn_spec.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
+| [cognitive](cognitive.md) | Discrete and continuous active inference package plus a knowledge vault | `specs/discrete_variational.gnn.md` | `v5.1.0` · `75c834bd` in `specs/gnn-pin.json` | CI job `gnn-conformance`; `code/tests/test_gnn_conformance.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
 | [ActiveBlockference](active-blockference.md) | CPU-oriented active inference for radCAD/cadCAD grid simulations | `specs/gridworld_3x3.gnn.md` | `v5.1.0` · `75c834bd` in `specs/gnn-pin.json` | CI job `gnn-conformance`; `tests/test_gnn_spec.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
-| [GEN24](gen24.md) | Synthetic domain material generation; GNN enters through the NHIM module | `NHIM/nhim_inquiry_agent.gnn.md` | `v5.0.3` · `8f293d9b` in `NHIM/gnn-pin.json` | CI job `gnn-conformance` (`gnn conformance (pinned)`) fetches the pin and validates the spec; `scripts/validate_gnn_spec.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
+| [GEN24](gen24.md) | Synthetic domain material generation; GNN enters through the NHIM module | `NHIM/nhim_inquiry_agent.gnn.md` | `v5.1.0` · `75c834bd` in `NHIM/gnn-pin.json` | CI job `gnn-conformance` (`gnn conformance (pinned)`) fetches the pin and validates the spec; `scripts/validate_gnn_spec.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
 | [CEREBRUM](cerebrum.md) | Case-enabled reasoning engine with Bayesian representations | `models/case_conditioned_active_inference.gnn.md` | `v5.1.0` · `75c834bd` in `.github/gnn-pin.json` | CI job `gnn-conformance` (`gnn conformance (pinned)`); `tests/core/test_gnn_spec.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
 | [Biofirm](biofirm.md) | Ecological control and bioregion decision analysis with a pymdp controller | `models/biofirm_ecosystem_variable.gnn.md` | `v5.1.0` · `75c834bd` in `.github/gnn-pin.json` | CI job `gnn-conformance` (`gnn conformance (pinned)`); `tests/test_gnn.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
 | [Active_InferAnts](active-inferants.md) | Multi-language active inference framework (ant-colony multi-agent simulation) | `gnn/gaussian_agent.gnn.md` | `v5.1.0` · `75c834bd` in `gnn/upstream.json` | CI job `gnn-conformance` (`gnn conformance (pinned)`); `tests/test_gnn_conformance.py` | `reference`, `source_pin`, `conformance` <!-- evidence_categories: reference, source_pin, conformance --> |
@@ -48,9 +48,8 @@ and a `gnn conformance (pinned)` job but no GNN specification, listed under
 
 - **Pinned GNN revision** names the GNN release tag and commit recorded in the
   repository's own pin file or dependency declaration, or in the contract named
-  in the row. The table records two releases during the cutover: sixteen rows
-  pin `v5.1.0` at commit `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`, six pin
-  `v5.0.3` at `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`, and `fep_formal`
+  in the row. Twenty-two rows of the table
+  pin `v5.1.0` at commit `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf`, and `fep_formal`
   pins by content hash (its custody record names `v5.1.0`). A pin records what
   a repository declares, not what it currently passes.
 - **Conformance / validation evidence** names the workflow job, test file or
