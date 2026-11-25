@@ -67,7 +67,8 @@ redirects that report.
 `citation`, `negative`, `illustrative`, `external-sibling` or `history`; only
 `citation` is a finding. It fails on a new `citation` and on a recorded one that
 disappeared, against `scripts/doc_path_references_baseline.json`. After fixing a
-cited path, run `scripts/check_doc_path_references.py --write-baseline` so the
+cited path, regenerate the baseline with the write option named in the
+`scripts/check_doc_path_references.py` docstring so the
 baseline shrinks. A dated record opts out of the scan with the
 `<!-- doc-path-references: historical-record -->` marker.
 

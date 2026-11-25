@@ -11,7 +11,7 @@ the five classes is a finding:
    ``no longer exists``, ``absent``, ``removed``, ``former``, ``never created``,
    ``deleted``). Correct as written: the missing target is the point.
 3. ``illustrative`` — the line labels itself an example (``illustrative``), or the
-   path is a registered schematic placeholder (:data:`SCHEMATIC_PATHS`). Correct
+   path is a registered schematic path (:data:`SCHEMATIC_PATHS`). Correct
    as written.
 4. ``external-sibling`` — a document under :data:`EXTERNAL_DOC_PREFIXES` cites
    *another repository's* path. ``docs/downstream/fundamentals.md`` describing
@@ -108,11 +108,11 @@ NEGATIVE_RE = re.compile(
 #: Lines that label themselves as examples rather than citations.
 ILLUSTRATIVE_RE = re.compile(r"(?i)\billustrative\b")
 
-#: Registered schematic placeholders. A placeholder names a *pattern*, not a file,
+#: Registered schematic paths. A schematic path names a *pattern*, not a file,
 #: so it is correct that no such file exists.
 SCHEMATIC_PATHS = {
     "src/gnn/N_module.py": "numbered-driver naming pattern",
-    "src/gnn/X_module.py": "pipeline architecture diagram placeholder",
+    "src/gnn/X_module.py": "schematic module name in the pipeline architecture diagram",
     "src/gnn/23_new_step.py": "instruction to create a new numbered driver",
 }
 

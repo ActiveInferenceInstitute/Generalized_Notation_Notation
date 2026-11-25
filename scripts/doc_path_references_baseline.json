@@ -1,13 +1,13 @@
 {
   "schema": "doc-path-references-baseline/v1",
-  "measured_at_commit": "55e778201dff8765e2fe056321fa82689ceb6af5",
+  "measured_at_commit": "0c882e9dad1f930a4a6f42d8b1588b45e714b038",
   "measured_at_date": "2026-11-25",
   "population": {
     "documents_scanned": 1193,
-    "unresolved_citations": 153
+    "unresolved_citations": 149
   },
   "classes": {
-    "citation": 15,
+    "citation": 11,
     "negative": 3,
     "illustrative": 3,
     "external-sibling": 66,
@@ -68,26 +68,6 @@
       "doc": "docs/workflows/gnn-fep.md",
       "line": 306,
       "cited": "tests/analysis/test_stage_process.py"
-    },
-    {
-      "doc": "src/gnn/setup/AGENTS.md",
-      "line": 263,
-      "cited": "tests/test_environment_overall.py"
-    },
-    {
-      "doc": "src/gnn/setup/AGENTS.md",
-      "line": 262,
-      "cited": "tests/test_uv_environment.py"
-    },
-    {
-      "doc": "src/gnn/setup/SPEC.md",
-      "line": 85,
-      "cited": "tests/test_environment_overall.py"
-    },
-    {
-      "doc": "src/gnn/setup/SPEC.md",
-      "line": 84,
-      "cited": "tests/test_uv_environment.py"
     }
   ]
 }
