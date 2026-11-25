@@ -260,7 +260,7 @@ separately so that the boundary between hand-written source and
 reproducible output stays explicit.
 
 The \texttt{src/} tree is the executable core of GNN. It is organized
-into 45 Python packages spanning 790 source files and roughly 240263
+into 45 Python packages spanning 791 source files and roughly 240352
 lines of code. Alongside these packages sit the 25 top-level step
 modules (0--24) that implement the numbered pipeline as thin
 orchestrators delegating into the packages, each module owning one stage
@@ -325,6 +325,44 @@ establish current-run evidence. Notably,
 manuscript's substituted token values are materialized.
 \end{frame}
 
+\begin{frame}[fragile,allowframebreaks]{Package Boundaries and
+Downstream Importers}
+\protect\phantomsection\label{package-boundaries-and-downstream-importers}
+The 45 packages are not free to import one another.
+\texttt{pyproject.toml} declares 12 import-linter contracts, each of
+which forbids a named set of imports. Most fix a direction of
+dependency: the shared operations stay below both transports, the
+pipeline below the report step, the parsers, types and importer reader
+below the transports and the execution step, and extraction below
+rendering. \breaktt{tests/architecture/test\_dependency\_direction.py}
+checks the same directions from the syntax tree, counting imports
+written inside functions and type-checking blocks, and it freezes the
+set of package pairs that still depend on each other in both directions,
+so that set can shrink but cannot grow unnoticed. Where an
+implementation moved to satisfy a contract, the earlier import path
+re-exports the same objects, and the tests assert that identity. These
+contracts state which imports are refused. They do not establish that
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Package Boundaries and
+Downstream Importers}
+the packages behind them can be installed separately.
+
+A repository that applies GNN records the upstream revision it consumes
+in a pin file, and the released reader \breaktt{src/gnn/importers.py}
+normalizes the pin shapes in use and validates the member's
+specifications with the installed parser.
+\breaktt{docs/downstream/importers.json} registers 42 such importers, of
+which 41 pin the v5.1.0 release by tag and commit; any other member
+holds a different recorded identity.
+\breaktt{scripts/check\_importer\_registry.py} checks the registry
+against its prose form and this repository's tags without network
+access, and with \texttt{-\/-online} compares each row with the pin file
+the member publishes on its default branch. A row is evidence of what a
+member declares. Whether that member's specifications still parse at its
+pin is decided by the member's own gate, run in its own repository.
+\end{frame}
+
 \begin{frame}[fragile,allowframebreaks]{Authored Source Versus Generated
 Output}
 \protect\phantomsection\label{authored-source-versus-generated-output}
@@ -347,7 +385,7 @@ producer can derive from a source surface is a token,
 
 \begin{frame}[fragile,allowframebreaks]{Authored Source Versus Generated
 Output}
-section hard-codes one instead, and the resulting 93-entry map is
+section hard-codes one instead, and the resulting 97-entry map is
 committed at \breaktt{output/data/manuscript\_variables.json} for audit.
 External references are resolved from
 \breaktt{manuscript/references.bib}, which the same gate cross-checks

@@ -41,9 +41,10 @@
 \contentsline {subsection}{\numberline {7.1}Current Limitations}{25}{subsection.7.1}%
 \contentsline {subsection}{\numberline {7.2}Next Steps}{25}{subsection.7.2}%
 \contentsline {section}{\numberline {8}Supplemental Source Surface}{27}{section.8}%
-\contentsline {subsection}{\numberline {8.1}Authored Source Versus Generated Output}{27}{subsection.8.1}%
-\contentsline {section}{\numberline {9}Symbols and Glossary}{28}{section.9}%
-\contentsline {subsection}{\numberline {9.1}Language Constructs}{28}{subsection.9.1}%
-\contentsline {subsection}{\numberline {9.2}Symbols by Model Kind}{29}{subsection.9.2}%
-\contentsline {subsection}{\numberline {9.3}Ontology Bindings and Implementations}{30}{subsection.9.3}%
-\contentsline {section}{\numberline {10}References}{31}{section.10}%
+\contentsline {subsection}{\numberline {8.1}Package Boundaries and Downstream Importers}{27}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Authored Source Versus Generated Output}{27}{subsection.8.2}%
+\contentsline {section}{\numberline {9}Symbols and Glossary}{29}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Language Constructs}{29}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Symbols by Model Kind}{30}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Ontology Bindings and Implementations}{31}{subsection.9.3}%
+\contentsline {section}{\numberline {10}References}{32}{section.10}%
