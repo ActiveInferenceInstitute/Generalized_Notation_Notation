@@ -1,8 +1,8 @@
 {
-  "counts_describe_commit": "bb3c23e38",
+  "counts_describe_commit": "a1669e876",
   "dirty_path_count": 9,
   "dirty_paths": [
-    "output/.pipeline/analysis-data/da23a833b73e3acf3a767fed65968a289c5673d5be6543c15537a0dac7e5565a/",
+    "output/.pipeline/analysis-data/79ba16a5b120cdc4538083ee6ed04c588c8e6acfd4fd4f159a7fa5cea6d7bf2e/",
     "output/data/manuscript_variables.json",
     "output/data/manuscript_variables_receipt.json",
     "output/manuscript/00_abstract.md",
