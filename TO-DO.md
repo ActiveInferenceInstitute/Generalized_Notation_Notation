@@ -82,9 +82,8 @@ commit and uploads no artifacts; the
 [5.0.1 release](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1)
 remains the latest release with uploaded source-bound assets.
 [docs/downstream/importers.json](docs/downstream/importers.json) records
-`v5.1.0` for every member except `act_inf_metaanalysis`, which still pins
-`v5.0.3` at `8f293d9ba810e6eda5c09842d9c7ed9ffa5f92c1`. A member's pin move
-belongs to its own change; refresh its row once that change merges.
+`v5.1.0` for every member with a pin file. A member's pin move belongs to its
+own change; refresh its row once that change merges.
 
 [GNN 5.0.1](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/tag/v5.0.1),
 [FEP_Formal 2.1.0](https://github.com/ActiveInferenceInstitute/fep_formal/releases/tag/v2.1.0)
