@@ -107,7 +107,7 @@ Commit the manifest with the new publication and Stage 04 evidence. The schedule
 
 The render needs a LaTeX installation providing the packages listed in `docs/manuscript/preamble.md` plus `seqsplit`; the template guards `seqsplit` with `\IfFileExists`, so a missing copy degrades rather than failing the build.
 
-Because the variables file is regenerated before rendering, the counts in the rendered PDF track the repository state at the commit recorded in `output/data/manuscript_variables.json` (e1d1a590e): a code change that alters, for example, the test inventory (708 test files, 7501 test functions) propagates into the prose on the next regeneration without any manual editing.
+Because the variables file is regenerated before rendering, the counts in the rendered PDF track the repository state at the commit recorded in `output/data/manuscript_variables.json` (9d48d7284): a code change that alters, for example, the test inventory (709 test files, 7508 test functions) propagates into the prose on the next regeneration without any manual editing.
 
 ## Reproducibility Contract
 

@@ -71,13 +71,13 @@
         "GNN_MCP_TOOL_COUNT": "165",
         "GNN_SRC_PACKAGE_COUNT": "45",
         "GNN_STEP_COUNT": "25",
-        "GNN_TEST_FILE_COUNT": "708",
+        "GNN_TEST_FILE_COUNT": "709",
         "GNN_VERSION": "5.1.0"
       },
       "filename": "gnn_repo_metrics.png",
       "generated_by": "scripts/manuscript_fig_repo_metrics.py",
       "label": "fig:repo_metrics",
-      "png_sha256": "e1469b0a411cbf10bea6dd637a16585ac34ffb8cee7ed3e4abdc93fdfefd4cff",
+      "png_sha256": "a0199fcf4b23c6659469a73b9f560d1d90701621dc23b37fadec33e7864ea8a6",
       "source_sha256": {}
     },
     {
