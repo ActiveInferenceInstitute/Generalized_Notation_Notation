@@ -35,6 +35,29 @@ This creates a powerful recursive loop where Bayesian structures are continuousl
 learned_structure = bn.structure_learning.fit(df_sim, methodtype="hc", scoretype="bic")
 ```
 
+### Fixed-action full-sequence smoothing
+
+Run a generated source-bound bnlearn program with `--inference smooth`.
+Supply a JSON array of observation indices and a JSON array containing one
+action index per transition. For a one-observation run, supply an empty action
+array. The program writes `simulation_results.json` under
+`BNLEARN_OUTPUT_DIR` and reports one float64 posterior per time, conditioned
+on all observations.
+
+```bash
+BNLEARN_OUTPUT_DIR="$RESULT_DIR" python "$PROGRAM" --inference smooth \
+  --observations-json "$OBSERVATIONS" --transition-actions-json "$ACTIONS"
+gnn witness "$SOURCE" --results "$RESULT_DIR/simulation_results.json" \
+  --program "$PROGRAM" --output "$RECEIPT"
+gnn witness --verify "$RECEIPT"
+```
+
+Witness replay requires a source admitted by the [E4 finite smoothing contract](../development/remaining_roadmap_contracts.md#e4-replayable-finite-smoothing-v4).
+The native scope is one stationary categorical factor with at most four
+states, observations and actions, eight time steps, and 4,096 latent paths.
+Observation zero conditions the declared prior. Action `t` selects the
+transition from `t` to `t+1`.
+
 ### Step 16: Analysis
 In this step, advanced statistical analysis utilizes `bnlearn` specifically for **Causal Inference**:
 *   Given evidence from a particular time step slice of the simulation, `bn.inference.fit()` runs exact probabilistic counterfactuals to evaluate agent policy consequences over different time horizons. 

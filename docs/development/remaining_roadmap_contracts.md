@@ -266,10 +266,18 @@ Negative controls fail, refuse or raise with explicit diagnoses:
 - float32 values with and without a float32 declaration (`float32_precision_rounding`);
 - source, reference and schema tampering on replay.
 
-Only `bnlearn` and `pgmpy` framework labels are admitted. No native smoothing
-adapter produces these results yet; the tests use the separate test oracle as
-the reported runtime. `execution_source_verified` stays false and formal
-evidence stays unavailable.
+The opt-in native bnlearn runner builds one unrolled network from the authored
+A/B/D conditionals. Its pgmpy variable elimination queries each hidden state
+against the same complete observation sequence. It requires explicit
+observation and transition-action JSON files and uses the existing
+`bnlearn` extra. The default generated runner still performs filtering.
+
+The all-extras gate retains and replays the v4 receipts for a four-step
+asymmetric native fixture and its one-step prior-first control. Both retain
+their actual executable source, input identities, bnlearn and pgmpy versions,
+and runtime A/B/D values. Conditioning, precision, and scope use the v4 rules
+above. Receipt replay keeps `execution_source_verified` false and formal
+evidence unavailable.
 
 ### Ontology bridge alignment diagnostics
 

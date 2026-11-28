@@ -264,7 +264,9 @@ The lists below own outstanding work; this table owns target-version sequencing.
   Progress: the 4.3.0 [witness foundation](docs/development/remaining_roadmap_contracts.md#e4-foundation-source-bound-numerical-witness-v1)
   independently reads a restricted source subset, enumerates finite paths and
   conditions joint Gaussians. Native bnlearn/JAX comparisons and counterexamples
-  cover their declared filtering fixtures. The unreleased
+  cover their declared filtering fixtures. Opt-in native bnlearn smoothing
+  adds one-step and four-step [v4 replay](docs/development/remaining_roadmap_contracts.md#e4-replayable-finite-smoothing-v4)
+  on the restricted fixed-action source contract. The unreleased
   [E4-IG1 composition extension](docs/development/e4_independent_gaussian_composition.md)
   adds independent extraction and joint-prefix conditioning for two passive
   Gaussian agents, full retained child metadata and separate FEP Kalman/Joseph

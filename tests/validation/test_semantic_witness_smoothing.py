@@ -1,20 +1,24 @@
 """E4 v4: replayable finite full-sequence smoothing and its negative controls.
 
-Reported smoothing values come from the separate test-only reader in
-``tests/helpers/numerical_witness.py``; the production witness recomputes its
-reference from the raw source bytes by exact latent-path enumeration.
+The counterexample fixtures provide controlled values. The native tests run a
+generated bnlearn program and replay against independent latent-path enumeration.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import os
+import subprocess
+import sys
 from copy import deepcopy
+from pathlib import Path
 
 import numpy as np
 import pytest
 
 from gnn.cli import main
+from gnn.render.bnlearn.source_program import generate_source_program
 from gnn.validation.semantic_witness import (
     SCHEMA,
     SMOOTHING_CONTRACT,
@@ -23,7 +27,7 @@ from gnn.validation.semantic_witness import (
     verify_semantic_witness,
 )
 from tests.helpers.numerical_witness import enumerate_finite, read_source
-from tests.render.test_source_numerical_witnesses import authored_source
+from tests.render.test_source_numerical_witnesses import authored_source, extracted_spec
 
 OBSERVATIONS = [2, 0, 1, 2]
 ACTIONS = [1, 0, 1]
@@ -115,6 +119,127 @@ def test_smoothing_and_filtering_differ_on_fixture_but_agree_at_final_time():
     assert control["question"] == "filtering"
     assert control["final_time_max_abs_difference"] < 1e-15
     np.testing.assert_allclose(control["beliefs"], filtered, rtol=0, atol=1e-15)
+
+
+@pytest.mark.needs_bnlearn
+@pytest.mark.parametrize(
+    ("observations", "actions", "left_posteriors"),
+    [
+        (OBSERVATIONS, ACTIONS, [371 / 3305, 616 / 661, 19437 / 23135, 325 / 4627]),
+        ([OBSERVATIONS[0]], [], [7 / 43]),
+    ],
+    ids=["four-steps", "one-step"],
+)
+def test_native_bnlearn_smoothing_matches_independent_witness(
+    tmp_path: Path,
+    observations: list[int],
+    actions: list[int],
+    left_posteriors: list[float],
+) -> None:
+    steps = len(observations)
+    source = smoothing_source().replace(
+        b"num_timesteps: 4", f"num_timesteps: {steps}".encode()
+    )
+    source_path = tmp_path / "source.md"
+    contract = read_source(source)
+    spec = extracted_spec(tmp_path, source)
+    source_identity = {"source_sha256": hashlib.sha256(source).hexdigest()}
+    script = tmp_path / "model.py"
+    script.write_text(generate_source_program(spec, source_identity), encoding="utf-8")
+    observations_path = tmp_path / "observations.json"
+    observations_path.write_text(json.dumps(observations), encoding="utf-8")
+    actions_path = tmp_path / "actions.json"
+    actions_path.write_text(json.dumps(actions), encoding="utf-8")
+    result_dir = tmp_path / "result"
+    result_path = result_dir / "simulation_results.json"
+    command = [
+        sys.executable,
+        str(script),
+        "--inference",
+        "smooth",
+        "--observations-json",
+        str(observations_path),
+    ]
+    environment = dict(os.environ, BNLEARN_OUTPUT_DIR=str(result_dir))
+    if steps == 1:
+        missing_actions = subprocess.run(
+            command, env=environment, capture_output=True, text=True, timeout=90
+        )
+        assert missing_actions.returncode == 2
+        assert "smoothing requires --observations-json" in missing_actions.stderr
+        assert not result_path.exists()
+    completed = subprocess.run(
+        [*command, "--transition-actions-json", str(actions_path)],
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=90,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    result = json.loads(result_path.read_bytes())
+    assert result["framework"] == "bnlearn"
+    assert all(result.get(name) for name in ("bnlearn_version", "pgmpy_version"))
+    assert result["observations"] == observations
+    assert result["transition_actions"] == actions
+    assert result["source_identity"] == source_identity
+    expected = enumerate_finite(contract, observations, actions)
+    np.testing.assert_allclose(expected[:, 0], left_posteriors, rtol=0, atol=1e-15)
+    np.testing.assert_allclose(
+        result["smoothed_beliefs"], expected, rtol=1e-10, atol=1e-12
+    )
+
+    receipt_path = tmp_path / "semantic-witness-v4.json"
+    assert (
+        main(
+            [
+                "witness",
+                str(source_path),
+                "--results",
+                str(result_path),
+                "--program",
+                str(script),
+                "--output",
+                str(receipt_path),
+            ]
+        )
+        == 0
+    )
+    assert main(["witness", "--verify", str(receipt_path)]) == 0
+    receipt_bytes = receipt_path.read_bytes()
+    receipt = json.loads(receipt_bytes)
+    assert receipt["schema"] == SMOOTHING_SCHEMA
+    assert receipt["status"] == "passed"
+    assert receipt["assumptions"]["conditioning_horizon"] == [steps] * steps
+    assert receipt["execution_evidence"]["execution_source_verified"] is False
+    assert receipt["formal_evidence"]["status"] == "unavailable"
+    if steps > 1:
+        filtering = receipt["reference"]["negative_control"]["beliefs"]
+        assert np.max(np.abs(expected[:-1] - np.asarray(filtering[:-1]))) > 0.09
+        np.testing.assert_allclose(expected[-1], filtering[-1], rtol=0, atol=1e-15)
+
+    if destination := os.environ.get("GNN_NUMERICAL_WITNESS_DIR"):
+        out = Path(destination)
+        out.mkdir(parents=True, exist_ok=True)
+        prefix = out / f"e4-finite-smoothing-{steps}-step"
+        prefix.with_suffix(".json").write_bytes(receipt_bytes)
+        repository = Path(__file__).resolve().parents[2]
+        custody = {
+            "checkout_commit": subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repository, text=True
+            ).strip(),
+            "checkout_dirty_paths": subprocess.check_output(
+                ["git", "status", "--porcelain", "--untracked-files=normal"],
+                cwd=repository,
+                text=True,
+            ).splitlines(),
+            "receipt_sha256": hashlib.sha256(receipt_bytes).hexdigest(),
+            "return_code": completed.returncode,
+            "observations": observations,
+            "transition_actions": actions,
+        }
+        prefix.with_suffix(".custody.json").write_text(
+            json.dumps(custody, indent=2) + "\n", encoding="utf-8"
+        )
 
 
 def test_filtering_values_substituted_for_smoothing_fail_with_diagnosis():
