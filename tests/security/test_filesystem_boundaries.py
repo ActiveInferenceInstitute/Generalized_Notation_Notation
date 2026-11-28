@@ -905,8 +905,10 @@ async def test_api_normal_leader_exit_has_bounded_native_cleanup(
         sys.executable,
         "-c",
         (
-            "import subprocess,time; "
-            f"subprocess.Popen([{sys.executable!r},'-c',{child!r}]); time.sleep(.3)"
+            "import subprocess,time; from pathlib import Path; "
+            f"subprocess.Popen([{sys.executable!r},'-c',{child!r}]); "
+            f"marker=Path({str(child_pid)!r}); deadline=time.monotonic()+1.5\n"
+            "while not marker.exists() and time.monotonic() < deadline: time.sleep(.01)"
         ),
     ]
     monkeypatch.setattr(
@@ -936,11 +938,22 @@ async def test_api_normal_leader_exit_has_bounded_native_cleanup(
         else:
             assert job["status"] == "completed" and cleanup["cleanup_verified"]
             assert cleanup["streams_drained"]
-            assert (
-                child_identity is None
-                or not child_identity.is_running()
-                or child_identity.status() == psutil.STATUS_ZOMBIE
-            )
+            if child_identity is not None:
+                # A group signal can close output pipes before the kernel makes
+                # the already-identified child's exit visible to status readers.
+                deadline = time.monotonic() + 1
+                while time.monotonic() < deadline:
+                    try:
+                        if (
+                            not child_identity.is_running()
+                            or child_identity.status() == psutil.STATUS_ZOMBIE
+                        ):
+                            break
+                    except psutil.NoSuchProcess:
+                        break
+                    await asyncio.sleep(0.01)
+                else:
+                    pytest.fail("The owned child remained alive after API cleanup")
     finally:
         # Windows's deliberately unsupported child remains caller-owned; stop
         # only that published birth-time-bound identity, never a host PID scan.
