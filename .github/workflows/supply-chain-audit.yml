@@ -40,7 +40,6 @@ jobs:
           uv export --frozen --no-dev --no-emit-project -o /tmp/requirements-audit.txt
 
       # Audit the frozen export for this interpreter/platform (markers apply).
-      # Preserve uv overrides (Gradio/Pillow); no advisories are ignored.
       - name: Run pip-audit
         id: audit
         run: |
@@ -77,7 +76,6 @@ jobs:
           uv export --frozen --all-extras --no-dev --no-emit-project -o /tmp/requirements-all-extras.txt
 
       # Audit the frozen export for this interpreter/platform (markers apply).
-      # Preserve uv overrides (Gradio/Pillow); no advisories are ignored.
       - name: Run pip-audit
         id: audit
         run: |

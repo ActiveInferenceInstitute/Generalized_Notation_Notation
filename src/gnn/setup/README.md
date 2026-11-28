@@ -181,10 +181,10 @@ uv sync --extra gui
 uv sync --all-extras        # Everything
 ```
 
-GUI/all-extras installs require the committed uv Pillow 13 override while
-Gradio 6.30.0 still caps Pillow below 13. See the root
-[runtime exceptions](../../../README.md#runtime-defaults-and-required-profiles)
-for the qualification scope and removal check.
+The GUI and all-extras profiles use Gradio 6.32.0 or newer and resolve with
+the Pillow 13 minimum. See the root
+[runtime profiles](../../../README.md#runtime-defaults-and-required-profiles)
+for qualification details.
 
 ## Output
 

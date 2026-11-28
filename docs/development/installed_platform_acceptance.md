@@ -1,9 +1,9 @@
 # Installed-package and native platform acceptance
 
 The [installed-platform workflow](../../.github/workflows/installed-platforms.yml)
-accepts an ordinary wheel outside the source checkout. Its matrix is
-Linux/Python 3.12 and 3.14, macOS/Python 3.14, and Windows/Python 3.14 on every
-event.
+checks ordinary wheel and sdist installations outside the source checkout.
+Every event runs Linux/Python 3.12, 3.13, and 3.14, macOS/Python 3.14, and
+Windows/Python 3.14.
 A supported release must have successful native receipts for its exact source;
 a resolvable wheel plan or classifier alone does not establish support.
 The ordinary source test suite has a separate Python 3.12–3.14 matrix, and

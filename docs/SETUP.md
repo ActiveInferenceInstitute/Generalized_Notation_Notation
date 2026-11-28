@@ -77,11 +77,11 @@ uv sync --frozen --python 3.14
 uv sync --frozen --all-extras --python 3.12
 ```
 
-The GUI and all-extras profiles require uv's committed Pillow 13 override while
-Gradio 6.30.0 still declares Pillow `<13`. Plain pip cannot resolve those extras;
-core pip installs retain the secure Pillow minimum. See the
-[runtime exceptions and removal checks](../README.md#runtime-defaults-and-required-profiles)
-for compatibility scope and the required native GUI/image checks.
+The GUI and all-extras profiles declare Gradio 6.32.0 or newer and resolve
+with the Pillow 13 minimum using the ordinary resolver. Use the frozen
+commands above for lock-based reproduction and see the
+[runtime profiles](../README.md#runtime-defaults-and-required-profiles)
+for the native GUI and image checks.
 
 Do not create a second `src/.venv`; the project environment belongs at the repository
 root and is managed by `uv`.
