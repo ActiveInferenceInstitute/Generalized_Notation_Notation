@@ -21,6 +21,7 @@ descriptor or replacing the stream.
 | `gnn extract <file>` | Extract the POMDP state space as structured JSON (`--strict`/`--no-strict`, `--compact`, `--json` standard envelope) |
 | `gnn render <file>` | Render a GNN file to a specific framework (pymdp, rxinfer, jax, etc.); `--json` emits the standard envelope |
 | `gnn report` | Generate pipeline report from existing outputs |
+| `gnn replay --output-dir <run>` | Verify retained manifests and emit the deterministic recorded trace digest |
 | `gnn witness <file> --results <result> --program <script>` | Compare independently read source semantics with native reported values; optional `--output` writes a v2 receipt |
 | `gnn witness --verify <receipt>` | Recompute all numerical evidence from retained bytes; refuse altered or nonpassing records |
 | `gnn reproduce <hash>` | Re-run from a previous run hash (content-addressable) |
@@ -98,6 +99,7 @@ The CLI module is a thin dispatcher — each subcommand delegates to the corresp
 - `extract` → `gnn.extract.extract_to_json()` (lazy import; emits a structured error envelope when the extractor is unavailable)
 - `render` → `render.process_render()`
 - `report` → `report.pipeline_report.generate_pipeline_report()`
+- `replay` → `pipeline.run_manifest.replay_run_manifest()`
 - `reproduce` → `pipeline.hasher.lookup_run()` + `main.main(override_args=...)`
 - `preflight` → `pipeline.preflight.run_preflight()`
 - `health` → `render.health.check_renderers()` + `pipeline.preflight.check_environment()`

@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 import numpy as np
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -98,6 +99,42 @@ def test_round_trip_validates_clean(tmp_path: Path) -> None:
 
     problems = verify_run_manifests(tmp_path / "emitted", run_dir)
     assert problems == [], f"expected clean round-trip, got: {problems}"
+
+
+def test_cli_replay_checks_retained_trace_without_rewriting_run(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from gnn.cli import main
+
+    run_dir = _build_fake_run(tmp_path)
+    summary_path = run_dir / "00_pipeline_summary" / "pipeline_execution_summary.json"
+    summary = json.loads(summary_path.read_text())
+    summary["run_id"] = "recorded-run"
+    summary_path.write_text(json.dumps(summary))
+    emission = emit_run_manifests(run_dir)
+    manifest_dir = Path(emission["manifest_dir"])
+    before = {path: path.read_bytes() for path in run_dir.rglob("*") if path.is_file()}
+
+    args = ["replay", "--output-dir", str(run_dir), "--json", "--expected-run-id"]
+    assert main([*args, "recorded-run"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["data"]["run_id"] == "recorded-run"
+    assert result["data"]["evidence_mode"] == "summary"
+    assert result["data"]["trace_sha256"] == replay_trace(
+        read_trace(manifest_dir / "execution_trace.json")
+    )
+    assert main([*args, "different-run"]) != 0
+    assert json.loads(capsys.readouterr().out)["status"] == "error"
+    assert {
+        path: path.read_bytes() for path in run_dir.rglob("*") if path.is_file()
+    } == before
+
+    (run_dir / "3_gnn_output/format_statistics.json").write_text('{"tampered":true}')
+    assert main([*args, "recorded-run"]) != 0
+    assert json.loads(capsys.readouterr().out)["status"] == "error"
+    assert (manifest_dir / "index.json").read_bytes() == before[
+        manifest_dir / "index.json"
+    ]
 
 
 def test_negative_tampered_artifact_is_detected(tmp_path: Path) -> None:

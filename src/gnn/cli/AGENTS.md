@@ -26,6 +26,7 @@ The CLI module provides the `gnn` command-line tool — a unified interface to t
 - **Code generation** via `gnn render` (PyMDP, RxInfer, ActiveInference.jl, JAX, NumPyro, Stan, PyTorch, DisCoPy, bnlearn)
 - **POMDP extraction** via `gnn extract` (structured JSON of the POMDP state space, with graceful degradation when the extractor is unavailable)
 - **Run reproduction** via `gnn reproduce` using content-addressable hashing
+- **Retained run replay** via `gnn replay --output-dir PATH --json`, which verifies the existing output bundle and returns its recorded trace digest
 - **Static complexity bounds** via `gnn complexity <model|dir>` — one `[ESTIMATE]`-labeled BOUNDS row per backend as a terminal table plus the `gnn.complexity_estimate/v1` receipt as stable sorted-key JSON (`--json` standard envelope; `--output PATH` writes the receipt file). No execution, no measurement — estimates are arguments over declared structure, never numbers.
 - **Empirical benchmark + calibration** via `gnn benchmark <dir> --frameworks ... --repeats K` — corpus harness through the existing execution envelope (`--frameworks` comma-separated, default `all`; `--repeats` int, default 3; `--json` envelope; `--output-dir` default `output/cross_framework`). Writes `complexity_benchmark.json` (`gnn.complexity_benchmark/v1`, per-run rows with K-rep timing and the environment block) and `complexity_calibration.json` (`gnn.complexity_calibration/v1`, static-vs-measured join on `(source_sha256, framework)` with a factual `calibration_note` per row). Unavailable backends are recorded `available: false`, never skipped silently.
 - **Environment checks** via `gnn preflight` and `gnn health`
@@ -49,7 +50,7 @@ cli/
 ├── parser.py            # build_parser + argparse type validators
 ├── helpers.py           # Shared envelope/emit/guard/logging helpers + exit codes
 ├── handlers_pipeline.py # run/validate/parse/extract/render/graph handlers
-├── handlers_ops.py      # report/reproduce/preflight/health handlers
+├── handlers_ops.py      # report/replay/reproduce/preflight/health handlers
 ├── handlers_service.py  # serve/watch/lsp/gui/mcp handlers
 ├── handlers_library.py  # templates/models/pull handlers
 ├── handlers_complexity.py # complexity/benchmark handlers

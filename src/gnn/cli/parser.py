@@ -218,6 +218,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--json", action="store_true", help="Output standard JSON envelope"
     )
 
+    replay_p = subparsers.add_parser(
+        "replay", help="Verify and replay retained run evidence"
+    )
+    replay_p.add_argument(
+        "--output-dir",
+        "-o",
+        type=Path,
+        default=Path("output"),
+        help="Run output directory",
+    )
+    replay_p.add_argument("--expected-run-id", help="Require this recorded run ID")
+    replay_p.add_argument(
+        "--json", action="store_true", help="Output standard JSON envelope"
+    )
+
     # ── gnn reproduce ────────────────────────────────────────────────────────
     reproduce_p = subparsers.add_parser(
         "reproduce", help="Re-run from a previous run hash"

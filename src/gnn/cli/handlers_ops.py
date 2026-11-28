@@ -163,6 +163,21 @@ def _cmd_report(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS
 
 
+def _cmd_replay(args: argparse.Namespace) -> int:
+    """Verify and replay an existing durable run manifest."""
+    from gnn.pipeline.run_manifest import replay_run_manifest
+
+    receipt = replay_run_manifest(args.output_dir, expected_run_id=args.expected_run_id)
+    if args.json:
+        _print_envelope("success", data=receipt, command="replay")
+    else:
+        print(
+            f"Verified {receipt['trace_event_count']} recorded events in {receipt['evidence_mode']} mode."
+        )
+        print(receipt["trace_sha256"])
+    return EXIT_SUCCESS
+
+
 def _cmd_reproduce(args: argparse.Namespace) -> int:
     """Re-run from a previous run hash."""
     from gnn.pipeline.hasher import lookup_run, verify_indexed_run
