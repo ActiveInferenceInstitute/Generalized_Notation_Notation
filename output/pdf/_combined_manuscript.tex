@@ -164,14 +164,14 @@
   pdfcreator={LaTeX via pandoc}}
 
 \ifXeTeX
-\special{pdf:trailerid [ <c37f50ad3dc66f5f7555a251e6c8b175> <c37f50ad3dc66f5f7555a251e6c8b175> ]}
+\special{pdf:trailerid [ <4001c6d6941b0fd1fa05e7d7f5612108> <4001c6d6941b0fd1fa05e7d7f5612108> ]}
 \fi
 \ifPDFTeX
 \pdftrailerid{}
-\pdftrailer{/ID [ <c37f50ad3dc66f5f7555a251e6c8b175> <c37f50ad3dc66f5f7555a251e6c8b175> ]}
+\pdftrailer{/ID [ <4001c6d6941b0fd1fa05e7d7f5612108> <4001c6d6941b0fd1fa05e7d7f5612108> ]}
 \fi
 \ifLuaTeX
-\pdfvariable trailerid {[ <c37f50ad3dc66f5f7555a251e6c8b175> <c37f50ad3dc66f5f7555a251e6c8b175> ]}
+\pdfvariable trailerid {[ <4001c6d6941b0fd1fa05e7d7f5612108> <4001c6d6941b0fd1fa05e7d7f5612108> ]}
 \fi
 
 \title{GeneralizedNotationNotation: A Text Language for Active Inference
@@ -315,7 +315,7 @@ Models}
 \centering
 \includegraphics[width=1\linewidth,height=0.5\textheight,keepaspectratio,alt={The
 GeneralizedNotationNotation (GNN) pipeline at a glance, generated from
-the producer's token map at commit dfbcff0cc. A plain-text specification
+the producer's token map at commit 8931b8504. A plain-text specification
 --- the StateSpaceBlock declaring the model's tensors, A, B, C, D, and E
 for the discrete categorical kind of eq.~ through eq.~ and its own
 matrix vocabulary for the other model kinds --- is parsed (Step 3),
@@ -336,7 +336,7 @@ registered render backends with 12 render targets having Step 12
 execution adapters, and 165 Model Context Protocol
 tools.}]{../figures/gnn_graphical_abstract.png}
 \caption{The GeneralizedNotationNotation (GNN) pipeline at a glance,
-generated from the producer's token map at commit dfbcff0cc. A
+generated from the producer's token map at commit 8931b8504. A
 plain-text specification --- the \protect\texttt{StateSpaceBlock}
 declaring the model's tensors, \protect\texttt{A}, \protect\texttt{B},
 \protect\texttt{C}, \protect\texttt{D}, and \protect\texttt{E} for the
@@ -388,9 +388,9 @@ Play'' treats each model as three coordinated views --- a textual
 specification, graphical visualizations, and executable cognitive models
 --- so that outputs share an authored source and can be checked for
 consistency through identity, parameter, semantic, and numerical
-receipts. The framework spans 38 exemplar specifications (29
-discrete-state and 9 continuous linear-Gaussian) across 9 model families
-and 12 registered rendering backends, with explicit gates for
+receipts. The framework spans 39 exemplar specifications (29
+discrete-state and 10 continuous linear-Gaussian) across 9 model
+families and 12 registered rendering backends, with explicit gates for
 cross-format semantic fidelity and cross-framework reliability. GNN
 3.0.0 layered safe-by-design long-running orchestration on top of this
 language and pipeline --- durable observation streams, resumable run
@@ -781,7 +781,7 @@ inference mode used for each run.
 \begin{equation}\protect\phantomsection\label{eq:policy}{Q(\pi) \;=\; \frac{E_\pi \exp\!\left[-\gamma G(\pi)\right]}{\sum_{\pi'} E_{\pi'} \exp\!\left[-\gamma G(\pi')\right]}}\end{equation}
 
 The discrete categorical kind is the language's original and most
-densely exercised target: 29 of the 38 exemplar specifications in the
+densely exercised target: 29 of the 39 exemplar specifications in the
 corpus are discrete-state. The discrete family folder holds the kind's
 core set --- from minimal \texttt{markov\_chain.md} and
 \texttt{hmm\_baseline.md} fixtures through epistemic planning
@@ -856,7 +856,7 @@ position, and whose control input pushes the believed position toward
 \texttt{goal\_mean} with gain \texttt{control\_gain}. The other
 continuous exemplars are passive: \breaktt{predictive\_coding\_agent.md}
 and \breaktt{stochastic\_dynamics.md} filter without steering. In total
-the corpus ships 9 continuous linear-Gaussian exemplars in the
+the corpus ships 10 continuous linear-Gaussian exemplars in the
 continuous family folder. Symbolically the kind reuses letters the
 discrete vocabulary already claims --- most prominently \texttt{F},
 which names the state-transition matrix here and the variational free
@@ -1060,7 +1060,7 @@ from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, which
 mirrors the live step registry. Parsing (Step 3) precedes many later
 steps. Optional artifact enrichments are documented separately and are
 not shown as required edges. The figure is generated from
-src/gnn/STEP\_INDEX.md at commit dfbcff0cc; its footer restates the step
+src/gnn/STEP\_INDEX.md at commit 8931b8504; its footer restates the step
 count, the number of required prerequisites, and the layout
 rule.}]{../figures/gnn_pipeline_dag.png}
 \caption{The 25-step GNN processing pipeline as a directed acyclic
@@ -1072,7 +1072,7 @@ Dependency Graph block of \protect\breaktt{src/gnn/STEP\_INDEX.md}, which
 mirrors the live step registry. Parsing (Step 3) precedes many later
 steps. Optional artifact enrichments are documented separately and are
 not shown as required edges. The figure is generated from
-\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit dfbcff0cc; its footer
+\protect\breaktt{src/gnn/STEP\_INDEX.md} at commit 8931b8504; its footer
 restates the step count, the number of required prerequisites, and the
 layout rule.}\label{fig:pipeline}
 \end{figure}
@@ -1199,7 +1199,7 @@ provide evidence of agreement among the projections. The executable node
 summarizes 12 of 12 registered render targets with implemented Step 12
 execution adapters and previews three by name; execution depends on
 runtime readiness, admitted model kind, and a successful source-bound
-run receipt. Counts are producer tokens at commit dfbcff0cc, and the
+run receipt. Counts are producer tokens at commit 8931b8504, and the
 panel is generated by scripts/manuscript\_fig\_triple\_play.py.
 Take-away: a model is authored once and then read, seen, and run from
 that single source.}]{../figures/gnn_triple_play.png}
@@ -1213,7 +1213,7 @@ projections. The executable node summarizes 12 of 12 registered render
 targets with implemented Step 12 execution adapters and previews three
 by name; execution depends on runtime readiness, admitted model kind,
 and a successful source-bound run receipt. Counts are producer tokens at
-commit dfbcff0cc, and the panel is generated by
+commit 8931b8504, and the panel is generated by
 \protect\breaktt{scripts/manuscript\_fig\_triple\_play.py}. Take-away: a
 model is authored once and then read, seen, and run from that single
 source.}\label{fig:triple_play}
@@ -1265,7 +1265,7 @@ plain-text notation. Parsing (step 3) reads each specification, builds
 an internal model representation, and re-emits it across a family of
 structured export formats so that downstream tools, and human readers,
 can consume the same model through whichever serialization they prefer.
-The corpus that exercises this stage spans 38 example model files
+The corpus that exercises this stage spans 39 example model files
 organized into 12 curated corpora, and it spans the model kinds of
 sec.~\ref{sec:model_kinds}: minimal perception fixtures used to test the
 parser, discrete categorical agents, continuous linear-Gaussian
@@ -1455,7 +1455,7 @@ tan row (Stan, ngc-learn) is declared by that family but sits outside
 the maintained set, so it is never profiled; a red Render-Subdir cell
 would mean a registry entry with no subdirectory. The table is read
 directly from src/gnn/render/framework\_registry.py and the model-family
-manifest at commit dfbcff0cc, and its footer summarizes the row counts.
+manifest at commit 8931b8504, and its footer summarizes the row counts.
 Take-away: registration, render presence, and profiling status are three
 different claims, and the table keeps them
 apart.}]{../figures/gnn_backend_capability_matrix.png}
@@ -1469,7 +1469,7 @@ declared by that family but sits outside the maintained set, so it is
 never profiled; a red Render-Subdir cell would mean a registry entry
 with no subdirectory. The table is read directly from
 \protect\breaktt{src/gnn/render/framework\_registry.py} and the
-model-family manifest at commit dfbcff0cc, and its footer summarizes the
+model-family manifest at commit 8931b8504, and its footer summarizes the
 row counts. Take-away: registration, render presence, and profiling
 status are three different claims, and the table keeps them
 apart.}\label{fig:backend_matrix}
@@ -1674,7 +1674,7 @@ Auto-Injection}\label{reproducibility-and-auto-injection}
 
 Every count reported in this manuscript is emitted by the producer
 \breaktt{scripts/z\_generate\_manuscript\_variables.py} from the
-repository state at commit dfbcff0cc, not typed by hand. The producer
+repository state at commit 8931b8504, not typed by hand. The producer
 reads that commit's source surfaces directly --- the step modules, the
 source tree, the model-family manifest, and the framework registry ---
 together with the project's maintained ledgers, notably the Model
@@ -1693,7 +1693,7 @@ repository state yields the same values, and authors are prohibited from
 hard-coding any number that has a corresponding token. This makes the
 manuscript a faithful, regenerable description of the system it
 documents: when the 25-step pipeline, the 12 rendering backends, or the
-38-file example corpus change --- or when the discrete-to-continuous
+39-file example corpus change --- or when the discrete-to-continuous
 exemplar balance shifts --- the reported numbers change with them on the
 next build, and \breaktt{scripts/check\_manuscript\_tokens.py} fails the
 build if a section reintroduces a literal that a token already owns.
@@ -1723,7 +1723,7 @@ unobserved worker internals.
 This section reports what the project has actually produced and how each
 quantitative claim is grounded. Every number below is substituted at
 render time from the deterministic producer, which reads the repository
-state at commit dfbcff0cc, so each figure here is regenerated from the
+state at commit 8931b8504, so each figure here is regenerated from the
 artifacts it describes rather than transcribed.
 
 \subsection{Model-Family Coverage}\label{model-family-coverage}
@@ -1733,7 +1733,7 @@ across the difficulty gradient from minimal parser fixtures to full
 multi-agent and scaling studies. The manifest registers 9 families
 (basics, discrete, continuous, hierarchical, multiagent, precision,
 structured, gridworld, scaling-study) across 9 target directories, and
-\texttt{input/gnn\_files} holds 12 corpus directories containing 38
+\texttt{input/gnn\_files} holds 12 corpus directories containing 39
 concrete example models. The three sets are not coextensive, and the
 manuscript does not treat them as one. Registered in no family:
 \breaktt{input/gnn\_files/learning}, \breaktt{input/gnn\_files/recursive},
@@ -1747,9 +1747,9 @@ text model fan out across the executable-model leg of the Triple Play
 enumerated below.
 
 The exemplar corpus partitions cleanly by model kind, and the partition
-is itself a token: 29 of the 38 example specifications are
+is itself a token: 29 of the 39 example specifications are
 discrete-state --- the discrete categorical kind and its composed
-variants --- and 9 are continuous linear-Gaussian specifications in the
+variants --- and 10 are continuous linear-Gaussian specifications in the
 continuous family folder. The cold-start index
 \breaktt{input/gnn\_files/INDEX.md} catalogues every exemplar with its
 kind, its task folder, and a suggested reading order, and is the fastest
@@ -1844,7 +1844,7 @@ deliberately sparse --- most families declare a single backend, and only
 continuous, discrete, and gridworld declare several. Read it as declared
 intent, not as profiled outcomes: the gates described below supply the
 outcomes. The matrix is generated from the two registries at commit
-dfbcff0cc.}]{../figures/gnn_family_framework_matrix.png}
+8931b8504.}]{../figures/gnn_family_framework_matrix.png}
 \caption{Model-family coverage across the registered rendering backends:
 one row per family from
 \protect\breaktt{input/model\_family\_manifest.json}, one column per
@@ -1856,7 +1856,7 @@ families declare a single backend, and only continuous, discrete, and
 gridworld declare several. Read it as declared intent, not as profiled
 outcomes: the gates described below supply the outcomes. The matrix is
 generated from the two registries at commit
-dfbcff0cc.}\label{fig:family_matrix}
+8931b8504.}\label{fig:family_matrix}
 \end{figure}
 
 These families are not illustrative prose: they are the inputs over
@@ -2017,7 +2017,7 @@ claims.
 
 The repository's scale is itself evidence of the surface that the gates
 and pipeline cover, and it is reported in fig.~\ref{fig:repo_metrics}
-directly from the tracked files at commit dfbcff0cc.
+directly from the tracked files at commit 8931b8504.
 
 \begin{figure}
 \centering
@@ -2027,7 +2027,7 @@ backends, render-target execution adapters, Model Context Protocol
 tools, source packages, test files, example models, and documentation
 files. Every bar is annotated with its exact value, and every value is a
 producer token read from output/data/manuscript\_variables.json at
-commit dfbcff0cc --- the same token map that substitutes the prose
+commit 8931b8504 --- the same token map that substitutes the prose
 counts. The figure-freshness suite binds the committed image digest and
 its recorded producer inputs and counts; semantic content and visual
 correctness require their own review. The two backend bars are
@@ -2043,7 +2043,7 @@ Model Context Protocol tools, source packages, test files, example
 models, and documentation files. Every bar is annotated with its exact
 value, and every value is a producer token read from
 \protect\breaktt{output/data/manuscript\_variables.json} at commit
-dfbcff0cc --- the same token map that substitutes the prose counts. The
+8931b8504 --- the same token map that substitutes the prose counts. The
 figure-freshness suite binds the committed image digest and its recorded
 producer inputs and counts; semantic content and visual correctness
 require their own review. The two backend bars are deliberately
@@ -2055,8 +2055,8 @@ Read the chart as the scale of the surface the pipeline maintains, not
 as a quality measure.}\label{fig:repo_metrics}
 \end{figure}
 
-The test suite comprises 706 test files containing 7461 test functions,
-exercising a source base of 794 Python files across 45 packages (241418
+The test suite comprises 708 test files containing 7499 test functions,
+exercising a source base of 798 Python files across 45 packages (242882
 lines of source). The pipeline's step modules --- the thin orchestrators
 named in tbl.~\ref{tbl:pipeline_steps} --- number 25, one per numbered
 step. The Model Context Protocol surface --- which exposes GNN's
@@ -2310,9 +2310,9 @@ than failing the build.
 
 Because the variables file is regenerated before rendering, the counts
 in the rendered PDF track the repository state at the commit recorded in
-\breaktt{output/data/manuscript\_variables.json} (dfbcff0cc): a code
-change that alters, for example, the test inventory (706 test files,
-7461 test functions) propagates into the prose on the next regeneration
+\breaktt{output/data/manuscript\_variables.json} (8931b8504): a code
+change that alters, for example, the test inventory (708 test files,
+7499 test functions) propagates into the prose on the next regeneration
 without any manual editing.
 
 \subsection{Reproducibility Contract}\label{reproducibility-contract}
@@ -2501,7 +2501,7 @@ separately so that the boundary between hand-written source and
 reproducible output stays explicit.
 
 The \texttt{src/} tree is the executable core of GNN. It is organized
-into 45 Python packages spanning 794 source files and roughly 241418
+into 45 Python packages spanning 798 source files and roughly 242882
 lines of code. Alongside these packages sit the 25 top-level step
 modules (0--24) that implement the numbered pipeline as thin
 orchestrators delegating into the packages, each module owning one stage
@@ -2513,15 +2513,15 @@ source-bound command and result receipt.
 
 The \texttt{input/} tree holds the model corpora that exercise the
 pipeline. Its \texttt{gnn\_files/} subtree contains 12 corpus
-directories organized by model family, together totaling 38 example
-files --- 29 discrete-state specifications and 9 continuous
+directories organized by model family, together totaling 39 example
+files --- 29 discrete-state specifications and 10 continuous
 linear-Gaussian specifications, the partition the manuscript's
 model-kind accounting uses (sec.~\ref{sec:model_kinds}). The cold-start
 index \breaktt{input/gnn\_files/INDEX.md} catalogues every exemplar with
 its kind and task folder, and the \texttt{recursive/} directory is
 reserved for bounded \texttt{-\/-autonomous} proposal-loop runs, holding
 no committed models. Every model file under \texttt{input/} lives in
-that subtree, so the 38-file count covers the whole tree. A
+that subtree, so the 39-file count covers the whole tree. A
 \breaktt{model\_family\_manifest.json} enumerates the 9 registered
 families and their target directories. This manifest is the
 authoritative registry that downstream steps and the manuscript variable
