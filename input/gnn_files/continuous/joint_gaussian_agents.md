@@ -4,6 +4,10 @@
 
 ActInfContinuousMultiAgent
 
+## GNNVersionAndFlags
+
+GNN v1
+
 ## ModelName
 
 Two coupled Gaussian agents
@@ -53,3 +57,9 @@ nr_agents: 2
 agent_coupling: gnn_joint_gaussian_filter_v1
 num_timesteps: 4
 dt: 1.0
+
+## Footer
+
+This exemplar uses the declared control and observation sequences to compare
+the centralized filter's joint posterior mean and covariance with independent
+Gaussian conditioning at each observation prefix.
