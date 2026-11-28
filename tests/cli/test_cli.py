@@ -2,8 +2,11 @@
 
 import argparse
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
+from threading import Barrier
 from types import SimpleNamespace
 from typing import Any
 
@@ -175,8 +178,8 @@ def test_run_combines_and_serializes_skip_steps(
     captured_argv: list[str] = []
     original_argv = list(sys.argv)
 
-    def fake_pipeline_main() -> int:
-        captured_argv.extend(sys.argv)
+    def fake_pipeline_main(*, argv: list[str]) -> int:
+        captured_argv.extend(argv)
         return 0
 
     monkeypatch.setattr(pipeline_module, "main", fake_pipeline_main)
@@ -203,8 +206,8 @@ def test_run_serializes_only_steps_for_pipeline_parser(
 
     captured_argv: list[str] = []
 
-    def fake_pipeline_main() -> int:
-        captured_argv.extend(sys.argv)
+    def fake_pipeline_main(*, argv: list[str]) -> int:
+        captured_argv.extend(argv)
         return 0
 
     monkeypatch.setattr(pipeline_module, "main", fake_pipeline_main)
@@ -214,6 +217,51 @@ def test_run_serializes_only_steps_for_pipeline_parser(
 
 def test_run_rejects_overlapping_only_and_skip_steps() -> None:
     assert main(["run", "--only-steps", "3", "--skip-steps", "3"]) == 1
+
+
+def test_concurrent_runs_use_their_own_output_lease(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import gnn.main as pipeline_module
+    from gnn.pipeline import output_lease
+    from gnn.utils.arguments.pipeline_arguments import PipelineArguments
+
+    original_argv = sys.argv
+    original_values = list(original_argv)
+    pipeline_main = pipeline_module.main
+    admitted = Barrier(2)
+    leased: list[Path] = []
+    observed: list[tuple[Path, Path]] = []
+
+    def synchronize(*args: Any, **kwargs: Any) -> int:
+        admitted.wait(timeout=5)
+        return pipeline_main(*args, **kwargs)
+
+    @contextmanager
+    def lease(root: Path, _run_id: str):
+        leased.append(root)
+        try:
+            yield
+        finally:
+            leased.pop()
+
+    def record_run(args: PipelineArguments, *_: Any) -> int:
+        observed.append((leased[0], args.output_dir))
+        return 0
+
+    monkeypatch.setattr(pipeline_module, "main", synchronize)
+    monkeypatch.setattr(pipeline_module, "_run_pipeline", record_run)
+    monkeypatch.setattr(output_lease, "OutputLease", lease)
+
+    destinations = [tmp_path / "first", tmp_path / "second"]
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [
+            pool.submit(main, ["run", "--only-steps", "3", "--output-dir", str(path)])
+            for path in destinations
+        ]
+        assert [future.result(timeout=10) for future in futures] == [0, 0]
+    assert sorted(observed) == [(path, path) for path in destinations]
+    assert sys.argv is original_argv and sys.argv == original_values
 
 
 def test_verbose_is_accepted_after_subcommand(

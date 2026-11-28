@@ -291,13 +291,14 @@ def select_pipeline_steps(
 
 def _build_main_args(
     override_args: Optional[PipelineArguments],
+    argv: Optional[Sequence[str]] = None,
 ) -> tuple[PipelineArguments, Optional[argparse.Namespace]]:
     """Build pipeline arguments from an override object or CLI parsing."""
     if override_args is not None:
         return override_args, None
 
     parser = ArgumentParser.create_main_parser()
-    parsed = parser.parse_args()
+    parsed = parser.parse_args(argv)
     field_names = {f.name for f in fields(PipelineArguments)}
     kwargs = {k: getattr(parsed, k) for k in field_names if hasattr(parsed, k)}
     args = PipelineArguments(**kwargs)
@@ -545,8 +546,9 @@ def _initialize_pipeline_summary(
 
 
 def _prepare_pipeline_context(
-    override_args: Optional[PipelineArguments],
+    args: PipelineArguments,
     override_config: Optional[Dict[str, Any]],
+    parsed: Optional[argparse.Namespace],
 ) -> tuple[
     PipelineArguments,
     dict[Any, Any],
@@ -557,7 +559,6 @@ def _prepare_pipeline_context(
     logging.Logger,
 ]:
     """Prepare args, config, logging, step list, and initial summary."""
-    args, parsed = _build_main_args(override_args)
     try:
         visual_logger, correlation_id = _create_pipeline_visual_logger(args)
         logger = _setup_pipeline_logger(args)
@@ -896,11 +897,14 @@ def _execute_pipeline_iteration(
 def main(
     override_args: Optional[PipelineArguments] = None,
     override_config: Optional[Dict[str, Any]] = None,
+    *,
+    argv: Optional[Sequence[str]] = None,
 ) -> int:
     """Run once with an invocation ID, restoring the caller's environment on exit.
 
     An incoming API ID is authoritative. Fresh calls receive distinct UUIDs;
     the separately computed run_hash continues to identify stable input/config.
+    CLI callers can pass an explicit argument list instead of reading sys.argv.
     """
     with _run_environment_lock:
         incoming_run_id = os.environ.get("GNN_RUN_ID")
@@ -914,23 +918,21 @@ def main(
             )
             from gnn.pipeline.output_lease import OutputLease, OutputLeaseError
 
-            probe_args, _ = _build_main_args(override_args)
+            args, parsed = _build_main_args(override_args, argv)
             try:
                 _admit_configured_worker_limits(override_config)
                 validate_steps(
-                    probe_args.only_steps,
+                    args.only_steps,
                     field_name="steps",
                     aliases=True,
                     allow_empty=False,
                 )
-                validate_steps(
-                    probe_args.skip_steps, field_name="skip_steps", aliases=True
-                )
+                validate_steps(args.skip_steps, field_name="skip_steps", aliases=True)
                 for flag in ("verbose", "strict", "parallel", "consolidated_steps"):
-                    validate_boolean(getattr(probe_args, flag), field_name=flag)
+                    validate_boolean(getattr(args, flag), field_name=flag)
                 for name in ("file_workers", "step_workers"):
                     validate_worker_count(
-                        getattr(probe_args, name),
+                        getattr(args, name),
                         field_name=name,
                         allow_none=name == "step_workers",
                     )
@@ -938,8 +940,8 @@ def main(
                 print(f"Pipeline admission failure: {error}", file=sys.stderr)
                 return 1
             try:
-                with OutputLease(Path(probe_args.output_dir), os.environ["GNN_RUN_ID"]):
-                    return _run_pipeline(override_args, override_config)
+                with OutputLease(Path(args.output_dir), os.environ["GNN_RUN_ID"]):
+                    return _run_pipeline(args, override_config, parsed)
             except OutputLeaseError as error:
                 # A previous invocation may still own an open file handler to a
                 # now-rejected hardlinked log. Refusal must not write through it.
@@ -982,8 +984,9 @@ def _admit_configured_worker_limits(config: Optional[Dict[str, Any]]) -> None:
 
 
 def _run_pipeline(
-    override_args: Optional[PipelineArguments],
+    admitted_args: PipelineArguments,
     override_config: Optional[Dict[str, Any]],
+    parsed: Optional[argparse.Namespace],
 ) -> int:
     """Execute one invocation inside main's environment scope."""
     try:
@@ -995,7 +998,7 @@ def _run_pipeline(
             visual_logger,
             correlation_id,
             logger,
-        ) = _prepare_pipeline_context(override_args, override_config)
+        ) = _prepare_pipeline_context(admitted_args, override_config, parsed)
     except Exception as e:
         return _fail_pipeline_startup(e)
 

@@ -14,7 +14,6 @@ import argparse
 import json
 import logging
 import shutil
-import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -43,33 +42,31 @@ logger = logging.getLogger(__name__)
 
 def _cmd_run(args: argparse.Namespace) -> int:
     """Execute full pipeline."""
-    original_argv = sys.argv
     try:
         from gnn.main import main as pipeline_main
         from gnn.pipeline.admission import validate_steps
         from gnn.pipeline.step_registry import get_llm_steps
 
-        sys.argv = ["gnn"]
-        extra_args: list[Any] = [
+        pipeline_argv = [
             "--target-dir",
             str(args.target_dir),
             "--output-dir",
             str(args.output_dir),
         ]
         if args.verbose:
-            extra_args.append("--verbose")
+            pipeline_argv.append("--verbose")
         if args.log_format == "json":
-            extra_args.extend(["--log-format", "json"])
+            pipeline_argv.extend(["--log-format", "json"])
         for flag in ("strict", "parallel", "consolidated_steps"):
             if getattr(args, flag, False):
-                extra_args.append("--" + flag.replace("_", "-"))
+                pipeline_argv.append("--" + flag.replace("_", "-"))
         for name in ("file_workers", "step_workers"):
             value = getattr(args, name, None)
             if value is not None:
                 from gnn.pipeline.admission import validate_worker_count
 
                 validate_worker_count(value, field_name=name)
-                extra_args.extend(["--" + name.replace("_", "-"), str(value)])
+                pipeline_argv.extend(["--" + name.replace("_", "-"), str(value)])
         checked_skip = validate_steps(args.skip_steps, field_name="skip_steps")
         checked_only = validate_steps(
             getattr(args, "only_steps", None), field_name="steps", allow_empty=False
@@ -87,23 +84,20 @@ def _cmd_run(args: argparse.Namespace) -> int:
             )
             return EXIT_ERROR
         if only_steps:
-            extra_args.extend(
+            pipeline_argv.extend(
                 ["--only-steps", ",".join(str(step) for step in sorted(only_steps))]
             )
         if skipped_steps:
-            extra_args.extend(
+            pipeline_argv.extend(
                 ["--skip-steps", ",".join(str(step) for step in sorted(skipped_steps))]
             )
-        sys.argv.extend(extra_args)
-        return pipeline_main()
+        return pipeline_main(argv=pipeline_argv)
     except ImportError as e:
         logger.error(f"Could not import pipeline: {e}")
         return EXIT_ERROR
     except Exception as e:
         logger.error("Pipeline execution failed: %s", e, exc_info=True)
         return EXIT_ERROR
-    finally:
-        sys.argv = original_argv
 
 
 def _cmd_validate(args: argparse.Namespace) -> int:

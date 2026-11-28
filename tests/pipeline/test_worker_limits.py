@@ -98,14 +98,12 @@ def test_file_limit_reaches_step_parser_and_command(step):
 
 
 def test_run_cli_forwards_resource_limits(monkeypatch):
-    import sys
-
     import gnn.main
     from gnn.cli.handlers_pipeline import _cmd_run
     from gnn.cli.parser import build_parser
 
     observed = []
-    monkeypatch.setattr(gnn.main, "main", lambda: observed.extend(sys.argv) or 0)
+    monkeypatch.setattr(gnn.main, "main", lambda *, argv: observed.extend(argv) or 0)
     args = build_parser().parse_args(
         ["run", "--file-workers", "4", "--parallel", "--step-workers", "2"]
     )
