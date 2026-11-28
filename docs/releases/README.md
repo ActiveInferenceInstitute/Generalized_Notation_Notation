@@ -60,9 +60,11 @@ python .github/release_gate.py --revision FULL_MAIN_SHA --ref vVERSION \
 
 Main's automatic branch push runs a reduced CI profile. All sixteen workflows
 support manual dispatch for full main qualification. The first command dispatches
-workflows with no visible manual run at the exact main SHA. It rechecks each
-missing workflow before dispatch and preserves existing runs, including pending
-and failed runs. Use a single dispatch owner and retain the dispatch receipt while
+active workflows with no visible manual run at the exact main SHA. It rechecks
+each missing workflow before dispatch and preserves existing runs, including
+pending and failed runs. A workflow without a run that GitHub marks inactive
+appears as `workflow_inactive` and continues to block qualification. Use a
+single dispatch owner and retain the dispatch receipt while
 GitHub registers the runs. For subsequent observations, use a new output path
 and omit `--dispatch-missing`. Omitting `--event` is available for read-only
 diagnosis across event types.

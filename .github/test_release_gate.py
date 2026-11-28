@@ -7,12 +7,14 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 from release_gate import (
     REQUIRED_MATRIX_JOBS,
     WORKFLOWS,
     evaluate,
     filter_runs,
+    inspect,
     main,
     release_ready,
 )
@@ -140,6 +142,21 @@ class ReleaseRosterControls(unittest.TestCase):
 
 
 class ReleaseDispatchControls(unittest.TestCase):
+    def test_absent_run_reports_actual_workflow_state(self):
+        for workflow_state, expected in (
+            ("active", "missing"),
+            ("disabled_manually", "workflow_inactive"),
+        ):
+            with (
+                self.subTest(workflow_state=workflow_state),
+                patch("release_gate.pages", return_value=[]),
+                patch("release_gate.gh", return_value={"state": workflow_state}),
+            ):
+                self.assertEqual(
+                    inspect("ci.yml", "a" * 40, "main", "workflow_dispatch"),
+                    ("ci.yml", {"state": expected, "workflow_state": workflow_state}),
+                )
+
     def test_dispatch_requires_explicit_main_manual_phase(self):
         def fail_on_external_call(*args):
             self.fail(f"Rejected command accessed workflow services: {args}")
@@ -185,6 +202,7 @@ class ReleaseDispatchControls(unittest.TestCase):
             "gridworld.yml": "pending",
             "full-extras.yml": "wrong_source",
             "installed-platforms.yml": "incomplete_jobs",
+            "local-gates.yml": "workflow_inactive",
         }
         observations = []
         requests = []
@@ -234,6 +252,9 @@ class ReleaseDispatchControls(unittest.TestCase):
             self.assertEqual(receipt["event"], "workflow_dispatch")
             self.assertEqual(receipt["dispatched"], ["ci.yml"])
             self.assertEqual(receipt["workflows"]["docs-audit.yml"]["state"], "pending")
+            self.assertEqual(
+                receipt["workflows"]["local-gates.yml"]["state"], "workflow_inactive"
+            )
             self.assertFalse(receipt["ready"])
 
 
