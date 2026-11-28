@@ -356,33 +356,40 @@ def export_to_plaintext_summary(model_data: Dict[str, Any], output_file: Path) -
 def export_to_plaintext_dsl(model_data: Dict[str, Any], output_file: Path) -> bool:
     """Export GNN model data to plaintext DSL format."""
     try:
-        with open(output_file, "w", encoding="utf-8") as f:
-            # Write model header
+        source = model_data.get("raw_content")
+        if isinstance(source, str) and source:
+            output_file.write_bytes(source.encode("utf-8"))
+            return True
+
+        raw_sections = model_data.get("raw_sections")
+        sections = raw_sections or model_data.get("sections", {})
+        with open(output_file, "w", encoding="utf-8", newline="") as f:
             f.write("# GNN Model\n\n")
 
-            # Write variables
-            variables = model_data.get("variables", [])
-            if variables:
-                f.write("## Variables\n\n")
-                for var in variables:
-                    f.write(f"{var.get('name', '')}: {var.get('type', '')}\n")
-                f.write("\n")
+            # Older callers can supply a summary without the authored sections.
+            if not raw_sections and "StateSpaceBlock" not in sections:
+                variables = model_data.get("variables", [])
+                if variables:
+                    f.write("## Variables\n\n")
+                    for var in variables:
+                        f.write(f"{var.get('name', '')}: {var.get('type', '')}\n")
+                    f.write("\n")
+                if "Connections" not in sections:
+                    endpoints = list(_connection_pairs(model_data))
+                    if endpoints:
+                        f.write("## Connections\n\n")
+                        for left, right in endpoints:
+                            f.write(f"{left} -> {right}\n")
+                        f.write("\n")
 
-            # Write connections
-            connections = model_data.get("connections", [])
-            if connections:
-                f.write("## Connections\n\n")
-                for conn in connections:
-                    f.write(f"{conn.get('source', '')} -> {conn.get('target', '')}\n")
-                f.write("\n")
-
-            # Write sections
-            sections = model_data.get("sections", {})
             for section_name, section_content in sections.items():
                 f.write(f"## {section_name}\n\n")
-                for line in section_content:
-                    f.write(f"{line}\n")
-                f.write("\n")
+                body = (
+                    section_content
+                    if isinstance(section_content, str)
+                    else "\n".join(map(str, section_content))
+                )
+                f.write(body + "\n\n")
 
         return True
     except Exception as e:

@@ -161,6 +161,9 @@ Parses GNN content into structured data for export.
 The standalone export reads section bodies, typed declarations, and connections
 from the Markdown parser. A grouped connection contributes one edge per
 source-target pair. GraphML and GEXF connect those names to the emitted node IDs.
+The DSL writer preserves original UTF-8 text when the parsed input carries it.
+For a structured Step 3 payload, it writes the retained source sections in their
+recorded order.
 
 **Processing:**
 

@@ -85,3 +85,40 @@ def test_structured_and_standalone_artifacts_preserve_topology(
     parameters = xml.find("./sections/section[@name='InitialParameterization']")
     assert parameters is not None
     assert "D={(0.5, 0.5)}" in [line.text for line in parameters.findall("line")]
+
+
+def test_source_backed_dsl_reimports_the_authored_model(tmp_path: Path) -> None:
+    source = SAMPLE.read_text(encoding="utf-8").replace("\n", "\r\n")
+    parser = MarkdownGNNParser()
+    original = parser.parse_string(source)
+    assert original.success
+    for label, model_data in (
+        ("standalone", parse_gnn_content(source)),
+        ("step3", original.model.to_dict()),
+    ):
+        destination = tmp_path / label
+        receipt = export_model(model_data, destination, formats=["dsl"])
+        assert receipt["success"], receipt
+        encoded = (destination / "model.dsl").read_bytes()
+        if label == "standalone":
+            assert encoded == source.encode("utf-8")
+        reimported = parser.parse_string(encoded.decode("utf-8"))
+        assert reimported.success
+        assert reimported.model.raw_sections == original.model.raw_sections
+        assert [
+            (variable.name, variable.dimensions, variable.data_type)
+            for variable in reimported.model.variables
+        ] == [
+            (variable.name, variable.dimensions, variable.data_type)
+            for variable in original.model.variables
+        ]
+        assert [(param.name, param.value) for param in reimported.model.parameters] == [
+            (param.name, param.value) for param in original.model.parameters
+        ]
+        assert [
+            (edge.source_variables, edge.target_variables, edge.connection_type)
+            for edge in reimported.model.connections
+        ] == [
+            (edge.source_variables, edge.target_variables, edge.connection_type)
+            for edge in original.model.connections
+        ]
