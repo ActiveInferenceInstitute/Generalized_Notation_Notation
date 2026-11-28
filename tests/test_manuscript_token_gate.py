@@ -194,6 +194,34 @@ def test_a_missing_committed_token_map_is_named(tmp_path) -> None:
     assert "missing" in issue and "z_generate_manuscript_variables" in issue
 
 
+def test_the_table_claim_ledger_tracks_generated_captions(tmp_path: Path) -> None:
+    variables = {
+        **_PRODUCER,
+        "GNN_STEP_TABLE": ": Step inventory {#tbl:pipeline_steps}",
+        "GNN_PROSE": "The caption declares `{#tbl:example}`.",
+    }
+    committed = _write_committed(tmp_path, variables)
+    ledger = tmp_path / "manuscript-table-claim-ledger.json"
+    assert "is missing" in GATE._table_claim_ledger_issue(variables, ledger)
+
+    Z_GENERATE.write_table_claim_ledger(committed, variables)
+    claims = json.loads(ledger.read_text(encoding="utf-8"))["claims"]
+    assert claims == [
+        {
+            "claim_id": "GNN_STEP_TABLE",
+            "kind": "table",
+            "value": "tbl:pipeline_steps",
+            "artifact_path": "output/data/manuscript_variables.json",
+        }
+    ]
+    assert GATE._table_claim_ledger_issue(variables, ledger) == ""
+
+    ledger.write_text('{"claims": []}', encoding="utf-8")
+    assert "does not match" in GATE._table_claim_ledger_issue(variables, ledger)
+    ledger.write_text("invalid JSON", encoding="utf-8")
+    assert "is unreadable" in GATE._table_claim_ledger_issue(variables, ledger)
+
+
 # --- SC-23: commit provenance --------------------------------------------------
 
 
@@ -285,6 +313,7 @@ def _write_tmp_project(tmp_path: Path, variables: dict[str, str]) -> Path:
     package.mkdir(parents=True)
     (tmp_path / "src" / "gnn" / "__init__.py").write_text("", encoding="utf-8")
     (package / "__init__.py").write_text(_STUB, encoding="utf-8")
+    shutil.copy2(REPO_ROOT / "src" / "gnn" / "manuscript" / "tables.py", package)
     (package / "variables.json").write_text(
         json.dumps(variables, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )

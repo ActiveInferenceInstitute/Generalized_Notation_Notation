@@ -43,6 +43,7 @@ with the producer at HEAD:
 
 * ``token_checksum(generate_variables(HEAD))`` must equal the checksum of the
   committed ``output/data/manuscript_variables.json``;
+* the table-claim ledger must match the labels and token keys produced at HEAD;
 * every registry ``png_sha256`` must be the digest of the PNG on disk;
 * every registry ``source_sha256`` digest must equal the file's bytes at HEAD
   on a clean tree (dirty trees compare against the working tree instead,
@@ -90,6 +91,7 @@ from gnn.manuscript import (  # noqa: E402
 )
 from gnn.manuscript.gate_baseline import compare_findings  # noqa: E402
 from gnn.manuscript.substitution import EXCLUDED_DOC_FILENAMES, TOKEN_RE  # noqa: E402
+from gnn.manuscript.tables import TABLE_CLAIM_LEDGER_FILENAME, table_claim_ledger  # noqa: E402
 from gnn.manuscript.variables import _families  # noqa: E402
 
 _EXCLUDED = set(EXCLUDED_DOC_FILENAMES)
@@ -398,6 +400,23 @@ def _committed_variables_issue(live: Mapping[str, str], variables_json: Path) ->
             "stale: committed token_checksum "
             f"{committed_sum[:12]} != producer-at-HEAD {live_sum[:12]} — run "
             "scripts/z_generate_manuscript_variables.py"
+        )
+    return ""
+
+
+def _table_claim_ledger_issue(variables: Mapping[str, str], ledger_path: Path) -> str:
+    """Report generated table evidence that is missing or disagrees with the producer."""
+    regenerate_hint = " — run scripts/z_generate_manuscript_variables.py"
+    if not ledger_path.is_file():
+        return f"{_display(ledger_path)} is missing{regenerate_hint}"
+    try:
+        committed = json.loads(ledger_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return f"{_display(ledger_path)} is unreadable: {exc}{regenerate_hint}"
+    if committed != table_claim_ledger(variables):
+        return (
+            f"{_display(ledger_path)} does not match its generated caption claims "
+            f"from output/data/manuscript_variables.json{regenerate_hint}"
         )
     return ""
 
@@ -723,11 +742,17 @@ def audit_issues(
             issues.extend(hardcoded)
             ok = False
     if strict:
+        data_dir = _PROJECT_ROOT / "output/data"
         committed = _committed_variables_issue(
-            variables, _PROJECT_ROOT / "output/data/manuscript_variables.json"
+            variables, data_dir / "manuscript_variables.json"
         )
         if committed:
             issues.append(f"output/data/manuscript_variables.json: {committed}")
+        ledger_issue = _table_claim_ledger_issue(
+            variables, data_dir / TABLE_CLAIM_LEDGER_FILENAME
+        )
+        if ledger_issue:
+            issues.append(ledger_issue)
         png, sources = _figure_artifact_issues(snapshot)
         issues.extend(png)
         issues.extend(sources)

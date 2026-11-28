@@ -12,6 +12,25 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence
 
+TABLE_CLAIM_LEDGER_FILENAME = "manuscript-table-claim-ledger.json"
+_TABLE_CAPTION_LABEL = re.compile(r"^: .* \{#(tbl:[\w:-]+)\}$", re.MULTILINE)
+
+
+def table_claim_ledger(variables: Mapping[str, str]) -> dict[str, list[dict[str, str]]]:
+    """Return the render template's evidence records for generated table captions."""
+    return {
+        "claims": [
+            {
+                "claim_id": variable,
+                "kind": "table",
+                "value": label,
+                "artifact_path": "output/data/manuscript_variables.json",
+            }
+            for variable, text in sorted(variables.items())
+            for label in _TABLE_CAPTION_LABEL.findall(text)
+        ]
+    }
+
 
 def _humanize_step(script_name: str) -> str:
     stem = script_name.removesuffix(".py")

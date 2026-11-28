@@ -11,7 +11,7 @@ Responsibilities (delegated to :mod:`gnn.manuscript`):
 2. Write the producer-owned ``docs/manuscript/config.yaml`` fields (``version:``,
    ``date:``) from that map — config.yaml is never token-substituted, so those
    title-page literals can only stay true by being written.
-3. Persist the map to ``output/data/manuscript_variables.json`` for audit/debug.
+3. Persist the map and its generated table claims under ``output/data/``.
 4. Hydrate ``docs/manuscript/*.md`` into ``output/manuscript/*.md`` with tokens
    resolved, via the template injector when available.
 
@@ -81,7 +81,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import subprocess
 import sys
 from collections.abc import Mapping
@@ -97,6 +96,7 @@ from gnn.manuscript import (  # noqa: E402
     sync_config_metadata,
     sync_preamble_metadata,
 )
+from gnn.manuscript.tables import TABLE_CLAIM_LEDGER_FILENAME, table_claim_ledger  # noqa: E402
 
 _RENDER_INVOCATION_ENV = "TEMPLATE_REPO_ROOT"
 _RECEIPT_REL = Path("output") / "data" / "manuscript_variables_receipt.json"
@@ -201,21 +201,12 @@ def _report_dirty_tree(variables: Mapping[str, str]) -> dict:
     return receipt
 
 
-
 def write_table_claim_ledger(variables_path: Path, variables: Mapping[str, str]) -> None:
     """Register table labels supplied by hydrated Markdown variables."""
-    claims = [
-        {
-            "claim_id": variable,
-            "kind": "table",
-            "value": label,
-            "artifact_path": "output/data/manuscript_variables.json",
-        }
-        for variable, text in sorted(variables.items())
-        for label in re.findall(r"#(tbl:[A-Za-z0-9_:-]+)", text)
-    ]
-    ledger = variables_path.with_name("manuscript-table-claim-ledger.json")
-    ledger.write_text(json.dumps({"claims": claims}, indent=2) + "\n", encoding="utf-8")
+    ledger = variables_path.with_name(TABLE_CLAIM_LEDGER_FILENAME)
+    ledger.write_text(
+        json.dumps(table_claim_ledger(variables), indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def main() -> int:

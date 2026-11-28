@@ -20,8 +20,8 @@ shipped, and unlike running the gates it costs nothing and cannot go stale.
 Scope: commands invoking ``scripts/*.py`` (directly or as ``-m scripts.<name>``),
 whose arguments are declared by a single ``argparse`` parser in that file. Any
 other printed ``.py`` path is still checked to exist in this repository — except
-the one command §6.3 states explicitly runs from the docxology template's
-checkout, which is exempted by name below and whose exemption is itself pinned
+the commands §6.3 places in the docxology template checkout, which are exempted
+by name below and whose exemption is itself pinned
 to that prose claim.
 """
 
@@ -50,12 +50,14 @@ from scripts.lib.manuscript_exclusions import (
 # command line (or reword the fence in the manuscript to a non-executable tag).
 _COMMAND_BLOCK_RE = re.compile(r"```(?:bash|shell|sh)\n(.*?)```", re.DOTALL)
 
-# The render stage is the docxology template's, run from the template root with
-# this repository symlinked in; it is not a file of this checkout. The manuscript
-# says so in prose, and test_the_external_command_is_still_declared_external below
+# The render and validation stages belong to the docxology template. The manuscript
+# says so in prose, and test_the_external_commands_are_still_declared_external below
 # fails if that sentence ever disappears — so this exemption cannot become a way
 # to hide a command this repository really is expected to provide.
-_EXTERNAL_SCRIPTS = {"scripts/pipeline/stage_03_render.py"}
+_EXTERNAL_SCRIPTS = {
+    "scripts/pipeline/stage_03_render.py",
+    "scripts/pipeline/stage_04_validate.py",
+}
 
 
 def _published_commands() -> list[tuple[str, str]]:
@@ -180,8 +182,8 @@ def test_every_required_argument_is_supplied_by_the_published_command() -> None:
     assert not problems, "\n".join(problems)
 
 
-def test_the_external_command_is_still_declared_external() -> None:
-    """The one exempted command must keep saying where it runs from.
+def test_the_external_commands_are_still_declared_external() -> None:
+    """The manuscript must keep saying where the exempted commands run.
 
     Without this, ``_EXTERNAL_SCRIPTS`` would be a silent way to exempt any
     command whose script this repository stopped shipping.
@@ -190,6 +192,6 @@ def test_the_external_command_is_still_declared_external() -> None:
     for relative in sorted(_EXTERNAL_SCRIPTS):
         assert relative in text, f"{relative} is exempted but no longer published"
     assert "separate checkout" in text, (
-        "the render command is exempted as external, but the manuscript no "
-        "longer tells the reader it runs from another checkout"
+        "the manuscript no longer places the render and validation commands "
+        "in the template checkout"
     )
