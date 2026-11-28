@@ -156,7 +156,7 @@
 % a reader cannot tell a line break from a name. Keep seqsplit's guarantee that
 % no code token overflows the measure, but forbid breaks inside the last
 % \GNNttTail characters (an extension is never orphaned) and inside the first
-% \GNNttHead (a one- or two-letter stub is never left behind).
+% \GNNttHead (a one- or two-letter fragment is never left behind).
 % Declarations the template's combined-PDF renderer requires
 % (infrastructure/rendering/_pdf_combined_preamble.py). Absent here, it warns
 % "Preamble is missing declarations required by manuscript content" and
@@ -530,7 +530,7 @@ than failing the build.
 
 Because the variables file is regenerated before rendering, the counts
 in the rendered PDF track the repository state at the commit recorded in
-\breaktt{output/data/manuscript\_variables.json} (b44b0fc13): a code
+\breaktt{output/data/manuscript\_variables.json} (b253f85df): a code
 change that alters, for example, the test inventory (705 test files,
 7438 test functions) propagates into the prose on the next regeneration
 without any manual editing.
