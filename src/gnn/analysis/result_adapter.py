@@ -199,6 +199,10 @@ def result_views(data: dict[str, Any]) -> dict[str, dict[str, Any]]:
                 view[key] = table.get(name, []) if isinstance(table, dict) else []
             for key in ("beliefs_by_agent", "posterior_cov_by_agent"):
                 view.pop(key, None)
+            for key in ("control_inputs", "state_control_increments"):
+                table = data.get(f"{key}_by_agent")
+                if isinstance(table, dict) and name in table:
+                    view[key] = table[name]
             metrics = continuous_result_metrics(view)
             if (
                 expected_steps is not None

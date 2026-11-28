@@ -31,6 +31,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 
 REQUIRED_KEYS = ("F", "H", "Q", "R", "prior_mean", "prior_cov")
+JOINT_GAUSSIAN_CONTRACT = "gnn_joint_gaussian_filter_v1"
 
 
 @dataclass
@@ -94,6 +95,11 @@ def _validate_covariance(
 
 def extract_continuous_spec(gnn_spec: Dict[str, Any]) -> ContinuousSpec:
     """Parse and shape-check the continuous parameter block."""
+    params = gnn_spec.get("model_parameters") or {}
+    if params.get("agent_coupling") == JOINT_GAUSSIAN_CONTRACT:
+        raise ValueError(
+            "unsupported-composition: joint Gaussian filtering requires its dedicated renderer"
+        )
     initial = gnn_spec.get("initialparameterization") or gnn_spec.get(
         "initial_parameterization"
     )
@@ -143,7 +149,6 @@ def extract_continuous_spec(gnn_spec: Dict[str, Any]) -> ContinuousSpec:
         if not np.isfinite(goal_mean).all() or not np.isfinite(control_gain):
             raise ValueError("goal_mean and control_gain must be finite")
 
-    params = gnn_spec.get("model_parameters") or {}
     num_timesteps = _positive_integer(
         params.get("num_timesteps", 20), name="num_timesteps"
     )

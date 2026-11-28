@@ -101,13 +101,20 @@ def render_gnn_to_jax(
         if detect_model_kinds(gnn_spec) == frozenset(
             {ModelKind.MULTI_AGENT, ModelKind.CONTINUOUS}
         ):
+            from gnn.extract.continuous_spec import JOINT_GAUSSIAN_CONTRACT
             from gnn.render.multi_agent_continuous import (
                 generate_multi_agent_continuous_script,
             )
 
+            joint = (gnn_spec.get("model_parameters") or {}).get(
+                "agent_coupling"
+            ) == JOINT_GAUSSIAN_CONTRACT
+            description = (
+                "joint Gaussian filtering" if joint else "independent continuous agents"
+            )
             return _render_to_path(
                 lambda spec, _opts: generate_multi_agent_continuous_script(spec, "jax"),
-                "JAX native independent continuous agents",
+                f"JAX native {description}",
                 gnn_spec,
                 output_path,
                 options,

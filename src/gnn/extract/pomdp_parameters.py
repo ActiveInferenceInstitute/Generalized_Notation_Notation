@@ -62,6 +62,29 @@ class POMDPParametersMixin(POMDPExtractorSupportMixin):
         model_parameters: Dict[str, Any],
     ) -> Tuple[int, int, int, Optional[int]]:
         """Dimensions of a linear-Gaussian model: n from F, m from H."""
+        from gnn.extract.continuous_spec import JOINT_GAUSSIAN_CONTRACT
+
+        if model_parameters.get("agent_coupling") == JOINT_GAUSSIAN_CONTRACT:
+            from gnn.extract.joint_gaussian_spec import extract_joint_gaussian_spec
+
+            joint = extract_joint_gaussian_spec(
+                {
+                    "initialparameterization": initial_params,
+                    "model_parameters": model_parameters,
+                }
+            )
+            self._dimension_sources = {
+                "num_states": "joint_agent_state_axes",
+                "num_observations": "joint_agent_observation_axes",
+                "num_actions": "joint_agent_control_axes",
+                "num_timesteps": "ModelParameters",
+            }
+            return (
+                joint.system.n,
+                joint.system.m,
+                int(joint.control_matrix.shape[1]),
+                joint.system.num_timesteps,
+            )
         if any(self._AGENT_CONTINUOUS_KEY.fullmatch(key) for key in initial_params):
             from gnn.extract.continuous_spec import (
                 extract_multi_agent_continuous_specs,

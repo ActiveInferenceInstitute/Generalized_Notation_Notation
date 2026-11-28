@@ -229,6 +229,7 @@ _CAPABILITY_CONFORMANCE_SPECS: tuple[str, ...] = (
     "continuous/stochastic_dynamics.md",
     "continuous/factored_continuous_lgssm.md",
     "continuous/independent_gaussian_agents.md",
+    "continuous/joint_gaussian_agents.md",
     "continuous/hybrid_discrete_continuous.md",
     "discrete/time_varying_dynamics.md",
     "discrete/regime_switched_dynamics.md",
@@ -245,7 +246,9 @@ _FRAME_CONTRACT_REFUSALS: tuple[tuple[str, str, str], ...] = (
 )
 
 
-def _capability_requirement(kinds: frozenset[ModelKind]) -> tuple[str, str] | None:
+def _capability_requirement(
+    kinds: frozenset[ModelKind], *, joint_gaussian: bool = False
+) -> tuple[str, str] | None:
     """Return the declared (dimension, value) a kind set requires, or None.
 
     Mirrors the gate order in ``_validate_pomdp_framework_compatibility``:
@@ -253,7 +256,10 @@ def _capability_requirement(kinds: frozenset[ModelKind]) -> tuple[str, str] | No
     mixed-family composition, then nonstationary dynamics.
     """
     if kinds == frozenset({ModelKind.MULTI_AGENT, ModelKind.CONTINUOUS}):
-        return ("continuous_composition", "independent_agents")
+        return (
+            "continuous_composition",
+            "joint_gaussian" if joint_gaussian else "independent_agents",
+        )
     if kinds == frozenset({ModelKind.FACTORED, ModelKind.CONTINUOUS}):
         return ("continuous_composition", "factored")
     if ModelKind.CONTINUOUS in kinds and len(kinds) > 1:
@@ -280,8 +286,10 @@ def _assert_capability_declaration_conformance(base_dir: Path) -> None:
     configs = get_pomdp_framework_configs()
     processor = POMDPRenderProcessor(base_dir)
 
-    def declared_compatible(frame: str, kinds: frozenset[ModelKind]) -> bool:
-        requirement = _capability_requirement(kinds)
+    def declared_compatible(
+        frame: str, kinds: frozenset[ModelKind], *, joint_gaussian: bool
+    ) -> bool:
+        requirement = _capability_requirement(kinds, joint_gaussian=joint_gaussian)
         if requirement is not None and not supports_render_dimension(
             frame, *requirement
         ):
@@ -294,15 +302,17 @@ def _assert_capability_declaration_conformance(base_dir: Path) -> None:
         pomdp = extract_pomdp_from_file(GNN_FILES / relative, strict_validation=True)
         assert pomdp is not None, relative
         kinds = detect_pomdp_space_model_kinds(pomdp)
+        joint = relative == "continuous/joint_gaussian_agents.md"
         for frame in FRAMEWORK_REGISTRY:
             result = processor._validate_pomdp_framework_compatibility(pomdp, frame)
-            assert result["compatible"] == declared_compatible(frame, kinds), (
+            expected = declared_compatible(frame, kinds, joint_gaussian=joint)
+            assert result["compatible"] == expected, (
                 relative,
                 frame,
                 sorted(kind.value for kind in kinds),
                 result,
             )
-            if not declared_compatible(frame, kinds):
+            if not expected:
                 assert result["unsupported"] is True, (relative, frame)
                 assert result["reason"], (relative, frame)
 
@@ -382,6 +392,9 @@ class TestComposedExemplar:
         expected_composed = {
             COMPOSED_REL: frozenset({ModelKind.CONTINUOUS, ModelKind.MULTI_AGENT}),
             "continuous/independent_gaussian_agents.md": frozenset(
+                {ModelKind.CONTINUOUS, ModelKind.MULTI_AGENT}
+            ),
+            "continuous/joint_gaussian_agents.md": frozenset(
                 {ModelKind.CONTINUOUS, ModelKind.MULTI_AGENT}
             ),
             "continuous/factored_continuous_lgssm.md": frozenset(
@@ -482,11 +495,12 @@ class TestDispatchHonesty:
                 tmp_path / "11_render_output" / "render_processing_summary.json"
             ).read_text(encoding="utf-8")
         )
-        assert summary["total_files"] == 9
-        assert summary["successful_files"] == 9
+        assert summary["total_files"] == 10
+        assert summary["successful_files"] == 10
         assert summary["successful_framework_renderings"] == 6
         expected_receipts = {
             "multi_agent_lgssm": "unsupported-composition",
+            "joint_gaussian_agents": "unsupported-composition",
             # The factored exemplar is receipted by the pomdp_processor
             # validation gate before rxinfer's own composed refusal.
             "factored_continuous_lgssm": "unsupported-factored-continuous",

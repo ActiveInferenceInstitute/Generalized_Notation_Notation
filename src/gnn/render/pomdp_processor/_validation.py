@@ -67,17 +67,34 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
             {ModelKind.FACTORED, ModelKind.CONTINUOUS}
         )
         if kinds == frozenset({ModelKind.MULTI_AGENT, ModelKind.CONTINUOUS}):
+            from gnn.extract.continuous_spec import JOINT_GAUSSIAN_CONTRACT
+            from gnn.extract.joint_gaussian_spec import extract_joint_gaussian_spec
             from gnn.render.multi_agent_continuous import (
                 extract_multi_agent_continuous_specs,
             )
 
+            source = {
+                "initialparameterization": pomdp_space.initial_parameterization,
+                "model_parameters": pomdp_space.model_parameters,
+            }
+            joint = (pomdp_space.model_parameters or {}).get(
+                "agent_coupling"
+            ) == JOINT_GAUSSIAN_CONTRACT
+            composition = "joint_gaussian" if joint else "independent_agents"
+            if not supports_render_dimension(
+                framework, "continuous_composition", composition
+            ):
+                return {
+                    "compatible": False,
+                    "unsupported": True,
+                    "reason": f"unsupported-composition: {framework} does not render {composition} continuous agents",
+                    "warnings": warnings,
+                }
             try:
-                extract_multi_agent_continuous_specs(
-                    {
-                        "initialparameterization": pomdp_space.initial_parameterization,
-                        "model_parameters": pomdp_space.model_parameters,
-                    }
-                )
+                if joint:
+                    extract_joint_gaussian_spec(source)
+                else:
+                    extract_multi_agent_continuous_specs(source)
             except ValueError as exc:
                 if not str(exc).startswith("unsupported-composition:"):
                     raise
@@ -87,16 +104,7 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
                     "reason": str(exc),
                     "warnings": warnings,
                 }
-            if supports_render_dimension(
-                framework, "continuous_composition", "independent_agents"
-            ):
-                return {"compatible": True, "reason": None, "warnings": warnings}
-            return {
-                "compatible": False,
-                "unsupported": True,
-                "reason": f"unsupported-composition: {framework} does not render independent continuous agents",
-                "warnings": warnings,
-            }
+            return {"compatible": True, "reason": None, "warnings": warnings}
         if (
             ModelKind.CONTINUOUS in kinds
             and len(kinds) > 1

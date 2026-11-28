@@ -157,7 +157,7 @@ def run_mcmc(y, u, F, H, Q, R, prior_mean, prior_cov, T, n):
     return means, (max(r_hats) if r_hats else float("nan")), {key: getattr(mcmc, key) for key in ("num_warmup", "num_samples", "num_chains", "chain_method")}
 '''
 
-_BODY_HEAD = '''
+KALMAN_STEP = '''
 
 def kalman_step(mu, P, y_t, F, H, Q, R, u_prev, first):
     """One predict/update step. ``first`` skips prediction (prior is for x_1)."""
@@ -173,7 +173,11 @@ def kalman_step(mu, P, y_t, F, H, Q, R, u_prev, first):
     I_KH = eye(P_pred.shape[0]) - K @ H
     P_new = I_KH @ P_pred @ I_KH.T + K @ R @ K.T  # Joseph form (stays PSD)
     return mu_new, P_new
+'''
 
+_BODY_HEAD = (
+    KALMAN_STEP
+    + """
 
 def run_simulation():
     start = time.time()
@@ -245,7 +249,8 @@ def run_simulation():
         "actions": [],
         "efe_history": [],
     }
-'''
+"""
+)
 
 
 _NUMPYRO_RESULTS = """

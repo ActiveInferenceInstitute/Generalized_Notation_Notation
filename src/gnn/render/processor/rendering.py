@@ -34,17 +34,24 @@ def _render_continuous_target(
 
     kinds = detect_model_kinds(spec)
     if kinds == frozenset({ModelKind.MULTI_AGENT, ModelKind.CONTINUOUS}):
+        from gnn.extract.continuous_spec import JOINT_GAUSSIAN_CONTRACT
         from gnn.render.multi_agent_continuous import (
             generate_multi_agent_continuous_script,
         )
 
         code = generate_multi_agent_continuous_script(spec, target)
+        joint = (spec.get("model_parameters") or {}).get(
+            "agent_coupling"
+        ) == JOINT_GAUSSIAN_CONTRACT
+        description = (
+            "joint Gaussian filtering" if joint else "independent continuous agents"
+        )
         suffix = ".jl" if target == "rxinfer" else ".py"
         output_file = output_dir / f"{stem}_{target}{suffix}"
         output_file.write_text(code, encoding="utf-8")
         return (
             True,
-            f"{target} native independent continuous agents",
+            f"{target} native {description}",
             [str(output_file)],
         )
     if kinds == frozenset({ModelKind.FACTORED, ModelKind.CONTINUOUS}):

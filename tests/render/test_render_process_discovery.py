@@ -3,7 +3,7 @@
 Verifies recursive discovery in ``gnn.render.processor``:
 
 1. ``process_render(..., recursive=True)`` walks every nested model folder.
-   All 38 model sources receive current receipts: 29 render and nine unsupported
+   All 39 model sources receive current receipts: 29 render and ten unsupported
    model contracts receive explicit receipts. Private malformed fixtures retain
    strict scientific rejection coverage. Documentation is excluded.
 2. Passing ``recursive=False`` via kwargs reverts to a top-level-only glob, so
@@ -24,13 +24,14 @@ from gnn.render.processor import process_render
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXEMPLAR_DIR = REPO_ROOT / "input" / "gnn_files"
-EXPECTED_EXEMPLAR_COUNT = 38
+EXPECTED_EXEMPLAR_COUNT = 39
 EXPECTED_UNSUPPORTED_SOURCES = {
     "discrete/deep_planning_horizon.md": "unsupported-planning",
     "hierarchical/hierarchical_pomdp.md": "unsupported-execution-contract",
     "hierarchical/temporal_hierarchy.md": "unsupported-execution-contract",
     "discrete/tmaze_epistemic.md": "unsupported-execution-contract",
     "continuous/multi_agent_lgssm.md": "unsupported-composition",
+    "continuous/joint_gaussian_agents.md": "unsupported-composition",
     "continuous/hybrid_discrete_continuous.md": "unsupported-composition",
     "continuous/factored_continuous_lgssm.md": "unsupported-factored-continuous",
     "discrete/time_varying_dynamics.md": "unsupported-nonstationary",
