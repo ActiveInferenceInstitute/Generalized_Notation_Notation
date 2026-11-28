@@ -44,6 +44,16 @@ resolver. Linux covers CPython 3.12, 3.13 and 3.14. macOS and Windows retain
 their 3.14 lanes. The POSIX lanes also resolve `all` and run the `gui`
 wheel smoke test with Gradio and Pillow.
 
+To check built distributions locally, pass the direct wheel, rebuilt wheel,
+and source distribution. The receipt records the checked metadata and each
+artifact's SHA-256 digest.
+
+```bash
+python scripts/check_distribution_artifacts.py \
+  --wheel "$DIRECT_WHEEL" --rebuilt-wheel "$REBUILT_WHEEL" \
+  --sdist "$SDIST" --receipt "$ARTIFACT_RECEIPT"
+```
+
 Each runner exports runtime requirements from `uv.lock` with hashes and
 `--frozen`. Core, API and THRML
 runtime dependencies must install as ordinary binary wheels. Development test
