@@ -449,7 +449,7 @@ uv run --frozen --no-sync python scripts/check_capability_contracts.py --strict
 
 For source changes use the [current verification commands](../TO-DO.md#verification-and-execution-rules)
 and the workflows' declared environments. Run `actionlint .github/workflows/*.yml`
-when workflow YAML changes. Count-changing manuscript/source/test edits follow
+when workflow YAML changes. Count-changing docs/manuscript/source/test edits follow
 the full rendering/custody procedure in [AGENTS.md](../AGENTS.md).
 
 </details>

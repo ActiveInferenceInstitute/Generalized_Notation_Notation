@@ -81,7 +81,7 @@ worktrees and return local commits; the integrator owns publication and custody.
 
 | Owner | Delivery boundary |
 | --- | --- |
-| Integrator | M5 global documentation, independent reviews, roadmap closeout, version surfaces, exact-source checks, manuscript/FEP/GEO custody and release |
+| Integrator | M5 global documentation, independent reviews, roadmap closeout, version surfaces, exact-source checks, docs/manuscript/FEP/GEO custody and release |
 | contracts410 | M2/M3 public admission, shared run/configuration/outcome contracts; render dispatch without scientific algorithm changes |
 | ownership410 | M1/M4 logging and website owners, RxInfer interchange/analysis, bounded authored-parser defects |
 | security410 | S5 filesystem operations, leases, owned worker cancellation and precise native containment guarantees |
@@ -215,7 +215,7 @@ requires exclusive environment use and unchanged source bookends.
 | Scientific presentation and performance | Accepted finite actual-image critique and paired raster CPU/size/pixel evidence; retain hashes during final-source checks |
 | Comprehensive coverage | Same-interpreter subprocess tracing and full unchanged source scope, alongside existing core reports |
 | Installed acceptance | Final ordinary wheel with complete local API checks, then all five hosted native lanes |
-| Publication custody | Frozen versioned source, fresh manuscript/template render and companion pins, followed by exact-source hosted and release gates |
+| Publication custody | Frozen versioned source, fresh docs/manuscript/template render and companion pins, followed by exact-source hosted and release gates |
 
 The full lazy observation run at `96868cbe289d1c318370ed7e143c39193d55a481`
 passed all 7,096 core and 524 MCP cases. The pipeline selection passed 348 of
@@ -258,7 +258,7 @@ candidate revision before building. The maintained workflow indexes include
 all sixteen YAML workflows, with their actual triggers and evidence limits.
 Workflow lint, strict links/anchors and flag audits pass; 114 registered flags
 remain documented with the 129 phantom-token ceiling intact. Final native,
-manuscript/custody and publication acceptance remain pending.
+docs/manuscript/custody and publication acceptance remain pending.
 
 Temporary-directory and full-corpus image writes failed during a local disk
 capacity incident. Failed runs remain diagnostic evidence and cannot satisfy
@@ -293,7 +293,7 @@ custody. Publish a reviewable frozen branch when companion/native hosted checks
 need it, then merge only after required exact-revision gates pass.
 
 Release requires a unique nonconflicting tag, accepted wheel/sdist installation,
-public manuscript/checksum artifacts and terminal exact-tag hosted checks.
+public docs/manuscript/checksum artifacts and terminal exact-tag hosted checks.
 Remove only accepted completed work from TO-DO; retain externally blocked work
 with precise evidence. Never treat a pending check or partial archive as done.
 

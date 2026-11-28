@@ -8,11 +8,11 @@ invokes this exact script name automatically before PDF render.
 Responsibilities (delegated to :mod:`gnn.manuscript`):
 
 1. Compute the deterministic ``{{TOKEN}}`` map from the repository at ``HEAD``.
-2. Write the producer-owned ``manuscript/config.yaml`` fields (``version:``,
+2. Write the producer-owned ``docs/manuscript/config.yaml`` fields (``version:``,
    ``date:``) from that map — config.yaml is never token-substituted, so those
    title-page literals can only stay true by being written.
 3. Persist the map to ``output/data/manuscript_variables.json`` for audit/debug.
-4. Hydrate ``manuscript/*.md`` into ``output/manuscript/*.md`` with tokens
+4. Hydrate ``docs/manuscript/*.md`` into ``output/manuscript/*.md`` with tokens
    resolved, via the template injector when available.
 
 Every count in the map describes the commit reported as ``GNN_GIT_COMMIT``. A
@@ -60,7 +60,7 @@ ritual has run, in order:
    ``output/data/manuscript_render_manifest.json``).
 
 PR-time drift guard: ``scripts/check_hydrated_prose.py`` (``local-gates.yml``
-``repo-gates``) re-substitutes ``manuscript/*.md`` from the committed token map
+``repo-gates``) re-substitutes ``docs/manuscript/*.md`` from the committed token map
 and fails when the committed ``output/manuscript/`` differs. So a PR that
 regenerates the token map (every count-changing PR) must run this whole
 ritual. Regenerating and re-recording alone now fails before merge, where it
@@ -81,6 +81,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from collections.abc import Mapping
@@ -200,6 +201,23 @@ def _report_dirty_tree(variables: Mapping[str, str]) -> dict:
     return receipt
 
 
+
+def write_table_claim_ledger(variables_path: Path, variables: Mapping[str, str]) -> None:
+    """Register table labels supplied by hydrated Markdown variables."""
+    claims = [
+        {
+            "claim_id": variable,
+            "kind": "table",
+            "value": label,
+            "artifact_path": "output/data/manuscript_variables.json",
+        }
+        for variable, text in sorted(variables.items())
+        for label in re.findall(r"#(tbl:[A-Za-z0-9_:-]+)", text)
+    ]
+    ledger = variables_path.with_name("manuscript-table-claim-ledger.json")
+    ledger.write_text(json.dumps({"claims": claims}, indent=2) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     variables = generate_variables(_PROJECT_ROOT)
     for change in sync_config_metadata(_PROJECT_ROOT, variables):
@@ -209,6 +227,7 @@ def main() -> int:
     _report_dirty_tree(variables)
     out_path = _PROJECT_ROOT / "output" / "data" / "manuscript_variables.json"
     save_variables(variables, out_path)
+    write_table_claim_ledger(out_path, variables)
 
     _discover_template_root()
     try:

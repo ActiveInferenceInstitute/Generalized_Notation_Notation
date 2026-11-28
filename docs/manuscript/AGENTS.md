@@ -15,7 +15,7 @@ This directory follows the docxology/template manuscript contract:
 - Do not fabricate results, benchmark numbers, citations, DOIs, or release claims.
 - Keep project-specific computation in source modules and scripts; keep manuscript files as prose and evidence maps.
 - Prefer explicit paths to source surfaces when describing evidence.
-- If adding figures, write them under `../output/figures/` and reference them with Pandoc-crossref labels.
+- If adding figures, write them under `../../output/figures/` and reference them with Pandoc-crossref labels.
 
 ## Current Scope
 
@@ -43,9 +43,9 @@ Evidence boundary: Do not treat root output churn as manuscript evidence until t
 Prose is re-hydrated from `output/data/manuscript_variables.json` on every render.
 A figure is a committed PNG: move a count in the token map and the prose follows,
 while the figure keeps printing the old value. `fig:repo_metrics` shipped
-"Test files: 365" on the same PDF page as prose reading 367, under a caption
-claiming it was measured at the stamped commit — the count had moved 365 → 366 →
-367 across three commits and no one re-ran the build.
+`Test files: 365` on the same PDF page as prose reading `367`. The
+caption used the current commit while the old figure still showed the first
+value in the historical sequence `365 → 366 → 367`.
 
 So: **any commit that moves a count must re-run
 `python -m scripts.manuscript_build_figures` and commit the PNGs.** This is now
@@ -96,7 +96,7 @@ declarations: every flag passed must be declared, and every `required=True`
 option must be passed. It is static — it proves the repository would accept the
 arguments, not that the command succeeds — so a published command still has to
 be run before it is called verified. One command is exempt by name, the
-template's `stage_03_render.py`, because §6.3 says in prose that it runs from a
+template's `stage_03_render.py`, because the manuscript reproducibility section says that it runs from a
 separate checkout; a test pins that sentence so the exemption cannot outlive it.
 
 
@@ -163,9 +163,9 @@ suite instead of being re-discovered by the next audit.
 ```
 
 Every occurrence lands strictly between a `PROBE-BEGIN` and its `PROBE-END`.
-`\vsplit` appears exactly once in `longtable.sty` (line 212), inside
+`\vsplit` appears exactly once in `longtable.sty` (line `212`), inside
 `\LT@start`, which `\endlongtable` calls — so that is the emitter.
-`latex.ltx`'s `\@doclearpage` (line 20594) — the kernel's other `\vsplit`
+`latex.ltx`'s `\@doclearpage` (line `20594`) — the kernel's other `\vsplit`
 user — was hooked in the same run as a control: it fires once, at
 `\end{document}`, and emits nothing between its markers.
 
@@ -222,13 +222,13 @@ above, whose baseline is 1 occurrence, 0 underfull, 0 overfull:
 |---|---|---|
 | baseline | 1 | 0 |
 | `\setlength{\LTpre}{0pt}\setlength{\LTpost}{0pt}` | 1 | 0 |
-| `\setlength{\@flushglue}{0pt plus 2em}` | 1 | 15 |
+| `\setlength{\@flushglue}{0pt plus 2em}` | 1 | `15` |
 
 1. `\LTpre`/`\LTpost` is the audit's own prescription and it changes nothing.
    `\LTpre` is applied at `longtable.sty:198` (`\vskip\LTpre`), *before and
-   outside* the box whose copy line 212 splits, so its value is irrelevant.
+   outside* the box whose copy line `212` splits, so its value is irrelevant.
 2. `\@flushglue` is strictly worse — the warning survives and loose lines
-   appear (15 here; a full render on 2026-09-05 produced 144). `\@flushglue`
+   appear (`15` in this diagnostic run and `144` in the full render on 2026-09-05). `\@flushglue`
    is horizontal (`\rightskip`); the reported shrinkage is vertical.
 
 ### What is still not known, and why it does not matter
@@ -256,9 +256,9 @@ line range the log prints:
 
 | badness | cause |
 |---|---|
-| 1019 | `\breaktt{output/data/manuscript\_variables.json}` |
-| 3657 | `\texttt{output/}` / `\texttt{manuscript/}` in a narrow `\item` measure |
-| 1852 | four consecutive `\breaktt{A=LikelihoodMatrix}`-style spans |
+| `1019` | `\breaktt{output/data/manuscript\_variables.json}` |
+| `3657` | `\texttt{output/}` / `\texttt{manuscript/}` in a narrow `\item` measure |
+| `1852` | four consecutive `\breaktt{A=LikelihoodMatrix}`-style spans |
 
 Two of the three causes are `\breaktt`, which deliberately forbids line breaks inside an
 identifier's first 2 and last 5 characters. That bound exists because unbounded
@@ -268,7 +268,7 @@ tell a line break from a name. An unbreakable token in a narrow measure makes th
 line stretch; that is the cost, and it is the right one to pay.
 
 An underfull hbox is a *loose* line, not lost content: every badness here is far
-under TeX's 10000 ceiling and the `Overfull` count is 0 (asserted by
+under TeX's `10000` ceiling and the `Overfull` count is 0 (asserted by
 `src/tests/test_manuscript_latex_log.py`), so nothing is clipped or run into
-the margin. The 3657 case is a plain `\texttt` list item and has nothing to do
+the margin. The `3657` case is a plain `\texttt` list item and has nothing to do
 with `\breaktt`.

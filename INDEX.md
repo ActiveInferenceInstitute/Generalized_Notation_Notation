@@ -45,7 +45,7 @@ test matrix.
 | [SECURITY.md](SECURITY.md) | Security policy and reporting |
 | [SUPPORT.md](SUPPORT.md) | Help channels |
 | [CITATION.cff](CITATION.cff) | Citation metadata |
-| [manuscript/](manuscript/) | Paper chapters (`00_abstract.md` … `99_references.md`) |
+| [manuscript/](docs/manuscript/) | Paper chapters (`00_abstract.md` … `99_references.md`) |
 
 ## Execution surface
 

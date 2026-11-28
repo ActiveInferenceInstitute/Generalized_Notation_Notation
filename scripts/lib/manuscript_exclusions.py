@@ -8,7 +8,7 @@ guide meant editing four places; missing one silently scanned or skipped the
 wrong files). They live here now, with the contract stated once:
 
 ``EXCLUDED_DOC_FILENAMES``
-    ``manuscript/*.md`` files the render pipeline does NOT token-substitute,
+    ``docs/manuscript/*.md`` files the render pipeline does NOT token-substitute,
     so no scanner may treat their text as published prose. Imported from the
     shared ``gnn.manuscript.substitution`` contract, which prefers the template's
     actual value when importable and otherwise uses the headless fallback.

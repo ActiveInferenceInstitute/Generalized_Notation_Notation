@@ -18,6 +18,7 @@ export
 gnn
 gui_oxdraw
 llm
+manuscript
 mcp
 other
 pedalboard

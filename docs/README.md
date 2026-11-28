@@ -165,3 +165,7 @@ See [Framework Integrations](gnn/integration/framework_integration_guide.md).
 
 For versioning policy, see [SPEC.md](SPEC.md). For contribution conventions, see
 [style_guide.md](style_guide.md) and [../CONTRIBUTING.md](../CONTRIBUTING.md).
+
+## Manuscript
+
+- [Manuscript sources and rendering](manuscript/README.md)

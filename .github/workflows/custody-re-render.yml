@@ -3,7 +3,7 @@ name: Custody re-render
 # SC-22 residual: a scheduled/manual CI run confirms the custody chain on a
 # fresh render. The committed PDF evidence (output/pdf/_combined_manuscript.*)
 # is produced by the docxology/template render stage (see
-# manuscript/05_reproducibility.md §"Reproducible by command" and
+# docs/manuscript/05_reproducibility.md §"Reproducible by command" and
 # scripts/z_record_manuscript_render_manifest.py's docstring): the render stage
 # lives in the template checkout, with this repository checked out inside it
 # as a real directory at `projects/active/GeneralizedNotationNotation` (the

@@ -24,7 +24,7 @@ token checker).
 2. `RepositorySnapshot` — git-snapshot reader backing every count.
 3. `load_variables()` / `save_variables()` — read/write the persisted map.
 4. `sync_config_metadata()` / `config_metadata_drift()` — keep
-   `manuscript/config.yaml` producer-owned fields in step.
+   `docs/manuscript/config.yaml` producer-owned fields in step.
 5. `select_cross_framework_family()` — family selection for the
    cross-framework coverage note.
 6. `token_checksum()` — integrity checksum over the emitted map.
@@ -48,7 +48,7 @@ token checker).
    host reflows the artifacts it laid out.
 8. `hydration_issues()` / `hydrate_text()` — the PR-time custody drift
    guard (`scripts/check_hydrated_prose.py`, `local-gates.yml` repo-gates):
-   re-substitute `manuscript/*.md` from the committed token map, mirroring
+   re-substitute `docs/manuscript/*.md` from the committed token map, mirroring
    the template injector, and report every committed `output/manuscript/`
    file that differs. It needs no LaTeX. A count-changing PR that skips the
    full SC-22 ritual fails here instead of in the scheduled

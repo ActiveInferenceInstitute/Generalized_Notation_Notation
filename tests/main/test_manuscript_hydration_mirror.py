@@ -77,9 +77,9 @@ def test_the_hydration_expectation_applies_the_destination_rebase(
     tmp_path: Path,
 ) -> None:
     """The PR-time guard compares the copy the renderer reads, not the source form."""
-    (tmp_path / "manuscript").mkdir()
-    (tmp_path / "manuscript" / "00_fixture.md").write_text(
-        "{{T}} and [x](../output/data/y.json)\n", encoding="utf-8"
+    (tmp_path / "docs" / "manuscript").mkdir(parents=True)
+    (tmp_path / "docs" / "manuscript" / "00_fixture.md").write_text(
+        "{{T}} and [x](../../output/data/y.json)\n", encoding="utf-8"
     )
     tree = render_custody._expected_hydrated_tree(tmp_path, {"T": "value"}, frozenset())
-    assert tree["output/manuscript/00_fixture.md"] == b"value and [x](../data/y.json)\n"
+    assert tree["output/manuscript/00_fixture.md"] == b"value and [x](../../output/data/y.json)\n"

@@ -117,7 +117,7 @@ __all__ = [
 
 
 def _load_config(project_root: Path) -> dict:
-    config_path = project_root / "manuscript" / "config.yaml"
+    config_path = project_root / "docs" / "manuscript" / "config.yaml"
     if not config_path.is_file() or _yaml is None:
         return {}
     loaded = _yaml.safe_load(config_path.read_text(encoding="utf-8"))
@@ -140,7 +140,7 @@ def generate_variables(
         strings (the template injector substitutes text). Every count is read
         from the commit reported as ``GNN_GIT_COMMIT``, so the mapping is
         deterministic for that commit regardless of working-tree state. The
-        authored manuscript config (``manuscript/config.yaml``) is the one
+        authored manuscript config (``docs/manuscript/config.yaml``) is the one
         working-tree read: it is the input a developer edits and re-renders.
 
     Raises:
@@ -388,9 +388,9 @@ def generate_variables(
     return variables
 
 
-# Fields in manuscript/config.yaml the producer owns, and the token that owns
+# Fields in docs/manuscript/config.yaml the producer owns, and the token that owns
 # each. config.yaml is NOT token-substituted (the injector only processes
-# manuscript/*.md), so a literal typed here can only be kept true by writing it.
+# docs/manuscript/*.md), so a literal typed here can only be kept true by writing it.
 _CONFIG_OWNED_FIELDS = {
     "version": "GNN_VERSION",
     "date": "GNN_RELEASE_DATE",
@@ -405,7 +405,7 @@ def config_metadata_drift(
     Empty list means the title page states the same version and date the
     repository does.
     """
-    config_path = Path(project_root) / "manuscript" / "config.yaml"
+    config_path = Path(project_root) / "docs" / "manuscript" / "config.yaml"
     if not config_path.is_file():
         return []
     drift: list[str] = []
@@ -424,7 +424,7 @@ def config_metadata_drift(
 
 
 def sync_config_metadata(project_root: Path, variables: Mapping[str, str]) -> list[str]:
-    """Rewrite the producer-owned ``manuscript/config.yaml`` fields in place.
+    """Rewrite the producer-owned ``docs/manuscript/config.yaml`` fields in place.
 
     ``version:`` and ``date:`` render onto the PDF title page but sit in a file
     the token injector never touches, so they can only stay true by being
@@ -436,7 +436,7 @@ def sync_config_metadata(project_root: Path, variables: Mapping[str, str]) -> li
     Returns the list of ``"field: old -> new"`` changes applied (empty when the
     file was already in sync).
     """
-    config_path = Path(project_root) / "manuscript" / "config.yaml"
+    config_path = Path(project_root) / "docs" / "manuscript" / "config.yaml"
     if not config_path.is_file():
         return []
     lines = config_path.read_text(encoding="utf-8").splitlines(keepends=True)
@@ -459,7 +459,7 @@ def sync_config_metadata(project_root: Path, variables: Mapping[str, str]) -> li
     return changes
 
 
-# Fields in manuscript/preamble.md's LaTeX block the producer owns, and the token
+# Fields in docs/manuscript/preamble.md's LaTeX block the producer owns, and the token
 # that owns each. preamble.md IS token-substituted into output/manuscript/, but
 # the template's _manuscript_source.py then copies the RAW file over that copy
 # (`_shutil.copy2(preamble_src, preamble_dst)`), so a {{TOKEN}} written here
@@ -477,7 +477,7 @@ _PREAMBLE_FIELD_RE = re.compile(
 
 def _preamble_fields(project_root: Path) -> list[tuple[int, str, str, str]]:
     """Return ``(line_index, field, current_value, whole_line)`` for owned fields."""
-    path = Path(project_root) / "manuscript" / "preamble.md"
+    path = Path(project_root) / "docs" / "manuscript" / "preamble.md"
     if not path.is_file():
         return []
     found = []
@@ -510,7 +510,7 @@ def sync_preamble_metadata(
 
     Returns the list of ``"field: old -> new"`` changes applied.
     """
-    path = Path(project_root) / "manuscript" / "preamble.md"
+    path = Path(project_root) / "docs" / "manuscript" / "preamble.md"
     fields = _preamble_fields(project_root)
     if not fields:
         return []

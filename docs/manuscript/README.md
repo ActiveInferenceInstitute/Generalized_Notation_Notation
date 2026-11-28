@@ -1,6 +1,6 @@
 # Manuscript - GeneralizedNotationNotation
 
-This directory contains the template-format manuscript sources for:
+This directory contains the canonical manuscript sources for:
 
 **GeneralizedNotationNotation: A Text Language for Active Inference Models**
 
@@ -68,7 +68,7 @@ uv run --frozen --no-sync python scripts/check_hydrated_prose.py
 
 Export `GNN_TEMPLATE_REVISION` from the actual template checkout for the custody
 check. A stale-chain verdict requires a deliberate renewal after a successful
-render, not suppression. See the [run guide](../docs/RUN_GUIDE.md#manuscript-rendering-and-custody)
+render, not suppression. See the [run guide](../RUN_GUIDE.md#manuscript-rendering-and-custody)
 for the exported-copy build epoch, measured render and toolchain; see
 [reproducibility](05_reproducibility.md#manuscript-reproducibility) for the source,
 variable and figure contracts.

@@ -233,7 +233,7 @@ def test_gate_ignores_paths_inside_fenced_commands(tmp_path: Path) -> None:
 
 def test_live_manuscript_has_no_contradicted_path_claims() -> None:
     """The assertion that would have failed on the shipped PDF."""
-    manuscript_dir = REPO_ROOT / "manuscript"
+    manuscript_dir = REPO_ROOT / "docs" / "manuscript"
     sections = GATE._section_files(manuscript_dir)
     assert sections, "no manuscript sections found"
     families = _families(RepositorySnapshot(REPO_ROOT))
@@ -251,7 +251,7 @@ def test_live_manuscript_types_no_family_target_directory_by_hand() -> None:
     families = _families(RepositorySnapshot(REPO_ROOT))
     declared = {str(f["target_dir"]).rstrip("/") for f in families}
     offenders: list[str] = []
-    for path in GATE._section_files(REPO_ROOT / "manuscript"):
+    for path in GATE._section_files(REPO_ROOT / "docs" / "manuscript"):
         raw = path.read_text(encoding="utf-8")
         for _, content in GATE._code_spans(raw):
             if content.rstrip("/") in declared:
@@ -318,7 +318,7 @@ def test_live_outside_corpus_dirs_are_empty_after_corpus_closure() -> None:
 
 def test_live_s01_states_the_outside_corpus_relationship_through_the_token() -> None:
     """S01 must not re-type the sentence the producer now owns."""
-    raw = (REPO_ROOT / "manuscript" / "S01_source_surface.md").read_text(
+    raw = (REPO_ROOT / "docs" / "manuscript" / "S01_source_surface.md").read_text(
         encoding="utf-8"
     )
     assert "{{GNN_OUTSIDE_CORPUS_NOTE}}" in raw

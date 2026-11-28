@@ -122,7 +122,7 @@ and untracked), then minute-level `stat` on every file dated 2026-09-05.
   every `out/` artifact is dated 2026-09-04 13:47–13:59 (prior sessions), and
   `.pytest_cache` / `.mypy_cache` are gitignored.
 - Concurrent-lane activity dated 2026-09-05, none of it this session's: a
-  manuscript/publication lane (`manuscript/*.md` edited 02:38;
+  docs/manuscript/publication lane (`docs/manuscript/*.md` edited 02:38;
   `output/{manuscript,pdf,slides,web,data,reports,figures}` regenerated
   09:08–09:09; `src/gnn/manuscript_variables.py`) and an MCP audit regeneration
   (`src/gnn/mcp/audit_report.json`, 00:42). This is a shared fleet checkout.
@@ -131,4 +131,4 @@ and untracked), then minute-level `stat` on every file dated 2026-09-05.
 - Directory-ownership rule adopted for any follow-on work in this checkout:
   `manuscript/`, `output/{manuscript,pdf,slides,web,reports,data}`,
   `src/gnn/manuscript_variables.py`, and `src/gnn/mcp/audit_report.json` belong to the
-  active manuscript/audit lanes and are avoided entirely.
+  active docs/manuscript/audit lanes and are avoided entirely.

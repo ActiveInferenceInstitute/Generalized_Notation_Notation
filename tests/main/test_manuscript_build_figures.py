@@ -28,7 +28,7 @@ from lib.manuscript_exclusions import (
 
 SCRIPT = REPO_ROOT / "scripts" / "manuscript_build_figures.py"
 REGISTRY = REPO_ROOT / "output" / "figures" / "figure_registry.json"
-MANUSCRIPT = REPO_ROOT / "manuscript"
+MANUSCRIPT = REPO_ROOT / "docs" / "manuscript"
 _FIG_LABEL_RE = re.compile(r"\{#(fig:[\w:-]+)")
 
 

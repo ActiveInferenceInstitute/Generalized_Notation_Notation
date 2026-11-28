@@ -50,7 +50,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 from scripts.lib.manuscript_exclusions import AUTHORING_GUIDE_FILENAMES  # noqa: E402
 
 _FIG_DIR = _PROJECT_ROOT / "output" / "figures"
-_MANUSCRIPT_DIR = _PROJECT_ROOT / "manuscript"
+_MANUSCRIPT_DIR = _PROJECT_ROOT / "docs" / "manuscript"
 _REGISTRY_PATH = _FIG_DIR / "figure_registry.json"
 _PROVENANCE_ENV = "GNN_FIGURE_TOKEN_PROVENANCE"
 _Z_GENERATE = "z_generate_manuscript_variables.py"
@@ -164,7 +164,7 @@ _FIGURE_SOURCES: dict[str, tuple[str, ...]] = {
 }
 
 _FIG_LABEL_RE = re.compile(r"\{#(fig:[\w:-]+)")
-# manuscript/SYNTAX.md is the authoring guide; its example embeds are not figures.
+# docs/manuscript/SYNTAX.md is the authoring guide; its example embeds are not figures.
 # Shared with the token gate and the published-commands test — see
 # scripts/lib/manuscript_exclusions.py.
 _LABEL_SCAN_SKIP = AUTHORING_GUIDE_FILENAMES

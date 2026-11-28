@@ -26,7 +26,7 @@
     "resolved_url": "https://zenodo.org/records/23222085"
   },
   "archive_contents_limits": [
-    "GitHub integration source ZIP includes committed manuscript/CITATION/uv.lock but no separately attached release wheel, sdist or SHA256SUMS asset."
+    "GitHub integration source ZIP includes committed docs/manuscript/CITATION/uv.lock but no separately attached release wheel, sdist or SHA256SUMS asset."
   ],
   "manuscript_release_asset_parity": true,
   "release_manuscript_url": "https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases/download/v4.0.1/GNN-4.0.1-manuscript.pdf"
