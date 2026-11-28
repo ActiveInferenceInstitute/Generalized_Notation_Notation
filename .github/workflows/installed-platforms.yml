@@ -227,12 +227,36 @@ jobs:
           requirements = scratch / 'mypy-tools.txt'
           requirements.write_text('\n'.join(line for line in logical if (match := re.match(r'([A-Za-z0-9_.-]+)==', line)) and match[1] in needed) + '\n')
           subprocess.run(['uv', '--no-config', 'pip', 'install', '--python', str(python), '--require-hashes', '-r', str(requirements)], cwd=scratch, check=True)
-          subprocess.run([str(python), '-I', '-c', "import importlib.util; assert importlib.util.find_spec('fastapi') is None; assert importlib.util.find_spec('pygls') is None"], cwd=scratch, check=True)
+          subprocess.run([str(python), '-I', '-c', "from importlib.resources import files; from importlib.util import find_spec; assert files('gnn').joinpath('py.typed').is_file(); assert find_spec('fastapi') is None; assert find_spec('pygls') is None"], cwd=scratch, check=True)
           public = scratch / 'public_imports.py'
-          public.write_text('from gnn.parsers import GNNParsingSystem as GNNParsingSystem\nfrom gnn.types import GNNFormat as GNNFormat, GNNVariable as GNNVariable\nfrom gnn.importers import ImporterPin as ImporterPin\nfrom gnn.validation.semantic_witness import build_semantic_witness as build_semantic_witness\n')
-          # The wheel currently has no py.typed marker: analyze implementation
-          # types by explicit opt-in, without advertising PEP 561 support.
-          subprocess.run([str(python), '-I', '-m', 'mypy', '--strict', '--no-incremental', '--follow-untyped-imports', '--follow-imports=silent', str(public)], cwd=scratch, stdout=(scratch / 'public-mypy.log').open('w'), stderr=subprocess.STDOUT, check=True)
+          public.write_text('\n'.join((
+              'from pathlib import Path',
+              'from typing import Any, assert_type',
+              'from gnn.importers import ImporterPin',
+              'from gnn.parsers import GNNParsingSystem, parse_gnn_file_structured',
+              'from gnn.types import GNNFormat, GNNVariable, ParseResult',
+              'from gnn.validation.semantic_witness import build_semantic_witness',
+              '',
+              'def verify(path: Path, variable: GNNVariable, pin: ImporterPin) -> None:',
+              '    assert_type(GNNParsingSystem().parse_file(path), ParseResult)',
+              '    assert_type(parse_gnn_file_structured(path, GNNFormat.MARKDOWN), ParseResult)',
+              '    assert_type(variable.name, str)',
+              '    assert_type(pin.commit, str)',
+              '    assert_type(build_semantic_witness(b"source", b"result"), dict[str, Any])',
+              '',
+          )), encoding='utf-8')
+          misuse = scratch / 'public_misuse.py'
+          misuse.write_text('from gnn.parsers import parse_gnn_file_structured\nparse_gnn_file_structured(123)\n', encoding='utf-8')
+          env = {key: value for key, value in os.environ.items() if key not in {'PYTHONPATH', 'MYPYPATH'}}
+          mypy = [str(python), '-I', '-m', 'mypy', '--strict', '--no-incremental', '--cache-dir', os.devnull, '--show-error-codes', '--no-color-output']
+          with (scratch / 'public-mypy.log').open('w', encoding='utf-8') as log:
+              subprocess.run([*mypy, str(public)], cwd=scratch, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
+          result = subprocess.run([*mypy, str(misuse)], cwd=scratch, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+          (scratch / 'public-mypy-negative.log').write_text(result.stdout, encoding='utf-8')
+          diagnostics = [line for line in result.stdout.splitlines() if ': error:' in line]
+          assert result.returncode == 1 and len(diagnostics) == 1, result.stdout
+          error = diagnostics[0]
+          assert 'parse_gnn_file_structured' in error and 'incompatible type "int"' in error and error.endswith('[arg-type]'), error
           PYCODE
       - name: Tracked-file bookend
         if: always()
@@ -253,7 +277,7 @@ jobs:
             ${{ runner.temp }}/gnn-installed-platform/*.json
             ${{ runner.temp }}/gnn-installed-platform/*.xml
             ${{ runner.temp }}/gnn-installed-platform/*-profile.log
-            ${{ runner.temp }}/gnn-installed-platform/public-mypy.log
+            ${{ runner.temp }}/gnn-installed-platform/public-mypy*.log
             ${{ runner.temp }}/gnn-installed-platform/tracked-*.txt
             ${{ runner.temp }}/gnn-installed-platform/data/*.log
             ${{ runner.temp }}/gnn-installed-platform/base-data/*.log

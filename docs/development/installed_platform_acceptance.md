@@ -73,6 +73,13 @@ and binds the result to the tested source, wheel, lock and base
 export. Each lane retains both its base profile and its extended native
 profile evidence.
 
+Both wheels ship the PEP 561 marker `gnn/py.typed`. From the installed base
+wheel outside the checkout, strict mypy checks the types of the parser,
+shared types, importer pin, and semantic witness APIs. A separate negative
+probe must report an argument type error when a caller passes an integer as
+the parser path. The base typing environment installs only the locked mypy
+dependency closure and checks that FastAPI and pygls are absent.
+
 ## Public and numerical acceptance
 
 [`run_installed_platform_acceptance.py`](../../scripts/run_installed_platform_acceptance.py)
@@ -197,9 +204,8 @@ Witnesses ran with `python -I` and checked GNN's installed module location.
   `mypy --strict --no-incremental --follow-untyped-imports --follow-imports=silent`
   passed for `GNNParsingSystem`, `GNNFormat`, `GNNVariable`, `ImporterPin` and
   `build_semantic_witness`. Its base venv contained mypy's locked dependency
-  closure and still had neither FastAPI nor pygls installed. The hosted
-  workflow uses the same opt-in boundary and does not install the dev group
-  into that base typing environment.
+  closure and still had neither FastAPI nor pygls installed. This observation
+  describes the wheel built for Wave 1A.
 
 The lock resolves opentelemetry-api **1.45.2**, tornado **6.6.1** and
 inferactively-pymdp **1.0.5**. It retains Flax **0.12.8/0.12.10**, ngclearn's

@@ -20,6 +20,7 @@ METADATA_KEYS = (
     "Requires-Dist",
     "Provides-Extra",
 )
+TYPING_MARKER = "gnn/py.typed"
 
 
 def metadata_fields(contents: bytes) -> dict[str, list[str]]:
@@ -76,6 +77,8 @@ def verify_distributions(direct: Path, rebuilt: Path, source: Path) -> dict:
             if direct_contents.get(name) != rebuilt_contents.get(name)
         )
         raise ValueError(f"direct and sdist wheels differ: {different}")
+    if TYPING_MARKER not in direct_contents:
+        raise ValueError(f"both wheels must contain {TYPING_MARKER}")
     with tarfile.open(source) as archive:
         (package_info,) = [
             member
@@ -99,6 +102,7 @@ def verify_distributions(direct: Path, rebuilt: Path, source: Path) -> dict:
     return {
         "metadata": direct_metadata,
         "wheel_members_verified": len(direct_contents) + 1,
+        "pep561_marker": TYPING_MARKER,
         "artifacts_sha256": digests,
     }
 
