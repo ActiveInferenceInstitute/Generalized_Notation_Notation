@@ -2,7 +2,7 @@
   "consumed_manuscript": [
     {
       "rendered_path": "output/manuscript/00_abstract.md",
-      "rendered_sha256": "c16aca49046e58271543ac384861b5328016f34b16d4c633e128fc11720f826f",
+      "rendered_sha256": "7a8ce5501f0e25098034fbe502a8a9c96498d809f2de9597f955bdcef6c0fe03",
       "source_path": "docs/manuscript/00_abstract.md",
       "source_sha256": "8ccb35dade937a85e17d447ff9d92626fd3c3a742f6ddcb93195f867d5efb71a"
     },
@@ -14,31 +14,31 @@
     },
     {
       "rendered_path": "output/manuscript/02_system_context.md",
-      "rendered_sha256": "4d985f2764848ea2820f0cd9b1de2972ee7176814639130a4b74685c32231209",
+      "rendered_sha256": "1068c20eef28e43b64892eb4e9b6e8280c9c2d55d4deb23ea4979a7e42812a9f",
       "source_path": "docs/manuscript/02_system_context.md",
       "source_sha256": "57fd57fe9567828b542b99f4a09039f695893e5cfd480937da10f059561a962d"
     },
     {
       "rendered_path": "output/manuscript/03_methods.md",
-      "rendered_sha256": "fe8f7a58ee8b0a980a278d416eea51cbe44f15d766fb47bfac1785233d9c45ad",
+      "rendered_sha256": "97580727d8b4286a2eaf62b0b8f0193113252fe712d5e766d2184b9e6cb7834b",
       "source_path": "docs/manuscript/03_methods.md",
       "source_sha256": "5a25e0de152cb59d47d2fc226a5a3143471065bc17acb350d72d8f1b253cc521"
     },
     {
       "rendered_path": "output/manuscript/04_artifacts_and_evidence.md",
-      "rendered_sha256": "3577c7e05ceb4504cd9b63f2c553848db512b057d0718ba59a079479c1ed9528",
+      "rendered_sha256": "86c7cbdee277d5e7ea51a7bbf6d1acb3a8d5d9f40a64cd04daa131244679d059",
       "source_path": "docs/manuscript/04_artifacts_and_evidence.md",
       "source_sha256": "e1e5e5fc72e809ffcc594ce2a5b39211151ef89f6316ed6dde5a67afa8b830db"
     },
     {
       "rendered_path": "output/manuscript/05_reproducibility.md",
-      "rendered_sha256": "41484225232c9b0751afc55d2813c0af38ba8858ccac40b792006aaabe4a7311",
+      "rendered_sha256": "18ea5fad38843f7619b0a7b0fa978e83aedc1dd28d7fa7f67a040065a1142bff",
       "source_path": "docs/manuscript/05_reproducibility.md",
       "source_sha256": "4b2f72273d5ab1dc660cc6b9805ba92da79983dd0bea3364007791ac843a1cb3"
     },
     {
       "rendered_path": "output/manuscript/06_limitations_and_next_steps.md",
-      "rendered_sha256": "91f12ecb5073b9cdc36c07042c7e5e9751f86140e6d980e496153298f9d9e3b5",
+      "rendered_sha256": "c39931300f34ea51884613999813479f6bd8fd5641cfeb73baef85833bf5096a",
       "source_path": "docs/manuscript/06_limitations_and_next_steps.md",
       "source_sha256": "c5e4b9322a7fde00ff124c026f6c88c8571089b3458698b8a791e9677af667f8"
     },
@@ -64,22 +64,22 @@
   "evidence_files": {
     "artifact_manifest": {
       "path": "output/reports/artifact_manifest.json",
-      "sha256": "de8f73ca8155dc5670ddd6ec6335363d08e338b5d4e910d8fb41ea169f1dd0b6",
+      "sha256": "f84179f48724d37695abd32ef12e1f9723e3e4871d80024b72172a59e63efe89",
       "size_bytes": 17091
     },
     "combined_manuscript": {
       "path": "output/web/_combined_manuscript.md",
-      "sha256": "8801f13956afb43ffac2c282b4dd745e50619fc97c0ff4ec7a30f3bd064be554",
+      "sha256": "bba71fe91f3b2ed99e4a1f6ff7d8db80dfc18889e80d821fcfb60193031a7c57",
       "size_bytes": 119305
     },
     "composition_manifest": {
       "path": "output/reports/manuscript_composition.json",
-      "sha256": "13b7ab63ab92047750f2e5f72cbcdb1a2426a27821a62335347c6b57a2c525c5",
+      "sha256": "8b5a38232f066f05aa8634c6685723249c9771b7716ae9331c11de1fb0cb3ece",
       "size_bytes": 2564
     },
     "validation_report": {
       "path": "output/reports/validation_report.json",
-      "sha256": "b307df6cdcc1e2470e24ad8d0dbe111c39570b26dd7cf2db4a7fdd08ff9daa36",
+      "sha256": "133e22df069fcd2cfa9b0fcc2a677d67b413430bb134ec26d6bb111bb8bc110b",
       "size_bytes": 12276
     }
   },
@@ -87,15 +87,15 @@
   "fingerprints": {
     "config": {
       "file_count": 46,
-      "sha256": "61e51aded62b359609980c8f65d2cfebc50a8bcab5b7eca4e954ac349ca8a438"
+      "sha256": "ef3f90ce06ff0339a13ee4b2be7d0e95f70c8c54fa95cfa8c58cff4feeadf5da"
     },
     "output": {
       "file_count": 52,
-      "sha256": "80b911ce260186161fb31485901e441268db36f32d3e42187a0b21e11c7be72e"
+      "sha256": "136209ee833f0d98ea9a24eaf8e1ebd49d4376c015b1178aeb6e0000af698a9f"
     },
     "source": {
       "file_count": 1229,
-      "sha256": "d2e3a1088e5c9e93f596942143ee06c36a739a1d2f6ee3e441450bcf2458871e"
+      "sha256": "366c02060a89f33531c084df1dfcbbd0ff9cbc2f607244b086d1011f9d8f9950"
     },
     "stage": {
       "file_count": 1651,
