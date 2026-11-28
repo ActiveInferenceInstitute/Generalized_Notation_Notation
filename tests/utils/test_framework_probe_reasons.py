@@ -12,18 +12,19 @@ import pytest
 from gnn.utils.runtime_safety import framework_availability as availability
 
 
-def _child_is_gone_or_zombie(pid: int) -> bool:
-    """True when *pid* no longer exists or is a not-yet-reaped zombie.
-
-    ``psutil.pid_exists`` still reports a zombie as present, and the child can be
-    reaped between that call and the status read, so ``NoSuchProcess`` here is
-    the condition under test - the child is gone - rather than an error.
-    """
+def _child_is_gone_or_zombie(pid: int, *, timeout: float = 0.0) -> bool:
+    """Check one process identity, optionally waiting for its kernel exit."""
     try:
-        process_status = psutil.Process(pid).status()
+        child = psutil.Process(pid)
+        deadline = time.monotonic() + timeout
+        while child.is_running() and child.status() != psutil.STATUS_ZOMBIE:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return False
+            time.sleep(min(0.01, remaining))
     except psutil.NoSuchProcess:
         return True
-    return bool(process_status == psutil.STATUS_ZOMBIE)
+    return True
 
 
 @pytest.mark.parametrize(
@@ -178,7 +179,9 @@ def test_import_spawned_child_cannot_hold_probe_pipes_open(
         assert status.reason_code == "probe_timeout"
         assert status.execution_error_type == "TimeoutExpired"
         assert status.cleanup_verified is True and status.streams_drained is True
-        assert _child_is_gone_or_zombie(pid), (
+        # Pipe closure can arrive before the killed child reports its final
+        # kernel status. Observe that identity briefly after the probe returns.
+        assert _child_is_gone_or_zombie(pid, timeout=0.5), (
             "the spawned child must not survive the probe"
         )
 
