@@ -22,7 +22,7 @@ descriptor or replacing the stream.
 | `gnn extract <file>` | Extract the POMDP state space as structured JSON (`--strict`/`--no-strict`, `--compact`, `--json` standard envelope) |
 | `gnn render <file>` | Render a GNN file to a specific framework (pymdp, rxinfer, jax, etc.); `--json` emits the standard envelope |
 | `gnn report` | Generate pipeline report from existing outputs |
-| `gnn replay --output-dir <run>` | Verify retained manifests and emit the deterministic recorded trace digest |
+| `gnn replay --output-dir <run>` | Verify retained manifests and emit the deterministic recorded trace digest. Use `--expected-run-id <id>` to require a specific retained run ID. |
 | `gnn witness <file> --results <result> --program <script>` | Compare independently read source semantics with native reported values; optional `--output` writes a v2 receipt |
 | `gnn witness --verify <receipt>` | Recompute all numerical evidence from retained bytes; refuse altered or nonpassing records |
 | `gnn reproduce <hash>` | Re-run from a previous run hash (content-addressable) |
