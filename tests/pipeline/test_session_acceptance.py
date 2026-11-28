@@ -194,6 +194,46 @@ def test_unknown_family_raises_keyerror(tmp_path: Path) -> None:
         )
 
 
+def test_resume_requalifies_corrupt_family_and_reuses_other_receipts(
+    tmp_path: Path,
+) -> None:
+    session_path = _run_three_family_session(tmp_path)
+    output_dir = tmp_path / "out"
+    (output_dir / "discrete/model_family_acceptance_ledger.json").write_text("{}")
+    rerun = run_session_acceptance(
+        MANIFEST,
+        output_dir,
+        session_path,
+        family_names=["basics", "discrete", "continuous"],
+        runner=_passing_runner,
+        resume=True,
+    )
+    assert set(rerun["ledgers"]) == {"discrete"}
+    assert rerun["status"]["done"]
+    assert verify_session_artifacts(session_path, output_dir) == []
+
+
+def test_resume_refuses_checkpoint_for_different_orchestration(tmp_path: Path) -> None:
+    session_path = _run_three_family_session(tmp_path)
+    checkpoint = json.loads(session_path.read_text())
+    checkpoint["created_by"] = "gnn.main"
+    foreign_bytes = json.dumps(checkpoint).encode()
+    session_path.write_bytes(foreign_bytes)
+
+    with pytest.raises(
+        ValueError, match="not a supported model-family acceptance session"
+    ):
+        run_session_acceptance(
+            MANIFEST,
+            tmp_path / "out",
+            session_path,
+            family_names=["basics"],
+            runner=_passing_runner,
+            resume=True,
+        )
+    assert session_path.read_bytes() == foreign_bytes
+
+
 def test_resume_with_family_not_in_session_raises(tmp_path: Path) -> None:
     """NEGATIVE: resuming with a family the persisted session never knew about must
     FAIL LOUDLY, not silently skip it and report done=True having run nothing."""
