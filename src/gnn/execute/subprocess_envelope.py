@@ -32,7 +32,6 @@ import logging
 import math
 import os
 import subprocess
-import sys
 import tempfile
 import time
 from pathlib import Path
@@ -48,6 +47,7 @@ from gnn.utils.runtime_safety.cancellation import CancelToken
 from gnn.utils.runtime_safety.process_budget import resolve_process_deadlines
 from gnn.utils.runtime_safety.process_tree import (
     DescendantTracker,
+    descendant_observation_available,
     terminate_process_tree,
 )
 
@@ -300,11 +300,9 @@ def run_subprocess_envelope(
                         Intersected with an active invocation deadline. Up to
                         one second (25% of remaining time for short budgets)
                         is reserved for observation, termination, and draining.
-        require_descendant_containment: Refuse launch when the native platform
-                        cannot observe or contain descendants. Windows currently
-                        supports only direct-worker cleanup and refuses this
-                        request before creating a process. This is not a hostile
-                        daemonization guarantee on supported POSIX systems.
+        require_descendant_containment: Refuse before launch when the native
+                        child detector or process identity tracking is unavailable.
+                        Supported detection observes the owned process tree.
         require_descendant_resource_accounting: Refuse unsupported native
                         descendant observation instead of reporting direct-only
                         RSS as a process-tree measurement. Even supported RSS
@@ -397,11 +395,14 @@ def run_subprocess_envelope(
     }
 
     subject = command[0] if command else "<empty-command>"
-    if (
-        require_descendant_containment or require_descendant_resource_accounting
-    ) and not (sys.platform == "darwin" or sys.platform.startswith("linux")):
+    if (require_descendant_containment or require_descendant_resource_accounting) and (
+        (require_descendant_resource_accounting and _psutil_module is None)
+        or not descendant_observation_available(
+            require_resource_accounting=require_descendant_resource_accounting
+        )
+    ):
         envelope.update(
-            error="Descendant containment/resource observation is unsupported on this native platform",
+            error="Required descendant observation is unavailable on this runtime",
             error_type="UnsupportedContainment",
         )
         return envelope

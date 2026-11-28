@@ -88,6 +88,34 @@ def _child_pids(pid: int) -> list[int] | None:
     return None
 
 
+def descendant_observation_available(
+    *, require_resource_accounting: bool = False
+) -> bool:
+    """Probe child observation for the current process without starting a worker."""
+    if os.name != "posix":
+        return False
+    try:
+        import psutil
+    except ImportError:
+        return False
+    try:
+        pid = os.getpid()
+        # A missing task directory looks like a dead PID to the routine query,
+        # but this process is alive and needs a real detector for admission.
+        if (
+            sys.platform.startswith("linux")
+            and not (Path("/proc") / str(pid) / "task").is_dir()
+        ):
+            return False
+        process = psutil.Process(pid)
+        process.create_time()
+        if require_resource_accounting:
+            process.memory_info()
+        return _child_pids(pid) is not None
+    except (psutil.Error, OSError, RuntimeError, ValueError, AttributeError):
+        return False
+
+
 class DescendantTracker:
     """Observe descendants while a leader lives, retaining process identities."""
 
@@ -130,6 +158,10 @@ class DescendantTracker:
                         visited.add(identity)
                         child_pids = _child_pids(parent.pid)
                         if child_pids is None:
+                            if self.boundary == "observed_descendants":
+                                self.errors.append(
+                                    "Owned descendant observation became unavailable"
+                                )
                             return
                         self.boundary = "observed_descendants"
                         # Discard a snapshot if its parent identity disappeared

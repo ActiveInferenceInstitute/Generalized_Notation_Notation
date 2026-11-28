@@ -580,14 +580,17 @@ def test_invocation_deadline_includes_real_child_cleanup(
 
 
 @pytest.mark.needs_posix
-def test_normal_worker_exit_cleans_detached_descendant(
+def test_normal_worker_exit_cleans_descendant_within_native_boundary(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import threading
 
     import psutil
 
-    from gnn.utils.runtime_safety.process_tree import DescendantTracker
+    from gnn.utils.runtime_safety.process_tree import (
+        DescendantTracker,
+        descendant_observation_available,
+    )
 
     pid_file = tmp_path / "daemon.pid"
     observed = tmp_path / "observed.flag"
@@ -606,9 +609,19 @@ def test_normal_worker_exit_cleans_detached_descendant(
 
         threading.Thread(target=signal_observed, daemon=True).start()
 
-    monkeypatch.setattr(DescendantTracker, "start", start_with_observation_handshake)
+    can_observe = descendant_observation_available()
+    if can_observe:
+        monkeypatch.setattr(
+            DescendantTracker, "start", start_with_observation_handshake
+        )
     daemon = "import time; time.sleep(60)"
-    worker = f"import subprocess,sys,time,pathlib; p=subprocess.Popen([sys.executable,'-c',{daemon!r}],start_new_session=True); pathlib.Path({str(pid_file)!r}).write_text(str(p.pid)); flag=pathlib.Path({str(observed)!r})\nwhile not flag.exists(): time.sleep(0.01)"
+    worker = (
+        "import subprocess,sys,time,pathlib; "
+        f"p=subprocess.Popen([sys.executable,'-c',{daemon!r}],start_new_session={can_observe!r}); "
+        f"pathlib.Path({str(pid_file)!r}).write_text(str(p.pid))"
+    )
+    if can_observe:
+        worker += f"\nflag=pathlib.Path({str(observed)!r})\nwhile not flag.exists(): time.sleep(0.01)"
     result = execute_command_streaming(
         [sys.executable, "-c", worker],
         timeout=3,
@@ -634,7 +647,13 @@ def test_normal_worker_exit_cleans_detached_descendant(
     assert result["status"] == "SUCCESS", json.dumps(
         {"supervisor": result, "owned_witnesses": witnesses}, indent=2, default=str
     )
-    assert result["observed_descendants"] >= 1
+    assert result["containment"] == (
+        "observed_descendants" if can_observe else "process_group_only"
+    )
+    if can_observe:
+        assert result["observed_descendants"] >= 1
+    else:
+        assert result["observed_descendants"] == 0
     pid = int(pid_file.read_text())
     assert (
         not psutil.pid_exists(pid)

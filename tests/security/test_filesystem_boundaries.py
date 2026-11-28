@@ -528,8 +528,16 @@ def test_output_lease_is_exclusive_in_another_native_process(tmp_path: Path) -> 
     assert (tmp_path / ".gnn_run.lock").read_text().startswith("contender pid=")
 
 
-def test_native_process_cleanup_reports_its_actual_boundary(tmp_path: Path) -> None:
+@pytest.mark.parametrize("missing_detector", [False, True])
+def test_native_process_cleanup_reports_its_actual_boundary(
+    monkeypatch: pytest.MonkeyPatch, missing_detector: bool
+) -> None:
     from gnn.execute.subprocess_envelope import run_subprocess_envelope
+    from gnn.utils.runtime_safety import process_tree
+
+    if missing_detector:
+        monkeypatch.setattr(process_tree, "_child_pids", lambda _pid: None)
+    can_observe = process_tree.descendant_observation_available()
 
     result = run_subprocess_envelope(
         [
@@ -544,19 +552,32 @@ def test_native_process_cleanup_reports_its_actual_boundary(tmp_path: Path) -> N
         result["success"] and result["cleanup_verified"] and result["streams_drained"]
     )
     assert result["stdout"].strip() == "native-worker"
-    assert result["containment"] == (
-        "direct_worker_only" if os.name == "nt" else "observed_descendants"
-    )
+    expected = "process_group_only" if os.name == "posix" else "direct_worker_only"
+    if can_observe:
+        expected = "observed_descendants"
+    assert result["containment"] == expected
 
 
 @pytest.mark.parametrize(
     "requirement",
     ["require_descendant_containment", "require_descendant_resource_accounting"],
 )
+@pytest.mark.parametrize("missing_detector", [False, True])
 def test_native_descendant_requirements_are_supported_or_refused_before_launch(
-    tmp_path: Path, requirement: str
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    requirement: str,
+    missing_detector: bool,
 ) -> None:
     from gnn.execute.subprocess_envelope import run_subprocess_envelope
+    from gnn.utils.runtime_safety import process_tree
+
+    if missing_detector:
+        monkeypatch.setattr(process_tree, "_child_pids", lambda _pid: None)
+    can_observe = process_tree.descendant_observation_available(
+        require_resource_accounting=requirement
+        == "require_descendant_resource_accounting"
+    )
 
     marker = tmp_path / "launched"
     result = run_subprocess_envelope(
@@ -569,7 +590,7 @@ def test_native_descendant_requirements_are_supported_or_refused_before_launch(
         sandbox=False,
         **{requirement: True},
     )
-    if os.name == "nt":
+    if not can_observe:
         assert (
             not result["success"] and result["error_type"] == "UnsupportedContainment"
         )
