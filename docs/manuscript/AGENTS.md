@@ -53,7 +53,7 @@ mechanical rather than remembered. Generators read the token map through
 `scripts/lib/manuscript_figure_tokens.load_tokens()`, which records the
 `{key: value}` pairs each generator actually reads; the build writes them, plus
 the PNG's SHA-256, into `figure_registry.json`; and
-`src/tests/test_manuscript_figure_freshness.py` fails when a recorded value
+`tests/test_manuscript_figure_freshness.py` fails when a recorded value
 disagrees with the live token map, or when a committed PNG is not the one the
 registry records. A new generator that opens the token map directly fails that
 suite too, because bypassing the loader would leave its numbers unchecked.
@@ -77,7 +77,7 @@ so the false text shipped in the PDF.
 Rule 8 of that gate now cross-checks the manifest: an `input/...` literal must
 exist on disk, and a literal typed next to a family name must be that family's
 declared `target_dir` (or an ancestor of it, so `input/gnn_files` still reads as
-covering every family). `src/tests/test_manuscript_path_claims.py` pins both the
+covering every family). `tests/test_manuscript_path_claims.py` pins both the
 generated sentences and the gate rule, and its two live-repository tests fail on
 the pre-fix prose.
 
@@ -90,7 +90,7 @@ reader with a clean checkout can reproduce the pipeline". It shipped
 "exists" had quietly come to mean "the path is there" rather than "the
 invocation runs".
 
-`src/tests/test_manuscript_published_commands.py` reads every command out of the
+`tests/test_manuscript_published_commands.py` reads every command out of the
 manuscript's `bash` blocks and checks it against the script's own `argparse`
 declarations: every flag passed must be declared, and every `required=True`
 option must be passed. It is static — it proves the repository would accept the
@@ -125,7 +125,7 @@ finite glue shrinkage found in box being split [25]
 so `grep -c 'Infinite glue'` reported **3** against a true count of **4**, and
 the earlier version of this note prescribed exactly that under-counting probe.
 Treat every log probe this way: join the lines before matching.
-`src/tests/test_manuscript_latex_log.py` pins the split line verbatim and the
+`tests/test_manuscript_latex_log.py` pins the split line verbatim and the
 counting that survives it.
 
 ### One per wide table — not one per page break
@@ -147,7 +147,7 @@ In this document each of the four paragraph-column tables owns exactly one
 message, and the one `lll` table owns none. The *bound* is structural rather
 than a tally: `\LT@start` (`longtable.sty:196`) does `\let\LT@start\endgraf`
 on its first call, so its `\vsplit` runs once per `longtable` and one table can
-contribute at most one message. `src/tests/test_manuscript_latex_log.py`
+contribute at most one message. `tests/test_manuscript_latex_log.py`
 asserts that bound against the shipped log, so a fifth message would fail the
 suite instead of being re-discovered by the next audit.
 
@@ -269,6 +269,6 @@ line stretch; that is the cost, and it is the right one to pay.
 
 An underfull hbox is a *loose* line, not lost content: every badness here is far
 under TeX's `10000` ceiling and the `Overfull` count is 0 (asserted by
-`src/tests/test_manuscript_latex_log.py`), so nothing is clipped or run into
+`tests/test_manuscript_latex_log.py`), so nothing is clipped or run into
 the margin. The `3657` case is a plain `\texttt` list item and has nothing to do
 with `\breaktt`.
