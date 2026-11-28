@@ -5,7 +5,6 @@ Serializes GNN internal representations to XML format.
 
 import json
 import xml.etree.ElementTree as ET  # nosec B405
-from typing import Any
 from xml.dom import (
     minidom,  # nosec B408
 )
@@ -30,6 +29,10 @@ class XMLSerializer(BaseGNNSerializer):
         ET.SubElement(metadata, "annotation").text = model.annotation or ""
         ET.SubElement(metadata, "created_at").text = model.created_at.isoformat()
         ET.SubElement(metadata, "modified_at").text = model.modified_at.isoformat()
+        if model.extensions:
+            ET.SubElement(metadata, "extensions").text = json.dumps(
+                model.extensions, ensure_ascii=False
+            )
 
         # Variables - sorted by name for consistency
         if model.variables:
@@ -45,6 +48,10 @@ class XMLSerializer(BaseGNNSerializer):
                 var_elem.set("type", var.var_type.value)
                 if var.description:
                     var_elem.set("description", var.description)
+                if var.constraints:
+                    var_elem.set(
+                        "constraints", json.dumps(var.constraints, ensure_ascii=False)
+                    )
 
         # Connections - sorted by source then target for consistency
         if model.connections:
@@ -61,13 +68,15 @@ class XMLSerializer(BaseGNNSerializer):
                 conn_elem.set("type", conn.connection_type.value)
                 if conn.weight is not None:
                     conn_elem.set("weight", str(conn.weight))
+                if conn.annotation is not None:
+                    conn_elem.set("annotation", conn.annotation)
 
                 # Create child elements in consistent order
                 sources_elem = ET.SubElement(conn_elem, "sources")
-                sources_elem.text = ",".join(sorted(conn.source_variables))
+                sources_elem.text = ",".join(conn.source_variables)
 
                 targets_elem = ET.SubElement(conn_elem, "targets")
-                targets_elem.text = ",".join(sorted(conn.target_variables))
+                targets_elem.text = ",".join(conn.target_variables)
 
                 if conn.description:
                     desc_elem = ET.SubElement(conn_elem, "description")
@@ -82,9 +91,16 @@ class XMLSerializer(BaseGNNSerializer):
                 param_elem.set("name", param.name)
                 if param.type_hint:
                     param_elem.set("type", param.type_hint)
-                param_elem.text = str(param.value)
+                param_elem.set("value_encoding", "json")
+                param_elem.text = json.dumps(param.value, ensure_ascii=False)
                 if param.description:
                     param_elem.set("description", param.description)
+                if param.section:
+                    param_elem.set("section", param.section)
+                if param.metadata:
+                    param_elem.set(
+                        "metadata", json.dumps(param.metadata, ensure_ascii=False)
+                    )
 
         # Equations - sorted by label
         if model.equations:
@@ -105,10 +121,17 @@ class XMLSerializer(BaseGNNSerializer):
             time_elem = ET.SubElement(root, "time_specification")
             if model.time_specification.discretization:
                 time_elem.set("discretization", model.time_specification.discretization)
-            if model.time_specification.horizon:
+            if model.time_specification.horizon is not None:
                 time_elem.set("horizon", str(model.time_specification.horizon))
-            if model.time_specification.step_size:
+                if isinstance(model.time_specification.horizon, str):
+                    time_elem.set("horizon_encoding", "string")
+            if model.time_specification.step_size is not None:
                 time_elem.set("step_size", str(model.time_specification.step_size))
+            if model.time_specification.metadata:
+                time_elem.set(
+                    "metadata",
+                    json.dumps(model.time_specification.metadata, ensure_ascii=False),
+                )
             time_elem.set("type", model.time_specification.time_type)
 
         # Ontology Mappings - sorted by variable name
@@ -124,104 +147,9 @@ class XMLSerializer(BaseGNNSerializer):
                 if mapping.description:
                     mapping_elem.set("description", mapping.description)
 
-        # Add embedded complete model data as XML comment for perfect round-trip
-        model_data: dict[str, Any] = {
-            "model_name": model.model_name,
-            "annotation": model.annotation,
-            "variables": [
-                {
-                    "name": var.name,
-                    "var_type": var.var_type.value
-                    if hasattr(var, "var_type")
-                    else "hidden_state",
-                    "data_type": var.data_type.value
-                    if hasattr(var, "data_type")
-                    else "categorical",
-                    "dimensions": var.dimensions if hasattr(var, "dimensions") else [],
-                    "description": var.description,
-                }
-                for var in model.variables
-            ],
-            "connections": [
-                {
-                    "annotation": getattr(conn, "annotation", None),
-                    "source_variables": conn.source_variables
-                    if hasattr(conn, "source_variables")
-                    else [],
-                    "target_variables": conn.target_variables
-                    if hasattr(conn, "target_variables")
-                    else [],
-                    "connection_type": conn.connection_type.value
-                    if hasattr(conn, "connection_type")
-                    else "directed",
-                }
-                for conn in model.connections
-            ],
-            "parameters": [
-                {
-                    "name": param.name,
-                    "value": param.value,
-                    "param_type": getattr(param, "param_type", "constant"),
-                }
-                for param in model.parameters
-            ],
-            "equations": [
-                str(eq)
-                for eq in (model.equations if hasattr(model, "equations") else [])
-            ],
-            "time_specification": self._serialize_time_spec(model.time_specification)
-            if hasattr(model, "time_specification") and model.time_specification
-            else None,
-            "ontology_mappings": self._serialize_ontology_mappings(
-                model.ontology_mappings
-            )
-            if hasattr(model, "ontology_mappings")
-            else [],
-        }
-
         # Convert to string with consistent formatting
         rough_string = ET.tostring(root, encoding="unicode")
         reparsed = minidom.parseString(rough_string)  # nosec B318
 
-        # Get pretty XML and normalize whitespace
-        pretty_xml = reparsed.toprettyxml(indent="  ")
-
-        # Remove empty lines and normalize
-        lines = [line for line in pretty_xml.split("\n") if line.strip()]
-
-        # Add embedded data as XML comment before the closing tag
-        if lines and lines[-1].strip() == "</gnn_model>":
-            lines.insert(
-                -1,
-                f"<!-- MODEL_DATA: {json.dumps(model_data, separators=(',', ':'))} -->",
-            )
-
-        return "\n".join(lines)
-
-    def _serialize_time_spec(self, time_spec: Any) -> Any:
-        """Serialize time specification object."""
-        if not time_spec:
-            return None
-        return {
-            "time_type": getattr(time_spec, "time_type", "dynamic"),
-            "discretization": getattr(time_spec, "discretization", None),
-            "horizon": getattr(time_spec, "horizon", None),
-            "step_size": getattr(time_spec, "step_size", None),
-        }
-
-    def _serialize_ontology_mappings(self, mappings: Any) -> Any:
-        """Serialize ontology mappings."""
-        if not mappings:
-            return []
-        return [
-            {
-                "variable_name": mapping.variable_name
-                if hasattr(mapping, "variable_name")
-                else str(mapping),
-                "ontology_term": mapping.ontology_term
-                if hasattr(mapping, "ontology_term")
-                else "",
-                "description": getattr(mapping, "description", None),
-            }
-            for mapping in mappings
-        ]
+        # Trim the document terminator without removing authored blank lines.
+        return reparsed.toprettyxml(indent="  ").rstrip("\n")

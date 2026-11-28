@@ -14,6 +14,8 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
+from gnn.parsers.common import split_variable_bracket_fields
+
 from .parameter_dimensions import (
     validate_matrix_dimensions as validate_matrix_dimensions,
 )
@@ -160,23 +162,7 @@ def parse_state_space(
             continue
 
         name = m.group("name")
-        raw_dims = m.group("dims")
-
-        # Parse comma-separated dimension entries
-        parts = [p.strip() for p in raw_dims.split(",")]
-        dims: list[Any] = []
-        dtype = "float"
-        default = None
-        for part in parts:
-            if "=" in part:
-                key, val = part.split("=", 1)
-                key, val = key.strip(), val.strip()
-                if key == "type":
-                    dtype = val
-                elif key == "default":
-                    default = val
-            else:
-                dims.append(part)
+        dims, attributes = split_variable_bracket_fields(m.group("dims"))
 
         if name in seen_names:
             errors.append(
@@ -193,8 +179,8 @@ def parse_state_space(
             GNNVariable(
                 name=name,
                 dimensions=dims,
-                dtype=dtype,
-                default=default,
+                dtype=attributes.get("type", "float"),
+                default=attributes.get("default"),
                 line=line_no,
             )
         )

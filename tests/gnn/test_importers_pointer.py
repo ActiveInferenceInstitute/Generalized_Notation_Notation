@@ -140,6 +140,37 @@ def test_check_pointer_accepts_a_complete_pointer(tmp_path: Path) -> None:
     )
 
 
+@pytest.mark.parametrize("link", ["gnn-pin.json", "<gnn-pin.json>", "./gnn-pin.json"])
+def test_pointer_resolves_relative_pin_link(tmp_path: Path, link: str) -> None:
+    pin = read_pin(_write_pin(tmp_path, {"commit": COMMIT}, ".github/gnn-pin.json"))
+    _pointer(tmp_path, f"[Pin]({link}) at {COMMIT}\n")
+    assert check_pointer(tmp_path, pin) == []
+
+
+def test_pointer_rejects_a_same_named_link_to_the_wrong_directory(tmp_path: Path):
+    pin = read_pin(_write_pin(tmp_path, {"commit": COMMIT}, ".github/gnn-pin.json"))
+    _pointer(tmp_path, f"[Pin](../gnn-pin.json) at {COMMIT}\n")
+    assert [item["code"] for item in check_pointer(tmp_path, pin)] == [
+        "pointer-pin-unnamed"
+    ]
+
+
+def test_read_pin_preserves_the_legacy_syntax_reference(tmp_path: Path) -> None:
+    pin = _write_pin(
+        tmp_path,
+        {"commit": COMMIT, "parser_files": {"docs/gnn/gnn_syntax.md": "a" * 64}},
+        "NHIM/gnn-pin.json",
+    )
+    assert read_pin(pin).raw["parser_files"]["docs/gnn/gnn_syntax.md"] == "a" * 64
+    unrelated = _write_pin(
+        tmp_path,
+        {"commit": COMMIT, "parser_files": {"docs/README.md": "a" * 64}},
+        "NHIM/gnn-pin.json",
+    )
+    with pytest.raises(PinError, match="outside the GNN package"):
+        read_pin(unrelated)
+
+
 def test_check_pointer_reports_a_missing_pointer(tmp_path: Path) -> None:
     pin = read_pin(_write_pin(tmp_path, {"commit": COMMIT}, ".github/gnn-pin.json"))
 

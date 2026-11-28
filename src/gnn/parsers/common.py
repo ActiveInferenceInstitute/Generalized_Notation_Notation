@@ -392,6 +392,7 @@ class Parameter(ASTNode):
     value: Any = None
     type_hint: Optional[str] = None
     description: Optional[str] = None
+    section: Optional[str] = None
 
     def __post_init__(self) -> Any:
         """Normalize fields after dataclass initialization."""
@@ -999,6 +1000,20 @@ def normalize_variable_name(name: str) -> str:
         return name
 
     return name
+
+
+def split_variable_bracket_fields(text: str) -> tuple[list[str], dict[str, str]]:
+    """Separate ordered dimension tokens from named bracket attributes."""
+    dimensions = []
+    attributes = {}
+    for item in text.split(","):
+        token = item.strip()
+        key, separator, value = token.partition("=")
+        if separator:
+            attributes[key.strip()] = value.strip()
+        elif token:
+            dimensions.append(token)
+    return dimensions, attributes
 
 
 def parse_dimensions(dim_str: str) -> List[int]:

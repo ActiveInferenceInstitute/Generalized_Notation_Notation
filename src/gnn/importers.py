@@ -61,12 +61,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import posixpath
 import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 __all__ = [
     "IMPORTER_VARIABLES_SCHEMA",
@@ -317,7 +318,11 @@ def read_pin(path: Path, *, party: Optional[str] = None) -> ImporterPin:
         raise PinError(f"{path}: parser_files must be an object of SHA-256 hashes")
     for relative, digest in parser_files.items():
         _relative_source_name(relative)
-        if not relative.startswith(("src/gnn/", "gnn/")):
+        # The original NHIM pin also binds the exact published syntax reference.
+        # This is a metadata receipt, distinct from a package origin manifest.
+        if relative != "docs/gnn/gnn_syntax.md" and not relative.startswith(
+            ("src/gnn/", "gnn/")
+        ):
             raise PinError(
                 f"{path}: parser file is outside the GNN package: {relative}"
             )
@@ -409,7 +414,7 @@ def _validate_spec(path: Path) -> List[str]:
 def _relative(path: Path, root: Path) -> str:
     """Return ``path`` relative to ``root`` when it is inside it, else the name."""
     try:
-        return str(path.relative_to(root))
+        return path.relative_to(root).as_posix()
     except ValueError:
         return path.name
 
@@ -452,7 +457,18 @@ def check_pointer(
         ]
 
     pin_name = _relative(pin.path, repo_root)
-    if pin_name not in text:
+    local_links = (
+        unquote(match.group(1) or match.group(2))
+        for match in re.finditer(r"\]\(\s*(?:<([^<>\n]+)>|([^\s)]+))", text)
+    )
+    linked_pin = any(
+        not link.startswith("/")
+        and ":" not in link
+        and "\\" not in link
+        and posixpath.normpath(posixpath.join(".github", link)) == pin_name
+        for link in local_links
+    )
+    if pin_name not in text and not linked_pin:
         findings.append(
             {
                 "level": "error",

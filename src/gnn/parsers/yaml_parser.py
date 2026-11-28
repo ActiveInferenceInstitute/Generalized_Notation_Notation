@@ -364,6 +364,7 @@ class YAMLGNNParser(BaseGNNParser):
                     dimensions=dimensions,
                     data_type=data_type,
                     description=description,
+                    constraints=spec.get("constraints") or {},
                 )
             return None
 
@@ -544,11 +545,16 @@ class YAMLGNNParser(BaseGNNParser):
         try:
             name = param_data.get("name", "")
             value = param_data.get("value")
-            type_hint = param_data.get("type")
+            type_hint = param_data.get("type_hint", param_data.get("type"))
             description = param_data.get("description", "")
 
             return Parameter(
-                name=name, value=value, type_hint=type_hint, description=description
+                name=name,
+                value=value,
+                type_hint=type_hint,
+                description=description,
+                metadata=param_data.get("metadata") or {},
+                section=param_data.get("section"),
             )
 
         except Exception as e:
@@ -618,6 +624,7 @@ class YAMLGNNParser(BaseGNNParser):
                     discretization=discretization,
                     horizon=horizon,
                     step_size=time_data.get("step_size"),
+                    metadata=time_data.get("metadata") or {},
                 )
 
         except Exception as e:

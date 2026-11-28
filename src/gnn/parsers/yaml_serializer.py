@@ -25,6 +25,7 @@ class YAMLSerializer(BaseGNNSerializer):
             "model_name": model.model_name,
             "version": model.version,
             "annotation": model.annotation,
+            **({"extensions": model.extensions} if model.extensions else {}),
             "variables": [
                 {
                     "name": var.name,
@@ -32,14 +33,15 @@ class YAMLSerializer(BaseGNNSerializer):
                     "data_type": var.data_type.value,
                     "dimensions": var.dimensions,
                     "description": var.description,
+                    **({"constraints": var.constraints} if var.constraints else {}),
                 }
                 for var in sorted(model.variables, key=lambda v: v.name)
             ],
             "connections": [
                 {
                     "annotation": conn.annotation,
-                    "source_variables": sorted(conn.source_variables),
-                    "target_variables": sorted(conn.target_variables),
+                    "source_variables": conn.source_variables,
+                    "target_variables": conn.target_variables,
                     "connection_type": conn.connection_type.value,
                     "weight": conn.weight,
                     "description": conn.description,
@@ -58,6 +60,8 @@ class YAMLSerializer(BaseGNNSerializer):
                     "value": param.value,
                     "type_hint": param.type_hint,
                     "description": param.description,
+                    **({"metadata": param.metadata} if param.metadata else {}),
+                    **({"section": param.section} if param.section else {}),
                 }
                 for param in sorted(model.parameters, key=lambda p: p.name)
             ],
@@ -75,6 +79,11 @@ class YAMLSerializer(BaseGNNSerializer):
                 "discretization": model.time_specification.discretization,
                 "horizon": model.time_specification.horizon,
                 "step_size": model.time_specification.step_size,
+                **(
+                    {"metadata": model.time_specification.metadata}
+                    if model.time_specification.metadata
+                    else {}
+                ),
             }
             if model.time_specification
             else None,
@@ -97,7 +106,7 @@ class YAMLSerializer(BaseGNNSerializer):
 
         return cast(
             "str",
-            yaml.dump(
+            yaml.safe_dump(
                 data, default_flow_style=False, allow_unicode=True, sort_keys=True
             ),
         )

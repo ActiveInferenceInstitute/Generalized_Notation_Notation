@@ -39,6 +39,7 @@ class JSONSerializer(BaseGNNSerializer):
                     else "categorical",
                     "dimensions": var.dimensions if hasattr(var, "dimensions") else [],
                     "description": getattr(var, "description", ""),
+                    **({"constraints": var.constraints} if var.constraints else {}),
                 }
                 for var in model.variables
             ],
@@ -65,6 +66,8 @@ class JSONSerializer(BaseGNNSerializer):
                     "value": param.value,
                     "type_hint": getattr(param, "type_hint", "constant"),
                     "description": getattr(param, "description", ""),
+                    **({"metadata": param.metadata} if param.metadata else {}),
+                    **({"section": param.section} if param.section else {}),
                 }
                 for param in model.parameters
             ],
@@ -77,7 +80,14 @@ class JSONSerializer(BaseGNNSerializer):
                 }
                 for eq in (model.equations if hasattr(model, "equations") else [])
             ],
-            "time_specification": self._serialize_time_spec(model.time_specification)
+            "time_specification": {
+                **self._serialize_time_spec(model.time_specification),
+                **(
+                    {"metadata": model.time_specification.metadata}
+                    if model.time_specification.metadata
+                    else {}
+                ),
+            }
             if hasattr(model, "time_specification") and model.time_specification
             else None,
             "ontology_mappings": [
