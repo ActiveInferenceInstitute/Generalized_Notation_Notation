@@ -82,7 +82,7 @@ def _generate_3d_visualization(
             if variables:
                 fig = plt.figure(figsize=(10, 8))
                 ax = cast(Any, fig.add_subplot(111, projection="3d"))
-                positions = _calculate_semantic_positions(variables, connections)
+                positions = _calculate_semantic_positions(variables, connections or [])
 
                 name_to_idx = {var.get("name"): i for i, var in enumerate(variables)}
 
