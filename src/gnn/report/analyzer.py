@@ -187,7 +187,10 @@ def collect_pipeline_data(
     summary_dir = pipeline_output_dir / "00_pipeline_summary"
     summary_name = "pipeline_execution_summary.json"
     context = current_run_context()
-    summary_paths = (summary_dir / summary_name, pipeline_output_dir / summary_name)
+    summary_paths: tuple[Path, ...] = (
+        summary_dir / summary_name,
+        pipeline_output_dir / summary_name,
+    )
     if context is not None:
         summary_paths = (summary_dir / "current_summary.json",)
         if pipeline_output_dir.resolve() != Path(context.output_root).resolve():

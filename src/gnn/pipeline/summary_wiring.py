@@ -1503,7 +1503,7 @@ def _build_report_context(
             active_run_id=context.run_id,
         )
     else:
-        candidates = (resolved_summary_path,)
+        candidates: tuple[Path, ...] = (resolved_summary_path,)
         if resolved_summary_path.parent.name != "00_pipeline_summary":
             candidates += (
                 resolved_summary_path.parent
