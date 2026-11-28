@@ -51,11 +51,16 @@ def _generate_3d_visualization(
 
     try:
         if MATPLOTLIB_AVAILABLE and plt and np:
-            fig = plt.figure(figsize=(10, 8))
-            ax = cast(Any, fig.add_subplot(111, projection="3d"))
-
-            variables = model_data.get("variables", [])
-            connections = model_data.get("connections", [])
+            variables = model_data.get("variables")
+            connections = model_data.get("connections")
+            if (
+                isinstance(variables, list)
+                and not variables
+                and isinstance(connections, list)
+                and not connections
+            ):
+                attempt.error_message = "No variables found in model"
+                return attempt
 
             validation_results = validate_visualization_data(model_data, logger)
 
@@ -72,6 +77,8 @@ def _generate_3d_visualization(
                 return attempt
 
             if variables:
+                fig = plt.figure(figsize=(10, 8))
+                ax = cast(Any, fig.add_subplot(111, projection="3d"))
                 positions = _calculate_semantic_positions(variables, connections)
 
                 name_to_idx = {var.get("name"): i for i, var in enumerate(variables)}
@@ -536,13 +543,16 @@ def _generate_policy_visualization(
         parameters = model_data.get("parameters", [])
 
         policy_data: dict[str, tuple[str, Any]] = {}
+        has_policy_variable = False
         for var in variables:
-            if not isinstance(var, dict) or var.get("value") is None:
+            if not isinstance(var, dict):
                 continue
             name = str(var.get("name") or "")
             var_type = str(var.get("var_type") or "").lower()
             if name and ("policy" in var_type or name in {"π", "pi"}):
-                policy_data[name] = ("Declared Policy Probabilities", var["value"])
+                has_policy_variable = True
+                if var.get("value") is not None:
+                    policy_data[name] = ("Declared Policy Probabilities", var["value"])
 
         mv = _MatrixVisualizer()
         if mv is None:
@@ -555,7 +565,11 @@ def _generate_policy_visualization(
 
         if not policy_data:
             attempt.status = "skipped"
-            attempt.error_message = "No policy probabilities were declared"
+            attempt.error_message = (
+                "No policy probabilities were declared"
+                if has_policy_variable
+                else "No policy data found"
+            )
             return attempt
 
         distributions = []
