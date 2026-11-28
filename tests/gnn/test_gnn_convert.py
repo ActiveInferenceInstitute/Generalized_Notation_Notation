@@ -31,7 +31,7 @@ REPO = Path(__file__).resolve().parents[2]
 EXEMPLAR = REPO / "input" / "gnn_files" / "discrete" / "actinf_pomdp_agent.md"
 
 
-@pytest.mark.parametrize("interchange_suffix", [".md", ".json", ".yaml"])
+@pytest.mark.parametrize("interchange_suffix", [".md", ".json", ".yaml", ".xml"])
 def test_saved_regime_schedule_and_tensor_survive_markdown_conversion(
     tmp_path: Path, interchange_suffix: str
 ) -> None:

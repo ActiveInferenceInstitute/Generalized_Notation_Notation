@@ -3,6 +3,7 @@
 Tests for gnn/parsers/xml_parser.py — XMLGNNParser and PNMLParser.
 """
 
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,8 @@ from typing import Any
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from gnn.parsers import GNNFormat, GNNParsingSystem  # noqa: E402
 
 MINIMAL_XML = """\
 <?xml version="1.0" encoding="UTF-8"?>
@@ -42,6 +45,142 @@ MINIMAL_PNML = """\
   </net>
 </pnml>
 """
+
+
+def test_saved_xml_preserves_typed_model_data_in_native_elements(
+    tmp_path: Path,
+) -> None:
+    model = {
+        "model_name": "Authored",
+        "version": "1.1.0",
+        "annotation": "Model rationale.\n\nSecond paragraph.",
+        "extensions": {"gnn_section": "ActInfPOMDP"},
+        "variables": [
+            {
+                "name": "s",
+                "data_type": "integer",
+                "dimensions": [2],
+                "constraints": {"default": "ones"},
+            },
+            {"name": "o", "data_type": "binary", "dimensions": [2]},
+            {"name": "u", "data_type": "integer", "dimensions": [2]},
+        ],
+        "connections": [
+            {
+                "source_variables": ["u", "s"],
+                "target_variables": ["o"],
+                "connection_type": "bidirectional",
+                "weight": 0.0,
+                "annotation": "likelihood:α",
+                "description": "two-way",
+            }
+        ],
+        "parameters": [
+            {
+                "name": "options",
+                "value": {"flag": False, "label": "false"},
+                "type_hint": "mapping",
+                "description": "authored",
+                "metadata": {"reviewed": True},
+                "section": "ModelParameters",
+            }
+        ],
+        "equations": [
+            {
+                "label": "update",
+                "content": "x = x",
+                "format": "latex",
+                "description": "authored relation",
+            }
+        ],
+        "time_specification": {
+            "horizon": 0,
+            "step_size": 0.0,
+            "metadata": {"time_variable": "t"},
+        },
+    }
+    source = tmp_path / "authored.json"
+    source.write_text(json.dumps(model), encoding="utf-8")
+    target = tmp_path / "saved.xml"
+    system = GNNParsingSystem(strict_validation=False)
+    system.convert_file(source, target)
+    assert "MODEL_DATA" not in target.read_text()
+
+    restored = system.parse_file(target)
+    assert restored.success, restored.errors
+    loaded = restored.model
+    assert loaded.version == "1.1.0"
+    assert loaded.annotation == model["annotation"]
+    assert loaded.extensions == model["extensions"]
+    assert loaded.get_variable_by_name("s").constraints == {"default": "ones"}
+    edge = loaded.connections[0]
+    assert edge.source_variables == ["u", "s"]
+    assert edge.annotation == "likelihood:α"
+    assert edge.description == "two-way" and edge.weight == 0.0
+    parameter = loaded.parameters[0]
+    assert parameter.value == {"flag": False, "label": "false"}
+    assert parameter.metadata == {"reviewed": True}
+    assert parameter.section == "ModelParameters"
+    assert parameter.type_hint == "mapping"
+    assert parameter.description == "authored"
+    equation = loaded.equations[0]
+    assert (equation.label, equation.content, equation.description) == (
+        "update",
+        "x = x",
+        "authored relation",
+    )
+    assert loaded.time_specification.horizon == 0
+    assert loaded.time_specification.step_size == 0.0
+    assert loaded.time_specification.metadata == {"time_variable": "t"}
+
+
+def test_legacy_xml_fills_omissions_without_overriding_visible_model(
+    tmp_path: Path,
+) -> None:
+    embedded = {
+        "model_name": "Stale title",
+        "version": "1.0",
+        "parameters": [
+            {"name": "keep_type", "value": [False, 0]},
+            {"name": "visible_edit", "value": 1},
+        ],
+        "connections": [
+            {
+                "source_variables": ["s"],
+                "target_variables": ["o"],
+                "annotation": "legacy label",
+            }
+        ],
+    }
+    source = tmp_path / "legacy.xml"
+    source.write_text(
+        '<gnn_model name="Visible title" version="1.1">'
+        '<connections><connection source="s" target="o" weight="0.5">'
+        "<description>physical edge</description></connection></connections>"
+        '<parameters><parameter name="keep_type">[False, 0]</parameter>'
+        '<parameter name="visible_edit">2</parameter></parameters>'
+        '<equations><equation label="visible">x = x</equation></equations>'
+        f"<!-- MODEL_DATA: {json.dumps(embedded)} -->"
+        "</gnn_model>",
+        encoding="utf-8",
+    )
+    system = GNNParsingSystem(strict_validation=False)
+    restored = system.parse_file(source)
+    assert restored.success, restored.errors
+    model = restored.model
+    assert (model.model_name, model.version) == ("Visible title", "1.1")
+    assert model.connections[0].annotation == "legacy label"
+    assert model.connections[0].description == "physical edge"
+    assert model.connections[0].weight == 0.5
+    assert model.parameters[0].value == [False, 0]
+    assert model.parameters[1].value == "2"
+    assert model.equations[0].content == "x = x"
+
+    comment_only = f'<?xml version="1.0"?><gnn_model><!-- MODEL_DATA: {json.dumps(embedded)} --></gnn_model>'
+    fallback = system.parse_string(comment_only, GNNFormat.XML)
+    assert fallback.success
+    assert fallback.model.model_name == "Stale title"
+    assert fallback.model.parameters[0].value == [False, 0]
 
 
 class TestXMLGNNParser:

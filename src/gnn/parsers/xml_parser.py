@@ -9,6 +9,8 @@ Date: 2025-01-11
 License: MIT
 """
 
+import json
+from collections import defaultdict, deque
 from typing import Any, cast
 
 try:
@@ -22,6 +24,8 @@ except ImportError as _exc:  # pragma: no cover - broken environment only
 
 import logging
 from typing import Dict, Iterator, List, Optional
+
+from gnn.utils.runtime_safety.safe_eval import MATRIX_MAX_LEN, safe_literal_eval
 
 from .common import (
     BaseGNNParser,
@@ -52,6 +56,15 @@ def _unique_xml_elements(root: Any, paths: tuple[str, ...]) -> Iterator[Any]:
                 yield element
 
 
+def _xml_object(text: str | None) -> dict[str, Any]:
+    if text is None:
+        return {}
+    value = json.loads(text)
+    if not isinstance(value, dict):
+        raise ValueError("expected a JSON object in XML model metadata")
+    return value
+
+
 class XMLGNNParser(BaseGNNParser):
     """Parser for XML format GNN specifications."""
 
@@ -62,21 +75,8 @@ class XMLGNNParser(BaseGNNParser):
     def parse_file(self, file_path: str) -> ParseResult:
         """Parse an XML file containing GNN specifications."""
         try:
-            # Read file content first to check for embedded data
             with open(file_path, encoding="utf-8") as f:
-                content = f.read()
-
-            # First try to extract embedded JSON data for perfect round-trip
-            embedded_data = self._extract_embedded_json_data(content)
-            if embedded_data:
-                # Use embedded data for perfect round-trip fidelity
-                model = self._build_model_from_embedded_data(embedded_data)
-                return ParseResult(model=model, success=True)
-
-            # Only parse XML structure if no embedded data is available
-            tree = ET.parse(file_path)  # nosec B314
-            root = tree.getroot()
-            return self._parse_xml_root(root)
+                return self._parse_document(f.read())
 
         except ET.ParseError as e:
             logger.error(f"XML parse error in {file_path}: {e}")
@@ -110,16 +110,7 @@ class XMLGNNParser(BaseGNNParser):
                 )
                 return result
 
-            # First try to extract embedded JSON data for perfect round-trip (before parsing XML)
-            embedded_data = self._extract_embedded_json_data(content)
-            if embedded_data:
-                # Use embedded data for perfect round-trip fidelity
-                model = self._build_model_from_embedded_data(embedded_data)
-                return ParseResult(model=model, success=True)
-
-            # Only parse XML structure if no embedded data is available
-            root = ET.fromstring(content)  # nosec B314
-            return self._parse_xml_root(root)
+            return self._parse_document(content)
 
         except ET.ParseError as e:
             logger.error(f"XML parse error: {e}")
@@ -136,6 +127,16 @@ class XMLGNNParser(BaseGNNParser):
             )
             result.add_error(f"Failed to parse XML content: {e}")
             return result
+
+    def _parse_document(self, content: str) -> ParseResult:
+        root = ET.fromstring(content)  # nosec B314
+        result = self._parse_xml_root(root)
+        if result.success and root.tag == "gnn_model":
+            embedded = self._extract_embedded_json_data(content)
+            if embedded:
+                legacy = self._build_model_from_embedded_data(embedded)
+                result.model = self._reconcile_legacy_model(root, result.model, legacy)
+        return result
 
     def _parse_xml_root(self, root: Any) -> ParseResult:
         """Parse XML root element."""
@@ -198,8 +199,9 @@ class XMLGNNParser(BaseGNNParser):
         metadata_elem = root.find(".//metadata")
         if metadata_elem is not None:
             annotation_elem = metadata_elem.find("annotation")
-            if annotation_elem is not None and annotation_elem.text:
-                model.annotation = annotation_elem.text
+            if annotation_elem is not None:
+                model.annotation = annotation_elem.text or ""
+            model.extensions = _xml_object(metadata_elem.findtext("extensions"))
 
     def _parse_xml_variables(self, root: Any, model: GNNInternalRepresentation) -> Any:
         """Parse variables from each distinct physical element."""
@@ -255,6 +257,7 @@ class XMLGNNParser(BaseGNNParser):
                 dimensions=dimensions,
                 data_type=data_type,
                 description=description,
+                constraints=_xml_object(var_elem.get("constraints")),
             )
 
         except Exception as e:
@@ -330,13 +333,18 @@ class XMLGNNParser(BaseGNNParser):
                     logger.debug("Non-numeric weight value ignored: %s", weight_str)
 
             # Get description
-            description = conn_elem.get("description", "")
+            description = conn_elem.get(
+                "description", conn_elem.findtext("description")
+            )
 
             return Connection(
                 source_variables=source_vars,
                 target_variables=target_vars,
                 connection_type=conn_type,
                 weight=weight,
+                annotation=conn_elem.get(
+                    "annotation", conn_elem.findtext("annotation")
+                ),
                 description=description,
             )
 
@@ -361,11 +369,18 @@ class XMLGNNParser(BaseGNNParser):
                 return None
 
             value = param_elem.get("value") or param_elem.text
+            if param_elem.get("value_encoding") == "json":
+                value = json.loads(value)
             type_hint = param_elem.get("type")
             description = param_elem.get("description", "")
 
             return Parameter(
-                name=name, value=value, type_hint=type_hint, description=description
+                name=name,
+                value=value,
+                type_hint=type_hint,
+                description=description,
+                metadata=_xml_object(param_elem.get("metadata")),
+                section=param_elem.get("section"),
             )
 
         except Exception as e:
@@ -424,19 +439,23 @@ class XMLGNNParser(BaseGNNParser):
             time_type = time_elem.get("type", "Static")
             discretization = time_elem.get("discretization")
             horizon = time_elem.get("horizon")
+            step_size = time_elem.get("step_size")
 
             # Convert horizon to appropriate type
-            if horizon:
+            if horizon and time_elem.get("horizon_encoding") != "string":
                 try:
-                    if horizon.isdigit():
-                        horizon = int(horizon)
-                except Exception as e:
+                    horizon = int(horizon)
+                except ValueError as e:
                     logger.debug(
                         f"Could not convert horizon to int, keeping as string: {e}"
                     )
 
             model.time_specification = TimeSpecification(
-                time_type=time_type, discretization=discretization, horizon=horizon
+                time_type=time_type,
+                discretization=discretization,
+                horizon=horizon,
+                step_size=float(step_size) if step_size is not None else None,
+                metadata=_xml_object(time_elem.get("metadata")),
             )
 
     def _parse_xml_ontology_mappings(
@@ -480,11 +499,10 @@ class XMLGNNParser(BaseGNNParser):
 
     def _extract_embedded_json_data(self, content: str) -> Optional[Dict[str, Any]]:
         """Extract embedded JSON model data from XML comments."""
-        import json
         import re
 
         # Look for JSON data in <!-- MODEL_DATA: {...} --> comments
-        pattern = r"<!--\s*MODEL_DATA:\s*(\{.*\})\s*-->"
+        pattern = r"<!--\s*MODEL_DATA:\s*(\{.*?\})\s*-->"
         match = re.search(pattern, content, re.DOTALL | re.MULTILINE)
         if match:
             try:
@@ -495,6 +513,71 @@ class XMLGNNParser(BaseGNNParser):
                     "Embedded MODEL_DATA JSON is malformed, falling back to XML parsing"
                 )
         return None
+
+    def _reconcile_legacy_model(
+        self,
+        root: Any,
+        native: GNNInternalRepresentation,
+        legacy: GNNInternalRepresentation,
+    ) -> GNNInternalRepresentation:
+        """Use native XML and recover fields omitted by historical writers."""
+        if not any(element.tag != "metadata" for element in root):
+            if root.get("name") or root.get("model_name"):
+                legacy.model_name = native.model_name
+            if root.get("version") is not None:
+                legacy.version = native.version
+            if root.find("./metadata/annotation") is not None:
+                legacy.annotation = native.annotation
+            if root.find("./metadata/extensions") is not None:
+                legacy.extensions = native.extensions
+            return legacy
+
+        def connection_key(connection: Connection) -> tuple[Any, ...]:
+            return (
+                tuple(sorted(connection.source_variables)),
+                tuple(sorted(connection.target_variables)),
+                connection.connection_type,
+            )
+
+        old_connections: dict[tuple[Any, ...], deque[Connection]] = defaultdict(deque)
+        for connection in legacy.connections:
+            old_connections[connection_key(connection)].append(connection)
+        for connection in native.connections:
+            matching = old_connections[connection_key(connection)]
+            if matching:
+                old = matching.popleft()
+                if connection.annotation is None:
+                    connection.annotation = old.annotation
+
+        old_parameters: dict[str, deque[Parameter]] = defaultdict(deque)
+        for parameter in legacy.parameters:
+            old_parameters[parameter.name].append(parameter)
+        for parameter in native.parameters:
+            matching = old_parameters[parameter.name]
+            if not matching:
+                continue
+            old = matching.popleft()
+            if isinstance(parameter.value, str) and not isinstance(old.value, str):
+                if parameter.value == str(old.value):
+                    parameter.value = old.value
+                else:
+                    try:
+                        literal = safe_literal_eval(
+                            parameter.value, max_len=MATRIX_MAX_LEN
+                        )
+                        if json.dumps(literal) == json.dumps(old.value):
+                            parameter.value = old.value
+                    except (TypeError, ValueError, SyntaxError):
+                        pass
+
+        if native.time_specification and legacy.time_specification:
+            if native.time_specification.horizon is None:
+                native.time_specification.horizon = legacy.time_specification.horizon
+            if native.time_specification.step_size is None:
+                native.time_specification.step_size = (
+                    legacy.time_specification.step_size
+                )
+        return native
 
     def _build_model_from_embedded_data(
         self, embedded_data: Dict[str, Any]

@@ -5,11 +5,13 @@ Public functions: test_semantic_contract_contains_release_fields, test_semantic_
 
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from pathlib import Path
 
 import pytest
 
+from gnn.parsers import GNNParsingSystem
 from gnn.pipeline.semantic_fidelity import (
     build_semantic_contract,
     compare_semantic_contracts,
@@ -142,3 +144,28 @@ def test_semantic_gate_round_trips_saved_yaml_and_markdown(tmp_path: Path) -> No
     for model in ledger["families"][0]["models"]:
         for result in model["round_trips"]:
             assert Path(result["artifact"]).is_file()
+
+
+def test_semantic_gate_rejects_changes_visible_only_in_the_saved_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    write_file = GNNParsingSystem.serialize_to_file
+
+    def altered_write(system, model, file_path, format=None):
+        write_file(system, model, file_path, format)
+        path = Path(file_path)
+        saved = json.loads(path.read_text(encoding="utf-8"))
+        saved["extensions"]["gnn_section"] = "ChangedAfterSerialization"
+        path.write_text(json.dumps(saved), encoding="utf-8")
+
+    monkeypatch.setattr(GNNParsingSystem, "serialize_to_file", altered_write)
+    with pytest.raises(RuntimeError, match="Semantic fidelity failed: basics"):
+        run_semantic_fidelity_gate(
+            Path("input/model_family_manifest.json"),
+            tmp_path,
+            family_names=["basics"],
+            strict=True,
+        )
+    ledger = json.loads((tmp_path / "semantic_fidelity_ledger.json").read_text())
+    differences = ledger["families"][0]["models"][0]["round_trips"][0]["differences"]
+    assert [difference["field"] for difference in differences] == ["model_identity"]
