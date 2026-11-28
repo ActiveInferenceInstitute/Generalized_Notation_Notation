@@ -4,21 +4,30 @@ Reproducibility in GNN is a source- and run-binding contract across the {{GNN_ST
 
 ## Pipeline Smoke Run
 
-The fastest way to confirm a working installation is to drive the full pipeline over the discrete model family without invoking the optional LLM steps:
+A bounded smoke run parses and validates the discrete examples. From the GNN checkout, install the locked development environment and select the parsing, type-checking, and validation stages:
 
 ```bash
-uv run python src/gnn/main.py \
+uv sync --frozen --extra dev
+uv run --frozen --no-sync python src/gnn/main.py \
+  --target-dir input/gnn_files/discrete \
+  --output-dir "$(mktemp -d)" --only-steps 3,5,6 --skip-llm
+```
+
+For pipeline-wide coverage, omit the step selection. The broader command includes setup, tests, and any admitted rendering and execution:
+
+```bash
+uv run --frozen --no-sync python src/gnn/main.py \
   --target-dir input/gnn_files/discrete \
   --output-dir /tmp/gnn-smoke \
   --skip-llm
 ```
 
-This parses the discrete GNN files, runs visualization and rendering across the maintained backends, and writes all artifacts under the chosen output directory. The `--skip-llm` flag disables the LLM processing step; it does not establish network isolation or guarantee that every other step executes. Default framework selection excludes the experimental targets, and dependency readiness, model-kind admission, configured steps, and budgets determine the actual work. Inspect the current-run statuses and terminal exit code (0 success, 1 error, 2 warning); missing or unfinished required work must remain a non-success outcome. To exercise every registered family rather than a single one, drive the manifest through the model-family acceptance gate given below: pointing `--target-dir` at `input/gnn_files` covers that tree's {{GNN_INPUT_FAMILY_DIR_COUNT}} corpus directories. {{GNN_TARGET_DIR_COVERAGE_NOTE}}
+The pipeline writes artifacts under the chosen output directory. The `--skip-llm` flag skips LLM processing and selects rule-based intelligent analysis. Setup and optional backend tools can still use the network. Default framework selection excludes experimental targets. Dependency readiness, model-kind admission, configured stages, and budgets determine the work performed. Inspect the current-run statuses and terminal exit code (0 success, 1 error, 2 warning). To exercise the registered families, use the manifest-driven acceptance gate below. Pointing `--target-dir` at `input/gnn_files` selects that tree's {{GNN_INPUT_FAMILY_DIR_COUNT}} corpus directories. {{GNN_TARGET_DIR_COVERAGE_NOTE}}
 
 The discrete family exercises the categorical kind end to end. The continuous linear-Gaussian kind smoke-runs the same way, and the contrast between the two runs is itself a check of the per-kind contract:
 
 ```bash
-uv run python src/gnn/main.py \
+uv run --frozen --no-sync python src/gnn/main.py \
   --target-dir input/gnn_files/continuous \
   --output-dir /tmp/gnn-smoke-continuous \
   --skip-llm
@@ -51,28 +60,50 @@ Under `--strict`, required mismatches make these gates exit non-zero, so these c
 
 ## Manuscript Reproducibility
 
-This manuscript is itself a reproducible artifact. Every quantitative value in the prose — the pipeline step count, the family and backend counts, the source and test inventories — is a token rather than a hard-coded literal, and the deterministic producer regenerates all of them from the tracked files at the current commit:
+The producer derives repository counts and capability claims from tracked files at the current commit. It writes the token map and table claim ledger under `output/data/`. The template invokes that producer and hydrates the manuscript into `output/manuscript/`. From the GNN checkout, check the existing publication custody before rebuilding and regenerate the figures:
 
 ```bash
-uv run python scripts/z_generate_manuscript_variables.py
+uv run --frozen --no-sync python scripts/z_verify_fresh_render.py --committed-only
+uv run --frozen --no-sync python -m scripts.manuscript_build_figures
 ```
 
-That command recomputes the {{...}} tokens and writes the token map and table claim ledger under `output/data/`. The template injector, when available, uses the map to hydrate the manuscript sources into `output/manuscript/`. The manuscript's figures are rebuilt from the same token map:
+Use the template revision declared in `output/data/manuscript_render_manifest.json` to reproduce the publication. From a separate checkout of the template containing this repository as a real directory at `projects/active/GeneralizedNotationNotation`, export the measured template revision and build epoch and render the PDF, HTML, and slide decks:
 
 ```bash
-uv run python -m scripts.manuscript_build_figures
-```
-
-The docxology template renders the hydrated sources to PDF and validates the publication. From a separate checkout of the template containing this repository as a real directory at `projects/active/GeneralizedNotationNotation`, run:
-
-```bash
-uv run --frozen python scripts/pipeline/stage_03_render.py \
-  --project GeneralizedNotationNotation
-uv run --frozen python scripts/pipeline/stage_04_validate.py \
+export GNN_TEMPLATE_REVISION="$(git rev-parse HEAD)"
+export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+uv sync --frozen
+uv run --frozen --no-sync python scripts/pipeline/stage_03_render.py \
   --project GeneralizedNotationNotation
 ```
 
-The validation stage checks the rendered outputs and their evidence, including the generated tables and their claims.
+From the GNN checkout, prepare the rendered evidence by removing personal path prefixes:
+
+```bash
+uv run --frozen --no-sync python scripts/z_record_manuscript_render_manifest.py --prepare
+```
+
+From the same template root, validate the publication and write the Stage 04 reports:
+
+```bash
+uv run --frozen --no-sync python scripts/pipeline/stage_04_validate.py \
+  --project GeneralizedNotationNotation
+```
+
+The validation stage checks the rendered outputs and their evidence, including the generated tables and their claims. From the GNN checkout, compare the fresh evidence with the existing custody manifest:
+
+```bash
+uv run --frozen --no-sync python scripts/z_verify_fresh_render.py
+```
+
+For an intentional source or template update, run the rendering and validation commands and explicitly record the renewed custody manifest from the project checkout:
+
+```bash
+uv run --frozen --no-sync python scripts/z_record_manuscript_render_manifest.py
+uv run --frozen --no-sync python scripts/z_verify_fresh_render.py --committed-only
+```
+
+Commit the manifest with the new publication and Stage 04 evidence. The scheduled custody check leaves the baseline manifest intact.
 
 The render needs a LaTeX installation providing the packages listed in `docs/manuscript/preamble.md` plus `seqsplit`; the template guards `seqsplit` with `\IfFileExists`, so a missing copy degrades rather than failing the build.
 
