@@ -1,6 +1,6 @@
 # Reproducibility {#sec:reproducibility}
 
-Reproducibility in GNN is a source- and run-binding contract across the {{GNN_STEP_RANGE}} processing steps. Fixed-source parsing and token production are distinct from stochastic inference, dependency provisioning, and environment-dependent execution. Reproducing a reported outcome requires the selected inputs, configuration, source revision, dependencies, dtype, seed, and retained command and artifact receipts. This section lists only commands that exist in the repository, so that a reader with a clean checkout can reproduce the pipeline, the validation gates, and this manuscript itself.
+Reproducibility in GNN is a source- and run-binding contract across the {{GNN_STEP_RANGE}} processing steps. Fixed-source parsing and token production are distinct from stochastic inference, dependency provisioning, and environment-dependent execution. Reproducing a reported outcome requires the selected inputs, configuration, source revision, dependencies, dtype, seed, and retained command and artifact receipts. The commands below reproduce the pipeline, the validation gates, and the manuscript from clean checkouts of GNN and its render template.
 
 ## Pipeline Smoke Run
 
@@ -57,18 +57,22 @@ This manuscript is itself a reproducible artifact. Every quantitative value in t
 uv run python scripts/z_generate_manuscript_variables.py
 ```
 
-That command recomputes the {{...}} tokens, persists them to `output/data/manuscript_variables.json` for audit, and hydrates the manuscript sources into `output/manuscript/`. The manuscript's own figures are rebuilt from the same token map:
+That command recomputes the {{...}} tokens and writes the token map and table claim ledger under `output/data/`. The template injector, when available, uses the map to hydrate the manuscript sources into `output/manuscript/`. The manuscript's figures are rebuilt from the same token map:
 
 ```bash
 uv run python -m scripts.manuscript_build_figures
 ```
 
-The hydrated sources are then rendered to PDF by the docxology template's render stage. That stage lives in a separate checkout of the template, with this repository checked out inside it as a real directory at `projects/active/GeneralizedNotationNotation` (the template's analysis-read custody refuses a symlinked project); run from the template root:
+The docxology template renders the hydrated sources to PDF and validates the publication. From a separate checkout of the template containing this repository as a real directory at `projects/active/GeneralizedNotationNotation`, run:
 
 ```bash
 uv run --frozen python scripts/pipeline/stage_03_render.py \
   --project GeneralizedNotationNotation
+uv run --frozen python scripts/pipeline/stage_04_validate.py \
+  --project GeneralizedNotationNotation
 ```
+
+The validation stage checks the rendered outputs and their evidence, including the generated tables and their claims.
 
 The render needs a LaTeX installation providing the packages listed in `docs/manuscript/preamble.md` plus `seqsplit`; the template guards `seqsplit` with `\IfFileExists`, so a missing copy degrades rather than failing the build.
 
@@ -77,7 +81,7 @@ Because the variables file is regenerated before rendering, the counts in the re
 ## Reproducibility Contract
 
 - Do not cite results that cannot be regenerated or directly traced to a command in this repository.
-- Keep generated outputs under `output/` and maintained manuscript source under `manuscript/`. Regenerate owned build artifacts when their inputs change, and preserve the raw command receipts and numerical results needed to substantiate historical runs.
+- Keep generated outputs under `output/` and maintained manuscript source under `docs/manuscript/`. Regenerate owned build artifacts when their inputs change, and preserve the raw command receipts and numerical results needed to substantiate historical runs.
 - Express every quantitative claim in the prose as a double-brace `{{...}}` token substituted by `scripts/z_generate_manuscript_variables.py`, never as a hard-coded number.
 - Keep private data, credentials, and unpublished sensitive details out of the manuscript and out of version control.
 - Record the exact verification commands — the smoke run, the acceptance and fidelity gates, and `just lint` — before marking this manuscript publication-ready.

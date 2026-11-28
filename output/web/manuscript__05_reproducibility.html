@@ -816,10 +816,9 @@ the 0–24 processing steps. Fixed-source parsing and token production are
 distinct from stochastic inference, dependency provisioning, and
 environment-dependent execution. Reproducing a reported outcome requires
 the selected inputs, configuration, source revision, dependencies,
-dtype, seed, and retained command and artifact receipts. This section
-lists only commands that exist in the repository, so that a reader with
-a clean checkout can reproduce the pipeline, the validation gates, and
-this manuscript itself.</p>
+dtype, seed, and retained command and artifact receipts. The commands
+below reproduce the pipeline, the validation gates, and the manuscript
+from clean checkouts of GNN and its render template.</p>
 <h2 data-number="6.1" id="pipeline-smoke-run"><span
 class="header-section-number">6.1</span> Pipeline Smoke Run</h2>
 <p>The fastest way to confirm a working installation is to drive the
@@ -904,21 +903,24 @@ hard-coded literal, and the deterministic producer regenerates all of
 them from the tracked files at the current commit:</p>
 <div class="sourceCode" id="cb5"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/z_generate_manuscript_variables.py</span></code></pre></div>
-<p>That command recomputes the {{…}} tokens, persists them to
-<code>output/data/manuscript_variables.json</code> for audit, and
-hydrates the manuscript sources into <code>output/manuscript/</code>.
-The manuscript’s own figures are rebuilt from the same token map:</p>
+<p>That command recomputes the {{…}} tokens and writes the token map and
+table claim ledger under <code>output/data/</code>. The template
+injector, when available, uses the map to hydrate the manuscript sources
+into <code>output/manuscript/</code>. The manuscript’s figures are
+rebuilt from the same token map:</p>
 <div class="sourceCode" id="cb6"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python <span class="at">-m</span> scripts.manuscript_build_figures</span></code></pre></div>
-<p>The hydrated sources are then rendered to PDF by the docxology
-template’s render stage. That stage lives in a separate checkout of the
-template, with this repository checked out inside it as a real directory
-at <code>projects/active/GeneralizedNotationNotation</code> (the
-template’s analysis-read custody refuses a symlinked project); run from
-the template root:</p>
+<p>The docxology template renders the hydrated sources to PDF and
+validates the publication. From a separate checkout of the template
+containing this repository as a real directory at
+<code>projects/active/GeneralizedNotationNotation</code>, run:</p>
 <div class="sourceCode" id="cb7"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> python scripts/pipeline/stage_03_render.py <span class="dt">\</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--project</span> GeneralizedNotationNotation</span></code></pre></div>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--project</span> GeneralizedNotationNotation</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> python scripts/pipeline/stage_04_validate.py <span class="dt">\</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--project</span> GeneralizedNotationNotation</span></code></pre></div>
+<p>The validation stage checks the rendered outputs and their evidence,
+including the generated tables and their claims.</p>
 <p>The render needs a LaTeX installation providing the packages listed
 in <code>docs/manuscript/preamble.md</code> plus <code>seqsplit</code>;
 the template guards <code>seqsplit</code> with
@@ -927,8 +929,8 @@ failing the build.</p>
 <p>Because the variables file is regenerated before rendering, the
 counts in the rendered PDF track the repository state at the commit
 recorded in <code>output/data/manuscript_variables.json</code>
-(7c51ce617): a code change that alters, for example, the test inventory
-(705 test files, 7433 test functions) propagates into the prose on the
+(1b26eb059): a code change that alters, for example, the test inventory
+(705 test files, 7434 test functions) propagates into the prose on the
 next regeneration without any manual editing.</p>
 <h2 data-number="6.4" id="reproducibility-contract"><span
 class="header-section-number">6.4</span> Reproducibility Contract</h2>
@@ -936,8 +938,8 @@ class="header-section-number">6.4</span> Reproducibility Contract</h2>
 <li>Do not cite results that cannot be regenerated or directly traced to
 a command in this repository.</li>
 <li>Keep generated outputs under <code>output/</code> and maintained
-manuscript source under <code>manuscript/</code>. Regenerate owned build
-artifacts when their inputs change, and preserve the raw command
+manuscript source under <code>docs/manuscript/</code>. Regenerate owned
+build artifacts when their inputs change, and preserve the raw command
 receipts and numerical results needed to substantiate historical
 runs.</li>
 <li>Express every quantitative claim in the prose as a double-brace
