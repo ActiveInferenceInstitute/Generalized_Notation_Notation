@@ -7,6 +7,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Ver
 
 ## [Unreleased]
 
+### Export, visualization, and run evidence
+
+- Standalone exports retain authored sections and typed connections. GraphML,
+  GEXF, and XML use the model's actual edge endpoints. DSL export preserves
+  source bytes when available and reconstructs authored sections from Step 3
+  payloads.
+- Step 9 keeps its structural and Plotly dashboards as distinct artifacts.
+  The structural dashboard writes a static fallback when Plotly is unavailable.
+- Resume reuses verified no-work receipts when the active policy or model
+  selection still justifies the skip. This preserves valid downstream reports.
+- Native cpomdp results and analysis record the effective preference precision
+  used to score candidate policies.
+- The release collector records inactive GitHub workflows and skips dispatching
+  them while keeping the release gate incomplete.
+
 ### Extraction below rendering, and a classifying path-citation gate
 
 - The validated linear-Gaussian, per-factor and per-agent specifications
