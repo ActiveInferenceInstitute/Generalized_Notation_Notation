@@ -10,11 +10,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # A superseded PR head is not evidence about the new head, so PR runs cancel
-  # in progress. A merged tree's verdict is evidence, so main and manual runs
-  # never cancel; keying those by commit keeps each tip's run independent
-  # instead of queueing it behind an earlier tip's run.
-  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  # Keep superseded PR runs grouped by PR ref. Qualify each release phase
+  # independently by event, ref, and commit.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || format('{0}-{1}-{2}', github.event_name, github.ref, github.sha) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -32,9 +30,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Every event runs the same four lanes across the supported range.
+        # Every event runs the same lanes across the supported range.
         include:
           - {os: ubuntu-latest, python: "3.12"}
+          - {os: ubuntu-latest, python: "3.13"}
           - {os: ubuntu-latest, python: "3.14"}
           - {os: macos-latest, python: "3.14"}
           - {os: windows-latest, python: "3.14"}
@@ -56,11 +55,11 @@ jobs:
         with:
           version: "0.13.6"
           enable-cache: true
-      - name: Build the wheel and export the frozen runtime profiles
+      - name: Qualify the wheel and sdist and export frozen runtime profiles
         id: build
         run: |
           python - <<'PY'
-          import os, pathlib, subprocess
+          import hashlib, json, os, pathlib, subprocess, sys, tomllib
           checkout = pathlib.Path.cwd()
           source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
           assert source == os.environ['INSTALLED_SOURCE_REVISION'], 'installed build source differs from candidate'
@@ -68,10 +67,46 @@ jobs:
           scratch.mkdir()
           before = subprocess.check_output(['git', '-c', 'core.fsmonitor=false', 'status', '--porcelain', '--untracked-files=no'], text=True)
           (scratch / 'tracked-before.txt').write_text(before)
-          subprocess.run(['uv', 'build', '--wheel', '--out-dir', str(scratch / 'dist')], check=True)
+          constraints = checkout / '.github/build-requirements.txt'
+          build = ['uv', 'build', '--build-constraints', str(constraints), '--require-build-hashes']
+          subprocess.run([*build, '--wheel', '--out-dir', str(scratch / 'dist')], check=True)
+          subprocess.run([*build, '--out-dir', str(scratch / 'rebuilt')], check=True)
+          wheel, = (scratch / 'dist').glob('*.whl')
+          rebuilt, = (scratch / 'rebuilt').glob('*.whl')
+          sdist, = (scratch / 'rebuilt').glob('*.tar.gz')
+          subprocess.run([sys.executable, str(checkout / 'scripts/check_distribution_artifacts.py'), '--wheel', str(wheel), '--rebuilt-wheel', str(rebuilt), '--sdist', str(sdist), '--receipt', str(scratch / 'distribution-acceptance.json')], check=True)
+          (scratch / 'build-identity.json').write_text(json.dumps({'checkout_commit': source, 'required_backend': tomllib.loads((checkout / 'pyproject.toml').read_text(encoding='utf-8'))['build-system']['requires'], 'build_constraints_sha256': hashlib.sha256(constraints.read_bytes()).hexdigest(), 'python_version': sys.version}, indent=2), encoding='utf-8')
           subprocess.run(['uv', 'export', '--frozen', '--no-default-groups', '--extra', 'api', '--extra', 'thrml', '--no-emit-project', '--output-file', str(scratch / 'runtime.txt')], check=True, stdout=subprocess.DEVNULL)
           subprocess.run(['uv', 'export', '--frozen', '--only-group', 'dev', '--no-emit-project', '--output-file', str(scratch / 'testtools.txt')], check=True, stdout=subprocess.DEVNULL)
           subprocess.run(['uv', 'export', '--frozen', '--no-default-groups', '--no-emit-project', '--output-file', str(scratch / 'base-runtime.txt')], check=True, stdout=subprocess.DEVNULL)
+          PY
+      - name: Accept the distributions with an ordinary resolver
+        env:
+          GRADIO_ANALYTICS_ENABLED: "False"
+          HF_HUB_OFFLINE: "1"
+        run: |
+          python - <<'PY'
+          import os, pathlib, shutil, subprocess
+          checkout = pathlib.Path.cwd()
+          scratch = pathlib.Path(os.environ['RUNNER_TEMP']) / 'gnn-installed-platform'
+          wheel, = (scratch / 'dist').glob('*.whl')
+          sdist, = (scratch / 'rebuilt').glob('*.tar.gz')
+          constraints = checkout / '.github/build-requirements.txt'
+          for profile, package in [('wheel', wheel), ('sdist', sdist)]:
+              root = scratch / ('normal-' + profile)
+              root.mkdir()
+              environment = root / 'venv'
+              subprocess.run(['uv', 'venv', '--python', os.environ['UV_PYTHON'], str(environment)], cwd=root, check=True)
+              python = environment / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
+              install = ['uv', '--no-config', 'pip', 'install', '--python', str(python)]
+              subprocess.run([*install, '--build-constraints', str(constraints), '--require-build-hashes', str(package)], cwd=root, check=True)
+              model = root / 'static_perception.md'
+              shutil.copyfile(checkout / 'input/gnn_files/basics/static_perception.md', model)
+              subprocess.run([str(python), '-I', str(checkout / 'scripts/run_installed_platform_acceptance.py'), '--base-wheel', '--checkout', str(checkout), '--root', str(root), '--model', str(model), '--receipt', str(scratch / ('normal-' + profile + '.json'))], cwd=root, check=True)
+              if profile == 'wheel' and os.name == 'posix':
+                  subprocess.run([*install, '--dry-run', str(wheel) + '[all]'], cwd=root, check=True)
+                  subprocess.run([*install, str(wheel) + '[gui]'], cwd=root, check=True)
+                  subprocess.run([str(python), '-I', '-c', 'import gradio; from PIL import Image; assert callable(gradio.Blocks); Image.new("RGB", (2, 2)).save("native_gui_probe.png"); Image.open("native_gui_probe.png").verify()'], cwd=root, check=True)
           PY
       - name: Install the wheel with API, THRML and development test tools
         run: |
@@ -190,12 +225,36 @@ jobs:
           requirements = scratch / 'mypy-tools.txt'
           requirements.write_text('\n'.join(line for line in logical if (match := re.match(r'([A-Za-z0-9_.-]+)==', line)) and match[1] in needed) + '\n')
           subprocess.run(['uv', '--no-config', 'pip', 'install', '--python', str(python), '--require-hashes', '-r', str(requirements)], cwd=scratch, check=True)
-          subprocess.run([str(python), '-I', '-c', "import importlib.util; assert importlib.util.find_spec('fastapi') is None; assert importlib.util.find_spec('pygls') is None"], cwd=scratch, check=True)
+          subprocess.run([str(python), '-I', '-c', "from importlib.resources import files; from importlib.util import find_spec; assert files('gnn').joinpath('py.typed').is_file(); assert find_spec('fastapi') is None; assert find_spec('pygls') is None"], cwd=scratch, check=True)
           public = scratch / 'public_imports.py'
-          public.write_text('from gnn.parsers import GNNParsingSystem as GNNParsingSystem\nfrom gnn.types import GNNFormat as GNNFormat, GNNVariable as GNNVariable\nfrom gnn.importers import ImporterPin as ImporterPin\nfrom gnn.validation.semantic_witness import build_semantic_witness as build_semantic_witness\n')
-          # The wheel currently has no py.typed marker: analyze implementation
-          # types by explicit opt-in, without advertising PEP 561 support.
-          subprocess.run([str(python), '-I', '-m', 'mypy', '--strict', '--no-incremental', '--follow-untyped-imports', '--follow-imports=silent', str(public)], cwd=scratch, stdout=(scratch / 'public-mypy.log').open('w'), stderr=subprocess.STDOUT, check=True)
+          public.write_text('\n'.join((
+              'from pathlib import Path',
+              'from typing import Any, assert_type',
+              'from gnn.importers import ImporterPin',
+              'from gnn.parsers import GNNParsingSystem, parse_gnn_file_structured',
+              'from gnn.types import GNNFormat, GNNVariable, ParseResult',
+              'from gnn.validation.semantic_witness import build_semantic_witness',
+              '',
+              'def verify(path: Path, variable: GNNVariable, pin: ImporterPin) -> None:',
+              '    assert_type(GNNParsingSystem().parse_file(path), ParseResult)',
+              '    assert_type(parse_gnn_file_structured(path, GNNFormat.MARKDOWN), ParseResult)',
+              '    assert_type(variable.name, str)',
+              '    assert_type(pin.commit, str)',
+              '    assert_type(build_semantic_witness(b"source", b"result"), dict[str, Any])',
+              '',
+          )), encoding='utf-8')
+          misuse = scratch / 'public_misuse.py'
+          misuse.write_text('from gnn.parsers import parse_gnn_file_structured\nparse_gnn_file_structured(123)\n', encoding='utf-8')
+          env = {key: value for key, value in os.environ.items() if key not in {'PYTHONPATH', 'MYPYPATH'}}
+          mypy = [str(python), '-I', '-m', 'mypy', '--strict', '--no-incremental', '--cache-dir', os.devnull, '--show-error-codes', '--no-color-output']
+          with (scratch / 'public-mypy.log').open('w', encoding='utf-8') as log:
+              subprocess.run([*mypy, str(public)], cwd=scratch, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
+          result = subprocess.run([*mypy, str(misuse)], cwd=scratch, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+          (scratch / 'public-mypy-negative.log').write_text(result.stdout, encoding='utf-8')
+          diagnostics = [line for line in result.stdout.splitlines() if ': error:' in line]
+          assert result.returncode == 1 and len(diagnostics) == 1, result.stdout
+          error = diagnostics[0]
+          assert 'parse_gnn_file_structured' in error and 'incompatible type "int"' in error and error.endswith('[arg-type]'), error
           PYCODE
       - name: Tracked-file bookend
         if: always()
@@ -216,7 +275,7 @@ jobs:
             ${{ runner.temp }}/gnn-installed-platform/*.json
             ${{ runner.temp }}/gnn-installed-platform/*.xml
             ${{ runner.temp }}/gnn-installed-platform/*-profile.log
-            ${{ runner.temp }}/gnn-installed-platform/public-mypy.log
+            ${{ runner.temp }}/gnn-installed-platform/public-mypy*.log
             ${{ runner.temp }}/gnn-installed-platform/tracked-*.txt
             ${{ runner.temp }}/gnn-installed-platform/data/*.log
             ${{ runner.temp }}/gnn-installed-platform/base-data/*.log

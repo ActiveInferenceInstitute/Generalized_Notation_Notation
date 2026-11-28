@@ -54,7 +54,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: pair-pin-freshness-${{ github.ref }}
+  group: pair-pin-freshness-${{ github.ref }}-${{ github.event_name }}-${{ github.sha }}
   cancel-in-progress: false
 
 permissions:

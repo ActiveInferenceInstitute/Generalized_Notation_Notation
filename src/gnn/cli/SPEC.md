@@ -6,7 +6,7 @@ Provide a unified `gnn` CLI entry point that dispatches to pipeline module APIs.
 
 ## Requirements
 
-1. **Subcommand routing**: registered commands (`run`, `validate`, `parse`, `extract`, `render`, `report`, `reproduce`, `preflight`, `health`, `serve`, `templates`, `models`, `pull`, `watch`, `graph`, `gui`, `mcp`, `lsp`, `complexity`, `benchmark`, `witness`)
+1. **Subcommand routing**: registered commands (`run`, `validate`, `parse`, `extract`, `render`, `report`, `replay`, `reproduce`, `preflight`, `health`, `serve`, `templates`, `models`, `pull`, `watch`, `graph`, `gui`, `mcp`, `lsp`, `complexity`, `benchmark`, `witness`)
 2. **Lazy imports**: Each handler imports its target module only when invoked
 3. **Standard exit codes**: 0=success, 1=error, 2=success with warnings/skipped
 4. **Verbose mode**: `--verbose` / `-v` flag enables DEBUG logging globally

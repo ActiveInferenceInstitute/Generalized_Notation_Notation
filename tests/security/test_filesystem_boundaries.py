@@ -528,8 +528,16 @@ def test_output_lease_is_exclusive_in_another_native_process(tmp_path: Path) -> 
     assert (tmp_path / ".gnn_run.lock").read_text().startswith("contender pid=")
 
 
-def test_native_process_cleanup_reports_its_actual_boundary(tmp_path: Path) -> None:
+@pytest.mark.parametrize("missing_detector", [False, True])
+def test_native_process_cleanup_reports_its_actual_boundary(
+    monkeypatch: pytest.MonkeyPatch, missing_detector: bool
+) -> None:
     from gnn.execute.subprocess_envelope import run_subprocess_envelope
+    from gnn.utils.runtime_safety import process_tree
+
+    if missing_detector:
+        monkeypatch.setattr(process_tree, "_child_pids", lambda _pid: None)
+    can_observe = process_tree.descendant_observation_available()
 
     result = run_subprocess_envelope(
         [
@@ -544,19 +552,32 @@ def test_native_process_cleanup_reports_its_actual_boundary(tmp_path: Path) -> N
         result["success"] and result["cleanup_verified"] and result["streams_drained"]
     )
     assert result["stdout"].strip() == "native-worker"
-    assert result["containment"] == (
-        "direct_worker_only" if os.name == "nt" else "observed_descendants"
-    )
+    expected = "process_group_only" if os.name == "posix" else "direct_worker_only"
+    if can_observe:
+        expected = "observed_descendants"
+    assert result["containment"] == expected
 
 
 @pytest.mark.parametrize(
     "requirement",
     ["require_descendant_containment", "require_descendant_resource_accounting"],
 )
+@pytest.mark.parametrize("missing_detector", [False, True])
 def test_native_descendant_requirements_are_supported_or_refused_before_launch(
-    tmp_path: Path, requirement: str
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    requirement: str,
+    missing_detector: bool,
 ) -> None:
     from gnn.execute.subprocess_envelope import run_subprocess_envelope
+    from gnn.utils.runtime_safety import process_tree
+
+    if missing_detector:
+        monkeypatch.setattr(process_tree, "_child_pids", lambda _pid: None)
+    can_observe = process_tree.descendant_observation_available(
+        require_resource_accounting=requirement
+        == "require_descendant_resource_accounting"
+    )
 
     marker = tmp_path / "launched"
     result = run_subprocess_envelope(
@@ -569,7 +590,7 @@ def test_native_descendant_requirements_are_supported_or_refused_before_launch(
         sandbox=False,
         **{requirement: True},
     )
-    if os.name == "nt":
+    if not can_observe:
         assert (
             not result["success"] and result["error_type"] == "UnsupportedContainment"
         )
@@ -884,8 +905,10 @@ async def test_api_normal_leader_exit_has_bounded_native_cleanup(
         sys.executable,
         "-c",
         (
-            "import subprocess,time; "
-            f"subprocess.Popen([{sys.executable!r},'-c',{child!r}]); time.sleep(.3)"
+            "import subprocess,time; from pathlib import Path; "
+            f"subprocess.Popen([{sys.executable!r},'-c',{child!r}]); "
+            f"marker=Path({str(child_pid)!r}); deadline=time.monotonic()+1.5\n"
+            "while not marker.exists() and time.monotonic() < deadline: time.sleep(.01)"
         ),
     ]
     monkeypatch.setattr(
@@ -915,11 +938,22 @@ async def test_api_normal_leader_exit_has_bounded_native_cleanup(
         else:
             assert job["status"] == "completed" and cleanup["cleanup_verified"]
             assert cleanup["streams_drained"]
-            assert (
-                child_identity is None
-                or not child_identity.is_running()
-                or child_identity.status() == psutil.STATUS_ZOMBIE
-            )
+            if child_identity is not None:
+                # A group signal can close output pipes before the kernel makes
+                # the already-identified child's exit visible to status readers.
+                deadline = time.monotonic() + 1
+                while time.monotonic() < deadline:
+                    try:
+                        if (
+                            not child_identity.is_running()
+                            or child_identity.status() == psutil.STATUS_ZOMBIE
+                        ):
+                            break
+                    except psutil.NoSuchProcess:
+                        break
+                    await asyncio.sleep(0.01)
+                else:
+                    pytest.fail("The owned child remained alive after API cleanup")
     finally:
         # Windows's deliberately unsupported child remains caller-owned; stop
         # only that published birth-time-bound identity, never a host PID scan.

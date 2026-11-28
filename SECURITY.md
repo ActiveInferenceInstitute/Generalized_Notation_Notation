@@ -251,7 +251,8 @@ Once a security vulnerability is reported, we commit to:
 - `GNN_API_KEY` — require a matching `X-API-Key` header on the FastAPI API;
   non-loopback binds are refused unless set or `GNN_ALLOW_INSECURE_BIND=1`.
 - `GNN_SANDBOX` — `off` / `prefer` / `require` wrapping of rendered-script
-  execution under firejail / bubblewrap / nsjail (degrades loudly, never silently).
+  execution under firejail / bubblewrap / nsjail. Invalid explicit settings
+  and `require` without a backend block launch. `prefer` logs when it falls back.
 - `GNN_ALLOW_UNSAFE_EXEC=1` — explicit escape hatch to bypass the
   pre-execution AST gate (trusted-local research only).
 - `GNN_MCP_TOKEN` / `GNN_MCP_RATE_LIMIT_PER_MINUTE` — bearer auth and

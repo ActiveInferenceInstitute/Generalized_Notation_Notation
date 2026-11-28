@@ -32,7 +32,6 @@ constraints = [
     { name = "urllib3", specifier = ">=2.8.0" },
     { name = "virtualenv", specifier = ">=21.14.13" },
 ]
-overrides = [{ name = "pillow", specifier = ">=13.0.0" }]
 
 [[package]]
 name = "absl-py"
@@ -1735,8 +1734,8 @@ requires-dist = [
     { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.100.0" },
     { name = "fastapi", marker = "extra == 'api'", specifier = ">=0.100.0" },
     { name = "flax", specifier = ">=0.12.9" },
-    { name = "gradio", marker = "extra == 'all'", specifier = ">=6.7.0" },
-    { name = "gradio", marker = "extra == 'gui'", specifier = ">=6.7.0" },
+    { name = "gradio", marker = "extra == 'all'", specifier = ">=6.32.0" },
+    { name = "gradio", marker = "extra == 'gui'", specifier = ">=6.32.0" },
     { name = "graphviz", marker = "extra == 'all'", specifier = ">=0.20.0" },
     { name = "graphviz", marker = "extra == 'graphs'", specifier = ">=0.20.0" },
     { name = "h3", marker = "extra == 'all'", specifier = ">=4.5.0,<5" },

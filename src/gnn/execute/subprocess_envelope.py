@@ -32,16 +32,22 @@ import logging
 import math
 import os
 import subprocess
-import sys
 import tempfile
 import time
 from pathlib import Path
 from typing import Any, BinaryIO, Dict, List, Optional, Union, cast
 
+from gnn.execute.sandbox import (
+    SandboxAdmission,
+    SandboxAdmissionError,
+    resolve_sandbox,
+    wrap_command,
+)
 from gnn.utils.runtime_safety.cancellation import CancelToken
 from gnn.utils.runtime_safety.process_budget import resolve_process_deadlines
 from gnn.utils.runtime_safety.process_tree import (
     DescendantTracker,
+    descendant_observation_available,
     terminate_process_tree,
 )
 
@@ -131,39 +137,6 @@ __all__ = [
     "INTERNAL_ERROR",
     "UNKNOWN_STATE",
 ]
-
-
-def _sandbox_prefix_and_mode() -> tuple[List[str], str, Optional[str]]:
-    """Return ``(prefix, effective_mode, blocked_reason)`` from ``GNN_SANDBOX``.
-
-    Mirrors the Step-12 semantics (``execute.processor._sandbox_mode`` /
-    ``_sandbox_command_prefix``): ``off`` runs unsandboxed, ``prefer``
-    falls back to unsandboxed execution (with a warning) when no backend
-    exists, and ``require`` without a backend yields a non-None
-    ``blocked_reason`` so the caller can refuse to execute.
-    """
-    from gnn.execute.sandbox import _resolve_mode, detect_sandbox
-
-    mode = _resolve_mode(None)
-    if mode == "off":
-        return [], mode, None
-    spec = detect_sandbox()
-    if spec is None:
-        if mode == "require":
-            return (
-                [],
-                mode,
-                (
-                    "GNN_SANDBOX=require but no sandbox backend "
-                    "(firejail/bwrap/nsjail) is installed"
-                ),
-            )
-        logger.warning(
-            "GNN_SANDBOX=%s but no sandbox backend found; running unsandboxed",
-            mode,
-        )
-        return [], mode, None
-    return list(spec.prefix), mode, None
 
 
 def _spawn_kwargs() -> Dict[str, Any]:
@@ -294,7 +267,7 @@ def run_subprocess_envelope(
     capture_output: bool = True,
     cwd: Optional[Union[str, Path]] = None,
     input: Optional[str] = None,
-    sandbox: bool = True,
+    sandbox: bool | SandboxAdmission = True,
     cancel_token: Optional[CancelToken] = None,
     deadline_monotonic: float | None = None,
     require_descendant_containment: bool = False,
@@ -316,10 +289,8 @@ def run_subprocess_envelope(
                         the parent process.
         input:          Text supplied through an owned temporary stdin
                         descriptor; ``None`` leaves stdin attached to the parent.
-        sandbox:        Apply the ``GNN_SANDBOX`` env-prefix pattern
-                        (Step-12 semantics). ``True`` prefixes the command
-                        with the configured sandbox backend's argument
-                        vector; ``False`` runs unsandboxed unconditionally.
+        sandbox:        Resolve ``GNN_SANDBOX`` (default True), reuse a validated
+                        admission, or explicitly run unsandboxed with False.
         cancel_token:   Optional cooperative :class:`CancelToken`; checked
                         before spawning and every poll slice. A cancel
                         (pre-spawn or mid-flight) requests bounded cleanup
@@ -329,11 +300,9 @@ def run_subprocess_envelope(
                         Intersected with an active invocation deadline. Up to
                         one second (25% of remaining time for short budgets)
                         is reserved for observation, termination, and draining.
-        require_descendant_containment: Refuse launch when the native platform
-                        cannot observe or contain descendants. Windows currently
-                        supports only direct-worker cleanup and refuses this
-                        request before creating a process. This is not a hostile
-                        daemonization guarantee on supported POSIX systems.
+        require_descendant_containment: Refuse before launch when the native
+                        child detector or process identity tracking is unavailable.
+                        Supported detection observes the owned process tree.
         require_descendant_resource_accounting: Refuse unsupported native
                         descendant observation instead of reporting direct-only
                         RSS as a process-tree measurement. Even supported RSS
@@ -385,7 +354,8 @@ def run_subprocess_envelope(
             - ``error`` (str, optional): Populated on failure.
             - ``error_type`` (str, optional): Exception class name on
               failure; ``"SandboxUnavailable"`` when ``GNN_SANDBOX=require``
-              found no backend and the run was refused;
+              found no backend and the run was refused; ``"InvalidSandboxMode"``
+              when the requested mode is invalid;
               ``"TimeoutExpired"`` on timeout; ``"Cancelled"`` when the
               ``cancel_token`` fired.
 
@@ -425,15 +395,18 @@ def run_subprocess_envelope(
     }
 
     subject = command[0] if command else "<empty-command>"
-    if (
-        require_descendant_containment or require_descendant_resource_accounting
-    ) and not (sys.platform == "darwin" or sys.platform.startswith("linux")):
+    if (require_descendant_containment or require_descendant_resource_accounting) and (
+        (require_descendant_resource_accounting and _psutil_module is None)
+        or not descendant_observation_available(
+            require_resource_accounting=require_descendant_resource_accounting
+        )
+    ):
         envelope.update(
-            error="Descendant containment/resource observation is unsupported on this native platform",
+            error="Required descendant observation is unavailable on this runtime",
             error_type="UnsupportedContainment",
         )
         return envelope
-    if not sandbox:
+    if sandbox is False:
         logger.warning(
             "sandbox_disabled_receipt: %s executed WITHOUT a sandbox "
             "(sandbox=False). The command runs with operator privileges; "
@@ -446,15 +419,17 @@ def run_subprocess_envelope(
             },
         )
     else:
-        sandbox_prefix, mode, blocked = _sandbox_prefix_and_mode()
-        envelope["sandbox_mode"] = mode
-        if blocked is not None:
-            # Mirrors the Step-12 processor: refuse to run unsandboxed.
-            envelope["error"] = blocked
-            envelope["error_type"] = "SandboxUnavailable"
-            logger.error(blocked)
+        try:
+            admission = resolve_sandbox() if sandbox is True else sandbox
+        except SandboxAdmissionError as exc:
+            envelope.update(
+                sandbox_mode=exc.mode, error=str(exc), error_type=exc.error_type
+            )
+            logger.error("%s", exc)
             return envelope
-        if sandbox_prefix:
+        mode = admission.mode
+        envelope["sandbox_mode"] = mode
+        if admission.backend is not None:
             envelope["sandboxed"] = True
             logger.info(
                 "sandbox_active_receipt: %s will run under sandbox "
@@ -466,14 +441,14 @@ def run_subprocess_envelope(
                     "sandbox_mode": mode,
                 },
             )
-            command = [*sandbox_prefix, *command]
+            command = wrap_command(command, admission.backend)
         else:
             logger.warning(
                 "sandbox_disabled_receipt: %s executed WITHOUT a sandbox "
-                "(GNN_SANDBOX=off, the default). The command runs with "
-                "operator privileges; set GNN_SANDBOX=prefer/require for "
-                "isolation.",
+                "(GNN_SANDBOX=%s%s). The command runs with operator privileges.",
                 subject,
+                mode,
+                ", no backend found" if mode == "prefer" else "",
                 extra={
                     "event": "sandbox_disabled_receipt",
                     "sandbox_mode": mode,

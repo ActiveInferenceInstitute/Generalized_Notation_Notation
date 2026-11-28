@@ -16,6 +16,8 @@ Modes (selected via ``GNN_SANDBOX`` or an explicit argument):
 - ``require``: wrap when a sandbox binary is found; otherwise **refuse to run**
   the script and return an error envelope.
 
+Explicit settings outside these modes are rejected before execution.
+
 Supported sandbox backends, in preference order (first found wins):
 
 - ``firejail``: ``firejail --noprofile --net=none --private --caps.drop=all``
@@ -34,8 +36,6 @@ import shutil
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from gnn.execute.subprocess_envelope import run_subprocess_envelope  # nosec B404
-
 logger = logging.getLogger(__name__)
 
 #: Valid ``GNN_SANDBOX`` modes.
@@ -53,6 +53,23 @@ class SandboxSpec:
     def available(self) -> bool:
         """Whether the backend binary is on PATH."""
         return shutil.which(self.binary) is not None
+
+
+@dataclass(frozen=True)
+class SandboxAdmission:
+    """The validated mode and backend selected for a launch."""
+
+    mode: str
+    backend: Optional[SandboxSpec]
+
+
+class SandboxAdmissionError(ValueError):
+    """An invalid policy or an unavailable required backend."""
+
+    def __init__(self, mode: str, error_type: str, message: str) -> None:
+        super().__init__(message)
+        self.mode = mode
+        self.error_type = error_type
 
 
 #: Preference-ordered backends. ``bwrap`` builds a read-only bind of the root
@@ -89,14 +106,13 @@ def _resolve_mode(mode: Optional[str]) -> str:
     """Resolve the effective sandbox mode from an explicit arg or the env var."""
     if mode is None:
         mode = os.environ.get("GNN_SANDBOX", _DEFAULT_MODE)
-    mode = (mode or _DEFAULT_MODE).strip().lower()
+    mode = mode.strip().lower()
     if mode not in SANDBOX_MODES:
-        logger.warning(
-            "Unknown GNN_SANDBOX mode %r; falling back to %r",
-            mode,
-            _DEFAULT_MODE,
+        raise SandboxAdmissionError(
+            "invalid",
+            "InvalidSandboxMode",
+            "GNN_SANDBOX must be one of off, prefer, or require",
         )
-        return _DEFAULT_MODE
     return mode
 
 
@@ -111,6 +127,20 @@ def detect_sandbox() -> Optional[SandboxSpec]:
 def wrap_command(command: List[str], spec: SandboxSpec) -> List[str]:
     """Return ``command`` prefixed with the sandbox backend's isolation flags."""
     return list(spec.prefix) + list(command)
+
+
+def resolve_sandbox(mode: Optional[str] = None) -> SandboxAdmission:
+    """Validate the requested sandbox and select an available backend."""
+    effective = _resolve_mode(mode)
+    spec = detect_sandbox() if effective != "off" else None
+    if effective == "require" and spec is None:
+        raise SandboxAdmissionError(
+            effective,
+            "SandboxUnavailable",
+            "GNN_SANDBOX=require but no sandbox backend "
+            "(firejail/bwrap/nsjail) is installed",
+        )
+    return SandboxAdmission(effective, spec)
 
 
 def run_sandboxed(
@@ -130,55 +160,44 @@ def run_sandboxed(
     - ``sandboxed`` (bool): whether the command was actually wrapped.
     - ``sandbox`` (str|None): backend binary name, or ``None``.
     - ``mode`` (str): the effective mode used.
-    - ``blocked`` (bool): True only when ``require`` could not find a backend.
+    - ``blocked`` (bool): True when policy admission refused execution.
     - ``success`` (bool), ``return_code`` (int), ``stdout``/``stderr`` (str).
     """
-    effective = _resolve_mode(mode)
-    spec = detect_sandbox() if effective != "off" else None
+    from gnn.execute.subprocess_envelope import NEVER_STARTED, run_subprocess_envelope
 
     envelope: Dict[str, Any] = {
         "sandboxed": False,
         "sandbox": None,
-        "mode": effective,
         "blocked": False,
         "success": False,
-        "return_code": -1,
+        "return_code": NEVER_STARTED,
         "stdout": "",
         "stderr": "",
     }
-
-    if effective == "require" and spec is None:
-        envelope["blocked"] = True
-        envelope["error"] = (
-            "GNN_SANDBOX=require but no sandbox backend (firejail/bwrap/nsjail) "
-            "is installed; refusing to execute rendered script unsandboxed."
+    try:
+        admission = resolve_sandbox(mode)
+    except SandboxAdmissionError as exc:
+        envelope.update(
+            blocked=True, mode=exc.mode, error=str(exc), error_type=exc.error_type
         )
-        logger.error(envelope["error"])
+        logger.error("%s", exc)
         return envelope
-
-    if spec is None:
-        if effective == "prefer":
-            logger.warning(
-                "GNN_SANDBOX=prefer but no sandbox backend found; "
-                "running rendered script unsandboxed."
-            )
-        final_command = list(command)
-    else:
-        final_command = wrap_command(command, spec)
-        envelope["sandboxed"] = True
-        envelope["sandbox"] = spec.binary
 
     # Canonical subprocess envelope (MAJ-10): one structured outcome for
     # timeout / OSError / non-zero exit; the sandbox-specific timeout message
     # shape is preserved on top of the shared envelope.
     outcome = run_subprocess_envelope(
-        final_command,
+        command,
         timeout=timeout,
         env=env,
         cwd=cwd,
         capture_output=capture_output,
-        sandbox=False,
+        sandbox=admission,
     )
+    envelope["mode"] = admission.mode
+    envelope["sandboxed"] = outcome["sandboxed"]
+    if admission.backend is not None:
+        envelope["sandbox"] = admission.backend.binary
     envelope["return_code"] = outcome["return_code"]
     envelope["success"] = outcome["success"]
     envelope["stdout"] = outcome["stdout"]

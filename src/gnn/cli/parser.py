@@ -106,6 +106,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run_p.add_argument("--output-dir", "-o", default="output", help="Output directory")
     run_p.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume the verified checkpoint in the output directory",
+    )
+    run_p.add_argument(
         "--skip-steps", nargs="*", type=_pipeline_step, help="Step numbers to skip"
     )
     run_p.add_argument(
@@ -215,6 +220,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--output-dir", "-o", default="output", help="Pipeline output directory"
     )
     report_p.add_argument(
+        "--json", action="store_true", help="Output standard JSON envelope"
+    )
+
+    replay_p = subparsers.add_parser(
+        "replay", help="Verify and replay retained run evidence"
+    )
+    replay_p.add_argument(
+        "--output-dir",
+        "-o",
+        type=Path,
+        default=Path("output"),
+        help="Run output directory",
+    )
+    replay_p.add_argument("--expected-run-id", help="Require this recorded run ID")
+    replay_p.add_argument(
         "--json", action="store_true", help="Output standard JSON envelope"
     )
 

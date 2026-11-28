@@ -89,6 +89,16 @@ PYTHONPATH=src uv run --frozen --no-sync python scripts/run_v3_orchestration_acc
 - [Setup](../SETUP.md)
 - [Troubleshooting](../troubleshooting/README.md)
 
+## Resume a pipeline run
+
+Repeat the original `gnn run` command with `--resume` to continue the run in
+the same output directory. The saved input bytes, configuration, and step plan
+must match the request. Resume keeps the recorded run ID, starts a new attempt
+and deadline, and reuses completed steps whose artifacts and selected
+dependencies still verify. A changed runtime causes those steps to execute
+again, as does a checkpoint created before runtime fingerprints were recorded.
+The final summary records the reused and scheduled step names.
+
 ## Documents in this folder
 
 - [v3.0.0 Long-Running Orchestration](v3_orchestration.md)

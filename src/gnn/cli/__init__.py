@@ -9,6 +9,7 @@ Provides:
   gnn extract    — Extract POMDP state space as JSON
   gnn render     — Render a GNN file to a specific framework
   gnn report     — Generate pipeline report
+  gnn replay     — Verify retained run evidence and replay its trace
   gnn reproduce  — Re-run from a previous run hash
   gnn preflight  — Run environment & config checks
   gnn health     — Show renderer & dependency status
@@ -45,6 +46,7 @@ from gnn.cli.handlers_library import (
 from gnn.cli.handlers_ops import (
     _cmd_health,
     _cmd_preflight,
+    _cmd_replay,
     _cmd_report,
     _cmd_reproduce,
     _cmd_witness,
@@ -105,6 +107,7 @@ COMMAND_HANDLERS: Final[dict[str, str]] = {
     "extract": "_cmd_extract",
     "render": "_cmd_render",
     "report": "_cmd_report",
+    "replay": "_cmd_replay",
     "reproduce": "_cmd_reproduce",
     "preflight": "_cmd_preflight",
     "health": "_cmd_health",

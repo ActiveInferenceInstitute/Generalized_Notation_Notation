@@ -58,9 +58,8 @@ installed `Provides-Extra` metadata, with a source-manifest fallback;
 - **Package manager**: uv 0.13.6 (required by `uv.toml`)
 - **Core deps**: the scientific/backend/client requirements in `pyproject.toml`; the frozen lock selects their versions
 
-The GUI/all-extras profiles use the documented Gradio/Pillow 13 uv override.
-See [runtime exceptions](../../../README.md#runtime-defaults-and-required-profiles);
-plain pip cannot resolve those extras while upstream Gradio caps Pillow below 13.
+The GUI and all-extras profiles resolve Gradio 6.32.0 or newer with the Pillow
+13 minimum. See the [runtime profiles](../../../README.md#runtime-defaults-and-required-profiles).
 
 ## Troubleshooting
 

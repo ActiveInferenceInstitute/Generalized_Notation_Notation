@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, cast
 
 from gnn.pipeline.artifact_ownership import current_artifact_files
+from gnn.pipeline.report_evidence import ReportEvidence, load_report_evidence
 from gnn.utils.arguments.pipeline_arguments import PipelineArguments
 from gnn.utils.arguments.step_config import StepConfiguration
 from gnn.utils.errors.error_handling import (
@@ -367,6 +368,11 @@ def _log_pipeline_step_completion(
         step_duration,
         step_stats,
     )
+
+    if status_for_logging == "SKIPPED":
+        reason = step_result.get("skip_reason") or step_result.get("stdout", "")
+        logger.info("⏭️ %s skipped: %s", description, str(reason).strip())
+        return
 
     if STRUCTURED_LOGGING_AVAILABLE and progress_tracker:
         if "WARNING" in status_for_logging:
@@ -1421,6 +1427,8 @@ class PipelineReportContext:
     step_dirs: List[Path]
     step_stats: Dict[str, Dict[str, Any]]
     mode: Literal["final", "preliminary"]
+    evidence: ReportEvidence | None = None
+    step_files: Dict[Path, List[Path]] | None = None
 
 
 def generate_pipeline_report(
@@ -1447,14 +1455,20 @@ def generate_pipeline_report(
     # Build report sections
     sections: list[Any] = [
         _section_header(context.summary),
+        f"**{context.evidence.description}**" if context.evidence is not None else "",
         _section_step_status(
             context.summary,
             context.step_stats,
             mode=context.mode,
         ),
         _section_timing(context.summary),
-        _section_artifacts(context.step_dirs),
-        _section_statistics(context.output_dir),
+        _section_artifacts(context.step_dirs, step_files=context.step_files),
+        _section_statistics(
+            context.output_dir,
+            step_files=context.step_files,
+            include_cache_stats=context.evidence is None
+            or context.evidence.files is None,
+        ),
         _section_errors(context.summary, context.step_stats),
     ]
 
@@ -1479,21 +1493,41 @@ def _build_report_context(
     from gnn.pipeline.run_context import current_run_context
 
     context = current_run_context()
+    if (
+        context is not None
+        and resolved_output_dir.resolve() != Path(context.output_root).resolve()
+    ):
+        raise ValueError("Pipeline report output differs from invocation output root")
     if context is not None and mode == "preliminary":
         resolved_summary_path = (
-            Path(context.output_root) / "00_pipeline_summary" / "current_summary.json"
+            resolved_output_dir / "00_pipeline_summary" / "current_summary.json"
         )
-    summary = _load_summary(resolved_summary_path)
-    if context is not None and summary.get("run_id") != context.run_id:
+        evidence = load_report_evidence(
+            resolved_output_dir,
+            (resolved_summary_path,),
+            active_run_id=context.run_id,
+        )
+    else:
+        candidates: tuple[Path, ...] = (resolved_summary_path,)
+        if resolved_summary_path.parent.name != "00_pipeline_summary":
+            candidates += (
+                resolved_summary_path.parent
+                / "00_pipeline_summary"
+                / resolved_summary_path.name,
+            )
+        evidence = load_report_evidence(resolved_output_dir, candidates)
+    if context is not None and evidence.summary.get("run_id") != context.run_id:
         raise ValueError("Pipeline report summary belongs to a different run")
-    step_dirs = _discover_step_dirs(resolved_output_dir)
+    step_files = _report_step_files(resolved_output_dir, evidence.files)
     return PipelineReportContext(
         output_dir=resolved_output_dir,
         summary_path=resolved_summary_path,
-        summary=summary,
-        step_dirs=step_dirs,
-        step_stats=_collect_step_stats(step_dirs),
+        summary=evidence.summary,
+        step_dirs=list(step_files),
+        step_stats=_collect_step_stats(list(step_files), step_files=step_files),
         mode=mode,
+        evidence=evidence,
+        step_files=step_files,
     )
 
 
@@ -1524,31 +1558,54 @@ def _discover_step_dirs(output_dir: Path) -> List[Path]:
     return dirs
 
 
-def _collect_step_stats(step_dirs: List[Path]) -> Dict[str, Dict[str, Any]]:
-    """Collect basic stats from each step output directory."""
-    stats: dict[Any, Any] = {}
-    for d in step_dirs:
-        file_count = len(current_artifact_files(d))
-        total_size = sum(f.stat().st_size for f in current_artifact_files(d))
-        # Look for a results JSON
-        results_json = None
-        for candidate in [
-            d / "results.json",
-            d / f"{d.name.replace('_output', '')}_results.json",
-        ]:
-            if candidate.exists():
-                results_json = candidate
-                break
-        # Also check commonly named files
-        if not results_json:
-            jsons = list(d.glob("*results*.json"))
-            if jsons:
-                results_json = jsons[0]
+def _report_step_files(
+    output_dir: Path, files: frozenset[Path] | None
+) -> Dict[Path, List[Path]]:
+    """Group admitted files, scanning directories only for historical reports."""
+    if files is None:
+        return {
+            directory: current_artifact_files(directory)
+            for directory in _discover_step_dirs(output_dir)
+        }
+    grouped: Dict[Path, List[Path]] = {}
+    for path in sorted(files):
+        parts = path.relative_to(output_dir).parts
+        if len(parts) > 1 and parts[0][0].isdigit() and "_output" in parts[0]:
+            grouped.setdefault(output_dir / parts[0], []).append(path)
+    return grouped
 
-        stats[d.name] = {
-            "file_count": file_count,
-            "total_size_kb": round(total_size / 1024, 1),
-            "results_json": results_json,
+
+def _collect_step_stats(
+    step_dirs: List[Path], *, step_files: Dict[Path, List[Path]] | None = None
+) -> Dict[str, Dict[str, Any]]:
+    """Collect basic stats from each step output directory."""
+    stats = {}
+    for directory in step_dirs:
+        files = (
+            current_artifact_files(directory)
+            if step_files is None
+            else step_files[directory]
+        )
+        candidates = (
+            directory / "results.json",
+            directory / f"{directory.name.removesuffix('_output')}_results.json",
+        )
+        result = next((path for path in candidates if path in files), None)
+        if result is None:
+            result = next(
+                (
+                    path
+                    for path in files
+                    if path.parent == directory and path.match("*results*.json")
+                ),
+                None,
+            )
+        stats[directory.name] = {
+            "file_count": len(files),
+            "total_size_kb": round(
+                sum(path.stat().st_size for path in files) / 1024, 1
+            ),
+            "results_json": result,
         }
     return stats
 
@@ -1631,10 +1688,15 @@ def _section_step_status(
             emoji = (
                 "✅"
                 if status in ("SUCCESS", "success")
+                else "⏭️"
+                if status == "SKIPPED"
                 else "⚠️"
                 if "warn" in str(status).lower()
                 else "❌"
             )
+            if status == "SKIPPED" and (reason := step.get("skip_reason")):
+                reason_text = str(reason).replace("|", "\\|").replace("\n", " ")
+                status = f"{status} ({reason_text})"
             lines.append(
                 f"| {step_num} | {name} | {emoji} {status} | {duration} | {files} | {size} |"
             )
@@ -1702,7 +1764,9 @@ def _section_timing(summary: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _section_artifacts(step_dirs: List[Path]) -> str:
+def _section_artifacts(
+    step_dirs: List[Path], *, step_files: Dict[Path, List[Path]] | None = None
+) -> str:
     """Generate artifact inventory section."""
     lines: list[Any] = ["## Artifact Inventory"]
     lines.append("")
@@ -1714,8 +1778,7 @@ def _section_artifacts(step_dirs: List[Path]) -> str:
     total_files = 0
     total_size = 0
     for d in step_dirs:
-        files = current_artifact_files(d)
-        file_items = [f for f in files if f.is_file()]
+        file_items = current_artifact_files(d) if step_files is None else step_files[d]
         count = len(file_items)
         size = sum(f.stat().st_size for f in file_items)
         total_files += count
@@ -1734,14 +1797,22 @@ def _section_artifacts(step_dirs: List[Path]) -> str:
     return "\n".join(lines)
 
 
-def _section_statistics(output_dir: Path) -> str:
+def _section_statistics(
+    output_dir: Path,
+    *,
+    step_files: Dict[Path, List[Path]] | None = None,
+    include_cache_stats: bool = True,
+) -> str:
     """Pull model/parse statistics from GNN step outputs."""
     lines: list[Any] = ["## Pipeline Statistics"]
     stats: dict[Any, Any] = {}
 
     # GNN parse results
-    gnn_results = output_dir / "3_gnn_output" / "gnn_results.json"
-    if gnn_results.exists():
+    if step_files is None:
+        step_files = _report_step_files(output_dir, None)
+    gnn_directory = output_dir / "3_gnn_output"
+    gnn_results = gnn_directory / "gnn_results.json"
+    if gnn_results in step_files.get(gnn_directory, []):
         try:
             with open(gnn_results) as f:
                 data = json.load(f)
@@ -1761,13 +1832,12 @@ def _section_statistics(output_dir: Path) -> str:
 
     # Export results
     export_dir = output_dir / "7_export_output"
-    if export_dir.exists():
-        export_files = current_artifact_files(export_dir)
-        stats["Export artifacts"] = len([f for f in export_files if f.is_file()])
+    if export_dir in step_files:
+        stats["Export artifacts"] = len(step_files[export_dir])
 
     # LLM cache stats
     cache_dir = output_dir / ".cache"
-    if cache_dir.exists():
+    if include_cache_stats and cache_dir.exists():
         stats["LLM cache entries"] = len(list(cache_dir.glob("*.json")))
 
     if not stats:

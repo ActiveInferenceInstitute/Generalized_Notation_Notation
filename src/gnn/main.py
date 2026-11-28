@@ -67,7 +67,10 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from threading import RLock
-from typing import Any, Dict, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
+
+if TYPE_CHECKING:
+    from gnn.pipeline.resume import ResumeCheckpoint
 
 _module_logger = logging.getLogger(__name__)
 # Environment scope is process-global; serialize programmatic top-level runs.
@@ -291,13 +294,14 @@ def select_pipeline_steps(
 
 def _build_main_args(
     override_args: Optional[PipelineArguments],
+    argv: Optional[Sequence[str]] = None,
 ) -> tuple[PipelineArguments, Optional[argparse.Namespace]]:
     """Build pipeline arguments from an override object or CLI parsing."""
     if override_args is not None:
         return override_args, None
 
     parser = ArgumentParser.create_main_parser()
-    parsed = parser.parse_args()
+    parsed = parser.parse_args(argv)
     field_names = {f.name for f in fields(PipelineArguments)}
     kwargs = {k: getattr(parsed, k) for k in field_names if hasattr(parsed, k)}
     args = PipelineArguments(**kwargs)
@@ -545,8 +549,9 @@ def _initialize_pipeline_summary(
 
 
 def _prepare_pipeline_context(
-    override_args: Optional[PipelineArguments],
+    args: PipelineArguments,
     override_config: Optional[Dict[str, Any]],
+    parsed: Optional[argparse.Namespace],
 ) -> tuple[
     PipelineArguments,
     dict[Any, Any],
@@ -557,7 +562,6 @@ def _prepare_pipeline_context(
     logging.Logger,
 ]:
     """Prepare args, config, logging, step list, and initial summary."""
-    args, parsed = _build_main_args(override_args)
     try:
         visual_logger, correlation_id = _create_pipeline_visual_logger(args)
         logger = _setup_pipeline_logger(args)
@@ -771,10 +775,24 @@ def _execute_selected_step(
         pipeline_config = pipeline_summary.get("identity_config", {}).get(
             "input_config"
         )
+    run_id = pipeline_summary.get("run_id")
+    if script_name == "2_tests.py" and pipeline_summary.get("identity_config", {}).get(
+        "skip_tests_in_pipeline"
+    ):
+        return {
+            "status": "SKIPPED",
+            "exit_code": 0,
+            "skip_reason": "SKIP_TESTS_IN_PIPELINE",
+            "stdout": "Test harness skipped by SKIP_TESTS_IN_PIPELINE",
+            "stderr": "",
+            "execution_mode": "skipped",
+            "artifacts": [],
+            "run_id": run_id,
+            "selected_model_ids": selected_ids if context is not None else [],
+        }
     output_root = Path(args.output_dir)
     step_output = get_output_dir_for_script(script_name, output_root)
     before = snapshot_files(step_output)
-    run_id = pipeline_summary.get("run_id")
     if _consolidated_step_selected(script_name, args, pipeline_summary):
         from gnn.pipeline.step_executor import execute_step_in_process
 
@@ -896,16 +914,21 @@ def _execute_pipeline_iteration(
 def main(
     override_args: Optional[PipelineArguments] = None,
     override_config: Optional[Dict[str, Any]] = None,
+    *,
+    argv: Optional[Sequence[str]] = None,
+    resume: bool = False,
 ) -> int:
     """Run once with an invocation ID, restoring the caller's environment on exit.
 
     An incoming API ID is authoritative. Fresh calls receive distinct UUIDs;
     the separately computed run_hash continues to identify stable input/config.
+    CLI callers can pass an explicit argument list instead of reading sys.argv.
     """
     with _run_environment_lock:
         incoming_run_id = os.environ.get("GNN_RUN_ID")
         incoming_context = os.environ.get("GNN_RUN_CONTEXT_FILE")
-        os.environ["GNN_RUN_ID"] = incoming_run_id or uuid.uuid4().hex
+        attempt_id = uuid.uuid4().hex if resume else incoming_run_id or uuid.uuid4().hex
+        os.environ["GNN_RUN_ID"] = attempt_id
         try:
             from gnn.pipeline.admission import (
                 validate_boolean,
@@ -914,23 +937,22 @@ def main(
             )
             from gnn.pipeline.output_lease import OutputLease, OutputLeaseError
 
-            probe_args, _ = _build_main_args(override_args)
+            args, parsed = _build_main_args(override_args, argv)
             try:
                 _admit_configured_worker_limits(override_config)
+                validate_boolean(resume, field_name="resume")
                 validate_steps(
-                    probe_args.only_steps,
+                    args.only_steps,
                     field_name="steps",
                     aliases=True,
                     allow_empty=False,
                 )
-                validate_steps(
-                    probe_args.skip_steps, field_name="skip_steps", aliases=True
-                )
+                validate_steps(args.skip_steps, field_name="skip_steps", aliases=True)
                 for flag in ("verbose", "strict", "parallel", "consolidated_steps"):
-                    validate_boolean(getattr(probe_args, flag), field_name=flag)
+                    validate_boolean(getattr(args, flag), field_name=flag)
                 for name in ("file_workers", "step_workers"):
                     validate_worker_count(
-                        getattr(probe_args, name),
+                        getattr(args, name),
                         field_name=name,
                         allow_none=name == "step_workers",
                     )
@@ -938,8 +960,34 @@ def main(
                 print(f"Pipeline admission failure: {error}", file=sys.stderr)
                 return 1
             try:
-                with OutputLease(Path(probe_args.output_dir), os.environ["GNN_RUN_ID"]):
-                    return _run_pipeline(override_args, override_config)
+                with OutputLease(Path(args.output_dir), attempt_id):
+                    if not resume:
+                        return _run_pipeline(args, override_config, parsed)
+                    from gnn.pipeline.resume import load_resume_checkpoint
+
+                    try:
+                        if args.autonomous:
+                            raise ValueError(
+                                "Autonomous proposals cannot resume a pipeline session"
+                            )
+                        checkpoint = load_resume_checkpoint(Path(args.output_dir))
+                        if (
+                            incoming_run_id is not None
+                            and incoming_run_id != checkpoint.run_id
+                        ):
+                            raise ValueError(
+                                "Caller run ID differs from the resume checkpoint"
+                            )
+                    except ValueError as error:
+                        return _fail_pipeline_startup(error)
+                    os.environ["GNN_RUN_ID"] = checkpoint.run_id
+                    return _run_pipeline(
+                        args,
+                        override_config,
+                        parsed,
+                        resume_checkpoint=checkpoint,
+                        resume_attempt_id=attempt_id,
+                    )
             except OutputLeaseError as error:
                 # A previous invocation may still own an open file handler to a
                 # now-rejected hardlinked log. Refusal must not write through it.
@@ -982,8 +1030,12 @@ def _admit_configured_worker_limits(config: Optional[Dict[str, Any]]) -> None:
 
 
 def _run_pipeline(
-    override_args: Optional[PipelineArguments],
+    admitted_args: PipelineArguments,
     override_config: Optional[Dict[str, Any]],
+    parsed: Optional[argparse.Namespace],
+    *,
+    resume_checkpoint: Optional["ResumeCheckpoint"] = None,
+    resume_attempt_id: str = "",
 ) -> int:
     """Execute one invocation inside main's environment scope."""
     try:
@@ -995,12 +1047,14 @@ def _run_pipeline(
             visual_logger,
             correlation_id,
             logger,
-        ) = _prepare_pipeline_context(override_args, override_config)
+        ) = _prepare_pipeline_context(admitted_args, override_config, parsed)
     except Exception as e:
         return _fail_pipeline_startup(e)
 
+    from gnn.pipeline.resume import restore_pipeline_progress, resume_runtime_identity
     from gnn.pipeline.run_context import CONTEXT_ENV, build_run_context
 
+    run_session: Optional[RunSession] = None
     try:
         context = build_run_context(
             args.target_dir,
@@ -1011,9 +1065,6 @@ def _run_pipeline(
             frameworks=str(getattr(args, "frameworks", "all")).split(","),
             recursive=bool(getattr(args, "recursive", True)),
         )
-        context_path = args.output_dir / "00_pipeline_summary" / "run_context.json"
-        context.write(context_path)
-        os.environ[CONTEXT_ENV] = str(context_path.resolve())
         pipeline_summary["model_selection"] = [
             model.__dict__ for model in context.models if model.steps
         ]
@@ -1024,8 +1075,18 @@ def _run_pipeline(
         pipeline_summary["deadline_monotonic"] = context.deadline_monotonic
         pipeline_summary["artifact_inventory_contract"] = "current-run-v1"
         pipeline_summary["planned_steps"] = [step[0] for step in steps_to_execute]
+        pipeline_summary["resume_runtime_sha256"] = resume_runtime_identity()
+        if resume_checkpoint is not None:
+            run_session = restore_pipeline_progress(
+                resume_checkpoint, pipeline_summary, context, resume_attempt_id
+            )
+        context_path = args.output_dir / "00_pipeline_summary" / "run_context.json"
+        context.write(context_path)
+        os.environ[CONTEXT_ENV] = str(context_path.resolve())
         _write_preliminary_pipeline_summary(pipeline_summary, args.output_dir, logger)
     except Exception as error:
+        if resume_checkpoint is not None:
+            return _fail_pipeline_startup(error)
         return _handle_pipeline_failure(error, args, pipeline_summary, logger)
 
     if getattr(args, "autonomous", False):
@@ -1039,12 +1100,18 @@ def _run_pipeline(
         )
         return 0
 
-    run_session: Optional[RunSession] = None
+    reused_steps = set(pipeline_summary.get("resume", {}).get("reused_steps", ()))
     progress_tracker: Optional[PipelineProgressTracker] = None
     try:
-        run_session = open_run_session_guarded(
-            args, steps_to_execute, pipeline_summary, logger
-        )
+        if run_session is None:
+            run_session = open_run_session_guarded(
+                args, steps_to_execute, pipeline_summary, logger
+            )
+        else:
+            from gnn.pipeline.run_session import checkpoint
+            from gnn.pipeline.run_session_wiring import run_session_path
+
+            checkpoint(run_session, run_session_path(args.output_dir))
         progress_tracker = _start_pipeline_run(
             args,
             steps_to_execute,
@@ -1070,7 +1137,9 @@ def _run_pipeline(
                 for step_num, deps in PIPELINE_STEP_DEPENDENCIES.items()
             }
             exec_indices = {
-                int(s[0].split("_")[0]): s for s in steps_to_execute if "_" in s[0]
+                int(s[0].split("_")[0]): s
+                for s in steps_to_execute
+                if "_" in s[0] and s[0] not in reused_steps
             }
             tiers = resolve_execution_order(
                 deps_dict,
@@ -1078,7 +1147,7 @@ def _run_pipeline(
                 skip_steps=set(range(25)) - set(exec_indices.keys()),
             )
 
-            current_step_counter = 0
+            current_step_counter = len(reused_steps)
             for tier_idx, tier in enumerate(tiers):
                 tier_steps = [exec_indices[n] for n in tier if n in exec_indices]
                 if not tier_steps:
@@ -1205,6 +1274,8 @@ def _run_pipeline(
                             )
         else:
             for step_index, (script_name, description) in enumerate(steps_to_execute):
+                if script_name in reused_steps:
+                    continue
                 updated_session = _execute_pipeline_iteration(
                     step_index,
                     script_name,
@@ -1220,6 +1291,12 @@ def _run_pipeline(
                 if updated_session is not None:
                     run_session = updated_session
 
+        if resume_checkpoint is not None:
+            order = {
+                name: index
+                for index, name in enumerate(pipeline_summary["planned_steps"])
+            }
+            pipeline_summary["steps"].sort(key=lambda step: order[step["script_name"]])
         context.verify_sources()
         from gnn.pipeline.artifact_ownership import verify_owned_artifacts
 

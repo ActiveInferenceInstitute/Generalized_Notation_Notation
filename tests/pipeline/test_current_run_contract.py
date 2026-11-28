@@ -580,14 +580,17 @@ def test_invocation_deadline_includes_real_child_cleanup(
 
 
 @pytest.mark.needs_posix
-def test_normal_worker_exit_cleans_detached_descendant(
+def test_normal_worker_exit_cleans_descendant_within_native_boundary(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import threading
 
     import psutil
 
-    from gnn.utils.runtime_safety.process_tree import DescendantTracker
+    from gnn.utils.runtime_safety.process_tree import (
+        DescendantTracker,
+        descendant_observation_available,
+    )
 
     pid_file = tmp_path / "daemon.pid"
     observed = tmp_path / "observed.flag"
@@ -606,9 +609,19 @@ def test_normal_worker_exit_cleans_detached_descendant(
 
         threading.Thread(target=signal_observed, daemon=True).start()
 
-    monkeypatch.setattr(DescendantTracker, "start", start_with_observation_handshake)
+    can_observe = descendant_observation_available()
+    if can_observe:
+        monkeypatch.setattr(
+            DescendantTracker, "start", start_with_observation_handshake
+        )
     daemon = "import time; time.sleep(60)"
-    worker = f"import subprocess,sys,time,pathlib; p=subprocess.Popen([sys.executable,'-c',{daemon!r}],start_new_session=True); pathlib.Path({str(pid_file)!r}).write_text(str(p.pid)); flag=pathlib.Path({str(observed)!r})\nwhile not flag.exists(): time.sleep(0.01)"
+    worker = (
+        "import subprocess,sys,time,pathlib; "
+        f"p=subprocess.Popen([sys.executable,'-c',{daemon!r}],start_new_session={can_observe!r}); "
+        f"pathlib.Path({str(pid_file)!r}).write_text(str(p.pid))"
+    )
+    if can_observe:
+        worker += f"\nflag=pathlib.Path({str(observed)!r})\nwhile not flag.exists(): time.sleep(0.01)"
     result = execute_command_streaming(
         [sys.executable, "-c", worker],
         timeout=3,
@@ -634,7 +647,13 @@ def test_normal_worker_exit_cleans_detached_descendant(
     assert result["status"] == "SUCCESS", json.dumps(
         {"supervisor": result, "owned_witnesses": witnesses}, indent=2, default=str
     )
-    assert result["observed_descendants"] >= 1
+    assert result["containment"] == (
+        "observed_descendants" if can_observe else "process_group_only"
+    )
+    if can_observe:
+        assert result["observed_descendants"] >= 1
+    else:
+        assert result["observed_descendants"] == 0
     pid = int(pid_file.read_text())
     assert (
         not psutil.pid_exists(pid)
@@ -658,7 +677,7 @@ def test_observation_failure_still_kills_child_before_releasing_pipeline_lease(
     child_pid = tmp_path / "child.pid"
     worker_pid = tmp_path / "worker.pid"
     child = "import time; time.sleep(60)"
-    worker = f"import subprocess,sys,time,pathlib,os; pathlib.Path({str(worker_pid)!r}).write_text(str(os.getpid())); p=subprocess.Popen([sys.executable,'-c',{child!r}]); pathlib.Path({str(child_pid)!r}).write_text(str(p.pid)); time.sleep(60)"
+    worker = f"import subprocess,sys,pathlib,os; pathlib.Path({str(worker_pid)!r}).write_text(str(os.getpid())); p=subprocess.Popen([sys.executable,'-c',{child!r}]); pathlib.Path({str(child_pid)!r}).write_text(str(p.pid))"
     original_stop = DescendantTracker.stop
 
     def failed_stop(self, timeout=0.1):
@@ -673,7 +692,9 @@ def test_observation_failure_still_kills_child_before_releasing_pipeline_lease(
     args = PipelineArguments(
         target_dir=source, output_dir=tmp_path / "output", only_steps="3"
     )
-    assert orchestrator.main(args, {"pipeline": {"timeout": {"total": 0.75}}}) == 1
+    # Normal leader exit makes the injected observer fault independent of
+    # process startup timing while its descendant still needs cleanup.
+    assert orchestrator.main(args, {"pipeline": {"timeout": {"total": 5}}}) == 1
     for path in (worker_pid, child_pid):
         pid = int(path.read_text())
         assert (
@@ -689,6 +710,7 @@ def test_observation_failure_still_kills_child_before_releasing_pipeline_lease(
     )
     assert receipt["overall_status"] == "FAILED"
     assert receipt["steps"][0]["cleanup_verified"] is False
+    assert "Injected observation failure" in receipt["steps"][0]["stderr"]
 
 
 def test_explicit_model_scope_does_not_union_other_receipt_models() -> None:

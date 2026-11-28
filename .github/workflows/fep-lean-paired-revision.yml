@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: fep-lean-paired-revision-${{ github.workflow }}-${{ github.ref }}
+  group: fep-lean-paired-revision-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}-${{ github.sha }}
   cancel-in-progress: true
 
 permissions:

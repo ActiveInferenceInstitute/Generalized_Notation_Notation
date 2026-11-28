@@ -145,7 +145,13 @@ def _cmd_report(args: argparse.Namespace) -> int:
             )
         return EXIT_ERROR
 
-    report, report_path = publish_pipeline_report(output_dir)
+    try:
+        report, report_path = publish_pipeline_report(output_dir)
+    except (OSError, ValueError) as error:
+        logger.error("Could not generate pipeline report: %s", error)
+        if is_json:
+            _print_envelope("error", error=str(error), command="report")
+        return EXIT_ERROR
     if is_json:
         _print_envelope(
             "success",
@@ -154,6 +160,21 @@ def _cmd_report(args: argparse.Namespace) -> int:
         )
     else:
         print(f"📄 Report written to: {report_path}")
+    return EXIT_SUCCESS
+
+
+def _cmd_replay(args: argparse.Namespace) -> int:
+    """Verify and replay an existing durable run manifest."""
+    from gnn.pipeline.run_manifest import replay_run_manifest
+
+    receipt = replay_run_manifest(args.output_dir, expected_run_id=args.expected_run_id)
+    if args.json:
+        _print_envelope("success", data=receipt, command="replay")
+    else:
+        print(
+            f"Verified {receipt['trace_event_count']} recorded events in {receipt['evidence_mode']} mode."
+        )
+        print(receipt["trace_sha256"])
     return EXIT_SUCCESS
 
 

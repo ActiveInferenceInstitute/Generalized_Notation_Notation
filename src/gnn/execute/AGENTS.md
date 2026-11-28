@@ -32,7 +32,7 @@ processor/
 ├── envelope.py    # Per-script result envelope factories: _base_execution_envelope, _make_skipped_result, local/distributed failure factories, facade-routed availability probe
 ├── workers.py     # _coerce_execution_workers/_coerce_dispatch_retries, _execute_script_worker, _run_scripts_with_local_workers (ProcessPoolExecutor resolved through the facade)
 ├── summary.py     # _init_execution_summary, _update_framework_status, _classify_execute_outcome, _write_execution_summaries
-├── single.py      # _aggregate_benchmark_samples, _new_execution_result, _build_execution_environment, sandbox helpers, _backend_version_from_runner_metadata, execute_single_script
+├── single.py      # _aggregate_benchmark_samples, _new_execution_result, _build_execution_environment, _backend_version_from_runner_metadata, execute_single_script
 └── pipeline.py    # process_execute (Step 12 orchestration) and execute_simulation_from_gnn
 ```
 
@@ -231,7 +231,7 @@ elif not detection.get("correct_package"):
 - `GNN_SANDBOX` (str): rendered-script sandbox mode — `"off"` (default, no
   wrapping), `"prefer"` (wrap when firejail/bwrap/nsjail is found, otherwise
   run unsandboxed with a warning), or `"require"` (refuse to run when no
-  backend is found). See `execute.sandbox` (RED_TEAM V-10).
+  backend is found). Explicit values outside these modes are rejected before launch. See `execute.sandbox` (RED_TEAM V-10).
 - `GNN_JAX_PLATFORM` (str): pins `JAX_PLATFORM_NAME` for JAX-backed child processes (see Key Capabilities).
 
 ---

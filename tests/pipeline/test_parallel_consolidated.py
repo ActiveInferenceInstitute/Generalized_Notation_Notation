@@ -13,6 +13,7 @@ import logging
 import os
 import threading
 import time
+from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -75,6 +76,7 @@ def _inject_steps(monkeypatch: pytest.MonkeyPatch, args: PipelineArguments) -> N
     def context(
         override_args: PipelineArguments | None,
         override_config: dict[str, Any] | None,
+        parsed: Namespace | None,
     ) -> tuple[Any, ...]:
         summary = orchestrator._initialize_pipeline_summary(args, STEPS, {})
         return (

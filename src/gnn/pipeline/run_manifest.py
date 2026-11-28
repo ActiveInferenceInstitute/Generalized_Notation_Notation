@@ -731,3 +731,38 @@ def verify_run_manifests(
     except (OSError, ValueError, TypeError, KeyError) as exc:
         problems.append(f"Cannot verify trace: {exc}")
     return problems
+
+
+def replay_run_manifest(
+    run_output_dir: Path, *, expected_run_id: str | None = None
+) -> dict[str, Any]:
+    """Verify retained execution evidence and return a read-only replay receipt."""
+    run_dir = run_output_dir.resolve(strict=True)
+    manifest_dir = run_dir / DEFAULT_MANIFEST_SUBDIR
+    index_path = _contained_file(run_dir, f"{DEFAULT_MANIFEST_SUBDIR}/index.json")
+    index_bytes = index_path.read_bytes()
+    index = json.loads(index_bytes)
+    if not isinstance(index, dict):
+        raise ValueError("Run manifest index must be a JSON object")
+    trace_path = _contained_file(manifest_dir, index.get("trace_file"))
+    trace_bytes = trace_path.read_bytes()
+
+    problems = verify_run_manifests(manifest_dir, run_dir)
+    if problems:
+        raise ValueError("Run evidence verification failed: " + "; ".join(problems))
+    if index_path.read_bytes() != index_bytes or trace_path.read_bytes() != trace_bytes:
+        raise ValueError("Run manifest changed during replay verification")
+    provenance = index["provenance"]
+    run_id = provenance.get("run_id")
+    if expected_run_id is not None and run_id != expected_run_id:
+        raise ValueError("Run manifest does not match the expected run ID")
+    trace = ExecutionTrace.model_validate_json(trace_bytes)
+    return {
+        "schema": "gnn.run_replay/v1",
+        "run_id": run_id,
+        "run_hash": provenance.get("run_hash"),
+        "overall_status": provenance.get("overall_status"),
+        "evidence_mode": provenance["mode"],
+        "trace_event_count": len(trace.events),
+        "trace_sha256": replay_trace(trace),
+    }

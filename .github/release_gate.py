@@ -2,6 +2,8 @@
 
 Uses the authenticated GitHub CLI. This is a workflow-status gate, not a
 substitute for independent artifact, manuscript or scientific acceptance.
+Release qualification observes main workflow-dispatch runs and tag-push
+runs separately. Dispatch fills only missing main workflow-dispatch runs.
 """
 
 from __future__ import annotations
@@ -12,6 +14,7 @@ import datetime
 import json
 import re
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -36,6 +39,23 @@ WORKFLOWS = (
     "custody-re-render.yml",
 )
 
+# A successful run with a partial matrix is not a release qualification.
+REQUIRED_MATRIX_JOBS = {
+    "ci.yml": {"test (3.13)", "test (3.14)", "pytest (3.12)"},
+    "comprehensive-native-coverage.yml": {
+        f"Comprehensive native ({python})" for python in ("3.12", "3.13", "3.14")
+    },
+    "installed-platforms.yml": {
+        "installed (ubuntu-latest, 3.12)",
+        "installed (ubuntu-latest, 3.13)",
+        "installed (ubuntu-latest, 3.14)",
+        "installed (macos-latest, 3.14)",
+        "installed (windows-latest, 3.14)",
+        "container (linux/amd64, 3.14)",
+    },
+    "fep-lean-paired-revision.yml": {"fep-lean-pair (3.12)", "fep-lean-pair (3.14)"},
+}
+
 
 def gh(*arguments: str) -> Any:
     return json.loads(
@@ -56,7 +76,13 @@ def pages(endpoint: str, key: str) -> list[dict]:
     raise RuntimeError("Actions pagination exceeded the bounded collection limit")
 
 
-def evaluate(runs: list[dict], jobs: list[dict], revision: str) -> dict:
+def evaluate(
+    runs: list[dict],
+    jobs: list[dict],
+    revision: str,
+    *,
+    required_jobs: set[str] | None = None,
+) -> dict:
     """Require the newest run/attempt, exact head and every declared job."""
     if not runs:
         return {"state": "missing"}
@@ -74,14 +100,22 @@ def evaluate(runs: list[dict], jobs: list[dict], revision: str) -> dict:
                 {"name": job["name"], "seconds": (end - start).total_seconds()}
             )
     result = {"run": run, "jobs": jobs, "job_timings": timings}
+    missing_jobs = sorted((required_jobs or set()) - {job.get("name") for job in jobs})
+    if missing_jobs:
+        result["missing_jobs"] = missing_jobs
     if run["head_sha"] != revision:
         result["state"] = "wrong_source"
     elif run["status"] != "completed":
         result["state"] = "pending"
     elif run["conclusion"] != "success":
         result["state"] = "failed"
-    elif not jobs or any(
-        job["status"] != "completed" or job["conclusion"] != "success" for job in jobs
+    elif (
+        missing_jobs
+        or not jobs
+        or any(
+            job["status"] != "completed" or job["conclusion"] != "success"
+            for job in jobs
+        )
     ):
         result["state"] = "incomplete_jobs"
     else:
@@ -124,38 +158,61 @@ def inspect(
         f"repos/{REPOSITORY}/actions/runs/{latest['id']}/attempts/{latest['run_attempt']}/jobs",
         "jobs",
     )
-    return workflow, evaluate(runs, jobs, revision)
+    return workflow, evaluate(
+        runs, jobs, revision, required_jobs=REQUIRED_MATRIX_JOBS.get(workflow)
+    )
 
 
-def main() -> int:
+def resolve_ref(ref: str) -> str:
+    endpoint = f"repos/{REPOSITORY}/commits/{quote(ref, safe='')}"
+    revision: str = gh("api", endpoint)["sha"]
+    return revision
+
+
+def dispatch_workflow(workflow: str, ref: str) -> None:
+    subprocess.run(
+        ["gh", "workflow", "run", workflow, "--repo", REPOSITORY, "--ref", ref],
+        check=True,
+        timeout=90,
+    )
+
+
+def main(
+    argv: list[str] | None = None,
+    *,
+    read_ref: Callable[[str], str] = resolve_ref,
+    observe: Callable[[str, str, str, str | None], tuple[str, dict]] = inspect,
+    request_dispatch: Callable[[str, str], None] = dispatch_workflow,
+) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--revision", required=True, help="Full immutable Git commit")
     parser.add_argument(
         "--ref", required=True, help="Remote branch or tag resolving to that commit"
     )
     parser.add_argument(
-        "--event", choices=("push", "pull_request", "workflow_dispatch")
+        "--event",
+        choices=("push", "pull_request", "workflow_dispatch"),
+        help="Use workflow_dispatch for release main and push for the version tag",
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
         "--dispatch-missing",
         action="store_true",
-        help="Dispatch only workflows with no run; never retry failures",
+        help="Dispatch missing workflow_dispatch runs on main",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if not re.fullmatch("[0-9a-f]{40}", args.revision):
         parser.error("--revision must be a full commit SHA")
-    if args.dispatch_missing and args.event:
-        parser.error(
-            "dispatch requires unfiltered events so existing automatic runs are retained"
-        )
-    endpoint = f"repos/{REPOSITORY}/commits/{quote(args.ref, safe='')}"
-    if gh("api", endpoint)["sha"] != args.revision:
+    if args.dispatch_missing and (
+        args.ref != "main" or args.event != "workflow_dispatch"
+    ):
+        parser.error("--dispatch-missing requires --ref main --event workflow_dispatch")
+    if read_ref(args.ref) != args.revision:
         parser.error("remote ref no longer resolves to requested revision")
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         observations = dict(
             executor.map(
-                lambda name: inspect(name, args.revision, args.ref, args.event),
+                lambda name: observe(name, args.revision, args.ref, args.event),
                 WORKFLOWS,
             )
         )
@@ -176,25 +233,17 @@ def main() -> int:
     if args.dispatch_missing:
         for name, result in observations.items():
             if result["state"] == "missing":
-                if gh("api", endpoint)["sha"] != args.revision:
+                # An exact candidate run may have appeared during collection.
+                _, latest = observe(name, args.revision, args.ref, args.event)
+                observations[name] = latest
+                if latest["state"] != "missing":
+                    continue
+                if read_ref(args.ref) != args.revision:
                     raise RuntimeError("remote ref moved before dispatch")
-                subprocess.run(
-                    [
-                        "gh",
-                        "workflow",
-                        "run",
-                        name,
-                        "--repo",
-                        REPOSITORY,
-                        "--ref",
-                        args.ref,
-                    ],
-                    check=True,
-                    timeout=90,
-                )
+                request_dispatch(name, args.ref)
                 dispatches.append(name)
                 args.output.write_text(json.dumps(receipt, indent=2) + "\n")
-    if gh("api", endpoint)["sha"] != args.revision:
+    if read_ref(args.ref) != args.revision:
         raise RuntimeError(
             "remote ref moved during collection; observation cannot qualify the ref"
         )

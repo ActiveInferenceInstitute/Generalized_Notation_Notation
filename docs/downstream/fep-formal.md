@@ -1,7 +1,7 @@
 # fep_formal
 
 **Repository**: [`ActiveInferenceInstitute/fep_formal`](https://github.com/ActiveInferenceInstitute/fep_formal)
-· **Default branch**: `main` · **Verified**: 2026-11-02 from origin `main` with read-only GitHub API calls; job evidence re-read 2026-11-06 and 2026-11-11.
+· **Default branch**: `main` · **Source pair verified**: 2026-11-27.
 
 ## What it models
 
@@ -23,25 +23,23 @@ documents rather than a corpus of generative models.
 
 ## Pinned GNN revision
 
-Content-addressed, not a release tag, and the source pin names the GNN commit
-it was taken from. Two pin files carry the bridge:
+The bridge source pin binds an exact GNN commit and its contract files by
+content hash. Two pin files carry the bridge:
 
 - `specs/gnn-bridge-w1-bridge-operations/syntax-pin.json` records SHA-256
   hashes for GNN's `docs/gnn/gnn_syntax.md` and
   `src/gnn/pipeline/step_registry.py`.
-- `specs/gnn-bridge-w2-source-custody/source-pin.json` records release
-  `v5.1.0` at GNN commit `75c834bd8519dc7b5adc4d24f16bf393cfd1ecdf` with
+- `specs/gnn-bridge-w2-source-custody/source-pin.json` records GNN commit
+  `c44896439ad8e2e2b50ef99f519182550098807e` with
   SHA-256 hashes for the six declared contract files (`pyproject.toml`,
   `uv.lock`, `src/gnn/main.py`, `docs/gnn/gnn_syntax.md`,
   `src/gnn/pipeline/step_registry.py`,
   `docs/other/fep_lean/bridge-contract.md`), and the `fep_lean` companion
-  commit `301c2d2405b260ef8b645b0c5a3914fbcdf5c49c` with its own file hashes.
+  source commit `40e985910fe413f6355a75b706ec48ffeb29ea9f` with its own file
+  hashes.
 
-Per-file binding, measured 2026-11-12 by hashing each declared file at commit
-`75c834bd`: all six GNN hashes reproduce exactly. The previous pin `2778e65c`
-was 206 commits after tag `v5.0.3` and is an ancestor of GNN `main`; it
-predated `src/gnn/importers.py`, which is why the pin moved to the release that
-carries the reader.
+The [reciprocal GNN pin](../../.github/fep-lean-pair.json) names FEP's merged
+qualification revision, including its native proof receipt.
 
 ## Conformance and validation evidence
 
@@ -55,23 +53,24 @@ carries the reader.
   `tests/test_gnn_bridge_operations.py`, which exercises the bridge's read-only
   checks and their refusal paths.
 - A dedicated `.github/workflows/ci.yml` job key `gnn-conformance` publishes the
-  `gnn conformance (pinned)` context on every push and pull request
-  (re-read 2026-11-11); the `python` job above remains separate bridge evidence.
-  The `protect-default-branch` ruleset requires the separate
-  `gitvault/fep-gnn-conformance` check, not this context.
+  `gnn conformance (pinned)` context on push and pull request when the
+  workflow is enabled. The `python` job above checks bridge artifacts.
 - `docs/pin_audit.py` (run in `ci.yml` as "Require the newest stable Lean-Mathlib
   release pair" and in the scheduled `pin-audit` job of `lean-latest.yml`)
   audits the Lean toolchain, Mathlib revision and model pins in project
   markdown. It does not audit the GNN syntax pin and is not bridge evidence.
-- Manual, not automatic: the live pair check `fep-formal bridge status`, pointed
+- Run the live pair check `fep-formal bridge status`, pointed
   at a GNN checkout, compares the source pin against that checkout
   (`specs/gnn-bridge-w1-bridge-operations/bridge_status.py` is the compatibility
   entry point); the source pin is rewritten only by `fep-formal bridge pin`.
 - Dispatch-only: `.github/workflows/source-pair-qualification.yml` job
   `qualify-source-pair` takes explicit `fep_revision` and `gnn_revision` inputs
-  (40-character lowercase hex) and validates them. It runs only when dispatched;
-  the most recent runs completed 2026-10-28, so the pair is not verified
-  continuously.
+  (40-character lowercase hex) and validates them when the workflow runs.
+- [FEP PR #276](https://github.com/ActiveInferenceInstitute/fep_formal/pull/276)
+  records local source-binding, finite and continuous emit checks, the Q7
+  render, portability checks on four Python runtimes, and fresh Lean
+  compilation of 12 Q7 theorem signatures. The independent receipt check
+  passed on the frozen source pair.
 - The two copies of the bridge contract are not byte-identical: the GNN mirror
   hashes `66ca4b50…` and the canonical `fep_formal` copy `8bfa57cb…`, differing
   only in the two table rows that name the canonical and the mirror copy. The
@@ -86,9 +85,7 @@ carries the reader.
 
 ## Verification limits
 
-Not verified: that the qualification workflow is currently green (its runs are
-manual and the most recent are 2026-10-28), and that a GNN checkout matches the
-pin today — that comparison needs the manual `fep-formal bridge status` run.
-The pins are content-addressed and name a GNN commit rather than a release, so
-freshness must be re-established by hashing the declared files at the intended
-revision.
+The current receipt records local qualification for the frozen pair. Use
+`fep-formal bridge status` with the intended GNN checkout to verify the bound
+source files. Workflow status and native results for other revisions require
+their own evidence.

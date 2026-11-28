@@ -1,9 +1,9 @@
 # Installed-package and native platform acceptance
 
 The [installed-platform workflow](../../.github/workflows/installed-platforms.yml)
-accepts an ordinary wheel outside the source checkout. Its matrix is
-Linux/Python 3.12 and 3.14, macOS/Python 3.14, and Windows/Python 3.14 on every
-event.
+checks ordinary wheel and sdist installations outside the source checkout.
+Every event runs Linux/Python 3.12, 3.13, and 3.14, macOS/Python 3.14, and
+Windows/Python 3.14.
 A supported release must have successful native receipts for its exact source;
 a resolvable wheel plan or classifier alone does not establish support.
 The ordinary source test suite has a separate Python 3.12–3.14 matrix, and
@@ -36,8 +36,16 @@ the precise native guarantee and launcher boundary.
 
 ## Installation boundary
 
-Each runner builds one wheel from its tested revision and exports runtime
-requirements from `uv.lock` with hashes and `--frozen`. Core, API and THRML
+Each runner builds a wheel directly and rebuilds it from the sdist using the
+hash-pinned [build requirements](../../.github/build-requirements.txt). It
+verifies both wheel inventories and `RECORD` entries, compares artifact
+metadata, and runs base installs of both distributions with an ordinary
+resolver. Linux covers CPython 3.12, 3.13 and 3.14. macOS and Windows retain
+their 3.14 lanes. The POSIX lanes also resolve `all` and run the `gui`
+wheel smoke test with Gradio and Pillow.
+
+Each runner exports runtime requirements from `uv.lock` with hashes and
+`--frozen`. Core, API and THRML
 runtime dependencies must install as ordinary binary wheels. Development test
 tools are installed from a separate frozen hashed export. The GNN wheel is
 installed without resolving dependencies again, because they have already been admitted
@@ -64,6 +72,13 @@ field against the installed schema mode. It records distribution versions
 and binds the result to the tested source, wheel, lock and base
 export. Each lane retains both its base profile and its extended native
 profile evidence.
+
+Both wheels ship the PEP 561 marker `gnn/py.typed`. From the installed base
+wheel outside the checkout, strict mypy checks the types of the parser,
+shared types, importer pin, and semantic witness APIs. A separate negative
+probe must report an argument type error when a caller passes an integer as
+the parser path. The base typing environment installs only the locked mypy
+dependency closure and checks that FastAPI and pygls are absent.
 
 ## Public and numerical acceptance
 
@@ -189,9 +204,8 @@ Witnesses ran with `python -I` and checked GNN's installed module location.
   `mypy --strict --no-incremental --follow-untyped-imports --follow-imports=silent`
   passed for `GNNParsingSystem`, `GNNFormat`, `GNNVariable`, `ImporterPin` and
   `build_semantic_witness`. Its base venv contained mypy's locked dependency
-  closure and still had neither FastAPI nor pygls installed. The hosted
-  workflow uses the same opt-in boundary and does not install the dev group
-  into that base typing environment.
+  closure and still had neither FastAPI nor pygls installed. This observation
+  describes the wheel built for Wave 1A.
 
 The lock resolves opentelemetry-api **1.45.2**, tornado **6.6.1** and
 inferactively-pymdp **1.0.5**. It retains Flax **0.12.8/0.12.10**, ngclearn's

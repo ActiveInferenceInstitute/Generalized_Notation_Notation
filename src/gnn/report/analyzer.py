@@ -12,6 +12,10 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List
 
+from gnn.pipeline.artifact_ownership import current_artifact_files
+from gnn.pipeline.report_evidence import ReportEvidence, load_report_evidence
+from gnn.pipeline.run_context import current_run_context
+
 logger = logging.getLogger(__name__)
 
 
@@ -180,66 +184,64 @@ def collect_pipeline_data(
     }
 
     # Check for pipeline execution summary (main.py writes to 00_pipeline_summary/ subdir)
-    pipeline_summary_candidates: list[Any] = [
-        pipeline_output_dir / "00_pipeline_summary" / "pipeline_execution_summary.json",
-        pipeline_output_dir / "pipeline_execution_summary.json",
-    ]
-    from gnn.pipeline.run_context import current_run_context
-
+    summary_dir = pipeline_output_dir / "00_pipeline_summary"
+    summary_name = "pipeline_execution_summary.json"
     context = current_run_context()
+    summary_paths: tuple[Path, ...] = (
+        summary_dir / summary_name,
+        pipeline_output_dir / summary_name,
+    )
     if context is not None:
-        pipeline_summary_candidates = [
-            pipeline_output_dir / "00_pipeline_summary" / "current_summary.json"
-        ]
-    pipeline_summary_file = None
-    for candidate in pipeline_summary_candidates:
-        if candidate.exists():
-            pipeline_summary_file = candidate
-            break
-    if context is not None and pipeline_summary_file is None:
-        raise ValueError("Current-run report snapshot is unavailable")
-    if pipeline_summary_file is not None:
-        try:
-            with open(pipeline_summary_file, encoding="utf-8") as f:
-                pipeline_data["pipeline_summary"] = json.load(f)
-            if (
-                context is not None
-                and pipeline_data["pipeline_summary"].get("run_id") != context.run_id
-            ):
-                raise ValueError("Report snapshot belongs to a different run")
-
-            # Extract performance metrics from summary
-            summary = pipeline_data["pipeline_summary"]
-            pipeline_data["report_generation_time"] = _summary_timestamp(summary)
-            pipeline_data["report_timestamp_source"] = (
-                "pipeline_execution_summary"
-                if pipeline_data["report_generation_time"] != "unavailable"
-                else "unavailable"
+        summary_paths = (summary_dir / "current_summary.json",)
+        if pipeline_output_dir.resolve() != Path(context.output_root).resolve():
+            raise ValueError(
+                "Current-run report snapshot belongs to another output root"
             )
-            pipeline_data["overall_status"] = summary.get("overall_status", "UNKNOWN")
-            if "performance_metrics" in summary:
-                pipeline_data["performance_metrics"] = summary["performance_metrics"]
-            elif "performance_summary" in summary:
-                pipeline_data["performance_metrics"] = summary["performance_summary"]
+    try:
+        evidence = load_report_evidence(
+            pipeline_output_dir,
+            summary_paths,
+            active_run_id=context.run_id if context is not None else None,
+        )
+    except (OSError, ValueError) as error:
+        if context is not None:
+            raise ValueError(
+                f"Current-run report snapshot is invalid: {error}"
+            ) from error
+        if not isinstance(error, (json.JSONDecodeError, UnicodeError)):
+            raise
+        logger.warning("Failed to read pipeline summary: %s", error)
+        evidence = ReportEvidence({}, None, "Unverified historical directory inventory")
 
-            # Extract error analysis from summary
-            if "errors" in summary:
-                pipeline_data["error_analysis"] = analyze_errors(
-                    summary["errors"], logger
-                )
-
-        except Exception as e:
-            if context is not None:
-                raise ValueError(f"Current-run report snapshot is invalid: {e}") from e
-            logger.warning(f"Failed to read pipeline summary: {e}")
+    pipeline_data["evidence_scope"] = evidence.description
+    summary = evidence.summary
+    if summary:
+        pipeline_data["pipeline_summary"] = summary
+        pipeline_data["report_generation_time"] = _summary_timestamp(summary)
+        if pipeline_data["report_generation_time"] != "unavailable":
+            pipeline_data["report_timestamp_source"] = "pipeline_execution_summary"
+        pipeline_data["overall_status"] = summary.get("overall_status", "UNKNOWN")
+        if "performance_metrics" in summary:
+            pipeline_data["performance_metrics"] = summary["performance_metrics"]
+        elif "performance_summary" in summary:
+            pipeline_data["performance_metrics"] = summary["performance_summary"]
+        if "errors" in summary:
+            pipeline_data["error_analysis"] = analyze_errors(summary["errors"], logger)
 
     # Collect data from each step directory
     step_directories = list(STEP_OUTPUT_DIRS)
 
     for step_dir in step_directories:
         step_path = pipeline_output_dir / step_dir
-        if step_path.exists():
-            step_data = analyze_step_directory(step_path, step_dir, logger)
+        has_step_files = (
+            step_path.exists()
+            if evidence.files is None
+            else bool(current_artifact_files(step_path, inventory=evidence.files))
+        )
+        if has_step_files:
+            step_data = analyze_step_directory(
+                step_path, step_dir, logger, inventory=evidence.files
+            )
             pipeline_data["steps"][step_dir] = step_data
 
             # Update summary statistics
@@ -356,14 +358,18 @@ def collect_pipeline_data(
 
     # Collect visualizations from all pipeline outputs
     pipeline_data["visualizations"] = collect_visualizations(
-        pipeline_output_dir, logger
+        pipeline_output_dir, logger, inventory=evidence.files
     )
 
     return pipeline_data
 
 
 def analyze_step_directory(
-    step_path: Path, step_name: str, logger: logging.Logger
+    step_path: Path,
+    step_name: str,
+    logger: logging.Logger,
+    *,
+    inventory: frozenset[Path] | None = None,
 ) -> Dict[str, Any]:
     """
     Analyze a specific step directory and extract relevant data.
@@ -391,9 +397,7 @@ def analyze_step_directory(
 
     try:
         # Count files and calculate sizes
-        from gnn.pipeline.artifact_ownership import current_artifact_files
-
-        for file_path in current_artifact_files(step_path):
+        for file_path in current_artifact_files(step_path, inventory=inventory):
             if file_path.is_file():
                 step_data["file_count"] += 1
                 file_size_mb = file_path.stat().st_size / (1024 * 1024)
@@ -411,7 +415,7 @@ def analyze_step_directory(
 
                 # Track last modification
                 mtime = file_path.stat().st_mtime
-                if (
+                if inventory is None and (
                     step_data["last_modified"] is None
                     or mtime > step_data["last_modified"]
                 ):
@@ -437,7 +441,11 @@ def analyze_step_directory(
         step_data["total_size_mb"] = round(step_data["total_size_mb"], 2)
 
         # Analyze step-specific performance and errors
-        step_data.update(analyze_step_specific_data(step_path, step_name, logger))
+        step_data.update(
+            analyze_step_specific_data(
+                step_path, step_name, logger, inventory=inventory
+            )
+        )
 
     except Exception as e:
         logger.warning(f"Failed to analyze step directory {step_name}: {e}")
@@ -448,7 +456,11 @@ def analyze_step_directory(
 
 
 def analyze_step_specific_data(
-    step_path: Path, step_name: str, logger: logging.Logger
+    step_path: Path,
+    step_name: str,
+    logger: logging.Logger,
+    *,
+    inventory: frozenset[Path] | None = None,
 ) -> Dict[str, Any]:
     """
     Analyze step-specific data like performance metrics and error logs.
@@ -465,11 +477,9 @@ def analyze_step_specific_data(
 
     try:
         # Look for performance metrics files
-        from gnn.pipeline.artifact_ownership import current_artifact_files
-
         perf_files = current_artifact_files(
-            step_path, "*performance*.json"
-        ) + current_artifact_files(step_path, "*metrics*.json")
+            step_path, "*performance*.json", inventory=inventory
+        ) + current_artifact_files(step_path, "*metrics*.json", inventory=inventory)
         for perf_file in perf_files:
             try:
                 with open(perf_file, encoding="utf-8") as f:
@@ -479,9 +489,9 @@ def analyze_step_specific_data(
                 logger.debug(f"Failed to read performance file {perf_file}: {e}")
 
         # Look for error logs
-        log_files = current_artifact_files(step_path, "*.log") + current_artifact_files(
-            step_path, "*error*.json"
-        )
+        log_files = current_artifact_files(
+            step_path, "*.log", inventory=inventory
+        ) + current_artifact_files(step_path, "*error*.json", inventory=inventory)
         error_logs: list[Any] = []
         for log_file in log_files:
             try:
@@ -687,7 +697,10 @@ def is_key_file(file_path: Path, step_name: str) -> bool:
 
 
 def collect_visualizations(
-    pipeline_output_dir: Path, logger: logging.Logger
+    pipeline_output_dir: Path,
+    logger: logging.Logger,
+    *,
+    inventory: frozenset[Path] | None = None,
 ) -> Dict[str, Any]:
     """
     Collect all visualizations from pipeline output directories.
@@ -725,9 +738,9 @@ def collect_visualizations(
 
             # Scan for visualization files
             for pattern in patterns:
-                from gnn.pipeline.artifact_ownership import current_artifact_files
-
-                for viz_file in current_artifact_files(step_path, pattern):
+                for viz_file in current_artifact_files(
+                    step_path, pattern, inventory=inventory
+                ):
                     if viz_file.is_file():
                         try:
                             file_size = viz_file.stat().st_size

@@ -89,10 +89,10 @@ with `uv sync --extra <group>` or together with `uv sync --all-extras`):
 
 - **Packages**: `gradio`
 - **Use case**: GUI interfaces for model construction (Step 22)
-- **Installation**: `uv sync --frozen --extra gui --python 3.12`. The committed uv override selects
-  Pillow 13 despite Gradio 6.30.0's upstream `<13` cap; plain pip GUI/all installs
-  cannot resolve this combination. See the
-  [runtime exceptions](README.md#runtime-defaults-and-required-profiles).
+- **Installation**: `uv sync --frozen --extra gui --python 3.12` uses the
+  committed lock. Ordinary `pip install '.[gui]'` resolves Gradio 6.32.0 or
+  newer with Pillow 13 or newer. See the
+  [runtime profiles](README.md#runtime-defaults-and-required-profiles).
 
 ### 6. **graphs** - Graphviz Bindings
 

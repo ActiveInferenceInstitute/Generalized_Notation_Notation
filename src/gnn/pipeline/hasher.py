@@ -11,6 +11,7 @@ Provides:
 import hashlib
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, cast
 
@@ -48,7 +49,7 @@ def effective_run_config(
         "pipeline_summary_file",
     }
     args = {key: value for key, value in arguments.items() if key not in incidental}
-    return {
+    identity: Dict[str, Any] = {
         "arguments": args,
         "pipeline": pipeline_settings,
         "selected_steps": list(selected_steps),
@@ -57,6 +58,9 @@ def effective_run_config(
         if input_config is not None
         else {"pipeline": pipeline_settings},
     }
+    if "2_tests.py" in selected_steps and os.getenv("SKIP_TESTS_IN_PIPELINE"):
+        identity["skip_tests_in_pipeline"] = True
+    return identity
 
 
 def verify_indexed_run(entry: Dict[str, Any]) -> list[str]:

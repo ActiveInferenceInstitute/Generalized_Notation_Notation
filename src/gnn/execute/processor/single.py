@@ -36,6 +36,7 @@ from gnn.execute.processor.envelope import (
     _base_execution_envelope,
     _make_skipped_result,
 )
+from gnn.execute.sandbox import SandboxAdmissionError, resolve_sandbox
 from gnn.execute.security_gate import check_script_allowed
 from gnn.execute.subprocess_envelope import (
     INTERNAL_ERROR,
@@ -161,38 +162,6 @@ def _gnn_allow_missing_deps() -> bool:
     )
 
 
-def _sandbox_mode() -> str:
-    """Effective sandbox mode from ``GNN_SANDBOX`` (default ``off``)."""
-    from gnn.execute.sandbox import SANDBOX_MODES
-
-    mode = os.environ.get("GNN_SANDBOX", "off").strip().lower()
-    return mode if mode in SANDBOX_MODES else "off"
-
-
-def _sandbox_command_prefix(mode: str) -> tuple[list[str], Optional[str]]:
-    """Return ``(prefix, blocked_reason)`` for the requested sandbox mode.
-
-    ``blocked_reason`` is non-None only when ``require`` cannot find a backend.
-    """
-    if mode == "off":
-        return [], None
-    from gnn.execute.sandbox import detect_sandbox
-
-    spec = detect_sandbox()
-    if spec is None:
-        if mode == "require":
-            return [], (
-                "GNN_SANDBOX=require but no sandbox backend "
-                "(firejail/bwrap/nsjail) is installed"
-            )
-        logger.warning(
-            "GNN_SANDBOX=%s but no sandbox backend found; running unsandboxed",
-            mode,
-        )
-        return [], None
-    return list(spec.prefix), None
-
-
 def _backend_version_from_runner_metadata(
     runner_metadata: Dict[str, Any],
 ) -> Optional[str]:
@@ -250,6 +219,19 @@ def execute_single_script(
     deadline = script_deadline(timeout)
     from gnn.execute import processor as _processor_facade
 
+    exec_result = _new_execution_result(context)
+    try:
+        sandbox_admission = resolve_sandbox()
+    except SandboxAdmissionError as exc:
+        exec_result.update(
+            error=str(exc),
+            error_type=exc.error_type,
+            return_code=NEVER_STARTED,
+            execution_metadata={"sandbox_mode": exc.mode, "sandboxed": False},
+        )
+        logger.error("%s", exc)
+        return exec_result
+
     # Probe the actual interpreter and committed environment before dispatch.
     if framework in FRAMEWORK_IMPORT_CHECK or framework in FRAMEWORK_JULIA_PACKAGES:
         dependency_status = _processor_facade._check_framework_by_name(
@@ -262,9 +244,6 @@ def execute_single_script(
             return _make_skipped_result(
                 script_info, framework, model_name, executor, logger, dependency_status
             )
-
-    # Prepare execution result
-    exec_result = _new_execution_result(context)
 
     # Pre-execution security gate (RED_TEAM_REVIEW V-01/V-06): scan rendered
     # code BEFORE running it. Shared helper (SC-1) also gates the GNNExecutor
@@ -322,46 +301,12 @@ def execute_single_script(
 
         try:
             env = _processor_facade._build_execution_environment(context, results_dir)
-
-            sandbox_mode = _sandbox_mode()
-            sandbox_prefix, sandbox_blocked = _sandbox_command_prefix(sandbox_mode)
-            if sandbox_blocked is not None:
-                exec_result["error"] = sandbox_blocked
-                exec_result["error_type"] = "SandboxUnavailable"
-                logger.error(sandbox_blocked)
-                return exec_result
-            # SC-2b: running unsandboxed is a record, not a whisper — emit a
-            # pipeline-visible receipt and carry the mode in execution metadata.
-            if sandbox_mode == "off":
-                logger.warning(
-                    "sandbox_disabled_receipt: script %s executed WITHOUT a "
-                    "sandbox (GNN_SANDBOX=off, the default). Rendered scripts "
-                    "run with operator privileges; set GNN_SANDBOX=prefer/require "
-                    "for isolation.",
-                    script_info["name"],
-                    extra={
-                        "event": "sandbox_disabled_receipt",
-                        "sandbox_mode": sandbox_mode,
-                        "script": script_info["name"],
-                    },
-                )
-            else:
-                logger.warning(
-                    "sandbox_active_receipt: script %s will run under sandbox "
-                    "isolation (GNN_SANDBOX=%s)",
-                    script_info["name"],
-                    sandbox_mode,
-                    extra={
-                        "event": "sandbox_active_receipt",
-                        "sandbox_mode": sandbox_mode,
-                    },
-                )
             exec_result["execution_metadata"] = dict(
-                exec_result.get("execution_metadata") or {}
+                exec_result.get("execution_metadata") or {},
+                sandbox_mode=sandbox_admission.mode,
+                sandboxed=sandbox_admission.backend is not None,
             )
-            exec_result["execution_metadata"]["sandbox_mode"] = sandbox_mode
-            exec_result["execution_metadata"]["sandboxed"] = bool(sandbox_prefix)
-            base_command = _build_script_execution_command(context, sandbox_prefix)
+            base_command = _build_script_execution_command(context, [])
 
             for rep in range(K):
                 if framework == "thrml":
@@ -378,7 +323,7 @@ def execute_single_script(
                     deadline_monotonic=deadline,
                     cwd=script_path.parent,
                     env=env,
-                    sandbox=False,
+                    sandbox=sandbox_admission,
                 )
                 elapsed_rep = (datetime.now() - rep_start).total_seconds()
                 # Surface the envelope's measurement keys into the per-script

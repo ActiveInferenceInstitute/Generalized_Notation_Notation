@@ -46,9 +46,10 @@ companion, PR/main and tag gates at their exact sources. Pending/missing require
 checks keep publication pending. After the final qualified PR merges normally,
 verify exact Git-tree equality and retained producer ancestry before making an
 annotated candidate tag at that main commit. Main and tag qualification may run
-concurrently; each ref/event needs its own successful terminal checks and actual
-artifact acceptance before publishing. Never move a tag or borrow one ref's
-results for another. Build ordinary wheel/sdist from a clean,
+concurrently. Use exact main `workflow_dispatch` and tag `push` observations
+from the [release procedure](../docs/releases/README.md#repeatable-release-qualification).
+Both phases require successful terminal checks and artifact acceptance. Keep
+each accepted tag at its original revision. Build ordinary wheel/sdist from a clean,
 task-owned accepted-source checkout, and retain source-bound docs/manuscript/visual/
 evidence assets. Generated developer caches cannot enter release archives.
 

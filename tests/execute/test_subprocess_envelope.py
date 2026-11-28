@@ -500,6 +500,7 @@ def test_detached_descendant_cannot_hold_pipes_or_write_after_return(
     import psutil
 
     from gnn.execute import subprocess_envelope as se
+    from gnn.utils.runtime_safety.process_tree import descendant_observation_available
 
     def unrelated_host_scan(*args: object, **kwargs: object) -> None:
         raise AssertionError("supervision must not scan the entire host process table")
@@ -534,6 +535,25 @@ def test_detached_descendant_cannot_hold_pipes_or_write_after_return(
         f"time.sleep({0.1 if mode == 'normal_exit' else 30})"
     )
     token = CancelToken()
+    if not descendant_observation_available():
+        result = run_subprocess_envelope(
+            [PYTHON, "-c", leader_code],
+            timeout=1.5,
+            require_descendant_containment=True,
+        )
+        assert (
+            not result["success"] and result["error_type"] == "UnsupportedContainment"
+        )
+        assert (
+            result["containment"] == "not_started"
+            and result["cleanup_verified"] is None
+        )
+        assert (
+            not pid_file.exists()
+            and not observed_barrier.exists()
+            and not sentinel.exists()
+        )
+        return
     stop_observer = threading.Event()
 
     def release_after_observation() -> None:
@@ -553,6 +573,7 @@ def test_detached_descendant_cannot_hold_pipes_or_write_after_return(
             timeout=1.5,
             cancel_token=token,
             capture_output=mode != "normal_exit",
+            require_descendant_containment=True,
         )
         assert time.monotonic() - started < 2.9, result
         assert (

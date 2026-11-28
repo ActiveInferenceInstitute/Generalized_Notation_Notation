@@ -15,7 +15,7 @@ on:
     - cron: "14 7 * * *"
 
 concurrency:
-  group: custody-re-render-${{ github.workflow }}-${{ github.ref }}
+  group: custody-re-render-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}-${{ github.sha }}
   cancel-in-progress: true
 
 permissions:
