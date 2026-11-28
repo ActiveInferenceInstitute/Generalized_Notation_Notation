@@ -213,6 +213,32 @@ def test_public_network_with_no_edges_reports_no_artifact_instead_of_success(tmp
     assert not list(output.glob("*.png"))
 
 
+def test_public_all_keeps_both_dashboard_html_artifacts(tmp_path):
+    _, parsed, inventory = saved_model(tmp_path, [("sensor", "belief")])
+    _, output, summary = run_saved_model(tmp_path, parsed, inventory, "all")
+    dashboard_files = {
+        row["viz_type"]: [Path(path) for path in row["output_files"]]
+        for row in summary["attempts"]
+        if row["viz_type"] in {"dashboard", "interactive_dashboard"}
+    }
+    structural_html = output / "authored_network_interactive_dashboard.html"
+    interactive_html = output / "authored_network_interactive_plotly_dashboard.html"
+    assert dashboard_files == {
+        "dashboard": [structural_html],
+        "interactive_dashboard": [
+            interactive_html,
+            output / "authored_network_interactive_dashboard.json",
+        ],
+    }
+    assert "Adjacency Matrix" in structural_html.read_text(encoding="utf-8")
+    assert "Model Statistics" in interactive_html.read_text(encoding="utf-8")
+    assert len(summary["output_files"]) == len(set(summary["output_files"]))
+
+    _, _, summary = run_saved_model(tmp_path, parsed, inventory, "interactive")
+    assert summary["output_files"][0] == str(structural_html)
+    assert "Model Statistics" in structural_html.read_text(encoding="utf-8")
+
+
 def test_public_3d_network_rejects_unusable_saved_variables_without_artifact(tmp_path):
     _, parsed, inventory = saved_model(tmp_path, [], variables=[])
     result, output, summary = run_saved_model(tmp_path, parsed, inventory, "3d")

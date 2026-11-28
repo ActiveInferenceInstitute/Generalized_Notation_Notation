@@ -507,6 +507,11 @@ def process_advanced_viz(
                             export_formats,
                             dependencies_available,
                             logger,
+                            html_suffix=(
+                                "interactive_plotly_dashboard"
+                                if viz_type == "all"
+                                else "interactive_dashboard"
+                            ),
                         ),
                     )
 

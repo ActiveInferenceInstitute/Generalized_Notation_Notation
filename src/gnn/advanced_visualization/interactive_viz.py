@@ -24,6 +24,8 @@ def _generate_interactive_plotly_dashboard(
     export_formats: List[str],
     dependencies: Dict[str, bool],
     logger: logging.Logger,
+    *,
+    html_suffix: str = "interactive_dashboard",
 ) -> AdvancedVisualizationAttempt:
     """Generate full interactive Plotly dashboard"""
     attempt = AdvancedVisualizationAttempt(
@@ -155,7 +157,7 @@ def _generate_interactive_plotly_dashboard(
         )
 
         if "html" in export_formats:
-            output_file = output_dir / f"{model_name}_interactive_dashboard.html"
+            output_file = output_dir / f"{model_name}_{html_suffix}.html"
             fig.write_html(str(output_file))
             attempt.output_files.append(str(output_file))
 
