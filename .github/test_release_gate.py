@@ -7,7 +7,6 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
-from unittest.mock import patch
 
 from release_gate import (
     REQUIRED_MATRIX_JOBS,
@@ -142,6 +141,9 @@ class ReleaseRosterControls(unittest.TestCase):
 
 class ReleaseDispatchControls(unittest.TestCase):
     def test_dispatch_requires_explicit_main_manual_phase(self):
+        def fail_on_external_call(*args):
+            self.fail(f"Rejected command accessed workflow services: {args}")
+
         for ref, event in (
             ("main", None),
             ("main", "push"),
@@ -149,7 +151,6 @@ class ReleaseDispatchControls(unittest.TestCase):
         ):
             with self.subTest(ref=ref, event=event):
                 argv = [
-                    "release_gate.py",
                     "--revision",
                     "a" * 40,
                     "--ref",
@@ -160,46 +161,54 @@ class ReleaseDispatchControls(unittest.TestCase):
                 ]
                 if event is not None:
                     argv.extend(["--event", event])
-                with patch("sys.argv", argv), patch("release_gate.gh") as gh:
-                    with (
-                        redirect_stderr(io.StringIO()) as stderr,
-                        self.assertRaises(SystemExit) as exc,
-                    ):
-                        main()
-                    self.assertEqual(exc.exception.code, 2)
-                    self.assertIn(
-                        "requires --ref main --event workflow_dispatch",
-                        stderr.getvalue(),
+                with (
+                    redirect_stderr(io.StringIO()) as stderr,
+                    self.assertRaises(SystemExit) as exc,
+                ):
+                    main(
+                        argv,
+                        read_ref=fail_on_external_call,
+                        observe=fail_on_external_call,
+                        request_dispatch=fail_on_external_call,
                     )
-                    gh.assert_not_called()
+                self.assertEqual(exc.exception.code, 2)
+                self.assertIn(
+                    "requires --ref main --event workflow_dispatch", stderr.getvalue()
+                )
 
     def test_dispatch_only_missing_manual_runs_and_recheck_arrivals(self):
         revision = "a" * 40
-        states = {
-            "missing.yml": "missing",
-            "newly-queued.yml": "missing",
-            "failed.yml": "failed",
-            "pending.yml": "pending",
-            "stale.yml": "wrong_source",
-            "partial.yml": "incomplete_jobs",
-            "passed.yml": "success",
+        states = dict.fromkeys(WORKFLOWS, "success") | {
+            "ci.yml": "missing",
+            "docs-audit.yml": "missing",
+            "codeql.yml": "failed",
+            "gridworld.yml": "pending",
+            "full-extras.yml": "wrong_source",
+            "installed-platforms.yml": "incomplete_jobs",
         }
-        calls = []
+        observations = []
+        requests = []
 
-        def inspect(workflow, observed_revision, ref, event):
+        def read_ref(ref):
+            self.assertEqual(ref, "main")
+            return revision
+
+        def observe(workflow, observed_revision, ref, event):
             self.assertEqual(
                 (observed_revision, ref, event), (revision, "main", "workflow_dispatch")
             )
             state = states[workflow]
-            if workflow == "newly-queued.yml" and workflow in calls:
+            if workflow == "docs-audit.yml" and workflow in observations:
                 state = "pending"
-            calls.append(workflow)
+            observations.append(workflow)
             return workflow, {"state": state}
+
+        def request_dispatch(workflow, ref):
+            requests.append((workflow, ref))
 
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "receipt.json"
             args = [
-                "release_gate.py",
                 "--revision",
                 revision,
                 "--ref",
@@ -210,25 +219,21 @@ class ReleaseDispatchControls(unittest.TestCase):
                 str(output),
                 "--dispatch-missing",
             ]
-            with (
-                patch("sys.argv", args),
-                patch("release_gate.WORKFLOWS", tuple(states)),
-                patch("release_gate.gh", return_value={"sha": revision}),
-                patch("release_gate.inspect", side_effect=inspect),
-                patch("release_gate.subprocess.run") as dispatch,
-                redirect_stdout(io.StringIO()),
-            ):
-                self.assertEqual(main(), 1)
-            commands = [call.args[0] for call in dispatch.call_args_list]
-            self.assertEqual(len(commands), 1)
-            self.assertEqual(commands[0][:4], ["gh", "workflow", "run", "missing.yml"])
-            self.assertEqual(commands[0][-2:], ["--ref", "main"])
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(
+                    main(
+                        args,
+                        read_ref=read_ref,
+                        observe=observe,
+                        request_dispatch=request_dispatch,
+                    ),
+                    1,
+                )
+            self.assertEqual(requests, [("ci.yml", "main")])
             receipt = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(receipt["event"], "workflow_dispatch")
-            self.assertEqual(receipt["dispatched"], ["missing.yml"])
-            self.assertEqual(
-                receipt["workflows"]["newly-queued.yml"]["state"], "pending"
-            )
+            self.assertEqual(receipt["dispatched"], ["ci.yml"])
+            self.assertEqual(receipt["workflows"]["docs-audit.yml"]["state"], "pending")
             self.assertFalse(receipt["ready"])
 
 

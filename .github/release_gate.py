@@ -14,6 +14,7 @@ import datetime
 import json
 import re
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -162,7 +163,27 @@ def inspect(
     )
 
 
-def main() -> int:
+def resolve_ref(ref: str) -> str:
+    endpoint = f"repos/{REPOSITORY}/commits/{quote(ref, safe='')}"
+    revision: str = gh("api", endpoint)["sha"]
+    return revision
+
+
+def dispatch_workflow(workflow: str, ref: str) -> None:
+    subprocess.run(
+        ["gh", "workflow", "run", workflow, "--repo", REPOSITORY, "--ref", ref],
+        check=True,
+        timeout=90,
+    )
+
+
+def main(
+    argv: list[str] | None = None,
+    *,
+    read_ref: Callable[[str], str] = resolve_ref,
+    observe: Callable[[str, str, str, str | None], tuple[str, dict]] = inspect,
+    request_dispatch: Callable[[str, str], None] = dispatch_workflow,
+) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--revision", required=True, help="Full immutable Git commit")
     parser.add_argument(
@@ -179,20 +200,19 @@ def main() -> int:
         action="store_true",
         help="Dispatch missing workflow_dispatch runs on main",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if not re.fullmatch("[0-9a-f]{40}", args.revision):
         parser.error("--revision must be a full commit SHA")
     if args.dispatch_missing and (
         args.ref != "main" or args.event != "workflow_dispatch"
     ):
         parser.error("--dispatch-missing requires --ref main --event workflow_dispatch")
-    endpoint = f"repos/{REPOSITORY}/commits/{quote(args.ref, safe='')}"
-    if gh("api", endpoint)["sha"] != args.revision:
+    if read_ref(args.ref) != args.revision:
         parser.error("remote ref no longer resolves to requested revision")
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         observations = dict(
             executor.map(
-                lambda name: inspect(name, args.revision, args.ref, args.event),
+                lambda name: observe(name, args.revision, args.ref, args.event),
                 WORKFLOWS,
             )
         )
@@ -214,29 +234,16 @@ def main() -> int:
         for name, result in observations.items():
             if result["state"] == "missing":
                 # An exact candidate run may have appeared during collection.
-                _, latest = inspect(name, args.revision, args.ref, args.event)
+                _, latest = observe(name, args.revision, args.ref, args.event)
                 observations[name] = latest
                 if latest["state"] != "missing":
                     continue
-                if gh("api", endpoint)["sha"] != args.revision:
+                if read_ref(args.ref) != args.revision:
                     raise RuntimeError("remote ref moved before dispatch")
-                subprocess.run(
-                    [
-                        "gh",
-                        "workflow",
-                        "run",
-                        name,
-                        "--repo",
-                        REPOSITORY,
-                        "--ref",
-                        args.ref,
-                    ],
-                    check=True,
-                    timeout=90,
-                )
+                request_dispatch(name, args.ref)
                 dispatches.append(name)
                 args.output.write_text(json.dumps(receipt, indent=2) + "\n")
-    if gh("api", endpoint)["sha"] != args.revision:
+    if read_ref(args.ref) != args.revision:
         raise RuntimeError(
             "remote ref moved during collection; observation cannot qualify the ref"
         )
