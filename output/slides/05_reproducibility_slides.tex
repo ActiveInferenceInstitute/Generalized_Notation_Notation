@@ -295,10 +295,9 @@ Reproducibility in GNN is a source- and run-binding contract across the
 distinct from stochastic inference, dependency provisioning, and
 environment-dependent execution. Reproducing a reported outcome requires
 the selected inputs, configuration, source revision, dependencies,
-dtype, seed, and retained command and artifact receipts. This section
-lists only commands that exist in the repository, so that a reader with
-a clean checkout can reproduce the pipeline, the validation gates, and
-this manuscript itself.
+dtype, seed, and retained command and artifact receipts. The commands
+below reproduce the pipeline, the validation gates, and the manuscript
+from clean checkouts of GNN and its render template.
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Pipeline Smoke Run}
@@ -433,10 +432,11 @@ them from the tracked files at the current commit:
 \end{Highlighting}
 \end{Shaded}
 
-That command recomputes the \{\{\ldots\}\} tokens, persists them to
-\breaktt{output/data/manuscript\_variables.json} for audit, and hydrates
-the manuscript sources into \breaktt{output/manuscript/}. The
-manuscript's own figures are rebuilt from the same token map:
+That command recomputes the \{\{\ldots\}\} tokens and writes the token
+map and table claim ledger under \texttt{output/data/}. The template
+injector, when available, uses the map to hydrate the manuscript sources
+into \breaktt{output/manuscript/}. The manuscript's figures are rebuilt
+from the same token map:
 
 \end{frame}
 
@@ -447,22 +447,25 @@ manuscript's own figures are rebuilt from the same token map:
 \end{Highlighting}
 \end{Shaded}
 
-The hydrated sources are then rendered to PDF by the docxology
-template's render stage. That stage lives in a separate checkout of the
-template, with this repository checked out inside it as a real directory
-at \breaktt{projects/active/GeneralizedNotationNotation} (the template's
-analysis-read custody refuses a symlinked project); run from the
-template root:
+The docxology template renders the hydrated sources to PDF and validates
+the publication. From a separate checkout of the template containing
+this repository as a real directory at
+\breaktt{projects/active/GeneralizedNotationNotation}, run:
 
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
 \begin{Shaded}
 \begin{Highlighting}[]
 \ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen}\NormalTok{ python scripts/pipeline/stage\_03\_render.py }\DataTypeTok{\textbackslash{}}
   \AttributeTok{{-}{-}project}\NormalTok{ GeneralizedNotationNotation}
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen}\NormalTok{ python scripts/pipeline/stage\_04\_validate.py }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}project}\NormalTok{ GeneralizedNotationNotation}
 \end{Highlighting}
 \end{Shaded}
+
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
+The validation stage checks the rendered outputs and their evidence,
+including the generated tables and their claims.
 
 The render needs a LaTeX installation providing the packages listed in
 \breaktt{docs/manuscript/preamble.md} plus \texttt{seqsplit}; the
@@ -470,14 +473,11 @@ template guards \texttt{seqsplit} with
 \texttt{\textbackslash{}IfFileExists}, so a missing copy degrades rather
 than failing the build.
 
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
 Because the variables file is regenerated before rendering, the counts
 in the rendered PDF track the repository state at the commit recorded in
-\breaktt{output/data/manuscript\_variables.json} (7c51ce617): a code
+\breaktt{output/data/manuscript\_variables.json} (6ad2a95ae): a code
 change that alters, for example, the test inventory (705 test files,
-7433 test functions) propagates into the prose on the next regeneration
+7434 test functions) propagates into the prose on the next regeneration
 without any manual editing.
 \end{frame}
 
@@ -490,8 +490,8 @@ without any manual editing.
   command in this repository.
 \item
   Keep generated outputs under \texttt{output/} and maintained
-  manuscript source under \texttt{manuscript/}. Regenerate owned build
-  artifacts when their inputs change, and preserve the raw command
+  manuscript source under \breaktt{docs/manuscript/}. Regenerate owned
+  build artifacts when their inputs change, and preserve the raw command
   receipts and numerical results needed to substantiate historical runs.
 \item
   Express every quantitative claim in the prose as a double-brace

@@ -1,5 +1,5 @@
 {
-  "counts_describe_commit": "7c51ce617",
+  "counts_describe_commit": "6ad2a95ae",
   "declared_environment": {
     "permitted_profiles": {
       "tex-live-2023-debian-pandoc-3.13-crossref-0.3.26": {
@@ -25,51 +25,51 @@
   "manifest_version": "gnn_render_manifest_v1",
   "publication_artifacts": {
     "output/pdf/GeneralizedNotationNotation_combined.pdf": {
-      "sha256": "b28fd21b58bd4b441732617f704fff5b3175c8c3c5a677e34e533180f977a38d",
-      "size_bytes": 1628343
+      "sha256": "f1197105fb110bcf49c7d62c58bb066ac10061e51aa3011ece350358eac0668c",
+      "size_bytes": 1628420
     }
   },
-  "receipt_counts_describe_commit": "7c51ce617",
+  "receipt_counts_describe_commit": "6ad2a95ae",
   "recorded_by": "uv run python scripts/z_record_manuscript_render_manifest.py",
   "render_artifacts_normalized_sha256": {
     "output/pdf/_combined_manuscript.log": "793748a70875f30b56bb132255e7dc065fdc5e84d8cff04911030f2e8d5f065d",
-    "output/pdf/_combined_manuscript.md": "76538fa9f622d134a111d964cd26078db199107bdf88266c10c8b2483aec256b",
-    "output/pdf/_combined_manuscript.tex": "d33629ee55c5f042ec78439bd2f3fd1b06e60e87255e98f62c91bdf8f2d98b5a"
+    "output/pdf/_combined_manuscript.md": "49d1eba8d230af7e2708f505cfbd1d339851b246700f8863cb2f75e799bc9390",
+    "output/pdf/_combined_manuscript.tex": "6d46bdc437c192e743d274ac5ac3c2a52f3e2d59cf512b6a4f8b1691fd0ba04b"
   },
   "render_artifacts_sha256": {
-    "output/pdf/_combined_manuscript.log": "2484ba11ac5df8af691de021bb6895da570deb10956345e84652459795a5c5af",
-    "output/pdf/_combined_manuscript.md": "4967c13713f8bedf89346c97680cd1f9c2c74b3a15675e8806034bd51155b82b",
-    "output/pdf/_combined_manuscript.tex": "0298ec546dafabc7fa0177f46366b06ee27c66267e952ffd6caf35942ae79b9d"
+    "output/pdf/_combined_manuscript.log": "2959360db0d8b77756739f1f6be0dc7247f7d232a1069836f38565605ee6a1cc",
+    "output/pdf/_combined_manuscript.md": "517ee108c477b62a5b2516d5aa10337b117453f0198978d963b2e5b41b463c8d",
+    "output/pdf/_combined_manuscript.tex": "5d429c4b979324740f14bc48235fa57061fd08cac5d2a1360a4bbfebf8cd8e5f"
   },
   "render_inputs_normalized_sha256": {
     "output/manuscript/00_abstract.md": "686c87bb10964e77e98121d10dba98b8a88b1fdbd9ef4e470f1e9adc563842bf",
     "output/manuscript/01_introduction.md": "c82c98c4674c18267c26032f47c357d1b3bc43681422a3ccb98482ebdcef1b02",
     "output/manuscript/02_system_context.md": "a19451b5bb713c96959d4c0157a2f08a87aa065d8350c4964a761f46f786a495",
     "output/manuscript/03_methods.md": "5f84050206e52f4dc7ddacaf525c4f8dce7e2e9819f3e2d65a6bbf11d597872e",
-    "output/manuscript/04_artifacts_and_evidence.md": "7951ef0a431211bbaa3fa1e2660fde92f3d30998a2ba7fa882306bf2e96ac640",
-    "output/manuscript/05_reproducibility.md": "3de9e74916e75a30640924182c91e993050609daaa80a9b3418d624928bca874",
+    "output/manuscript/04_artifacts_and_evidence.md": "596b738f7dd45f2fc8e13de1fee9a268f74d262c18b89316eaa039f0f9eb6f85",
+    "output/manuscript/05_reproducibility.md": "699b9c0c0e740628a2f32b385cd22d4c4d41d8378e6cc682abc3a455fc586f08",
     "output/manuscript/06_limitations_and_next_steps.md": "91f12ecb5073b9cdc36c07042c7e5e9751f86140e6d980e496153298f9d9e3b5",
     "output/manuscript/98_symbols_glossary.md": "4342b4bac17e063cd34f0e0805afe4769048efb22beced4887080ff198577c60",
     "output/manuscript/99_references.md": "853a1a32e21b2169129c870ca5a98bf8c890ccb8cbea48279ef3c340975a374a",
-    "output/manuscript/S01_source_surface.md": "0c46d3c7e31c58c902a6b7669983074c5349a1d2b746011a4d19fd0dddb9b965",
+    "output/manuscript/S01_source_surface.md": "3d902a01f3d60963f761d63a27b81d493444adeaa5e03205cc73345eaf7fad58",
     "output/manuscript/config.yaml": "1477c25b2f744b11dfa53871106a751e8204c4f601c281979b26f888c815bfdf",
     "output/manuscript/preamble.md": "a0e1d8553b86dde039ddb391ea270303a4e69d3658ded17e08c6966108e3fb2a",
     "output/manuscript/references.bib": "ed44f4594867a193123aaf03334e12c2f12e167584d42ac5bc6074c4bfec9f0d"
   },
   "render_inputs_sha256": {
-    "output/manuscript/00_abstract.md": "c7ff4c28628ed5b59a099c27774f927e4113d10bf11dbe2832e54a9dc83e425a",
+    "output/manuscript/00_abstract.md": "a6c40539fa6507a7e1d211a241e85616eec1a55f648b53b8dc9841ff06728c1b",
     "output/manuscript/01_introduction.md": "c82c98c4674c18267c26032f47c357d1b3bc43681422a3ccb98482ebdcef1b02",
-    "output/manuscript/02_system_context.md": "ac1eaa23e61223476f33b90318aa698db6fd0ffb6dec35999a3df8af80f04d59",
-    "output/manuscript/03_methods.md": "32c9c2732b9b6699f53f0b0c9ce0596e211ca0bdee8b6631632058c703a5dd07",
-    "output/manuscript/04_artifacts_and_evidence.md": "8573501f669ed240974b7c402425b29adc34e6b7c1a60f520803600712aad913",
-    "output/manuscript/05_reproducibility.md": "3850616fc2689d62f63eb78bdc02fc4c87e86e024d949a96923e180033c48624",
+    "output/manuscript/02_system_context.md": "18e22b95f4a641f260614887b190aec8eaf9686c6a75253b5bade16926fe2e87",
+    "output/manuscript/03_methods.md": "c067b8e5c59305f7cd603c4b1abc80e0f5b918af28a797bdc6bc703b3d56eb2c",
+    "output/manuscript/04_artifacts_and_evidence.md": "6d7a5012cdf3a86e3479fb3ceff286b8fe75a2847a13887d947ac6e28bdfbdee",
+    "output/manuscript/05_reproducibility.md": "905e74a00feae9456ed8b456d3377602aaecf602d13359c8adcf59ea76bea72d",
     "output/manuscript/06_limitations_and_next_steps.md": "91f12ecb5073b9cdc36c07042c7e5e9751f86140e6d980e496153298f9d9e3b5",
     "output/manuscript/98_symbols_glossary.md": "4342b4bac17e063cd34f0e0805afe4769048efb22beced4887080ff198577c60",
     "output/manuscript/99_references.md": "853a1a32e21b2169129c870ca5a98bf8c890ccb8cbea48279ef3c340975a374a",
-    "output/manuscript/S01_source_surface.md": "0c46d3c7e31c58c902a6b7669983074c5349a1d2b746011a4d19fd0dddb9b965",
+    "output/manuscript/S01_source_surface.md": "3d902a01f3d60963f761d63a27b81d493444adeaa5e03205cc73345eaf7fad58",
     "output/manuscript/config.yaml": "1477c25b2f744b11dfa53871106a751e8204c4f601c281979b26f888c815bfdf",
     "output/manuscript/preamble.md": "a0e1d8553b86dde039ddb391ea270303a4e69d3658ded17e08c6966108e3fb2a",
     "output/manuscript/references.bib": "ed44f4594867a193123aaf03334e12c2f12e167584d42ac5bc6074c4bfec9f0d"
   },
-  "variables_sha256": "fb7f315ea4836cf97c36ef671cfd9af4a22d0ee728b5628abcb5ac49ed0fc755"
+  "variables_sha256": "8e09e8c301180207781f8772628e818c61ac6ac4f1a5346d642dd72962b9c906"
 }
