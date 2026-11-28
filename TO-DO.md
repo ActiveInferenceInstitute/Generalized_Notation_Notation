@@ -1,6 +1,6 @@
 # TO-DO — GNN next steps
 
-Updated 2026-11-25.
+Updated 2026-11-27.
 Current software version is owned by [pyproject.toml](pyproject.toml).
 [GitHub release records](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/releases)
 own exact tags, accepted sources, checks and public artifacts. Version metadata
@@ -147,10 +147,10 @@ For each target:
   Qualify changes with local `./run.sh gates` receipts and record them as local;
   the organization's billing owner must clear the lock before any hosted result
   can be cited here or in a release record.
-- Re-derive the installed matrix after the unreleased PyMDP change: `d7d98d569`
-  replaces the split requirement with `inferactively-pymdp>=1.0.5`, so the
-  Python 3.11 (jax 0.10.2) and 3.12+ (jax 0.12.0) splits now resolve one pymdp
-  release. The Installed Platforms lane produced no receipt (run
+- Re-derive the installed matrix for the current PyMDP and Python requirements.
+  The lock resolves `inferactively-pymdp==1.0.5` and `jax==0.12.0.1` across
+  the supported CPython 3.12–3.14 range. The Installed Platforms lane produced
+  no receipt (run
   [43274810045](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/actions/runs/43274810045)
   failed to start), so the installed-platform acceptance this file requires
   before publication is still outstanding and locally owned.
@@ -177,8 +177,8 @@ The lists below own outstanding work; this table owns target-version sequencing.
   Scope: identify a released upstream version addressing
   [inactive categorical padding](https://github.com/extropic-ai/thrml/issues/72),
   evaluate its compatibility and test exact-zero/inactive-padding behavior on
-  both supported JAX splits. Accept: independent numerical witnesses, no NaNs,
-  unchanged source/seed/sample semantics and ordinary locked installation.
+  the supported CPython and JAX matrix. Accept: independent numerical witnesses,
+  no NaNs, unchanged source/seed/sample semantics and ordinary locked installation.
   Keep strict rejection until those checks pass. Depends on a suitable released
   fix; substantial adapter or inference changes require separate scope under E2.
 

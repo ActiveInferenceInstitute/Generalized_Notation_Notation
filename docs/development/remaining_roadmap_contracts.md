@@ -21,7 +21,7 @@ as implemented. Historical numerical/archive observations keep their dated scope
 | E1 | Composed-kind dispatch and JAX/RxInfer Gaussian renderers | Explicit joint Gaussian coupling contract |
 | E2 | THRML admission, payload compiler, runtime and analysis | One separately named inference extension at a time |
 | E3 | cpomdp option admission, generator, executor and analysis | Explicit finite action-set contract with bounded exhaustive search |
-| S3 | THRML dependency and native scientific tests | Verify a suitable ordinary released wheel on both lock splits |
+| S3 | THRML dependency and native scientific tests | Verify a suitable ordinary released wheel across the supported runtime matrix |
 | E5 | Release artifacts, citation metadata and archive receipt | Verify the exact version archive and public artifact hashes |
 
 Content changes to bridge-bound owners require the
