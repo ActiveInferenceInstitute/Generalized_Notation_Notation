@@ -91,6 +91,8 @@ def _cmd_run(args: argparse.Namespace) -> int:
             pipeline_argv.extend(
                 ["--skip-steps", ",".join(str(step) for step in sorted(skipped_steps))]
             )
+        if getattr(args, "resume", False):
+            return pipeline_main(argv=pipeline_argv, resume=True)
         return pipeline_main(argv=pipeline_argv)
     except ImportError as e:
         logger.error(f"Could not import pipeline: {e}")

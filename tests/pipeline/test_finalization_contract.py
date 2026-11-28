@@ -407,3 +407,67 @@ def test_main_reuses_ordinary_history_without_clobbering_unrelated_files(
         )
         == []
     )
+
+
+@pytest.mark.parametrize("parallel", [False, True])
+def test_explicit_resume_replays_owned_step_then_reexecutes_tampered_artifact(
+    parsed_run: PipelineArguments,
+    parallel: bool,
+) -> None:
+    from gnn.cli import main
+
+    command = [
+        "run",
+        "--target-dir",
+        str(parsed_run.target_dir),
+        "--output-dir",
+        str(parsed_run.output_dir),
+        "--only-steps",
+        "3",
+    ]
+    if parallel:
+        command.append("--parallel")
+    assert main(command) == 0
+    initial = _summary(parsed_run)
+    assert main([*command, "--resume"]) == 0
+    reused = _summary(parsed_run)
+    assert reused["run_id"] == initial["run_id"]
+    assert reused["resume"]["attempt_id"] != initial["run_id"]
+    assert reused["resume"]["reused_steps"] == ["3_gnn.py"]
+    assert reused["resume"]["scheduled_steps"] == []
+    assert reused["steps"][0]["reused_from_checkpoint"] is True
+
+    record = next(
+        item
+        for item in reused["steps"][0]["artifacts"]
+        if item["path"].endswith(".json")
+    )
+    artifact = parsed_run.output_dir / record["path"]
+    artifact.write_bytes(b"tampered")
+    assert main([*command, "--resume"]) == 0
+    rerun = _summary(parsed_run)
+    assert rerun["run_id"] == initial["run_id"]
+    assert rerun["resume"]["reused_steps"] == []
+    assert rerun["resume"]["scheduled_steps"] == ["3_gnn.py"]
+    assert artifact.read_bytes() != b"tampered"
+    assert (
+        verify_run_manifests(
+            parsed_run.output_dir / "v3_run_manifest", parsed_run.output_dir
+        )
+        == []
+    )
+
+
+def test_resume_refuses_changed_model_without_overwriting_checkpoint(
+    parsed_run: PipelineArguments,
+) -> None:
+    assert orchestrator.main(parsed_run) == 0
+    summaries = parsed_run.output_dir / "00_pipeline_summary"
+    checkpoint = summaries / "run_session.json"
+    terminal = summaries / "pipeline_execution_summary.json"
+    before = checkpoint.read_bytes(), terminal.read_bytes()
+    source = parsed_run.target_dir / "simple_mdp.md"
+    source.write_bytes(source.read_bytes() + b"\nchanged model\n")
+
+    assert orchestrator.main(parsed_run, resume=True) != 0
+    assert (checkpoint.read_bytes(), terminal.read_bytes()) == before

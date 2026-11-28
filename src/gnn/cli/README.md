@@ -16,6 +16,7 @@ descriptor or replacing the stream.
 | Command | Description |
 |---------|-------------|
 | `gnn run` | Execute the full 25-step pipeline |
+| `gnn run --resume` | Continue the output directory's checkpoint using the same inputs, configuration, and step selection |
 | `gnn validate <file>` | Validate a GNN file (sections, state-space, connections, dimensions) |
 | `gnn parse <file>` | Parse a GNN file and output JSON/YAML/summary |
 | `gnn extract <file>` | Extract the POMDP state space as structured JSON (`--strict`/`--no-strict`, `--compact`, `--json` standard envelope) |

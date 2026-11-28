@@ -106,6 +106,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run_p.add_argument("--output-dir", "-o", default="output", help="Output directory")
     run_p.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume the verified checkpoint in the output directory",
+    )
+    run_p.add_argument(
         "--skip-steps", nargs="*", type=_pipeline_step, help="Step numbers to skip"
     )
     run_p.add_argument(
