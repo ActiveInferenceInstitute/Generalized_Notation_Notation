@@ -41,6 +41,8 @@ def _generate_3d_visualization(
     export_formats: List[str],
     dependencies: Dict[str, bool],
     logger: logging.Logger,
+    *,
+    skip_empty_graph: bool = False,
 ) -> AdvancedVisualizationAttempt:
     model_name = safe_output_stem(model_name)
     attempt = AdvancedVisualizationAttempt(
@@ -54,7 +56,8 @@ def _generate_3d_visualization(
             variables = model_data.get("variables")
             connections = model_data.get("connections")
             if (
-                isinstance(variables, list)
+                skip_empty_graph
+                and isinstance(variables, list)
                 and not variables
                 and isinstance(connections, list)
                 and not connections

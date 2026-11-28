@@ -445,6 +445,7 @@ def process_advanced_viz(
                             export_formats,
                             dependencies_available,
                             logger,
+                            skip_empty_graph=viz_type == "all",
                         ),
                     )
 
