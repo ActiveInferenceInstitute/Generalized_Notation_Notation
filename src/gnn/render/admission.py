@@ -7,7 +7,9 @@ generation and does not certify an installed execution runtime.
 
 from __future__ import annotations
 
+import json
 import math
+from collections.abc import Collection
 from typing import Any
 
 from gnn.frameworks import RENDER_FRAMEWORKS
@@ -147,6 +149,58 @@ def validate_render_options(framework: str, options: Any) -> dict[str, Any]:
         ):
             raise ValueError(f"{framework}.{key} is outside its admitted range")
     return dict(options)
+
+
+def _invalid_simulation_constant(value: str) -> Any:
+    raise ValueError(f"simulation_params must be valid JSON. Invalid constant {value}.")
+
+
+def _unique_simulation_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"simulation_params contains duplicate key {key!r}")
+        result[key] = value
+    return result
+
+
+def admit_simulation_parameters(
+    value: Any, *, frameworks: Collection[str] | None = None
+) -> dict[str, Any]:
+    """Validate the Step 11 JSON envelope and its supported renderer namespace."""
+    if isinstance(value, str):
+        try:
+            value = json.loads(
+                value,
+                parse_constant=_invalid_simulation_constant,
+                object_pairs_hook=_unique_simulation_object,
+            )
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                f"simulation_params must be valid JSON: {error.msg}"
+            ) from error
+    if not isinstance(value, dict):
+        raise ValueError("simulation_params must be a JSON object")
+    if set(value) - {"thrml"}:
+        raise ValueError(
+            "simulation_params accepts only the thrml object. Use --timesteps "
+            "for a shared horizon or render.backend_options for other renderer options."
+        )
+    if "thrml" not in value:
+        return {}
+    if not isinstance(value["thrml"], dict):
+        raise ValueError("simulation_params.thrml must be an object")
+    try:
+        options = validate_render_options("thrml", value["thrml"])
+    except ValueError as error:
+        raise ValueError(
+            f"simulation_params.thrml contains unknown or malformed options: {error}"
+        ) from error
+    if options and frameworks is not None and "thrml" not in frameworks:
+        raise ValueError(
+            "simulation_params.thrml requires selecting --frameworks thrml"
+        )
+    return {"thrml": options} if options else {}
 
 
 def validate_model_render_options(

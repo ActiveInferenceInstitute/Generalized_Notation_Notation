@@ -429,7 +429,7 @@ ARGUMENT_DEFINITIONS = MappingProxyType(
             flag="--simulation-params",
             arg_type=str,
             default="{}",
-            help_text="JSON string containing simulation parameters",
+            help_text="JSON object with THRML overrides. Requires --frameworks thrml.",
         ),
         "timeout": ArgumentDefinition(
             flag="--timeout",

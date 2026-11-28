@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Spec-generation mixin for the POMDP render processor."""
 
-import json
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import numpy as np
 
+from gnn.render.admission import admit_simulation_parameters
 from gnn.render.pomdp_contract import ModelKind, detect_pomdp_space_model_kind
 
 from ._routes import _continuous_shape
@@ -50,16 +50,12 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
         if timesteps is None and hasattr(pomdp_space, "num_timesteps"):
             timesteps = pomdp_space.num_timesteps
 
-        sim_params = kwargs.get("simulation_params", "{}")
-        try:
-            parsed_sim_params = (
-                json.loads(sim_params) if isinstance(sim_params, str) else sim_params
+        parsed_sim_params = admit_simulation_parameters(
+            kwargs.get(
+                "simulation_params",
+                (pomdp_space.model_parameters or {}).get("simulation_params", {}),
             )
-        except json.JSONDecodeError:
-            self.logger.warning(
-                f"Invalid simulation_params string: {sim_params}. Using empty dict."
-            )
-            parsed_sim_params = {}
+        )
 
         if getattr(pomdp_space, "model_kind", "discrete") == "continuous":
             return self._continuous_pomdp_to_gnn_spec(

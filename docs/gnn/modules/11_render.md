@@ -164,6 +164,11 @@ Continuous exemplars (`input/gnn_files/continuous/`) are linear-Gaussian models 
 - `strict_validation` (bool): Passed to POMDP extraction (`True` by default)
 - `**kwargs`: Additional options forwarded to framework renderers (e.g. `timesteps`, `simulation_params`)
 
+`--simulation-params` takes a JSON object. Step 11 accepts
+`{"thrml":{"num_samples":2048}}` when THRML is selected and refuses unknown
+settings before rendering. Use `--timesteps` for a shared horizon and
+`render.backend_options` for other framework settings.
+
 **Returns**: `bool` - True if processing succeeded, False otherwise
 
 **Example**:

@@ -12,7 +12,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from gnn.render.admission import merge_backend_options
+from gnn.render.admission import admit_simulation_parameters, merge_backend_options
 from gnn.render.execution_contracts import (
     UNSUPPORTED_PREFIX,
     is_unsupported_message,
@@ -88,6 +88,11 @@ def process_render(
         logger.info(f"Output directory: {output_dir}")
 
         frameworks, explicit_framework_request = parse_frameworks_selection(frameworks)
+        simulation = admit_simulation_parameters(
+            kwargs.get("simulation_params", {}), frameworks=frameworks or ()
+        )
+        if "simulation_params" in kwargs:
+            kwargs["simulation_params"] = simulation
         strict_framework_success = (
             strict_framework_success or explicit_framework_request
         )
@@ -102,6 +107,10 @@ def process_render(
 
             pomdp_available = True
         except ImportError as e:
+            if simulation:
+                raise ValueError(
+                    "THRML simulation_params require POMDP-aware rendering"
+                ) from e
             logger.warning(f"POMDP processing modules not available: {e}")
             logger.info("Falling back to basic rendering")
             pomdp_available = False
@@ -215,6 +224,10 @@ def process_render(
                     )
 
                     if pomdp_space is None:
+                        if simulation:
+                            raise ValueError(
+                                "THRML simulation_params require an extracted POMDP specification"
+                            )
                         logger.warning(
                             f"Could not extract POMDP from {gnn_file}, trying basic rendering"
                         )

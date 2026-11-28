@@ -136,6 +136,7 @@ def render_gnn_spec(
         from gnn.render.admission import (
             SPEC_RENDER_TARGETS,
             SPEC_TARGET_BACKENDS,
+            admit_simulation_parameters,
             validate_model_render_options,
             validate_render_options,
         )
@@ -165,7 +166,6 @@ def render_gnn_spec(
             if not isinstance(filename, str) or not filename:
                 raise ValueError("output_filename must be a nonempty string")
         output_dir = Path(output_directory)
-        output_dir.mkdir(parents=True, exist_ok=True)
 
         # Generator-based renderers: target → (module, generator_name, file_suffix)
         _GENERATOR_TARGETS: dict[str, Any] = {
@@ -202,10 +202,20 @@ def render_gnn_spec(
             model_name = str(gnn_spec_mapping["model_name"])
         from gnn.render.execution_contracts import unsupported_contract
 
+        parameters = gnn_spec_mapping.get("model_parameters")
+        if isinstance(parameters, dict) and "simulation_params" in parameters:
+            simulation = admit_simulation_parameters(
+                parameters["simulation_params"], frameworks=(option_target,)
+            )
+            gnn_spec_mapping = {
+                **gnn_spec_mapping,
+                "model_parameters": {**parameters, "simulation_params": simulation},
+            }
         validate_model_render_options(target_lower, options, gnn_spec_mapping)
         contract_refusal = unsupported_contract(gnn_spec_mapping, target_lower)
         if contract_refusal:
             return False, contract_refusal, []
+        output_dir.mkdir(parents=True, exist_ok=True)
         files: list[Any] = []
         requested_stem = filename or model_name
         output_stem = _safe_output_stem(requested_stem)
