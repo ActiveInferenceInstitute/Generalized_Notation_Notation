@@ -223,38 +223,59 @@ def parse_gnn_content(content: str) -> Dict[str, Any]:
     """
     try:
         from gnn import parse_gnn_file
+        from gnn.parsers.markdown_parser import MarkdownGNNParser
 
         parsed = parse_gnn_file("inline_export_input.md", content=content)
         raw_sections = parsed.get("sections", {}) if parsed.get("success") else {}
         raw_variables = parsed.get("variables", []) if parsed.get("success") else []
-        sections: object = _normalize_export_sections(raw_sections, content)
-        variables = _normalize_export_variables(raw_variables, content)
-        connections: list[Any] = []
-        section_iterables: list[Any] = []
-        if isinstance(sections, dict):
-            section_iterables = [
-                section_lines
-                for section_name, section_lines in sections.items()
-                if "connection" in str(section_name).lower()
+        parser = MarkdownGNNParser()
+        structured = parser.parse_string(content)
+        if structured.success:
+            sections = _normalize_export_sections(
+                structured.model.raw_sections, content
+            )
+            raw_variables = [
+                {"name": variable.name, "type": variable.data_type.value}
+                for variable in structured.model.variables
             ]
+            typed_connections = structured.model.connections
         else:
-            section_iterables = [content.splitlines()]
-
-        for section_lines in section_iterables:
-            if isinstance(section_lines, str):
-                iterable = section_lines.splitlines()
-            else:
-                iterable = section_lines if isinstance(section_lines, list) else []
-            for line in iterable:
-                text = str(line).strip()
-                operator = "->" if "->" in text else "→" if "→" in text else None
-                if not operator:
-                    continue
-                source, target = text.split(operator, 1)
-                connections.append({"source": source.strip(), "target": target.strip()})
+            sections = _normalize_export_sections(raw_sections, content)
+            # Legacy compatibility inputs also used a single-hash Connections heading.
+            legacy = "\n".join(
+                line
+                for name, lines in sections.items()
+                if "connection" in name.lower()
+                for line in lines
+            )
+            typed_connections = (
+                parser.parse_string("## Connections\n" + legacy).model.connections
+                if legacy
+                else []
+            )
+        connections = [
+            {
+                "source": source,
+                "target": target,
+                "connection_type": connection.connection_type.value,
+                **(
+                    {"annotation": connection.annotation}
+                    if connection.annotation
+                    else {}
+                ),
+                **(
+                    {"description": connection.description}
+                    if connection.description
+                    else {}
+                ),
+            }
+            for connection in typed_connections
+            for source in connection.source_variables
+            for target in connection.target_variables
+        ]
         return {
             "sections": sections,
-            "variables": variables,
+            "variables": _normalize_export_variables(raw_variables, content),
             "connections": connections,
             "raw_content": content,
             "canonical_parse": parsed,
@@ -266,15 +287,19 @@ def parse_gnn_content(content: str) -> Dict[str, Any]:
 
 def _normalize_export_sections(sections: Any, content: str) -> Dict[str, List[str]]:
     """Normalize canonical parser sections for compatibility export formatters."""
+    from gnn.parsers.common import canonical_section_heading
+
     if isinstance(sections, dict):
         normalized: Dict[str, List[str]] = {}
         for name, value in sections.items():
+            canonical = canonical_section_heading(str(name))
             if isinstance(value, str):
-                normalized[str(name)] = value.splitlines()
+                lines = value.splitlines()
             elif isinstance(value, list):
-                normalized[str(name)] = [str(item) for item in value]
+                lines = [str(item) for item in value]
             else:
-                normalized[str(name)] = [str(value)]
+                lines = [str(value)]
+            normalized.setdefault(canonical, []).extend(lines)
         return normalized
 
     parsed_sections: Dict[str, List[str]] = {}

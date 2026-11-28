@@ -158,6 +158,10 @@ Exports a single GNN file to multiple formats.
 
 Parses GNN content into structured data for export.
 
+The standalone export reads section bodies, typed declarations, and connections
+from the Markdown parser. A grouped connection contributes one edge per
+source-target pair. GraphML and GEXF connect those names to the emitted node IDs.
+
 **Processing:**
 
 - Content structure analysis
