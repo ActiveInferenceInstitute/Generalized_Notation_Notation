@@ -65,6 +65,45 @@ def emitted_main_literals(path):
     }
 
 
+@pytest.mark.parametrize(
+    ("matrix", "values", "message"),
+    [
+        ("A", [[0, 0.1], [0, 0.3], [0, 0.6]], "A column 0 has invalid"),
+        (
+            "A",
+            [[-0.1, 0.1], [0.2, 0.3], [0.9, 0.6]],
+            "A must contain finite nonnegative",
+        ),
+        (
+            "B",
+            [[[1, 0, 0, False], [1, 0, 0, 1]], [[0, 1, 1, 1], [0, 1, 1, 0]]],
+            "B must contain numeric",
+        ),
+        ("D", [0, 0], "D must have positive finite mass"),
+        ("D", [1], "D must contain 2 probabilities"),
+        ("C", [1, 2], "C must contain 3 finite preferences"),
+        ("E", [0.7, 0.3], "E length must match 4 actions"),
+    ],
+)
+def test_native_pymdp_refuses_invalid_authored_arrays(
+    tmp_path, matrix, values, message
+):
+    from gnn.execute.pymdp.simulation import run_pymdp_simulation
+
+    spec = authored_model()
+    spec["initialparameterization"][matrix] = values
+    for mode in ("pipeline", "standalone"):
+        destination = tmp_path / f"{mode}.py"
+        destination.write_text("previous artifact\n")
+        success, error, _ = render_gnn_to_pymdp(spec, destination, {"mode": mode})
+        assert not success and message in error
+        assert destination.read_text() == "previous artifact\n"
+
+    with pytest.raises(ValueError, match=message):
+        run_pymdp_simulation(spec, tmp_path)
+    assert not (tmp_path / "simulation_results.json").exists()
+
+
 @pytest.mark.parametrize("mode", ["pipeline", "standalone"])
 @pytest.mark.parametrize("representation", ["list", "tuple", "ndarray"])
 @pytest.mark.parametrize(

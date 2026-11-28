@@ -191,7 +191,7 @@ def canonicalize_pomdp(spec: POMDPStateSpace) -> POMDPStateSpace:
 
     Pure, stdlib-only copy: the input spec (and its B_matrix) is never
     mutated. Use a declared stored order or decisive orientation provenance.
-    Legacy lenient extraction can carry contradictory prose; its detected
+    Lenient extraction can carry contradictory prose. Its detected
     order is used if no executable declaration is present. Ambiguous
     tensors without orientation evidence are copied unchanged.
     All unrelated fields are deep-copied as-is.

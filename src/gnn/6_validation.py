@@ -39,7 +39,15 @@ run_script = create_standardized_pipeline_script(
     "Validation processing for GNN models",
     additional_arguments={
         "strict": {"type": bool, "help": "Enable strict validation mode"},
-        "profile": {"type": bool, "help": "Enable performance profiling"},
+        "profile": {
+            "type": bool,
+            "help": "Compatibility option. Step 6 always profiles performance.",
+        },
+        "strict_probabilities": {
+            "flag": "--strict-probabilities",
+            "action": "store_true",
+            "help": "Validate authored categorical probability values and dimensions",
+        },
         "transpose_b": {
             "type": bool,
             "help": (

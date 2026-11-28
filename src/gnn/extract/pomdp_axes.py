@@ -145,7 +145,7 @@ def resolve_b_order(
     actions: int | None = None,
     default: str = ACTION_PREVIOUS_NEXT,
 ) -> str:
-    """Choose an explicit order, unique stochastic evidence, or a legacy fallback."""
+    """Choose an explicit order, stochastic evidence, or the established default."""
     metadata = provenance or {}
     order = stored_b_order(declared, metadata)
     bound = (

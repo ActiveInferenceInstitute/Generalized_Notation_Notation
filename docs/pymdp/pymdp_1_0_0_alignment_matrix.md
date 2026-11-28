@@ -60,21 +60,20 @@ The GNN transition tensor is stored in the pymdp 1.0.0 native axis order:
   column-stochastic — rows are next states, columns are previous states, and
   each column (one previous state) sums to 1 over next states. pymdp's
   `Agent` validates this with `utils.validate_normalization(B[f], axis=1)`.
-- **InitialParameterization writing convention**: write `B={...}` so the
-  semantic tensor reads `B[next_state][previous_state][action]`. Two
-  equivalent layouts are accepted by the pipeline:
+- **InitialParameterization writing convention**: the canonical tensor reads
+  `B[next_state][previous_state][action]`. The pipeline accepts these layouts:
   - next-state-outer (the `pomdp_gridworld_3x3.md` convention): the outer
     axis is the next state; each slice has rows = previous states and
     columns = actions;
-  - per-action-outer: one slice per action, each slice written with
-    rows = next states and columns = previous states, column-stochastic.
-  The declaration comment must state the canonical order, e.g.
-  `# Transition matrix: B[next_state, previous_state, actions]`.
-- **Enforcement**: `execute.pymdp.simulation._canonicalise_B` resolves the
-  stored orientation from `matrix_provenance["B"]` (`source_order` /
-  `detected_order` / `claimed_slice_convention`) first, then an explicit
-  `b_tensor_order`, then shape + stochasticity detection — it never
-  double-transposes an already-canonical tensor. The type checker
+  - per-action-outer: one slice per action, with next-state rows and
+    previous-state columns;
+  - per-action-outer: one slice per action, with previous-state rows and
+    next-state columns.
+  Set `b_tensor_order` to declare the stored order explicitly.
+- **Enforcement**: the shared resolver uses custody metadata for an already
+  canonical tensor, then the executable `b_tensor_order` declaration.
+  Shape and probability mass provide evidence for sources without one.
+  The type checker
   (`type_checker.checking.dimensions.validate_dimension_compatibility`,
   code `GNN-E002`) flags comment-vs-comment orientation contradictions and
   row-stochastic-only slices as errors in strict mode.

@@ -176,8 +176,8 @@ def _check_tensor(
         diagnostics.append(StochasticDiagnostic(code, key, f"{key}: {message}"))
 
     if not isinstance(value, (list, tuple)):
-        # Scalars are not probability tensors; parse failures are reported
-        # separately as GNN-E006 and never reach this check.
+        if key == family:
+            add(DIMENSION_CODE, "expected a numeric tensor or vector")
         return diagnostics
     shape = _shape_of(value)
     if not shape or 0 in shape or not _is_rectangular(value, shape):

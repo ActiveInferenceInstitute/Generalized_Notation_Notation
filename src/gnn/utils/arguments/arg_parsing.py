@@ -109,15 +109,14 @@ class ArgumentParser:
 
     @classmethod
     def create_main_parser(cls) -> argparse.ArgumentParser:
-        """Create the main pipeline argument parser with all arguments."""
+        """Create the main pipeline argument parser from its argument catalog."""
         parser = argparse.ArgumentParser(
             description="GNN Processing Pipeline",
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
 
-        # Add all arguments
-        for _, arg_def in cls.ARGUMENT_DEFINITIONS.items():
-            arg_def.add_to_parser(parser)
+        for name in cls.STEP_ARGUMENTS["main.py"]:
+            cls.ARGUMENT_DEFINITIONS[name].add_to_parser(parser)
 
         return parser
 

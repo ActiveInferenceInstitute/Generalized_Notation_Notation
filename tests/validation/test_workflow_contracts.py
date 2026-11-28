@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import json
 import logging
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +31,83 @@ from gnn.validation.structure import (
     cycle_nodes,
     extract_content_from_dict,
 )
+
+
+def test_strict_probability_receipt_uses_authored_values_and_preserves_default(
+    tmp_path,
+):
+    from gnn.parsers.markdown_parser import MarkdownGNNParser
+    from gnn.validation import validate_content
+    from gnn.validation.mcp import validate_gnn_file_mcp
+
+    root = Path(__file__).resolve().parents[2]
+    source = root / "input" / "gnn_files" / "discrete" / "two_state_bistable.md"
+    content = source.read_text(encoding="utf-8")
+    assert (
+        validate_content(content, strict_probabilities=True)["probability_validation"][
+            "status"
+        ]
+        == "passed"
+    )
+    content = content.replace("(0.8, 0.2),", "(-0.1, 0.2),", 1).replace(
+        "D={(0.5, 0.5)}",
+        "D={(0.0, 0.0)}",
+    )
+    assert validate_content(content, "strict")["valid"]
+    assert "probability_validation" not in validate_content(content, "strict")
+    source_copy = tmp_path / "invalid.md"
+    source_copy.write_text(content, encoding="utf-8")
+    result = validate_gnn_file_mcp(str(source_copy), strict_probabilities=True)
+    assert result["is_valid"] is False
+    probability = result["semantic"]["probability_validation"]
+    assert probability["status"] == "failed"
+    assert len(probability["diagnostics"]) == 2
+    assert all(row["code"] == "GNN-E007" for row in probability["diagnostics"])
+
+    parsed = MarkdownGNNParser().parse_string(content)
+    assert parsed.success
+    parsed_path = tmp_path / "model.json"
+    parsed_path.write_text(json.dumps(parsed.model.to_dict()), encoding="utf-8")
+    run = tmp_path / "run"
+    _write_manifest(run, parsed_path)
+    out = run / "6_validation_output"
+    assert process_validation(tmp_path, out) is True
+    command = [
+        sys.executable,
+        str(root / "src" / "gnn" / "6_validation.py"),
+        "--target-dir",
+        str(tmp_path),
+        "--output-dir",
+        str(run),
+        "--strict-probabilities",
+    ]
+    checked = subprocess.run(
+        command, cwd=root, capture_output=True, text=True, timeout=30
+    )
+    assert checked.returncode == 1, checked.stdout + checked.stderr
+    receipt = json.loads((out / "validation_results.json").read_text(encoding="utf-8"))
+    assert receipt["context"]["strict_probabilities"] is True
+    assert receipt["current_summary"]["failed_validations"] == 1
+    parsed_probability = receipt["files_validated"][0]["validations"]["semantic"][
+        "probability_validation"
+    ]
+    assert parsed_probability["line_origin"] == "reconstructed_model"
+    assert probability["line_origin"] == "source_text"
+    assert [
+        (row["code"], row["message"]) for row in parsed_probability["diagnostics"]
+    ] == [(row["code"], row["message"]) for row in probability["diagnostics"]]
+    assert source_copy.read_text(encoding="utf-8") == content
+
+
+def test_strict_probability_structured_receipt_without_raw_sections():
+    model = {
+        "variables": [{"name": "s", "dimensions": [2]}],
+        "parameters": [{"name": "D", "value": [0.0, 0.0]}],
+    }
+    result = validation.process_semantic_validation(model, strict_probabilities=True)
+    probability = result["probability_validation"]
+    assert probability["status"] == "failed"
+    assert "prior sums to 0" in probability["diagnostics"][0]["message"]
 
 
 def _write_manifest(base_output: Path, parsed_file: Path) -> None:

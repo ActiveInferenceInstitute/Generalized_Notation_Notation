@@ -64,7 +64,7 @@ _FRAMEWORK_REMEDIATIONS: dict[str, str] = {
     "stan": "Add cmdstanpy: uv add cmdstanpy",
     "discopy": "Add discopy: uv add discopy",
     "jax": "Add jax: uv add jax jaxlib",
-    "pymdp": "Add pymdp: uv add pymdp",
+    "pymdp": "Install inferactively-pymdp: uv pip install 'inferactively-pymdp>=1.0.5'",
     "ngclearn": "Add ngclearn: uv sync --extra ngclearn",
     "cpomdp": "Install released cpomdp: uv sync --extra cpomdp",
     "thrml": "Install released THRML: uv sync --extra thrml",

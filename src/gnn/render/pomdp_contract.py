@@ -16,7 +16,7 @@ from __future__ import annotations
 import re
 from copy import deepcopy
 from enum import Enum
-from numbers import Integral
+from numbers import Integral, Real
 from typing import Any, Dict, Iterable, List, Tuple, TypedDict, cast
 
 import numpy as np
@@ -177,6 +177,79 @@ def _declared_b_order(model_parameters: Dict[str, Any]) -> str:
     return declared_b_order(model_parameters)
 
 
+def _pymdp_numeric(value: Any, name: str) -> np.ndarray:
+    """Accept numeric inputs without coercing authored booleans or strings."""
+    if isinstance(value, np.ndarray) and value.dtype.kind in "iuf":
+        return value
+    raw = np.asarray(value, dtype=object)
+    if any(
+        isinstance(entry, (bool, np.bool_)) or not isinstance(entry, Real)
+        for entry in raw.flat
+    ):
+        raise ValueError(f"{name} must contain numeric values")
+    return np.asarray(raw, dtype=np.float64)
+
+
+def canonicalise_pymdp_likelihood_prior(
+    initial: Dict[str, Any],
+    model_parameters: Dict[str, Any],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Validate categorical observation likelihood, preferences and state prior."""
+    likelihood = np.asarray(
+        normalise_matrix_columns(_pymdp_numeric(initial["A"], "A"), name="A")
+    )
+    observations, states = likelihood.shape
+    for key, expected in (
+        ("num_states", states),
+        ("num_hidden_states", states),
+        ("num_obs", observations),
+        ("num_observations", observations),
+    ):
+        if key in model_parameters:
+            declared = model_parameters[key]
+            if (
+                type(declared) is bool
+                or not isinstance(declared, Integral)
+                or declared != expected
+            ):
+                raise ValueError(f"A shape does not match declared {key}")
+    preferences = _pymdp_numeric(initial["C"], "C").flatten()
+    if len(preferences) != observations or not np.isfinite(preferences).all():
+        raise ValueError(f"C must contain {observations} finite preferences")
+    prior = np.asarray(normalise_vector(_pymdp_numeric(initial["D"], "D"), name="D"))
+    if len(prior) != states:
+        raise ValueError(f"D must contain {states} probabilities")
+    return likelihood, preferences, prior
+
+
+def pymdp_policy_horizon(parameters: Dict[str, Any]) -> int:
+    """Return a positive integer policy horizon without coercion."""
+    value = parameters.get("policy_len", 1)
+    if isinstance(value, bool) or not isinstance(value, Integral) or value < 1:
+        raise ValueError("policy_len must be a positive integer")
+    return int(value)
+
+
+def canonicalise_pymdp_policy_prior(
+    value: Any, *, num_actions: int, policy_len: int
+) -> np.ndarray | None:
+    """Validate a declared prior against the complete native policy space."""
+    if value is None:
+        return None
+    prior = np.asarray(normalise_vector(_pymdp_numeric(value, "E"), name="E"))
+    remaining = len(prior)
+    declared_horizon = 0
+    if num_actions > 1:
+        while remaining > 1 and remaining % num_actions == 0:
+            remaining //= num_actions
+            declared_horizon += 1
+    if remaining != 1 or (num_actions > 1 and declared_horizon != policy_len):
+        raise ValueError(
+            f"E length must match {num_actions} actions over a policy horizon of {policy_len}"
+        )
+    return prior
+
+
 def canonicalise_b_matrix(
     value: Any,
     *,
@@ -184,9 +257,14 @@ def canonicalise_b_matrix(
     num_actions: int | None,
     model_parameters: Dict[str, Any],
     b_provenance: Dict[str, Any] | None = None,
+    strict_types: bool = False,
 ) -> Tuple[List[List[List[float]]], Dict[str, Any]]:
     """Return B as ``(next_state, previous_state, action)``."""
-    raw = np.asarray(value, dtype=np.float64)
+    raw = (
+        _pymdp_numeric(value, "B")
+        if strict_types
+        else np.asarray(value, dtype=np.float64)
+    )
     if not np.isfinite(raw).all() or np.any(raw < 0):
         raise ValueError("B must contain finite nonnegative probabilities")
     declared_order = _declared_b_order(model_parameters)
@@ -384,7 +462,7 @@ def canonicalise_pymdp_phase_transitions(
     provenance: Dict[str, Any] | None = None,
 ) -> tuple[np.ndarray, list[int] | None]:
     """Validate each authored phase and return its canonical tensor and schedule."""
-    raw = np.asarray(value)
+    raw = _pymdp_numeric(value, key)
     if raw.ndim not in {2, 3, 4}:
         raise ValueError(f"{key} must be a transition matrix, tensor or phase stack")
     if raw.ndim in {2, 3}:
@@ -395,7 +473,7 @@ def canonicalise_pymdp_phase_transitions(
     order = declared_b_order(parameters, name="B" + key[1:].lower())
     if raw.ndim == 4 and not stored_b_order(order, provenance or {}):
         # A stack has one physical axis order for all phases. Intersect
-        # stochastic evidence before choosing the canonical legacy default.
+        # stochastic evidence before choosing the canonical default.
         candidates = b_shape_orders(
             raw.shape[1:], states=num_states, actions=num_actions
         )
@@ -418,6 +496,7 @@ def canonicalise_pymdp_phase_transitions(
                 num_actions=num_actions,
                 model_parameters={"b_tensor_order": order},
                 b_provenance=provenance,
+                strict_types=True,
             )
         except ValueError as error:
             raise ValueError(f"{key} phase {index}: {error}") from error

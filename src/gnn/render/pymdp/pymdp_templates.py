@@ -103,7 +103,7 @@ try:
 except ImportError as e:
     print(
         "ERROR: pymdp 1.0.0 required. Install with: "
-        "uv pip install 'inferactively-pymdp>=1.0.0' (original error: "
+        "uv pip install 'inferactively-pymdp>=1.0.5' (original error: "
         + str(e) + ")",
         file=sys.stderr,
     )
@@ -174,7 +174,7 @@ _STANDALONE_RUNNER_DOCSTRING = """
 Self-contained pymdp 1.0.0 rollout for {model_display_name}
 
 Generated from a GNN specification. This script is fully standalone: it does
-not depend on the GNN pipeline code, only on ``inferactively-pymdp>=1.0.0``
+not depend on the GNN pipeline code, only on ``inferactively-pymdp>=1.0.5``
 and its JAX/equinox runtime.
 
 Model:        {model_display_name}
@@ -202,7 +202,7 @@ try:
 except ImportError as e:
     print(
         "ERROR: pymdp 1.0.0 required. Install with: "
-        "uv pip install 'inferactively-pymdp>=1.0.0' (original error: "
+        "uv pip install 'inferactively-pymdp>=1.0.5' (original error: "
         + str(e) + ")",
         file=sys.stderr,
     )
@@ -215,26 +215,24 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Numpy-based normalisation helpers (GNN → pymdp 1.0.0 input contract)
 # ---------------------------------------------------------------------------
-def _norm_vec(v: np.ndarray) -> np.ndarray:
+def _norm_vec(v: np.ndarray, *, declared: bool = False) -> np.ndarray:
     arr = np.asarray(v, dtype=np.float64).flatten()
     total = float(arr.sum())
-    if not np.isfinite(total) or total <= 0:
-        n = max(len(arr), 1)
-        return np.ones(n, dtype=np.float64) / n
+    if not np.isfinite(total) or total <= 0 or np.any(arr < 0):
+        raise ValueError("Expected a finite nonnegative probability vector")
+    if declared and not np.isclose(total, 1, atol=1e-4, rtol=0):
+        raise ValueError("Declared probability vector must have unit mass")
     return arr / total
 
 
 def _norm_cols(mat: np.ndarray) -> np.ndarray:
-    out = np.asarray(mat, dtype=np.float64).copy()
+    out = np.asarray(mat, dtype=np.float64)
+    if out.ndim != 2 or not np.isfinite(out).all() or np.any(out < 0):
+        raise ValueError("Expected a two-dimensional array of finite nonnegative probabilities")
     cs = out.sum(axis=0, keepdims=True)
-    zero = cs <= 0
-    cs = np.where(zero, 1.0, cs)
-    out = out / cs
-    if zero.any():
-        rows = out.shape[0]
-        for j in np.where(zero.flatten())[0]:
-            out[:, j] = 1.0 / rows
-    return out
+    if not np.allclose(cs, 1, atol=1e-4, rtol=0):
+        raise ValueError("Declared probability columns must have unit mass")
+    return out / cs
 
 
 def _canonical_B(raw: np.ndarray) -> np.ndarray:
@@ -286,22 +284,21 @@ def main() -> int:
 
     if C_data is None:
         raise ValueError("C vector is required for pymdp execution")
-    c = np.asarray(C_data, dtype=np.float64).flatten()
-    C_np = np.zeros(num_obs, dtype=np.float64)
-    C_np[: min(num_obs, len(c))] = c[: min(num_obs, len(c))]
+    C_np = np.asarray(C_data, dtype=np.float64).flatten()
+    if len(C_np) != num_obs or not np.isfinite(C_np).all():
+        raise ValueError("C must contain one finite preference per observation")
 
     if D_data is None:
         raise ValueError("D vector is required for pymdp execution")
-    D_np = _norm_vec(np.asarray(D_data, dtype=np.float64))
+    D_np = _norm_vec(np.asarray(D_data, dtype=np.float64), declared=True)
     if D_np.shape[0] != num_states:
-        padded = np.ones(num_states, dtype=np.float64) / num_states
-        k = min(num_states, D_np.shape[0])
-        padded[:k] = D_np[:k]
-        D_np = _norm_vec(padded)
+        raise ValueError("D must contain one probability per state")
 
     E_np: Optional[np.ndarray] = None
     if E_data is not None:
-        E_np = _norm_vec(np.asarray(E_data, dtype=np.float64))
+        E_np = _norm_vec(np.asarray(E_data, dtype=np.float64), declared=True)
+        if len(E_np) != num_actions:
+            raise ValueError("E must contain one probability per one-step policy")
 
     logger.info("Dims: No=%d Ns=%d Nu=%d T=%d", num_obs, num_states, num_actions, num_timesteps)
 

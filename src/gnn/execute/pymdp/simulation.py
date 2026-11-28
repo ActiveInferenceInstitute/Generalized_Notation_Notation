@@ -59,41 +59,12 @@ EFE_CONVENTION_PYMDP_SUMMARY = (
 
 
 def _normalise_prob_vector(v: np.ndarray) -> np.ndarray:
-    """Return a 1-D probability vector summing to 1 (robust to GNN rounding)."""
+    """Normalize a computed distribution without fabricating missing mass."""
     arr = np.asarray(v, dtype=np.float64).flatten()
     total = float(arr.sum())
-    if not np.isfinite(total) or total <= 0:
-        n = max(len(arr), 1)
-        return np.ones(n, dtype=np.float64) / n
+    if not np.isfinite(total) or total <= 0 or np.any(arr < 0):
+        raise ValueError("PyMDP computed an invalid probability distribution")
     return arr / total
-
-
-def _normalise_columns(mat: np.ndarray) -> np.ndarray:
-    """Normalise each column so it sums to 1, repairing zero columns uniformly."""
-    out = np.asarray(mat, dtype=np.float64).copy()
-    if out.ndim != 2:
-        raise ValueError(f"_normalise_columns expected 2D, got {out.ndim}D")
-    col_sums = out.sum(axis=0, keepdims=True)
-    zero_cols = col_sums <= 0
-    col_sums = np.where(zero_cols, 1.0, col_sums)
-    out = out / col_sums
-    if zero_cols.any():
-        rows = out.shape[0]
-        for j in np.where(zero_cols.flatten())[0]:
-            out[:, j] = 1.0 / rows
-    return out
-
-
-def _canonicalise_A(A_data: Any, fallback_shape: Tuple[int, int]) -> np.ndarray:
-    """Return an A matrix of shape ``(num_obs, num_states)`` with columns summing to 1."""
-    if A_data is None:
-        raise ValueError("A matrix is required for PyMDP execution")
-    mat = np.asarray(A_data, dtype=np.float64)
-    if mat.ndim != 2:
-        raise ValueError(
-            f"A matrix must be 2D (num_obs, num_states); got shape {mat.shape}"
-        )
-    return _normalise_columns(mat)
 
 
 def _canonicalise_B(
@@ -114,57 +85,9 @@ def _canonicalise_B(
         num_actions=num_actions,
         model_parameters={"b_tensor_order": b_tensor_order},
         b_provenance=b_provenance,
+        strict_types=True,
     )
     return np.asarray(canonical, dtype=np.float64)
-
-
-def _canonicalise_C(C_data: Any, num_obs: int) -> np.ndarray:
-    """Canonicalize C."""
-    if C_data is None:
-        raise ValueError("C vector is required for PyMDP execution")
-    vec = np.asarray(C_data, dtype=np.float64).flatten()
-    if vec.shape[0] != num_obs:
-        padded = np.zeros(num_obs, dtype=np.float64)
-        k = min(num_obs, vec.shape[0])
-        padded[:k] = vec[:k]
-        vec = padded
-    return vec
-
-
-def _canonicalise_D(D_data: Any, num_states: int) -> np.ndarray:
-    """Canonicalize D."""
-    if D_data is None:
-        raise ValueError("D vector is required for PyMDP execution")
-    return _normalise_probability_vector_safe(D_data, num_states)
-
-
-def _normalise_probability_vector_safe(v: Any, expected_len: int) -> np.ndarray:
-    """Normalize probability vector safe."""
-    vec = np.asarray(v, dtype=np.float64).flatten()
-    if vec.shape[0] != expected_len:
-        padded = np.ones(expected_len, dtype=np.float64) / max(expected_len, 1)
-        k = min(expected_len, vec.shape[0])
-        padded[:k] = vec[:k]
-        vec = padded
-    return _normalise_prob_vector(vec)
-
-
-def _canonicalise_E(
-    E_data: Any, expected_policies: Optional[int]
-) -> Optional[np.ndarray]:
-    """Canonicalize E."""
-    if E_data is None:
-        return None
-    vec = np.asarray(E_data, dtype=np.float64).flatten()
-    if expected_policies is not None and vec.shape[0] != expected_policies:
-        # Re-scale / truncate / pad to match policy count (pymdp asserts on this).
-        padded = np.ones(expected_policies, dtype=np.float64) / max(
-            expected_policies, 1
-        )
-        k = min(expected_policies, vec.shape[0])
-        padded[:k] = vec[:k]
-        vec = padded
-    return _normalise_prob_vector(vec)
 
 
 def _build_nonstationary_b_steps(
@@ -263,7 +186,7 @@ def _require_pymdp_1() -> Any:
     except ImportError as e:
         raise ImportError(
             "pymdp 1.0.0 (JAX-first) is required. Install with:\n"
-            "    uv pip install 'inferactively-pymdp>=1.0.0'\n"
+            "    uv pip install 'inferactively-pymdp>=1.0.5'\n"
             f"(original error: {e})"
         ) from e
 
@@ -271,7 +194,7 @@ def _require_pymdp_1() -> Any:
     if not hasattr(Agent, "update_empirical_prior"):
         raise ImportError(
             "Detected unsupported pymdp (<1.0.0). This module requires pymdp 1.0.0. "
-            "Upgrade with: uv pip install --upgrade 'inferactively-pymdp>=1.0.0'"
+            "Upgrade with: uv pip install --upgrade 'inferactively-pymdp>=1.0.5'"
         )
     return Agent, pymdp_utils, jnp, jr
 
@@ -525,7 +448,7 @@ def run_pymdp_simulation(
         return False, {
             "success": False,
             "error": str(e),
-            "suggestion": "Install with: uv pip install 'inferactively-pymdp>=1.0.0'",
+            "suggestion": "Install with: uv pip install 'inferactively-pymdp>=1.0.5'",
         }
 
     try:
@@ -543,9 +466,12 @@ def run_pymdp_simulation(
     model_params = gnn_spec.get("model_parameters", {}) or {}
     from gnn.render.pomdp_contract import (
         ModelKind,
+        canonicalise_pymdp_likelihood_prior,
         canonicalise_pymdp_phase_transitions,
+        canonicalise_pymdp_policy_prior,
         detect_model_kinds,
         pymdp_nonstationary_transition,
+        pymdp_policy_horizon,
     )
 
     required_matrices = ["A", "B", "C", "D"]
@@ -567,17 +493,7 @@ def run_pymdp_simulation(
             "schema_version": "pymdp_simulation_v1",
         }
 
-    a_raw = init_params.get("A")
-    a_np_tmp = np.asarray(a_raw, dtype=np.float64)
-    if a_np_tmp.ndim != 2:
-        return False, {
-            "success": False,
-            "error": f"A matrix must be 2D; got shape {a_np_tmp.shape}",
-            "schema_version": "pymdp_simulation_v1",
-        }
-    fallback_shape = (int(a_np_tmp.shape[0]), int(a_np_tmp.shape[1]))
-
-    A_np = _canonicalise_A(a_raw, fallback_shape)
+    A_np, C_np, D_np = canonicalise_pymdp_likelihood_prior(init_params, model_params)
     num_obs, num_states = A_np.shape
 
     b_raw = init_params.get("B")
@@ -615,12 +531,11 @@ def run_pymdp_simulation(
         )
     # Ensure num_actions reflects the canonicalised tensor.
     num_actions = int(B_np.shape[2])
-    C_np = _canonicalise_C(init_params.get("C"), num_obs)
-    D_np = _canonicalise_D(init_params.get("D"), num_states)
-    E_np = _canonicalise_E(init_params.get("E"), expected_policies=num_actions)
-
+    policy_len = pymdp_policy_horizon(model_params)
+    E_np = canonicalise_pymdp_policy_prior(
+        init_params.get("E"), num_actions=num_actions, policy_len=policy_len
+    )
     batch_size = int(model_params.get("batch_size", 1))
-    policy_len = int(model_params.get("policy_len", 1))
     gamma = float(model_params.get("gamma", 16.0))
     alpha = float(model_params.get("alpha", 16.0))
     seed = int(model_params.get("random_seed", 0))

@@ -150,7 +150,7 @@ flowchart LR
 
 Main pipeline orchestrator (called by `src/gnn/6_validation.py`). Reads GNN results JSON from step 3, then runs the three validators plus the B-tensor orientation diagnostic on each parsed file.
 
-**kwargs:** `validation_level` (semantic depth: `basic`/`standard`/`strict`/`research`; default `standard`), `strict` (shorthand for `validation_level="strict"`, wired to the orchestrator's `--strict` flag), `transpose_b` (opt-in canonical B-tensor transposition for the orientation stage; textbook row-stochastic tensors are transposed in memory and recorded in the receipt, default warnings-only). `logger`, `recursive`, and `profile` are accepted for the pipeline-template contract and do not alter behavior.
+**kwargs:** `validation_level` (semantic depth: `basic`/`standard`/`strict`/`research`; default `standard`), `strict` (shorthand for `validation_level="strict"`, wired to the orchestrator's `--strict` flag), `transpose_b` (opt-in canonical B-tensor transposition for the orientation stage; textbook row-stochastic tensors are transposed in memory and recorded in the receipt, default warnings-only), `strict_probabilities` (opt-in numeric probability validation through the strict extraction contract). `logger`, `recursive`, and `profile` are accepted for the pipeline-template contract and do not alter behavior.
 
 **Workflow:**
 

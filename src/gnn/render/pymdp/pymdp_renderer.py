@@ -291,9 +291,13 @@ class PyMDPRenderer:
         from gnn.render.execution_contracts import unsupported_contract
         from gnn.render.pomdp_contract import (
             ModelKind,
+            canonicalise_b_matrix,
+            canonicalise_pymdp_likelihood_prior,
             canonicalise_pymdp_phase_transitions,
+            canonicalise_pymdp_policy_prior,
             detect_model_kinds,
             pymdp_nonstationary_transition,
+            pymdp_policy_horizon,
         )
 
         reason = unsupported_contract(gnn_spec, "pymdp")
@@ -347,6 +351,7 @@ class PyMDPRenderer:
 
         params = gnn_spec.get("model_parameters") or {}
         provenance = gnn_spec.get("matrix_provenance") or {}
+        canonicalise_pymdp_likelihood_prior(init_params, params)
         axis_permutation = (0, 1, 2)
         if key:
             declared_actions = params.get("num_actions")
@@ -373,6 +378,20 @@ class PyMDPRenderer:
                 )
                 axis_permutation = b_permutation(order)
                 num_actions = raw_b.shape[axis_permutation[2]]
+            canonicalise_b_matrix(
+                init_params["B"],
+                num_states=num_states,
+                num_actions=int(params.get("num_actions", num_actions)),
+                model_parameters=params,
+                b_provenance=provenance.get("B"),
+                strict_types=True,
+            )
+        policy_len = pymdp_policy_horizon(params)
+        if self.mode == "standalone" and policy_len != 1:
+            raise ValueError("The standalone PyMDP runner requires policy_len=1")
+        canonicalise_pymdp_policy_prior(
+            init_params.get("E"), num_actions=num_actions, policy_len=policy_len
+        )
 
         context: Dict[str, Any] = {
             "model_name": model_name,

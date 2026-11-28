@@ -37,7 +37,7 @@ Exports are defined in `src/gnn/execute/pymdp/__init__.py`. Main entry points:
 
 - Required install:
   ```bash
-  uv pip install 'inferactively-pymdp>=1.0.0'
+  uv pip install 'inferactively-pymdp>=1.0.5'
   ```
   pymdp 1.0.0 is the JAX-first rewrite (`equinox.Module` Agent, batched
   list-of-JAX-array models, explicit PRNG keys for action sampling).
@@ -53,6 +53,12 @@ Exports are defined in `src/gnn/execute/pymdp/__init__.py`. Main entry points:
 
 Step 12 writes execution traces, logs, and summary artifacts. Plot generation is
 explicitly deferred to Step 16 analysis.
+
+The authored PyMDP entry points require finite nonnegative probabilities in A,
+B, D, and any declared E. Unit-mass checks allow absolute rounding drift up
+to `1e-4`. C contains one finite preference per observation, D contains one
+probability per state, and E, when present, covers the native policy space.
+Invalid inputs fail before a simulation result is written.
 
 ## Upstream PyMDP ``Agent`` contract tests
 
