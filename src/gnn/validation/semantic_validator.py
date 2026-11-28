@@ -535,7 +535,9 @@ def process_semantic_validation(
 
 def _with_structured_probabilities(content: str, model: dict[str, Any]) -> str:
     """Expose numeric declarations carried without raw source section text."""
-    if re.search(r"^##\s+InitialParameterization\s*$", content, re.MULTILINE):
+    from gnn.extract.pomdp_support import find_section_heading
+
+    if find_section_heading(content, "InitialParameterization") is not None:
         return content
     values = model.get("initialparameterization") or model.get(
         "initial_parameterization"
@@ -599,6 +601,7 @@ def _probability_receipt(content: str) -> dict[str, Any]:
     """Evaluate the same authored categorical contract as strict extraction."""
     from gnn.extract.pomdp_extractor import extract_pomdp_from_content
     from gnn.extract.pomdp_stochastic import DEFAULT_ATOL
+    from gnn.extract.pomdp_support import find_section_heading
 
     data: dict[str, Any] = {
         "contract": "gnn_strict_categorical_probabilities",
@@ -607,7 +610,7 @@ def _probability_receipt(content: str) -> dict[str, Any]:
         "diagnostics": [],
         "line_origin": "source_text",
     }
-    if not re.search(r"^##\s+InitialParameterization\s*$", content, re.MULTILINE):
+    if find_section_heading(content, "InitialParameterization") is None:
         return data
     space, errors = extract_pomdp_from_content(
         content,

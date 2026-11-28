@@ -12,12 +12,25 @@ method path is unchanged.
 This module is stdlib-only at import time.
 """
 
+import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from .pomdp_state import GNNExtractionError, _shape_of
 
 if TYPE_CHECKING:
     import logging
+
+
+SECTION_PATTERN = re.compile(r"^[^\S\n]*##[^\S\n]+(\S[^\n]*)$", re.MULTILINE)
+
+
+def find_section_heading(content: str, section: str) -> re.Match[str] | None:
+    """Find the last occurrence, matching the extractor's section precedence."""
+    heading = None
+    for match in SECTION_PATTERN.finditer(content):
+        if match.group(1).strip() == section:
+            heading = match
+    return heading
 
 
 class POMDPExtractorSupportMixin:
@@ -88,7 +101,5 @@ class POMDPExtractorSupportMixin:
 
     def _section_line_offset_for(self, content: str, section: str) -> int:
         """File-absolute 1-based line number of a section header (0 if absent)."""
-        for index, raw_line in enumerate(content.split("\n"), start=1):
-            if raw_line.strip().lower() == f"## {section.lower()}":
-                return index
-        return 0
+        heading = find_section_heading(content, section)
+        return 0 if heading is None else content.count("\n", 0, heading.start()) + 1

@@ -99,6 +99,40 @@ def test_strict_probability_receipt_uses_authored_values_and_preserves_default(
     assert source_copy.read_text(encoding="utf-8") == content
 
 
+@pytest.mark.parametrize(
+    "heading", ["  ## InitialParameterization", "\t##\tInitialParameterization  "]
+)
+def test_strict_probability_checks_indented_heading_at_authored_line(heading: str):
+    from gnn.extract.pomdp_extractor import extract_pomdp_from_content
+
+    root = Path(__file__).resolve().parents[2]
+    source = root / "input" / "gnn_files" / "discrete" / "two_state_bistable.md"
+    content = source.read_text(encoding="utf-8").replace(
+        "## InitialParameterization", heading
+    )
+    assert (
+        validation.validate_content(content, strict_probabilities=True)[
+            "probability_validation"
+        ]["status"]
+        == "passed"
+    )
+
+    invalid_prior = "D={(0.0, 0.0)}"
+    content = content.replace("D={(0.5, 0.5)}", invalid_prior)
+    prior_line = content.splitlines().index(invalid_prior) + 1
+    result = validation.validate_content(content, strict_probabilities=True)
+    assert not result["valid"]
+    receipt = result["probability_validation"]
+    assert receipt["status"] == "failed"
+    (diagnostic,) = receipt["diagnostics"]
+    _, errors = extract_pomdp_from_content(
+        content, on_error="collect", strict_probabilities=True, insert_default_c=False
+    )
+    (error,) = errors
+    assert diagnostic["code"] == error.code == "GNN-E007"
+    assert diagnostic["line"] == error.line == prior_line
+
+
 def test_strict_probability_structured_receipt_without_raw_sections():
     model = {
         "variables": [{"name": "s", "dimensions": [2]}],

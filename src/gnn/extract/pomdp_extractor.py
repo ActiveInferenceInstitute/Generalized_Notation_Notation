@@ -44,6 +44,7 @@ from .pomdp_state import (
     canonicalize_pomdp,
 )
 from .pomdp_stochastic import DEFAULT_ATOL, stochastic_diagnostics
+from .pomdp_support import SECTION_PATTERN
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +131,7 @@ class POMDPExtractor(POMDPSectionsMixin, POMDPParametersMixin, POMDPOrientationM
         self._dimension_sources: Dict[str, str] = {}
 
         # Patterns for parsing GNN content
-        self.SECTION_PATTERN = re.compile(r"^##\s+(.+)$", re.MULTILINE)
+        self.SECTION_PATTERN = SECTION_PATTERN
         self.VARIABLE_PATTERN = re.compile(
             r"^([A-Za-z_π][A-Za-z0-9_π]*)\[([^\]]+)\](?:,type=([a-zA-Z]+))?(?:\s*#\s*(.*))?$"
         )
