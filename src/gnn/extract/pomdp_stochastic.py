@@ -13,16 +13,11 @@ Contracts (``atol`` defaults to ``1e-6``):
 - ``A`` / ``A_*`` likelihoods: every entry is finite and non-negative, and the
   sum over the leading observation axis is ``1`` for every conditioning index
   (``A[obs, state, ...]``; factorized slices follow the same rule).
-- ``B`` transitions: finite non-negative entries; the sum over the next-state
-  axis is ``1`` for every (previous state, action) pair. The next-state axis is
-  axis ``0`` for the canonical ``(next_state, previous_state, action)`` order
-  and the last axis when the detected order is action-outer. When the stored
-  orientation is ambiguous (doubly stochastic slices such as permutations) or
-  undetected, either axis is admitted, mirroring the orientation contract;
-  a tensor stochastic along neither axis is rejected.
-  Factorized ``B_*`` slices carry no declared axis order, so they are admitted
-  when any axis of a square state pair (or, with no square pair, any axis) is
-  stochastic; a tensor with no stochastic candidate axis is rejected.
+- ``B`` transitions: finite non-negative entries; the sum over the declared
+  next-state axis is ``1`` for every (previous state, action) pair. Without a
+  machine-readable order, any compatible supported layout with unit mass is
+  admitted. Unspecified higher-rank factored transitions retain their
+  square-state-axis diagnostic.
 - ``D`` / ``D_*`` priors: finite non-negative probability vectors summing to
   ``1``. ``D`` additionally matches ``num_states``.
 - ``C`` / ``C_*`` preferences: finite entries (log-preferences may be
@@ -40,12 +35,12 @@ from dataclasses import dataclass
 from itertools import product
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
+from .pomdp_axes import b_permutation, b_shape_orders, declared_b_order, parse_b_order
 from .pomdp_state import POMDPStateSpace, _shape_of
 
 DEFAULT_ATOL = 1e-6
 DIMENSION_CODE = "GNN-E002"
 PROBABILITY_CODE = "GNN-E007"
-_ACTION_OUTER_ORDER = ["action", "previous_state", "next_state"]
 
 __all__ = [
     "DEFAULT_ATOL",
@@ -86,7 +81,11 @@ def _entry_fault(value: Any) -> Optional[str]:
     for entry in _flatten(value):
         if isinstance(entry, bool) or not isinstance(entry, (int, float)):
             return f"non-numeric entry {entry!r}"
-        if not math.isfinite(float(entry)):
+        try:
+            finite = math.isfinite(float(entry))
+        except OverflowError:
+            finite = False
+        if not finite:
             return f"non-finite entry {entry!r}"
     return None
 
@@ -130,19 +129,22 @@ def _worst_axis_sum(
 
 def _b_next_axes(key: str, shape: Sequence[int], space: POMDPStateSpace) -> List[int]:
     """Candidate next-state axes for a transition tensor."""
-    if len(shape) == 1:
+    if len(shape) < 3 or (key == "B" and len(shape) != 3):
         return [0]
-    if key == "B":
-        if len(shape) != 3:
-            return [0]
-        provenance = (space.matrix_provenance or {}).get("B") or {}
-        detected = provenance.get("detected_order")
-        if detected is not None:
-            return [2] if detected == _ACTION_OUTER_ORDER else [0]
-        # Ambiguous (e.g. doubly stochastic permutation slices) or undetected:
-        # mirror the orientation contract, which never treats ambiguity as a
-        # contradiction, and admit either supported next-state axis.
-        return [0, 2]
+    if len(shape) == 3:
+        provenance = (space.matrix_provenance or {}).get(key) or {}
+        order = (
+            parse_b_order(provenance.get("stored_order"))
+            or declared_b_order(space.model_parameters or {}, name=key)
+            or parse_b_order(provenance.get("detected_order"))
+        )
+        candidates = b_shape_orders(shape)
+        if order:
+            if order not in candidates:
+                raise ValueError(f"tensor shape {list(shape)} does not match {order}")
+            return [b_permutation(order)[0]]
+        if candidates:
+            return [b_permutation(order)[0] for order in candidates]
     paired = sorted(
         {
             axis
@@ -230,7 +232,11 @@ def _check_tensor(
         return diagnostics
 
     # family == "B"
-    candidates = _b_next_axes(key, shape, space)
+    try:
+        candidates = _b_next_axes(key, shape, space)
+    except ValueError as error:
+        add(DIMENSION_CODE, str(error))
+        return diagnostics
     failures: Dict[int, Tuple[Tuple[int, ...], float]] = {}
     for axis in candidates:
         worst = _worst_axis_sum(value, shape, axis, atol)

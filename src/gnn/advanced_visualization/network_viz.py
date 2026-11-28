@@ -408,7 +408,9 @@ def _generate_pomdp_transition_analysis(
             )
             return attempt
 
-        B_matrix = matrices["B"]
+        from gnn.visualization.matrix.extract import orient_visualization_transition
+
+        B_matrix = orient_visualization_transition(matrices["B"], model_data)
         if B_matrix.ndim not in (2, 3):
             raise ValueError(
                 "POMDP transition visualization requires rank-two or rank-three B"

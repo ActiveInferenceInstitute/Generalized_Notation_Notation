@@ -31,6 +31,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from gnn.extract.pomdp_axes import declared_b_order
 from gnn.utils.runtime_safety.resource_manager import get_current_memory_usage
 
 logger = logging.getLogger(__name__)
@@ -96,51 +97,6 @@ def _canonicalise_A(A_data: Any, fallback_shape: Tuple[int, int]) -> np.ndarray:
     return _normalise_columns(mat)
 
 
-def _slices_stochasticity(raw: np.ndarray) -> tuple[bool, bool]:
-    """Return (row_stochastic, column_stochastic) across all 2-D slices.
-
-    A slice is row-stochastic when every row (axis 1) sums to 1 and
-    column-stochastic when every column (axis 0) sums to 1.
-    """
-    row_stochastic = True
-    column_stochastic = True
-    for index in range(raw.shape[0]):
-        matrix = raw[index]
-        row_sums = matrix.sum(axis=1)
-        col_sums = matrix.sum(axis=0)
-        if not np.allclose(row_sums, 1.0, atol=1e-6):
-            row_stochastic = False
-        if not np.allclose(col_sums, 1.0, atol=1e-6):
-            column_stochastic = False
-    return row_stochastic, column_stochastic
-
-
-def _b_order_from_provenance(b_provenance: Any) -> str:
-    """Resolve the stored B orientation from ``matrix_provenance["B"]``.
-
-    Returns one of ``"canonical"`` (incoming tensor is already
-    ``(next_state, previous_state, action)``),
-    ``"action_previous_state_next_state"``,
-    ``"action_next_state_previous_state"``, or ``""`` (unknown — use
-    fallbacks). ``source_order`` is emitted by the render-side
-    canonicaliser and means the incoming tensor is already canonical;
-    the extractor's ``detected_order`` / ``claimed_slice_convention``
-    describe the per-slice convention of the *stored* tensor.
-    """
-    if not isinstance(b_provenance, dict):
-        return ""
-    if b_provenance.get("source_order"):
-        return "canonical"
-    slice_convention = b_provenance.get("detected_order") or (
-        b_provenance.get("claimed_slice_convention")
-    )
-    if slice_convention == "rows_previous_columns_next":
-        return "action_previous_state_next_state"
-    if slice_convention == "rows_next_columns_previous":
-        return "action_next_state_previous_state"
-    return ""
-
-
 def _canonicalise_B(
     B_data: Any,
     num_states: int,
@@ -148,89 +104,19 @@ def _canonicalise_B(
     b_tensor_order: str = "",
     b_provenance: Any = None,
 ) -> np.ndarray:
-    """
-    Return a B tensor with PyMDP shape ``(next_state, prev_state, action)``.
+    """Project source transitions to the same probability axes as Step 11."""
+    from gnn.render.pomdp_contract import canonicalise_b_matrix
 
-    Orientation is resolved in priority order:
-      1. ``matrix_provenance["B"]`` (``source_order`` / ``detected_order`` /
-         ``claimed_slice_convention``) — never re-transposes an
-         already-canonical tensor.
-      2. An explicit ``b_tensor_order`` declaration.
-      3. Shape + stochasticity detection (handles non-square B such as
-         ``B[3,3,2]`` and per-slice column-stochastic layouts).
-
-    Accepted GNN raw formats:
-      * 3-D ``(action, prev, next)`` — transposed to ``(next, prev, action)``
-      * 3-D ``(action, next, prev)`` — axis-reordered to ``(next, prev, action)``
-      * 3-D ``(next, prev, action)`` — kept as-is if shape matches
-      * 2-D ``(next, prev)`` — promoted to single-action ``(next, prev, 1)``
-    Each slice ``B[:, :, a]`` is column-normalised.
-    """
     if B_data is None:
         raise ValueError("B matrix is required for PyMDP execution")
-
-    raw = np.asarray(B_data, dtype=np.float64)
-    declared_order = b_tensor_order.lower().replace("-", "_").replace(" ", "_")
-    provenance_order = _b_order_from_provenance(b_provenance)
-
-    if raw.ndim == 2:
-        tensor = raw[:, :, np.newaxis]
-    elif raw.ndim == 3:
-        if provenance_order == "canonical":
-            tensor = raw
-        elif provenance_order == "action_previous_state_next_state":
-            tensor = raw.transpose(2, 1, 0)
-        elif provenance_order == "action_next_state_previous_state":
-            tensor = raw.transpose(2, 0, 1)
-        elif declared_order in {
-            "next_state_previous_state_action",
-            "next_previous_action",
-            "next_prev_action",
-        }:
-            tensor = raw
-        elif declared_order in {
-            "action_previous_state_next_state",
-            "action_previous_next",
-            "actions_previous_next",
-        }:
-            tensor = raw.transpose(2, 1, 0)
-        elif declared_order in {
-            "action_next_state_previous_state",
-            "action_next_previous",
-            "actions_next_previous",
-        }:
-            tensor = raw.transpose(2, 0, 1)
-        elif raw.shape[0] == num_actions and raw.shape[1] == raw.shape[2]:
-            # Per-action slices of square shape: disambiguate the slice
-            # layout by stochasticity (column-stochastic-only means the
-            # rows are next states: (action, next, prev)).
-            row_stochastic, column_stochastic = _slices_stochasticity(raw)
-            if column_stochastic and not row_stochastic:
-                tensor = raw.transpose(2, 0, 1)
-            else:
-                tensor = raw.transpose(2, 1, 0)
-        elif raw.shape[-1] == num_actions and raw.shape[0] == raw.shape[1]:
-            # Non-square canonical shape, e.g. B[3, 3, 2].
-            tensor = raw
-        elif raw.shape[1] == raw.shape[2] and raw.shape[0] != num_states:
-            # Action-first slices whose action axis was not declared:
-            # infer from stochasticity instead of guessing by shape.
-            row_stochastic, column_stochastic = _slices_stochasticity(raw)
-            if column_stochastic and not row_stochastic:
-                tensor = raw.transpose(2, 0, 1)
-            else:
-                tensor = raw.transpose(2, 1, 0)
-        else:
-            # Best-effort: treat as (next, prev, action)
-            tensor = raw
-    else:
-        raise ValueError(f"B matrix must be 2D or 3D; got shape {raw.shape}")
-
-    # Normalise each action slice by column (over next_state).
-    tensor = tensor.copy()
-    for a in range(tensor.shape[2]):
-        tensor[:, :, a] = _normalise_columns(tensor[:, :, a])
-    return tensor
+    canonical, _ = canonicalise_b_matrix(
+        B_data,
+        num_states=num_states,
+        num_actions=num_actions,
+        model_parameters={"b_tensor_order": b_tensor_order},
+        b_provenance=b_provenance,
+    )
+    return np.asarray(canonical, dtype=np.float64)
 
 
 def _canonicalise_C(C_data: Any, num_obs: int) -> np.ndarray:
@@ -813,17 +699,16 @@ def run_pymdp_simulation(
             model_params=model_params,
             num_timesteps=num_timesteps,
         )
-        # The initial Agent/transition uses the first scheduled step; the
-        # rollout loop rebuilds the Agent for every scheduled step.
-        b_raw = b_steps[0]
-
-    B_np = _canonicalise_B(
-        b_raw,
-        num_states,
-        num_actions,
-        str(model_params.get("b_tensor_order", "")),
-        b_provenance=(gnn_spec.get("matrix_provenance") or {}).get("B"),
-    )
+        # The scheduled slices are already in canonical stored order.
+        B_np = b_steps[0]
+    else:
+        B_np = _canonicalise_B(
+            b_raw,
+            num_states,
+            num_actions,
+            declared_b_order(model_params),
+            b_provenance=(gnn_spec.get("matrix_provenance") or {}).get("B"),
+        )
     # Ensure num_actions reflects the canonicalised tensor.
     num_actions = int(B_np.shape[2])
     C_np = _canonicalise_C(init_params.get("C"), num_obs)

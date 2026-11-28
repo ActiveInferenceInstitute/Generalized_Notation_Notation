@@ -14,6 +14,14 @@ This module is stdlib-only at import time.
 import re
 from typing import Any, Dict, List, Optional
 
+from .pomdp_axes import (
+    ACTION_NEXT_PREVIOUS,
+    ACTION_PREVIOUS_NEXT,
+    b_axes,
+    b_shape_orders,
+    declared_b_order,
+    stochastic_b_orders,
+)
 from .pomdp_state import CANONICAL_B_ORDER
 from .pomdp_support import POMDPExtractorSupportMixin
 
@@ -75,68 +83,41 @@ class POMDPOrientationMixin(POMDPExtractorSupportMixin):
         return None
 
     def _detect_b_order(self, b_matrix: Any) -> Optional[List[str]]:
-        """Detect the stored tensor's axis order from stochasticity sums.
-
-        Evidence tests over the stored (as-written) tensor T[d0][d1][d2]:
-        - Doubly stochastic (dominant): every slice has row sums AND column
-          sums = 1 (permutation-style data). Ambiguous — never decisive, and
-          never a contradiction by itself.
-        - H2 (canonical): sum over the OUTER axis at each (i, j) position = 1
-          (law of total probability over next_state) -> stored is
-          (next_state, previous_state, action).
-        - H1 (action-outer): every slice is row-stochastic (row sums = 1) ->
-          stored is (action, previous_state, next_state).
-        Neither test decisive -> None.
-        """
+        """Report a detected order only when its shape and mass are decisive."""
         shape = self._nested_shape(b_matrix)
-        if len(shape) != 3 or 0 in shape:
-            return None
         try:
-            rows_stochastic = all(
-                abs(sum(float(v) for v in row) - 1.0) <= 1e-6
-                for slice_ in b_matrix
-                for row in slice_
-            )
-            cols_stochastic = all(
-                abs(sum(float(row[j]) for row in slice_) - 1.0) <= 1e-6
-                for slice_ in b_matrix
-                for j in range(len(slice_[0]))
-            )
-            doubly_stochastic = rows_stochastic and cols_stochastic
-            h2 = all(
-                abs(sum(float(s[i][j]) for s in b_matrix) - 1.0) <= 1e-6
-                for i in range(shape[1])
-                for j in range(shape[2])
-            )
-        except (TypeError, ValueError, IndexError):
+            orders = stochastic_b_orders(b_matrix, shape, b_shape_orders(shape))
+        except (IndexError, TypeError, ValueError, OverflowError):
             return None
-
-        if doubly_stochastic:
-            return None  # ambiguous — never decisive, never a contradiction
-        if h2:
-            return list(CANONICAL_B_ORDER)  # (next, prev, action)
-        if rows_stochastic:
-            return ["action", "previous_state", "next_state"]
-        return None
+        return list(b_axes(orders[0])) if len(orders) == 1 else None
 
     def _analyze_b_orientation(
         self,
         state_space_block: str,
         parameterization: str,
         b_matrix: Any,
+        model_parameters: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Produce B-orientation metadata for matrix_provenance['B']."""
-        declared = self._parse_declared_b_order(state_space_block)
+        reason: Optional[str] = None
+        try:
+            stored_declaration = declared_b_order(model_parameters)
+        except ValueError as error:
+            reason = str(error)
+            stored_declaration = ""
+        declared = (
+            list(b_axes(stored_declaration))
+            if stored_declaration
+            else self._parse_declared_b_order(state_space_block)
+        )
         claimed = self._parse_claimed_slice_convention(parameterization)
         detected = self._detect_b_order(b_matrix)
-        contradiction = False
-        reason: Optional[str] = None
 
         # Contradiction requires decisive data (doubly-stochastic/ambiguous
         # data is NEVER a contradiction by itself): the detected orientation
         # must disagree with the declared axis order (or, absent a declaration,
         # with the claimed convention / canonical order).
-        if detected is not None:
+        if reason is None and detected is not None:
             reference = declared
             reference_label = "declared"
             if reference is None:
@@ -144,14 +125,13 @@ class POMDPOrientationMixin(POMDPExtractorSupportMixin):
                     list(CANONICAL_B_ORDER)
                     if claimed is None
                     else (
-                        ["action", "previous_state", "next_state"]
+                        list(b_axes(ACTION_PREVIOUS_NEXT))
                         if claimed == "rows_previous_columns_next"
-                        else list(CANONICAL_B_ORDER)
+                        else list(b_axes(ACTION_NEXT_PREVIOUS))
                     )
                 )
                 reference_label = "claimed" if claimed else "canonical"
             if detected != reference:
-                contradiction = True
                 reason = (
                     f"detected B orientation {detected} contradicts the "
                     f"{reference_label} order {reference}"
@@ -163,6 +143,6 @@ class POMDPOrientationMixin(POMDPExtractorSupportMixin):
             "claimed_slice_convention": claimed,
             "detected_order": detected,
             "canonical_order": list(CANONICAL_B_ORDER),
-            "contradiction": contradiction,
+            "contradiction": reason is not None,
             "reason": reason,
         }

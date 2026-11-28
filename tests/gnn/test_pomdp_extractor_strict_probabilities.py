@@ -245,10 +245,14 @@ def test_detected_action_outer_b_is_checked_on_its_next_state_axis() -> None:
 
 
 def test_unsupported_b_layout_fails_closed_with_axis_hint() -> None:
-    """Stochastic only along axis 1 (action, next, previous): no supported order."""
-    block = "B={ ( (0.8, 0.3), (0.2, 0.7) ), ( (0.3, 0.8), (0.7, 0.2) ) }"
+    """A previous-state-first array with three actions has no supported order."""
+    block = (
+        "B={ ( (0.8, 0.3, 0.6), (0.2, 0.7, 0.4) ), "
+        "( (0.3, 0.8, 0.1), (0.7, 0.2, 0.9) ) }"
+    )
+    content = _content(B=block).replace("B[2,2,2,type=float]", "B[2,2,3,type=float]")
     with pytest.raises(GNNExtractionError) as info:
-        _strict(_content(B=block), "raise")
+        _strict(content, "raise")
     assert info.value.code == PROBABILITY_CODE
     assert "axis 1 is stochastic" in info.value.message
 
@@ -486,8 +490,6 @@ KNOWN_NONSTOCHASTIC_INPUT_FIXTURES = {
     "discrete/multi_armed_bandit.md": {"D"},
     # Phase t=0 conditional (previous=1, action=1) sums to 0.8.
     "discrete/time_varying_dynamics.md": {"B_t"},
-    # Stochastic only along axis 1: (action, next, previous) layout.
-    "discrete/two_state_bistable.md": {"B"},
     # Generated likelihood column rounds to 0.999969.
     "pymdp_scaling_study/pymdp_scaling_N64_T100.md": {"A"},
 }

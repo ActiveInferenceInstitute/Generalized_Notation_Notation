@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
+from gnn.extract.pomdp_axes import b_permutation, declared_b_order, resolve_b_order
+
 from ..compat.viz_compat import np
 
 NUMPY_AVAILABLE = np is not None
@@ -98,4 +100,32 @@ def collect_visualization_matrices(parsed_data: Dict[str, Any]) -> Dict[str, Any
             m_data = convert_to_matrix(m_info.get("data"), m_name)
             if m_data is not None and m_data.ndim > 0:
                 matrices[m_name] = m_data
-    return matrices
+    return {
+        name: orient_visualization_transition(value, parsed_data, name=name)
+        if is_transition_tensor_name(name)
+        else value
+        for name, value in matrices.items()
+    }
+
+
+def orient_visualization_transition(
+    matrix: Any, parsed_data: Dict[str, Any], *, name: str = "B"
+) -> Any:
+    """Project stored transitions onto canonical display axes without rescaling."""
+    if matrix.ndim != 3:
+        return matrix
+    parameters = (
+        parsed_data.get("model_parameters") or parsed_data.get("parameters") or {}
+    )
+    if isinstance(parameters, list):
+        parameters = {
+            item["name"]: item.get("value") for item in parameters if "name" in item
+        }
+    provenance = parsed_data.get("matrix_provenance") or {}
+    order = resolve_b_order(
+        matrix,
+        matrix.shape,
+        declared=declared_b_order(parameters, name=name),
+        provenance=provenance.get(name),
+    )
+    return matrix.transpose(b_permutation(order))

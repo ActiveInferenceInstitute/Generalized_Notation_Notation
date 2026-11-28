@@ -20,7 +20,13 @@ import copy
 from pathlib import Path
 from typing import Any, cast
 
-from gnn.extract.pomdp_extractor import canonicalize_pomdp, extract_pomdp_from_file
+import numpy as np
+import pytest
+
+from gnn.extract.pomdp_extractor import (
+    canonicalize_pomdp,
+    extract_pomdp_from_file,
+)
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -227,3 +233,50 @@ def test_canonicalize_leaves_all_other_fields_intact(tmp_path: Path) -> None:
     assert canonical.num_observations == spec.num_observations
     assert canonical.num_actions == spec.num_actions
     assert canonical.A_matrix == spec.A_matrix
+
+
+def test_bistable_exemplar_keeps_authored_column_stochastic_action_blocks() -> None:
+    source = REPO / "input" / "gnn_files" / "discrete" / "two_state_bistable.md"
+    spec = extract_pomdp_from_file(source, strict_probabilities=True, on_error="raise")
+    assert spec is not None
+    stored = np.array(spec.B_matrix)
+    expected = np.stack([[[0.8, 0.3], [0.2, 0.7]], [[0.3, 0.8], [0.7, 0.2]]], axis=-1)
+    assert _b_provenance(spec)["detected_order"] == [
+        "action",
+        "next_state",
+        "previous_state",
+    ]
+    canonical = canonicalize_pomdp(spec)
+    np.testing.assert_array_equal(canonical.B_matrix, expected)
+    np.testing.assert_array_equal(canonicalize_pomdp(canonical).B_matrix, expected)
+    np.testing.assert_array_equal(spec.B_matrix, stored)
+
+
+@pytest.mark.parametrize(
+    ("order", "stored_axes"),
+    [
+        ("next_state_previous_state_action", (0, 1, 2)),
+        ("action_next_state_previous_state", (2, 0, 1)),
+        ("action_previous_state_next_state", (2, 1, 0)),
+    ],
+)
+def test_transition_consumers_use_the_same_declared_layout(order, stored_axes):
+    from gnn.execute.pymdp.simulation import _canonicalise_B
+    from gnn.render.pomdp_contract import canonicalise_b_matrix
+    from gnn.visualization.matrix.extract import collect_visualization_matrices
+
+    action_zero = [[0.7, 0.1, 0.2], [0.2, 0.6, 0.2], [0.1, 0.3, 0.6]]
+    action_one = [[0.4, 0.2, 0.7], [0.3, 0.3, 0.2], [0.3, 0.5, 0.1]]
+    expected = np.stack([action_zero, action_one], axis=-1)
+    stored = expected.transpose(stored_axes).tolist()
+    params = {"b_tensor_order": order}
+    rendered, _ = canonicalise_b_matrix(
+        stored, num_states=3, num_actions=2, model_parameters=params
+    )
+    executed = _canonicalise_B(stored, 3, 2, order)
+    displayed = collect_visualization_matrices(
+        {"parameters": {"B": stored}, "model_parameters": params}
+    )["B"]
+    np.testing.assert_allclose(rendered, expected, atol=1e-15, rtol=0)
+    np.testing.assert_allclose(executed, expected, atol=1e-15, rtol=0)
+    np.testing.assert_array_equal(displayed, expected)

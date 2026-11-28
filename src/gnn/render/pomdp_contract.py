@@ -20,7 +20,9 @@ from typing import Any, Dict, Iterable, List, Tuple, TypedDict, cast
 
 import numpy as np
 
-CANONICAL_B_ORDER = "next_state_previous_state_action"
+from gnn.extract.pomdp_axes import CANONICAL as CANONICAL_B_ORDER
+from gnn.extract.pomdp_axes import b_permutation, declared_b_order, resolve_b_order
+
 # Only source decimal rounding drift may be corrected; arbitrary weights
 # require the explicit demo adapter and never enter strict canonical models.
 DECLARED_PROBABILITY_MASS_ATOL = 1e-4
@@ -163,14 +165,8 @@ def normalise_matrix_columns(
 
 
 def _declared_b_order(model_parameters: Dict[str, Any]) -> str:
-    """Handle declared b order for internal callers."""
-    order = str(
-        model_parameters.get("b_tensor_order")
-        or model_parameters.get("B_tensor_order")
-        or model_parameters.get("transition_tensor_order")
-        or ""
-    ).lower()
-    return order.replace("-", "_").replace(" ", "_")
+    """Return the normalized stored orientation used by render callers."""
+    return declared_b_order(model_parameters)
 
 
 def canonicalise_b_matrix(
@@ -179,28 +175,13 @@ def canonicalise_b_matrix(
     num_states: int,
     num_actions: int,
     model_parameters: Dict[str, Any],
+    b_provenance: Dict[str, Any] | None = None,
 ) -> Tuple[List[List[List[float]]], Dict[str, Any]]:
     """Return B as ``(next_state, previous_state, action)``."""
     raw = np.asarray(value, dtype=np.float64)
     if not np.isfinite(raw).all() or np.any(raw < 0):
         raise ValueError("B must contain finite nonnegative probabilities")
     declared_order = _declared_b_order(model_parameters)
-    supported_orders = {
-        CANONICAL_B_ORDER,
-        "next_previous_action",
-        "next_prev_action",
-        "states_next_states_previous_actions",
-        "action_next_state_previous_state",
-        "action_next_previous",
-        "actions_next_previous",
-        "action_previous_state_next_state",
-        "action_previous_next",
-        "actions_previous_next",
-    }
-    if declared_order and declared_order not in supported_orders:
-        raise ValueError(f"Unsupported declared B tensor order: {declared_order}")
-    source_order = "inferred"
-
     if raw.ndim == 2:
         if raw.shape != (num_states, num_states):
             raise ValueError(
@@ -209,43 +190,15 @@ def canonicalise_b_matrix(
         tensor = raw[:, :, np.newaxis]
         source_order = "next_state_previous_state"
     elif raw.ndim == 3:
-        if declared_order in {
-            CANONICAL_B_ORDER,
-            "next_previous_action",
-            "next_prev_action",
-            "states_next_states_previous_actions",
-        }:
-            tensor = raw
-            source_order = CANONICAL_B_ORDER
-        elif declared_order in {
-            "action_next_state_previous_state",
-            "action_next_previous",
-            "actions_next_previous",
-        }:
-            tensor = raw.transpose(1, 2, 0)
-            source_order = "action_next_state_previous_state"
-        elif declared_order in {
-            "action_previous_state_next_state",
-            "action_previous_next",
-            "actions_previous_next",
-        }:
-            tensor = raw.transpose(2, 1, 0)
-            source_order = "action_previous_state_next_state"
-        elif raw.shape == (num_actions, num_states, num_states):
-            tensor = raw.transpose(2, 1, 0)
-            source_order = "action_previous_state_next_state"
-        elif raw.shape == (num_states, num_states, num_actions):
-            tensor = raw
-            source_order = CANONICAL_B_ORDER
-        elif raw.shape == (1, num_states, num_states):
-            tensor = raw.transpose(2, 1, 0)
-            source_order = "single_action_previous_state_next_state"
-        else:
-            raise ValueError(
-                "B must be 2-D passive, canonical "
-                f"({num_states}, {num_states}, {num_actions}), or action-first "
-                f"({num_actions}, {num_states}, {num_states}); got {raw.shape}"
-            )
+        source_order = resolve_b_order(
+            raw,
+            raw.shape,
+            declared=declared_order,
+            provenance=b_provenance,
+            states=num_states,
+            actions=num_actions,
+        )
+        tensor = raw.transpose(b_permutation(source_order))
     else:
         raise ValueError(f"B must be 2-D or 3-D, got shape {raw.shape}")
 
@@ -678,11 +631,13 @@ def build_canonical_pomdp_spec(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
         _infer_num_actions_from_b(initial["B"], num_states=num_states),
     )
 
+    provenance = dict(spec.get("matrix_provenance") or {})
     canonical_b, b_provenance = canonicalise_b_matrix(
         initial["B"],
         num_states=num_states,
         num_actions=num_actions,
         model_parameters=model_parameters,
+        b_provenance=provenance.get("B"),
     )
     action_count = len(canonical_b[0][0]) if canonical_b else num_actions
 
@@ -728,7 +683,6 @@ def build_canonical_pomdp_spec(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
     spec["initialparameterization"] = canonical_initial
     spec["initial_parameterization"] = canonical_initial
 
-    provenance = dict(spec.get("matrix_provenance") or {})
     existing_b = dict(provenance.get("B") or {})
     provenance["B"] = {
         **existing_b,
