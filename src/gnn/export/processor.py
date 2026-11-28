@@ -241,16 +241,18 @@ def parse_gnn_content(content: str) -> Dict[str, Any]:
             typed_connections = structured.model.connections
         else:
             sections = _normalize_export_sections(raw_sections, content)
-            # Legacy compatibility inputs also used a single-hash Connections heading.
-            legacy = "\n".join(
+            # Compatibility inputs may use a single-hash Connections heading.
+            connection_text = "\n".join(
                 line
                 for name, lines in sections.items()
                 if "connection" in name.lower()
                 for line in lines
             )
             typed_connections = (
-                parser.parse_string("## Connections\n" + legacy).model.connections
-                if legacy
+                parser.parse_string(
+                    "## Connections\n" + connection_text
+                ).model.connections
+                if connection_text
                 else []
             )
         connections = [

@@ -37,7 +37,7 @@ def _dump_pickle(data: Any, output_file: Path) -> None:
 
 
 def _connection_pairs(parsed_content: Dict[str, Any]) -> Iterator[tuple[str, str]]:
-    """Expand legacy single endpoints and structured GNN connection groups."""
+    """Expand single endpoints and structured GNN connection groups."""
     for connection in parsed_content.get("connections", []):
         sources = connection.get(
             "source_variables", connection.get("sources", [connection.get("source")])
