@@ -366,8 +366,8 @@ def export_to_plaintext_dsl(model_data: Dict[str, Any], output_file: Path) -> bo
         with open(output_file, "w", encoding="utf-8", newline="") as f:
             f.write("# GNN Model\n\n")
 
-            # Older callers can supply a summary without the authored sections.
-            if not raw_sections and "StateSpaceBlock" not in sections:
+            # Saved model summaries may carry only a subset of the authored sections.
+            if not raw_sections:
                 variables = model_data.get("variables", [])
                 if variables:
                     f.write("## Variables\n\n")
