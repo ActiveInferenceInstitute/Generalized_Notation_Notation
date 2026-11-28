@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tests for the opt-in Step-12 sandbox wrapper (execute.sandbox)."""
 
+import logging
+import subprocess
 import sys
 from pathlib import Path
 
@@ -9,6 +11,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from gnn.execute import sandbox
+from gnn.execute.processor import execute_single_script
+from gnn.execute.subprocess_envelope import NEVER_STARTED, run_subprocess_envelope
 
 
 class TestSandbox:
@@ -37,15 +41,20 @@ class TestSandbox:
         assert result["blocked"] is True
         assert result["sandboxed"] is False
         assert result["success"] is False
+        assert result["error_type"] == "SandboxUnavailable"
 
     def test_run_sandboxed_prefer_falls_back_without_backend(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
     ) -> None:
         monkeypatch.setattr(sandbox, "detect_sandbox", lambda: None)
         result = sandbox.run_sandboxed(["python3", "-c", "print(1)"], mode="prefer")
         assert result["blocked"] is False
         assert result["sandboxed"] is False
         assert result["success"] is True
+        receipts = [record for record in caplog.records if "sandbox_" in record.message]
+        assert len(receipts) == 1
+        assert "sandbox_disabled_receipt" in receipts[0].message
+        assert "GNN_SANDBOX=prefer, no backend found" in receipts[0].message
 
     def test_run_sandboxed_uses_backend_when_present(
         self, monkeypatch: pytest.MonkeyPatch
@@ -56,8 +65,58 @@ class TestSandbox:
         assert result["sandboxed"] is True
         assert result["sandbox"] == "firejail"
 
-    def test_unknown_mode_falls_back_to_off(
-        self, monkeypatch: pytest.MonkeyPatch
+    @pytest.mark.parametrize(
+        ("setting", "mode", "error_type"),
+        [
+            ("", "invalid", "InvalidSandboxMode"),
+            ("requre", "invalid", "InvalidSandboxMode"),
+            ("require", "require", "SandboxUnavailable"),
+        ],
+    )
+    def test_refused_policy_blocks_all_launch_surfaces(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        setting: str,
+        mode: str,
+        error_type: str,
     ) -> None:
-        monkeypatch.setenv("GNN_SANDBOX", "bogus")
-        assert sandbox._resolve_mode(None) == "off"
+        monkeypatch.setenv("GNN_SANDBOX", setting)
+        monkeypatch.setattr(sandbox, "detect_sandbox", lambda: None)
+
+        def forbid_launch(*args: object, **kwargs: object) -> None:
+            pytest.fail("A blocked sandbox policy must prevent launch")
+
+        monkeypatch.setattr(subprocess, "Popen", forbid_launch)
+        monkeypatch.setattr(
+            "gnn.execute.processor._check_framework_by_name", forbid_launch
+        )
+        script = tmp_path / "model" / "pymdp" / "rendered.py"
+        script.parent.mkdir(parents=True)
+        script.write_text("print('test model')\n")
+        command = [sys.executable, str(script)]
+
+        direct = sandbox.run_sandboxed(command)
+        assert direct["blocked"] is True
+        assert direct["mode"] == mode
+
+        envelope = run_subprocess_envelope(command)
+        assert envelope["containment"] == "not_started"
+        assert envelope["sandbox_mode"] == mode
+
+        step = execute_single_script(
+            {
+                "path": script,
+                "framework": "pymdp",
+                "name": script.name,
+                "executor": sys.executable,
+            },
+            tmp_path / "results",
+            False,
+            logging.getLogger(__name__),
+        )
+        assert step["execution_metadata"]["sandbox_mode"] == mode
+        for result in (direct, envelope, step):
+            assert result["error_type"] == error_type
+            assert result["success"] is False
+            assert result["return_code"] == NEVER_STARTED

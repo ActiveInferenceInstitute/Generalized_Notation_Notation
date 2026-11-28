@@ -99,8 +99,6 @@ from gnn.execute.processor.single import (
     _framework_for_data_helpers,
     _gnn_allow_missing_deps,
     _new_execution_result,
-    _sandbox_command_prefix,
-    _sandbox_mode,
     execute_single_script,
 )
 from gnn.execute.processor.summary import (
