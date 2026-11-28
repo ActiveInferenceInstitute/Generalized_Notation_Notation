@@ -19,6 +19,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 EVIDENCE_ROOTS = (
+    "docs/manuscript",
     "manuscript",
     "output/data",
     "output/manuscript",
@@ -138,19 +139,19 @@ def finding_fingerprint(project_root: Path, issue: str) -> str:
     supply byte identity. Hydration findings additionally bind their source and
     token map. This cannot grandfather altered evidence with the same wording.
     """
-    paths = set(re.findall(r"(?:output|manuscript|input|src)/[A-Za-z0-9_./-]+", issue))
+    paths = set(re.findall(r"(?:docs/manuscript|output|manuscript|input|src)/[A-Za-z0-9_./-]+", issue))
     for name in re.findall(r"\b[A-Za-z0-9_-]+\.(?:md|yaml|bib)\b", issue):
         if (project_root / name).is_file():
             paths.add(name)
-        if (project_root / "manuscript" / name).is_file():
-            paths.add(f"manuscript/{name}")
+        if (project_root / "docs" / "manuscript" / name).is_file():
+            paths.add(f"docs/manuscript/{name}")
     if issue.startswith("fig:"):
         paths.add("output/figures/figure_registry.json")
         for name in re.findall(r"\b[A-Za-z0-9_-]+\.png\b", issue):
             paths.add(f"output/figures/{name}")
     for path in tuple(paths):
         if path.startswith("output/manuscript/"):
-            paths.add("manuscript/" + path.rsplit("/", 1)[-1])
+            paths.add("docs/manuscript/" + path.rsplit("/", 1)[-1])
             paths.add("output/data/manuscript_variables.json")
         if path.startswith("output/pdf/") and "commit" in issue:
             paths.add("output/data/manuscript_variables.json")

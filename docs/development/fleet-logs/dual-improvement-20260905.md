@@ -129,7 +129,7 @@ changes"):
 ## Dirty-state ledger (close of cycle)
 
 308 porcelain entries (217 M / 2 D / 89 untracked). Modified-today files =
-this cycle's ~20 landed files + the concurrent manuscript/audit lanes'
+this cycle's ~20 landed files + the concurrent docs/manuscript/audit lanes'
 surfaces (manuscript/, output/{manuscript,pdf,slides,web,reports,data,
 figures}, src/gnn/manuscript_variables.py, src/gnn/mcp/audit_report.json — avoided
 entirely by this cycle). The 2 deletions (src/gnn/llm demo removals) and the

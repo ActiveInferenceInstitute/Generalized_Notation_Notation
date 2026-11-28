@@ -7,7 +7,7 @@ Deterministic checks run before/after rendering the token-injected manuscript:
    emitted by ``gnn.manuscript.generate_variables``. An unknown token would
    survive substitution and render literally in the PDF.
 2. **Dangling citations** — every Pandoc ``[@key]`` must resolve to an entry in
-   ``manuscript/references.bib``.
+   ``docs/manuscript/references.bib``.
 3. **Hard-coded counts** — bare literals equal to a high-value producer count (e.g. the
    test-file count, MCP-tool count) are flagged: they should be ``{{TOKEN}}`` instead.
 4. **Hard-coded step numbers** — a bare integer in a step phrase — "step 3",
@@ -19,7 +19,7 @@ Deterministic checks run before/after rendering the token-injected manuscript:
 5. **Malformed cross-references** — a pandoc-crossref marker glued to a stray prefix
    character (``+@fig:x``) still resolves, so no reference gate catches it, but the
    prefix renders literally into the PDF ("+fig. 2 depicts...").
-6. **config.yaml drift** — ``manuscript/config.yaml`` is never token-substituted, so its
+6. **config.yaml drift** — ``docs/manuscript/config.yaml`` is never token-substituted, so its
    ``version:`` / ``date:`` literals are compared against the producer's values.
 7. **Figure accessibility registry** — every ``{#fig:...}`` label a section declares must
    have an ``output/figures/figure_registry.json`` entry with alt text and an existing
@@ -546,7 +546,7 @@ def audit_issues(
     snapshot: RepositorySnapshot | None = None,
 ) -> list[str]:
     """Evaluate HEAD audit semantics against explicit repository evidence."""
-    manuscript_dir = _PROJECT_ROOT / "manuscript"
+    manuscript_dir = _PROJECT_ROOT / "docs" / "manuscript"
     variables = (
         variables if variables is not None else generate_variables(_PROJECT_ROOT)
     )
@@ -581,7 +581,7 @@ def audit_issues(
     }
 
     # config.yaml title/subtitle are NOT token-substituted (the injector only
-    # processes manuscript/*.md), so a count baked into them silently drifts.
+    # processes docs/manuscript/*.md), so a count baked into them silently drifts.
     # Scan them against every producer count, including the small ones the body
     # scan skips, so a regression like a hard-coded "25-step" subtitle fails here.
     config_text = (manuscript_dir / "config.yaml").read_text(encoding="utf-8")
@@ -698,7 +698,7 @@ def audit_issues(
         for c in path_claims:
             print(f"  \u2717 {c}")
     if config_drift:
-        issues.extend(f"manuscript/config.yaml: {issue}" for issue in config_drift)
+        issues.extend(f"docs/manuscript/config.yaml: {issue}" for issue in config_drift)
         ok = False
         print(f"\nCONFIG.YAML DRIFT ({len(config_drift)}):")
         for d in config_drift:

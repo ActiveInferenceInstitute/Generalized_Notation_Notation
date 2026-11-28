@@ -551,7 +551,7 @@ def test_preamble_pdf_metadata_is_written_not_typed(variables: dict[str, str]) -
     """
     assert preamble_metadata_drift(_PROJECT_ROOT, variables) == []
 
-    preamble = (_PROJECT_ROOT / "manuscript" / "preamble.md").read_text(
+    preamble = (_PROJECT_ROOT / "docs" / "manuscript" / "preamble.md").read_text(
         encoding="utf-8"
     )
     assert "{{" not in preamble, "preamble tokens are never substituted in the render"
@@ -563,9 +563,9 @@ def test_sync_preamble_metadata_repairs_drift(
     tmp_path: Path, variables: dict[str, str]
 ) -> None:
     """A hand-edited value is rewritten from the token, and drift reports it."""
-    manuscript = tmp_path / "manuscript"
-    manuscript.mkdir()
-    source = (_PROJECT_ROOT / "manuscript" / "preamble.md").read_text(encoding="utf-8")
+    manuscript = tmp_path / "docs" / "manuscript"
+    manuscript.mkdir(parents=True)
+    source = (_PROJECT_ROOT / "docs" / "manuscript" / "preamble.md").read_text(encoding="utf-8")
     stale = source.replace(
         f"pdfsubject={{{variables['GNN_SUBTITLE']}}}", "pdfsubject={stale subtitle}"
     )
@@ -585,12 +585,12 @@ def test_config_title_page_metadata_is_written_not_typed(
     """Nonempty title-page tokens own their fields; an unreleased date does not.
 
     config.yaml is never token-substituted (the injector only processes
-    ``manuscript/*.md``), so the producer must write these fields or the PDF
+    ``docs/manuscript/*.md``), so the producer must write these fields or the PDF
     title page silently keeps a stale version/date.
     """
     assert config_metadata_drift(_PROJECT_ROOT, variables) == []
 
-    config = (_PROJECT_ROOT / "manuscript" / "config.yaml").read_text(encoding="utf-8")
+    config = (_PROJECT_ROOT / "docs" / "manuscript" / "config.yaml").read_text(encoding="utf-8")
     assert f'version: "{variables["GNN_VERSION"]}"' in config
     if variables["GNN_RELEASE_DATE"]:
         assert f'date: "{variables["GNN_RELEASE_DATE"]}"' in config
@@ -600,9 +600,9 @@ def test_sync_config_metadata_repairs_drift(
     tmp_path: Path, variables: dict[str, str]
 ) -> None:
     """A hand-edited title-page value is rewritten from the token; drift reports it."""
-    manuscript = tmp_path / "manuscript"
-    manuscript.mkdir()
-    source = (_PROJECT_ROOT / "manuscript" / "config.yaml").read_text(encoding="utf-8")
+    manuscript = tmp_path / "docs" / "manuscript"
+    manuscript.mkdir(parents=True)
+    source = (_PROJECT_ROOT / "docs" / "manuscript" / "config.yaml").read_text(encoding="utf-8")
     stale = source.replace(
         f'version: "{variables["GNN_VERSION"]}"', 'version: "stale version"'
     )
@@ -624,8 +624,8 @@ def test_config_date_policy_preserves_authored_epoch_until_release(
     tmp_path: Path, release_date: str
 ) -> None:
     """An empty token preserves the authored date; a released token owns it."""
-    manuscript = tmp_path / "manuscript"
-    manuscript.mkdir()
+    manuscript = tmp_path / "docs" / "manuscript"
+    manuscript.mkdir(parents=True)
     config = manuscript / "config.yaml"
     # Synthetic dates belong only to this private fixture, never release metadata.
     authored = 'paper:\n  version: "stale"\n  date: "2000-01-01"\n'

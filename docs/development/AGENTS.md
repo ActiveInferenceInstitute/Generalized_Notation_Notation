@@ -16,7 +16,7 @@ historical receipts and fleet logs retain their original epochs.
 
 Use the [developer guide](README.md) for task routes, [documentation review](documentation_review.md)
 for prose and signposting, and [paired custody](fep_lean_paired_revision.md) for
-manuscript/companion updates. The tree also contains retained JSON receipts and
+docs/manuscript/companion updates. The tree also contains retained JSON receipts and
 `fleet-logs/`; a hand-maintained file count is not authoritative.
 
 ## Quick Navigation

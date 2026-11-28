@@ -47,7 +47,7 @@ MAINTAINED_ROOTS = [
     ROOT / ".github",
     ROOT / "docs",
     ROOT / "input",
-    ROOT / "manuscript",
+    ROOT / "docs" / "manuscript",
     ROOT / "scripts",
     ROOT / "src",
     ROOT / "AGENTS.md",

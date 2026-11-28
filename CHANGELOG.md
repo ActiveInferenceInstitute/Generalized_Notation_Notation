@@ -2088,7 +2088,7 @@ lazily.
   and scaling orchestrator (SC-19); `verify_logging_duplication.py` deleted.
 - `docs/development/output_tracking.md` — the curated-vs-volatile `output/`
   tracking boundary (SC-9): 6,666 volatile step-output files untracked
-  (index-only), curated manuscript/pdf/figures/data bundles stay tracked.
+  (index-only), curated docs/manuscript/pdf/figures/data bundles stay tracked.
 - `--allow-hosts` on `scripts/check_external_links.py` + weekly
   schedule-only run in `docs-audit.yml` (+9 exemption-contract tests).
 - cmark-gfm slugger port in `docs/development/docs_audit.py` (doctested) +

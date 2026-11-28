@@ -6,7 +6,7 @@ been re-reported as an open defect twice. This module ends that: it pins the
 that explains them (at most one per paragraph-column ``longtable``).
 
 The finding itself, with the experiments that established it, is written up in
-``manuscript/AGENTS.md`` under "Known benign LaTeX diagnostics".
+``docs/manuscript/AGENTS.md`` under "Known benign LaTeX diagnostics".
 
 Both artifacts these tests read are tracked, so they are asserted present rather
 than skipped over; ``.gitignore`` carries a named exception for the log.
@@ -57,7 +57,7 @@ from gnn.manuscript.substitution import active_preamble  # noqa: E402
 
 LOG_PATH = REPO_ROOT / "output" / "pdf" / "_combined_manuscript.log"
 TEX_PATH = REPO_ROOT / "output" / "pdf" / "_combined_manuscript.tex"
-PREAMBLE_PATH = REPO_ROOT / "manuscript" / "preamble.md"
+PREAMBLE_PATH = REPO_ROOT / "docs" / "manuscript" / "preamble.md"
 
 # The declarations docxology/template's ``_pdf_combined_preamble.py`` checks
 # for, with its own patterns: a preamble missing one gets a fallback
@@ -198,7 +198,7 @@ def test_the_preamble_declares_what_the_template_requires() -> None:
         for name, pattern in REQUIRED_PREAMBLE_DECLARATIONS.items()
         if pattern.search(preamble) is None
     ]
-    assert not missing, f"manuscript/preamble.md lacks {missing}"
+    assert not missing, f"docs/manuscript/preamble.md lacks {missing}"
 
 
 def test_the_preamble_patterns_reject_a_preamble_without_them() -> None:
@@ -498,20 +498,20 @@ def test_a_re_render_differing_only_in_the_log_timestamp_passes(
 def _hydration_fixture(tmp_path: Path) -> Path:
     """Sources, a token map, and the tree the injector writes from them."""
     root = tmp_path / "repo"
-    (root / "manuscript").mkdir(parents=True)
+    (root / "docs" / "manuscript").mkdir(parents=True)
     (root / "output" / "data").mkdir(parents=True)
     (root / "output" / "manuscript").mkdir(parents=True)
-    (root / "manuscript" / "05_reproducibility.md").write_text(
+    (root / "docs" / "manuscript" / "05_reproducibility.md").write_text(
         "a {{GNN_STEP_COUNT}}-step pipeline at {{GNN_GIT_COMMIT}}\n",
         encoding="utf-8",
     )
-    (root / "manuscript" / "AGENTS.md").write_text(
+    (root / "docs" / "manuscript" / "AGENTS.md").write_text(
         "example: {{GNN_STEP_COUNT}}\n", encoding="utf-8"
     )
-    (root / "manuscript" / "preamble.md").write_text(
+    (root / "docs" / "manuscript" / "preamble.md").write_text(
         "\\usepackage{listings} {{NOT_SUBSTITUTED}}\n", encoding="utf-8"
     )
-    (root / "manuscript" / "references.bib").write_text(
+    (root / "docs" / "manuscript" / "references.bib").write_text(
         "@misc{k, title={t}}\n", encoding="utf-8"
     )
     (root / "output" / "data" / "manuscript_variables.json").write_text(
@@ -523,7 +523,7 @@ def _hydration_fixture(tmp_path: Path) -> Path:
         "a 25-step pipeline at abc1234\n", encoding="utf-8"
     )
     for name in ("preamble.md", "references.bib"):
-        (out / name).write_bytes((root / "manuscript" / name).read_bytes())
+        (out / name).write_bytes((root / "docs" / "manuscript" / name).read_bytes())
     pdf = root / "output/pdf"
     pdf.mkdir()
     for suffix in ("md", "tex"):
@@ -572,10 +572,10 @@ def test_a_commit_only_regeneration_fails_too(tmp_path: Path) -> None:
 def test_a_source_edit_never_hydrated_fails(tmp_path: Path) -> None:
     """Prose edited in manuscript/ but never rendered is stale evidence."""
     root = _hydration_fixture(tmp_path)
-    (root / "manuscript" / "preamble.md").write_text(
+    (root / "docs" / "manuscript" / "preamble.md").write_text(
         "\\usepackage{listings}\n", encoding="utf-8"
     )
-    (root / "manuscript" / "07_new.md").write_text("new\n", encoding="utf-8")
+    (root / "docs" / "manuscript" / "07_new.md").write_text("new\n", encoding="utf-8")
     (root / "output" / "manuscript" / "08_gone.md").write_text("x\n", encoding="utf-8")
     issues = hydration_issues(root, _EXCLUDED)
     assert [issue.split()[0] for issue in issues] == [

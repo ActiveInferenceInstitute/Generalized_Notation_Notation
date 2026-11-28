@@ -34,7 +34,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-MANUSCRIPT = REPO_ROOT / "manuscript"
+MANUSCRIPT = REPO_ROOT / "docs" / "manuscript"
 # Authoring guides, not published sections — single-sourced with the token
 # gate and the figure build (scripts/lib/manuscript_exclusions.py).
 sys.path.insert(0, str(REPO_ROOT))

@@ -162,7 +162,7 @@ _VARIABLES_REL = Path("output") / "data" / "manuscript_variables.json"
 RENDER_INPUT_ROOT = Path("output") / "manuscript"
 _RECEIPT_REL = Path("output") / "data" / "manuscript_variables_receipt.json"
 _PUBLICATION_REL = Path("output") / "pdf" / "GeneralizedNotationNotation_combined.pdf"
-_SOURCE_MANUSCRIPT_REL = Path("manuscript")
+_SOURCE_MANUSCRIPT_REL = Path("docs/manuscript")
 # Hydration mirror of ``infrastructure.rendering.manuscript_injection``
 # (docxology/template): ``_TOKEN_RE`` is its token pattern, and these are
 # the auxiliary files ``write_resolved_manuscript_tree`` copies verbatim

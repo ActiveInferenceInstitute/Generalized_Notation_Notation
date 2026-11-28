@@ -252,7 +252,7 @@ Each check proves one thing and nothing more:
 Changes to pinned bridge and interchange owners follow the closeout
 ordering in
 [docs/development/fep_lean_paired_revision.md](../development/fep_lean_paired_revision.md)
-— all content edits land first (the manuscript/token ritual runs at the
+— all content edits land first (the docs/manuscript/token ritual runs at the
 final content state when manuscript inputs changed), then the FEP_Formal-side
 bridge re-pin, then the GNN pin bump as the final commit; the GEO_INFER
 direction is the mirror image.

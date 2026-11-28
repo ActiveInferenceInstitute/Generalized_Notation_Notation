@@ -70,7 +70,7 @@ uv run --frozen python scripts/pipeline/stage_03_render.py \
   --project GeneralizedNotationNotation
 ```
 
-The render needs a LaTeX installation providing the packages listed in `manuscript/preamble.md` plus `seqsplit`; the template guards `seqsplit` with `\IfFileExists`, so a missing copy degrades rather than failing the build.
+The render needs a LaTeX installation providing the packages listed in `docs/manuscript/preamble.md` plus `seqsplit`; the template guards `seqsplit` with `\IfFileExists`, so a missing copy degrades rather than failing the build.
 
 Because the variables file is regenerated before rendering, the counts in the rendered PDF track the repository state at the commit recorded in `output/data/manuscript_variables.json` ({{GNN_GIT_COMMIT}}): a code change that alters, for example, the test inventory ({{GNN_TEST_FILE_COUNT}} test files, {{GNN_TEST_FUNCTION_COUNT}} test functions) propagates into the prose on the next regeneration without any manual editing.
 

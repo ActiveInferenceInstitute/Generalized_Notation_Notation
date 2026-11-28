@@ -71,7 +71,7 @@ def test_script_exclusion_contract_reexports_active_names_from_uninstalled_check
         script.parent.mkdir()
         script.write_bytes((repo / "scripts/check_hydrated_prose.py").read_bytes())
         if configured_template:
-            (fixture / "manuscript/TEMPLATE_GUIDE.md").write_text("{{UNKNOWN}}\n")
+            (fixture / "docs/manuscript/TEMPLATE_GUIDE.md").write_text("{{UNKNOWN}}\n")
         if entrypoint == "stale-hydration":
             (fixture / "output/manuscript/00_section.md").write_text("stale science\n")
         command = [sys.executable, "-I", "-B", str(script)]
@@ -90,9 +90,9 @@ def test_script_exclusion_contract_reexports_active_names_from_uninstalled_check
 
 
 def _tree(root: Path) -> Path:
-    for directory in ("manuscript", "output/data", "output/manuscript", "output/pdf"):
+    for directory in ("docs/manuscript", "output/data", "output/manuscript", "output/pdf"):
         (root / directory).mkdir(parents=True, exist_ok=True)
-    (root / "manuscript/00_section.md").write_text(
+    (root / "docs/manuscript/00_section.md").write_text(
         "count {{COUNT}} at {{GNN_GIT_COMMIT}}\n"
     )
     (root / "output/manuscript/00_section.md").write_text("count 25 at abc1234\n")
@@ -272,8 +272,8 @@ def test_strict_token_cli_waives_only_unchanged_base_checksum(
     from scripts import check_manuscript_tokens as gate
 
     root = _tree(tmp_path)
-    (root / "manuscript/references.bib").write_text("")
-    (root / "manuscript/config.yaml").write_text("{}")
+    (root / "docs/manuscript/references.bib").write_text("")
+    (root / "docs/manuscript/config.yaml").write_text("{}")
     (root / "output/data/manuscript_variables.json").write_text(
         json.dumps({"COUNT": "24", "GNN_GIT_COMMIT": "abc1234"})
     )

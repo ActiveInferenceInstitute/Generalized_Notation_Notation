@@ -130,8 +130,8 @@ def test_a_table_token_carries_its_own_label(tmp_path) -> None:
 
 
 def test_an_unresolved_token_in_output_manuscript_is_flagged(tmp_path) -> None:
-    rendered = tmp_path / "manuscript"
-    rendered.mkdir()
+    rendered = tmp_path / "docs" / "manuscript"
+    rendered.mkdir(parents=True)
     (rendered / "0X_section.md").write_text(
         "The value {{GNN_OOPS}} reaches the PDF verbatim.\n", encoding="utf-8"
     )
@@ -141,8 +141,8 @@ def test_an_unresolved_token_in_output_manuscript_is_flagged(tmp_path) -> None:
 
 def test_tokens_inside_code_spans_are_not_output_findings(tmp_path) -> None:
     """A backticked mention is documentation about tokens, not a live one."""
-    rendered = tmp_path / "manuscript"
-    rendered.mkdir()
+    rendered = tmp_path / "docs" / "manuscript"
+    rendered.mkdir(parents=True)
     (rendered / "0X_ok.md").write_text(
         "Write `{{GNN_NOT_A_TOKEN}}` only inside backticks.\n", encoding="utf-8"
     )
@@ -331,7 +331,7 @@ def test_the_render_invocation_contract_is_documented_in_repo() -> None:
     the producer module names its orchestrator, and the orchestrator documents
     the detection mechanism and the launcher that exports it.
     """
-    repro = (REPO_ROOT / "manuscript" / "05_reproducibility.md").read_text(
+    repro = (REPO_ROOT / "docs" / "manuscript" / "05_reproducibility.md").read_text(
         encoding="utf-8"
     )
     assert "scripts/z_generate_manuscript_variables.py" in repro

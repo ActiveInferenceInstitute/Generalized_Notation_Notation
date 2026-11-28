@@ -8,7 +8,7 @@ custody manifest, so every PR-time gate passes; but the hydrated sections
 under ``output/manuscript/`` and the PDF evidence rendered from them only
 change when the full ritual runs, and the scheduled
 ``custody-re-render.yml`` then goes red after the merge. This check catches
-that before merge, with no LaTeX: it re-substitutes ``manuscript/*.md``
+that before merge, with no LaTeX: it re-substitutes ``docs/manuscript/*.md``
 from the committed token map and compares the result to the committed
 hydrated tree byte for byte and requires rendered Markdown and TeX to carry
 the token map commit stamp. A failure means: run the full ritual (figures,

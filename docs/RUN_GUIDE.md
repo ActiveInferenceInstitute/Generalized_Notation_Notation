@@ -127,7 +127,7 @@ That composite action is not a claim about this repository's setup.
 ## Manuscript rendering and custody
 
 The authoritative renderer is the template's `scripts/pipeline/stage_03_render.py`.
-The [manuscript reproduction section](../manuscript/05_reproducibility.md#manuscript-reproducibility)
+The [manuscript reproduction section](manuscript/05_reproducibility.md#manuscript-reproducibility)
 and [custody workflow](../.github/workflows/custody-re-render.yml) own the ritual:
 regenerate variables, rebuild figures, render, verify the old chain, then record
 the renewed manifest after a successful render. Figures are declared in

@@ -128,8 +128,8 @@
 %   \protected\def\breaktt#1{\begingroup\ttfamily\seqsplit{#1}\endgroup}
 % and \seqsplit permits a break after EVERY character with no continuation cue.
 % In the 2026-09-05 PDF that rendered `model_family_manifest.json` as
-% `model_family_manifest.js` + `on` and `src/manuscript_variables.py` as
-% `(src/manusc` + `ript_variables.py` — the first is itself a valid filename, so
+% `model_family_manifest.js` + `on` and the former variable script as
+% `(src/manusc` + `ript_variables.py`. The first is itself a valid filename, so
 % a reader cannot tell a line break from a name. Keep seqsplit's guarantee that
 % no code token overflows the measure, but forbid breaks inside the last
 % \GNNttTail characters (an extension is never orphaned) and inside the first
@@ -274,7 +274,7 @@
 
 \includegraphics[width=1\linewidth,height=0.40\textheight,keepaspectratio,alt={The
 GeneralizedNotationNotation (GNN) pipeline at a glance, generated from
-the producer's token map at commit 38c8a70f1. A plain-text specification
+the producer's token map at commit 7c51ce617. A plain-text specification
 --- the StateSpaceBlock declaring the model's tensors, A, B, C, D, and E
 for the discrete categorical kind of eq.~ through eq.~ and its own
 matrix vocabulary for the other model kinds --- is parsed (Step 3),
@@ -305,7 +305,7 @@ tools.}]{../figures/gnn_graphical_abstract.png}
 
 \figurename~1:\ The
 GeneralizedNotationNotation (GNN) pipeline at a glance, generated from
-the producer's token map at commit 38c8a70f1. A plain-text specification
+the producer's token map at commit 7c51ce617. A plain-text specification
 --- the \texttt{StateSpaceBlock} declaring the model's tensors,
 \texttt{A}, \texttt{B}, \texttt{C}, \texttt{D}, and \texttt{E} for the
 discrete categorical kind of eq.~1 through

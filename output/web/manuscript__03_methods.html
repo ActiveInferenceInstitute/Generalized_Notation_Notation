@@ -1109,7 +1109,7 @@ the reliability gate profiles for the continuous family; the tan row
 maintained set, so it is never profiled; a red Render-Subdir cell would
 mean a registry entry with no subdirectory. The table is read directly
 from <code>src/gnn/render/framework_registry.py</code> and the
-model-family manifest at commit 38c8a70f1, and its footer summarizes the
+model-family manifest at commit 7c51ce617, and its footer summarizes the
 row counts. Take-away: registration, render presence, and profiling
 status are three different claims, and the table keeps them
 apart.</figcaption>
@@ -1259,7 +1259,8 @@ acceptance gate and exercised through dedicated Model Context Protocol
 tools. fig. <a href="#fig:orchestration">5</a> shows how the three
 contracts compose into one inspectable orchestration surface.</p>
 <figure id="fig:orchestration">
-<a class="figure-full-size-link" href="../figures/gnn_orchestration.png" target="_blank" rel="noopener" aria-label="Open full-size Figure 5, The three safe-by-design orchestration contracts introduced in GNN 3.0.0, side by side…"><img src="../figures/gnn_orchestration.png" style="width:85.0%"
+<a class="figure-full-size-link" href="../figures/gnn_orchestration.png" target="_blank" rel="noopener" aria-label="Open full-size Figure 5, The three safe-by-design orchestration contracts introduced in GNN 3.0.0, side by side…"><img src="../figures/gnn_orchestration.png"
+style="width:85.0%"
 alt="The three long-running orchestration contracts side by side — durable observation streams, resumable run sessions, and auditable container plans — each shown with the artifacts it generates and validates, and each stopping short of any live mutation." /><span class="figure-full-size-label" aria-hidden="true">Open full-size figure</span></a>
 <figcaption>Figure 5: The three safe-by-design
 orchestration contracts introduced in GNN 3.0.0, side by side inside the
@@ -1299,7 +1300,7 @@ class="header-section-number">4.7</span> Reproducibility and
 Auto-Injection</h2>
 <p>Every count reported in this manuscript is emitted by the producer
 <code>scripts/z_generate_manuscript_variables.py</code> from the
-repository state at commit 38c8a70f1, not typed by hand. The producer
+repository state at commit 7c51ce617, not typed by hand. The producer
 reads that commit’s source surfaces directly — the step modules, the
 source tree, the model-family manifest, and the framework registry —
 together with the project’s maintained ledgers, notably the Model

@@ -122,3 +122,7 @@ acceptance.
 - [Integration](gnn/integration/README.md)
 - [Operations](gnn/operations/README.md)
 - [References](gnn/reference/README.md)
+
+## Manuscript
+
+- [Manuscript sources and rendering](manuscript/README.md)

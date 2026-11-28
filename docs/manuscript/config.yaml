@@ -45,7 +45,7 @@ metadata:
   license: "CC-BY-NC-SA-4.0"
   language: "en"
 
-manuscript_dir: "manuscript"
+manuscript_dir: "docs/manuscript"
 
 render:
   formats:
@@ -56,6 +56,6 @@ render:
     epub: false
 
 bibliography:
-  references_path: "manuscript/references.bib"
+  references_path: "docs/manuscript/references.bib"
   fail_on_missing: true
   fail_on_unused: false

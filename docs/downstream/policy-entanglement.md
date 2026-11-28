@@ -18,7 +18,7 @@ boundary alongside pymdp POMDP simulations.
 - `gnn/k_stream_ensemble.gnn.md` — K=3 chain coupling, showing that the
   stock-GNN joint-variable encoding scales to K > 2.
 - `gnn/production_ensemble.gnn.md`.
-- Extension discussion: `manuscript/S08_gnn_generalized_notation_extension.md`;
+- Extension discussion: `docs/manuscript/S08_gnn_generalized_notation_extension.md`;
   generated Lean: `gnn/generated/BernoulliToyGnn.lean`.
 
 ## Pinned GNN revision

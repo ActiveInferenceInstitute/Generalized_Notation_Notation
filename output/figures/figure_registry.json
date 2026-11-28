@@ -20,7 +20,7 @@
       "filename": "gnn_graphical_abstract.png",
       "generated_by": "scripts/manuscript_fig_graphical_abstract.py",
       "label": "fig:graphical_abstract",
-      "png_sha256": "bb81fb4e97e7e70ca406cdb083147ec3419c14bf8b143e682f3c74b229a4325c",
+      "png_sha256": "41995c77eb2812b4e10795e71480f055e19ebdb796cc88edd8f4ceb9d454b51a",
       "source_sha256": {}
     },
     {
@@ -29,7 +29,7 @@
       "filename": "gnn_pipeline_dag.png",
       "generated_by": "scripts/manuscript_fig_pipeline_dag.py",
       "label": "fig:pipeline",
-      "png_sha256": "85b47b83d13209d9fdd07382e108cbd37f3a535c8e583ac3e7e946ffb4811982",
+      "png_sha256": "96eebc402bed14eaf6211fbb7cd077f507f231252d7ccb112e472b57acc24824",
       "source_sha256": {
         "src/gnn/STEP_INDEX.md": "7a4a58bbaf6113cbb14cc74db2c38b6c398fe23aa38678f20322dc49db03f850"
       }
@@ -40,7 +40,7 @@
       "filename": "gnn_family_framework_matrix.png",
       "generated_by": "scripts/manuscript_fig_family_framework.py",
       "label": "fig:family_matrix",
-      "png_sha256": "dccd1333e5d44a0cb103d98811118f4b32b6c5475a91235f655b758e21974647",
+      "png_sha256": "3b7f9b3db6b28b386ae546a3ab38a645ca48577e772420b171f8e11802f18078",
       "source_sha256": {
         "input/model_family_manifest.json": "33fce4343a3713e622fa140e1c6e17064378046ba219192ed6448d8ed1deb6e8",
         "src/gnn/render/framework_registry.py": "6a9dc452a6e89ad8505d7ae5fa8aee31ef12d2e785473b879e6094b891a95d7b"
@@ -52,10 +52,10 @@
       "filename": "gnn_backend_capability_matrix.png",
       "generated_by": "scripts/manuscript_fig_backend_matrix.py",
       "label": "fig:backend_matrix",
-      "png_sha256": "6ba9f31349019f3d337c5d1e9539bb551711eb70b7048965f1674ef89d7e9a2b",
+      "png_sha256": "cbae80b62c903a681100e2ebdaf8f22655813ae0d7879950be36867f0e04fbaa",
       "source_sha256": {
         "input/model_family_manifest.json": "33fce4343a3713e622fa140e1c6e17064378046ba219192ed6448d8ed1deb6e8",
-        "src/gnn/manuscript/variables.py": "45d1279c594d6940cf777ba44c4d53d408a2b9076cba5fa997a785f7d03817fd",
+        "src/gnn/manuscript/variables.py": "d81a33f667e963d9e04b729281e237311ea81e946ddadd33acef18adc8a3d03b",
         "src/gnn/pipeline/cross_framework_reliability.py": "c3f0d0964a6c078205b0bd9d63e36c720b91fc976113d60bae14c1a7946cd7e0",
         "src/gnn/render/framework_registry.py": "6a9dc452a6e89ad8505d7ae5fa8aee31ef12d2e785473b879e6094b891a95d7b"
       }
@@ -64,7 +64,7 @@
       "alt_text": "Horizontal bar chart on a logarithmic axis of repository-scale counts: pipeline steps, model families, registered backends, render-target adapters, MCP tools, source packages, test files, example models and documentation files. Each bar is annotated with its exact value; all values come from output/data/manuscript_variables.json.",
       "consumed_tokens": {
         "GNN_BACKEND_COUNT": "12",
-        "GNN_DOC_FILE_COUNT": "680",
+        "GNN_DOC_FILE_COUNT": "694",
         "GNN_EXAMPLE_COUNT": "38",
         "GNN_EXECUTABLE_BACKEND_COUNT": "12",
         "GNN_FAMILY_COUNT": "9",
@@ -77,7 +77,7 @@
       "filename": "gnn_repo_metrics.png",
       "generated_by": "scripts/manuscript_fig_repo_metrics.py",
       "label": "fig:repo_metrics",
-      "png_sha256": "c2f7f5b3b602c99bf2d75420de2721aed944a08876ab51d2db614179a57b01bf",
+      "png_sha256": "838d00d5b0fb79756cdbebe2b3003891766cc4ff7dd7920ab15fbc87a0a1110f",
       "source_sha256": {}
     },
     {
@@ -94,7 +94,7 @@
       "filename": "gnn_triple_play.png",
       "generated_by": "scripts/manuscript_fig_triple_play.py",
       "label": "fig:triple_play",
-      "png_sha256": "c06e827bf73cb239850890016ef13c0be27b7c94796d2ccda93dadb806a9ff3a",
+      "png_sha256": "05c2a0fe6046957ce086e982e71a61d500a2f8a4d8ab0b7a73a33fee335c33e2",
       "source_sha256": {}
     },
     {
@@ -103,7 +103,7 @@
       "filename": "gnn_orchestration.png",
       "generated_by": "scripts/manuscript_fig_orchestration.py",
       "label": "fig:orchestration",
-      "png_sha256": "c59fb5dfe42e9e1a0a73c95a410da4a7d3b215c33f0dd6e5da7c913331f90005",
+      "png_sha256": "85138e1a0e120cd4b103a2d83c45b5d072959e6c4c17ba7ef8263e5d9d3505e3",
       "source_sha256": {}
     }
   ],

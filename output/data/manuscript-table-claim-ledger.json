@@ -1,0 +1,34 @@
+{
+  "claims": [
+    {
+      "claim_id": "GNN_BACKEND_TABLE",
+      "kind": "table",
+      "value": "tbl:backend_registry",
+      "artifact_path": "output/data/manuscript_variables.json"
+    },
+    {
+      "claim_id": "GNN_FAMILY_TABLE",
+      "kind": "table",
+      "value": "tbl:model_families",
+      "artifact_path": "output/data/manuscript_variables.json"
+    },
+    {
+      "claim_id": "GNN_FRAMEWORK_TABLE",
+      "kind": "table",
+      "value": "tbl:framework_capability",
+      "artifact_path": "output/data/manuscript_variables.json"
+    },
+    {
+      "claim_id": "GNN_MODEL_KIND_TABLE",
+      "kind": "table",
+      "value": "tbl:model_kinds",
+      "artifact_path": "output/data/manuscript_variables.json"
+    },
+    {
+      "claim_id": "GNN_STEP_TABLE",
+      "kind": "table",
+      "value": "tbl:pipeline_steps",
+      "artifact_path": "output/data/manuscript_variables.json"
+    }
+  ]
+}

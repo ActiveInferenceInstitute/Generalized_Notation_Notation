@@ -248,7 +248,7 @@ A member that renders a manuscript consumes `docxology/template`. Two things
 about that consumption are declarable, and the group's rule is that both are
 declared rather than assumed.
 
-**The renderer revision** is declared in `manuscript/config.yaml` under
+**The renderer revision** is declared in `docs/manuscript/config.yaml` under
 `template_renderer` with schema `template-renderer-lock-v1`:
 
 ```yaml

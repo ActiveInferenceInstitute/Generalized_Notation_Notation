@@ -47,7 +47,7 @@ annotated candidate tag at that main commit. Main and tag qualification may run
 concurrently; each ref/event needs its own successful terminal checks and actual
 artifact acceptance before publishing. Never move a tag or borrow one ref's
 results for another. Build ordinary wheel/sdist from a clean,
-task-owned accepted-source checkout, and retain source-bound manuscript/visual/
+task-owned accepted-source checkout, and retain source-bound docs/manuscript/visual/
 evidence assets. Generated developer caches cannot enter release archives.
 
 Verify archives, installed imports/resources outside checkout, metadata, hashes
