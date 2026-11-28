@@ -818,8 +818,8 @@ version control; the generated artifacts it produces are described
 separately so that the boundary between hand-written source and
 reproducible output stays explicit.</p>
 <p>The <code>src/</code> tree is the executable core of GNN. It is
-organized into 45 Python packages spanning 791 source files and roughly
-240372 lines of code. Alongside these packages sit the 25 top-level step
+organized into 45 Python packages spanning 792 source files and roughly
+240569 lines of code. Alongside these packages sit the 25 top-level step
 modules (0–24) that implement the numbered pipeline as thin
 orchestrators delegating into the packages, each module owning one stage
 of the progression from a parsed GNN text model through visualization,
@@ -907,28 +907,22 @@ repository.</p>
 <h2 data-number="8.2" id="authored-source-versus-generated-output"><span
 class="header-section-number">8.2</span> Authored Source Versus
 Generated Output</h2>
-<p><code>src/</code>, <code>scripts/</code>, <code>input/</code>,
-<code>docs/</code> and <code>manuscript/</code> are authored and
-reviewed. The <code>output/</code> tree holds generated artifacts and
-retained run evidence; <code>output/manuscript/</code> contains
-token-substituted copies of the authored <code>manuscript/</code>
-sections. Regenerate owned build artifacts when appropriate, while
-preserving the receipts required to support historical outcomes. The
-commands that regenerate the output surfaces are listed in sec. <a
-href="manuscript__05_reproducibility.html#sec:reproducibility">6</a>: the smoke run for the per-step
-artifacts, <code>scripts/z_generate_manuscript_variables.py</code> for
-the token map and the hydrated sections,
-<code>scripts.manuscript_build_figures</code> for the 7 manuscript
-figures, and the template render stage for the PDF. Which values become
-tokens is not a matter of taste: any quantity the producer can derive
-from a source surface is a token,
-<code>scripts/check_manuscript_tokens.py</code> fails the build when a
-section hard-codes one instead, and the resulting 97-entry map is
-committed at <code>output/data/manuscript_variables.json</code> for
-audit. External references are resolved from
-<code>docs/manuscript/references.bib</code>, which the same gate
-cross-checks against every citation key in the prose. This manuscript
-quotes no private or unpublished material.</p>
+<p><code>src/</code>, <code>scripts/</code>, <code>input/</code>, and
+<code>docs/</code> are authored and reviewed. The <code>output/</code>
+tree holds generated artifacts and retained run evidence. Its
+<code>manuscript/</code> directory contains token-substituted copies of
+the authored <code>docs/manuscript/</code> sections. Regenerate build
+artifacts when their inputs change and retain the receipts that document
+historical outcomes. The commands in sec. <a
+href="manuscript__05_reproducibility.html#sec:reproducibility">6</a> reproduce per-stage artifacts, the
+token map and hydrated sections, the 7 manuscript figures, and the
+template’s PDF, HTML, slides, and validation reports.
+<code>scripts/check_manuscript_tokens.py</code> checks that derived
+quantities use tokens. The resulting 97-entry map is committed at
+<code>output/data/manuscript_variables.json</code>. The same gate
+cross-checks the citation keys in the prose against
+<code>docs/manuscript/references.bib</code>. This manuscript quotes no
+private or unpublished material.</p>
 </main>
 </body>
 </html>

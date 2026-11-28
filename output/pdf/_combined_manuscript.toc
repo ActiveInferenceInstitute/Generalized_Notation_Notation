@@ -12,14 +12,14 @@
 \contentsline {subsubsection}{\numberline {3.2.2}The Continuous Linear-Gaussian Kind}{7}{subsubsection.3.2.2}%
 \contentsline {subsubsection}{\numberline {3.2.3}Multi-Agent, Hierarchical, and Structural Kinds}{7}{subsubsection.3.2.3}%
 \contentsline {subsubsection}{\numberline {3.2.4}Reading Exemplars by Kind}{8}{subsubsection.3.2.4}%
-\contentsline {subsubsection}{\numberline {3.2.5}What the Kind Classification Governs}{8}{subsubsection.3.2.5}%
+\contentsline {subsubsection}{\numberline {3.2.5}What the Kind Classification Governs}{9}{subsubsection.3.2.5}%
 \contentsline {subsection}{\numberline {3.3}The Processing Pipeline}{9}{subsection.3.3}%
-\contentsline {subsection}{\numberline {3.4}The Triple Play}{11}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.4}The Triple Play}{10}{subsection.3.4}%
 \contentsline {section}{\numberline {4}Methods}{12}{section.4}%
 \contentsline {subsection}{\numberline {4.1}Parsing and Multi-Format Export}{12}{subsection.4.1}%
 \contentsline {subsection}{\numberline {4.2}Type Checking and Validation}{12}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Rendering to Multiple Backends}{12}{subsection.4.3}%
-\contentsline {subsubsection}{\numberline {4.3.1}Rendering by Model Kind}{13}{subsubsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3}Rendering to Multiple Backends}{13}{subsection.4.3}%
+\contentsline {subsubsection}{\numberline {4.3.1}Rendering by Model Kind}{14}{subsubsection.4.3.1}%
 \contentsline {subsection}{\numberline {4.4}Execution}{15}{subsection.4.4}%
 \contentsline {subsubsection}{\numberline {4.4.1}Executing by Model Kind}{15}{subsubsection.4.4.1}%
 \contentsline {subsection}{\numberline {4.5}Long-Running Orchestration Contracts}{15}{subsection.4.5}%
