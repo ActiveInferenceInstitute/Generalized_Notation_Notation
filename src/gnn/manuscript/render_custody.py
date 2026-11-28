@@ -19,7 +19,10 @@ The custody point is a small digest manifest,
 * ``render_artifacts_sha256`` — sha256 of the committed ``.log``/``.tex``/
   ``.md``. A re-render committed without re-recording the manifest fails;
   so does a manifest re-recorded against artifacts that are not committed.
-* ``publication_artifacts`` — exact SHA-256 and byte size of the shipped PDF.
+* ``publication_artifacts`` — exact SHA-256 and byte size of the shipped PDF,
+  browser pages and assets, and slides.
+* ``template_validation_artifacts`` — exact receipt bytes and evidence bindings
+  from the template's successful Stage 04.
   These identify the publication bytes, not byte-reproducible fresh-render
   evidence. The counts/source commit precedes the eventual artifact commit.
 * ``render_inputs_sha256`` — sha256 of every committed hydrated file under
@@ -71,6 +74,11 @@ from pathlib import Path
 if str(Path(__file__).resolve().parents[3]) not in sys.path:  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
+from gnn.manuscript.publication_artifacts import (  # noqa: E402
+    PUBLICATION_PDF,
+    delivery_digests,
+    validation_digests,
+)
 from gnn.manuscript.substitution import (  # noqa: E402
     hydrate_text,
     rebase_output_links_for_destination,
@@ -101,6 +109,8 @@ __all__ = [
     "manifest_path",
     "mask_log_timestamp",
     "observed_render_environment",
+    "prepare_render_artifacts",
+    "publication_validation_issues",
     "record_render_manifest",
     "strip_volatile_tokens",
     "verify_fresh_render",
@@ -161,7 +171,6 @@ _MANIFEST_REL = Path("output") / "data" / "manuscript_render_manifest.json"
 _VARIABLES_REL = Path("output") / "data" / "manuscript_variables.json"
 RENDER_INPUT_ROOT = Path("output") / "manuscript"
 _RECEIPT_REL = Path("output") / "data" / "manuscript_variables_receipt.json"
-_PUBLICATION_REL = Path("output") / "pdf" / "GeneralizedNotationNotation_combined.pdf"
 _SOURCE_MANUSCRIPT_REL = Path("docs/manuscript")
 # Hydration mirror of ``infrastructure.rendering.manuscript_injection``
 # (docxology/template): ``_TOKEN_RE`` is its token pattern, and these are
@@ -171,7 +180,7 @@ _SOURCE_MANUSCRIPT_REL = Path("docs/manuscript")
 _VERBATIM_AUX = ("config.yaml", "preamble.md")
 HYDRATION_FIX = (
     "rerun the full SC-22 ritual (python -m scripts.manuscript_build_figures, "
-    "then the template's stage_03_render, then "
+    "then the template's stage_03_render, evidence preparation, stage_04_validate, then "
     f"{RECORD_COMMAND}) and commit output/ — regenerating the token map and "
     "re-recording the manifest alone refreshes neither the hydrated prose "
     "nor the PDF evidence"
@@ -192,13 +201,13 @@ _HOME_PREFIX_RES = (
 )
 
 
-def _sanitize_personal_paths(project_root: Path) -> list[str]:
+def prepare_render_artifacts(project_root: Path) -> list[str]:
     """Rewrite personal home prefixes out of the committed render evidence.
 
     LaTeX/pandoc logs and sources embed absolute machine paths (e.g.
     ``/Users/<user>/Library/texmf/...``) from the render host; the evidence
-    is tracked, so sanitize in place before the manifest digests it — the
-    certified bytes are then always the shipped bytes. Idempotent.
+    is tracked, so sanitize in place before Stage 04 validates it.
+    Idempotent.
     """
     changed: list[str] = []
     for rel in RENDERED_ARTIFACTS:
@@ -262,9 +271,8 @@ def _render_inputs(project_root: Path) -> dict[str, str]:
 def record_render_manifest(project_root: Path) -> dict:
     """Digest the committed render artifacts + inputs and write the manifest.
 
-    Run AFTER the template's ``stage_03_render`` has produced the committed
-    PDF evidence and the producer has written the token map, as the last
-    step of the SC-22 re-render ritual before committing ``output/``.
+    Run after the template's Stage 03 render, evidence preparation, and
+    successful Stage 04 validation. Recording changes only the manifest.
     Raises (without writing) when any input is missing or the committed
     receipt disagrees with the token map about which commit the counts
     describe — recording a manifest over those states would bless a
@@ -287,8 +295,8 @@ def record_render_manifest(project_root: Path) -> dict:
 
     missing = [
         rel.as_posix()
-        for rel in (*RENDERED_ARTIFACTS, _PUBLICATION_REL, RENDER_INPUT_ROOT)
-        if not (rel if rel.is_absolute() else project_root / rel).exists()
+        for rel in (*RENDERED_ARTIFACTS, PUBLICATION_PDF, RENDER_INPUT_ROOT)
+        if not (project_root / rel).exists()
     ]
     if missing:
         raise RuntimeError(
@@ -296,8 +304,6 @@ def record_render_manifest(project_root: Path) -> dict:
             f"{sorted(set(missing))} — run the template's stage_03_render "
             "before recording the custody manifest"
         )
-    sanitized = _sanitize_personal_paths(project_root)
-
     receipt_path = project_root / _RECEIPT_REL
     receipt_commit: str | None = None
     if receipt_path.is_file():
@@ -311,11 +317,8 @@ def record_render_manifest(project_root: Path) -> dict:
                 "scripts/z_generate_manuscript_variables.py so the receipt "
                 "and the map describe the same commit"
             )
-    if sanitized:
-        print(
-            "[render-custody] sanitized personal home prefixes out of: "
-            f"{', '.join(sanitized)}"
-        )
+    deliveries = delivery_digests(project_root)
+    validation = validation_digests(project_root, deliveries)
 
     declared = observed_render_environment(project_root)
     declared_values = {key: declared[key] for key in PROFILE_KEYS}
@@ -359,12 +362,8 @@ def record_render_manifest(project_root: Path) -> dict:
         "render_artifacts_sha256": {
             rel.as_posix(): _sha256(project_root / rel) for rel in RENDERED_ARTIFACTS
         },
-        "publication_artifacts": {
-            _PUBLICATION_REL.as_posix(): {
-                "sha256": _sha256(project_root / _PUBLICATION_REL),
-                "size_bytes": (project_root / _PUBLICATION_REL).stat().st_size,
-            }
-        },
+        "publication_artifacts": deliveries,
+        "template_validation_artifacts": validation,
         "render_inputs_sha256": _render_inputs(project_root),
         # Preserve a trustworthy normalized baseline outside Git as well.
         # Never substitute the fresh file for an unavailable committed blob.
@@ -704,6 +703,41 @@ def _input_tree_issues(
     return issues
 
 
+def _publication_issues(project_root: Path, manifest: dict | None) -> list[str]:
+    issues: list[str] = []
+    try:
+        deliveries = delivery_digests(project_root)
+    except RuntimeError as exc:
+        return [str(exc)]
+
+    inventories = {"publication_artifacts": deliveries}
+    try:
+        inventories["template_validation_artifacts"] = validation_digests(
+            project_root, deliveries
+        )
+    except RuntimeError as exc:
+        issues.append(str(exc))
+    if manifest is None:
+        return issues
+
+    for kind, actual in inventories.items():
+        expected = manifest.get(kind)
+        if not isinstance(expected, dict):
+            issues.append(f"{kind} is missing or invalid in the custody manifest")
+            continue
+        for rel in sorted(actual.keys() | expected.keys()):
+            if actual.get(rel) != expected.get(rel):
+                issues.append(
+                    f"{rel} differs from the custody manifest's {kind} inventory"
+                )
+    return issues
+
+
+def publication_validation_issues(project_root: Path) -> list[str]:
+    """Verify the fresh Stage 04 evidence against the deliverables on disk."""
+    return _publication_issues(project_root, None)
+
+
 def custody_issues(project_root: Path) -> list[str]:
     """One message per disagreement between the committed chain and the manifest.
 
@@ -775,6 +809,7 @@ def custody_issues(project_root: Path) -> list[str]:
             issues.append(f"{rel.as_posix()} is not recorded in the custody manifest")
 
     issues.extend(_input_tree_issues(project_root, manifest))
+    issues.extend(_publication_issues(project_root, manifest))
     return issues
 
 
@@ -883,12 +918,9 @@ def hydration_issues(project_root: Path, excluded: frozenset[str]) -> list[str]:
 def verify_fresh_render(project_root: Path) -> list[str]:
     """Classify the fresh render on disk against the committed custody manifest.
 
-    The SC-22 cron (``.github/workflows/custody-re-render.yml``) re-renders
-    at HEAD and then records a fresh manifest, but recording alone would
-    bless whatever it finds: this check runs BEFORE the record step and
-    compares the fresh bytes to the manifest as committed, so a red run
-    certifies the committed chain, not just render success. Per rendered
-    artifact:
+    The SC-22 cron (``.github/workflows/custody-re-render.yml``) checks the
+    committed evidence, re-renders at HEAD, then calls this comparison.
+    Per rendered artifact:
 
     * ``[STALE-CHAIN]`` — the chain declares a different template
       revision than this render observed; the finding is returned alone
@@ -945,7 +977,9 @@ def verify_fresh_render(project_root: Path) -> list[str]:
             return None
         return _artifact_digest_from_bytes(rel.as_posix(), path.read_bytes(), stamps)
 
-    def _committed_normalized(rel_posix: str, recorded: str | None) -> str | None:
+    def _committed_normalized(
+        rel_posix: str, recorded: str, committed: bytes | None
+    ) -> str | None:
         """Digest of the artifact AS COMMITTED, at the fresh side's normalization.
 
         With git, HEAD's bytes are re-digested at the fresh side's
@@ -955,7 +989,6 @@ def verify_fresh_render(project_root: Path) -> list[str]:
         fresh side's stamp masking is a no-op there (fixture text carries no
         hex runs), so raw-vs-normalized agree.
         """
-        committed = _git_show(project_root, rel_posix)
         if committed is not None:
             return _artifact_digest_from_bytes(rel_posix, committed, stamps)
         normalized: str | None = manifest.get(
@@ -978,6 +1011,18 @@ def verify_fresh_render(project_root: Path) -> list[str]:
             issues.append(
                 f"[FAIL] {rel_posix} is not recorded in the custody "
                 f"manifest — re-record with: {RECORD_COMMAND}"
+            )
+
+    committed_artifacts = {}
+    for rel_posix in recorded_artifacts:
+        committed = _git_show(project_root, rel_posix)
+        committed_artifacts[rel_posix] = committed
+        if (
+            committed is not None
+            and hashlib.sha256(committed).hexdigest() != recorded_artifacts[rel_posix]
+        ):
+            issues.append(
+                f"[FAIL] committed {rel_posix} differs from its recorded raw digest"
             )
 
     observed = observed_render_environment(project_root)
@@ -1045,7 +1090,9 @@ def verify_fresh_render(project_root: Path) -> list[str]:
                 continue
             if rel in excluded:
                 continue
-            if _committed_normalized(rel_posix, recorded_digest) == _normalized(rel):
+            if _committed_normalized(
+                rel_posix, recorded_digest, committed_artifacts[rel_posix]
+            ) == _normalized(rel):
                 continue
             scope = (
                 "every compared artifact" if not excluded else "the narrowed comparison"

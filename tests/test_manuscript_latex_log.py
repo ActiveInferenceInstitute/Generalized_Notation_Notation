@@ -50,10 +50,13 @@ from gnn.manuscript.render_custody import (  # noqa: E402
     custody_issues,
     hydration_issues,
     mask_log_timestamp,
+    prepare_render_artifacts,
+    publication_validation_issues,
     record_render_manifest,
     verify_fresh_render,
 )
 from gnn.manuscript.substitution import active_preamble  # noqa: E402
+from tests.manuscript_fixtures import write_template_validation  # noqa: E402
 
 LOG_PATH = REPO_ROOT / "output" / "pdf" / "_combined_manuscript.log"
 TEX_PATH = REPO_ROOT / "output" / "pdf" / "_combined_manuscript.tex"
@@ -228,7 +231,7 @@ def _declared_template_revision(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(TEMPLATE_REVISION_ENV, "abc1234")
 
 
-def _custody_fixture(tmp_path: Path) -> Path:
+def _custody_fixture(tmp_path: Path, *, all_formats: bool = False) -> Path:
     """A miniature committed tree: token map, receipt, hydrated prose, artifacts."""
     root = tmp_path / "repo"
     (root / "output" / "data").mkdir(parents=True)
@@ -256,6 +259,24 @@ def _custody_fixture(tmp_path: Path) -> Path:
     (root / "output" / "pdf" / "GeneralizedNotationNotation_combined.pdf").write_bytes(
         b"%PDF-1.7\nfixture publication\n"
     )
+    if all_formats:
+        config = root / "docs/manuscript/config.yaml"
+        config.parent.mkdir(parents=True)
+        config.write_text(
+            "render:\n  formats:\n    pdf: true\n    html: true\n    slides: true\n",
+            encoding="utf-8",
+        )
+        (root / "output/manuscript/config.yaml").write_bytes(config.read_bytes())
+        for rel in (
+            "output/web/index.html",
+            "output/web/manuscript__05_reproducibility.html",
+            "output/web/assets/source-web-fonts.js",
+            "output/slides/05_reproducibility_slides.pdf",
+        ):
+            path = root / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("fixture " + rel, encoding="utf-8")
+    write_template_validation(root)
     record_render_manifest(root)
     return root
 
@@ -283,6 +304,66 @@ def test_publication_receipt_records_exact_bytes_not_fresh_render_identity(
     assert rel not in manifest["render_artifacts_normalized_sha256"]
     pdf.write_bytes(b"%PDF-1.7\nfresh render with another build id\n")
     assert verify_fresh_render(root) == []
+    assert any(rel in issue for issue in custody_issues(root))
+    assert any(rel in issue for issue in publication_validation_issues(root))
+    write_template_validation(root)
+    assert publication_validation_issues(root) == []
+    assert any(rel in issue for issue in custody_issues(root))
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "output/web/index.html",
+        "output/web/manuscript__05_reproducibility.html",
+        "output/web/assets/source-web-fonts.js",
+        "output/slides/05_reproducibility_slides.pdf",
+    ],
+)
+@pytest.mark.parametrize("remove", [False, True])
+def test_committed_html_slides_and_assets_are_required(
+    tmp_path: Path, rel: str, remove: bool
+) -> None:
+    root = _custody_fixture(tmp_path, all_formats=True)
+    assert custody_issues(root) == []
+    path = root / rel
+    if remove:
+        path.unlink()
+    else:
+        path.write_bytes(b"modified publication")
+    assert any(rel in issue for issue in custody_issues(root))
+
+
+@pytest.mark.parametrize(
+    ("rel", "match"),
+    [
+        ("validation_report.json", "validation must pass"),
+        ("rendered_provenance.json", "missing its evidence bindings"),
+        ("artifact_manifest.json", "provenance does not match"),
+    ],
+)
+def test_recording_requires_valid_template_evidence(
+    tmp_path: Path, rel: str, match: str
+) -> None:
+    root = _custody_fixture(tmp_path)
+    manifest = root / "output/data/manuscript_render_manifest.json"
+    committed = manifest.read_bytes()
+    (root / "output/reports" / rel).write_text("{}", encoding="utf-8")
+    with pytest.raises(RuntimeError, match=match):
+        record_render_manifest(root)
+    assert manifest.read_bytes() == committed
+
+
+def test_prepare_sanitizes_evidence_before_recording(tmp_path: Path) -> None:
+    root = _custody_fixture(tmp_path)
+    rel = "output/pdf/_combined_manuscript.log"
+    log = root / rel
+    log.write_text("read /home/testuser/source\n", encoding="utf-8")
+    assert prepare_render_artifacts(root) == [rel]
+    assert log.read_text(encoding="utf-8") == "read ~/source\n"
+    assert prepare_render_artifacts(root) == []
+    record_render_manifest(root)
+    assert custody_issues(root) == []
 
 
 def test_recording_requires_the_final_publication(tmp_path: Path) -> None:
@@ -384,6 +465,7 @@ def test_a_re_render_at_a_new_commit_with_identical_prose_passes(
     }
     for rel, data in parent.items():
         (root / rel).write_bytes(data)
+    write_template_validation(root)
     record_render_manifest(root)
 
     child = {
@@ -396,13 +478,31 @@ def test_a_re_render_at_a_new_commit_with_identical_prose_passes(
         (root / rel).write_bytes(data)
     monkeypatch.setattr(
         "gnn.manuscript.render_custody._git_show",
-        lambda _root, rel: parent[rel],
+        lambda _root, rel: parent.get(rel),
     )
     monkeypatch.setattr(
         "gnn.manuscript.render_custody._head_stamp",
         lambda _root: "bbb2222cafebabe0000000000000000000000000",
     )
     assert verify_fresh_render(root) == []
+
+
+def test_fresh_comparison_checks_the_raw_record_against_git(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _custody_fixture(tmp_path)
+    manifest = root / "output/data/manuscript_render_manifest.json"
+    recorded = json.loads(manifest.read_text(encoding="utf-8"))
+    rel = "output/pdf/_combined_manuscript.tex"
+    recorded["render_artifacts_sha256"][rel] = "0" * 64
+    manifest.write_text(json.dumps(recorded), encoding="utf-8")
+    monkeypatch.setattr(
+        "gnn.manuscript.render_custody._git_show",
+        lambda _root, key: (
+            (root / key).read_bytes() if (root / key).is_file() else None
+        ),
+    )
+    assert any("committed " + rel in issue for issue in verify_fresh_render(root))
 
 
 def test_an_artifact_swap_alongside_prose_drift_fails(tmp_path: Path) -> None:
@@ -477,7 +577,7 @@ def test_a_re_render_differing_only_in_the_log_timestamp_passes(
     }
     monkeypatch.setattr(
         "gnn.manuscript.render_custody._git_show",
-        lambda _root, rel: committed_tree[rel],
+        lambda _root, rel: committed_tree.get(rel),
     )
     (root / log_rel).write_text(
         _XETEX_BANNER.format(stamp="29 SEP 2026 07:14"), encoding="utf-8"
