@@ -201,7 +201,9 @@ def _report_dirty_tree(variables: Mapping[str, str]) -> dict:
     return receipt
 
 
-def write_table_claim_ledger(variables_path: Path, variables: Mapping[str, str]) -> None:
+def write_table_claim_ledger(
+    variables_path: Path, variables: Mapping[str, str]
+) -> None:
     """Register table labels supplied by hydrated Markdown variables."""
     ledger = variables_path.with_name(TABLE_CLAIM_LEDGER_FILENAME)
     ledger.write_text(
