@@ -33,7 +33,7 @@ The CLI module provides the `gnn` command-line tool — a unified interface to t
 - **Source-bound numerical witnesses** via `gnn witness SOURCE --results RESULT --program PROGRAM --output RECEIPT`, or `gnn witness --verify RECEIPT`. The restricted source reader, reference calculation and whole-receipt replay live in `gnn.validation`; numerical agreement does not authenticate execution or establish a Lean proof.
 - **Live development** via `gnn watch` (file monitoring with 250ms debounce)
 - **Dependency graphs** via `gnn graph` (Mermaid/text output)
-- **API server** via `gnn serve --surface` (`runs` → `api/app.py`, `jobs` → `api/server.py`, `both` starts the jobs surface on port+1 in a daemon thread, `website` → `gnn/website/serve.py` loopback static server + optional live reload, port 8090)
+- **API server** via `gnn serve --surface` (`runs` → `api/app.py`, `jobs` → `api/server.py`, `both` binds both ports before starting and supervises `jobs` on port+1, `website` → `gnn/website/serve.py` loopback static server + optional live reload, port 8090)
 - **MCP surface inspection** via `gnn mcp list` / `gnn mcp info <tool>` (lazy `gnn.mcp` registry bridge; `--json` emits the standard envelope)
 - **LSP server** via `gnn lsp` (canonical `gnn.lsp` pygls server when pygls is importable; `cli/lsp.py` JSON-RPC fallback)
 

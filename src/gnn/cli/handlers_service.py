@@ -11,12 +11,65 @@ from __future__ import annotations
 
 import argparse
 import logging
+from contextlib import ExitStack
 from pathlib import Path
+from threading import Event, Thread
 from typing import Any
 
 from .helpers import EXIT_ERROR, EXIT_SUCCESS, _print_envelope
 
 logger = logging.getLogger(__name__)
+
+
+def _serve_both(host: str, port: int) -> None:
+    """Bind both API listeners and stop the peer when either server exits."""
+    if not 1 <= port < 65535:
+        raise RuntimeError("The both surface requires a base port from 1 to 65534")
+
+    import uvicorn
+
+    from gnn.api.app import create_app as create_runs_app
+    from gnn.api.server import create_app as create_jobs_app
+
+    runs = uvicorn.Server(uvicorn.Config(create_runs_app(), host=host, port=port))
+    jobs = uvicorn.Server(uvicorn.Config(create_jobs_app(), host=host, port=port + 1))
+    stopping = Event()
+    jobs_errors: list[BaseException] = []
+    with ExitStack() as stack:
+        try:
+            runs_socket = stack.enter_context(runs.config.bind_socket())
+            jobs_socket = stack.enter_context(jobs.config.bind_socket())
+        except SystemExit as exc:
+            raise RuntimeError(
+                f"Could not bind both API ports {port} and {port + 1}"
+            ) from exc
+
+        def run_jobs() -> None:
+            try:
+                jobs.run(sockets=[jobs_socket])
+                if not stopping.is_set():
+                    raise RuntimeError("Jobs API listener stopped unexpectedly")
+            except BaseException as exc:
+                jobs_errors.append(exc)
+            finally:
+                runs.should_exit = True
+
+        worker = Thread(target=run_jobs, name="gnn-jobs-api")
+        worker.start()
+        try:
+            runs.run(sockets=[runs_socket])
+        except SystemExit as exc:
+            raise RuntimeError("Runs API listener failed") from exc
+        finally:
+            stopping.set()
+            jobs.should_exit = True
+            worker.join()
+        if jobs_errors:
+            raise RuntimeError(
+                f"Jobs API listener failed: {jobs_errors[0]}"
+            ) from jobs_errors[0]
+        if not runs.started or not jobs.started:
+            raise RuntimeError("Both API listeners did not start")
 
 
 def _cmd_serve(args: argparse.Namespace) -> int:
@@ -72,23 +125,9 @@ def _cmd_serve(args: argparse.Namespace) -> int:
             from gnn.api.server import run_server
 
             run_server(host=args.host, port=port)
+        elif surface == "both":
+            _serve_both(args.host, port)
         else:
-            if surface == "both":
-                import threading
-
-                import uvicorn
-
-                from gnn.api.server import create_app
-
-                jobs_server = uvicorn.Server(
-                    uvicorn.Config(
-                        create_app(),
-                        host=args.host,
-                        port=port + 1,
-                        log_level="info",
-                    )
-                )
-                threading.Thread(target=jobs_server.run, daemon=True).start()
             from gnn.api.app import start_server
 
             start_server(host=args.host, port=port)

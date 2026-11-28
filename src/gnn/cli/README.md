@@ -103,7 +103,7 @@ The CLI module is a thin dispatcher — each subcommand delegates to the corresp
 - `reproduce` → `pipeline.hasher.lookup_run()` + `main.main(override_args=...)`
 - `preflight` → `pipeline.preflight.run_preflight()`
 - `health` → `render.health.check_renderers()` + `pipeline.preflight.check_environment()`
-- `serve` → `api.app.start_server()` (surface `runs`), `api.server.run_server()` (surface `jobs`), or `both` (jobs via `uvicorn.Server` on port+1 while runs blocks on the main thread)
+- `serve` → `api.app.start_server()` (surface `runs`), `api.server.run_server()` (surface `jobs`), or `both` (binds both ports before starting, serves jobs on port+1, and stops the peer if either listener exits)
 - `templates` / `pull` → `cli.templates` maintained template index, checksum, and copy helpers
 - `models` → `model_registry.registry.ModelRegistry`
 - `lsp` → `gnn.cli.lsp.start_lsp()`: canonical pygls server (`gnn.lsp`) when pygls is importable, pygls-free JSON-RPC fallback otherwise

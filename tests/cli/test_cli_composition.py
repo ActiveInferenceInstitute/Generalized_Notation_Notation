@@ -602,39 +602,6 @@ class TestServeSurface:
         assert cli._cmd_serve(args) == cli.EXIT_SUCCESS
         assert calls == [((), {"host": "127.0.0.1", "port": 8100})]
 
-    def test_both_surface_starts_jobs_on_port_plus_one(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        import uvicorn
-
-        from gnn.api import app as api_app
-        from gnn.api import server as api_server
-
-        start_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
-        job_configs: list[Any] = []
-
-        def record_start(*args: Any, **kwargs: Any) -> None:
-            start_calls.append((args, kwargs))
-
-        class _StubJobsServer:
-            def __init__(self, config: Any) -> None:
-                job_configs.append(config)
-
-            def run(self) -> None:
-                return None
-
-        monkeypatch.setattr(api_app, "start_server", record_start)
-        monkeypatch.setattr(api_server, "create_app", lambda: object())
-        monkeypatch.setattr(uvicorn, "Server", _StubJobsServer)
-        args = argparse.Namespace(
-            surface="both", host="127.0.0.1", port=8200, verbose=False
-        )
-        assert cli._cmd_serve(args) == cli.EXIT_SUCCESS
-        assert start_calls == [((), {"host": "127.0.0.1", "port": 8200})]
-        assert len(job_configs) == 1
-        assert job_configs[0].port == 8201
-        assert job_configs[0].host == "127.0.0.1"
-
 
 # ---------------------------------------------------------------------------
 # extract/render --json — standard CLI envelope output

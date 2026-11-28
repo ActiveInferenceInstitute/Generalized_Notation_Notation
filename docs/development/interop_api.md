@@ -69,7 +69,7 @@ check the intended backend before treating a model as executable.
 | --- | --- | --- |
 | `runs` (default) | `gnn.api.app:create_app` via `start_server` | Pipeline-as-a-service runs over the shared pipeline entry points. |
 | `jobs` | `gnn.api.server:create_app` via `run_server` | Job submission, status and cancellation. |
-| `both` | `runs` on the main thread, `jobs` on port+1 | Both surfaces in one process. |
+| `both` | `runs` on the selected port, `jobs` on port+1 | Both ports must be available. A listener startup failure stops the pair and returns a CLI error. |
 | `website` | `gnn.website.serve` | Static server over the generated output tree (port 8090). |
 
 Both FastAPI factories call `install_exception_handlers` from
