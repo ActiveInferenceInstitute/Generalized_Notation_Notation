@@ -56,7 +56,7 @@ run_script = create_standardized_pipeline_script(
             "flag": "--simulation-params",
             "type": str,
             "default": "{}",
-            "help": "JSON string containing additional simulation parameters",
+            "help": "JSON object with THRML overrides. Requires --frameworks thrml.",
         },
         "frameworks": {
             "flag": "--frameworks",

@@ -25,12 +25,12 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from gnn.extract.pomdp_axes import declared_b_order
 from gnn.utils.runtime_safety.resource_manager import get_current_memory_usage
 
 logger = logging.getLogger(__name__)
@@ -59,315 +59,42 @@ EFE_CONVENTION_PYMDP_SUMMARY = (
 
 
 def _normalise_prob_vector(v: np.ndarray) -> np.ndarray:
-    """Return a 1-D probability vector summing to 1 (robust to GNN rounding)."""
+    """Normalize a computed distribution without fabricating missing mass."""
     arr = np.asarray(v, dtype=np.float64).flatten()
     total = float(arr.sum())
-    if not np.isfinite(total) or total <= 0:
-        n = max(len(arr), 1)
-        return np.ones(n, dtype=np.float64) / n
+    if not np.isfinite(total) or total <= 0 or np.any(arr < 0):
+        raise ValueError("PyMDP computed an invalid probability distribution")
     return arr / total
-
-
-def _normalise_columns(mat: np.ndarray) -> np.ndarray:
-    """Normalise each column so it sums to 1, repairing zero columns uniformly."""
-    out = np.asarray(mat, dtype=np.float64).copy()
-    if out.ndim != 2:
-        raise ValueError(f"_normalise_columns expected 2D, got {out.ndim}D")
-    col_sums = out.sum(axis=0, keepdims=True)
-    zero_cols = col_sums <= 0
-    col_sums = np.where(zero_cols, 1.0, col_sums)
-    out = out / col_sums
-    if zero_cols.any():
-        rows = out.shape[0]
-        for j in np.where(zero_cols.flatten())[0]:
-            out[:, j] = 1.0 / rows
-    return out
-
-
-def _canonicalise_A(A_data: Any, fallback_shape: Tuple[int, int]) -> np.ndarray:
-    """Return an A matrix of shape ``(num_obs, num_states)`` with columns summing to 1."""
-    if A_data is None:
-        raise ValueError("A matrix is required for PyMDP execution")
-    mat = np.asarray(A_data, dtype=np.float64)
-    if mat.ndim != 2:
-        raise ValueError(
-            f"A matrix must be 2D (num_obs, num_states); got shape {mat.shape}"
-        )
-    return _normalise_columns(mat)
-
-
-def _slices_stochasticity(raw: np.ndarray) -> tuple[bool, bool]:
-    """Return (row_stochastic, column_stochastic) across all 2-D slices.
-
-    A slice is row-stochastic when every row (axis 1) sums to 1 and
-    column-stochastic when every column (axis 0) sums to 1.
-    """
-    row_stochastic = True
-    column_stochastic = True
-    for index in range(raw.shape[0]):
-        matrix = raw[index]
-        row_sums = matrix.sum(axis=1)
-        col_sums = matrix.sum(axis=0)
-        if not np.allclose(row_sums, 1.0, atol=1e-6):
-            row_stochastic = False
-        if not np.allclose(col_sums, 1.0, atol=1e-6):
-            column_stochastic = False
-    return row_stochastic, column_stochastic
-
-
-def _b_order_from_provenance(b_provenance: Any) -> str:
-    """Resolve the stored B orientation from ``matrix_provenance["B"]``.
-
-    Returns one of ``"canonical"`` (incoming tensor is already
-    ``(next_state, previous_state, action)``),
-    ``"action_previous_state_next_state"``,
-    ``"action_next_state_previous_state"``, or ``""`` (unknown — use
-    fallbacks). ``source_order`` is emitted by the render-side
-    canonicaliser and means the incoming tensor is already canonical;
-    the extractor's ``detected_order`` / ``claimed_slice_convention``
-    describe the per-slice convention of the *stored* tensor.
-    """
-    if not isinstance(b_provenance, dict):
-        return ""
-    if b_provenance.get("source_order"):
-        return "canonical"
-    slice_convention = b_provenance.get("detected_order") or (
-        b_provenance.get("claimed_slice_convention")
-    )
-    if slice_convention == "rows_previous_columns_next":
-        return "action_previous_state_next_state"
-    if slice_convention == "rows_next_columns_previous":
-        return "action_next_state_previous_state"
-    return ""
 
 
 def _canonicalise_B(
     B_data: Any,
     num_states: int,
-    num_actions: int,
+    num_actions: int | None,
     b_tensor_order: str = "",
     b_provenance: Any = None,
 ) -> np.ndarray:
-    """
-    Return a B tensor with PyMDP shape ``(next_state, prev_state, action)``.
+    """Project source transitions to the same probability axes as Step 11."""
+    from gnn.render.pomdp_contract import canonicalise_b_matrix
 
-    Orientation is resolved in priority order:
-      1. ``matrix_provenance["B"]`` (``source_order`` / ``detected_order`` /
-         ``claimed_slice_convention``) — never re-transposes an
-         already-canonical tensor.
-      2. An explicit ``b_tensor_order`` declaration.
-      3. Shape + stochasticity detection (handles non-square B such as
-         ``B[3,3,2]`` and per-slice column-stochastic layouts).
-
-    Accepted GNN raw formats:
-      * 3-D ``(action, prev, next)`` — transposed to ``(next, prev, action)``
-      * 3-D ``(action, next, prev)`` — axis-reordered to ``(next, prev, action)``
-      * 3-D ``(next, prev, action)`` — kept as-is if shape matches
-      * 2-D ``(next, prev)`` — promoted to single-action ``(next, prev, 1)``
-    Each slice ``B[:, :, a]`` is column-normalised.
-    """
     if B_data is None:
         raise ValueError("B matrix is required for PyMDP execution")
-
-    raw = np.asarray(B_data, dtype=np.float64)
-    declared_order = b_tensor_order.lower().replace("-", "_").replace(" ", "_")
-    provenance_order = _b_order_from_provenance(b_provenance)
-
-    if raw.ndim == 2:
-        tensor = raw[:, :, np.newaxis]
-    elif raw.ndim == 3:
-        if provenance_order == "canonical":
-            tensor = raw
-        elif provenance_order == "action_previous_state_next_state":
-            tensor = raw.transpose(2, 1, 0)
-        elif provenance_order == "action_next_state_previous_state":
-            tensor = raw.transpose(2, 0, 1)
-        elif declared_order in {
-            "next_state_previous_state_action",
-            "next_previous_action",
-            "next_prev_action",
-        }:
-            tensor = raw
-        elif declared_order in {
-            "action_previous_state_next_state",
-            "action_previous_next",
-            "actions_previous_next",
-        }:
-            tensor = raw.transpose(2, 1, 0)
-        elif declared_order in {
-            "action_next_state_previous_state",
-            "action_next_previous",
-            "actions_next_previous",
-        }:
-            tensor = raw.transpose(2, 0, 1)
-        elif raw.shape[0] == num_actions and raw.shape[1] == raw.shape[2]:
-            # Per-action slices of square shape: disambiguate the slice
-            # layout by stochasticity (column-stochastic-only means the
-            # rows are next states: (action, next, prev)).
-            row_stochastic, column_stochastic = _slices_stochasticity(raw)
-            if column_stochastic and not row_stochastic:
-                tensor = raw.transpose(2, 0, 1)
-            else:
-                tensor = raw.transpose(2, 1, 0)
-        elif raw.shape[-1] == num_actions and raw.shape[0] == raw.shape[1]:
-            # Non-square canonical shape, e.g. B[3, 3, 2].
-            tensor = raw
-        elif raw.shape[1] == raw.shape[2] and raw.shape[0] != num_states:
-            # Action-first slices whose action axis was not declared:
-            # infer from stochasticity instead of guessing by shape.
-            row_stochastic, column_stochastic = _slices_stochasticity(raw)
-            if column_stochastic and not row_stochastic:
-                tensor = raw.transpose(2, 0, 1)
-            else:
-                tensor = raw.transpose(2, 1, 0)
-        else:
-            # Best-effort: treat as (next, prev, action)
-            tensor = raw
-    else:
-        raise ValueError(f"B matrix must be 2D or 3D; got shape {raw.shape}")
-
-    # Normalise each action slice by column (over next_state).
-    tensor = tensor.copy()
-    for a in range(tensor.shape[2]):
-        tensor[:, :, a] = _normalise_columns(tensor[:, :, a])
-    return tensor
-
-
-def _canonicalise_C(C_data: Any, num_obs: int) -> np.ndarray:
-    """Canonicalize C."""
-    if C_data is None:
-        raise ValueError("C vector is required for PyMDP execution")
-    vec = np.asarray(C_data, dtype=np.float64).flatten()
-    if vec.shape[0] != num_obs:
-        padded = np.zeros(num_obs, dtype=np.float64)
-        k = min(num_obs, vec.shape[0])
-        padded[:k] = vec[:k]
-        vec = padded
-    return vec
-
-
-def _canonicalise_D(D_data: Any, num_states: int) -> np.ndarray:
-    """Canonicalize D."""
-    if D_data is None:
-        raise ValueError("D vector is required for PyMDP execution")
-    return _normalise_probability_vector_safe(D_data, num_states)
-
-
-def _normalise_probability_vector_safe(v: Any, expected_len: int) -> np.ndarray:
-    """Normalize probability vector safe."""
-    vec = np.asarray(v, dtype=np.float64).flatten()
-    if vec.shape[0] != expected_len:
-        padded = np.ones(expected_len, dtype=np.float64) / max(expected_len, 1)
-        k = min(expected_len, vec.shape[0])
-        padded[:k] = vec[:k]
-        vec = padded
-    return _normalise_prob_vector(vec)
-
-
-def _canonicalise_E(
-    E_data: Any, expected_policies: Optional[int]
-) -> Optional[np.ndarray]:
-    """Canonicalize E."""
-    if E_data is None:
-        return None
-    vec = np.asarray(E_data, dtype=np.float64).flatten()
-    if expected_policies is not None and vec.shape[0] != expected_policies:
-        # Re-scale / truncate / pad to match policy count (pymdp asserts on this).
-        padded = np.ones(expected_policies, dtype=np.float64) / max(
-            expected_policies, 1
-        )
-        k = min(expected_policies, vec.shape[0])
-        padded[:k] = vec[:k]
-        vec = padded
-    return _normalise_prob_vector(vec)
-
-
-def _find_nonstationary_b_key(init_params: Dict[str, Any]) -> Optional[str]:
-    """Return the declared nonstationary transition key, if any.
-
-    ``B_t`` (time-indexed) or ``B_regime`` (regime-switched), optionally
-    with a numeric suffix. Presence of such a key routes the rollout to
-    the per-step rebuild semantics instead of the static canonical B.
-    """
-    for key in init_params:
-        name = str(key)
-        if re.match(r"^B_(t|regime)\d*$", name, re.IGNORECASE):
-            return name
-    return None
-
-
-def _parse_schedule_parameter(value: Any) -> Optional[List[int]]:
-    """Parse a schedule parameter: a list of ints or a comma-separated string."""
-    if isinstance(value, str):
-        parts = [part.strip() for part in value.split(",") if part.strip()]
-        try:
-            return [int(part) for part in parts]
-        except ValueError:
-            return None
-    if isinstance(value, (list, tuple)):
-        try:
-            return [int(item) for item in value]
-        except (TypeError, ValueError):
-            return None
-    return None
-
-
-def _resolve_regime_schedule(model_params: Dict[str, Any]) -> Optional[List[int]]:
-    """Resolve the declared regime→timestep schedule from model parameters."""
-    for key in ("b_regime_schedule", "regime_schedule", "b_schedule", "b_t_schedule"):
-        schedule = _parse_schedule_parameter(model_params.get(key))
-        if schedule:
-            return schedule
-    return None
-
-
-def _normalise_nonstationary_b_tensor(
-    value: Any,
-    *,
-    num_states: int,
-    num_actions: int,
-    name: str,
-) -> np.ndarray:
-    """Return a ``(steps, next, previous, action)`` transition stack.
-
-    Each slice is canonical ``(next_state, previous_state, action)`` with
-    columns summing to one. A 2-D/3-D tensor is promoted to a single-step
-    stack (same orientation rules as the static B canonicaliser), so the
-    earlier 3-D ``B_t`` keeps its pre-nonstationary static meaning.
-    """
-    raw = np.asarray(value, dtype=np.float64)
-    if raw.ndim == 2:
-        raw = raw[:, :, np.newaxis]
-    if raw.ndim == 3:
-        if (
-            raw.shape[0] == num_actions
-            and raw.shape[1] == raw.shape[2] == num_states
-            and raw.shape[0] != raw.shape[2]
-        ):
-            raw = raw.transpose(1, 2, 0)
-        raw = raw[np.newaxis, ...]
-    if raw.ndim != 4:
-        raise ValueError(f"{name} must be 2-D, 3-D, or 4-D, got shape {raw.shape}")
-    if raw.shape[1] != num_states or raw.shape[2] != num_states:
-        raise ValueError(
-            f"{name} slices must be ({num_states}, {num_states}, ...), got {raw.shape}"
-        )
-    if raw.shape[3] not in {1, num_actions}:
-        raise ValueError(
-            f"{name} action dimension must be 1 or {num_actions}, got {raw.shape}"
-        )
-    tensor = raw.copy()
-    for step in range(tensor.shape[0]):
-        for action in range(tensor.shape[3]):
-            tensor[step, :, :, action] = _normalise_columns(tensor[step, :, :, action])
-    return tensor
+    canonical, _ = canonicalise_b_matrix(
+        B_data,
+        num_states=num_states,
+        num_actions=num_actions,
+        model_parameters={"b_tensor_order": b_tensor_order},
+        b_provenance=b_provenance,
+        strict_types=True,
+    )
+    return np.asarray(canonical, dtype=np.float64)
 
 
 def _build_nonstationary_b_steps(
     b_tensor: np.ndarray,
     *,
     key: str,
-    model_params: Dict[str, Any],
+    schedule: list[int] | None,
     num_timesteps: int,
 ) -> Tuple[List[np.ndarray], Dict[str, Any]]:
     """Resolve per-step transition tensors from a nonstationary declaration.
@@ -380,18 +107,7 @@ def _build_nonstationary_b_steps(
       likewise holds its last entry beyond the declared span.
     """
     horizon = max(1, num_timesteps)
-    if "regime" in key.lower():
-        schedule = _resolve_regime_schedule(model_params)
-        if not schedule:
-            raise ValueError(
-                f"{key} requires a b_regime_schedule parameter (one regime "
-                "index per timestep) in ModelParameters"
-            )
-        max_regime = b_tensor.shape[0] - 1
-        if min(schedule) < 0 or max(schedule) > max_regime:
-            raise ValueError(
-                f"b_regime_schedule references a regime outside 0..{max_regime}"
-            )
+    if schedule is not None:
         steps = [b_tensor[schedule[min(t, len(schedule) - 1)]] for t in range(horizon)]
         meta = {
             "kind": "regime_switched",
@@ -470,7 +186,7 @@ def _require_pymdp_1() -> Any:
     except ImportError as e:
         raise ImportError(
             "pymdp 1.0.0 (JAX-first) is required. Install with:\n"
-            "    uv pip install 'inferactively-pymdp>=1.0.0'\n"
+            "    uv pip install 'inferactively-pymdp>=1.0.5'\n"
             f"(original error: {e})"
         ) from e
 
@@ -478,7 +194,7 @@ def _require_pymdp_1() -> Any:
     if not hasattr(Agent, "update_empirical_prior"):
         raise ImportError(
             "Detected unsupported pymdp (<1.0.0). This module requires pymdp 1.0.0. "
-            "Upgrade with: uv pip install --upgrade 'inferactively-pymdp>=1.0.0'"
+            "Upgrade with: uv pip install --upgrade 'inferactively-pymdp>=1.0.5'"
         )
     return Agent, pymdp_utils, jnp, jr
 
@@ -608,6 +324,7 @@ def pymdp_kind_refusal(gnn_spec: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         ModelKind,
         detect_model_kinds,
         detect_pomdp_space_model_kinds,
+        pymdp_nonstationary_transition,
         unsupported_composition_reason,
     )
 
@@ -616,7 +333,13 @@ def pymdp_kind_refusal(gnn_spec: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     )
     if isinstance(initial, dict) and initial:
         kinds = detect_model_kinds(gnn_spec)
-        declared_keys = [str(key) for key in initial]
+        declared_keys = [
+            str(key)
+            for key in {
+                **initial,
+                **((gnn_spec.get("structured_pomdp") or {}).get("matrices") or {}),
+            }
+        ]
     else:
         file_path = gnn_spec.get("file_path")
         if not file_path:
@@ -663,27 +386,21 @@ def pymdp_kind_refusal(gnn_spec: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             ),
             "model_kinds": sorted(k.value for k in kinds),
         }
-    if ModelKind.NONSTATIONARY in kinds and not any(
-        re.match(r"^B_(t|regime)\d*$", key, re.IGNORECASE) for key in declared_keys
-    ):
-        # Time-indexed A/C/D/E parameterization with a static B would roll
-        # out as a fully static model: pymdp has no executor route for it,
-        # so receipt it instead of silently rendering static dynamics.
-        return {
-            "success": False,
-            "unsupported": True,
-            "status": "unsupported",
-            "reason": (
-                "unsupported-nonstationary: pymdp executes B_t/B_regime "
-                "transitions with a per-step Agent rebuild; this spec's "
-                "time variation sits in A/C/D/E parameterization, which "
-                "has no executor route"
-            ),
-            "model_kinds": sorted(k.value for k in kinds),
-        }
-    # NONSTATIONARY is deliberately not refused here: run_pymdp_simulation
-    # executes the B_t/B_regime switching semantics (per-step Agent
-    # rebuild), so a nonstationary kind set is a supported pymdp route.
+    if ModelKind.NONSTATIONARY in kinds:
+        try:
+            transition = pymdp_nonstationary_transition(declared_keys)
+            if isinstance(initial, dict) and initial and transition not in initial:
+                raise ValueError(
+                    f"unsupported-nonstationary: {transition} is absent from executable parameters"
+                )
+        except ValueError as error:
+            return {
+                "success": False,
+                "unsupported": True,
+                "status": "unsupported",
+                "reason": str(error),
+                "model_kinds": sorted(k.value for k in kinds),
+            }
     return None
 
 
@@ -731,7 +448,7 @@ def run_pymdp_simulation(
         return False, {
             "success": False,
             "error": str(e),
-            "suggestion": "Install with: uv pip install 'inferactively-pymdp>=1.0.0'",
+            "suggestion": "Install with: uv pip install 'inferactively-pymdp>=1.0.5'",
         }
 
     try:
@@ -747,8 +464,22 @@ def run_pymdp_simulation(
         "initial_parameterization", {}
     )
     model_params = gnn_spec.get("model_parameters", {}) or {}
-    required_matrices: list[Any] = ["A", "B", "C", "D"]
-    nonstationary_key = _find_nonstationary_b_key(init_params)
+    from gnn.render.pomdp_contract import (
+        ModelKind,
+        canonicalise_pymdp_likelihood_prior,
+        canonicalise_pymdp_phase_transitions,
+        canonicalise_pymdp_policy_prior,
+        detect_model_kinds,
+        pymdp_nonstationary_transition,
+        pymdp_policy_horizon,
+    )
+
+    required_matrices = ["A", "B", "C", "D"]
+    nonstationary_key = (
+        pymdp_nonstationary_transition(init_params)
+        if ModelKind.NONSTATIONARY in detect_model_kinds(gnn_spec)
+        else None
+    )
     missing_matrices = [
         name
         for name in required_matrices
@@ -762,76 +493,49 @@ def run_pymdp_simulation(
             "schema_version": "pymdp_simulation_v1",
         }
 
-    a_raw = init_params.get("A")
-    a_np_tmp = np.asarray(a_raw, dtype=np.float64)
-    if a_np_tmp.ndim != 2:
-        return False, {
-            "success": False,
-            "error": f"A matrix must be 2D; got shape {a_np_tmp.shape}",
-            "schema_version": "pymdp_simulation_v1",
-        }
-    fallback_shape = (int(a_np_tmp.shape[0]), int(a_np_tmp.shape[1]))
-
-    A_np = _canonicalise_A(a_raw, fallback_shape)
+    A_np, C_np, D_np = canonicalise_pymdp_likelihood_prior(init_params, model_params)
     num_obs, num_states = A_np.shape
 
-    # Derive num_actions from B or model params
     b_raw = init_params.get("B")
-    if b_raw is not None:
-        b_np_tmp = np.asarray(b_raw, dtype=np.float64)
-        if b_np_tmp.ndim == 3:
-            # Heuristic: if leading dim equals any plausible action count, prefer it
-            if (
-                b_np_tmp.shape[0] == b_np_tmp.shape[1]
-                and b_np_tmp.shape[0] == num_states
-            ):
-                num_actions_guess = int(b_np_tmp.shape[-1])
-            else:
-                num_actions_guess = int(b_np_tmp.shape[0])
-        elif b_np_tmp.ndim == 2:
-            num_actions_guess = 1
-        else:
-            num_actions_guess = int(model_params.get("num_actions", 1))
-    else:
-        num_actions_guess = int(model_params.get("num_actions", 1))
-
-    num_actions = max(1, int(model_params.get("num_actions", num_actions_guess)))
+    provided_actions = model_params.get("num_actions")
+    num_actions = int(provided_actions) if provided_actions is not None else None
+    provenance = gnn_spec.get("matrix_provenance") or {}
 
     b_steps: Optional[List[np.ndarray]] = None
     nonstationary_meta: Optional[Dict[str, Any]] = None
     num_timesteps = int(model_params.get("num_timesteps", 20))
     if nonstationary_key is not None:
-        b_tensor = _normalise_nonstationary_b_tensor(
+        b_tensor, schedule = canonicalise_pymdp_phase_transitions(
             init_params[nonstationary_key],
+            key=nonstationary_key,
             num_states=num_states,
             num_actions=num_actions,
-            name=nonstationary_key,
+            parameters=model_params,
+            provenance=provenance.get(nonstationary_key),
         )
         b_steps, nonstationary_meta = _build_nonstationary_b_steps(
             b_tensor,
             key=nonstationary_key,
-            model_params=model_params,
+            schedule=schedule,
             num_timesteps=num_timesteps,
         )
-        # The initial Agent/transition uses the first scheduled step; the
-        # rollout loop rebuilds the Agent for every scheduled step.
-        b_raw = b_steps[0]
-
-    B_np = _canonicalise_B(
-        b_raw,
-        num_states,
-        num_actions,
-        str(model_params.get("b_tensor_order", "")),
-        b_provenance=(gnn_spec.get("matrix_provenance") or {}).get("B"),
-    )
+        # The scheduled slices are already in canonical stored order.
+        B_np = b_steps[0]
+    else:
+        B_np = _canonicalise_B(
+            b_raw,
+            num_states,
+            num_actions,
+            declared_b_order(model_params),
+            b_provenance=provenance.get("B"),
+        )
     # Ensure num_actions reflects the canonicalised tensor.
     num_actions = int(B_np.shape[2])
-    C_np = _canonicalise_C(init_params.get("C"), num_obs)
-    D_np = _canonicalise_D(init_params.get("D"), num_states)
-    E_np = _canonicalise_E(init_params.get("E"), expected_policies=num_actions)
-
+    policy_len = pymdp_policy_horizon(model_params)
+    E_np = canonicalise_pymdp_policy_prior(
+        init_params.get("E"), num_actions=num_actions, policy_len=policy_len
+    )
     batch_size = int(model_params.get("batch_size", 1))
-    policy_len = int(model_params.get("policy_len", 1))
     gamma = float(model_params.get("gamma", 16.0))
     alpha = float(model_params.get("alpha", 16.0))
     seed = int(model_params.get("random_seed", 0))

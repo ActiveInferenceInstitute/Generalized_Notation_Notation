@@ -27,6 +27,7 @@ def process_validation_mcp(
     output_directory: str,
     verbose: bool = False,
     transpose_b: bool = False,
+    strict_probabilities: bool = False,
 ) -> dict[str, Any]:
     """
     Run full GNN validation on files in a directory.
@@ -42,6 +43,7 @@ def process_validation_mcp(
             (row-stochastic) transition tensors are transposed in memory and
             the per-tensor transposition is recorded in the receipt
             (default: orientation warnings only, source files untouched)
+        strict_probabilities: Check authored categorical probability values.
 
     Returns:
         Dictionary with success status and validation summary.
@@ -53,13 +55,18 @@ def process_validation_mcp(
         target_directory=target_directory,
         output_directory=output_directory,
         verbose=verbose,
-        extra_step_kwargs={"transpose_b": transpose_b},
+        extra_step_kwargs={
+            "transpose_b": transpose_b,
+            **({"strict_probabilities": True} if strict_probabilities else {}),
+        },
         label="Validation",
     )
 
 
 def validate_gnn_file_mcp(
-    gnn_file_path: str, validation_level: str = "standard"
+    gnn_file_path: str,
+    validation_level: str = "standard",
+    strict_probabilities: bool = False,
 ) -> dict[str, Any]:
     """
     Validate a single GNN file at a specified validation level.
@@ -71,6 +78,7 @@ def validate_gnn_file_mcp(
     Args:
         gnn_file_path:    Path to the GNN file to validate
         validation_level: Validation depth ('basic', 'standard', 'strict')
+        strict_probabilities: Check authored categorical probability values.
 
     Returns:
         Dictionary with is_valid flag, errors, warnings, structural counts,
@@ -110,7 +118,11 @@ def validate_gnn_file_mcp(
         if validation_level in ("strict",) and not connections:
             warnings.append("No connections defined in GNN model")
 
-        semantic = validate_content(content, validation_level=validation_level)
+        semantic = validate_content(
+            content,
+            validation_level=validation_level,
+            strict_probabilities=strict_probabilities,
+        )
         errors.extend(error for error in semantic["errors"] if error not in errors)
         warnings.extend(
             warning for warning in semantic["warnings"] if warning not in warnings
@@ -234,6 +246,11 @@ def register_tools(mcp_instance: Any) -> None:
                     "description": "Directory to save validation reports",
                 },
                 "verbose": {"type": "boolean", "default": False},
+                "strict_probabilities": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Check authored categorical probability values",
+                },
             },
             "required": ["target_directory", "output_directory"],
         },
@@ -253,6 +270,11 @@ def register_tools(mcp_instance: Any) -> None:
                     "type": "string",
                     "enum": ["basic", "standard", "strict"],
                     "default": "standard",
+                },
+                "strict_probabilities": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Check authored categorical probability values",
                 },
             },
             "required": ["gnn_file_path"],

@@ -51,6 +51,8 @@ def process_validation(
               ("basic", "standard", "strict", "research"; default "standard").
             - ``strict`` (bool): Shorthand that raises ``validation_level`` to
               "strict" when True (wired to the orchestrator's --strict flag).
+            - ``strict_probabilities`` (bool): Apply the strict categorical
+              probability contract to the authored model (default False).
             - ``run_id`` (str): Stable identity for intentional accumulation
               across multiple step-3 manifests in one run.
             - ``transpose_b`` (bool): Opt-in canonical B-tensor transposition
@@ -80,6 +82,7 @@ def process_validation(
         validation_level=validation_level,
         run_id=kwargs.get("run_id"),
         transpose_b=bool(kwargs.get("transpose_b", False)),
+        strict_probabilities=bool(kwargs.get("strict_probabilities", False)),
     )
 
 

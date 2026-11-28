@@ -43,7 +43,7 @@ from gnn.render.rxinfer.rxinfer_renderer import render_gnn_to_rxinfer
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 GNN_FILES = PROJECT_ROOT / "input" / "gnn_files"
 
-EXEMPLAR_COUNT = 38
+EXEMPLAR_COUNT = 39
 # The intended kind for every non-flat exemplar; everything else is FLAT.
 EXPECTED_NON_FLAT = {
     "continuous/continuous_navigation.md": ModelKind.CONTINUOUS,
@@ -52,6 +52,7 @@ EXPECTED_NON_FLAT = {
     "continuous/predictive_coding_agent.md": ModelKind.CONTINUOUS,
     "continuous/multi_agent_lgssm.md": ModelKind.MULTI_AGENT,
     "continuous/independent_gaussian_agents.md": ModelKind.MULTI_AGENT,
+    "continuous/joint_gaussian_agents.md": ModelKind.MULTI_AGENT,
     "continuous/stochastic_dynamics.md": ModelKind.CONTINUOUS,
     "continuous/factored_continuous_lgssm.md": ModelKind.CONTINUOUS,
     "continuous/hybrid_discrete_continuous.md": ModelKind.HYBRID,
@@ -179,6 +180,7 @@ class TestExemplarKindTaxonomy:
                 "hierarchical/temporal_hierarchy.md": "unsupported-execution-contract",
                 "discrete/tmaze_epistemic.md": "unsupported-execution-contract",
                 "continuous/multi_agent_lgssm.md": "unsupported-composition",
+                "continuous/joint_gaussian_agents.md": "unsupported-composition",
                 "continuous/hybrid_discrete_continuous.md": ("unsupported-composition"),
                 "continuous/factored_continuous_lgssm.md": ("unsupported-composition"),
                 "discrete/time_varying_dynamics.md": ("unsupported-nonstationary"),
@@ -199,7 +201,7 @@ class TestExemplarKindTaxonomy:
                 outcomes["rendered"].add(rel)
         assert not failures, "render failures:\n" + "\n".join(failures)
         assert len(outcomes["rendered"]) == 29
-        assert len(outcomes["unsupported"]) == 9
+        assert len(outcomes["unsupported"]) == 10
         assert set.union(*outcomes.values()) == {
             str(path.relative_to(GNN_FILES)) for path in _exemplar_files()
         }

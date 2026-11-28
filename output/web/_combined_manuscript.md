@@ -1,15 +1,15 @@
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-0-start-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-0-start-->
 ```
 
 # Abstract {#sec:abstract}
 
-![The GeneralizedNotationNotation (GNN) pipeline at a glance, generated from the producer's token map at commit dfbcff0cc. A plain-text specification — the `StateSpaceBlock` declaring the model's tensors, `A`, `B`, `C`, `D`, and `E` for the discrete categorical kind of [@eq:generative_model] through [@eq:policy] and its own matrix vocabulary for the other model kinds — is parsed (Step 3), type-checked and validated (Steps 5–6), rendered as backend-specific code (Step 11), executed (Step 12), and analyzed (Step 16), before artifacts flow into the cross-repository interchange checks against the pinned GEO-INFER and fep_lean pairs. Read the cards left to right: each header names the stage, each pill names the pipeline step (or the source role), and the body states what the stage produces. The validation stage includes the B-tensor orientation check — every discrete `B` literal is read as column-stochastic `B[s', s, a]`, and `--transpose-b` maps row-stochastic textbook literals onto that canonical order — and the execution stage includes the bnlearn lane, which generates runnable Python from the same parsed model and skips with a recorded status when its runtime is absent. The footer states the scale the panel summarizes: 25 pipeline steps, 9 model families, 12 registered render backends with 12 render targets having Step 12 execution adapters, and 165 Model Context Protocol tools.](../../output/figures/gnn_graphical_abstract.png){#fig:graphical_abstract width=100%}
+![The GeneralizedNotationNotation (GNN) pipeline at a glance, generated from the producer's token map at commit e1d1a590e. A plain-text specification — the `StateSpaceBlock` declaring the model's tensors, `A`, `B`, `C`, `D`, and `E` for the discrete categorical kind of [@eq:generative_model] through [@eq:policy] and its own matrix vocabulary for the other model kinds — is parsed (Step 3), type-checked and validated (Steps 5–6), rendered as backend-specific code (Step 11), executed (Step 12), and analyzed (Step 16), before artifacts flow into the cross-repository interchange checks against the pinned GEO-INFER and fep_lean pairs. Read the cards left to right: each header names the stage, each pill names the pipeline step (or the source role), and the body states what the stage produces. The validation stage includes the B-tensor orientation check — every discrete `B` literal is read as column-stochastic `B[s', s, a]`, and `--transpose-b` maps row-stochastic textbook literals onto that canonical order — and the execution stage includes the bnlearn lane, which generates runnable Python from the same parsed model and skips with a recorded status when its runtime is absent. The footer states the scale the panel summarizes: 25 pipeline steps, 9 model families, 12 registered render backends with 12 render targets having Step 12 execution adapters, and 165 Model Context Protocol tools.](../../output/figures/gnn_graphical_abstract.png){#fig:graphical_abstract width=100%}
 
-Active Inference offers a unifying account of perception, learning, and action under the free energy principle [@friston2010], yet the generative models at its core are still communicated ad hoc: scattered across prose descriptions, bespoke notebooks, and framework-specific code that rarely agree. This fragmentation makes published models hard to reproduce, compare, or port between tools, and it raises the barrier for newcomers learning the formalism [@parr2022]. GeneralizedNotationNotation (GNN) addresses this gap with a standardized, human- and machine-readable text language for specifying Active Inference generative models, paired with a 25-step processing pipeline that transforms a single specification into validation, visualization, simulation, and analysis artifacts [@gnn2023]. A GNN file denotes a generative model, and the language lets that model take the several shapes the field actually uses: the notation blocks a file declares — categorical `A`/`B`/`C`/`D`[/`E`] tensors, linear-Gaussian system matrices `F`/`H`/`Q`/`R` with a Gaussian prior, per-agent and per-level compositions — fix its model kind, which the pipeline classifies structurally and carries through rendering and execution, recording explicitly which registered backends can render and run a model of each kind and which report it unsupported. GNN's "Triple Play" treats each model as three coordinated views — a textual specification, graphical visualizations, and executable cognitive models — so that outputs share an authored source and can be checked for consistency through identity, parameter, semantic, and numerical receipts. The framework spans 38 exemplar specifications (29 discrete-state and 9 continuous linear-Gaussian) across 9 model families and 12 registered rendering backends, with explicit gates for cross-format semantic fidelity and cross-framework reliability. GNN 3.0.0 layered safe-by-design long-running orchestration on top of this language and pipeline — durable observation streams, resumable run sessions, and auditable container plans that generate, validate, and replay data only, with no live infrastructure mutation. We describe the language, the model kinds it denotes, the pipeline architecture, and the validation contracts and source-bound checks used to assess specification round trips and admitted executions across simulation backends — with coverage gaps recorded as explicit profiled-unsupported statuses rather than silently omitted — providing inspectable infrastructure for reproducing and comparing Active Inference models within the recorded capability and verification boundaries.
+Active Inference offers a unifying account of perception, learning, and action under the free energy principle [@friston2010], yet the generative models at its core are still communicated ad hoc: scattered across prose descriptions, bespoke notebooks, and framework-specific code that rarely agree. This fragmentation makes published models hard to reproduce, compare, or port between tools, and it raises the barrier for newcomers learning the formalism [@parr2022]. GeneralizedNotationNotation (GNN) addresses this gap with a standardized, human- and machine-readable text language for specifying Active Inference generative models, paired with a 25-step processing pipeline that transforms a single specification into validation, visualization, simulation, and analysis artifacts [@gnn2023]. A GNN file denotes a generative model, and the language lets that model take the several shapes the field actually uses: the notation blocks a file declares — categorical `A`/`B`/`C`/`D`[/`E`] tensors, linear-Gaussian system matrices `F`/`H`/`Q`/`R` with a Gaussian prior, per-agent and per-level compositions — fix its model kind, which the pipeline classifies structurally and carries through rendering and execution, recording explicitly which registered backends can render and run a model of each kind and which report it unsupported. GNN's "Triple Play" treats each model as three coordinated views — a textual specification, graphical visualizations, and executable cognitive models — so that outputs share an authored source and can be checked for consistency through identity, parameter, semantic, and numerical receipts. The framework spans 39 exemplar specifications (29 discrete-state and 10 continuous linear-Gaussian) across 9 model families and 12 registered rendering backends, with explicit gates for cross-format semantic fidelity and cross-framework reliability. GNN 3.0.0 layered safe-by-design long-running orchestration on top of this language and pipeline — durable observation streams, resumable run sessions, and auditable container plans that generate, validate, and replay data only, with no live infrastructure mutation. We describe the language, the model kinds it denotes, the pipeline architecture, and the validation contracts and source-bound checks used to assess specification round trips and admitted executions across simulation backends — with coverage gaps recorded as explicit profiled-unsupported statuses rather than silently omitted — providing inspectable infrastructure for reproducing and comparing Active Inference models within the recorded capability and verification boundaries.
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-0-end-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-0-end-->
 ```
 
 
@@ -19,7 +19,7 @@ Active Inference offers a unifying account of perception, learning, and action u
 
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-1-start-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-1-start-->
 ```
 
 # Introduction {#sec:introduction}
@@ -52,7 +52,7 @@ This work contributes a standard notation together with the infrastructure that 
 The remainder of this manuscript is organized to move from language to mechanism to evidence. [@sec:system_context] states the notation and the model kinds it denotes — the discrete categorical factorization, its four matrices, and its two free-energy objectives as explicit equations ([@eq:generative_model] through [@eq:policy]), the continuous linear-Gaussian state-space kind with its optional closed-loop control structure ([@eq:lgssm_state] through [@eq:closed_loop]), and the multi-agent, hierarchical, learning, and structural compositions — and it presents the model-kind table ([@tbl:model_kinds]), the pipeline structure ([@fig:pipeline]), the Triple Play ([@fig:triple_play]), and the per-step responsibility table ([@tbl:pipeline_steps]). [@sec:methods] follows a specification through the pipeline — parsing, kind-scoped type checking, rendering, execution, and reporting — and presents the backend registry ([@tbl:backend_registry]), the per-kind framework capability matrix ([@tbl:framework_capability]), the backend registry surface ([@fig:backend_matrix]), and the long-running orchestration contracts ([@fig:orchestration]). [@sec:artifacts_evidence] reports what the project has produced and how each number is grounded, with the model-family registry ([@tbl:model_families]), the family-by-framework coverage ([@fig:family_matrix]), and repository-scale metrics ([@fig:repo_metrics]). [@fig:graphical_abstract] condenses this same arc — specification, validation, rendering, execution, analysis, and interchange — into the summary panel at the head of the manuscript. Claims of independent re-execution are addressed in [@sec:reproducibility], the boundaries of the current system in [@sec:limitations_next_steps], the symbol and construct tables in [@sec:symbols_glossary], and full source details in [@sec:references]. Read in this order, the manuscript moves from why a standard notation is needed, through how GNN realizes it across model kinds, to the scoped evidence available for the notation and its implementations.
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-1-end-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-1-end-->
 ```
 
 
@@ -62,7 +62,7 @@ The remainder of this manuscript is organized to move from language to mechanism
 
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-2-start-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-2-start-->
 ```
 
 # System Context {#sec:system_context}
@@ -139,7 +139,7 @@ $$
 Q(\pi) \;=\; \frac{E_\pi \exp\!\left[-\gamma G(\pi)\right]}{\sum_{\pi'} E_{\pi'} \exp\!\left[-\gamma G(\pi')\right]}
 $$ {#eq:policy}
 
-The discrete categorical kind is the language's original and most densely exercised target: 29 of the 38 exemplar specifications in the corpus are discrete-state. The discrete family folder holds the kind's core set — from minimal `markov_chain.md` and `hmm_baseline.md` fixtures through epistemic planning (`tmaze_epistemic.md`) and deep planning horizons (`deep_planning_horizon.md`) to the canonical full agent (`actinf_pomdp_agent.md`) — and further categorical fixtures populate the basics, precision, structured, gridworld, and scaling-study corpora. The kind composes upward as well: multiple independent state factors (a factored model), per-level and per-agent matrix declarations ([@sec:structural_variants]), and Dirichlet priors that turn a declared matrix into a learned latent ([@sec:limitations_next_steps]) are all extensions of this same categorical substrate.
+The discrete categorical kind is the language's original and most densely exercised target: 29 of the 39 exemplar specifications in the corpus are discrete-state. The discrete family folder holds the kind's core set — from minimal `markov_chain.md` and `hmm_baseline.md` fixtures through epistemic planning (`tmaze_epistemic.md`) and deep planning horizons (`deep_planning_horizon.md`) to the canonical full agent (`actinf_pomdp_agent.md`) — and further categorical fixtures populate the basics, precision, structured, gridworld, and scaling-study corpora. The kind composes upward as well: multiple independent state factors (a factored model), per-level and per-agent matrix declarations ([@sec:structural_variants]), and Dirichlet priors that turn a declared matrix into a learned latent ([@sec:limitations_next_steps]) are all extensions of this same categorical substrate.
 
 Recent work continues to refine how expected-free-energy objectives relate to variational inference and to alternative but equivalent formulations, which is why GNN keeps the objects of [@eq:generative_model] through [@eq:policy] explicit in the notation rather than burying them in backend-specific code [@champion2024reframingEfe;@nuijten2026typeInference;@nuijten2026efePlanningVariational]. A `ModelParameters` section fixes the scalars those objects depend on — factor cardinalities and precision terms — while a `Time` section declares whether the model is static or dynamic and, if dynamic, how the horizon $T$ and its discretization are organized. Because every one of these sections is explicit text, a GNN file is at once human-readable, diffable under version control, and unambiguous to a parser — the property that makes the declared source contract inspectable; numerical replay also depends on the chosen inference and runtime configuration.
 
@@ -163,7 +163,7 @@ $$
 u_t \;=\; k \,\bigl(\mu^\star - \mu_t\bigr), \qquad \mu_t = \mathbb{E}\!\left[x_t \,\middle|\, y_{1:t}\right]
 $$ {#eq:closed_loop}
 
-This is how `input/gnn_files/continuous/continuous_navigation.md` is built: a two-dimensional navigator whose position persists between steps ($F = I$), whose observation is a noisy identity readout of that position, and whose control input pushes the believed position toward `goal_mean` with gain `control_gain`. The other continuous exemplars are passive: `predictive_coding_agent.md` and `stochastic_dynamics.md` filter without steering. In total the corpus ships 9 continuous linear-Gaussian exemplars in the continuous family folder. Symbolically the kind reuses letters the discrete vocabulary already claims — most prominently `F`, which names the state-transition matrix here and the variational free energy in [@eq:vfe] — and [@sec:symbols_glossary] resolves that collision by scoping each symbol table to its kind.
+This is how `input/gnn_files/continuous/continuous_navigation.md` is built: a two-dimensional navigator whose position persists between steps ($F = I$), whose observation is a noisy identity readout of that position, and whose control input pushes the believed position toward `goal_mean` with gain `control_gain`. The other continuous exemplars are passive: `predictive_coding_agent.md` and `stochastic_dynamics.md` filter without steering. In total the corpus ships 10 continuous linear-Gaussian exemplars in the continuous family folder. Symbolically the kind reuses letters the discrete vocabulary already claims — most prominently `F`, which names the state-transition matrix here and the variational free energy in [@eq:vfe] — and [@sec:symbols_glossary] resolves that collision by scoping each symbol table to its kind.
 
 ### Multi-Agent, Hierarchical, and Structural Kinds {#sec:structural_variants}
 
@@ -199,7 +199,7 @@ The governance runs in the direction the taxonomy promises: classification is co
 
 The pipeline is a fixed sequence of 25 numbered steps, 0–24, each a self-contained stage that consumes the artifacts of its predecessors and writes typed outputs for those that follow. Early steps parse and type-check the GNN text and validate it against the language schema; middle steps render visualizations, export the model to executable backends, and run simulations; later steps perform analysis, reporting, and downstream integration. The declared orchestration prerequisites among the steps form the directed acyclic graph shown in [@fig:pipeline]. The graph records which steps must precede others; artifact receipts separately identify source inputs and produced files, including optional enrichments.
 
-![The 25-step GNN processing pipeline as a directed acyclic graph, arranged in rowwise topological order and colored by execution phase (legend above the nodes). Each node is the thin step orchestrator under `src/gnn/` named in [@tbl:pipeline_steps]; each arrow is a required orchestration prerequisite parsed from the Data Dependency Graph block of `src/gnn/STEP_INDEX.md`, which mirrors the live step registry. Parsing (Step 3) precedes many later steps. Optional artifact enrichments are documented separately and are not shown as required edges. The figure is generated from `src/gnn/STEP_INDEX.md` at commit dfbcff0cc; its footer restates the step count, the number of required prerequisites, and the layout rule.](../../output/figures/gnn_pipeline_dag.png){#fig:pipeline width=90%}
+![The 25-step GNN processing pipeline as a directed acyclic graph, arranged in rowwise topological order and colored by execution phase (legend above the nodes). Each node is the thin step orchestrator under `src/gnn/` named in [@tbl:pipeline_steps]; each arrow is a required orchestration prerequisite parsed from the Data Dependency Graph block of `src/gnn/STEP_INDEX.md`, which mirrors the live step registry. Parsing (Step 3) precedes many later steps. Optional artifact enrichments are documented separately and are not shown as required edges. The figure is generated from `src/gnn/STEP_INDEX.md` at commit e1d1a590e; its footer restates the step count, the number of required prerequisites, and the layout rule.](../../output/figures/gnn_pipeline_dag.png){#fig:pipeline width=90%}
 
 The per-step responsibilities are enumerated in [@tbl:pipeline_steps]; each row names a step and the transformation it owns within the 0–24 range.
 
@@ -238,12 +238,12 @@ This staged design keeps the architecture modular. The implementation is organiz
 
 The reason for separating a single written language from a multi-stage pipeline is the design goal GNN calls the Triple Play: one model specification, three coordinated modes of existence. The same GNN text supplies a human-readable model description, the declared state-space and factor structure for graphical visualization, and input to supported executable renderers. Source identity and validation receipts connect these representations to the authored model; runtime readiness and model-kind admission govern which simulations can execute. @fig:triple_play depicts these three faces and the shared specification at their center.
 
-![The Triple Play: one GNN text specification (left) and its three coordinated projections (right) — the human-readable text form, graphical model visualizations, and executable simulation code. All three arrows originate at the same source box to show their shared parsed input. Source binding, parameter validation, and semantic-fidelity checks provide evidence of agreement among the projections. The executable node summarizes 12 of 12 registered render targets with implemented Step 12 execution adapters and previews three by name; execution depends on runtime readiness, admitted model kind, and a successful source-bound run receipt. Counts are producer tokens at commit dfbcff0cc, and the panel is generated by `scripts/manuscript_fig_triple_play.py`. Take-away: a model is authored once and then read, seen, and run from that single source.](../../output/figures/gnn_triple_play.png){#fig:triple_play width=70%}
+![The Triple Play: one GNN text specification (left) and its three coordinated projections (right) — the human-readable text form, graphical model visualizations, and executable simulation code. All three arrows originate at the same source box to show their shared parsed input. Source binding, parameter validation, and semantic-fidelity checks provide evidence of agreement among the projections. The executable node summarizes 12 of 12 registered render targets with implemented Step 12 execution adapters and previews three by name; execution depends on runtime readiness, admitted model kind, and a successful source-bound run receipt. Counts are producer tokens at commit e1d1a590e, and the panel is generated by `scripts/manuscript_fig_triple_play.py`. Take-away: a model is authored once and then read, seen, and run from that single source.](../../output/figures/gnn_triple_play.png){#fig:triple_play width=70%}
 
 Each face derives from a shared authored source. The text is the contract a researcher reads and reviews; the visualizations expose the declared factor-graph structure for inspection and communication; and the executable rendering targets inference frameworks, connecting the written specification to the discrete message-passing libraries for categorical Active Inference [@heins2022], to the reactive message-passing and probabilistic-programming engines that carry the linear-Gaussian kind, and to the broader tooling ecosystem for compositional model representation [@defelice2021]. Common source identity makes the projections traceable, while parameter values, tensor orientation, model-kind semantics, and source-bound numerical results still require validation to establish agreement. A supported model can therefore be read, seen, and run without authoring a separate specification for each purpose [@smith2022]. The Triple Play is governed per kind: renderers and executors apply the computed classification and their declared capability boundaries, and receipts distinguish successful, unsupported, skipped, partial, and failed outcomes for the selected model.
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-2-end-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-2-end-->
 ```
 
 
@@ -253,7 +253,7 @@ Each face derives from a shared authored source. The text is the contract a rese
 
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-3-start-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-3-start-->
 ```
 
 # Methods {#sec:methods}
@@ -262,7 +262,7 @@ The GeneralizedNotationNotation (GNN) method carries a plain-text model specific
 
 ## Parsing and Multi-Format Export
 
-The pipeline begins by ingesting GNN model files written in the plain-text notation. Parsing (step 3) reads each specification, builds an internal model representation, and re-emits it across a family of structured export formats so that downstream tools, and human readers, can consume the same model through whichever serialization they prefer. The corpus that exercises this stage spans 38 example model files organized into 12 curated corpora, and it spans the model kinds of [@sec:model_kinds]: minimal perception fixtures used to test the parser, discrete categorical agents, continuous linear-Gaussian state-space models, multi-agent swarms, hierarchical two-level compositions, and the scaling-study corpus that grows a single family across state-space sizes. The presence of hierarchical fixtures should be read as a coverage target, not as a claim that every current backend fully executes every hierarchical formulation; scaling hierarchical active inference remains an active research problem in its own right [@rangarajan2026hierarchicalSuccessor]. Treating parsing and export as a single round-trippable stage means a model authored once becomes immediately available as a typed object, a normalized text form, and machine-readable serializations without any manual re-encoding — and because the typed object carries the declared matrix vocabulary verbatim, the kind classification of [@sec:model_kinds] is computed from the parse result rather than re-derived downstream.
+The pipeline begins by ingesting GNN model files written in the plain-text notation. Parsing (step 3) reads each specification, builds an internal model representation, and re-emits it across a family of structured export formats so that downstream tools, and human readers, can consume the same model through whichever serialization they prefer. The corpus that exercises this stage spans 39 example model files organized into 12 curated corpora, and it spans the model kinds of [@sec:model_kinds]: minimal perception fixtures used to test the parser, discrete categorical agents, continuous linear-Gaussian state-space models, multi-agent swarms, hierarchical two-level compositions, and the scaling-study corpus that grows a single family across state-space sizes. The presence of hierarchical fixtures should be read as a coverage target, not as a claim that every current backend fully executes every hierarchical formulation; scaling hierarchical active inference remains an active research problem in its own right [@rangarajan2026hierarchicalSuccessor]. Treating parsing and export as a single round-trippable stage means a model authored once becomes immediately available as a typed object, a normalized text form, and machine-readable serializations without any manual re-encoding — and because the typed object carries the declared matrix vocabulary verbatim, the kind classification of [@sec:model_kinds] is computed from the parse result rather than re-derived downstream.
 
 ## Type Checking and Validation
 
@@ -314,7 +314,7 @@ Because rendering is kind-aware, the registry is best read as a capability matri
 
 The registry surface of these backends — registry key, display name, implementation language, and which of them the cross-framework gate compares — is summarized in @fig:backend_matrix; the family-by-backend coverage itself is shown in @fig:family_matrix.
 
-![The GNN rendering backend registry as a table: one row per registered backend, with its registry key, display name, implementation language, whether a render-output subdirectory exists under `src/gnn/render/`, and its role in the cross-framework reference comparison. Amber rows are the backends the reliability gate profiles for the continuous family; the tan row (Stan, ngc-learn) is declared by that family but sits outside the maintained set, so it is never profiled; a red Render-Subdir cell would mean a registry entry with no subdirectory. The table is read directly from `src/gnn/render/framework_registry.py` and the model-family manifest at commit dfbcff0cc, and its footer summarizes the row counts. Take-away: registration, render presence, and profiling status are three different claims, and the table keeps them apart.](../../output/figures/gnn_backend_capability_matrix.png){#fig:backend_matrix width=85%}
+![The GNN rendering backend registry as a table: one row per registered backend, with its registry key, display name, implementation language, whether a render-output subdirectory exists under `src/gnn/render/`, and its role in the cross-framework reference comparison. Amber rows are the backends the reliability gate profiles for the continuous family; the tan row (Stan, ngc-learn) is declared by that family but sits outside the maintained set, so it is never profiled; a red Render-Subdir cell would mean a registry entry with no subdirectory. The table is read directly from `src/gnn/render/framework_registry.py` and the model-family manifest at commit e1d1a590e, and its footer summarizes the row counts. Take-away: registration, render presence, and profiling status are three different claims, and the table keeps them apart.](../../output/figures/gnn_backend_capability_matrix.png){#fig:backend_matrix width=85%}
 
 ### Rendering by Model Kind
 
@@ -354,14 +354,14 @@ The final group of stages turns execution results into interpretable evidence. A
 
 ## Reproducibility and Auto-Injection
 
-Every count reported in this manuscript is emitted by the producer `scripts/z_generate_manuscript_variables.py` from the repository state at commit dfbcff0cc, not typed by hand. The producer reads that commit's source surfaces directly — the step modules, the source tree, the model-family manifest, and the framework registry — together with the project's maintained ledgers, notably the Model Context Protocol tool audit (`src/gnn/mcp/audit_report.json`, itself regenerated by the test suite). From these it emits a manifest of named tokens — counts of pipeline steps and their modules, source packages and files, model families, backends, example files partitioned by model kind, tests, and tools — plus the two capability tables this manuscript injects: the model-kind table ([@tbl:model_kinds]) and the framework capability matrix ([@tbl:framework_capability]). The renderer substitutes the tokens into the prose at build time. Filesystem-derived counts are recomputed on every run; ledger-derived counts (such as the backend registry) are re-read from a fixed repository state, so a fixed repository state yields the same values, and authors are prohibited from hard-coding any number that has a corresponding token. This makes the manuscript a faithful, regenerable description of the system it documents: when the 25-step pipeline, the 12 rendering backends, or the 38-file example corpus change — or when the discrete-to-continuous exemplar balance shifts — the reported numbers change with them on the next build, and `scripts/check_manuscript_tokens.py` fails the build if a section reintroduces a literal that a token already owns.
+Every count reported in this manuscript is emitted by the producer `scripts/z_generate_manuscript_variables.py` from the repository state at commit e1d1a590e, not typed by hand. The producer reads that commit's source surfaces directly — the step modules, the source tree, the model-family manifest, and the framework registry — together with the project's maintained ledgers, notably the Model Context Protocol tool audit (`src/gnn/mcp/audit_report.json`, itself regenerated by the test suite). From these it emits a manifest of named tokens — counts of pipeline steps and their modules, source packages and files, model families, backends, example files partitioned by model kind, tests, and tools — plus the two capability tables this manuscript injects: the model-kind table ([@tbl:model_kinds]) and the framework capability matrix ([@tbl:framework_capability]). The renderer substitutes the tokens into the prose at build time. Filesystem-derived counts are recomputed on every run; ledger-derived counts (such as the backend registry) are re-read from a fixed repository state, so a fixed repository state yields the same values, and authors are prohibited from hard-coding any number that has a corresponding token. This makes the manuscript a faithful, regenerable description of the system it documents: when the 25-step pipeline, the 12 rendering backends, or the 39-file example corpus change — or when the discrete-to-continuous exemplar balance shifts — the reported numbers change with them on the next build, and `scripts/check_manuscript_tokens.py` fails the build if a section reintroduces a literal that a token already owns.
 
 ### Bounded file processing
 
 Parsing/serialization and type checking accept an explicit per-step file-worker limit. Spawned processes compute file outcomes while the parent owns publication in the frozen model-selection order. Admission retains source identities and rejects noninteger or out-of-range limits before output setup. Scheduling and publication check cancellation and the run deadline, and abnormal process completion triggers cleanup of the owned children. Independent pipeline-step concurrency has a separate limit, so concurrently running steps may each create a file pool; neither setting specifies CPU affinity or a global operating-system quota. The default remains serial because worker startup and serialization can exceed the cost of processing small files. Profiling records unprofiled wall times, separate parent and terminated-child CPU times, runtime/source/input identities and the PIDs that actually return results; deterministic traces describe their calling thread rather than unobserved worker internals.
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-3-end-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-3-end-->
 ```
 
 
@@ -371,18 +371,18 @@ Parsing/serialization and type checking accept an explicit per-step file-worker 
 
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-4-start-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-4-start-->
 ```
 
 # Artifacts and Evidence {#sec:artifacts_evidence}
 
-This section reports what the project has actually produced and how each quantitative claim is grounded. Every number below is substituted at render time from the deterministic producer, which reads the repository state at commit dfbcff0cc, so each figure here is regenerated from the artifacts it describes rather than transcribed.
+This section reports what the project has actually produced and how each quantitative claim is grounded. Every number below is substituted at render time from the deterministic producer, which reads the repository state at commit e1d1a590e, so each figure here is regenerated from the artifacts it describes rather than transcribed.
 
 ## Model-Family Coverage
 
-GNN ships a curated corpus of model families that exercise the language across the difficulty gradient from minimal parser fixtures to full multi-agent and scaling studies. The manifest registers 9 families (basics, discrete, continuous, hierarchical, multiagent, precision, structured, gridworld, scaling-study) across 9 target directories, and `input/gnn_files` holds 12 corpus directories containing 38 concrete example models. The three sets are not coextensive, and the manuscript does not treat them as one. Registered in no family: `input/gnn_files/learning`, `input/gnn_files/recursive`, `input/gnn_files/thrml` (3 of the 12 corpus directories), covered in [@sec:limitations_next_steps]. Registered but outside the scanned tree: none, because all 9 target directories are themselves `input/gnn_files` corpus directories. Each family declares the simulation frameworks it is meant to drive, which is what lets the same text model fan out across the executable-model leg of the Triple Play [@gnn2023]. The families and their declared frameworks are enumerated below.
+GNN ships a curated corpus of model families that exercise the language across the difficulty gradient from minimal parser fixtures to full multi-agent and scaling studies. The manifest registers 9 families (basics, discrete, continuous, hierarchical, multiagent, precision, structured, gridworld, scaling-study) across 9 target directories, and `input/gnn_files` holds 12 corpus directories containing 39 concrete example models. The three sets are not coextensive, and the manuscript does not treat them as one. Registered in no family: `input/gnn_files/learning`, `input/gnn_files/recursive`, `input/gnn_files/thrml` (3 of the 12 corpus directories), covered in [@sec:limitations_next_steps]. Registered but outside the scanned tree: none, because all 9 target directories are themselves `input/gnn_files` corpus directories. Each family declares the simulation frameworks it is meant to drive, which is what lets the same text model fan out across the executable-model leg of the Triple Play [@gnn2023]. The families and their declared frameworks are enumerated below.
 
-The exemplar corpus partitions cleanly by model kind, and the partition is itself a token: 29 of the 38 example specifications are discrete-state — the discrete categorical kind and its composed variants — and 9 are continuous linear-Gaussian specifications in the continuous family folder. The cold-start index `input/gnn_files/INDEX.md` catalogues every exemplar with its kind, its task folder, and a suggested reading order, and is the fastest surface for a reader who wants to move from this prose to a runnable file of a given kind.
+The exemplar corpus partitions cleanly by model kind, and the partition is itself a token: 29 of the 39 example specifications are discrete-state — the discrete categorical kind and its composed variants — and 10 are continuous linear-Gaussian specifications in the continuous family folder. The cold-start index `input/gnn_files/INDEX.md` catalogues every exemplar with its kind, its task folder, and a suggested reading order, and is the fastest surface for a reader who wants to move from this prose to a runnable file of a given kind.
 
 Families that declare a capability axis (the continuous family declares the continuous-render axis) carry a backend split in [@tbl:model_families] generated directly from the registry's declared capability flags. This avoids a manually copied registry table; actual model admission still depends on the full parameter and composition checks recorded by the renderer. The generated flags describe declared capability, while current-run receipts record which selected backends were actually attempted, unsupported, skipped, or failed. The profiled cross-framework reference uses the continuous family, so it does not establish categorical coverage across the registry ([@tbl:framework_capability] is the per-kind key).
 
@@ -401,7 +401,7 @@ Families that declare a capability axis (the continuous family declares the cont
 
 The family-by-framework structure is shown in @fig:family_matrix, which renders the coverage matrix directly from the family registry rather than from a hand-maintained table.
 
-![Model-family coverage across the registered rendering backends: one row per family from `input/model_family_manifest.json`, one column per backend from `src/gnn/render/framework_registry.py`, and a green cell wherever the family declares that backend in its `frameworks` field. The right-hand count states how many backends each family declares; the grid is deliberately sparse — most families declare a single backend, and only continuous, discrete, and gridworld declare several. Read it as declared intent, not as profiled outcomes: the gates described below supply the outcomes. The matrix is generated from the two registries at commit dfbcff0cc.](../../output/figures/gnn_family_framework_matrix.png){#fig:family_matrix width=85%}
+![Model-family coverage across the registered rendering backends: one row per family from `input/model_family_manifest.json`, one column per backend from `src/gnn/render/framework_registry.py`, and a green cell wherever the family declares that backend in its `frameworks` field. The right-hand count states how many backends each family declares; the grid is deliberately sparse — most families declare a single backend, and only continuous, discrete, and gridworld declare several. Read it as declared intent, not as profiled outcomes: the gates described below supply the outcomes. The matrix is generated from the two registries at commit e1d1a590e.](../../output/figures/gnn_family_framework_matrix.png){#fig:family_matrix width=85%}
 
 These families are not illustrative prose: they are the inputs over which the parser, the type checker, and the cross-framework code generators are exercised, and they are the substrate for the reliability gates described next.
 
@@ -433,11 +433,11 @@ Context admission is limited to reviewed Ollama GGUF runtime contracts. It binds
 
 ## Repository Scale
 
-The repository's scale is itself evidence of the surface that the gates and pipeline cover, and it is reported in @fig:repo_metrics directly from the tracked files at commit dfbcff0cc.
+The repository's scale is itself evidence of the surface that the gates and pipeline cover, and it is reported in @fig:repo_metrics directly from the tracked files at commit e1d1a590e.
 
-![Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered backends, render-target execution adapters, Model Context Protocol tools, source packages, test files, example models, and documentation files. Every bar is annotated with its exact value, and every value is a producer token read from `output/data/manuscript_variables.json` at commit dfbcff0cc — the same token map that substitutes the prose counts. The figure-freshness suite binds the committed image digest and its recorded producer inputs and counts; semantic content and visual correctness require their own review. The two backend bars are deliberately distinct: *registered backends* (12) counts render targets, *render-target adapters* (12) counts the render-target subset with implemented Step 12 execution adapters. It excludes the separate execution-only Lean bridge and is not a count of observed native runs. Read the chart as the scale of the surface the pipeline maintains, not as a quality measure.](../../output/figures/gnn_repo_metrics.png){#fig:repo_metrics width=80%}
+![Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered backends, render-target execution adapters, Model Context Protocol tools, source packages, test files, example models, and documentation files. Every bar is annotated with its exact value, and every value is a producer token read from `output/data/manuscript_variables.json` at commit e1d1a590e — the same token map that substitutes the prose counts. The figure-freshness suite binds the committed image digest and its recorded producer inputs and counts; semantic content and visual correctness require their own review. The two backend bars are deliberately distinct: *registered backends* (12) counts render targets, *render-target adapters* (12) counts the render-target subset with implemented Step 12 execution adapters. It excludes the separate execution-only Lean bridge and is not a count of observed native runs. Read the chart as the scale of the surface the pipeline maintains, not as a quality measure.](../../output/figures/gnn_repo_metrics.png){#fig:repo_metrics width=80%}
 
-The test suite comprises 706 test files containing 7461 test functions, exercising a source base of 794 Python files across 45 packages (241418 lines of source). The pipeline's step modules — the thin orchestrators named in [@tbl:pipeline_steps] — number 25, one per numbered step. The Model Context Protocol surface — which exposes GNN's capabilities to external agents and tools — provides 165 tools across 36 modules. The pipeline itself runs as 25 steps (0–24), and 7 figure artifacts from the rendering of figures, models, and reports are committed under `output/`, of which 7 are the manuscript's own.
+The test suite comprises 708 test files containing 7501 test functions, exercising a source base of 798 Python files across 45 packages (242927 lines of source). The pipeline's step modules — the thin orchestrators named in [@tbl:pipeline_steps] — number 25, one per numbered step. The Model Context Protocol surface — which exposes GNN's capabilities to external agents and tools — provides 165 tools across 36 modules. The pipeline itself runs as 25 steps (0–24), and 7 figure artifacts from the rendering of figures, models, and reports are committed under `output/`, of which 7 are the manuscript's own.
 
 ## Claim Discipline
 
@@ -451,7 +451,7 @@ A claim is manuscript-ready only when it is bound to a verifiable artifact. Conc
 The pipeline records its own evidence trail under `output/`. The run-level summary is written to `output/PIPELINE_REPORT.md`, and the per-step execution record — including which steps ran, their status, and their artifacts — is captured in `output/00_pipeline_summary`. Readers should use those current-run records and their identity bindings to assess actual pipeline outcomes. Repository counts and declared capability tokens describe the source surface and do not by themselves establish native execution or scientific correctness. When a value would otherwise need a literal number with no producer behind it, the discipline is to omit the number rather than to hard-code it.
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-4-end-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-4-end-->
 ```
 
 
@@ -461,7 +461,7 @@ The pipeline records its own evidence trail under `output/`. The run-level summa
 
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-5-start-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-5-start-->
 ```
 
 # Reproducibility {#sec:reproducibility}
@@ -573,7 +573,7 @@ Commit the manifest with the new publication and Stage 04 evidence. The schedule
 
 The render needs a LaTeX installation providing the packages listed in `docs/manuscript/preamble.md` plus `seqsplit`; the template guards `seqsplit` with `\IfFileExists`, so a missing copy degrades rather than failing the build.
 
-Because the variables file is regenerated before rendering, the counts in the rendered PDF track the repository state at the commit recorded in `output/data/manuscript_variables.json` (dfbcff0cc): a code change that alters, for example, the test inventory (706 test files, 7461 test functions) propagates into the prose on the next regeneration without any manual editing.
+Because the variables file is regenerated before rendering, the counts in the rendered PDF track the repository state at the commit recorded in `output/data/manuscript_variables.json` (e1d1a590e): a code change that alters, for example, the test inventory (708 test files, 7501 test functions) propagates into the prose on the next regeneration without any manual editing.
 
 ## Reproducibility Contract
 
@@ -584,7 +584,7 @@ Because the variables file is regenerated before rendering, the counts in the re
 - Record the exact verification commands — the smoke run, the acceptance and fidelity gates, and `just lint` — before marking this manuscript publication-ready.
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-5-end-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-5-end-->
 ```
 
 
@@ -594,7 +594,7 @@ Because the variables file is regenerated before rendering, the counts in the re
 
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-6-start-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-6-start-->
 ```
 
 # Limitations and Next Steps {#sec:limitations_next_steps}
@@ -618,7 +618,7 @@ The roadmap is concrete and staged. The current software version is GNN 5.1.0. I
 The next major release pushes toward bounded autonomy, and it is gated behind the 3.0.0 orchestration work for good reason. The intent is to promote today's proposal-only candidate-scoring machinery — which already ranks candidate patches using the existing validators, model-family ledgers, and interpretability reports — toward *reviewed self-editing of GNN files*. Crucially, the design keeps a human in the loop: edits are proposed and applied only after explicit user approval, with no automatic source mutation, and the autonomy is wrapped in policy, rollback, and audit controls before any self-modifying or distributed action is permitted. This continues the same principle that governs the rest of the system, in the lineage of active-inference accounts of self-organizing systems that act to minimize free energy under explicit generative models [@friston2010; @parr2022]: an agent should expand its license to act only in proportion to the reviewability of what it does. The next-release items are not claimed as complete here; they are the recorded direction of travel, and each will be evidenced by its own gates when it lands, just as the 3.0.0 contracts are evidenced by theirs today. On the model-kind axis the same staging applies: extending native hierarchical rendering beyond the two-level strategies, broadening continuous reach across the remaining registered backends, and populating the reserved recursive corpus each arrive with their own gate evidence rather than by prose assertion.
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-6-end-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-6-end-->
 ```
 
 
@@ -628,16 +628,16 @@ The next major release pushes toward bounded autonomy, and it is gated behind th
 
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-7-start-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-7-start-->
 ```
 
 # Supplemental Source Surface {#sec:source_surface}
 
 This supplement records the top-level source surfaces a reader or reviewer should inspect before turning any prose in the main manuscript into a verifiable claim. Each surface below is authored material under version control; the generated artifacts it produces are described separately so that the boundary between hand-written source and reproducible output stays explicit.
 
-The `src/` tree is the executable core of GNN. It is organized into 45 Python packages spanning 794 source files and roughly 241418 lines of code. Alongside these packages sit the 25 top-level step modules (0–24) that implement the numbered pipeline as thin orchestrators delegating into the packages, each module owning one stage of the progression from a parsed GNN text model through visualization, type checking, code export, and executable cognitive simulation. A claim about declared pipeline behavior should identify its source implementation; a claim about actual execution additionally requires a source-bound command and result receipt.
+The `src/` tree is the executable core of GNN. It is organized into 45 Python packages spanning 798 source files and roughly 242927 lines of code. Alongside these packages sit the 25 top-level step modules (0–24) that implement the numbered pipeline as thin orchestrators delegating into the packages, each module owning one stage of the progression from a parsed GNN text model through visualization, type checking, code export, and executable cognitive simulation. A claim about declared pipeline behavior should identify its source implementation; a claim about actual execution additionally requires a source-bound command and result receipt.
 
-The `input/` tree holds the model corpora that exercise the pipeline. Its `gnn_files/` subtree contains 12 corpus directories organized by model family, together totaling 38 example files — 29 discrete-state specifications and 9 continuous linear-Gaussian specifications, the partition the manuscript's model-kind accounting uses ([@sec:model_kinds]). The cold-start index `input/gnn_files/INDEX.md` catalogues every exemplar with its kind and task folder, and the `recursive/` directory is reserved for bounded `--autonomous` proposal-loop runs, holding no committed models. Every model file under `input/` lives in that subtree, so the 38-file count covers the whole tree. A `model_family_manifest.json` enumerates the 9 registered families and their target directories. This manifest is the authoritative registry that downstream steps and the manuscript variable producer read when they report family counts and cross-framework coverage; it should be consulted directly rather than inferred from directory listings.
+The `input/` tree holds the model corpora that exercise the pipeline. Its `gnn_files/` subtree contains 12 corpus directories organized by model family, together totaling 39 example files — 29 discrete-state specifications and 10 continuous linear-Gaussian specifications, the partition the manuscript's model-kind accounting uses ([@sec:model_kinds]). The cold-start index `input/gnn_files/INDEX.md` catalogues every exemplar with its kind and task folder, and the `recursive/` directory is reserved for bounded `--autonomous` proposal-loop runs, holding no committed models. Every model file under `input/` lives in that subtree, so the 39-file count covers the whole tree. A `model_family_manifest.json` enumerates the 9 registered families and their target directories. This manifest is the authoritative registry that downstream steps and the manuscript variable producer read when they report family counts and cross-framework coverage; it should be consulted directly rather than inferred from directory listings.
 
 The `scripts/` tree contains the thin orchestrators that gate and reproduce the project. These include acceptance scripts that evaluate scoped pipeline runs, reliability gates that check selected semantic and coverage contracts, and the manuscript variable producer (`src/gnn/manuscript/variables.py` driven from this layer) that emits the double-brace `{{...}}` token values consumed throughout the manuscript. Treating these scripts as the source of reproduction commands keeps reported numbers bound to what the code actually computes.
 
@@ -656,7 +656,7 @@ A repository that applies GNN records the upstream revision it consumes in a pin
 `src/`, `scripts/`, `input/`, and `docs/` are authored and reviewed. The `output/` tree holds generated artifacts and retained run evidence. Its `manuscript/` directory contains token-substituted copies of the authored `docs/manuscript/` sections. Regenerate build artifacts when their inputs change and retain the receipts that document historical outcomes. The commands in [@sec:reproducibility] reproduce per-stage artifacts, the token map and hydrated sections, the 7 manuscript figures, and the template's PDF, HTML, slides, and validation reports. `scripts/check_manuscript_tokens.py` checks that derived quantities use tokens. The resulting 97-entry map is committed at `output/data/manuscript_variables.json`. The same gate cross-checks the citation keys in the prose against `docs/manuscript/references.bib`. This manuscript quotes no private or unpublished material.
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-7-end-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-7-end-->
 ```
 
 
@@ -666,7 +666,7 @@ A repository that applies GNN records the upstream revision it consumes in a pin
 
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-8-start-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-8-start-->
 ```
 
 # Symbols and Glossary {#sec:symbols_glossary}
@@ -772,7 +772,7 @@ executed across the 25-step pipeline (0–24)
 without restating its mathematics [@gnn2023; @heins2022; @defelice2021].
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-8-end-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-8-end-->
 ```
 
 
@@ -782,7 +782,7 @@ without restating its mathematics [@gnn2023; @heins2022; @defelice2021].
 
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-9-start-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-9-start-->
 ```
 
 # References {#sec:references}
@@ -790,5 +790,5 @@ without restating its mathematics [@gnn2023; @heins2022; @defelice2021].
 Entries below are resolved by Pandoc from [the manuscript bibliography](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/blob/main/docs/manuscript/references.bib) at render time. `scripts/check_manuscript_tokens.py` checks that every citation key is defined there.
 
 ```{=html}
-<!--template-web-source-d7ba469cbe9b25b9b3b17f5252ff9341e18896926b890b742524d6887756a390-9-end-->
+<!--template-web-source-2a607e9fdc1d4fcad3a7fade12235a8e4c5f8d4a94be81d792521d31852a5049-9-end-->
 ```

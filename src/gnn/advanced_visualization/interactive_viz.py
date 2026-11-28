@@ -159,12 +159,23 @@ def _generate_interactive_plotly_dashboard(
             fig.write_html(str(output_file))
             attempt.output_files.append(str(output_file))
 
+        if "json" in export_formats:
+            output_file = output_dir / f"{model_name}_interactive_dashboard.json"
+            fig.write_json(str(output_file))
+            attempt.output_files.append(str(output_file))
+
         if "png" in export_formats:
             output_file = output_dir / f"{model_name}_interactive_dashboard.png"
             fig.write_image(str(output_file), width=1200, height=800)
             attempt.output_files.append(str(output_file))
 
-        attempt.status = "success"
+        if attempt.output_files:
+            attempt.status = "success"
+        else:
+            attempt.status = "failed"
+            attempt.error_message = (
+                "No supported interactive export format was requested"
+            )
 
     except Exception as e:
         logger.error(f"Failed to generate interactive dashboard for {model_name}: {e}")

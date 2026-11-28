@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from gnn.render.admission import admit_simulation_parameters
 from gnn.render.framework_registry import get_pomdp_framework_configs
 from gnn.utils.config_io.code_metrics import count_code_metrics
 
@@ -54,6 +55,17 @@ class _ProcessFlowMixin(_POMDPProcessorSupportMixin):
                 for name, spec in self.framework_configs.items()
                 if not spec.get("experimental", False)
             ]
+        command = admit_simulation_parameters(
+            kwargs.get("simulation_params", {}), frameworks=frameworks
+        )
+        model_parameters = pomdp_space.model_parameters or {}
+        authored = (
+            admit_simulation_parameters(model_parameters.get("simulation_params", {}))
+            if "thrml" in frameworks
+            else {}
+        )
+        options = {**authored.get("thrml", {}), **command.get("thrml", {})}
+        simulation = {"thrml": options} if options else {}
 
         results: dict[Any, Any] = {}
         overall_success = True
@@ -85,8 +97,16 @@ class _ProcessFlowMixin(_POMDPProcessorSupportMixin):
         for framework in frameworks:
             try:
                 self.logger.info(f"Processing framework: {framework}")
+                framework_kwargs = dict(kwargs)
+                if (
+                    "simulation_params" in model_parameters
+                    or "simulation_params" in kwargs
+                ):
+                    framework_kwargs["simulation_params"] = (
+                        simulation if framework == "thrml" else {}
+                    )
                 framework_result = self._process_single_framework(
-                    pomdp_space, framework, gnn_file_path, **kwargs
+                    pomdp_space, framework, gnn_file_path, **framework_kwargs
                 )
 
                 results[framework] = framework_result

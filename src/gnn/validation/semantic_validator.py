@@ -503,9 +503,20 @@ def process_semantic_validation(
         else:
             file_path = str(model_data)
             content = Path(model_data).read_text(encoding="utf-8")
+        validate_probabilities = bool(kwargs.get("strict_probabilities", False))
+        if (
+            validate_probabilities
+            and isinstance(model_data, dict)
+            and not model_data.get("raw_sections")
+        ):
+            content = _with_structured_probabilities(content, model_data)
         result = validate_content(
-            content, validation_level=kwargs.get("validation_level", "standard")
+            content,
+            validation_level=kwargs.get("validation_level", "standard"),
+            strict_probabilities=validate_probabilities,
         )
+        if isinstance(model_data, dict) and "probability_validation" in result:
+            result["probability_validation"]["line_origin"] = "reconstructed_model"
         result.update(file_path=file_path, file_name=display_file_name(file_path))
         return result
     except Exception as exc:
@@ -522,8 +533,116 @@ def process_semantic_validation(
         }
 
 
+def _with_structured_probabilities(content: str, model: dict[str, Any]) -> str:
+    """Expose numeric declarations carried without raw source section text."""
+    from gnn.extract.pomdp_support import find_section_heading
+
+    if find_section_heading(content, "InitialParameterization") is not None:
+        return content
+    values = model.get("initialparameterization") or model.get(
+        "initial_parameterization"
+    )
+    if not values:
+        parameters = model.get("parameters")
+        if isinstance(parameters, dict):
+            values = parameters
+        elif isinstance(parameters, list):
+            values = {
+                item["name"]: item["value"]
+                for item in parameters
+                if isinstance(item, dict)
+                and isinstance(item.get("name"), str)
+                and "value" in item
+            }
+    if not isinstance(values, dict):
+        return content
+    matrices = [
+        f"{key} = {value!r}"
+        for key, value in values.items()
+        if isinstance(key, str)
+        and re.fullmatch(r"(?:[ABCD](?:_\w+)?|[FHQR]|prior_mean|prior_cov)", key)
+    ]
+    if not matrices:
+        return content
+    parameters = dict(model.get("model_parameters") or {})
+    options = {
+        key: parameters.get(key, values.get(key))
+        for key in (
+            "num_hidden_states",
+            "num_states",
+            "num_obs",
+            "num_observations",
+            "num_actions",
+        )
+    }
+    for key in parameters.keys() | values.keys():
+        if isinstance(key, str) and re.fullmatch(
+            r"(?:[bB]_tensor_order|transition_tensor_order)(?:_\w+)?", key
+        ):
+            order = parameters.get(key, values.get(key))
+            if isinstance(order, str) and re.fullmatch(r"[\w -]+", order):
+                options[key] = order
+    return (
+        content
+        + "\n\n## InitialParameterization\n"
+        + "\n".join(matrices)
+        + "\n\n## ModelParameters\n"
+        + "\n".join(
+            f"{key}: {value}"
+            for key, value in options.items()
+            if type(value) is int
+            or isinstance(value, str)
+            and re.fullmatch(r"[\w -]+", value)
+        )
+    )
+
+
+def _probability_receipt(content: str) -> dict[str, Any]:
+    """Evaluate the same authored categorical contract as strict extraction."""
+    from gnn.extract.pomdp_extractor import extract_pomdp_from_content
+    from gnn.extract.pomdp_stochastic import DEFAULT_ATOL
+    from gnn.extract.pomdp_support import find_section_heading
+
+    data: dict[str, Any] = {
+        "contract": "gnn_strict_categorical_probabilities",
+        "absolute_tolerance": DEFAULT_ATOL,
+        "status": "not_applicable",
+        "diagnostics": [],
+        "line_origin": "source_text",
+    }
+    if find_section_heading(content, "InitialParameterization") is None:
+        return data
+    space, errors = extract_pomdp_from_content(
+        content,
+        on_error="collect",
+        strict_probabilities=True,
+        insert_default_c=False,
+    )
+    if errors:
+        data["status"] = "failed"
+        data["diagnostics"] = [
+            {
+                "code": error.code,
+                "message": error.message,
+                "line": error.line,
+                "section": error.section,
+            }
+            for error in errors
+        ]
+    elif (
+        space is not None
+        and space.model_kind == "discrete"
+        and any(re.fullmatch(r"[ABCD](?:_\w+)?", key) for key in (space.matrices or {}))
+    ):
+        data["status"] = "passed"
+    return data
+
+
 def validate_content(
-    content: str, validation_level: str = "standard"
+    content: str,
+    validation_level: str = "standard",
+    *,
+    strict_probabilities: bool = False,
 ) -> dict[str, Any]:
     """
     Validate raw GNN content text without any file I/O.
@@ -536,7 +655,13 @@ def validate_content(
     try:
         validator = SemanticValidator(validation_level)
         validation_result = validator.validate(content)
-        return {
+        probability = _probability_receipt(content) if strict_probabilities else None
+        if probability and probability["status"] == "failed":
+            validation_result["errors"].extend(
+                f"{row['code']}: {row['message']}" for row in probability["diagnostics"]
+            )
+            validation_result["is_valid"] = False
+        result = {
             "file_path": "unknown",
             "file_name": "unknown",
             "valid": validation_result["is_valid"],
@@ -545,6 +670,9 @@ def validate_content(
             "semantic_score": _calculate_semantic_score(validation_result),
             "recovery": False,
         }
+        if probability is not None:
+            result["probability_validation"] = probability
+        return result
     except Exception as e:
         return {
             "status": "error",

@@ -5,7 +5,7 @@ The orchestration lives here; the heavy rendering lives in the
 broken into small cohesive helpers so they can be exercised in isolation:
 
 * :func:`discover_visualization_files` — deterministic input discovery.
-* :func:`load_cached_artifacts` — mtime-gated PNG cache reuse.
+* :func:`load_cached_artifacts` — content-verified artifact reuse.
 * :func:`sample_parsed_data` (in :mod:`visualization.core.sampling`) — pure
   downsampling of large models.
 * :func:`collect_visualization_matrices` (in :mod:`visualization.matrix.extract`)
@@ -16,6 +16,7 @@ broken into small cohesive helpers so they can be exercised in isolation:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from pathlib import Path
@@ -33,6 +34,7 @@ from ..analysis.combined_analysis import (
     generate_combined_analysis,
     generate_combined_visualizations,
 )
+from ..compat.viz_compat import np
 from ..core.parsed_model import (
     admitted_visualization_input,
     load_parse_artifact_stems,
@@ -265,24 +267,62 @@ def process_visualization(
         return False
 
 
-def load_cached_artifacts(model_dir: Path, source_mtime: float) -> List[str]:
-    """Return cached PNG paths when fresher than ``source_mtime``, else ``[]``.
-
-    Also removes stale cache PNGs (older than the source) so the caller can
-    re-render cleanly. Non-PNG artifacts and missing directories return ``[]``.
-    """
-    existing = sorted(str(p) for p in model_dir.glob("*.png"))
-    if not existing:
+def load_cached_artifacts(
+    model_dir: Path, model_name: str, cache_input: dict[str, str] | None
+) -> List[str]:
+    """Reuse precisely the complete artifact set bound to these input bytes."""
+    if cache_input is None:
         return []
-    cache_mtime = min(Path(png).stat().st_mtime for png in existing)
-    if cache_mtime >= source_mtime:
-        return existing
-    for png_file in existing:
-        try:
-            Path(png_file).unlink()
-        except OSError as e:
-            logger.debug("Could not remove stale cache file %s: %s", png_file, e)
-    return []
+    manifest_path = model_dir / f"{model_name}_viz_manifest.json"
+    try:
+        recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if (
+            not isinstance(recorded, dict)
+            or recorded.get("cache_input") != cache_input
+            or recorded.get("figure_failures")
+        ):
+            return []
+        files = recorded.get("artifact_identities")
+        if not isinstance(files, list) or not files:
+            return []
+        artifacts = []
+        model_root = model_dir.resolve()
+        for row in files:
+            relative_path = Path(row["path"])
+            if relative_path.is_absolute() or ".." in relative_path.parts:
+                return []
+            path = model_dir / relative_path
+            if (
+                not path.resolve().is_relative_to(model_root)
+                or _sha256_file(path) != row["sha256"]
+            ):
+                return []
+            artifacts.append(str(path))
+        if artifacts != recorded.get("artifacts"):
+            return []
+        return [*artifacts, str(manifest_path)]
+    except (KeyError, OSError, TypeError, ValueError):
+        return []
+
+
+def _sha256_file(path: Path) -> str:
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def _artifact_identities(model_dir: Path, artifacts: List[str]) -> list[dict[str, str]]:
+    """Record content identity only for the files emitted by this renderer."""
+    model_root = model_dir.resolve()
+    try:
+        return [
+            {
+                "path": Path(artifact).resolve().relative_to(model_root).as_posix(),
+                "sha256": _sha256_file(Path(artifact)),
+            }
+            for artifact in artifacts
+        ]
+    except (OSError, ValueError):
+        return []
 
 
 def render_matrix_artifacts(
@@ -370,6 +410,8 @@ def write_viz_manifest(
     artifacts: List[str],
     model_dir: Path,
     figure_failures: Optional[List[str]] = None,
+    *,
+    cache_input: dict[str, str] | None = None,
 ) -> Optional[Path]:
     """Write ``{model}_viz_manifest.json``; return the path or ``None`` on failure."""
     manifest_path = model_dir / f"{model_name}_viz_manifest.json"
@@ -379,6 +421,8 @@ def write_viz_manifest(
             "viz_meta": parsed_data.get("_viz_meta") or {},
             "artifact_count": len(artifacts),
             "artifacts": list(artifacts),
+            "cache_input": cache_input,
+            "artifact_identities": _artifact_identities(model_dir, artifacts),
             "variable_count": len(parsed_data.get("variables") or []),
             "connection_count": len(parsed_data.get("connections") or []),
             "parameter_count": len(parsed_data.get("parameters") or []),
@@ -411,26 +455,23 @@ def write_sampling_note(
         logger.debug("Could not write sampling note for %s: %s", model_name, e)
 
 
-def _cached_figure_failures(model_dir: Path, model_name: str) -> List[str]:
-    """Return the figure failures recorded by the run that produced the cache."""
-    manifest_path = model_dir / f"{model_name}_viz_manifest.json"
-    try:
-        recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return []
-    failures = recorded.get("figure_failures") if isinstance(recorded, dict) else None
-    return [str(f) for f in failures] if isinstance(failures, list) else []
+def _cache_input(source_bytes: bytes, model: Dict[str, Any]) -> dict[str, str] | None:
+    def array_value(value: Any) -> Any:
+        if np is not None and isinstance(value, (np.ndarray, np.generic)):
+            return value.tolist()
+        raise TypeError("Non-serializable visualization cache input")
 
-
-def _cached_parsed_input(model_dir: Path, model_name: str) -> Any:
-    """Return the Step 3 identity recorded by the run that produced the cache."""
-    manifest_path = model_dir / f"{model_name}_viz_manifest.json"
     try:
-        recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        model_bytes = json.dumps(
+            model, sort_keys=True, allow_nan=False, default=array_value
+        ).encode()
+    except (TypeError, ValueError):
         return None
-    meta = recorded.get("viz_meta") if isinstance(recorded, dict) else None
-    return meta.get("parsed_input") if isinstance(meta, dict) else None
+    return {
+        "schema": "gnn-step8-cache-v1",
+        "source_sha256": hashlib.sha256(source_bytes).hexdigest(),
+        "model_sha256": hashlib.sha256(model_bytes).hexdigest(),
+    }
 
 
 def process_single_gnn_file(
@@ -452,8 +493,8 @@ def process_single_gnn_file(
     manifest records figure failures is not reused; the figures are retried.
     """
     figure_failures: List[str] = []
-    with open(gnn_file, encoding="utf-8") as f:
-        content = f.read()
+    source_bytes = gnn_file.read_bytes()
+    content = source_bytes.decode("utf-8")
 
     if artifact_stem is None:
         artifact_stem = load_parse_artifact_stems(results_dir).get(
@@ -468,25 +509,6 @@ def process_single_gnn_file(
     admitted = admitted_visualization_input(
         gnn_file, results_dir, parsed_artifact_stem or model_name
     )
-    cached = load_cached_artifacts(model_dir, gnn_file.stat().st_mtime)
-    if cached and admitted is not None:
-        if _cached_parsed_input(model_dir, model_name) != admitted[1]:
-            # A versioned handoff admits cached figures only when they were
-            # drawn from the identical Step 3 model (run, source and bytes).
-            logger.info(
-                "Re-rendering %s: cached figures predate this handoff", model_name
-            )
-            cached = []
-    if cached and _cached_figure_failures(model_dir, model_name):
-        # The run that produced this cache lost figures: retry them rather
-        # than letting a partial cache pass as a clean result.
-        logger.info("Re-rendering %s: cached run recorded figure failures", model_name)
-        cached = []
-    if cached:
-        if verbose:
-            print(f"Using cached visualizations for {model_name}")
-        return cached
-
     parsed_data = load_visualization_model(
         gnn_file,
         content,
@@ -496,6 +518,13 @@ def process_single_gnn_file(
         parsed_artifact_stem=parsed_artifact_stem or model_name,
         admitted=admitted,
     )
+    cache_input = _cache_input(source_bytes, parsed_data)
+    cached = load_cached_artifacts(model_dir, model_name, cache_input)
+    if cached:
+        if verbose:
+            print(f"Using cached visualizations for {model_name}")
+        return cached
+
     write_stale_json_note_if_needed(parsed_data, model_dir, model_name, gnn_file)
     sampled = sample_parsed_data(parsed_data)
     if sampled and verbose:
@@ -557,7 +586,12 @@ def process_single_gnn_file(
         )
 
     manifest_path = write_viz_manifest(
-        model_name, parsed_data, visualizations, model_dir, figure_failures
+        model_name,
+        parsed_data,
+        visualizations,
+        model_dir,
+        figure_failures,
+        cache_input=cache_input,
     )
     if manifest_path is not None:
         visualizations.append(str(manifest_path))

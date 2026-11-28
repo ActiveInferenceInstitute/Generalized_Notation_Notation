@@ -16,11 +16,21 @@ from __future__ import annotations
 import re
 from copy import deepcopy
 from enum import Enum
+from numbers import Integral, Real
 from typing import Any, Dict, Iterable, List, Tuple, TypedDict, cast
 
 import numpy as np
 
-CANONICAL_B_ORDER = "next_state_previous_state_action"
+from gnn.extract.pomdp_axes import CANONICAL as CANONICAL_B_ORDER
+from gnn.extract.pomdp_axes import (
+    b_permutation,
+    b_shape_orders,
+    declared_b_order,
+    resolve_b_order,
+    stochastic_b_orders,
+    stored_b_order,
+)
+
 # Only source decimal rounding drift may be corrected; arbitrary weights
 # require the explicit demo adapter and never enter strict canonical models.
 DECLARED_PROBABILITY_MASS_ATOL = 1e-4
@@ -163,44 +173,101 @@ def normalise_matrix_columns(
 
 
 def _declared_b_order(model_parameters: Dict[str, Any]) -> str:
-    """Handle declared b order for internal callers."""
-    order = str(
-        model_parameters.get("b_tensor_order")
-        or model_parameters.get("B_tensor_order")
-        or model_parameters.get("transition_tensor_order")
-        or ""
-    ).lower()
-    return order.replace("-", "_").replace(" ", "_")
+    """Return the normalized stored orientation used by render callers."""
+    return declared_b_order(model_parameters)
+
+
+def _pymdp_numeric(value: Any, name: str) -> np.ndarray:
+    """Accept numeric inputs without coercing authored booleans or strings."""
+    if isinstance(value, np.ndarray) and value.dtype.kind in "iuf":
+        return value
+    raw = np.asarray(value, dtype=object)
+    if any(
+        isinstance(entry, (bool, np.bool_)) or not isinstance(entry, Real)
+        for entry in raw.flat
+    ):
+        raise ValueError(f"{name} must contain numeric values")
+    return np.asarray(raw, dtype=np.float64)
+
+
+def canonicalise_pymdp_likelihood_prior(
+    initial: Dict[str, Any],
+    model_parameters: Dict[str, Any],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Validate categorical observation likelihood, preferences and state prior."""
+    likelihood = np.asarray(
+        normalise_matrix_columns(_pymdp_numeric(initial["A"], "A"), name="A")
+    )
+    observations, states = likelihood.shape
+    for key, expected in (
+        ("num_states", states),
+        ("num_hidden_states", states),
+        ("num_obs", observations),
+        ("num_observations", observations),
+    ):
+        if key in model_parameters:
+            declared = model_parameters[key]
+            if (
+                type(declared) is bool
+                or not isinstance(declared, Integral)
+                or declared != expected
+            ):
+                raise ValueError(f"A shape does not match declared {key}")
+    preferences = _pymdp_numeric(initial["C"], "C").flatten()
+    if len(preferences) != observations or not np.isfinite(preferences).all():
+        raise ValueError(f"C must contain {observations} finite preferences")
+    prior = np.asarray(normalise_vector(_pymdp_numeric(initial["D"], "D"), name="D"))
+    if len(prior) != states:
+        raise ValueError(f"D must contain {states} probabilities")
+    return likelihood, preferences, prior
+
+
+def pymdp_policy_horizon(parameters: Dict[str, Any]) -> int:
+    """Return a positive integer policy horizon without coercion."""
+    value = parameters.get("policy_len", 1)
+    if isinstance(value, bool) or not isinstance(value, Integral) or value < 1:
+        raise ValueError("policy_len must be a positive integer")
+    return int(value)
+
+
+def canonicalise_pymdp_policy_prior(
+    value: Any, *, num_actions: int, policy_len: int
+) -> np.ndarray | None:
+    """Validate a declared prior against the complete native policy space."""
+    if value is None:
+        return None
+    prior = np.asarray(normalise_vector(_pymdp_numeric(value, "E"), name="E"))
+    remaining = len(prior)
+    declared_horizon = 0
+    if num_actions > 1:
+        while remaining > 1 and remaining % num_actions == 0:
+            remaining //= num_actions
+            declared_horizon += 1
+    if remaining != 1 or (num_actions > 1 and declared_horizon != policy_len):
+        raise ValueError(
+            f"E length must match {num_actions} actions over a policy horizon of {policy_len}"
+        )
+    return prior
 
 
 def canonicalise_b_matrix(
     value: Any,
     *,
     num_states: int,
-    num_actions: int,
+    num_actions: int | None,
     model_parameters: Dict[str, Any],
+    b_provenance: Dict[str, Any] | None = None,
+    strict_types: bool = False,
 ) -> Tuple[List[List[List[float]]], Dict[str, Any]]:
     """Return B as ``(next_state, previous_state, action)``."""
-    raw = np.asarray(value, dtype=np.float64)
+    raw = (
+        _pymdp_numeric(value, "B")
+        if strict_types
+        else np.asarray(value, dtype=np.float64)
+    )
     if not np.isfinite(raw).all() or np.any(raw < 0):
         raise ValueError("B must contain finite nonnegative probabilities")
     declared_order = _declared_b_order(model_parameters)
-    supported_orders = {
-        CANONICAL_B_ORDER,
-        "next_previous_action",
-        "next_prev_action",
-        "states_next_states_previous_actions",
-        "action_next_state_previous_state",
-        "action_next_previous",
-        "actions_next_previous",
-        "action_previous_state_next_state",
-        "action_previous_next",
-        "actions_previous_next",
-    }
-    if declared_order and declared_order not in supported_orders:
-        raise ValueError(f"Unsupported declared B tensor order: {declared_order}")
-    source_order = "inferred"
-
     if raw.ndim == 2:
         if raw.shape != (num_states, num_states):
             raise ValueError(
@@ -209,43 +276,15 @@ def canonicalise_b_matrix(
         tensor = raw[:, :, np.newaxis]
         source_order = "next_state_previous_state"
     elif raw.ndim == 3:
-        if declared_order in {
-            CANONICAL_B_ORDER,
-            "next_previous_action",
-            "next_prev_action",
-            "states_next_states_previous_actions",
-        }:
-            tensor = raw
-            source_order = CANONICAL_B_ORDER
-        elif declared_order in {
-            "action_next_state_previous_state",
-            "action_next_previous",
-            "actions_next_previous",
-        }:
-            tensor = raw.transpose(1, 2, 0)
-            source_order = "action_next_state_previous_state"
-        elif declared_order in {
-            "action_previous_state_next_state",
-            "action_previous_next",
-            "actions_previous_next",
-        }:
-            tensor = raw.transpose(2, 1, 0)
-            source_order = "action_previous_state_next_state"
-        elif raw.shape == (num_actions, num_states, num_states):
-            tensor = raw.transpose(2, 1, 0)
-            source_order = "action_previous_state_next_state"
-        elif raw.shape == (num_states, num_states, num_actions):
-            tensor = raw
-            source_order = CANONICAL_B_ORDER
-        elif raw.shape == (1, num_states, num_states):
-            tensor = raw.transpose(2, 1, 0)
-            source_order = "single_action_previous_state_next_state"
-        else:
-            raise ValueError(
-                "B must be 2-D passive, canonical "
-                f"({num_states}, {num_states}, {num_actions}), or action-first "
-                f"({num_actions}, {num_states}, {num_states}); got {raw.shape}"
-            )
+        source_order = resolve_b_order(
+            raw,
+            raw.shape,
+            declared=declared_order,
+            provenance=b_provenance,
+            states=num_states,
+            actions=num_actions,
+        )
+        tensor = raw.transpose(b_permutation(source_order))
     else:
         raise ValueError(f"B must be 2-D or 3-D, got shape {raw.shape}")
 
@@ -253,7 +292,7 @@ def canonicalise_b_matrix(
         raise ValueError(
             f"Canonical B shape {tensor.shape} does not match {num_states} states"
         )
-    if tensor.shape[2] not in {1, num_actions}:
+    if num_actions is not None and tensor.shape[2] not in {1, num_actions}:
         raise ValueError(
             f"Canonical B action dimension {tensor.shape[2]} does not match {num_actions}"
         )
@@ -327,6 +366,19 @@ def _is_active_inference_matrix_key(key: str) -> bool:
     )
 
 
+def declares_thrml_coupled_agents(spec: Dict[str, Any]) -> bool:
+    """Recognize a typed source boundary without admitting its values."""
+    structured = spec.get("structured_pomdp")
+    return any(
+        isinstance(initial, dict) and "thrml_coupled_agents" in initial
+        for initial in (
+            spec.get("initialparameterization"),
+            spec.get("initial_parameterization"),
+            structured.get("matrices") if isinstance(structured, dict) else None,
+        )
+    )
+
+
 _AGENT_MATRIX_KEY = re.compile(r"^[ABCDE]_agent\d+", re.IGNORECASE)
 _AGENT_CONTINUOUS_KEY = re.compile(
     r"^(F|H|Q|R|prior_mean|prior_cov|goal_mean|control_gain)_agent[1-9]\d*$"
@@ -339,11 +391,117 @@ _FACTOR_CONTINUOUS_KEY = re.compile(
 )
 
 
-_TIME_INDEXED_MATRIX_KEY = re.compile(r"^[ABCDE]_t\d*$", re.IGNORECASE)
-_REGIME_SWITCHED_MATRIX_KEY = re.compile(r"^[ABCDE]_regime\d*$", re.IGNORECASE)
+_TIME_INDEXED_MATRIX_KEY = re.compile(r"^[ABCDE]_t(?:\d*|_\w+)$", re.IGNORECASE)
+_REGIME_SWITCHED_MATRIX_KEY = re.compile(r"^[ABCDE]_regime(?:\d*|_\w+)$", re.IGNORECASE)
 _NONSTATIONARY_SCHEDULE_KEYS = frozenset(
     {"b_regime_schedule", "regime_schedule", "b_schedule", "b_t_schedule"}
 )
+
+
+def pymdp_nonstationary_transition(keys: Iterable[str]) -> str:
+    """Identify the single time-varying transition family PyMDP executes."""
+    phase_keys = sorted(
+        {
+            key
+            for key in keys
+            if _TIME_INDEXED_MATRIX_KEY.fullmatch(key)
+            or _REGIME_SWITCHED_MATRIX_KEY.fullmatch(key)
+        }
+    )
+    if len(phase_keys) != 1 or not phase_keys[0].lower().startswith("b_"):
+        detail = ", ".join(phase_keys) or "no transition tensor"
+        raise ValueError(
+            "unsupported-nonstationary: PyMDP requires exactly one B_t or "
+            f"B_regime tensor and supports no other time-varying matrices; found {detail}"
+        )
+    return phase_keys[0]
+
+
+def pymdp_regime_schedule(
+    key: str, parameters: Dict[str, Any], *, phases: int
+) -> list[int] | None:
+    """Validate the authored schedule, preserving every declared regime index."""
+    declared = sorted(_NONSTATIONARY_SCHEDULE_KEYS.intersection(parameters))
+    if "_regime" not in key.lower():
+        if declared:
+            raise ValueError(
+                f"{key} uses consecutive phases and does not accept {declared}"
+            )
+        return None
+    if len(declared) != 1:
+        raise ValueError(f"{key} requires exactly one b_regime_schedule declaration")
+    raw = parameters[declared[0]]
+    if isinstance(raw, str):
+        parts = [part.strip() for part in raw.split(",")]
+        raw = (
+            [int(part) for part in parts]
+            if all(re.fullmatch(r"[+-]?\d+", part) for part in parts)
+            else None
+        )
+    if (
+        not isinstance(raw, (list, tuple))
+        or not raw
+        or any(isinstance(item, bool) or not isinstance(item, Integral) for item in raw)
+    ):
+        raise ValueError("b_regime_schedule must contain nonboolean integer indices")
+    schedule = [int(item) for item in raw]
+    if not all(0 <= item < phases for item in schedule):
+        raise ValueError(
+            f"b_regime_schedule references a regime outside 0..{phases - 1}"
+        )
+    return schedule
+
+
+def canonicalise_pymdp_phase_transitions(
+    value: Any,
+    *,
+    key: str,
+    num_states: int,
+    num_actions: int | None,
+    parameters: Dict[str, Any],
+    provenance: Dict[str, Any] | None = None,
+) -> tuple[np.ndarray, list[int] | None]:
+    """Validate each authored phase and return its canonical tensor and schedule."""
+    raw = _pymdp_numeric(value, key)
+    if raw.ndim not in {2, 3, 4}:
+        raise ValueError(f"{key} must be a transition matrix, tensor or phase stack")
+    if raw.ndim in {2, 3}:
+        raw = raw[np.newaxis, ...]
+    if not raw.shape[0]:
+        raise ValueError(f"{key} must declare at least one phase")
+    schedule = pymdp_regime_schedule(key, parameters, phases=raw.shape[0])
+    order = declared_b_order(parameters, name="B" + key[1:].lower())
+    if raw.ndim == 4 and not stored_b_order(order, provenance or {}):
+        # A stack has one physical axis order for all phases. Intersect
+        # stochastic evidence before choosing the canonical default.
+        candidates = b_shape_orders(
+            raw.shape[1:], states=num_states, actions=num_actions
+        )
+        possible = candidates
+        for phase in raw:
+            possible = stochastic_b_orders(
+                phase, phase.shape, possible, atol=DECLARED_PROBABILITY_MASS_ATOL
+            )
+        compatible = possible or candidates
+        if compatible:
+            order = (
+                CANONICAL_B_ORDER if CANONICAL_B_ORDER in compatible else compatible[0]
+            )
+    phases = []
+    for index, phase in enumerate(raw):
+        try:
+            canonical, _ = canonicalise_b_matrix(
+                phase,
+                num_states=num_states,
+                num_actions=num_actions,
+                model_parameters={"b_tensor_order": order},
+                b_provenance=provenance,
+                strict_types=True,
+            )
+        except ValueError as error:
+            raise ValueError(f"{key} phase {index}: {error}") from error
+        phases.append(canonical)
+    return np.asarray(phases, dtype=np.float64), schedule
 
 
 def _structured_matrix_keys(gnn_spec: Dict[str, Any]) -> List[str]:
@@ -436,9 +594,13 @@ def detect_model_kinds(gnn_spec: Dict[str, Any]) -> frozenset[ModelKind]:
         nr_agents = int(nr_agents)
     except (TypeError, ValueError):
         nr_agents = 1
-    if nr_agents > 1 or any(
-        _AGENT_MATRIX_KEY.match(key) or _AGENT_CONTINUOUS_KEY.fullmatch(key)
-        for key in all_keys
+    if (
+        nr_agents > 1
+        or declares_thrml_coupled_agents(gnn_spec)
+        or any(
+            _AGENT_MATRIX_KEY.match(key) or _AGENT_CONTINUOUS_KEY.fullmatch(key)
+            for key in all_keys
+        )
     ):
         kinds.add(ModelKind.MULTI_AGENT)
 
@@ -678,11 +840,13 @@ def build_canonical_pomdp_spec(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
         _infer_num_actions_from_b(initial["B"], num_states=num_states),
     )
 
+    provenance = dict(spec.get("matrix_provenance") or {})
     canonical_b, b_provenance = canonicalise_b_matrix(
         initial["B"],
         num_states=num_states,
         num_actions=num_actions,
         model_parameters=model_parameters,
+        b_provenance=provenance.get("B"),
     )
     action_count = len(canonical_b[0][0]) if canonical_b else num_actions
 
@@ -728,7 +892,6 @@ def build_canonical_pomdp_spec(gnn_spec: Dict[str, Any]) -> Dict[str, Any]:
     spec["initialparameterization"] = canonical_initial
     spec["initial_parameterization"] = canonical_initial
 
-    provenance = dict(spec.get("matrix_provenance") or {})
     existing_b = dict(provenance.get("B") or {})
     provenance["B"] = {
         **existing_b,

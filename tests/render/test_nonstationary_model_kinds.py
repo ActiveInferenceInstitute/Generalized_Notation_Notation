@@ -13,6 +13,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
+import pytest
+
 from gnn.render.pomdp_contract import (
     ModelKind,
     detect_model_kind,
@@ -34,14 +37,14 @@ _D = [0.34, 0.33, 0.33]
 
 # (next, prev, action) slices — one per regime / phase.
 _SLICE_CALM = [
-    [[0.7, 0.1], [0.2, 0.1], [0.1, 0.8]],
-    [[0.2, 0.1], [0.7, 0.1], [0.1, 0.8]],
-    [[0.1, 0.1], [0.1, 0.1], [0.8, 0.8]],
+    [[0.7, 0.1], [0.2, 0.1], [0.1, 0.1]],
+    [[0.2, 0.1], [0.7, 0.1], [0.1, 0.1]],
+    [[0.1, 0.8], [0.1, 0.8], [0.8, 0.8]],
 ]
 _SLICE_STORM = [
-    [[0.2, 0.4], [0.6, 0.2], [0.2, 0.4]],
-    [[0.4, 0.2], [0.2, 0.4], [0.4, 0.4]],
-    [[0.3, 0.1], [0.3, 0.1], [0.4, 0.8]],
+    [[0.2, 0.4], [0.4, 0.2], [0.3, 0.1]],
+    [[0.6, 0.2], [0.2, 0.4], [0.3, 0.1]],
+    [[0.2, 0.4], [0.4, 0.4], [0.4, 0.8]],
 ]
 
 
@@ -263,3 +266,48 @@ def test_pymdp_gate_allows_b_regime_nonstationary() -> None:
     from gnn.execute.pymdp.simulation import pymdp_kind_refusal
 
     assert pymdp_kind_refusal(_regime_spec()) is None
+
+
+@pytest.mark.parametrize("ignored_key", ["A_t", "C_regime", "B_t1", "B_regime"])
+def test_render_and_execution_refuse_competing_time_variation(ignored_key, tmp_path):
+    from gnn.execute.pymdp.simulation import pymdp_kind_refusal
+
+    spec = _time_varying_spec()
+    spec["initialparameterization"][ignored_key] = [_SLICE_CALM]
+    receipt = pymdp_kind_refusal(spec)
+    assert receipt is not None and receipt["status"] == "unsupported"
+    assert ignored_key in receipt["reason"]
+    success, reason, outputs = render_gnn_spec(spec, "pymdp", tmp_path)
+    assert not success and ignored_key in reason and outputs == []
+    assert not list(tmp_path.glob("*.py"))
+
+
+def test_render_rejects_nonunit_condition_in_maintained_phase_source(tmp_path):
+    from gnn.extract.pomdp_extractor import extract_pomdp_from_content
+    from gnn.render.pomdp_processor import POMDPRenderProcessor
+
+    source = (DISCRETE_DIR / "time_varying_dynamics.md").read_text(encoding="utf-8")
+    altered = (
+        source.replace("(0.3, 0.125)", "(0.3, 0.1)")
+        .replace("(0.6, 0.75)", "(0.6, 0.6)")
+        .replace("(0.1, 0.125)", "(0.1, 0.1)")
+    )
+    spec = extract_pomdp_from_content(altered)
+    assert spec is not None
+    renderer = POMDPRenderProcessor(tmp_path)
+    raw = renderer._pomdp_to_gnn_spec(spec)
+    ok, reason, files = render_gnn_spec(raw, "pymdp", tmp_path)
+    assert not ok and "B_t phase 0" in reason and "mass must be one" in reason
+    assert not files and not list(tmp_path.rglob("*.py"))
+
+
+def test_regime_phase_next_state_axis_cannot_be_replaced_by_previous_state(tmp_path):
+    spec = _regime_spec()
+    canonical = np.asarray(spec["initialparameterization"]["B_regime"])
+    spec["initialparameterization"]["B_regime"] = canonical.transpose(0, 2, 1, 3)
+    spec["model_parameters"]["b_tensor_order_regime"] = (
+        "next_state_previous_state_action"
+    )
+    ok, reason, files = render_gnn_spec(spec, "pymdp", tmp_path)
+    assert not ok and "B_regime phase 0" in reason and "mass must be one" in reason
+    assert not files and not list(tmp_path.rglob("*.py"))

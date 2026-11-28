@@ -2,7 +2,7 @@
 
 ## Architectural Mapping
 
-**Orchestrator**: `src/gnn/6_validation.py` (62 lines)
+**Orchestrator**: `src/gnn/6_validation.py` (70 lines)
 **Implementation Layer**: `src/gnn/validation/`
 
 ## Module Description
@@ -80,6 +80,16 @@ in memory and records it per tensor in the receipt. Full convention,
 severity table, and fix recipe:
 [gnn_syntax.md § B-tensor orientation](../gnn_syntax.md).
 
+### Authored categorical probabilities
+
+Run the standalone Step 6 script with `--strict-probabilities` or set
+`strict_probabilities=True` through `process_validation` or the validation
+MCP tools. The option checks numeric A, B, C, and D declarations through
+the strict extraction contract. It records structured diagnostics under
+`probability_validation` and makes violations fail the current validation.
+Probability columns and priors use an absolute mass tolerance of `1e-6`.
+The default structural validation levels keep their existing behavior.
+
 ---
 
 ## API Reference
@@ -95,7 +105,8 @@ severity table, and fix recipe:
 - `verbose` (bool): Enable verbose logging (default: False)
 - `logger` (Logger, optional): Logger instance (default: None)
 - `strict` (bool): Enable strict validation mode (default: False)
-- `profile` (bool): Enable performance profiling (default: False)
+- `profile` (bool): Compatibility option. Step 6 always profiles performance.
+- `strict_probabilities` (bool): Check authored categorical probabilities (default: False)
 - `transpose_b` (bool): Opt-in canonical B-tensor transposition for the orientation stage — textbook (row-stochastic) transition tensors are transposed in memory and recorded in the receipt (default: orientation warnings only; source files are never modified)
 - `**kwargs`: Additional validation options (including `validation_level` and `run_id`)
 

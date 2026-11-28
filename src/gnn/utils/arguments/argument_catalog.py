@@ -124,10 +124,15 @@ ARGUMENT_DEFINITIONS = MappingProxyType(
         "strict": ArgumentDefinition(
             flag="--strict", action="store_true", help_text="Enable strict mode"
         ),
+        "strict_probabilities": ArgumentDefinition(
+            flag="--strict-probabilities",
+            action="store_true",
+            help_text="Validate authored categorical probability values and dimensions",
+        ),
         "profile": ArgumentDefinition(
             flag="--profile",
             action="store_true",
-            help_text="Enable performance profiling",
+            help_text="Compatibility option. Step 6 always profiles performance.",
         ),
         "transpose_b": ArgumentDefinition(
             flag="--transpose-b",
@@ -424,7 +429,7 @@ ARGUMENT_DEFINITIONS = MappingProxyType(
             flag="--simulation-params",
             arg_type=str,
             default="{}",
-            help_text="JSON string containing simulation parameters",
+            help_text="JSON object with THRML overrides. Requires --frameworks thrml.",
         ),
         "timeout": ArgumentDefinition(
             flag="--timeout",
@@ -536,6 +541,7 @@ STEP_ARGUMENTS = MappingProxyType(
             "recursive",
             "verbose",
             "strict",
+            "strict_probabilities",
             "profile",
             "transpose_b",
         ],
@@ -665,6 +671,8 @@ STEP_ARGUMENTS = MappingProxyType(
             "skip_llm",
             "bottleneck_threshold",
         ],
-        "main.py": list(ARGUMENT_DEFINITIONS.keys()),
+        "main.py": [
+            name for name in ARGUMENT_DEFINITIONS if name != "strict_probabilities"
+        ],
     }
 )

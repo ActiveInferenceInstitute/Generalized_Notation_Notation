@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
+from gnn.render.admission import admit_simulation_parameters
 from gnn.render.naming import atomic_write_text
 from gnn.render.thrml.adapter import (
     OPTION_KEYS,
@@ -51,13 +51,9 @@ def resolve_render_options(options: dict[str, Any] | None = None) -> dict[str, A
     if not isinstance(backend, dict):
         raise ValueError("backend_options must be a mapping")
     configured = backend.get("thrml", {})
-    simulation = incoming.get("simulation_params")
-    if simulation is None:
-        simulation = {}
-    if isinstance(simulation, str):
-        simulation = json.loads(simulation)
-    if not isinstance(simulation, dict):
-        raise ValueError("simulation_params must be a mapping")
+    simulation = admit_simulation_parameters(
+        incoming.get("simulation_params", {}), frameworks=("thrml",)
+    )
     command = simulation.get("thrml", {})
     for layer in (configured, command):
         if not isinstance(layer, dict) or set(layer) - OPTION_KEYS:

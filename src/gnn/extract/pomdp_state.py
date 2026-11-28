@@ -17,6 +17,14 @@ package — so any sibling can import it first under any entry order.
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
+from .pomdp_axes import (
+    CANONICAL,
+    b_axes,
+    b_permutation,
+    declared_b_order,
+    stored_b_order,
+)
+
 CANONICAL_B_ORDER = ["next_state", "previous_state", "action"]
 """Canonical B tensor semantic order: B[s', s, a] per pymdp 1.0.0
 (control.py: B[f][s, v, u]; per-action slices column-stochastic over next_state)."""
@@ -182,12 +190,10 @@ def canonicalize_pomdp(spec: POMDPStateSpace) -> POMDPStateSpace:
     """Return a NEW POMDPStateSpace with B in canonical (next, prev, action) order.
 
     Pure, stdlib-only copy: the input spec (and its B_matrix) is never
-    mutated. Orientation is chosen from matrix_provenance['B']
-    (detected_order/claimed_slice_convention) when decisive; a 3-D B stored
-    as (action, previous_state, next_state) is transposed to
-    (next_state, previous_state, action); canonical or ambiguous storage is
-    copied unchanged. B shape/orientation provenance and matrices["B"] follow
-    the transformed tensor, making repeated canonicalization idempotent.
+    mutated. Use a declared stored order or decisive orientation provenance.
+    Lenient extraction can carry contradictory prose. Its detected
+    order is used if no executable declaration is present. Ambiguous
+    tensors without orientation evidence are copied unchanged.
     All unrelated fields are deep-copied as-is.
     """
     from copy import deepcopy
@@ -196,36 +202,54 @@ def canonicalize_pomdp(spec: POMDPStateSpace) -> POMDPStateSpace:
     b_matrix = spec.B_matrix
     provenance = spec.matrix_provenance or {}
     b_meta = provenance.get("B") or {}
-    stored_order = b_meta.get("detected_order") or (
-        ["action", "previous_state", "next_state"]
-        if b_meta.get("claimed_slice_convention") == "rows_previous_columns_next"
-        else None
+    order_metadata = b_meta
+    if b_meta.get("contradiction") and not b_meta.get("stored_order"):
+        order_metadata = {**b_meta, "declared_order_explicit": False}
+    order = stored_b_order(
+        declared_b_order(spec.model_parameters or {}),
+        order_metadata,
     )
     if (
         isinstance(b_matrix, (list, tuple))
         and len(self_shape := _shape_of(b_matrix)) == 3
-        and stored_order
-        and stored_order != list(CANONICAL_B_ORDER)
-        and stored_order == ["action", "previous_state", "next_state"]
+        and order
+        and order != CANONICAL
     ):
-        # (action, prev, next) -> (next, prev, action):
-        # canonical[n][p][a] = stored[a][p][n]
+        permutation = b_permutation(order)
+        inverse = [permutation.index(axis) for axis in range(3)]
+        n, p, a = (self_shape[axis] for axis in permutation)
+        source_b = b_matrix
+
+        def entry(next_state: int, previous_state: int, action: int) -> float:
+            index = (next_state, previous_state, action)
+            return source_b[index[inverse[0]]][index[inverse[1]]][index[inverse[2]]]
+
         canonical.B_matrix = [
             [
-                [b_matrix[a][p][n] for a in range(self_shape[0])]
-                for p in range(self_shape[1])
+                [entry(next_state, previous_state, action) for action in range(a)]
+                for previous_state in range(p)
             ]
-            for n in range(self_shape[2])
+            for next_state in range(n)
         ]
         canonical.matrix_provenance = deepcopy(provenance)
         canonical.matrix_provenance["B"] = {
             **b_meta,
-            "original_detected_order": stored_order,
+            "original_detected_order": b_meta.get("detected_order"),
+            "source_order": order,
+            "stored_order": CANONICAL,
+            "canonical_order": list(b_axes(CANONICAL)),
             "detected_order": list(CANONICAL_B_ORDER),
             "shape": _shape_of(canonical.B_matrix),
         }
         if canonical.matrices is not None and "B" in canonical.matrices:
             canonical.matrices["B"] = deepcopy(canonical.B_matrix)
+        if (
+            canonical.initial_parameterization is not None
+            and "B" in canonical.initial_parameterization
+        ):
+            canonical.initial_parameterization["B"] = deepcopy(canonical.B_matrix)
+        if canonical.model_parameters is not None:
+            canonical.model_parameters["b_tensor_order"] = CANONICAL
     return canonical
 
 

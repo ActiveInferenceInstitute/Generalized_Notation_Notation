@@ -79,12 +79,15 @@ A={
 # B_t: four declared transition phases (t=0 exploration-biased, t=1
 # exploitation, t=2 reversed drift, t=3 quiescent). Timesteps beyond the
 # declared span hold the last phase (documented hold-last semantics).
+# The former phase-0 conditionals for action 1 and previous states 1 and 2
+# had weights (0.1, 0.6, 0.1) and (0.8, 0.3, 0.1), with masses 0.8 and 1.2.
+# Their declared probabilities preserve the relative weights.
 
 B_t={
   (
-    ((0.6, 0.1), (0.3, 0.1), (0.1, 0.8)),
-    ((0.3, 0.1), (0.6, 0.6), (0.1, 0.3)),
-    ((0.1, 0.8), (0.1, 0.1), (0.8, 0.1))
+    ((0.6, 0.1), (0.3, 0.125), (0.1, 0.6666666666666667)),
+    ((0.3, 0.1), (0.6, 0.75), (0.1, 0.25)),
+    ((0.1, 0.8), (0.1, 0.125), (0.8, 0.08333333333333333))
   ),
   (
     ((0.2, 0.1), (0.1, 0.1), (0.1, 0.1)),
@@ -142,6 +145,7 @@ num_hidden_states: 3
 num_obs: 3
 num_actions: 2
 num_timesteps: 10
+b_tensor_order_t: next_state_previous_state_action
 
 ## Footer
 

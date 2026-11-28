@@ -31,6 +31,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union, cast, overload
 
+from .pomdp_axes import CANONICAL, b_permutation, declared_b_order, stored_b_order
 from .pomdp_orientation import POMDPOrientationMixin
 from .pomdp_parameters import POMDPParametersMixin
 from .pomdp_sections import POMDPSectionsMixin
@@ -43,6 +44,7 @@ from .pomdp_state import (
     canonicalize_pomdp,
 )
 from .pomdp_stochastic import DEFAULT_ATOL, stochastic_diagnostics
+from .pomdp_support import SECTION_PATTERN
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +131,7 @@ class POMDPExtractor(POMDPSectionsMixin, POMDPParametersMixin, POMDPOrientationM
         self._dimension_sources: Dict[str, str] = {}
 
         # Patterns for parsing GNN content
-        self.SECTION_PATTERN = re.compile(r"^##\s+(.+)$", re.MULTILINE)
+        self.SECTION_PATTERN = SECTION_PATTERN
         self.VARIABLE_PATTERN = re.compile(
             r"^([A-Za-z_π][A-Za-z0-9_π]*)\[([^\]]+)\](?:,type=([a-zA-Z]+))?(?:\s*#\s*(.*))?$"
         )
@@ -326,6 +328,7 @@ class POMDPExtractor(POMDPSectionsMixin, POMDPParametersMixin, POMDPOrientationM
                         sections.get("StateSpaceBlock", ""),
                         sections.get("InitialParameterization", ""),
                         B_matrix,
+                        model_parameters,
                     )
                     b_provenance.update(orientation)
                     if orientation.get("contradiction"):
@@ -601,15 +604,20 @@ class POMDPExtractor(POMDPSectionsMixin, POMDPParametersMixin, POMDPOrientationM
                         pomdp_space.num_states,
                         pomdp_space.num_actions,
                     )
-                    stored_order = (
-                        (pomdp_space.matrix_provenance or {}).get("B") or {}
-                    ).get("detected_order")
-                    if stored_order == ["action", "previous_state", "next_state"]:
-                        expected_b_dims = (
-                            pomdp_space.num_actions,
-                            pomdp_space.num_states,
-                            pomdp_space.num_states,
+                    provenance = (pomdp_space.matrix_provenance or {}).get("B") or {}
+                    order = (
+                        stored_b_order(
+                            declared_b_order(pomdp_space.model_parameters or {}),
+                            provenance,
                         )
+                        or CANONICAL
+                    )
+                    axes = b_permutation(order)
+                    expected_b_dims = (
+                        expected_b_dims[axes.index(0)],
+                        expected_b_dims[axes.index(1)],
+                        expected_b_dims[axes.index(2)],
+                    )
                     actual_b_dims = (
                         len(pomdp_space.B_matrix),
                         len(pomdp_space.B_matrix[0]),
@@ -619,7 +627,7 @@ class POMDPExtractor(POMDPSectionsMixin, POMDPParametersMixin, POMDPOrientationM
                         warnings.append(
                             f"B matrix dimensions {actual_b_dims} don't match expected {expected_b_dims}"
                         )
-        except (TypeError, IndexError) as e:
+        except (TypeError, IndexError, ValueError) as e:
             warnings.append(f"B matrix has invalid structure: {e}")
 
         try:

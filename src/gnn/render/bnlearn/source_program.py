@@ -1,4 +1,4 @@
-"""Source-bound finite Bayesian filtering program for the bnlearn backend.
+"""Source-bound finite Bayesian filtering and smoothing with bnlearn.
 
 The action sequence is exogenous. Preferences and policy optimization are outside
 this contract; the declared A/B/D conditionals define every inference update.
@@ -126,7 +126,7 @@ def generate_source_program(
 
 
 _PROGRAM = '''#!/usr/bin/env python3
-"""Native bnlearn exact filtering of the declared finite A/B/D model."""
+"""Native bnlearn fixed-action inference for the declared finite A/B/D model."""
 import argparse
 import hashlib
 import json
@@ -134,6 +134,7 @@ import os
 from pathlib import Path
 import sys
 import time
+from importlib.metadata import version
 
 import bnlearn as bn
 import numpy as np
@@ -216,6 +217,10 @@ def run_simulation(observations=None, transition_actions=None):
         "execution_time_seconds": time.monotonic() - started,
         "generated_script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
     }
+    return write_result(results)
+
+
+def write_result(results):
     output = Path(os.environ.get("BNLEARN_OUTPUT_DIR", "."))
     output.mkdir(parents=True, exist_ok=True)
     (output / "simulation_results.json").write_text(json.dumps(results, indent=2, allow_nan=False), encoding="utf-8")
@@ -223,13 +228,76 @@ def run_simulation(observations=None, transition_actions=None):
     return results
 
 
+def run_smoothing(observations, transition_actions):
+    """Condition every hidden state on the same complete observation sequence."""
+    started = time.monotonic()
+    A, B, D = (np.asarray(PAYLOAD[key], dtype=np.float64) for key in ("A", "B", "D"))
+    n, _, actions = B.shape
+    m, steps = len(A), PAYLOAD["num_timesteps"]
+    if max(n, m, actions) > 4 or steps > 8 or n ** steps > 4096:
+        raise ValueError("bnlearn smoothing exceeds the finite witness scope")
+    if (not isinstance(observations, list) or len(observations) != steps or
+        any(type(value) is not int or not 0 <= value < m for value in observations)):
+        raise ValueError("smoothing requires one observed integer index per timestep")
+    if (not isinstance(transition_actions, list) or len(transition_actions) != steps - 1 or
+        any(type(value) is not int or not 0 <= value < actions for value in transition_actions)):
+        raise ValueError("smoothing requires one fixed integer action per transition")
+
+    states = [f"S{step}" for step in range(steps)]
+    outputs = [f"O{step}" for step in range(steps)]
+    edges = list(zip(states, outputs, strict=True))
+    edges.extend(zip(states[:-1], states[1:], strict=True))
+    cpds = [TabularCPD(states[0], n, D[:, None])]
+    for step, (state, observation) in enumerate(zip(states, outputs, strict=True)):
+        cpds.append(TabularCPD(observation, m, A, evidence=[state], evidence_card=[n]))
+        if step:
+            action = transition_actions[step - 1]
+            cpds.append(TabularCPD(state, n, B[:, :, action], evidence=[states[step - 1]], evidence_card=[n]))
+    network = bn.make_DAG(edges, CPD=cpds)
+    evidence = dict(zip(outputs, observations, strict=True))
+    beliefs = []
+    for state in states:
+        query = bn.inference.fit(network, variables=[state], evidence=evidence, to_df=False)
+        posterior = np.asarray(query.values)
+        if (posterior.dtype != np.dtype("float64") or posterior.shape != (n,) or
+            not np.isfinite(posterior).all() or np.any(posterior < 0) or
+            np.any(posterior > 1) or not np.isclose(posterior.sum(), 1, atol=1e-12, rtol=0)):
+            raise ValueError("native bnlearn returned an invalid smoothing posterior")
+        beliefs.append(posterior.tolist())
+
+    contract = "gnn_finite_fixed_action_smoother_v1"
+    return write_result({
+        "schema_version": contract, "inference_contract": contract, "framework": "bnlearn",
+        "question": "smoothing", "inference_mode": "exact_categorical_smoothing",
+        "control_mode": "fixed_transition_actions", "action_semantics": "transition_into_next_state",
+        "dtype": str(posterior.dtype), "initial_time": "first_observation_uses_prior",
+        "conditioning_horizon": [steps] * steps,
+        "axes": {"A": ["observation", "state"], "B": ["next_state", "previous_state", "action"]},
+        "belief_axes": ["timestep", "state"], "num_timesteps": steps, "num_states": n,
+        "num_observations": m, "num_actions": actions, "model_name": PAYLOAD["model_name"],
+        "random_seed": PAYLOAD["random_seed"], "parameters": {"A": A.tolist(), "B": B.tolist(), "D": D.tolist()},
+        "smoothed_beliefs": beliefs, "observations": observations, "transition_actions": transition_actions,
+        "model_contract_sha256": PAYLOAD["model_contract_sha256"], "source_identity": PAYLOAD["source_identity"],
+        "generated_script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "bnlearn_version": bn.__version__, "pgmpy_version": version("pgmpy"), "numpy_version": np.__version__,
+        "python_version": sys.version, "execution_time_seconds": time.monotonic() - started,
+    })
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--inference", choices=("filter", "smooth"), default="filter")
     parser.add_argument("--observations-json", type=Path)
     parser.add_argument("--transition-actions-json", type=Path)
     args = parser.parse_args()
-    run_simulation(
-        json.loads(args.observations_json.read_text()) if args.observations_json else None,
-        json.loads(args.transition_actions_json.read_text()) if args.transition_actions_json else None,
-    )
+    if args.inference == "smooth" and (
+        args.observations_json is None or args.transition_actions_json is None
+    ):
+        parser.error("smoothing requires --observations-json and --transition-actions-json")
+    observations = json.loads(args.observations_json.read_text()) if args.observations_json else None
+    actions = json.loads(args.transition_actions_json.read_text()) if args.transition_actions_json else None
+    if args.inference == "smooth":
+        run_smoothing(observations, actions)
+    else:
+        run_simulation(observations, actions)
 '''

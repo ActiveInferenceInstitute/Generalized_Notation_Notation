@@ -41,6 +41,13 @@ does not promote the subsequent empirical Gibbs posterior to exact inference.
 Source kind predicates reject continuous, hybrid, nonstationary, learning,
 hierarchical, structural, and unrepresented coupled semantics.
 
+The versioned `thrml_coupled_agents` contract maps exactly two positive
+categorical agents to one joint HMM. A/B/D source tables, their identities,
+and authored conditioning remain in `composition_metadata.source_declaration`.
+The runtime rechecks the mapping and binds native computation to CPU.
+Retained-entry accounting includes both the source and joint matrices.
+[Two-agent source schema](../../../../docs/gnn/implementations/thrml.md#source-declared-two-agent-coupled-smoothing)
+
 For each component with states S, observations O, duration T, retained samples
 K, burn-in B, and thinning L:
 

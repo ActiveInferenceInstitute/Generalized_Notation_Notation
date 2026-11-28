@@ -50,11 +50,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from .simulation import (
         _build_pymdp_agent,
-        _canonicalise_A,
         _canonicalise_B,
-        _canonicalise_C,
-        _canonicalise_D,
-        _canonicalise_E,
         _normalise_prob_vector,
         _require_pymdp_1,
     )
@@ -201,14 +197,18 @@ class PyMDPSimulation:
         """Noisy identity likelihood, column-normalised."""
         No = self.num_observations
         Ns = self.num_states
-        base = np.eye(No, Ns) * 0.9
+        from gnn.render.pomdp_contract import normalise_matrix_columns
+
+        base = np.ones((1, Ns), dtype=np.float64) if No == 1 else np.eye(No, Ns) * 0.9
         if No > 1:
             noise = 0.1 / (No - 1)
             for i in range(No):
                 for j in range(Ns):
                     if i != j:
                         base[i, j] = noise
-        return _canonicalise_A(base, (No, Ns))
+        return np.asarray(
+            normalise_matrix_columns(base, name="demo A", allow_weights=True)
+        )
 
     def _demo_transition_model(self) -> np.ndarray:
         """Gridworld or GNN-described transitions in (next, prev, action) shape."""
@@ -252,14 +252,19 @@ class PyMDPSimulation:
                     else:
                         B[s, s, action_idx] = 1.0
 
-        return _canonicalise_B(B, Ns, Na)
+        return _canonicalise_B(B, Ns, Na, "next_state_previous_state_action")
 
     def _demo_preference_model(self) -> np.ndarray:
         """Handle demo preference model for internal callers."""
         params = self.gnn_config.get("parameters", {}) or {}
         prefs = params.get("preferences")
         if isinstance(prefs, (list, tuple, np.ndarray)):
-            return _canonicalise_C(prefs, self.num_observations)
+            result = np.asarray(prefs, dtype=np.float64).flatten()
+            if len(result) != self.num_observations or not np.isfinite(result).all():
+                raise ValueError(
+                    "Demo C must contain one finite preference per observation"
+                )
+            return result
         # Named dict: prefer the 'goal_reward' → final observation
         C = np.zeros(self.num_observations, dtype=np.float64)
         if self.num_observations > 0:
@@ -274,7 +279,12 @@ class PyMDPSimulation:
         params = self.gnn_config.get("parameters", {}) or {}
         prior = params.get("prior_beliefs")
         if isinstance(prior, (list, tuple, np.ndarray)):
-            return _canonicalise_D(prior, self.num_states)
+            from gnn.render.pomdp_contract import normalise_vector
+
+            result = np.asarray(normalise_vector(prior, name="demo D"))
+            if len(result) != self.num_states:
+                raise ValueError("Demo D must contain one probability per state")
+            return result
         D = np.ones(self.num_states, dtype=np.float64) / max(self.num_states, 1)
         # slight mass on starting state
         if self.num_states > 1:
@@ -297,8 +307,31 @@ class PyMDPSimulation:
         self, init_params: Dict[str, Any]
     ) -> None:
         """Build model from initial parameterization."""
-        fallback_shape = (self.num_observations, self.num_states)
-        A_np = _canonicalise_A(init_params.get("A"), fallback_shape)
+        from gnn.extract.pomdp_axes import declared_b_order
+        from gnn.render.pomdp_contract import (
+            ModelKind,
+            canonicalise_pymdp_likelihood_prior,
+            canonicalise_pymdp_policy_prior,
+            detect_model_kinds,
+        )
+
+        model_params = (
+            self.gnn_config.get("model_parameters")
+            or self.gnn_config.get("parameters")
+            or {}
+        )
+        if ModelKind.NONSTATIONARY in detect_model_kinds(
+            {"initialparameterization": init_params, "model_parameters": model_params}
+        ):
+            raise ValueError(
+                "unsupported-nonstationary: use run_pymdp_simulation for a switching model"
+            )
+        missing = {"A", "B", "C", "D"} - init_params.keys()
+        if missing:
+            raise ValueError(f"Missing required PyMDP matrices: {sorted(missing)}")
+        A_np, C_np, D_np = canonicalise_pymdp_likelihood_prior(
+            init_params, model_params
+        )
 
         # Update dimensions if GNN matrices disagree with the name counts
         if A_np.shape != (self.num_observations, self.num_states):
@@ -308,17 +341,24 @@ class PyMDPSimulation:
             self.observation_names = list(self.observations)
             self.state_names = list(self.states)
 
+        provided_actions = model_params.get("num_actions")
         B_np = _canonicalise_B(
-            init_params.get("B"), self.num_states, max(self.num_actions, 1)
+            init_params["B"],
+            self.num_states,
+            int(provided_actions) if provided_actions is not None else None,
+            declared_b_order(model_params),
+            b_provenance=(self.gnn_config.get("matrix_provenance") or {}).get("B"),
         )
         self.num_actions = int(B_np.shape[2])
         if len(self.actions) != self.num_actions:
             self.actions = [f"action_{i}" for i in range(self.num_actions)]
             self.action_names = list(self.actions)
 
-        C_np = _canonicalise_C(init_params.get("C"), self.num_observations)
-        D_np = _canonicalise_D(init_params.get("D"), self.num_states)
-        E_np = _canonicalise_E(init_params.get("E"), expected_policies=self.num_actions)
+        E_np = canonicalise_pymdp_policy_prior(
+            init_params.get("E"),
+            num_actions=self.num_actions,
+            policy_len=self.policy_len,
+        )
 
         self._install_matrices(A_np, B_np, C_np, D_np, E_np)
         self._instantiate_agent()

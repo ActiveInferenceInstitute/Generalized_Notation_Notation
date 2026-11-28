@@ -188,6 +188,9 @@ def record_attempt(
         results.output_files.extend(attempt.output_files)
     elif attempt.status == "failed":
         results.failed += 1
+        results.output_files.extend(
+            path for path in attempt.output_files if Path(path).is_file()
+        )
         if attempt.error_message:
             results.errors.append(attempt.error_message)
     else:  # skipped

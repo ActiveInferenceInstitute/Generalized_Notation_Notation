@@ -206,18 +206,12 @@ def test_resume_requests_only_unfinished_windows(tmp_path: Path) -> None:
     plan = admit()
     ids = [segment.segment_id for segment in plan.segments]
     directory = tmp_path / "plan"
-    calls = {"n": 0}
 
     def cancel_after_two() -> bool:
-        return calls["n"] >= 2
+        return ps.PlanFiles(directory).segment(ids[1]).is_file()
 
     first = Executor()
-
-    async def counting(messages: Any, tokens: int, key: str) -> Any:
-        calls["n"] += 1
-        return await first(messages, tokens, key)
-
-    stopped = run(plan, directory, counting, cancelled=cancel_after_two)
+    stopped = run(plan, directory, first, cancelled=cancel_after_two)
     assert stopped["status"] == "cancelled" and not stopped["complete"]
     assert stopped["accepted"] == ids[:2] and stopped["pending"] == ids[2:]
     assert not ps.PlanFiles(directory).synthesis.exists()
@@ -350,6 +344,52 @@ def test_deadline_stops_scheduling_before_a_request_cannot_fit(tmp_path: Path) -
     assert receipt["status"] == "deadline_exceeded"
     assert 0 < len(executor.calls) < len(plan.segments)
     assert receipt["pending"]
+
+
+@pytest.mark.parametrize("stop_reason", ["cancelled", "deadline_exceeded"])
+@pytest.mark.parametrize("phase", ["window", "synthesis"])
+def test_late_terminal_reply_never_becomes_a_checkpoint(
+    tmp_path: Path, phase: str, stop_reason: str
+) -> None:
+    plan = admit(deadline_seconds=200, request_timeout_seconds=120)
+    directory = tmp_path / "plan"
+    now = 0.0
+    stopped = False
+    label = plan.segments[0].segment_id if phase == "window" else "synthesis"
+
+    async def execute(messages: Any, max_tokens: int, key: str) -> Any:
+        nonlocal now, stopped
+        if key.endswith(f":{label}"):
+            if stop_reason == "deadline_exceeded":
+                now = 200.0
+            else:
+                stopped = True
+        return "terminal-looking reply", terminal()
+
+    receipt = run(
+        plan, directory, execute, clock=lambda: now, cancelled=lambda: stopped
+    )
+    files = ps.PlanFiles(directory)
+    reply = files.segment(label) if phase == "window" else files.synthesis
+    assert receipt["status"] == stop_reason and not receipt["complete"]
+    assert receipt["new_requests"][-1] == label
+    assert not reply.exists()
+
+
+def test_request_timeout_is_enforced_before_checkpoint(tmp_path: Path) -> None:
+    plan = admit(request_timeout_seconds=0.01, segment_max_bytes=1000)
+
+    async def execute(messages: Any, max_tokens: int, key: str) -> Any:
+        await asyncio.sleep(60)
+        return "never in time", terminal()
+
+    directory = tmp_path / "plan"
+    receipt = run(plan, directory, execute)
+    assert receipt["status"] == "refused" and not receipt["complete"]
+    assert receipt["refusals"] == [
+        {"request": plan.segments[0].segment_id, "reason": "request timeout exceeded"}
+    ]
+    assert not ps.PlanFiles(directory).segment(plan.segments[0].segment_id).exists()
 
 
 # --- request construction and settings --------------------------------------
@@ -605,6 +645,24 @@ def test_process_llm_runs_the_request_plan_and_resumes_without_requests(
     [again] = json.loads((output / "llm_results.json").read_text())["request_plans"]
     assert again["resumed_segments"] == receipt["accepted"]
     assert again["new_requests"] == [] and again["complete"] is True
+
+
+def test_corpus_requests_receive_the_tighter_plan_timeout(
+    plan_corpus: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original = api._execute_prompt
+    timeouts = []
+
+    async def record_timeout(*args: Any, **kwargs: Any) -> str:
+        if kwargs.get("synthesis_plan_sha256"):
+            timeouts.append(kwargs["max_prompt_timeout"])
+        return await original(*args, **kwargs)
+
+    monkeypatch.setattr(api, "_execute_prompt", record_timeout)
+    options = copy.deepcopy(plan_corpus["options"])
+    options["request_plan"]["request_timeout_seconds"] = 7.0
+    assert api.process_llm(plan_corpus["root"], plan_corpus["output"], **options)
+    assert timeouts and all(0.0 < value <= 7.0 for value in timeouts)
 
 
 def test_process_llm_refuses_truncated_plan_windows(

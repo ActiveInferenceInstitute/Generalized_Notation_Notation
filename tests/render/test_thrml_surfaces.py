@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from gnn.api.app import create_app
 from gnn.api.server import create_app as create_job_app
 from gnn.cli import main as cli_main
-from gnn.render import process_render
+from gnn.render import process_render, render_gnn_spec
 from gnn.render.mcp import render_spec_to_format_mcp
 
 
@@ -31,6 +31,116 @@ def _payload(path: Path) -> dict:
     # Loading generated constants exercises serialization; native execution has
     # separate toolchain acceptance and is deliberately not claimed here.
     return runpy.run_path(str(path))["PAYLOAD"]
+
+
+@pytest.mark.parametrize(
+    ("supplied", "message"),
+    [
+        ("{oops", "simulation_params must be valid JSON"),
+        ("null", "simulation_params must be a JSON object"),
+        ("[]", "simulation_params must be a JSON object"),
+        ("7", "simulation_params must be a JSON object"),
+        ('{"seed":7}', "Use --timesteps"),
+        ('{"thrml":{"seed":7}}', "requires selecting --frameworks thrml"),
+        ('{"thrml":[]}', "simulation_params.thrml must be an object"),
+        ('{"thrml":{"seed":"7"}}', "thrml.seed must be"),
+        ('{"thrml":{"observations":[NaN]}}', "Invalid constant NaN"),
+        ('{"thrml":{"seed":2,"seed":7}}', "contains duplicate key"),
+    ],
+)
+def test_simulation_parameters_refuse_before_rendering(
+    tmp_path: Path, caplog, supplied: str, message: str
+) -> None:
+    source = _source(tmp_path)
+    output = tmp_path / "render"
+    output.mkdir()
+    existing = output / "previous_model.py"
+    existing.write_text("previous model\n", encoding="utf-8")
+    assert (
+        process_render(
+            source.parent, output, frameworks=["jax"], simulation_params=supplied
+        )
+        is False
+    )
+    assert message in caplog.text
+    assert list(output.iterdir()) == [existing]
+    assert existing.read_text(encoding="utf-8") == "previous model\n"
+
+
+def test_simulation_parameters_bind_only_to_selected_thrml(tmp_path: Path) -> None:
+    source = _source(tmp_path)
+    output = tmp_path / "render"
+    assert (
+        process_render(
+            source.parent,
+            output,
+            frameworks=["jax", "thrml"],
+            simulation_params='{"thrml":{"num_samples":23,"seed":7}}',
+        )
+        is True
+    )
+    assert list(output.rglob("*_jax.py"))
+    payload = _payload(next(output.rglob("*_thrml.py")))
+    assert payload["sampling"]["num_samples"] == 23
+    assert payload["sampling"]["seed"] == 7
+
+
+def test_source_thrml_parameters_leave_other_frameworks_renderable(
+    tmp_path: Path,
+) -> None:
+    from gnn import parse_gnn_file
+
+    source = _source(tmp_path)
+    content = source.read_text(encoding="utf-8")
+    header = "\n## ModelParameters\n"
+    authored = 'simulation_params: {"thrml":{"num_samples":23}}\n'
+    content = (
+        content.replace(header, header + authored, 1)
+        if header in content
+        else content + header + authored
+    )
+    source.write_text(content, encoding="utf-8")
+
+    output = tmp_path / "jax_only"
+    assert process_render(source.parent, output, frameworks=["jax"]) is True
+    assert list(output.rglob("*_jax.py"))
+    ok, message, artifacts = render_gnn_spec(
+        parse_gnn_file(source), "jax", tmp_path / "from_summary"
+    )
+    assert ok and artifacts, message
+
+    output = tmp_path / "mixed"
+    assert (
+        process_render(
+            source.parent,
+            output,
+            frameworks=["jax", "thrml"],
+            simulation_params='{"thrml":{"seed":7}}',
+        )
+        is True
+    )
+    assert list(output.rglob("*_jax.py"))
+    payload = _payload(next(output.rglob("*_thrml.py")))
+    assert payload["sampling"]["num_samples"] == 23
+    assert payload["sampling"]["seed"] == 7
+
+
+def test_direct_spec_cannot_silently_drop_simulation_parameters(tmp_path: Path) -> None:
+    from gnn.extract.pomdp_extractor import extract_pomdp_from_file
+    from gnn.render.pomdp_processor import pomdp_to_gnn_spec
+
+    source = _source(tmp_path)
+    parsed = extract_pomdp_from_file(source, on_error="raise")
+    assert parsed is not None
+    spec = pomdp_to_gnn_spec(parsed)
+    spec["model_parameters"]["simulation_params"] = {"thrml": {"num_samples": 23}}
+    output = tmp_path / "direct"
+    ok, message, files = render_gnn_spec(spec, "jax", output)
+    assert not ok and "requires selecting --frameworks thrml" in message and not files
+    assert not output.exists()
+    ok, message, files = render_gnn_spec(spec, "thrml", output)
+    assert ok, message
+    assert _payload(Path(files[0]))["sampling"]["num_samples"] == 23
 
 
 def test_pipeline_configuration_and_explicit_override(tmp_path: Path) -> None:

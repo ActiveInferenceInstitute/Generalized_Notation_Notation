@@ -213,6 +213,30 @@ jobs:
               assert semantic['artifacts']['source']['utf8'] == receipt['source_utf8']
               assert semantic['artifacts']['program']['utf8'] == receipt['native']['script_utf8']
               assert semantic['artifacts']['result']['utf8'] == receipt['native']['result_utf8']
+          for observations, actions in (([2], []), ([2, 0, 1, 2], [1, 0, 1])):
+              steps = len(observations)
+              prefix = Path('junit') / f'e4-finite-smoothing-{steps}-step'
+              receipt_bytes = prefix.with_suffix('.json').read_bytes()
+              semantic = json.loads(receipt_bytes)
+              custody = json.loads(prefix.with_suffix('.custody.json').read_bytes())
+              assert custody['checkout_commit'] == revision
+              assert custody['checkout_dirty_paths'] == []
+              assert custody['receipt_sha256'] == hashlib.sha256(receipt_bytes).hexdigest()
+              assert custody['return_code'] == 0
+              assert semantic['schema'] == 'gnn-semantic-witness-v4'
+              assert semantic['status'] == 'passed'
+              assert verify_semantic_witness(semantic) == []
+              assert semantic['artifacts']['program']
+              assert semantic['comparisons']['identity:generated_script_sha256']['status'] == 'passed'
+              assert semantic['comparisons']['identity:source_identity.source_sha256']['status'] == 'passed'
+              result = json.loads(semantic['artifacts']['result']['utf8'])
+              assert result['framework'] == 'bnlearn'
+              assert result['bnlearn_version'] and result['pgmpy_version']
+              assert result['observations'] == custody['observations'] == observations
+              assert result['transition_actions'] == custody['transition_actions'] == actions
+              assert semantic['assumptions']['conditioning_horizon'] == [steps] * steps
+              assert semantic['execution_evidence']['execution_source_verified'] is False
+              assert semantic['formal_evidence']['status'] == 'unavailable'
           PYCODE
 
       - name: Record execution counts and source identity

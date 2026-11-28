@@ -11,6 +11,7 @@ import json
 from typing import Any
 
 from gnn.extract.continuous_spec import (
+    JOINT_GAUSSIAN_CONTRACT,
     extract_multi_agent_continuous_specs,
 )
 
@@ -41,7 +42,19 @@ def agent_result_record(
 
 
 def generate_multi_agent_continuous_script(spec: dict[str, Any], backend: str) -> str:
-    """Compose genuine native continuous programs in isolated module namespaces."""
+    """Route joint Gaussian filtering or isolated independent native agents."""
+    parameters = spec.get("model_parameters") or {}
+    if parameters.get("agent_coupling") == JOINT_GAUSSIAN_CONTRACT:
+        from gnn.render.framework_registry import supports_render_dimension
+        from gnn.render.joint_gaussian import generate_joint_gaussian_script
+
+        if not supports_render_dimension(
+            backend, "continuous_composition", "joint_gaussian"
+        ):
+            raise ValueError(
+                f"unsupported-composition: {backend} has no qualified joint Gaussian filtering route"
+            )
+        return generate_joint_gaussian_script(spec)
     agents = extract_multi_agent_continuous_specs(spec)
     names = list(agents)
     record = agent_result_record(spec, backend, names)

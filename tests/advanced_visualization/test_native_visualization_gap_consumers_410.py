@@ -4,6 +4,7 @@ D2 controls cover returned source, saved verbatim by the caller. They do not
 invoke a D2 compiler or claim that a rendered SVG exists.
 """
 
+import json
 from copy import deepcopy
 
 import matplotlib.pyplot as plt
@@ -27,30 +28,68 @@ def close_native_figures():
     plt.close("all")
 
 
-@pytest.mark.parametrize("count", [2, 5])
-def test_saved_policy_variable_displays_its_declared_uniform_prior(
-    tmp_path, figures, count
-):
+def test_saved_policy_dimensions_alone_do_not_create_probabilities(tmp_path):
     _, parsed, inventory = saved_model(
         tmp_path,
         [],
-        variables=[{"name": "pi", "var_type": "policy", "dimensions": [count]}],
+        variables=[{"name": "pi", "var_type": "policy", "dimensions": [5]}],
     )
+    result, output, summary = run_saved_model(tmp_path, parsed, inventory, "pomdp")
+    assert result == 2
+    assert (summary["successful"], summary["failed"], summary["skipped"]) == (0, 0, 2)
+    policy = next(row for row in summary["attempts"] if row["viz_type"] == "policy")
+    assert "No policy probabilities were declared" in policy["error_message"]
+    assert not (output / "authored_network_policy_visualization.png").exists()
+
+
+def test_saved_authored_e_displays_its_policy_prior(tmp_path, figures):
+    model, parsed, inventory = saved_model(tmp_path, [])
+    model["parameters"] = [{"name": "E", "value": [0.6, 0.3, 0.1]}]
+    parsed.write_text(json.dumps(model))
     result, output, summary = run_saved_model(tmp_path, parsed, inventory, "pomdp")
     assert result is True
     assert (summary["successful"], summary["failed"], summary["skipped"]) == (1, 0, 1)
-    policy, absent = sorted(summary["attempts"], key=lambda row: row["viz_type"])
-    assert policy["viz_type"] == "policy" and policy["fallback_used"] is False
-    assert absent["output_files"] == []
     path = output / "authored_network_policy_visualization.png"
-    assert policy["output_files"] == [str(path)]
     native_png(path)
     axis = figures[path.name].axes[0]
-    assert [bar.get_height() for bar in axis.patches] == pytest.approx(
-        [1 / count] * count
+    assert [bar.get_height() for bar in axis.patches] == pytest.approx([0.6, 0.3, 0.1])
+    assert axis.get_title() == "Policy Prior: E"
+    assert axis.get_xlabel() == "Policy Index"
+
+
+@pytest.mark.parametrize("request_png", [False, True])
+def test_interactive_json_is_a_native_artifact_even_if_png_unavailable(
+    tmp_path, monkeypatch, request_png
+):
+    import plotly.graph_objects as go
+    from plotly.io import read_json
+
+    from gnn.advanced_visualization import process_advanced_viz
+
+    saved_model(tmp_path, [("sensor", "belief")])
+    output = tmp_path / "9_advanced_viz_output"
+    formats = ["json"]
+    if request_png:
+        formats.append("png")
+
+        def unavailable(*args, **kwargs):
+            raise RuntimeError("PNG converter unavailable")
+
+        monkeypatch.setattr(go.Figure, "write_image", unavailable)
+    result = process_advanced_viz(
+        tmp_path, output, viz_type="interactive", export_formats=formats
     )
-    assert axis.get_title() == "Policy Distribution: pi"
-    assert axis.get_ylabel() == "Probability"
+    summary = json.loads((output / "advanced_viz_summary.json").read_text())
+    path = output / "authored_network_interactive_dashboard.json"
+    assert read_json(str(path)).data
+    assert summary["output_files"] == [str(path)]
+    if request_png:
+        assert result == 2
+        assert summary["failed"] == 1
+        assert "PNG converter unavailable" in summary["errors"]
+    else:
+        assert result is True
+        assert summary["successful"] == 1
 
 
 def test_saved_single_node_self_loop_retains_real_graph_counts(tmp_path, figures):

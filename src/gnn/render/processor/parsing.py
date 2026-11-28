@@ -150,6 +150,11 @@ def _rehydrate_file_backed_parse_summary(
         pomdp_space,
         native_agents=native_agents,
         preserve_discrete_structure=preserve_discrete_structure,
+        simulation_params=(pomdp_space.model_parameters or {}).get(
+            "simulation_params", {}
+        )
+        if preserve_discrete_structure
+        else {},
     )
 
 

@@ -220,6 +220,7 @@ def _run_stage(
     summary_scores: dict[str, list[Any]],
     validation_level: str,
     transpose_b: bool,
+    strict_probabilities: bool,
     log: logging.Logger,
 ) -> None:
     """Run one best-effort stage, recording receipts, errors, and scores."""
@@ -227,6 +228,8 @@ def _run_stage(
     stage_kwargs: dict[str, Any] = {}
     if spec.wants_validation_level:
         stage_kwargs["validation_level"] = validation_level
+        if strict_probabilities:
+            stage_kwargs["strict_probabilities"] = True
     if spec.wants_transpose_b:
         stage_kwargs["transpose_b"] = transpose_b
     try:
@@ -266,6 +269,7 @@ def _validate_file(
     schema: str | None,
     producer_run_id: str | None,
     source_sha256: str | None,
+    strict_probabilities: bool,
 ) -> dict[str, Any]:
     """Run every validation stage on one parsed-model manifest entry."""
     from gnn.pipeline.parse_receipt import read_parsed_model
@@ -334,6 +338,7 @@ def _validate_file(
             summary_scores,
             validation_level,
             transpose_b,
+            strict_probabilities,
             log,
         )
 
@@ -401,6 +406,7 @@ def validate_directory(
     log: logging.Logger | None = None,
     run_id: str | None = None,
     transpose_b: bool = False,
+    strict_probabilities: bool = False,
 ) -> bool:
     """Validate every parsed GNN file listed in the step-3 manifest.
 
@@ -420,6 +426,8 @@ def validate_directory(
             orientation stage: textbook (row-stochastic) tensors are
             transposed in memory and the per-tensor transposition is
             recorded in the receipt. Source files are never modified.
+        strict_probabilities: Check declared categorical probability tensors
+            with the headless extraction probability contract.
 
     Returns:
         True only for a nonempty current pass with every file successful.
@@ -461,6 +469,8 @@ def validate_directory(
             "validation_level": validation_level,
             "transpose_b": transpose_b,
         }
+        if strict_probabilities:
+            context["strict_probabilities"] = True
         validation_results = _load_or_init_results(
             output_dir, Path(target_dir), active_logger, context
         )
@@ -482,6 +492,7 @@ def validate_directory(
                     schema=gnn_results.get("parsed_model_schema"),
                     producer_run_id=gnn_results.get("run_id"),
                     source_sha256=identity["input_identity"]["file_path_sha256"],
+                    strict_probabilities=strict_probabilities,
                 )
             else:
                 file_validation_result = {

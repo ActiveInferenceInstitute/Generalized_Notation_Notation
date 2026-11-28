@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Render continuous GNN models to standalone cpomdp simulation scripts.
 
-The script filters with cpomdp's exact Kalman backend and scores every policy
-over a declared finite action set. Discrete POMDP specs get the ``unsupported``
+The script filters with cpomdp's exact Kalman backend and scores finite
+action sequences. Discrete POMDP specs get the ``unsupported``
 status: cpomdp is the continuous-state sibling of pymdp.
 
 @Web: https://github.com/inferogenesis/cpomdp
@@ -24,6 +24,20 @@ from gnn.render.naming import atomic_write_text
 logger = logging.getLogger(__name__)
 
 UNSUPPORTED_MESSAGE = "cpomdp renders continuous (linear-Gaussian) models only"
+
+
+def _source_declarations(gnn_spec: dict[str, Any], key: str) -> list[Any]:
+    canonical = gnn_spec.get("initialparameterization")
+    alternate = gnn_spec.get("initial_parameterization")
+    declarations = [
+        mapping[key]
+        for mapping in (canonical, alternate)
+        if isinstance(mapping, dict) and key in mapping
+    ]
+    initial = canonical or alternate
+    if declarations and (not isinstance(initial, dict) or key not in initial):
+        raise ValueError(f"{key} declarations differ between parameter mappings")
+    return declarations
 
 
 def render_gnn_to_cpomdp(
@@ -55,7 +69,7 @@ def render_gnn_to_cpomdp(
         return False, UNSUPPORTED_MESSAGE, []
 
     try:
-        from gnn.render.cpomdp.finite_controls import finite_controls
+        from gnn.render.cpomdp.finite_controls import candidate_search, finite_controls
         from gnn.render.pomdp_contract import (
             detect_model_kinds,
             unsupported_composition_reason,
@@ -66,26 +80,12 @@ def render_gnn_to_cpomdp(
             return False, unsupported_composition_reason(kinds), []
         spec = extract_continuous_spec(gnn_spec)
         resolved = resolve_render_options(options)
-        initial = gnn_spec.get("initialparameterization") or gnn_spec.get(
-            "initial_parameterization"
-        )
-        declarations = [
-            mapping["cpomdp_control"]
-            for mapping in (
-                gnn_spec.get("initialparameterization"),
-                gnn_spec.get("initial_parameterization"),
-            )
-            if isinstance(mapping, dict) and "cpomdp_control" in mapping
-        ]
+        declarations = _source_declarations(gnn_spec, "cpomdp_control")
         if declarations:
-            if not isinstance(initial, dict) or "cpomdp_control" not in initial:
-                raise ValueError(
-                    "cpomdp_control declarations differ between parameter mappings"
-                )
-            control = finite_controls(initial["cpomdp_control"], spec.n)
+            control = finite_controls(declarations[0], spec.n)
             if any(
                 finite_controls(declared, spec.n) != control
-                for declared in declarations
+                for declared in declarations[1:]
             ):
                 raise ValueError(
                     "cpomdp_control declarations differ between parameter mappings"
@@ -99,12 +99,36 @@ def render_gnn_to_cpomdp(
                     "cpomdp_control requires efe mode and no action_scale override"
                 )
             resolved["finite_controls"] = control
+        searches = _source_declarations(gnn_spec, "cpomdp_search")
+        if searches:
+            if "finite_controls" not in resolved:
+                raise ValueError(
+                    "cpomdp_search requires source-declared cpomdp_control"
+                )
+            action_ids = resolved["finite_controls"]["action_ids"]
+            search = candidate_search(searches[0], action_ids)
+            if any(candidate_search(raw, action_ids) != search for raw in searches[1:]):
+                raise ValueError(
+                    "cpomdp_search declarations differ between parameter mappings"
+                )
+            if (
+                options
+                and "horizon" in options
+                and resolved["horizon"] != search["horizon"]
+            ):
+                raise ValueError(
+                    "cpomdp_search horizon conflicts with the renderer option"
+                )
+            resolved["horizon"] = search["horizon"]
+            resolved["candidate_search"] = search
         contract = {
             key: value.tolist() if hasattr(value, "tolist") else value
             for key, value in vars(spec).items()
         }
         if "finite_controls" in resolved:
             contract["cpomdp_control"] = resolved["finite_controls"]
+        if "candidate_search" in resolved:
+            contract["cpomdp_search"] = resolved["candidate_search"]
         resolved["source_identity"] = {
             "model_contract_sha256": hashlib.sha256(
                 json.dumps(contract, sort_keys=True).encode()
@@ -129,6 +153,8 @@ def render_gnn_to_cpomdp(
         output_path = Path(output_path)
         atomic_write_text(output_path, code)
         mode = resolved["control_mode"] if spec.has_control else "passive"
+        if searches:
+            mode = "efe with declared candidates"
         logger.info(f"✅ cpomdp continuous script written to: {output_path}")
         return (
             True,

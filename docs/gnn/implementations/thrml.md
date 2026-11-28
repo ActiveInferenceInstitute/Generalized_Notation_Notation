@@ -69,11 +69,46 @@ Supported composition has an explicit binding:
 - Declared conditionally independent `A_mN` observation modalities over one
   shared state use a bounded Cartesian observation composition with their C_m
   preferences and modality descriptors retained.
+- An explicit [two-agent CPU contract](#source-declared-two-agent-coupled-smoothing)
+  maps coupled positive transitions to a single joint chain.
 
-Cross-agent coupling, omitted matrix semantics, ambiguous component transition
+Unrepresented cross-agent coupling, omitted matrix semantics, ambiguous component transition
 orientation, structural zeros, continuous/hybrid/nonstationary models, and
 action optimization produce an unsupported result. Resource limits apply before
 Cartesian materialization and again to the aggregate admitted components.
+
+## Source-declared two-agent coupled smoothing
+
+Declare a single-line `thrml_coupled_agents` mapping in `InitialParameterization`.
+The contract identifier is `gnn-thrml-two-agent-positive-v1`. Supply these fields.
+
+| Field | Meaning |
+| --- | --- |
+| `contract` | `gnn-thrml-two-agent-positive-v1` |
+| `agent_ids` | Two distinct IDs in authored order |
+| `action_ids` | Ordered distinct IDs for the shared fixed action |
+| `A` | Two likelihoods, each indexed by `[observation, own_state]` |
+| `B` | Two transition tables, each indexed by `[own_next_state, first_previous_state, second_previous_state, action]` |
+| `D` | A joint prior indexed by `[first_state, second_state]` |
+| `observations` | A nonempty sequence of two-index observations in agent order |
+| `transition_actions` | Exactly T−1 declared action IDs for transitions into the next state |
+
+Each likelihood column and next-state conditional sums to one. Joint prior entries
+sum to one across both axes. All probability entries must be positive. Given both
+previous states and the shared action, the two next states are conditionally
+independent. Each observation depends on its own agent's state. GNN multiplies
+the authored factors into joint tables in Cartesian order, with the second agent
+varying fastest. Existing caps cover the authored and materialized tables before
+allocation. The generated script checks that its joint tables and conditioning
+still match the declaration before starting THRML.
+
+This contract requires source observations and actions. Backend options can set
+the sample count, burn-in, thinning, and seed. An explicit timestep option must
+match the authored sequence length. The result records one CPU joint smoother
+with empirical state and observation marginals for each agent. The native witness
+checks a 2×3-state source against exact enumeration of all 7,776 joint state paths,
+including a wrong-parent negative control and the independent-transition limit.
+[Witness source](../../../tests/render/test_thrml_coupled_agents.py)
 
 ## Configuration and public interfaces
 

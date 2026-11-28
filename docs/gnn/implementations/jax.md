@@ -115,6 +115,31 @@ when `goal_mean`/`control_gain` are present, closes the control loop with
 `observations_continuous`, `controls`, and `rmse_vs_true`. The exemplars under
 `input/gnn_files/continuous/` exercise this path.
 
+### Two coupled Gaussian agents
+
+Set `agent_coupling: gnn_joint_gaussian_filter_v1` and `nr_agents: 2` in
+ModelParameters. InitialParameterization declares two ordered agent IDs and
+their state, observation, and control axis labels. The resulting offsets
+specify the rows and columns of the full joint F, H, Q, R, prior covariance,
+and control matrix. Supply every cross-agent entry explicitly, including
+zeros. Q, R, and the prior covariance are symmetric positive definite.
+
+The prior describes the first observed state. Inference at time t uses
+observations through t. Each fixed control at t contributes
+`control_matrix @ control_sequence[t]` to the state at t+1. Supply one
+observation per timestep and one control per transition. Process and
+observation noise are independent across times and series. Their joint
+covariances allow correlation between agents within each series.
+
+The JAX runner records full posterior means, covariances, cross-agent
+covariance blocks, per-agent views, and the ordered axis identities. Joint
+state, observation, and control dimensions can each be at most 16. The
+contract allows at most 128 observations. The output uses the
+`gnn_joint_gaussian_filter_v1` schema. The independently declared agent
+contract remains available for separate models. RxInfer and other targets
+explicitly refuse the joint filtering contract. Read the complete
+[coupled Gaussian source](../../../input/gnn_files/continuous/joint_gaussian_agents.md).
+
 ## Telemetry & Logging Output
 
 At runtime, the JAX execution context compiles all trajectory metrics internally inside its loop arrays (such as the `observations_log`), avoiding arbitrary dictionary references prior to serialization. It writes telemetry to the directory named by the `JAX_OUTPUT_DIR` environment variable (set by Step 12 to the per-model `<model>/jax/` execution folder); the renderer's built-in default is `output/jax_simulations/<model>/simulation_data`.

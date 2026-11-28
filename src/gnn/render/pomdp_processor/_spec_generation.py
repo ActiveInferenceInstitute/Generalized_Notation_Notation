@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Spec-generation mixin for the POMDP render processor."""
 
-import json
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import numpy as np
 
+from gnn.render.admission import admit_simulation_parameters
 from gnn.render.pomdp_contract import ModelKind, detect_pomdp_space_model_kind
 
 from ._routes import _continuous_shape
@@ -50,16 +50,12 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
         if timesteps is None and hasattr(pomdp_space, "num_timesteps"):
             timesteps = pomdp_space.num_timesteps
 
-        sim_params = kwargs.get("simulation_params", "{}")
-        try:
-            parsed_sim_params = (
-                json.loads(sim_params) if isinstance(sim_params, str) else sim_params
+        parsed_sim_params = admit_simulation_parameters(
+            kwargs.get(
+                "simulation_params",
+                (pomdp_space.model_parameters or {}).get("simulation_params", {}),
             )
-        except json.JSONDecodeError:
-            self.logger.warning(
-                f"Invalid simulation_params string: {sim_params}. Using empty dict."
-            )
-            parsed_sim_params = {}
+        )
 
         if getattr(pomdp_space, "model_kind", "discrete") == "continuous":
             return self._continuous_pomdp_to_gnn_spec(
@@ -351,27 +347,26 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
         initial: Dict[str, Any] = {}
         provenance: Dict[str, Dict[str, Any]] = {}
         for key, value in sorted(matrices.items()):
-            if key in {"A", "B", "C", "D", "E"} or key.startswith(("B_t", "B_regime")):
-                initial[key] = value
-                shape = list(np.asarray(value).shape)
-                if key.startswith(("B_t", "B_regime")):
-                    provenance[key] = {
-                        "source": "nonstationary_raw_passthrough",
-                        "source_key": key,
-                        "shape": shape,
-                        "derived": False,
-                        "reason": (
-                            "Nonstationary transition tensor passes through "
-                            "verbatim; run_pymdp_simulation resolves the "
-                            "per-step transition"
-                        ),
-                    }
-                else:
-                    provenance[key] = {
-                        "source": "InitialParameterization",
-                        "shape": shape,
-                        "derived": False,
-                    }
+            initial[key] = value
+            shape = list(np.asarray(value).shape)
+            if key.lower().startswith(("b_t", "b_regime")):
+                provenance[key] = {
+                    "source": "nonstationary_raw_passthrough",
+                    "source_key": key,
+                    "shape": shape,
+                    "derived": False,
+                    "reason": (
+                        "Nonstationary transition tensor passes through "
+                        "verbatim; run_pymdp_simulation resolves the "
+                        "per-step transition"
+                    ),
+                }
+            else:
+                provenance[key] = {
+                    "source": "InitialParameterization",
+                    "shape": shape,
+                    "derived": False,
+                }
         preserved = {
             key: value
             for key, value in raw_initial.items()

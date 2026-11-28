@@ -16,6 +16,9 @@ Native transitions require a declared orientation. Independent component
 groups stay separate; declared cross-component coupling must not disappear.
 Dependent factors use the bounded shared exact categorical composer. Modal
 likelihood products retain their source tables and Cartesian ordering.
+`coupled_agents.py` admits the versioned positive two-agent source contract
+and compiles one Cartesian joint HMM with authored observations and actions.
+Runtime rechecks the source binding and selects CPU for this contract.
 
 The implemented inference conditions on fixed transition actions and an
 entire finite observation sequence. Actual `FactorSamplingProgram` and

@@ -258,6 +258,7 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
                 "Fixed-action Posterior Smoothing",
                 "Independent Component Composition",
                 "Bounded Factored and Observation Composition",
+                "Two-agent Coupled Smoothing (CPU)",
             ],
             "function": "render_gnn_to_thrml",
             "output_format": "python",
@@ -271,6 +272,7 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
             "supports_continuous": False,
             "continuous_only": False,
             "experimental": True,
+            "execution_contracts": ["thrml_two_agent_v1"],
             "unavailable_reason": None,
         },
         "ngclearn": {
@@ -317,7 +319,8 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
 #:   ``continuous_composition`` -- which continuous families the frame renders
 #:     whole: ``flat`` (one linear-Gaussian F/H/Q/R block), ``factored``
 #:     (per-factor ``*_fN`` blocks), ``independent_agents`` (per-agent
-#:     ``*_agentN`` blocks with declared independent coupling).
+#:     ``*_agentN`` blocks with declared independent coupling), ``joint_gaussian``
+#:     (ordered two-agent joint state filtering with fixed observations and controls).
 #:   ``dynamics`` -- ``stationary``/``nonstationary`` (time-indexed ``B_t`` or
 #:     regime-switched ``B_regime`` transitions with a step schedule).
 #:   ``planning`` -- ``none`` (no planning semantics; authored horizons are not
@@ -357,7 +360,12 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
 #: ``supported_features`` is documentation, not a gate.
 RENDER_DIMENSION_VALUES: Mapping[str, Tuple[str, ...]] = MappingProxyType(
     {
-        "continuous_composition": ("flat", "factored", "independent_agents"),
+        "continuous_composition": (
+            "flat",
+            "factored",
+            "independent_agents",
+            "joint_gaussian",
+        ),
         "dynamics": ("stationary", "nonstationary"),
         "planning": ("none", "one_step_only"),
         "mixed_family_composition": ("whole",),
@@ -402,6 +410,7 @@ RENDER_CAPABILITY_DECLARATIONS: Mapping[str, Mapping[str, Tuple[str, ...]]] = (
                     "flat",
                     "factored",
                     "independent_agents",
+                    "joint_gaussian",
                 ),
                 "dynamics": ("stationary",),
                 "planning": ("one_step_only",),

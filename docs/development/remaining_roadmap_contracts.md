@@ -21,7 +21,7 @@ as implemented. Historical numerical/archive observations keep their dated scope
 | E1 | Composed-kind dispatch and JAX/RxInfer Gaussian renderers | Explicit joint Gaussian coupling contract |
 | E2 | THRML admission, payload compiler, runtime and analysis | One separately named inference extension at a time |
 | E3 | cpomdp option admission, generator, executor and analysis | Explicit finite action-set contract with bounded exhaustive search |
-| S3 | THRML dependency and native scientific tests | Verify a suitable ordinary released wheel on both lock splits |
+| S3 | THRML dependency and native scientific tests | Verify a suitable ordinary released wheel across the supported runtime matrix |
 | E5 | Release artifacts, citation metadata and archive receipt | Verify the exact version archive and public artifact hashes |
 
 Content changes to bridge-bound owners require the
@@ -266,10 +266,18 @@ Negative controls fail, refuse or raise with explicit diagnoses:
 - float32 values with and without a float32 declaration (`float32_precision_rounding`);
 - source, reference and schema tampering on replay.
 
-Only `bnlearn` and `pgmpy` framework labels are admitted. No native smoothing
-adapter produces these results yet; the tests use the separate test oracle as
-the reported runtime. `execution_source_verified` stays false and formal
-evidence stays unavailable.
+The opt-in native bnlearn runner builds one unrolled network from the authored
+A/B/D conditionals. Its pgmpy variable elimination queries each hidden state
+against the same complete observation sequence. It requires explicit
+observation and transition-action JSON files and uses the existing
+`bnlearn` extra. The default generated runner still performs filtering.
+
+The all-extras gate retains and replays the v4 receipts for a four-step
+asymmetric native fixture and its one-step prior-first control. Both retain
+their actual executable source, input identities, bnlearn and pgmpy versions,
+and runtime A/B/D values. Conditioning, precision, and scope use the v4 rules
+above. Receipt replay keeps `execution_source_verified` false and formal
+evidence unavailable.
 
 ### Ontology bridge alignment diagnostics
 
@@ -351,7 +359,12 @@ Check conditional logits, independent-node empirical frequencies, source/seed/
 sample identity, finite outputs and zero-frequency impossible states. Do not
 substitute epsilon clipping or a local monkeypatch for released compatibility.
 
-Coupled categorical factors, policy search, continuous/hybrid models and hardware
+E2 admits a named [positive two-agent CPU contract](../gnn/implementations/thrml.md#source-declared-two-agent-coupled-smoothing)
+for cross-agent previous-state dependence with conditionally independent next states,
+fixed observations and fixed actions. Its native witness compares empirical THRML
+marginals to an independent exact enumeration from the authored source tables.
+
+Other coupled categorical factors, policy search, continuous/hybrid models and hardware
 execution require different named contracts. For each, define factor semantics,
 conditioning, normalization, resource bounds and independent witnesses before
 adding capability registration. Hardware operation needs actual device receipts;
@@ -377,6 +390,12 @@ horizon, source contract, every score and selected policy/action. All-invalid
 scores fail before selection. Native acceptance must compare Kalman posteriors
 and every EFE component against an independent reference, including tie and
 invalid-score cases. Estimated allocation remains separate from measured RSS.
+
+The [candidate sequence contract](../gnn/implementations/cpomdp.md#source-declared-candidate-sequences)
+adds bounded evaluation of an ordered source-authored subset. It records each
+candidate's native score and validity, and uses the source order for ties.
+Candidate costs and receipts describe the supplied sequences. Continuous action
+spaces and optimization beyond a finite set remain separate work.
 
 ## E5: exact-version archive
 
