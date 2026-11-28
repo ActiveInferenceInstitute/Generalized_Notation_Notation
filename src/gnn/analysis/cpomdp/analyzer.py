@@ -85,6 +85,8 @@ def analyze_payload(payload: dict[str, Any], output_dir: Path) -> dict[str, Any]
         },
         "artifacts": artifacts,
     }
+    if "goal_precision" in payload:
+        summary["goal_precision"] = payload["goal_precision"]
     atomic_write_text(
         output_dir / "cpomdp_analysis.json", json.dumps(summary, indent=2)
     )

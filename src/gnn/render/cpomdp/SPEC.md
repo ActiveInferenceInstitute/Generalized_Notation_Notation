@@ -16,7 +16,12 @@
 
 When run, the script writes `simulation_results.json` under `CPOMDP_OUTPUT_DIR` (default `.`). It holds the shared continuous schema: `model_name`, `framework` (`"cpomdp"`), `model_kind` (`"continuous"`), `num_timesteps`, `num_states`, `num_observations`, `beliefs`, `posterior_cov`, `true_states_continuous`, `observations_continuous`, `controls`, `control_mode`, `rmse_vs_true`, `observations` (`[]`), `actions` (`[]`), `validation` and `execution_time_seconds`.
 
-cpomdp adds `efe_history` (one row with one value per scored policy, empty when passive), `epistemic_term`, `pragmatic_term`, `selected_policy_index`, `horizon`, `action_scale`, `n_policies`, `cost_per_cycle`, `search_mode`, `search_certificate`, `jax_version` and `cpomdp_version`. For exhaustive search, `search_certificate` carries the library's own `expected`, `visited`, `warrant`, `action_set_size`, `horizon` and `action_set_version` fields plus GNN's `claim`.
+cpomdp adds `efe_history` (one row with one value per scored policy, empty when passive), `epistemic_term`, `pragmatic_term`, `selected_policy_index`, `horizon`, `goal_precision`, `action_scale`, `n_policies`, `cost_per_cycle`, `search_mode`, `search_certificate`, `jax_version` and `cpomdp_version`. For exhaustive search, `search_certificate` carries the library's own `expected`, `visited`, `warrant`, `action_set_size`, `horizon` and `action_set_version` fields plus GNN's `claim`.
+
+`goal_precision` is the scalar multiplying the identity in the observation
+preference precision matrix. It scales the pragmatic score while leaving the
+epistemic term unchanged for a fixed belief and candidate policy. Passive runs
+record `null` because they perform no policy scoring.
 
 `validation` holds `means_finite`, `posterior_cov_psd`, `rmse_finite`, `controls_finite`, `efe_finite` and `all_valid`. The script exits 1 when `all_valid` is false.
 
