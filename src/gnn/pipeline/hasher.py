@@ -49,7 +49,7 @@ def effective_run_config(
         "pipeline_summary_file",
     }
     args = {key: value for key, value in arguments.items() if key not in incidental}
-    identity = {
+    identity: Dict[str, Any] = {
         "arguments": args,
         "pipeline": pipeline_settings,
         "selected_steps": list(selected_steps),
