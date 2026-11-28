@@ -1,7 +1,2 @@
 \frametitle{Authored Source Versus Generated Output}
-section hard-codes one instead, and the resulting 97-entry map is
-committed at \breaktt{output/data/manuscript\_variables.json} for audit.
-External references are resolved from
-\breaktt{docs/manuscript/references.bib}, which the same gate
-cross-checks against every citation key in the prose. This manuscript
-quotes no private or unpublished material.
+private or unpublished material.

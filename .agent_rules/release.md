@@ -18,13 +18,15 @@ edits require a new evidence epoch.
 1. Regenerate variables/hydration at the committed source.
 2. Rebuild manuscript figures.
 3. Run the pinned template's full `stage_03_render` in its own environment.
-4. Check freshness and record custody.
-5. Verify disk evidence and normally commit artifacts.
-6. Verify the committed chain and tests/gates.
+4. Run `scripts/z_record_manuscript_render_manifest.py --prepare` in GNN.
+5. Run the same template's `stage_04_validate` and retain its native reports.
+6. Renew custody explicitly after successful validation and verify the new
+   inventory with `scripts/z_verify_fresh_render.py --committed-only`.
+7. Commit the publication and its evidence together and verify the repository gates.
 
-Record-only/accept-only refresh cannot replace a render. Preserve rejected logs,
-output and diagnostics. The verifier compares committed/disk chains differently
-before/after artifact commit; follow its owner and retain actual results.
+Use the [run guide](../docs/RUN_GUIDE.md#manuscript-rendering-and-custody) for the
+exact commands. Preserve rejected logs, output, and diagnostics. The scheduled
+audit compares fresh validated output with the existing manifest.
 
 ## Companion ordering
 

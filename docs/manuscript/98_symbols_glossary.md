@@ -56,13 +56,14 @@ consistency still requires validation when either changes.
 | `B` | Discrete kind: transition tensor encoding $P(s' \mid s, u)$, one column-stochastic slice per action in the canonical `B[next_state][previous_state][action]` order ([@eq:transition]). |
 | `C` | Discrete kind: preference vector — log-preferences over observation outcomes that bias the agent toward preferred outcomes ([@eq:preference]). |
 | `D` | Discrete kind: prior vector over initial hidden states ([@eq:prior]). |
-| `E` | Discrete kind: habit vector — an initial policy prior over actions, entering the policy posterior ([@eq:policy]). |
+| `E` | Discrete kind: habit vector supplying the prior over candidate policies ([@eq:policy]). |
 | `s` | Discrete kind: current hidden-state distribution; `s_prime` (`s'`) is the next hidden-state distribution. |
 | `o` | Discrete kind: current observation, an integer index over outcome modalities. |
-| `π` | Discrete kind: policy — a distribution over actions inferred from expected free energy ([@eq:policy]). |
-| `u` | Discrete kind: the selected (sampled) action, sampled from the policy posterior. Continuous kind: the control input added to the state each step ([@eq:lgssm_state]). |
+| `π` | Discrete kind: a candidate sequence of actions. Expected free energy and the habit prior determine its weight in the policy posterior ([@eq:policy]). |
+| `u` | Discrete kind: a control action. The policy posterior induces a distribution over the current action. Continuous kind: the control input added to the state each step ([@eq:lgssm_state]). |
 | `F` | Discrete kind: variational free energy, minimized during state inference ([@eq:vfe]) [@friston2010]. Continuous kind: the state-transition matrix of the linear-Gaussian model ([@eq:lgssm_state]). |
-| `G` | Discrete kind: expected free energy per policy, minimized during policy inference to score candidate actions ([@eq:efe]) [@dacosta2020]. |
+| `G` | Discrete kind: a policy's total expected free energy over the planning horizon ([@eq:efe]) [@dacosta2020]. |
+| `γ` | Discrete kind: policy precision, scaling the expected free energy term in the policy posterior ([@eq:policy]). |
 | `t` | Discrete time step; the horizon $T$ bounds the product in [@eq:generative_model]. Continuous kind: the time index of the state-space model. |
 | `H` | Continuous kind: observation matrix mapping the latent state to the observation ([@eq:lgssm_obs]). |
 | `Q` | Continuous kind: process-noise covariance of the state evolution ([@eq:lgssm_state]). |

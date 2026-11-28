@@ -156,7 +156,7 @@
 % a reader cannot tell a line break from a name. Keep seqsplit's guarantee that
 % no code token overflows the measure, but forbid breaks inside the last
 % \GNNttTail characters (an extension is never orphaned) and inside the first
-% \GNNttHead (a one- or two-letter stub is never left behind).
+% \GNNttHead (a one- or two-letter fragment is never left behind).
 % Declarations the template's combined-PDF renderer requires
 % (infrastructure/rendering/_pdf_combined_preamble.py). Absent here, it warns
 % "Preamble is missing declarations required by manuscript content" and
@@ -302,13 +302,28 @@ from clean checkouts of GNN and its render template.
 
 \begin{frame}[fragile,allowframebreaks]{Pipeline Smoke Run}
 \protect\phantomsection\label{pipeline-smoke-run}
-The fastest way to confirm a working installation is to drive the full
-pipeline over the discrete model family without invoking the optional
-LLM steps:
+A bounded smoke run parses and validates the discrete examples. From the
+GNN checkout, install the locked development environment and select the
+parsing, type-checking, and validation stages:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\ExtensionTok{uv}\NormalTok{ run python src/gnn/main.py }\DataTypeTok{\textbackslash{}}
+\ExtensionTok{uv}\NormalTok{ sync }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}extra}\NormalTok{ dev}
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}no{-}sync}\NormalTok{ python src/gnn/main.py }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}target{-}dir}\NormalTok{ input/gnn\_files/discrete }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}output{-}dir} \StringTok{"}\VariableTok{$(}\FunctionTok{mktemp} \AttributeTok{{-}d}\VariableTok{)}\StringTok{"} \AttributeTok{{-}{-}only{-}steps}\NormalTok{ 3,5,6 }\AttributeTok{{-}{-}skip{-}llm}
+\end{Highlighting}
+\end{Shaded}
+
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Pipeline Smoke Run}
+For pipeline-wide coverage, omit the step selection. The broader command
+includes setup, tests, and any admitted rendering and execution:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}no{-}sync}\NormalTok{ python src/gnn/main.py }\DataTypeTok{\textbackslash{}}
   \AttributeTok{{-}{-}target{-}dir}\NormalTok{ input/gnn\_files/discrete }\DataTypeTok{\textbackslash{}}
   \AttributeTok{{-}{-}output{-}dir}\NormalTok{ /tmp/gnn{-}smoke }\DataTypeTok{\textbackslash{}}
   \AttributeTok{{-}{-}skip{-}llm}
@@ -318,25 +333,22 @@ LLM steps:
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Pipeline Smoke Run}
-This parses the discrete GNN files, runs visualization and rendering
-across the maintained backends, and writes all artifacts under the
-chosen output directory. The \texttt{-\/-skip-llm} flag disables the LLM
-processing step; it does not establish network isolation or guarantee
-that every other step executes. Default framework selection excludes the
-experimental targets, and dependency readiness, model-kind admission,
-configured steps, and budgets determine the actual work. Inspect the
-current-run statuses and terminal exit code (0 success, 1 error, 2
-warning); missing or unfinished required work must remain a non-success
-outcome. To exercise every registered family rather than a single one,
-drive the manifest through the model-family acceptance gate given below:
-pointing \texttt{-\/-target-dir} at \texttt{input/gnn\_files} covers
+The pipeline writes artifacts under the chosen output directory. The
+\texttt{-\/-skip-llm} flag skips LLM processing and selects rule-based
+intelligent analysis. Setup and optional backend tools can still use the
+network. Default framework selection excludes experimental targets.
+Dependency readiness, model-kind admission, configured stages, and
+budgets determine the work performed. Inspect the current-run statuses
+and terminal exit code (0 success, 1 error, 2 warning). To exercise the
+registered families, use the manifest-driven acceptance gate below.
+Pointing \texttt{-\/-target-dir} at \texttt{input/gnn\_files} selects
 that tree's 12 corpus directories. All 9 registered family target
-\end{frame}
-
-\begin{frame}[fragile,allowframebreaks]{Pipeline Smoke Run}
 directories lie inside that tree, so a single invocation reaches every
 registered family.
 
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Pipeline Smoke Run}
 The discrete family exercises the categorical kind end to end. The
 continuous linear-Gaussian kind smoke-runs the same way, and the
 contrast between the two runs is itself a check of the per-kind
@@ -344,7 +356,7 @@ contract:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\ExtensionTok{uv}\NormalTok{ run python src/gnn/main.py }\DataTypeTok{\textbackslash{}}
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}no{-}sync}\NormalTok{ python src/gnn/main.py }\DataTypeTok{\textbackslash{}}
   \AttributeTok{{-}{-}target{-}dir}\NormalTok{ input/gnn\_files/continuous }\DataTypeTok{\textbackslash{}}
   \AttributeTok{{-}{-}output{-}dir}\NormalTok{ /tmp/gnn{-}smoke{-}continuous }\DataTypeTok{\textbackslash{}}
   \AttributeTok{{-}{-}skip{-}llm}
@@ -420,43 +432,59 @@ documentation, type, and security checks for a full pre-commit gate.
 
 \begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
 \protect\phantomsection\label{manuscript-reproducibility}
-This manuscript is itself a reproducible artifact. Every quantitative
-value in the prose --- the pipeline step count, the family and backend
-counts, the source and test inventories --- is a token rather than a
-hard-coded literal, and the deterministic producer regenerates all of
-them from the tracked files at the current commit:
+The producer derives repository counts and capability claims from
+tracked files at the current commit. It writes the token map and table
+claim ledger under \texttt{output/data/}. The template invokes that
+producer and hydrates the manuscript into \breaktt{output/manuscript/}.
+From the GNN checkout, check the existing publication custody before
+rebuilding and regenerate the figures:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\ExtensionTok{uv}\NormalTok{ run python scripts/z\_generate\_manuscript\_variables.py}
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}no{-}sync}\NormalTok{ python scripts/z\_verify\_fresh\_render.py }\AttributeTok{{-}{-}committed{-}only}
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}no{-}sync}\NormalTok{ python }\AttributeTok{{-}m}\NormalTok{ scripts.manuscript\_build\_figures}
 \end{Highlighting}
 \end{Shaded}
-
-That command recomputes the \{\{\ldots\}\} tokens and writes the token
-map and table claim ledger under \texttt{output/data/}. The template
-injector, when available, uses the map to hydrate the manuscript sources
-into \breaktt{output/manuscript/}. The manuscript's figures are rebuilt
-from the same token map:
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
+Use the template revision declared in
+\breaktt{output/data/manuscript\_render\_manifest.json} to reproduce the
+publication. From a separate checkout of the template containing this
+repository as a real directory at
+\breaktt{projects/active/GeneralizedNotationNotation}, export the
+measured template revision and build epoch and render the PDF, HTML, and
+slide decks:
+
 \begin{Shaded}
 \begin{Highlighting}[]
-\ExtensionTok{uv}\NormalTok{ run python }\AttributeTok{{-}m}\NormalTok{ scripts.manuscript\_build\_figures}
+\BuiltInTok{export} \VariableTok{GNN\_TEMPLATE\_REVISION}\OperatorTok{=}\StringTok{"}\VariableTok{$(}\FunctionTok{git}\NormalTok{ rev{-}parse HEAD}\VariableTok{)}\StringTok{"}
+\BuiltInTok{export} \VariableTok{SOURCE\_DATE\_EPOCH}\OperatorTok{=}\StringTok{"}\VariableTok{$(}\FunctionTok{git}\NormalTok{ log }\AttributeTok{{-}1} \AttributeTok{{-}{-}format}\OperatorTok{=}\NormalTok{\%ct}\VariableTok{)}\StringTok{"}
+\ExtensionTok{uv}\NormalTok{ sync }\AttributeTok{{-}{-}frozen}
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}no{-}sync}\NormalTok{ python scripts/pipeline/stage\_03\_render.py }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}project}\NormalTok{ GeneralizedNotationNotation}
 \end{Highlighting}
 \end{Shaded}
 
-The docxology template renders the hydrated sources to PDF and validates
-the publication. From a separate checkout of the template containing
-this repository as a real directory at
-\breaktt{projects/active/GeneralizedNotationNotation}, run:
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
+From the GNN checkout, prepare the rendered evidence by removing
+personal path prefixes:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen}\NormalTok{ python scripts/pipeline/stage\_03\_render.py }\DataTypeTok{\textbackslash{}}
-  \AttributeTok{{-}{-}project}\NormalTok{ GeneralizedNotationNotation}
-\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen}\NormalTok{ python scripts/pipeline/stage\_04\_validate.py }\DataTypeTok{\textbackslash{}}
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}no{-}sync}\NormalTok{ python scripts/z\_record\_manuscript\_render\_manifest.py }\AttributeTok{{-}{-}prepare}
+\end{Highlighting}
+\end{Shaded}
+
+From the same template root, validate the publication and write the
+Stage 04 reports:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}no{-}sync}\NormalTok{ python scripts/pipeline/stage\_04\_validate.py }\DataTypeTok{\textbackslash{}}
   \AttributeTok{{-}{-}project}\NormalTok{ GeneralizedNotationNotation}
 \end{Highlighting}
 \end{Shaded}
@@ -465,8 +493,35 @@ this repository as a real directory at
 
 \begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
 The validation stage checks the rendered outputs and their evidence,
-including the generated tables and their claims.
+including the generated tables and their claims. From the GNN checkout,
+compare the fresh evidence with the existing custody manifest:
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}no{-}sync}\NormalTok{ python scripts/z\_verify\_fresh\_render.py}
+\end{Highlighting}
+\end{Shaded}
+
+For an intentional source or template update, run the rendering and
+validation commands and explicitly record the renewed custody manifest
+from the project checkout:
+
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}no{-}sync}\NormalTok{ python scripts/z\_record\_manuscript\_render\_manifest.py}
+\ExtensionTok{uv}\NormalTok{ run }\AttributeTok{{-}{-}frozen} \AttributeTok{{-}{-}no{-}sync}\NormalTok{ python scripts/z\_verify\_fresh\_render.py }\AttributeTok{{-}{-}committed{-}only}
+\end{Highlighting}
+\end{Shaded}
+
+Commit the manifest with the new publication and Stage 04 evidence. The
+scheduled custody check leaves the baseline manifest intact.
+
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
 The render needs a LaTeX installation providing the packages listed in
 \breaktt{docs/manuscript/preamble.md} plus \texttt{seqsplit}; the
 template guards \texttt{seqsplit} with
@@ -475,9 +530,9 @@ than failing the build.
 
 Because the variables file is regenerated before rendering, the counts
 in the rendered PDF track the repository state at the commit recorded in
-\breaktt{output/data/manuscript\_variables.json} (1b26eb059): a code
+\breaktt{output/data/manuscript\_variables.json} (b253f85df): a code
 change that alters, for example, the test inventory (705 test files,
-7434 test functions) propagates into the prose on the next regeneration
+7438 test functions) propagates into the prose on the next regeneration
 without any manual editing.
 \end{frame}
 

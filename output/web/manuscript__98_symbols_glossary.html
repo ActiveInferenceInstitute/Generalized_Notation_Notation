@@ -1044,8 +1044,8 @@ href="manuscript__02_system_context.html#eq:prior">5</a>).</td>
 </tr>
 <tr>
 <td><code>E</code></td>
-<td>Discrete kind: habit vector — an initial policy prior over actions,
-entering the policy posterior (eq. <a href="manuscript__02_system_context.html#eq:policy">8</a>).</td>
+<td>Discrete kind: habit vector supplying the prior over candidate
+policies (eq. <a href="manuscript__02_system_context.html#eq:policy">8</a>).</td>
 </tr>
 <tr>
 <td><code>s</code></td>
@@ -1060,14 +1060,15 @@ modalities.</td>
 </tr>
 <tr>
 <td><code>π</code></td>
-<td>Discrete kind: policy — a distribution over actions inferred from
-expected free energy (eq. <a href="manuscript__02_system_context.html#eq:policy">8</a>).</td>
+<td>Discrete kind: a candidate sequence of actions. Expected free energy
+and the habit prior determine its weight in the policy posterior (eq. <a
+href="manuscript__02_system_context.html#eq:policy">8</a>).</td>
 </tr>
 <tr>
 <td><code>u</code></td>
-<td>Discrete kind: the selected (sampled) action, sampled from the
-policy posterior. Continuous kind: the control input added to the state
-each step (eq. <a href="manuscript__02_system_context.html#eq:lgssm_state">9</a>).</td>
+<td>Discrete kind: a control action. The policy posterior induces a
+distribution over the current action. Continuous kind: the control input
+added to the state each step (eq. <a href="manuscript__02_system_context.html#eq:lgssm_state">9</a>).</td>
 </tr>
 <tr>
 <td><code>F</code></td>
@@ -1080,11 +1081,15 @@ href="manuscript__02_system_context.html#eq:lgssm_state">9</a>).</td>
 </tr>
 <tr>
 <td><code>G</code></td>
-<td>Discrete kind: expected free energy per policy, minimized during
-policy inference to score candidate actions (eq. <a
-href="manuscript__02_system_context.html#eq:efe">7</a>) <span class="citation"
+<td>Discrete kind: a policy’s total expected free energy over the
+planning horizon (eq. <a href="manuscript__02_system_context.html#eq:efe">7</a>) <span class="citation"
 data-cites="dacosta2020">(<a href="index.html#ref-dacosta2020"
 role="doc-biblioref">Da Costa et al. 2020</a>)</span>.</td>
+</tr>
+<tr>
+<td><code>γ</code></td>
+<td>Discrete kind: policy precision, scaling the expected free energy
+term in the policy posterior (eq. <a href="manuscript__02_system_context.html#eq:policy">8</a>).</td>
 </tr>
 <tr>
 <td><code>t</code></td>

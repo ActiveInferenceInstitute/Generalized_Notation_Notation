@@ -565,7 +565,9 @@ def test_sync_preamble_metadata_repairs_drift(
     """A hand-edited value is rewritten from the token, and drift reports it."""
     manuscript = tmp_path / "docs" / "manuscript"
     manuscript.mkdir(parents=True)
-    source = (_PROJECT_ROOT / "docs" / "manuscript" / "preamble.md").read_text(encoding="utf-8")
+    source = (_PROJECT_ROOT / "docs" / "manuscript" / "preamble.md").read_text(
+        encoding="utf-8"
+    )
     stale = source.replace(
         f"pdfsubject={{{variables['GNN_SUBTITLE']}}}", "pdfsubject={stale subtitle}"
     )
@@ -590,7 +592,9 @@ def test_config_title_page_metadata_is_written_not_typed(
     """
     assert config_metadata_drift(_PROJECT_ROOT, variables) == []
 
-    config = (_PROJECT_ROOT / "docs" / "manuscript" / "config.yaml").read_text(encoding="utf-8")
+    config = (_PROJECT_ROOT / "docs" / "manuscript" / "config.yaml").read_text(
+        encoding="utf-8"
+    )
     assert f'version: "{variables["GNN_VERSION"]}"' in config
     if variables["GNN_RELEASE_DATE"]:
         assert f'date: "{variables["GNN_RELEASE_DATE"]}"' in config
@@ -602,7 +606,9 @@ def test_sync_config_metadata_repairs_drift(
     """A hand-edited title-page value is rewritten from the token; drift reports it."""
     manuscript = tmp_path / "docs" / "manuscript"
     manuscript.mkdir(parents=True)
-    source = (_PROJECT_ROOT / "docs" / "manuscript" / "config.yaml").read_text(encoding="utf-8")
+    source = (_PROJECT_ROOT / "docs" / "manuscript" / "config.yaml").read_text(
+        encoding="utf-8"
+    )
     stale = source.replace(
         f'version: "{variables["GNN_VERSION"]}"', 'version: "stale version"'
     )

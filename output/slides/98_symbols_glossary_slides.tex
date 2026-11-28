@@ -118,7 +118,7 @@
 % a reader cannot tell a line break from a name. Keep seqsplit's guarantee that
 % no code token overflows the measure, but forbid breaks inside the last
 % \GNNttTail characters (an extension is never orphaned) and inside the first
-% \GNNttHead (a one- or two-letter stub is never left behind).
+% \GNNttHead (a one- or two-letter fragment is never left behind).
 % Declarations the template's combined-PDF renderer requires
 % (infrastructure/rendering/_pdf_combined_preamble.py). Absent here, it warns
 % "Preamble is missing declarations required by manuscript content" and
@@ -475,25 +475,28 @@ observation outcomes that bias the agent toward preferred outcomes
 (eq.~4). \\
 \texttt{D} & Discrete kind: prior vector over initial hidden states
 (eq.~5). \\
-\texttt{E} & Discrete kind: habit vector --- an initial policy prior
-over actions, entering the policy posterior (eq.~8). \\
+\texttt{E} & Discrete kind: habit vector supplying the prior over
+candidate policies (eq.~8). \\
 \texttt{s} & Discrete kind: current hidden-state distribution;
 \texttt{s\_prime} (\texttt{s\textquotesingle{}}) is the next
 hidden-state distribution. \\
 \texttt{o} & Discrete kind: current observation, an integer index over
 outcome modalities. \\
-\texttt{\texorpdfstring{\ensuremath{\pi}}{pi}} & Discrete kind: policy --- a distribution over actions
-inferred from expected free energy (eq.~8). \\
-\texttt{u} & Discrete kind: the selected (sampled) action, sampled from
-the policy posterior. Continuous kind: the control input added to the
-state each step (eq.~9). \\
+\texttt{\texorpdfstring{\ensuremath{\pi}}{pi}} & Discrete kind: a candidate sequence of actions. Expected
+free energy and the habit prior determine its weight in the policy
+posterior (eq.~8). \\
+\texttt{u} & Discrete kind: a control action. The policy posterior
+induces a distribution over the current action. Continuous kind: the
+control input added to the state each step
+(eq.~9). \\
 \texttt{F} & Discrete kind: variational free energy, minimized during
 state inference (eq.~6) (Friston 2010). Continuous kind: the
 state-transition matrix of the linear-Gaussian model
 (eq.~9). \\
-\texttt{G} & Discrete kind: expected free energy per policy, minimized
-during policy inference to score candidate actions (eq.~7)
-(Da Costa et al. 2020). \\
+\texttt{G} & Discrete kind: a policy's total expected free energy over
+the planning horizon (eq.~7) (Da Costa et al. 2020). \\
+\texttt{\texorpdfstring{\ensuremath{\gamma}}{gamma}} & Discrete kind: policy precision, scaling the expected free
+energy term in the policy posterior (eq.~8). \\
 \texttt{t} & Discrete time step; the horizon \(T\) bounds the product in
 eq.~1. Continuous kind: the time index of the
 state-space model. \\

@@ -1,25 +1,13 @@
 #!/usr/bin/env python3
-"""Record the render custody manifest after a manuscript render.
+"""Prepare render evidence after Stage 03 or record it after Stage 04.
 
-The last step of the scheduled re-render ritual (SC-22 — see
-``scripts/z_generate_manuscript_variables.py``'s docstring): after the
-template's ``stage_03_render`` has produced the committed PDF evidence and
-the producer has written the token map, digest both into
-``output/data/manuscript_render_manifest.json`` so
-``tests/test_manuscript_latex_log.py`` can prove the committed
-``.log``/``.tex``/``.md``, the hydrated sections, and the token map are four
-artifacts of one render rather than three renders passing together.
-
-Thin orchestrator, same shape as ``z_generate_manuscript_variables.py``: all
-logic lives in :mod:`gnn.manuscript.render_custody`. Refuses to record over
-missing artifacts or a receipt/token-map commit disagreement.
-
-Usage:
-    uv run python scripts/z_record_manuscript_render_manifest.py
+The default command intentionally renews the custody manifest. The scheduled
+verifier checks the existing manifest and never calls the default command.
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -29,11 +17,22 @@ if str(_PROJECT_ROOT / "src") not in sys.path:
 
 from gnn.manuscript.render_custody import (  # noqa: E402
     manifest_path,
+    prepare_render_artifacts,
     record_render_manifest,
 )
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--prepare",
+        action="store_true",
+        help="remove personal path prefixes before Stage 04",
+    )
+    if parser.parse_args().prepare:
+        for rel in prepare_render_artifacts(_PROJECT_ROOT):
+            print(f"[render-custody] sanitized home path prefixes in {rel}")
+        return 0
     try:
         record_render_manifest(_PROJECT_ROOT)
     except RuntimeError as exc:

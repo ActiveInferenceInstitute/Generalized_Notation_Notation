@@ -133,7 +133,7 @@
 % a reader cannot tell a line break from a name. Keep seqsplit's guarantee that
 % no code token overflows the measure, but forbid breaks inside the last
 % \GNNttTail characters (an extension is never orphaned) and inside the first
-% \GNNttHead (a one- or two-letter stub is never left behind).
+% \GNNttHead (a one- or two-letter fragment is never left behind).
 % Declarations the template's combined-PDF renderer requires
 % (infrastructure/rendering/_pdf_combined_preamble.py). Absent here, it warns
 % "Preamble is missing declarations required by manuscript content" and
@@ -437,11 +437,13 @@ Costa et al. 2020; Smith et al. 2022).
 
 \begin{equation}\protect\phantomsection\label{eq:generative_model}{P(o_{1:T},\, s_{1:T},\, \pi) \;=\; P(\pi)\; P(s_1) \prod_{t=1}^{T} P(o_t \mid s_t) \prod_{t=2}^{T} P(s_t \mid s_{t-1},\, \pi)}\end{equation}
 
-The four matrices named in the \texttt{StateSpaceBlock} are exactly the
-factors of eq.~\ref{eq:generative_model}, and this correspondence is
-what makes the notation translatable rather than merely descriptive. The
-\texttt{A} matrix is the likelihood, a column-stochastic map from hidden
-states to observation outcomes, given in eq.~\ref{eq:likelihood}.
+The \texttt{A}, \texttt{B}, and \texttt{D} declarations specify the
+observation likelihood, controlled transition, and initial-state prior
+in eq.~\ref{eq:generative_model}. The remaining factor, \(P(\pi)\), can
+be supplied by the optional policy habit vector \texttt{E}. The
+\texttt{C} declaration supplies preferences for policy evaluation. The
+\texttt{A} matrix is a column-stochastic map from hidden states to
+observation outcomes, given in eq.~\ref{eq:likelihood}.
 
 \end{frame}
 
@@ -481,21 +483,35 @@ and an accuracy term (Friston 2010).
 \begin{frame}[fragile,allowframebreaks]{The Discrete Categorical Kind}
 \begin{equation}\protect\phantomsection\label{eq:vfe}{F[Q] \;=\; \underbrace{D_{\mathrm{KL}}\!\left[\,Q(s) \,\|\, P(s)\,\right]}_{\text{complexity}} \;-\; \underbrace{\mathbb{E}_{Q(s)}\!\left[\ln P(o \mid s)\right]}_{\text{accuracy}}}\end{equation}
 
-Action is expected-free-energy minimization: each policy \(\pi\) is
-scored over future steps \(\tau\) by eq.~\ref{eq:efe}, whose two terms
-are the information gain a policy is expected to yield and the extent to
-which its predicted outcomes match \texttt{C} (Da Costa et al. 2020).
+Policy evaluation uses the expected free energy of predicted future
+observations and states. For a decision at time \(t\), the contribution
+\(G_\tau(\pi)\) at each future time \(\tau\) combines expected
+information gain and expected log-preference (Da Costa et al. 2020). The
+horizon score \(G(\pi)\) in eq.~\ref{eq:efe} sums those contributions
+over \(\tau=t+1,\ldots,T\).
 
-\begin{equation}\protect\phantomsection\label{eq:efe}{G(\pi) \;=\; -\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid \pi)}\!\left[\ln Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid \pi)\right]}_{\text{epistemic value}} \;-\; \underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln \tilde{P}(o_\tau)\right]}_{\text{pragmatic value}}}\end{equation}
-
-The policy posterior then combines those scores with the habit prior
-\texttt{E} declared in the specification, as in eq.~\ref{eq:policy}, and
-the selected action \(u\) is sampled from it.
+\begin{equation}\protect\phantomsection\label{eq:efe}{\begin{aligned}
+G_\tau(\pi) &= -\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid \pi)}\!\left[\ln Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid \pi)\right]}_{\text{epistemic value}} \\
+&\quad - \underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln \tilde{P}(o_\tau)\right]}_{\text{pragmatic value}}, \\
+G(\pi) &= \sum_{\tau=t+1}^{T} G_\tau(\pi).
+\end{aligned}}\end{equation}
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{The Discrete Categorical Kind}
-\begin{equation}\protect\phantomsection\label{eq:policy}{Q(\pi) \;=\; \sigma\!\left(\ln E - G\right)}\end{equation}
+In this formulation, the posterior combines the habit prior \(E_\pi\)
+with the score scaled by policy precision \(\gamma>0\), using a uniform
+prior when no habits are specified. The softmax in eq.~\ref{eq:policy}
+is over candidate policies. A policy specifies future actions, and the
+policy posterior induces a distribution over the current action \(u_t\).
+The generated factored RxInfer example scores single actions, for which
+the policy and action indices coincide. Backend receipts identify the
+inference mode used for each run.
+
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]{The Discrete Categorical Kind}
+\begin{equation}\protect\phantomsection\label{eq:policy}{Q(\pi) \;=\; \frac{E_\pi \exp\!\left[-\gamma G(\pi)\right]}{\sum_{\pi'} E_{\pi'} \exp\!\left[-\gamma G(\pi')\right]}}\end{equation}
 
 The discrete categorical kind is the language's original and most
 densely exercised target: 29 of the 38 exemplar specifications in the
@@ -838,7 +854,7 @@ from the Data Dependency Graph block of src/gnn/STEP\_INDEX.md, which
 mirrors the live step registry. Parsing (Step 3) precedes many later
 steps. Optional artifact enrichments are documented separately and are
 not shown as required edges. The figure is generated from
-src/gnn/STEP\_INDEX.md at commit 1b26eb059; its footer restates the step
+src/gnn/STEP\_INDEX.md at commit b253f85df; its footer restates the step
 count, the number of required prerequisites, and the layout
 rule.}]{../figures/gnn_pipeline_dag.png}
 
@@ -869,7 +885,7 @@ step registry. Parsing (Step
 
 3) precedes many later steps. Optional artifact enrichments are
 documented separately and are not shown as required edges. The figure is
-generated from \breaktt{src/gnn/STEP\_INDEX.md} at commit 1b26eb059; its
+generated from \breaktt{src/gnn/STEP\_INDEX.md} at commit b253f85df; its
 footer restates the step count, the number of required prerequisites,
 and the layout rule.
 
@@ -1086,7 +1102,7 @@ provide evidence of agreement among the projections. The executable node
 summarizes 12 of 12 registered render targets with implemented Step 12
 execution adapters and previews three by name; execution depends on
 runtime readiness, admitted model kind, and a successful source-bound
-run receipt. Counts are producer tokens at commit 1b26eb059, and the
+run receipt. Counts are producer tokens at commit b253f85df, and the
 panel is generated by scripts/manuscript\_fig\_triple\_play.py.
 Take-away: a model is authored once and then read, seen, and run from
 that single source.}]{../figures/gnn_triple_play.png}
@@ -1119,7 +1135,7 @@ executable node summarizes 12 of 12 registered render targets with
 implemented Step 12 execution adapters and previews three by name;
 execution depends on runtime readiness, admitted model kind, and a
 successful source-bound run receipt. Counts are producer tokens at
-commit 1b26eb059, and the panel is generated by
+commit b253f85df, and the panel is generated by
 \breaktt{scripts/manuscript\_fig\_triple\_play.py}. Take-away: a model is
 authored once and then read,
 

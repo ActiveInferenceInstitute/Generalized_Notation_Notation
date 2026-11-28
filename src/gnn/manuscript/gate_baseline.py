@@ -139,7 +139,11 @@ def finding_fingerprint(project_root: Path, issue: str) -> str:
     supply byte identity. Hydration findings additionally bind their source and
     token map. This cannot grandfather altered evidence with the same wording.
     """
-    paths = set(re.findall(r"(?:docs/manuscript|output|manuscript|input|src)/[A-Za-z0-9_./-]+", issue))
+    paths = set(
+        re.findall(
+            r"(?:docs/manuscript|output|manuscript|input|src)/[A-Za-z0-9_./-]+", issue
+        )
+    )
     for name in re.findall(r"\b[A-Za-z0-9_-]+\.(?:md|yaml|bib)\b", issue):
         if (project_root / name).is_file():
             paths.add(name)

@@ -83,10 +83,13 @@ jobs:
       - name: Manuscript token audit
         run: uv run --frozen --no-sync python scripts/check_manuscript_tokens.py --strict
 
+      - name: Committed manuscript publication custody
+        run: uv run --frozen --no-sync python scripts/z_verify_fresh_render.py --committed-only
+
       # SC-22 PR-time drift guard: the committed hydrated prose must be what
       # the committed token map hydrates to. A PR that regenerated the map
-      # without the full ritual (figures -> template stage_03_render ->
-      # record) fails here instead of in custody-re-render.yml after merge.
+      # without the full ritual (figures -> template Stage 03 -> preparation ->
+      # template Stage 04 -> record) fails here instead of in custody-re-render.yml after merge.
       - name: Hydrated prose matches token map
         run: uv run --frozen --no-sync python scripts/check_hydrated_prose.py
 

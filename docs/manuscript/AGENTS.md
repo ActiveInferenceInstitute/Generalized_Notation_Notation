@@ -36,9 +36,9 @@ Evidence boundary: Do not treat root output churn as manuscript evidence until t
 - `alt_text` is the one authored field. It must say what the figure *shows* for a
   reader who cannot see it — different words from the caption, which is a title.
 - `scripts/check_manuscript_tokens.py` re-checks registry coverage independently of
-  the template. The template's own `validate_figure_registry` runs at
-  `stage_04_validate`, not `stage_03_render`, so relying on it alone let a 29-page
-  PDF ship with no registry at all.
+  the template. Run the template's `stage_04_validate` after preparing
+  Stage 03 evidence so its native figure registry check runs before custody
+  is recorded.
 
 ### A figure is a second renderer of the token map, and it does not re-run
 
@@ -97,9 +97,9 @@ manuscript's `bash` blocks and checks it against the script's own `argparse`
 declarations: every flag passed must be declared, and every `required=True`
 option must be passed. It is static — it proves the repository would accept the
 arguments, not that the command succeeds — so a published command still has to
-be run before it is called verified. One command is exempt by name, the
-template's `stage_03_render.py`, because the manuscript reproducibility section says that it runs from a
-separate checkout; a test pins that sentence so the exemption cannot outlive it.
+be run before it is called verified. The template's `stage_03_render.py` and
+`stage_04_validate.py` are exempt by name. The test checks that the manuscript
+places both commands in the separate template checkout.
 
 
 ## Known benign LaTeX diagnostics

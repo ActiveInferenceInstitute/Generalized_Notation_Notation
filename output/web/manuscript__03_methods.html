@@ -857,16 +857,12 @@ than re-derived downstream.</p>
 <h2 data-number="4.2" id="type-checking-and-validation"><span
 class="header-section-number">4.2</span> Type Checking and
 Validation</h2>
-<p>A model that parses is not yet a model that is well-formed. Steps 5
-and 6 apply type checking and validation to confirm that the state
-spaces, observation modalities, control factors, and the matrices
-relating them are mutually consistent before any code is generated. This
-catches dimensional mismatches and malformed factor structures at the
-notation level, where the diagnostic is cheap and legible, rather than
-allowing them to surface as opaque runtime errors deep inside a
-numerical backend. Validation is where the kinds receive their shape
-contracts, and each kind’s contract checks the objects its notation
-actually declares.</p>
+<p>A successful parse establishes the model structure. In a run that
+selects type checking and validation (steps 5 and 6), those stages check
+whether state spaces, observation modalities, control factors, and their
+matrices are mutually consistent. The checks catch dimensional
+mismatches and malformed factor structures at the notation level. Each
+kind’s contract checks the objects its notation declares.</p>
 <p>For a discrete categorical specification, validation reads each
 declared <code>B</code> tensor through an orientation diagnostic: the
 canonical reading is column-stochastic,
@@ -894,24 +890,21 @@ optional closed-loop declarations are checked as a pair, since a
 <code>goal_mean</code> without a <code>control_gain</code> (or the
 reverse) is an incomplete control structure rather than a passive
 model.</p>
-<p>Validation supplies explicit checks of the declared model contract
-before rendering. Passing those checks establishes their scoped
-conditions, not a certificate of every later numerical or backend
-behavior; execution and analysis retain their own validation and
+<p>Select the type-checking and validation stages explicitly to obtain
+their receipts. A render-only selection resolves the parsing dependency
+and applies the selected backend’s own model admission checks during
+rendering. Execution and analysis retain their own validation and
 source-bound receipts.</p>
 <h2 data-number="4.3" id="rendering-to-multiple-backends"><span
 class="header-section-number">4.3</span> Rendering to Multiple
 Backends</h2>
-<p>The central act of the “Triple Play” is turning a validated
-specification into executable cognitive models. The rendering stage
-emits backend-specific code for 12 registered target frameworks — PyMDP,
+<p>The rendering stage turns an admitted specification into
+backend-specific code or descriptions for 12 registered targets — PyMDP,
 RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan,
-bnlearn, cpomdp, THRML, ngc-learn — so that a single GNN model can be
-instantiated as a simulation in whichever computational ecosystem a
-researcher already works in. Each backend is addressed through a
-registry key that maps the abstract model onto that framework’s idioms
-for representing generative models and performing inference. The full
-mapping from registry key to backend is given below.</p>
+bnlearn, cpomdp, THRML, ngc-learn. Each backend has a registry key and
+its own mapping from GNN declarations to that framework’s representation
+of models and inference. The full mapping from registry key to backend
+is given below.</p>
 <div class="table-scroll" role="region" tabindex="0" aria-label="Scrollable table: Table 3: Render targets declared in src/gnn/render/framework_registry.py , one row per registry key in registry order…"><table id="tbl:backend_registry" data-responsive-table="true">
 <caption>Table 3: Render targets declared in
 <code>src/gnn/render/framework_registry.py</code>, one row per registry
@@ -1109,7 +1102,7 @@ the reliability gate profiles for the continuous family; the tan row
 maintained set, so it is never profiled; a red Render-Subdir cell would
 mean a registry entry with no subdirectory. The table is read directly
 from <code>src/gnn/render/framework_registry.py</code> and the
-model-family manifest at commit 1b26eb059, and its footer summarizes the
+model-family manifest at commit b253f85df, and its footer summarizes the
 row counts. Take-away: registration, render presence, and profiling
 status are three different claims, and the table keeps them
 apart.</figcaption>
@@ -1300,7 +1293,7 @@ class="header-section-number">4.7</span> Reproducibility and
 Auto-Injection</h2>
 <p>Every count reported in this manuscript is emitted by the producer
 <code>scripts/z_generate_manuscript_variables.py</code> from the
-repository state at commit 1b26eb059, not typed by hand. The producer
+repository state at commit b253f85df, not typed by hand. The producer
 reads that commit’s source surfaces directly — the step modules, the
 source tree, the model-family manifest, and the framework registry —
 together with the project’s maintained ledgers, notably the Model

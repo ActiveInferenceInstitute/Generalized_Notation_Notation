@@ -22,7 +22,7 @@ $$
 P(o_{1:T},\, s_{1:T},\, \pi) \;=\; P(\pi)\; P(s_1) \prod_{t=1}^{T} P(o_t \mid s_t) \prod_{t=2}^{T} P(s_t \mid s_{t-1},\, \pi)
 $$ {#eq:generative_model}
 
-The four matrices named in the `StateSpaceBlock` are exactly the factors of [@eq:generative_model], and this correspondence is what makes the notation translatable rather than merely descriptive. The `A` matrix is the likelihood, a column-stochastic map from hidden states to observation outcomes, given in [@eq:likelihood].
+The `A`, `B`, and `D` declarations specify the observation likelihood, controlled transition, and initial-state prior in [@eq:generative_model]. The remaining factor, $P(\pi)$, can be supplied by the optional policy habit vector `E`. The `C` declaration supplies preferences for policy evaluation. The `A` matrix is a column-stochastic map from hidden states to observation outcomes, given in [@eq:likelihood].
 
 $$
 P(o_t = i \mid s_t = j) \;=\; A_{ij}, \qquad \sum_i A_{ij} = 1
@@ -50,16 +50,20 @@ $$
 F[Q] \;=\; \underbrace{D_{\mathrm{KL}}\!\left[\,Q(s) \,\|\, P(s)\,\right]}_{\text{complexity}} \;-\; \underbrace{\mathbb{E}_{Q(s)}\!\left[\ln P(o \mid s)\right]}_{\text{accuracy}}
 $$ {#eq:vfe}
 
-Action is expected-free-energy minimization: each policy $\pi$ is scored over future steps $\tau$ by [@eq:efe], whose two terms are the information gain a policy is expected to yield and the extent to which its predicted outcomes match `C` [@dacosta2020].
+Policy evaluation uses the expected free energy of predicted future observations and states. For a decision at time $t$, the contribution $G_\tau(\pi)$ at each future time $\tau$ combines expected information gain and expected log-preference [@dacosta2020]. The horizon score $G(\pi)$ in [@eq:efe] sums those contributions over $\tau=t+1,\ldots,T$.
 
 $$
-G(\pi) \;=\; -\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid \pi)}\!\left[\ln Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid \pi)\right]}_{\text{epistemic value}} \;-\; \underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln \tilde{P}(o_\tau)\right]}_{\text{pragmatic value}}
+\begin{aligned}
+G_\tau(\pi) &= -\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid \pi)}\!\left[\ln Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid \pi)\right]}_{\text{epistemic value}} \\
+&\quad - \underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln \tilde{P}(o_\tau)\right]}_{\text{pragmatic value}}, \\
+G(\pi) &= \sum_{\tau=t+1}^{T} G_\tau(\pi).
+\end{aligned}
 $$ {#eq:efe}
 
-The policy posterior then combines those scores with the habit prior `E` declared in the specification, as in [@eq:policy], and the selected action $u$ is sampled from it.
+In this formulation, the posterior combines the habit prior $E_\pi$ with the score scaled by policy precision $\gamma>0$, using a uniform prior when no habits are specified. The softmax in [@eq:policy] is over candidate policies. A policy specifies future actions, and the policy posterior induces a distribution over the current action $u_t$. The generated factored RxInfer example scores single actions, for which the policy and action indices coincide. Backend receipts identify the inference mode used for each run.
 
 $$
-Q(\pi) \;=\; \sigma\!\left(\ln E - G\right)
+Q(\pi) \;=\; \frac{E_\pi \exp\!\left[-\gamma G(\pi)\right]}{\sum_{\pi'} E_{\pi'} \exp\!\left[-\gamma G(\pi')\right]}
 $$ {#eq:policy}
 
 The discrete categorical kind is the language's original and most densely exercised target: {{GNN_DISCRETE_EXEMPLAR_COUNT}} of the {{GNN_EXAMPLE_COUNT}} exemplar specifications in the corpus are discrete-state. The discrete family folder holds the kind's core set — from minimal `markov_chain.md` and `hmm_baseline.md` fixtures through epistemic planning (`tmaze_epistemic.md`) and deep planning horizons (`deep_planning_horizon.md`) to the canonical full agent (`actinf_pomdp_agent.md`) — and further categorical fixtures populate the basics, precision, structured, gridworld, and scaling-study corpora. The kind composes upward as well: multiple independent state factors (a factored model), per-level and per-agent matrix declarations ([@sec:structural_variants]), and Dirichlet priors that turn a declared matrix into a learned latent ([@sec:limitations_next_steps]) are all extensions of this same categorical substrate.

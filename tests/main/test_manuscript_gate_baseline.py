@@ -18,6 +18,7 @@ from gnn.manuscript.render_custody import (
     record_render_manifest,
     verify_fresh_render,
 )
+from tests.manuscript_fixtures import write_template_validation
 
 EXCLUDED = frozenset({"AGENTS.md"})
 
@@ -90,7 +91,12 @@ def test_script_exclusion_contract_reexports_active_names_from_uninstalled_check
 
 
 def _tree(root: Path) -> Path:
-    for directory in ("docs/manuscript", "output/data", "output/manuscript", "output/pdf"):
+    for directory in (
+        "docs/manuscript",
+        "output/data",
+        "output/manuscript",
+        "output/pdf",
+    ):
         (root / directory).mkdir(parents=True, exist_ok=True)
     (root / "docs/manuscript/00_section.md").write_text(
         "count {{COUNT}} at {{GNN_GIT_COMMIT}}\n"
@@ -109,6 +115,7 @@ def _tree(root: Path) -> Path:
     (root / "output/pdf/GeneralizedNotationNotation_combined.pdf").write_bytes(
         b"%PDF-1.7\nfixture publication\n"
     )
+    write_template_validation(root)
     return root
 
 

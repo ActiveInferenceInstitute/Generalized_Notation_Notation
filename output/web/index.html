@@ -993,7 +993,7 @@ style="width:100.0%"
 alt="End-to-end summary panel of the GNN pipeline in seven left-to-right stage cards: a plain-text GNN document declaring A, B, C, D and E; parsing; validation and type checking with the B-tensor orientation check; code rendering to the registered backends; supervised dispatch through execution adapters including the bnlearn lane; analysis; and cross-repository interchange with GEO-INFER and fep_lean. Step pills name the pipeline step behind each stage, a callout states the two newest capabilities, and a footer strip carries the producer&#x27;s scale counts for steps, families, backends and MCP tools." /><span class="figure-full-size-label" aria-hidden="true">Open full-size figure</span></a>
 <figcaption>Figure 1: The GeneralizedNotationNotation
 (GNN) pipeline at a glance, generated from the producer’s token map at
-commit 1b26eb059. A plain-text specification — the
+commit b253f85df. A plain-text specification — the
 <code>StateSpaceBlock</code> declaring the model’s tensors,
 <code>A</code>, <code>B</code>, <code>C</code>, <code>D</code>, and
 <code>E</code> for the discrete categorical kind of eq. <a
@@ -1379,12 +1379,15 @@ role="doc-biblioref">Smith et al. 2022</a>)</span>.</p>
 class="math display">\[P(o_{1:T},\, s_{1:T},\, \pi) \;=\; P(\pi)\;
 P(s_1) \prod_{t=1}^{T} P(o_t \mid s_t) \prod_{t=2}^{T} P(s_t \mid
 s_{t-1},\, \pi)\qquad{(1)}\]</span></span></p>
-<p>The four matrices named in the <code>StateSpaceBlock</code> are
-exactly the factors of eq. <a href="#eq:generative_model">1</a>, and
-this correspondence is what makes the notation translatable rather than
-merely descriptive. The <code>A</code> matrix is the likelihood, a
-column-stochastic map from hidden states to observation outcomes, given
-in eq. <a href="#eq:likelihood">2</a>.</p>
+<p>The <code>A</code>, <code>B</code>, and <code>D</code> declarations
+specify the observation likelihood, controlled transition, and
+initial-state prior in eq. <a href="#eq:generative_model">1</a>. The
+remaining factor, <span class="math inline">\(P(\pi)\)</span>, can be
+supplied by the optional policy habit vector <code>E</code>. The
+<code>C</code> declaration supplies preferences for policy evaluation.
+The <code>A</code> matrix is a column-stochastic map from hidden states
+to observation outcomes, given in eq. <a
+href="#eq:likelihood">2</a>.</p>
 <p><span id="eq:likelihood"><span class="math display">\[P(o_t = i \mid
 s_t = j) \;=\; A_{ij}, \qquad \sum_i A_{ij} =
 1\qquad{(2)}\]</span></span></p>
@@ -1422,27 +1425,39 @@ href="#ref-friston2010" role="doc-biblioref">Friston
 P(s)\,\right]}_{\text{complexity}} \;-\;
 \underbrace{\mathbb{E}_{Q(s)}\!\left[\ln P(o \mid
 s)\right]}_{\text{accuracy}}\qquad{(6)}\]</span></span></p>
-<p>Action is expected-free-energy minimization: each policy <span
-class="math inline">\(\pi\)</span> is scored over future steps <span
-class="math inline">\(\tau\)</span> by eq. <a href="#eq:efe">7</a>,
-whose two terms are the information gain a policy is expected to yield
-and the extent to which its predicted outcomes match <code>C</code>
-<span class="citation" data-cites="dacosta2020">(<a
-href="#ref-dacosta2020" role="doc-biblioref">Da Costa et al.
-2020</a>)</span>.</p>
-<p><span id="eq:efe"><span class="math display">\[G(\pi) \;=\;
--\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid \pi)}\!\left[\ln
-Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid
-\pi)\right]}_{\text{epistemic value}} \;-\;
-\underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln
-\tilde{P}(o_\tau)\right]}_{\text{pragmatic
-value}}\qquad{(7)}\]</span></span></p>
-<p>The policy posterior then combines those scores with the habit prior
-<code>E</code> declared in the specification, as in eq. <a
-href="#eq:policy">8</a>, and the selected action <span
-class="math inline">\(u\)</span> is sampled from it.</p>
+<p>Policy evaluation uses the expected free energy of predicted future
+observations and states. For a decision at time <span
+class="math inline">\(t\)</span>, the contribution <span
+class="math inline">\(G_\tau(\pi)\)</span> at each future time <span
+class="math inline">\(\tau\)</span> combines expected information gain
+and expected log-preference <span class="citation"
+data-cites="dacosta2020">(<a href="#ref-dacosta2020"
+role="doc-biblioref">Da Costa et al. 2020</a>)</span>. The horizon score
+<span class="math inline">\(G(\pi)\)</span> in eq. <a
+href="#eq:efe">7</a> sums those contributions over <span
+class="math inline">\(\tau=t+1,\ldots,T\)</span>.</p>
+<p><span id="eq:efe"><span class="math display">\[\begin{aligned}
+G_\tau(\pi) &amp;= -\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid
+\pi)}\!\left[\ln Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid
+\pi)\right]}_{\text{epistemic value}} \\
+&amp;\quad - \underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln
+\tilde{P}(o_\tau)\right]}_{\text{pragmatic value}}, \\
+G(\pi) &amp;= \sum_{\tau=t+1}^{T} G_\tau(\pi).
+\end{aligned}\qquad{(7)}\]</span></span></p>
+<p>In this formulation, the posterior combines the habit prior <span
+class="math inline">\(E_\pi\)</span> with the score scaled by policy
+precision <span class="math inline">\(\gamma&gt;0\)</span>, using a
+uniform prior when no habits are specified. The softmax in eq. <a
+href="#eq:policy">8</a> is over candidate policies. A policy specifies
+future actions, and the policy posterior induces a distribution over the
+current action <span class="math inline">\(u_t\)</span>. The generated
+factored RxInfer example scores single actions, for which the policy and
+action indices coincide. Backend receipts identify the inference mode
+used for each run.</p>
 <p><span id="eq:policy"><span class="math display">\[Q(\pi) \;=\;
-\sigma\!\left(\ln E - G\right)\qquad{(8)}\]</span></span></p>
+\frac{E_\pi \exp\!\left[-\gamma G(\pi)\right]}{\sum_{\pi&#39;}
+E_{\pi&#39;} \exp\!\left[-\gamma
+G(\pi&#39;)\right]}\qquad{(8)}\]</span></span></p>
 <p>The discrete categorical kind is the language’s original and most
 densely exercised target: 29 of the 38 exemplar specifications in the
 corpus are discrete-state. The discrete family folder holds the kind’s
@@ -1728,7 +1743,7 @@ of <code>src/gnn/STEP_INDEX.md</code>, which mirrors the live step
 registry. Parsing (Step 3) precedes many later steps. Optional artifact
 enrichments are documented separately and are not shown as required
 edges. The figure is generated from <code>src/gnn/STEP_INDEX.md</code>
-at commit 1b26eb059; its footer restates the step count, the number of
+at commit b253f85df; its footer restates the step count, the number of
 required prerequisites, and the layout rule.</figcaption>
 </figure>
 <p>The per-step responsibilities are enumerated in tbl. <a
@@ -1923,7 +1938,7 @@ projections. The executable node summarizes 12 of 12 registered render
 targets with implemented Step 12 execution adapters and previews three
 by name; execution depends on runtime readiness, admitted model kind,
 and a successful source-bound run receipt. Counts are producer tokens at
-commit 1b26eb059, and the panel is generated by
+commit b253f85df, and the panel is generated by
 <code>scripts/manuscript_fig_triple_play.py</code>. Take-away: a model
 is authored once and then read, seen, and run from that single
 source.</figcaption>
@@ -2003,16 +2018,12 @@ than re-derived downstream.</p>
 <h2 data-number="4.2" id="type-checking-and-validation"><span
 class="header-section-number">4.2</span> Type Checking and
 Validation</h2>
-<p>A model that parses is not yet a model that is well-formed. Steps 5
-and 6 apply type checking and validation to confirm that the state
-spaces, observation modalities, control factors, and the matrices
-relating them are mutually consistent before any code is generated. This
-catches dimensional mismatches and malformed factor structures at the
-notation level, where the diagnostic is cheap and legible, rather than
-allowing them to surface as opaque runtime errors deep inside a
-numerical backend. Validation is where the kinds receive their shape
-contracts, and each kind’s contract checks the objects its notation
-actually declares.</p>
+<p>A successful parse establishes the model structure. In a run that
+selects type checking and validation (steps 5 and 6), those stages check
+whether state spaces, observation modalities, control factors, and their
+matrices are mutually consistent. The checks catch dimensional
+mismatches and malformed factor structures at the notation level. Each
+kind’s contract checks the objects its notation declares.</p>
 <p>For a discrete categorical specification, validation reads each
 declared <code>B</code> tensor through an orientation diagnostic: the
 canonical reading is column-stochastic,
@@ -2040,24 +2051,21 @@ optional closed-loop declarations are checked as a pair, since a
 <code>goal_mean</code> without a <code>control_gain</code> (or the
 reverse) is an incomplete control structure rather than a passive
 model.</p>
-<p>Validation supplies explicit checks of the declared model contract
-before rendering. Passing those checks establishes their scoped
-conditions, not a certificate of every later numerical or backend
-behavior; execution and analysis retain their own validation and
+<p>Select the type-checking and validation stages explicitly to obtain
+their receipts. A render-only selection resolves the parsing dependency
+and applies the selected backend’s own model admission checks during
+rendering. Execution and analysis retain their own validation and
 source-bound receipts.</p>
 <h2 data-number="4.3" id="rendering-to-multiple-backends"><span
 class="header-section-number">4.3</span> Rendering to Multiple
 Backends</h2>
-<p>The central act of the “Triple Play” is turning a validated
-specification into executable cognitive models. The rendering stage
-emits backend-specific code for 12 registered target frameworks — PyMDP,
+<p>The rendering stage turns an admitted specification into
+backend-specific code or descriptions for 12 registered targets — PyMDP,
 RxInfer.jl, ActiveInference.jl, JAX, DisCoPy, PyTorch, NumPyro, Stan,
-bnlearn, cpomdp, THRML, ngc-learn — so that a single GNN model can be
-instantiated as a simulation in whichever computational ecosystem a
-researcher already works in. Each backend is addressed through a
-registry key that maps the abstract model onto that framework’s idioms
-for representing generative models and performing inference. The full
-mapping from registry key to backend is given below.</p>
+bnlearn, cpomdp, THRML, ngc-learn. Each backend has a registry key and
+its own mapping from GNN declarations to that framework’s representation
+of models and inference. The full mapping from registry key to backend
+is given below.</p>
 <div class="table-scroll" role="region" tabindex="0" aria-label="Scrollable table: Table 3: Render targets declared in src/gnn/render/framework_registry.py , one row per registry key in registry order…"><table id="tbl:backend_registry" data-responsive-table="true">
 <caption>Table 3: Render targets declared in
 <code>src/gnn/render/framework_registry.py</code>, one row per registry
@@ -2255,7 +2263,7 @@ the reliability gate profiles for the continuous family; the tan row
 maintained set, so it is never profiled; a red Render-Subdir cell would
 mean a registry entry with no subdirectory. The table is read directly
 from <code>src/gnn/render/framework_registry.py</code> and the
-model-family manifest at commit 1b26eb059, and its footer summarizes the
+model-family manifest at commit b253f85df, and its footer summarizes the
 row counts. Take-away: registration, render presence, and profiling
 status are three different claims, and the table keeps them
 apart.</figcaption>
@@ -2446,7 +2454,7 @@ class="header-section-number">4.7</span> Reproducibility and
 Auto-Injection</h2>
 <p>Every count reported in this manuscript is emitted by the producer
 <code>scripts/z_generate_manuscript_variables.py</code> from the
-repository state at commit 1b26eb059, not typed by hand. The producer
+repository state at commit b253f85df, not typed by hand. The producer
 reads that commit’s source surfaces directly — the step modules, the
 source tree, the model-family manifest, and the framework registry —
 together with the project’s maintained ledgers, notably the Model
@@ -2495,7 +2503,7 @@ class="header-section-number">5</span> Artifacts and Evidence</h1>
 <p>This section reports what the project has actually produced and how
 each quantitative claim is grounded. Every number below is substituted
 at render time from the deterministic producer, which reads the
-repository state at commit 1b26eb059, so each figure here is regenerated
+repository state at commit b253f85df, so each figure here is regenerated
 from the artifacts it describes rather than transcribed.</p>
 <h2 data-number="5.1" id="model-family-coverage"><span
 class="header-section-number">5.1</span> Model-Family Coverage</h2>
@@ -2638,7 +2646,7 @@ declares; the grid is deliberately sparse — most families declare a
 single backend, and only continuous, discrete, and gridworld declare
 several. Read it as declared intent, not as profiled outcomes: the gates
 described below supply the outcomes. The matrix is generated from the
-two registries at commit 1b26eb059.</figcaption>
+two registries at commit b253f85df.</figcaption>
 </figure>
 <p>These families are not illustrative prose: they are the inputs over
 which the parser, the type checker, and the cross-framework code
@@ -2790,7 +2798,7 @@ class="header-section-number">5.4</span> Repository Scale</h2>
 <p>The repository’s scale is itself evidence of the surface that the
 gates and pipeline cover, and it is reported in fig. <a
 href="#fig:repo_metrics">7</a> directly from the tracked files at commit
-1b26eb059.</p>
+b253f85df.</p>
 <figure id="fig:repo_metrics">
 <a class="figure-full-size-link" href="../figures/gnn_repo_metrics.png" target="_blank" rel="noopener" aria-label="Open full-size Figure 7, Repository-scale counts on a logarithmic axis: pipeline steps, model families, registered…"><img src="../figures/gnn_repo_metrics.png" style="width:80.0%"
 alt="Horizontal bar chart on a logarithmic axis of repository-scale counts: pipeline steps, model families, registered backends, render-target adapters, MCP tools, source packages, test files, example models and documentation files. Each bar is annotated with its exact value; all values come from output/data/manuscript_variables.json." /><span class="figure-full-size-label" aria-hidden="true">Open full-size figure</span></a>
@@ -2800,7 +2808,7 @@ render-target execution adapters, Model Context Protocol tools, source
 packages, test files, example models, and documentation files. Every bar
 is annotated with its exact value, and every value is a producer token
 read from <code>output/data/manuscript_variables.json</code> at commit
-1b26eb059 — the same token map that substitutes the prose counts. The
+b253f85df — the same token map that substitutes the prose counts. The
 figure-freshness suite binds the committed image digest and its recorded
 producer inputs and counts; semantic content and visual correctness
 require their own review. The two backend bars are deliberately
@@ -2811,9 +2819,9 @@ execution-only Lean bridge and is not a count of observed native runs.
 Read the chart as the scale of the surface the pipeline maintains, not
 as a quality measure.</figcaption>
 </figure>
-<p>The test suite comprises 705 test files containing 7434 test
-functions, exercising a source base of 791 Python files across 45
-packages (240372 lines of source). The pipeline’s step modules — the
+<p>The test suite comprises 705 test files containing 7438 test
+functions, exercising a source base of 792 Python files across 45
+packages (240580 lines of source). The pipeline’s step modules — the
 thin orchestrators named in tbl. <a href="#tbl:pipeline_steps">2</a> —
 number 25, one per numbered step. The Model Context Protocol surface —
 which exposes GNN’s capabilities to external agents and tools — provides
@@ -2870,38 +2878,43 @@ below reproduce the pipeline, the validation gates, and the manuscript
 from clean checkouts of GNN and its render template.</p>
 <h2 data-number="6.1" id="pipeline-smoke-run"><span
 class="header-section-number">6.1</span> Pipeline Smoke Run</h2>
-<p>The fastest way to confirm a working installation is to drive the
-full pipeline over the discrete model family without invoking the
-optional LLM steps:</p>
+<p>A bounded smoke run parses and validates the discrete examples. From
+the GNN checkout, install the locked development environment and select
+the parsing, type-checking, and validation stages:</p>
 <div class="sourceCode" id="cb1"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/gnn/main.py <span class="dt">\</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-dir</span> input/gnn_files/discrete <span class="dt">\</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> /tmp/gnn-smoke <span class="dt">\</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--skip-llm</span></span></code></pre></div>
-<p>This parses the discrete GNN files, runs visualization and rendering
-across the maintained backends, and writes all artifacts under the
-chosen output directory. The <code>--skip-llm</code> flag disables the
-LLM processing step; it does not establish network isolation or
-guarantee that every other step executes. Default framework selection
-excludes the experimental targets, and dependency readiness, model-kind
-admission, configured steps, and budgets determine the actual work.
-Inspect the current-run statuses and terminal exit code (0 success, 1
-error, 2 warning); missing or unfinished required work must remain a
-non-success outcome. To exercise every registered family rather than a
-single one, drive the manifest through the model-family acceptance gate
-given below: pointing <code>--target-dir</code> at
-<code>input/gnn_files</code> covers that tree’s 12 corpus directories.
-All 9 registered family target directories lie inside that tree, so a
-single invocation reaches every registered family.</p>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync <span class="at">--frozen</span> <span class="at">--extra</span> dev</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> <span class="at">--no-sync</span> python src/gnn/main.py <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-dir</span> input/gnn_files/discrete <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">mktemp</span> <span class="at">-d</span><span class="va">)</span><span class="st">&quot;</span> <span class="at">--only-steps</span> 3,5,6 <span class="at">--skip-llm</span></span></code></pre></div>
+<p>For pipeline-wide coverage, omit the step selection. The broader
+command includes setup, tests, and any admitted rendering and
+execution:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> <span class="at">--no-sync</span> python src/gnn/main.py <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-dir</span> input/gnn_files/discrete <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> /tmp/gnn-smoke <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--skip-llm</span></span></code></pre></div>
+<p>The pipeline writes artifacts under the chosen output directory. The
+<code>--skip-llm</code> flag skips LLM processing and selects rule-based
+intelligent analysis. Setup and optional backend tools can still use the
+network. Default framework selection excludes experimental targets.
+Dependency readiness, model-kind admission, configured stages, and
+budgets determine the work performed. Inspect the current-run statuses
+and terminal exit code (0 success, 1 error, 2 warning). To exercise the
+registered families, use the manifest-driven acceptance gate below.
+Pointing <code>--target-dir</code> at <code>input/gnn_files</code>
+selects that tree’s 12 corpus directories. All 9 registered family
+target directories lie inside that tree, so a single invocation reaches
+every registered family.</p>
 <p>The discrete family exercises the categorical kind end to end. The
 continuous linear-Gaussian kind smoke-runs the same way, and the
 contrast between the two runs is itself a check of the per-kind
 contract:</p>
-<div class="sourceCode" id="cb2"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/gnn/main.py <span class="dt">\</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-dir</span> input/gnn_files/continuous <span class="dt">\</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> /tmp/gnn-smoke-continuous <span class="dt">\</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--skip-llm</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> <span class="at">--no-sync</span> python src/gnn/main.py <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-dir</span> input/gnn_files/continuous <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> /tmp/gnn-smoke-continuous <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--skip-llm</span></span></code></pre></div>
 <p>This selects the continuous specifications for the same pipeline.
 Admitted, ready continuous-capable lanes can render and execute
 filtering (and, for the closed-loop exemplar, belief-steering) programs;
@@ -2916,10 +2929,10 @@ class="header-section-number">6.2</span> Validation Gates</h2>
 model-family acceptance gate runs the selected manifest families and
 evaluates their declared acceptance profiles; its receipt must record
 actual execution, unsupported and skipped work, and failures:</p>
-<div class="sourceCode" id="cb3"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_model_family_acceptance.py <span class="dt">\</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> output/model_family_acceptance <span class="at">--strict</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_model_family_acceptance.py <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> output/model_family_acceptance <span class="at">--strict</span></span></code></pre></div>
 <p>The semantic-fidelity gate verifies that a parse → serialize → parse
 round trip preserves variables, edges, dimensions, parameter shapes and
 values, parameter metadata, equations, time semantics, and ontology
@@ -2929,13 +2942,13 @@ ActiveInference.jl, DisCoPy) — refusing any framework outside that set —
 and records explicit compatible and unsupported statuses rather than
 silently degrading. Both write their ledgers to an output directory of
 your choosing:</p>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_semantic_fidelity_gate.py <span class="dt">\</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> output/semantic_fidelity <span class="at">--strict</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_cross_framework_reliability.py <span class="dt">\</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> output/cross_framework <span class="at">--strict</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_semantic_fidelity_gate.py <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> output/semantic_fidelity <span class="at">--strict</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/run_cross_framework_reliability.py <span class="dt">\</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--manifest</span> input/model_family_manifest.json <span class="dt">\</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> output/cross_framework <span class="at">--strict</span></span></code></pre></div>
 <p>Under <code>--strict</code>, required mismatches make these gates
 exit non-zero, so these commands double as assertions in an automated
 reproduction run. Code-quality reproducibility is enforced separately
@@ -2945,31 +2958,51 @@ broader <code>just quality</code> recipe chains formatting, terminology,
 documentation, type, and security checks for a full pre-commit gate.</p>
 <h2 data-number="6.3" id="manuscript-reproducibility"><span
 class="header-section-number">6.3</span> Manuscript Reproducibility</h2>
-<p>This manuscript is itself a reproducible artifact. Every quantitative
-value in the prose — the pipeline step count, the family and backend
-counts, the source and test inventories — is a token rather than a
-hard-coded literal, and the deterministic producer regenerates all of
-them from the tracked files at the current commit:</p>
-<div class="sourceCode" id="cb5"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/z_generate_manuscript_variables.py</span></code></pre></div>
-<p>That command recomputes the {{…}} tokens and writes the token map and
-table claim ledger under <code>output/data/</code>. The template
-injector, when available, uses the map to hydrate the manuscript sources
-into <code>output/manuscript/</code>. The manuscript’s figures are
-rebuilt from the same token map:</p>
+<p>The producer derives repository counts and capability claims from
+tracked files at the current commit. It writes the token map and table
+claim ledger under <code>output/data/</code>. The template invokes that
+producer and hydrates the manuscript into
+<code>output/manuscript/</code>. From the GNN checkout, check the
+existing publication custody before rebuilding and regenerate the
+figures:</p>
 <div class="sourceCode" id="cb6"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python <span class="at">-m</span> scripts.manuscript_build_figures</span></code></pre></div>
-<p>The docxology template renders the hydrated sources to PDF and
-validates the publication. From a separate checkout of the template
-containing this repository as a real directory at
-<code>projects/active/GeneralizedNotationNotation</code>, run:</p>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> <span class="at">--no-sync</span> python scripts/z_verify_fresh_render.py <span class="at">--committed-only</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> <span class="at">--no-sync</span> python <span class="at">-m</span> scripts.manuscript_build_figures</span></code></pre></div>
+<p>Use the template revision declared in
+<code>output/data/manuscript_render_manifest.json</code> to reproduce
+the publication. From a separate checkout of the template containing
+this repository as a real directory at
+<code>projects/active/GeneralizedNotationNotation</code>, export the
+measured template revision and build epoch and render the PDF, HTML, and
+slide decks:</p>
 <div class="sourceCode" id="cb7"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> python scripts/pipeline/stage_03_render.py <span class="dt">\</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--project</span> GeneralizedNotationNotation</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> python scripts/pipeline/stage_04_validate.py <span class="dt">\</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--project</span> GeneralizedNotationNotation</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GNN_TEMPLATE_REVISION</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$(</span><span class="fu">git</span> rev-parse HEAD<span class="va">)</span><span class="st">&quot;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">SOURCE_DATE_EPOCH</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$(</span><span class="fu">git</span> log <span class="at">-1</span> <span class="at">--format</span><span class="op">=</span>%ct<span class="va">)</span><span class="st">&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync <span class="at">--frozen</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> <span class="at">--no-sync</span> python scripts/pipeline/stage_03_render.py <span class="dt">\</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--project</span> GeneralizedNotationNotation</span></code></pre></div>
+<p>From the GNN checkout, prepare the rendered evidence by removing
+personal path prefixes:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> <span class="at">--no-sync</span> python scripts/z_record_manuscript_render_manifest.py <span class="at">--prepare</span></span></code></pre></div>
+<p>From the same template root, validate the publication and write the
+Stage 04 reports:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> <span class="at">--no-sync</span> python scripts/pipeline/stage_04_validate.py <span class="dt">\</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--project</span> GeneralizedNotationNotation</span></code></pre></div>
 <p>The validation stage checks the rendered outputs and their evidence,
-including the generated tables and their claims.</p>
+including the generated tables and their claims. From the GNN checkout,
+compare the fresh evidence with the existing custody manifest:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> <span class="at">--no-sync</span> python scripts/z_verify_fresh_render.py</span></code></pre></div>
+<p>For an intentional source or template update, run the rendering and
+validation commands and explicitly record the renewed custody manifest
+from the project checkout:</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> <span class="at">--no-sync</span> python scripts/z_record_manuscript_render_manifest.py</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> <span class="at">--no-sync</span> python scripts/z_verify_fresh_render.py <span class="at">--committed-only</span></span></code></pre></div>
+<p>Commit the manifest with the new publication and Stage 04 evidence.
+The scheduled custody check leaves the baseline manifest intact.</p>
 <p>The render needs a LaTeX installation providing the packages listed
 in <code>docs/manuscript/preamble.md</code> plus <code>seqsplit</code>;
 the template guards <code>seqsplit</code> with
@@ -2978,8 +3011,8 @@ failing the build.</p>
 <p>Because the variables file is regenerated before rendering, the
 counts in the rendered PDF track the repository state at the commit
 recorded in <code>output/data/manuscript_variables.json</code>
-(1b26eb059): a code change that alters, for example, the test inventory
-(705 test files, 7434 test functions) propagates into the prose on the
+(b253f85df): a code change that alters, for example, the test inventory
+(705 test files, 7438 test functions) propagates into the prose on the
 next regeneration without any manual editing.</p>
 <h2 data-number="6.4" id="reproducibility-contract"><span
 class="header-section-number">6.4</span> Reproducibility Contract</h2>
@@ -3165,8 +3198,8 @@ version control; the generated artifacts it produces are described
 separately so that the boundary between hand-written source and
 reproducible output stays explicit.</p>
 <p>The <code>src/</code> tree is the executable core of GNN. It is
-organized into 45 Python packages spanning 791 source files and roughly
-240372 lines of code. Alongside these packages sit the 25 top-level step
+organized into 45 Python packages spanning 792 source files and roughly
+240580 lines of code. Alongside these packages sit the 25 top-level step
 modules (0–24) that implement the numbered pipeline as thin
 orchestrators delegating into the packages, each module owning one stage
 of the progression from a parsed GNN text model through visualization,
@@ -3254,28 +3287,22 @@ repository.</p>
 <h2 data-number="8.2" id="authored-source-versus-generated-output"><span
 class="header-section-number">8.2</span> Authored Source Versus
 Generated Output</h2>
-<p><code>src/</code>, <code>scripts/</code>, <code>input/</code>,
-<code>docs/</code> and <code>manuscript/</code> are authored and
-reviewed. The <code>output/</code> tree holds generated artifacts and
-retained run evidence; <code>output/manuscript/</code> contains
-token-substituted copies of the authored <code>manuscript/</code>
-sections. Regenerate owned build artifacts when appropriate, while
-preserving the receipts required to support historical outcomes. The
-commands that regenerate the output surfaces are listed in sec. <a
-href="#sec:reproducibility">6</a>: the smoke run for the per-step
-artifacts, <code>scripts/z_generate_manuscript_variables.py</code> for
-the token map and the hydrated sections,
-<code>scripts.manuscript_build_figures</code> for the 7 manuscript
-figures, and the template render stage for the PDF. Which values become
-tokens is not a matter of taste: any quantity the producer can derive
-from a source surface is a token,
-<code>scripts/check_manuscript_tokens.py</code> fails the build when a
-section hard-codes one instead, and the resulting 97-entry map is
-committed at <code>output/data/manuscript_variables.json</code> for
-audit. External references are resolved from
-<code>docs/manuscript/references.bib</code>, which the same gate
-cross-checks against every citation key in the prose. This manuscript
-quotes no private or unpublished material.</p>
+<p><code>src/</code>, <code>scripts/</code>, <code>input/</code>, and
+<code>docs/</code> are authored and reviewed. The <code>output/</code>
+tree holds generated artifacts and retained run evidence. Its
+<code>manuscript/</code> directory contains token-substituted copies of
+the authored <code>docs/manuscript/</code> sections. Regenerate build
+artifacts when their inputs change and retain the receipts that document
+historical outcomes. The commands in sec. <a
+href="#sec:reproducibility">6</a> reproduce per-stage artifacts, the
+token map and hydrated sections, the 7 manuscript figures, and the
+template’s PDF, HTML, slides, and validation reports.
+<code>scripts/check_manuscript_tokens.py</code> checks that derived
+quantities use tokens. The resulting 97-entry map is committed at
+<code>output/data/manuscript_variables.json</code>. The same gate
+cross-checks the citation keys in the prose against
+<code>docs/manuscript/references.bib</code>. This manuscript quotes no
+private or unpublished material.</p>
 
 <hr />
 
@@ -3514,8 +3541,8 @@ href="#eq:prior">5</a>).</td>
 </tr>
 <tr>
 <td><code>E</code></td>
-<td>Discrete kind: habit vector — an initial policy prior over actions,
-entering the policy posterior (eq. <a href="#eq:policy">8</a>).</td>
+<td>Discrete kind: habit vector supplying the prior over candidate
+policies (eq. <a href="#eq:policy">8</a>).</td>
 </tr>
 <tr>
 <td><code>s</code></td>
@@ -3530,14 +3557,15 @@ modalities.</td>
 </tr>
 <tr>
 <td><code>π</code></td>
-<td>Discrete kind: policy — a distribution over actions inferred from
-expected free energy (eq. <a href="#eq:policy">8</a>).</td>
+<td>Discrete kind: a candidate sequence of actions. Expected free energy
+and the habit prior determine its weight in the policy posterior (eq. <a
+href="#eq:policy">8</a>).</td>
 </tr>
 <tr>
 <td><code>u</code></td>
-<td>Discrete kind: the selected (sampled) action, sampled from the
-policy posterior. Continuous kind: the control input added to the state
-each step (eq. <a href="#eq:lgssm_state">9</a>).</td>
+<td>Discrete kind: a control action. The policy posterior induces a
+distribution over the current action. Continuous kind: the control input
+added to the state each step (eq. <a href="#eq:lgssm_state">9</a>).</td>
 </tr>
 <tr>
 <td><code>F</code></td>
@@ -3550,11 +3578,15 @@ href="#eq:lgssm_state">9</a>).</td>
 </tr>
 <tr>
 <td><code>G</code></td>
-<td>Discrete kind: expected free energy per policy, minimized during
-policy inference to score candidate actions (eq. <a
-href="#eq:efe">7</a>) <span class="citation"
+<td>Discrete kind: a policy’s total expected free energy over the
+planning horizon (eq. <a href="#eq:efe">7</a>) <span class="citation"
 data-cites="dacosta2020">(<a href="#ref-dacosta2020"
 role="doc-biblioref">Da Costa et al. 2020</a>)</span>.</td>
+</tr>
+<tr>
+<td><code>γ</code></td>
+<td>Discrete kind: policy precision, scaling the expected free energy
+term in the policy posterior (eq. <a href="#eq:policy">8</a>).</td>
 </tr>
 <tr>
 <td><code>t</code></td>

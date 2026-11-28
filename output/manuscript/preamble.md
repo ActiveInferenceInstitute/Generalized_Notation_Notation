@@ -70,7 +70,7 @@ which emits plain `\ref`. Reinstating it means guarding it AND converting the
 % a reader cannot tell a line break from a name. Keep seqsplit's guarantee that
 % no code token overflows the measure, but forbid breaks inside the last
 % \GNNttTail characters (an extension is never orphaned) and inside the first
-% \GNNttHead (a one- or two-letter stub is never left behind).
+% \GNNttHead (a one- or two-letter fragment is never left behind).
 \makeatletter
 \newcount\GNN@ttlen
 \newcount\GNN@ttpos

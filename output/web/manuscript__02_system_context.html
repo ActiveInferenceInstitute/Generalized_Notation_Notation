@@ -961,12 +961,15 @@ role="doc-biblioref">Smith et al. 2022</a>)</span>.</p>
 class="math display">\[P(o_{1:T},\, s_{1:T},\, \pi) \;=\; P(\pi)\;
 P(s_1) \prod_{t=1}^{T} P(o_t \mid s_t) \prod_{t=2}^{T} P(s_t \mid
 s_{t-1},\, \pi)\qquad{(1)}\]</span></span></p>
-<p>The four matrices named in the <code>StateSpaceBlock</code> are
-exactly the factors of eq. <a href="#eq:generative_model">1</a>, and
-this correspondence is what makes the notation translatable rather than
-merely descriptive. The <code>A</code> matrix is the likelihood, a
-column-stochastic map from hidden states to observation outcomes, given
-in eq. <a href="#eq:likelihood">2</a>.</p>
+<p>The <code>A</code>, <code>B</code>, and <code>D</code> declarations
+specify the observation likelihood, controlled transition, and
+initial-state prior in eq. <a href="#eq:generative_model">1</a>. The
+remaining factor, <span class="math inline">\(P(\pi)\)</span>, can be
+supplied by the optional policy habit vector <code>E</code>. The
+<code>C</code> declaration supplies preferences for policy evaluation.
+The <code>A</code> matrix is a column-stochastic map from hidden states
+to observation outcomes, given in eq. <a
+href="#eq:likelihood">2</a>.</p>
 <p><span id="eq:likelihood"><span class="math display">\[P(o_t = i \mid
 s_t = j) \;=\; A_{ij}, \qquad \sum_i A_{ij} =
 1\qquad{(2)}\]</span></span></p>
@@ -1004,27 +1007,39 @@ href="index.html#ref-friston2010" role="doc-biblioref">Friston
 P(s)\,\right]}_{\text{complexity}} \;-\;
 \underbrace{\mathbb{E}_{Q(s)}\!\left[\ln P(o \mid
 s)\right]}_{\text{accuracy}}\qquad{(6)}\]</span></span></p>
-<p>Action is expected-free-energy minimization: each policy <span
-class="math inline">\(\pi\)</span> is scored over future steps <span
-class="math inline">\(\tau\)</span> by eq. <a href="#eq:efe">7</a>,
-whose two terms are the information gain a policy is expected to yield
-and the extent to which its predicted outcomes match <code>C</code>
-<span class="citation" data-cites="dacosta2020">(<a
-href="index.html#ref-dacosta2020" role="doc-biblioref">Da Costa et al.
-2020</a>)</span>.</p>
-<p><span id="eq:efe"><span class="math display">\[G(\pi) \;=\;
--\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid \pi)}\!\left[\ln
-Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid
-\pi)\right]}_{\text{epistemic value}} \;-\;
-\underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln
-\tilde{P}(o_\tau)\right]}_{\text{pragmatic
-value}}\qquad{(7)}\]</span></span></p>
-<p>The policy posterior then combines those scores with the habit prior
-<code>E</code> declared in the specification, as in eq. <a
-href="#eq:policy">8</a>, and the selected action <span
-class="math inline">\(u\)</span> is sampled from it.</p>
+<p>Policy evaluation uses the expected free energy of predicted future
+observations and states. For a decision at time <span
+class="math inline">\(t\)</span>, the contribution <span
+class="math inline">\(G_\tau(\pi)\)</span> at each future time <span
+class="math inline">\(\tau\)</span> combines expected information gain
+and expected log-preference <span class="citation"
+data-cites="dacosta2020">(<a href="index.html#ref-dacosta2020"
+role="doc-biblioref">Da Costa et al. 2020</a>)</span>. The horizon score
+<span class="math inline">\(G(\pi)\)</span> in eq. <a
+href="#eq:efe">7</a> sums those contributions over <span
+class="math inline">\(\tau=t+1,\ldots,T\)</span>.</p>
+<p><span id="eq:efe"><span class="math display">\[\begin{aligned}
+G_\tau(\pi) &amp;= -\underbrace{\mathbb{E}_{Q(o_\tau,\, s_\tau \mid
+\pi)}\!\left[\ln Q(s_\tau \mid o_\tau, \pi) - \ln Q(s_\tau \mid
+\pi)\right]}_{\text{epistemic value}} \\
+&amp;\quad - \underbrace{\mathbb{E}_{Q(o_\tau \mid \pi)}\!\left[\ln
+\tilde{P}(o_\tau)\right]}_{\text{pragmatic value}}, \\
+G(\pi) &amp;= \sum_{\tau=t+1}^{T} G_\tau(\pi).
+\end{aligned}\qquad{(7)}\]</span></span></p>
+<p>In this formulation, the posterior combines the habit prior <span
+class="math inline">\(E_\pi\)</span> with the score scaled by policy
+precision <span class="math inline">\(\gamma&gt;0\)</span>, using a
+uniform prior when no habits are specified. The softmax in eq. <a
+href="#eq:policy">8</a> is over candidate policies. A policy specifies
+future actions, and the policy posterior induces a distribution over the
+current action <span class="math inline">\(u_t\)</span>. The generated
+factored RxInfer example scores single actions, for which the policy and
+action indices coincide. Backend receipts identify the inference mode
+used for each run.</p>
 <p><span id="eq:policy"><span class="math display">\[Q(\pi) \;=\;
-\sigma\!\left(\ln E - G\right)\qquad{(8)}\]</span></span></p>
+\frac{E_\pi \exp\!\left[-\gamma G(\pi)\right]}{\sum_{\pi&#39;}
+E_{\pi&#39;} \exp\!\left[-\gamma
+G(\pi&#39;)\right]}\qquad{(8)}\]</span></span></p>
 <p>The discrete categorical kind is the language’s original and most
 densely exercised target: 29 of the 38 exemplar specifications in the
 corpus are discrete-state. The discrete family folder holds the kind’s
@@ -1310,7 +1325,7 @@ of <code>src/gnn/STEP_INDEX.md</code>, which mirrors the live step
 registry. Parsing (Step 3) precedes many later steps. Optional artifact
 enrichments are documented separately and are not shown as required
 edges. The figure is generated from <code>src/gnn/STEP_INDEX.md</code>
-at commit 1b26eb059; its footer restates the step count, the number of
+at commit b253f85df; its footer restates the step count, the number of
 required prerequisites, and the layout rule.</figcaption>
 </figure>
 <p>The per-step responsibilities are enumerated in tbl. <a
@@ -1505,7 +1520,7 @@ projections. The executable node summarizes 12 of 12 registered render
 targets with implemented Step 12 execution adapters and previews three
 by name; execution depends on runtime readiness, admitted model kind,
 and a successful source-bound run receipt. Counts are producer tokens at
-commit 1b26eb059, and the panel is generated by
+commit b253f85df, and the panel is generated by
 <code>scripts/manuscript_fig_triple_play.py</code>. Take-away: a model
 is authored once and then read, seen, and run from that single
 source.</figcaption>

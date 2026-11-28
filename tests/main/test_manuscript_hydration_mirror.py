@@ -82,4 +82,7 @@ def test_the_hydration_expectation_applies_the_destination_rebase(
         "{{T}} and [x](../../output/data/y.json)\n", encoding="utf-8"
     )
     tree = render_custody._expected_hydrated_tree(tmp_path, {"T": "value"}, frozenset())
-    assert tree["output/manuscript/00_fixture.md"] == b"value and [x](../../output/data/y.json)\n"
+    assert (
+        tree["output/manuscript/00_fixture.md"]
+        == b"value and [x](../../output/data/y.json)\n"
+    )
