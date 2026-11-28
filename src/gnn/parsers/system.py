@@ -301,6 +301,16 @@ class GNNParsingSystem:
         if format not in self.serializers:
             raise ValueError(f"Unsupported format: {format}")
 
+        if getattr(model, "boundary_annotations", None) and format not in {
+            GNNFormat.MARKDOWN,
+            GNNFormat.JSON,
+            GNNFormat.YAML,
+        }:
+            raise ParseError(
+                f"Export to {format.value} would drop BoundaryAnnotation. "
+                "Use Markdown, JSON, or YAML."
+            )
+
         serializer = self.serializers[format]
 
         try:

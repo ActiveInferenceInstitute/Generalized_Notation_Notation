@@ -171,7 +171,18 @@ GNNModel ::= SEQUENCE {
     ontologyMappings   SEQUENCE OF OntologyMapping OPTIONAL,
     
     -- Metadata and provenance
-    footer             UTF8String OPTIONAL
+    footer             UTF8String OPTIONAL,
+    boundaryAnnotation SEQUENCE SIZE (1..MAX) OF BoundaryDeclaration OPTIONAL
 }
 
-END -- GNN-Schema 
+BoundaryDeclaration ::= SEQUENCE {
+    variable UTF8String,
+    fields SEQUENCE SIZE (1..MAX) OF BoundaryField
+}
+
+BoundaryField ::= SEQUENCE {
+    key UTF8String,
+    value UTF8String
+}
+
+END -- GNN-Schema

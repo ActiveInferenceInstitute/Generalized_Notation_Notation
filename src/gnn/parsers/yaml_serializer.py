@@ -92,6 +92,11 @@ class YAMLSerializer(BaseGNNSerializer):
             "modified_at": model.modified_at.isoformat(),
         }
 
+        if model.boundary_annotations:
+            if not HAS_YAML:
+                raise RuntimeError("BoundaryAnnotation YAML requires PyYAML")
+            data["boundary_annotation"] = model.boundary_annotations
+
         if not HAS_YAML:
             return self._dict_to_yaml_like(data)
 

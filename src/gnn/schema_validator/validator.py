@@ -165,6 +165,9 @@ class GNNValidator(
                 result.semantic_checksum = parsed_gnn.semantic_checksum
                 result.metadata["parsed_successfully"] = True
                 result.metadata["source_format"] = parsed_gnn.source_format
+                result.warnings.extend(
+                    parsed_gnn.metadata.get("boundary_annotation_warnings", [])
+                )
             except Exception as e:
                 result.errors.append(f"Parsing failed: {e}")
                 result.is_valid = False

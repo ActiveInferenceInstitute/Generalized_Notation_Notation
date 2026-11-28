@@ -24,6 +24,7 @@ required_sections:
 # Optional sections
 optional_sections:
   - ImageFromPaper
+  - BoundaryAnnotation
   - Equations
   - ActInfOntologyAnnotation
   - ModelParameters
@@ -168,6 +169,14 @@ sections:
       - "B=TransitionMatrix            # B matrix maps to transitions"
       - "C=PreferenceVector           # C vector maps to preferences"
       - "π=PolicyVector               # π maps to policy vector"
+
+  BoundaryAnnotation:
+    description: "Declared boundary fields keyed by model variable"
+    content_type: "structured"
+    format: "boundary_declarations"
+    validation:
+      value_forms: ["?", "point", "range", "interval", "distribution", "samples"]
+      unknown_fields: preserve
 
   ModelParameters:
     description: "Model-specific parameters and metadata"

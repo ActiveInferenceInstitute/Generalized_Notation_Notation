@@ -33,6 +33,13 @@ class MarkdownSerializer(BaseGNNSerializer):
             sections.append(model.annotation)
             sections.append("")
 
+        if model.boundary_annotations:
+            sections.append("## BoundaryAnnotation")
+            for variable, fields in model.boundary_annotations.items():
+                values = "; ".join(f"{key}={value}" for key, value in fields.items())
+                sections.append(f"{variable}: {values}")
+            sections.append("")
+
         # StateSpaceBlock
         if model.variables:
             sections.append("## StateSpaceBlock")

@@ -58,6 +58,7 @@ GNN_SECTION_HEADINGS: tuple[str, ...] = (
     "GNNVersionAndFlags",
     "ModelName",
     "ModelAnnotation",
+    "BoundaryAnnotation",
     "StateSpaceBlock",
     "Connections",
     "InitialParameterization",
@@ -493,6 +494,7 @@ class GNNInternalRepresentation:
     # Extension points
     extensions: Dict[str, Any] = field(default_factory=dict)
     raw_sections: Dict[str, str] = field(default_factory=dict)
+    boundary_annotations: dict[str, dict[str, str]] = field(default_factory=dict)
 
     def get_variables_by_type(self, var_type: VariableType) -> List[Variable]:
         """Get all variables of a specific type."""
@@ -610,6 +612,9 @@ class GNNInternalRepresentation:
             "extensions": self.extensions,
             "raw_sections": self.raw_sections,
         }
+
+        if self.boundary_annotations:
+            result["boundary_annotation"] = self.boundary_annotations
 
         # Renderer-facing parameter views.
         if self.parameters:

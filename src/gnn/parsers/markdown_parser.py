@@ -18,6 +18,7 @@ logging.addLevelName(TRACE_LEVEL, "TRACE")
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from .boundary_annotation import parse_boundary_annotation, read_boundary_annotation
 from .common import (
     BaseGNNParser,
     Connection,
@@ -61,6 +62,7 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
             "GNNVersionAndFlags": self._parse_version_section,
             "ModelName": self._parse_model_name,
             "ModelAnnotation": self._parse_annotation,
+            "BoundaryAnnotation": self._parse_boundary_annotation,
             "StateSpaceBlock": self._parse_state_space,
             "Connections": self._parse_connections,
             "InitialParameterization": self._parse_parameters,
@@ -127,8 +129,27 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
                     self._parse_section(canonical_name, section_content, result.model)
                 except Exception as e:
                     error_msg = f"Error parsing section '{section_name}': {e}"
-                    result.add_warning(error_msg)
-                    logger.warning(error_msg)
+                    if canonical_name == "BoundaryAnnotation":
+                        result.add_error(error_msg)
+                    else:
+                        result.add_warning(error_msg)
+                        logger.warning(error_msg)
+
+            # Boundary rows may appear before the StateSpaceBlock.
+            if result.model.boundary_annotations:
+                declared = {var.name for var in result.model.variables}
+                try:
+                    result.model.boundary_annotations, warnings = (
+                        read_boundary_annotation(
+                            result.model.boundary_annotations, declared
+                        )
+                    )
+                except ValueError as error:
+                    result.add_error(str(error))
+                    result.model.boundary_annotations = {}
+                else:
+                    for warning in warnings:
+                        result.add_warning(warning)
 
             # Post-processing and validation
             self._post_process_model(result.model)
@@ -156,6 +177,7 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
         sections: dict[Any, Any] = {}
         current_section = None
         current_content: list[Any] = []
+        boundary_seen = False
 
         lines = content.split("\n")
 
@@ -170,6 +192,10 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
 
                 # Start new section
                 current_section = line.strip()[3:].strip()
+                if _collapse_heading(current_section) == "BoundaryAnnotation":
+                    if boundary_seen:
+                        raise ParseError("Duplicate BoundaryAnnotation section")
+                    boundary_seen = True
                 current_content = []
 
             elif current_section:
@@ -218,6 +244,11 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
             # Handle unknown sections as extensions
             model.extensions[section_name] = content
             logger.debug(f"Unknown section '{section_name}' stored as extension")
+
+    def _parse_boundary_annotation(
+        self, content: str, model: GNNInternalRepresentation
+    ) -> None:
+        model.boundary_annotations = parse_boundary_annotation(content)
 
     def _parse_gnn_section(self, content: str, model: GNNInternalRepresentation) -> Any:
         """Parse the GNNSection."""

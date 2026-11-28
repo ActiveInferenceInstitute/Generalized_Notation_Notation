@@ -176,6 +176,10 @@ class GNNParser(FormatDetectionMixin, SectionParsersMixin):
                 )
             if result.success:
                 return self._convert_parse_result_to_parsed_gnn(result, format_hint)
+            if result.metadata.get("boundary_annotation_error"):
+                from gnn.parsers.boundary_annotation import BoundaryAnnotationError
+
+                raise BoundaryAnnotationError("; ".join(result.errors))
             return self._degraded_markdown_fallback(
                 content,
                 source_name,
@@ -242,6 +246,11 @@ class GNNParser(FormatDetectionMixin, SectionParsersMixin):
         for param in model.parameters:
             parameters[param.name] = param.value
 
+        metadata = {}
+        if annotations := getattr(model, "boundary_annotations", None):
+            metadata["boundary_annotation"] = annotations
+            if result.warnings:
+                metadata["boundary_annotation_warnings"] = result.warnings
         return ParsedGNN(
             gnn_section=getattr(model, "gnn_section", f"{source_format.upper()}GNN"),
             version=getattr(model, "version", "1.0"),
@@ -257,6 +266,7 @@ class GNNParser(FormatDetectionMixin, SectionParsersMixin):
             footer=getattr(model, "footer", ""),
             source_format=source_format,
             semantic_checksum=self._compute_semantic_checksum(model),
+            metadata=metadata,
         )
 
     def _infer_symbol_from_type(self, connection_type: str) -> str:

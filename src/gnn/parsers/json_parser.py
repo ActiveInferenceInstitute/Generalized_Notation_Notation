@@ -14,6 +14,11 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from .boundary_annotation import (
+    BoundaryAnnotationError,
+    read_boundary_annotation,
+    reject_boundary_duplicates,
+)
 from .common import (
     BaseGNNParser,
     Connection,
@@ -32,6 +37,23 @@ from .common import (
 logger = logging.getLogger(__name__)
 
 
+def _load_json_document(content: str) -> dict[str, Any]:
+    data = json.loads(content)
+    if not isinstance(data, dict):
+        raise ValueError("JSON content must produce a dictionary")
+    if "boundary_annotation" in data:
+        # Retain occurrence counts for boundary objects only. Older fields
+        # continue to use the JSON loader's existing duplicate-key behavior.
+        pairs = json.loads(content, object_pairs_hook=list)
+        sections = [value for key, value in pairs if key == "boundary_annotation"]
+        if len(sections) != 1:
+            raise BoundaryAnnotationError("Duplicate BoundaryAnnotation section")
+        declarations = sections[0]
+        if isinstance(data["boundary_annotation"], dict):
+            reject_boundary_duplicates(declarations)
+    return data
+
+
 class JSONGNNParser(BaseGNNParser):
     """Parser for JSON data interchange format."""
 
@@ -43,7 +65,7 @@ class JSONGNNParser(BaseGNNParser):
         """Parse a JSON file containing GNN specifications."""
         try:
             with open(file_path, encoding="utf-8") as f:
-                data = json.load(f)
+                data = _load_json_document(f.read())
 
             return self._parse_json_data(data)
 
@@ -60,6 +82,8 @@ class JSONGNNParser(BaseGNNParser):
             result = ParseResult(
                 model=self.create_empty_model("Failed JSON Parse"), success=False
             )
+            if isinstance(e, BoundaryAnnotationError):
+                result.metadata["boundary_annotation_error"] = True
             result.add_error(f"Failed to parse JSON file: {e}")
             return result
 
@@ -78,7 +102,7 @@ class JSONGNNParser(BaseGNNParser):
                 )
                 return result
 
-            data = json.loads(content)
+            data = _load_json_document(content)
             return self._parse_json_data(data)
 
         except json.JSONDecodeError as e:
@@ -94,6 +118,8 @@ class JSONGNNParser(BaseGNNParser):
             result = ParseResult(
                 model=self.create_empty_model("Failed JSON Parse"), success=False
             )
+            if isinstance(e, BoundaryAnnotationError):
+                result.metadata["boundary_annotation_error"] = True
             result.add_error(f"Failed to parse JSON content: {str(e)}")
             return result
 
@@ -101,13 +127,22 @@ class JSONGNNParser(BaseGNNParser):
         """Parse JSON data into GNN internal representation."""
         try:
             model = self._convert_json_to_model(data)
-            return ParseResult(model=model, success=True)
+            result = ParseResult(model=model, success=True)
+            if "boundary_annotation" in data:
+                model.boundary_annotations, warnings = read_boundary_annotation(
+                    data["boundary_annotation"], {var.name for var in model.variables}
+                )
+                for warning in warnings:
+                    result.add_warning(warning)
+            return result
 
         except Exception as e:
             logger.error(f"Error converting JSON to model: {e}")
             result = ParseResult(
                 model=self.create_empty_model("Failed JSON Conversion"), success=False
             )
+            if isinstance(e, BoundaryAnnotationError):
+                result.metadata["boundary_annotation_error"] = True
             result.add_error(f"Failed to convert JSON to model: {e}")
             return result
 
@@ -127,6 +162,16 @@ class JSONGNNParser(BaseGNNParser):
         # Parse variables
         if "variables" in data:
             model.variables = self._parse_variables(data["variables"])
+        elif "boundary_annotation" in data and isinstance(
+            data.get("state_space_block"), dict
+        ):
+            model.variables = self._parse_variables(
+                [
+                    {**spec, "name": name, "data_type": spec.get("type", "continuous")}
+                    for name, spec in data["state_space_block"].items()
+                    if isinstance(spec, dict)
+                ]
+            )
 
         # Parse connections
         if "connections" in data:

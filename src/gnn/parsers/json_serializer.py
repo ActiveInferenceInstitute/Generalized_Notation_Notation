@@ -98,4 +98,7 @@ class JSONSerializer(BaseGNNSerializer):
             ],
         }
 
+        if model.boundary_annotations:
+            data["boundary_annotation"] = model.boundary_annotations
+
         return json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False)
