@@ -24,8 +24,8 @@
 %   \protected\def\breaktt#1{\begingroup\ttfamily\seqsplit{#1}\endgroup}
 % and \seqsplit permits a break after EVERY character with no continuation cue.
 % In the 2026-09-05 PDF that rendered `model_family_manifest.json` as
-% `model_family_manifest.js` + `on` and `src/manuscript_variables.py` as
-% `(src/manusc` + `ript_variables.py` — the first is itself a valid filename, so
+% `model_family_manifest.js` + `on` and the former variable script as
+% `(src/manusc` + `ript_variables.py`. The first is itself a valid filename, so
 % a reader cannot tell a line break from a name. Keep seqsplit's guarantee that
 % no code token overflows the measure, but forbid breaks inside the last
 % \GNNttTail characters (an extension is never orphaned) and inside the first

@@ -920,13 +920,14 @@ the template root:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run <span class="at">--frozen</span> python scripts/pipeline/stage_03_render.py <span class="dt">\</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--project</span> GeneralizedNotationNotation</span></code></pre></div>
 <p>The render needs a LaTeX installation providing the packages listed
-in <code>manuscript/preamble.md</code> plus <code>seqsplit</code>; the
-template guards <code>seqsplit</code> with <code>\IfFileExists</code>,
-so a missing copy degrades rather than failing the build.</p>
+in <code>docs/manuscript/preamble.md</code> plus <code>seqsplit</code>;
+the template guards <code>seqsplit</code> with
+<code>\IfFileExists</code>, so a missing copy degrades rather than
+failing the build.</p>
 <p>Because the variables file is regenerated before rendering, the
 counts in the rendered PDF track the repository state at the commit
 recorded in <code>output/data/manuscript_variables.json</code>
-(38c8a70f1): a code change that alters, for example, the test inventory
+(7c51ce617): a code change that alters, for example, the test inventory
 (705 test files, 7433 test functions) propagates into the prose on the
 next regeneration without any manual editing.</p>
 <h2 data-number="6.4" id="reproducibility-contract"><span

@@ -151,8 +151,8 @@
 %   \protected\def\breaktt#1{\begingroup\ttfamily\seqsplit{#1}\endgroup}
 % and \seqsplit permits a break after EVERY character with no continuation cue.
 % In the 2026-09-05 PDF that rendered `model_family_manifest.json` as
-% `model_family_manifest.js` + `on` and `src/manuscript_variables.py` as
-% `(src/manusc` + `ript_variables.py` — the first is itself a valid filename, so
+% `model_family_manifest.js` + `on` and the former variable script as
+% `(src/manusc` + `ript_variables.py`. The first is itself a valid filename, so
 % a reader cannot tell a line break from a name. Keep seqsplit's guarantee that
 % no code token overflows the measure, but forbid breaks inside the last
 % \GNNttTail characters (an extension is never orphaned) and inside the first
@@ -465,16 +465,17 @@ template root:
 \end{Shaded}
 
 The render needs a LaTeX installation providing the packages listed in
-\breaktt{manuscript/preamble.md} plus \texttt{seqsplit}; the template
-guards \texttt{seqsplit} with \texttt{\textbackslash{}IfFileExists}, so
-a missing copy degrades rather than failing the build.
+\breaktt{docs/manuscript/preamble.md} plus \texttt{seqsplit}; the
+template guards \texttt{seqsplit} with
+\texttt{\textbackslash{}IfFileExists}, so a missing copy degrades rather
+than failing the build.
 
 \end{frame}
 
 \begin{frame}[fragile,allowframebreaks]{Manuscript Reproducibility}
 Because the variables file is regenerated before rendering, the counts
 in the rendered PDF track the repository state at the commit recorded in
-\breaktt{output/data/manuscript\_variables.json} (38c8a70f1): a code
+\breaktt{output/data/manuscript\_variables.json} (7c51ce617): a code
 change that alters, for example, the test inventory (705 test files,
 7433 test functions) propagates into the prose on the next regeneration
 without any manual editing.
