@@ -55,12 +55,14 @@ class _ProcessFlowMixin(_POMDPProcessorSupportMixin):
                 for name, spec in self.framework_configs.items()
                 if not spec.get("experimental", False)
             ]
-        authored = admit_simulation_parameters(
-            (pomdp_space.model_parameters or {}).get("simulation_params", {}),
-            frameworks=frameworks,
-        )
         command = admit_simulation_parameters(
             kwargs.get("simulation_params", {}), frameworks=frameworks
+        )
+        model_parameters = pomdp_space.model_parameters or {}
+        authored = (
+            admit_simulation_parameters(model_parameters.get("simulation_params", {}))
+            if "thrml" in frameworks
+            else {}
         )
         options = {**authored.get("thrml", {}), **command.get("thrml", {})}
         simulation = {"thrml": options} if options else {}
@@ -96,7 +98,10 @@ class _ProcessFlowMixin(_POMDPProcessorSupportMixin):
             try:
                 self.logger.info(f"Processing framework: {framework}")
                 framework_kwargs = dict(kwargs)
-                if simulation or "simulation_params" in framework_kwargs:
+                if (
+                    "simulation_params" in model_parameters
+                    or "simulation_params" in kwargs
+                ):
                     framework_kwargs["simulation_params"] = (
                         simulation if framework == "thrml" else {}
                     )

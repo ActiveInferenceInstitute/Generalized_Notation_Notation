@@ -85,6 +85,46 @@ def test_simulation_parameters_bind_only_to_selected_thrml(tmp_path: Path) -> No
     assert payload["sampling"]["seed"] == 7
 
 
+def test_source_thrml_parameters_leave_other_frameworks_renderable(
+    tmp_path: Path,
+) -> None:
+    from gnn import parse_gnn_file
+
+    source = _source(tmp_path)
+    content = source.read_text(encoding="utf-8")
+    header = "\n## ModelParameters\n"
+    authored = 'simulation_params: {"thrml":{"num_samples":23}}\n'
+    content = (
+        content.replace(header, header + authored, 1)
+        if header in content
+        else content + header + authored
+    )
+    source.write_text(content, encoding="utf-8")
+
+    output = tmp_path / "jax_only"
+    assert process_render(source.parent, output, frameworks=["jax"]) is True
+    assert list(output.rglob("*_jax.py"))
+    ok, message, artifacts = render_gnn_spec(
+        parse_gnn_file(source), "jax", tmp_path / "from_summary"
+    )
+    assert ok and artifacts, message
+
+    output = tmp_path / "mixed"
+    assert (
+        process_render(
+            source.parent,
+            output,
+            frameworks=["jax", "thrml"],
+            simulation_params='{"thrml":{"seed":7}}',
+        )
+        is True
+    )
+    assert list(output.rglob("*_jax.py"))
+    payload = _payload(next(output.rglob("*_thrml.py")))
+    assert payload["sampling"]["num_samples"] == 23
+    assert payload["sampling"]["seed"] == 7
+
+
 def test_direct_spec_cannot_silently_drop_simulation_parameters(tmp_path: Path) -> None:
     from gnn.extract.pomdp_extractor import extract_pomdp_from_file
     from gnn.render.pomdp_processor import pomdp_to_gnn_spec
