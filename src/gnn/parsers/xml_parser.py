@@ -543,11 +543,11 @@ class XMLGNNParser(BaseGNNParser):
         for connection in legacy.connections:
             old_connections[connection_key(connection)].append(connection)
         for connection in native.connections:
-            matching = old_connections[connection_key(connection)]
-            if matching:
-                old = matching.popleft()
+            matching_connections = old_connections[connection_key(connection)]
+            if matching_connections:
+                prior_connection = matching_connections.popleft()
                 if connection.annotation is None:
-                    connection.annotation = old.annotation
+                    connection.annotation = prior_connection.annotation
 
         old_parameters: dict[str, deque[Parameter]] = defaultdict(deque)
         for parameter in legacy.parameters:
