@@ -309,21 +309,12 @@ project identity selects its CLI (`fep-formal` for the canonical project,
 `fep_lean` for pre-rename checkouts). These explicit compatibility profiles
 take precedence over unqualified upgrades.
 
-Pillow **13.0.0** is the minimum image decoder: 12.3.0 has nine October 2026
-advisories. The locked Gradio **6.30.0** release declares Pillow `<13`.
-The supported `uv sync --frozen --extra gui` / `--all-extras` profiles use an
-explicit Pillow override in both uv configurations; native GUI, PNG and GIF
-checks qualify GNN's actual consumers. Upstream Gradio metadata remains
-inconsistent with this override, so generic dependency-consistency tools will
-report its upper bound. Plain `pip install .` retains the secure Pillow floor;
-plain `pip install '.[gui]'` / `'.[all]'` cannot resolve the upstream cap and
-are unsupported. Use the committed uv profiles for those extras. Remove the
-override once a released Gradio admits Pillow 13, regenerate the lock, and rerun
-the native GUI/image and selected-profile security gates. The security audit
-checks pinned exports without re-resolving Gradio's cap and honors the selected
-interpreter/platform markers (Linux 3.14 core and 3.12 all extras in CI); it does
-not claim other marker splits or suppress advisories. Historical benchmark metadata keeps the Pillow
-version actually measured.
+Pillow **13.0.0** is the minimum image decoder after the October 2026
+advisories. The `gui` and `all` extras require Gradio **6.32.0** or newer,
+whose metadata admits Pillow 13 using the normal resolver. Use
+`uv sync --frozen --extra gui` for the locked GUI profile. The installed
+workflow exercises ordinary wheel and sdist installation, GUI imports and image
+decoding. Historical benchmarks retain the versions they measured.
 
 To remove the Python exception, provision/review native HDF5 and remaining build
 prerequisites, qualify the exact default dependency profile on 3.15, and

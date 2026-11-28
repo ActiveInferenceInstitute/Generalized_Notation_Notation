@@ -32,9 +32,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Every event runs the same four lanes across the supported range.
+        # Every event runs the same lanes across the supported range.
         include:
           - {os: ubuntu-latest, python: "3.12"}
+          - {os: ubuntu-latest, python: "3.13"}
           - {os: ubuntu-latest, python: "3.14"}
           - {os: macos-latest, python: "3.14"}
           - {os: windows-latest, python: "3.14"}
@@ -56,11 +57,11 @@ jobs:
         with:
           version: "0.13.6"
           enable-cache: true
-      - name: Build the wheel and export the frozen runtime profiles
+      - name: Qualify the wheel and sdist and export frozen runtime profiles
         id: build
         run: |
           python - <<'PY'
-          import os, pathlib, subprocess
+          import hashlib, json, os, pathlib, subprocess, sys, tomllib
           checkout = pathlib.Path.cwd()
           source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
           assert source == os.environ['INSTALLED_SOURCE_REVISION'], 'installed build source differs from candidate'
@@ -68,10 +69,46 @@ jobs:
           scratch.mkdir()
           before = subprocess.check_output(['git', '-c', 'core.fsmonitor=false', 'status', '--porcelain', '--untracked-files=no'], text=True)
           (scratch / 'tracked-before.txt').write_text(before)
-          subprocess.run(['uv', 'build', '--wheel', '--out-dir', str(scratch / 'dist')], check=True)
+          constraints = checkout / '.github/build-requirements.txt'
+          build = ['uv', 'build', '--build-constraints', str(constraints), '--require-build-hashes']
+          subprocess.run([*build, '--wheel', '--out-dir', str(scratch / 'dist')], check=True)
+          subprocess.run([*build, '--out-dir', str(scratch / 'rebuilt')], check=True)
+          wheel, = (scratch / 'dist').glob('*.whl')
+          rebuilt, = (scratch / 'rebuilt').glob('*.whl')
+          sdist, = (scratch / 'rebuilt').glob('*.tar.gz')
+          subprocess.run([sys.executable, str(checkout / 'scripts/check_distribution_artifacts.py'), '--wheel', str(wheel), '--rebuilt-wheel', str(rebuilt), '--sdist', str(sdist), '--receipt', str(scratch / 'distribution-acceptance.json')], check=True)
+          (scratch / 'build-identity.json').write_text(json.dumps({'checkout_commit': source, 'required_backend': tomllib.loads((checkout / 'pyproject.toml').read_text(encoding='utf-8'))['build-system']['requires'], 'build_constraints_sha256': hashlib.sha256(constraints.read_bytes()).hexdigest(), 'python_version': sys.version}, indent=2), encoding='utf-8')
           subprocess.run(['uv', 'export', '--frozen', '--no-default-groups', '--extra', 'api', '--extra', 'thrml', '--no-emit-project', '--output-file', str(scratch / 'runtime.txt')], check=True, stdout=subprocess.DEVNULL)
           subprocess.run(['uv', 'export', '--frozen', '--only-group', 'dev', '--no-emit-project', '--output-file', str(scratch / 'testtools.txt')], check=True, stdout=subprocess.DEVNULL)
           subprocess.run(['uv', 'export', '--frozen', '--no-default-groups', '--no-emit-project', '--output-file', str(scratch / 'base-runtime.txt')], check=True, stdout=subprocess.DEVNULL)
+          PY
+      - name: Accept the distributions with an ordinary resolver
+        env:
+          GRADIO_ANALYTICS_ENABLED: "False"
+          HF_HUB_OFFLINE: "1"
+        run: |
+          python - <<'PY'
+          import os, pathlib, shutil, subprocess
+          checkout = pathlib.Path.cwd()
+          scratch = pathlib.Path(os.environ['RUNNER_TEMP']) / 'gnn-installed-platform'
+          wheel, = (scratch / 'dist').glob('*.whl')
+          sdist, = (scratch / 'rebuilt').glob('*.tar.gz')
+          constraints = checkout / '.github/build-requirements.txt'
+          for profile, package in [('wheel', wheel), ('sdist', sdist)]:
+              root = scratch / ('normal-' + profile)
+              root.mkdir()
+              environment = root / 'venv'
+              subprocess.run(['uv', 'venv', '--python', os.environ['UV_PYTHON'], str(environment)], cwd=root, check=True)
+              python = environment / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
+              install = ['uv', '--no-config', 'pip', 'install', '--python', str(python)]
+              subprocess.run([*install, '--build-constraints', str(constraints), '--require-build-hashes', str(package)], cwd=root, check=True)
+              model = root / 'static_perception.md'
+              shutil.copyfile(checkout / 'input/gnn_files/basics/static_perception.md', model)
+              subprocess.run([str(python), '-I', str(checkout / 'scripts/run_installed_platform_acceptance.py'), '--base-wheel', '--checkout', str(checkout), '--root', str(root), '--model', str(model), '--receipt', str(scratch / ('normal-' + profile + '.json'))], cwd=root, check=True)
+              if profile == 'wheel' and os.name == 'posix':
+                  subprocess.run([*install, '--dry-run', str(wheel) + '[all]'], cwd=root, check=True)
+                  subprocess.run([*install, str(wheel) + '[gui]'], cwd=root, check=True)
+                  subprocess.run([str(python), '-I', '-c', 'import gradio; from PIL import Image; assert callable(gradio.Blocks); Image.new("RGB", (2, 2)).save("native_gui_probe.png"); Image.open("native_gui_probe.png").verify()'], cwd=root, check=True)
           PY
       - name: Install the wheel with API, THRML and development test tools
         run: |

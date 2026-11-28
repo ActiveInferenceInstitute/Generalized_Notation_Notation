@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling==1.33.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -129,7 +129,7 @@ audio = [
 gui = [
     "watchdog>=4.0",
     "websockets>=16.0",
-    "gradio>=6.7.0",
+    "gradio>=6.32.0",
 ]
 
 # Graph/categorical: system Graphviz bindings beyond core DisCoPy rendering
@@ -215,7 +215,7 @@ all = [
     "dask>=2023.0.0",
     "distributed>=2023.0.0",
     "fastapi>=0.100.0",
-    "gradio>=6.7.0",
+    "gradio>=6.32.0",
     "graphviz>=0.20.0",
     "h3>=4.5.0,<5",
     "jupyter-server>=2.20.0",
@@ -310,9 +310,6 @@ gnn = "gnn.cli:main"
 
 [tool.uv]
 default-groups = ["dev"]
-# Gradio 6.30.0 still caps Pillow <13. Qualify its GNN GUI consumers with
-# the patched decoder instead; see README runtime exceptions/removal checks.
-override-dependencies = ["pillow>=13.0.0"]
 # Security floors for transitive packages resolved through optional extras.
 # Keep these as resolver constraints so the packages do not become core runtime
 # dependencies merely because Dependabot tracks them in uv.lock.

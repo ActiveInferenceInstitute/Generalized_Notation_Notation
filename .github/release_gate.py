@@ -36,6 +36,23 @@ WORKFLOWS = (
     "custody-re-render.yml",
 )
 
+# A successful run with a partial matrix is not a release qualification.
+REQUIRED_MATRIX_JOBS = {
+    "ci.yml": {"test (3.13)", "test (3.14)", "pytest (3.12)"},
+    "comprehensive-native-coverage.yml": {
+        f"Comprehensive native ({python})" for python in ("3.12", "3.13", "3.14")
+    },
+    "installed-platforms.yml": {
+        "installed (ubuntu-latest, 3.12)",
+        "installed (ubuntu-latest, 3.13)",
+        "installed (ubuntu-latest, 3.14)",
+        "installed (macos-latest, 3.14)",
+        "installed (windows-latest, 3.14)",
+        "container (linux/amd64, 3.14)",
+    },
+    "fep-lean-paired-revision.yml": {"fep-lean-pair (3.12)", "fep-lean-pair (3.14)"},
+}
+
 
 def gh(*arguments: str) -> Any:
     return json.loads(
@@ -56,7 +73,13 @@ def pages(endpoint: str, key: str) -> list[dict]:
     raise RuntimeError("Actions pagination exceeded the bounded collection limit")
 
 
-def evaluate(runs: list[dict], jobs: list[dict], revision: str) -> dict:
+def evaluate(
+    runs: list[dict],
+    jobs: list[dict],
+    revision: str,
+    *,
+    required_jobs: set[str] | None = None,
+) -> dict:
     """Require the newest run/attempt, exact head and every declared job."""
     if not runs:
         return {"state": "missing"}
@@ -74,14 +97,22 @@ def evaluate(runs: list[dict], jobs: list[dict], revision: str) -> dict:
                 {"name": job["name"], "seconds": (end - start).total_seconds()}
             )
     result = {"run": run, "jobs": jobs, "job_timings": timings}
+    missing_jobs = sorted((required_jobs or set()) - {job.get("name") for job in jobs})
+    if missing_jobs:
+        result["missing_jobs"] = missing_jobs
     if run["head_sha"] != revision:
         result["state"] = "wrong_source"
     elif run["status"] != "completed":
         result["state"] = "pending"
     elif run["conclusion"] != "success":
         result["state"] = "failed"
-    elif not jobs or any(
-        job["status"] != "completed" or job["conclusion"] != "success" for job in jobs
+    elif (
+        missing_jobs
+        or not jobs
+        or any(
+            job["status"] != "completed" or job["conclusion"] != "success"
+            for job in jobs
+        )
     ):
         result["state"] = "incomplete_jobs"
     else:
@@ -124,7 +155,9 @@ def inspect(
         f"repos/{REPOSITORY}/actions/runs/{latest['id']}/attempts/{latest['run_attempt']}/jobs",
         "jobs",
     )
-    return workflow, evaluate(runs, jobs, revision)
+    return workflow, evaluate(
+        runs, jobs, revision, required_jobs=REQUIRED_MATRIX_JOBS.get(workflow)
+    )
 
 
 def main() -> int:

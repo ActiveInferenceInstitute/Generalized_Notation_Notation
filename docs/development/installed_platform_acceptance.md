@@ -36,8 +36,16 @@ the precise native guarantee and launcher boundary.
 
 ## Installation boundary
 
-Each runner builds one wheel from its tested revision and exports runtime
-requirements from `uv.lock` with hashes and `--frozen`. Core, API and THRML
+Each runner builds a wheel directly and rebuilds it from the sdist using the
+hash-pinned [build requirements](../../.github/build-requirements.txt). It
+verifies both wheel inventories and `RECORD` entries, compares artifact
+metadata, and runs base installs of both distributions with an ordinary
+resolver. Linux covers CPython 3.12, 3.13 and 3.14. macOS and Windows retain
+their 3.14 lanes. The POSIX lanes also resolve `all` and run the `gui`
+wheel smoke test with Gradio and Pillow.
+
+Each runner exports runtime requirements from `uv.lock` with hashes and
+`--frozen`. Core, API and THRML
 runtime dependencies must install as ordinary binary wheels. Development test
 tools are installed from a separate frozen hashed export. The GNN wheel is
 installed without resolving dependencies again, because they have already been admitted

@@ -3,7 +3,13 @@
 import copy
 import unittest
 
-from release_gate import WORKFLOWS, evaluate, filter_runs, release_ready
+from release_gate import (
+    REQUIRED_MATRIX_JOBS,
+    WORKFLOWS,
+    evaluate,
+    filter_runs,
+    release_ready,
+)
 
 
 class ReleaseGateControls(unittest.TestCase):
@@ -71,6 +77,15 @@ class ReleaseGateControls(unittest.TestCase):
             jobs = copy.deepcopy(self.jobs)
             jobs.append(dict(status="completed", conclusion=conclusion))
             self.assertEqual(self.state(jobs=jobs), "incomplete_jobs")
+
+    def test_an_all_green_partial_matrix_cannot_qualify(self):
+        required = REQUIRED_MATRIX_JOBS["installed-platforms.yml"]
+        jobs = [dict(self.jobs[0], name=name) for name in sorted(required)]
+        complete = evaluate([self.run], jobs, self.sha, required_jobs=required)
+        self.assertEqual(complete["state"], "success")
+        partial = evaluate([self.run], jobs[1:], self.sha, required_jobs=required)
+        self.assertEqual(partial["state"], "incomplete_jobs")
+        self.assertEqual(partial["missing_jobs"], [jobs[0]["name"]])
 
 
 class ReleaseRosterControls(unittest.TestCase):
