@@ -11,7 +11,7 @@ paper:
   cover:
     image: "output/figures/gnn_graphical_abstract.png"
     alt: "Graphical abstract: one plain-text GNN specification flowing through parse, validate, render, execute, and analyze cards into cross-repository interchange checks against the pinned GEO-INFER and fep-lean pairs."
-  version: "5.1.0"
+  version: "5.2.0"
   date: "2026-11-12"
 
 authors:
