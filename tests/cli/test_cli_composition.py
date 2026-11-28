@@ -65,8 +65,8 @@ class TestBuildParser:
 
     def test_subcommands_sorted_and_complete(self) -> None:
         assert cli.SUBCOMMANDS == tuple(sorted(cli.SUBCOMMANDS))
-        assert len(cli.SUBCOMMANDS) == 21
-        assert "witness" in cli.SUBCOMMANDS
+        assert len(cli.SUBCOMMANDS) == 22
+        assert {"replay", "witness"} <= set(cli.SUBCOMMANDS)
 
     def test_extract_flags_introspectable(self) -> None:
         parser = cli.build_parser()
@@ -98,6 +98,7 @@ class TestDispatchTable:
             "extract",
             "render",
             "report",
+            "replay",
             "reproduce",
             "preflight",
             "health",
@@ -126,6 +127,7 @@ class TestDispatchTable:
             "extract",
             "render",
             "report",
+            "replay",
             "reproduce",
             "preflight",
             "health",
@@ -425,6 +427,14 @@ class TestHandlerSignatures:
             import gnn.gui as gui_module
 
             monkeypatch.setattr(gui_module, "process_gui", completed)
+        elif command == "replay":
+            from gnn.pipeline import run_manifest
+
+            def replayed(path: Path, *, expected_run_id: str | None) -> dict[str, Any]:
+                calls.append(((path,), {"expected_run_id": expected_run_id}))
+                return {"trace_event_count": 0, "trace_sha256": "a" * 64}
+
+            monkeypatch.setattr(run_manifest, "replay_run_manifest", replayed)
         elif command == "mcp":
             import gnn.mcp as mcp_module
 
@@ -458,6 +468,10 @@ class TestHandlerSignatures:
             assert calls == [((), {"host": ns.host, "port": ns.port})]
         if command == "watch":
             assert calls[0][0][0].watch_dir == ns.dir
+        if command == "replay":
+            assert calls == [
+                ((ns.output_dir,), {"expected_run_id": ns.expected_run_id})
+            ]
         assert isinstance(result, int)
         assert result in (cli.EXIT_SUCCESS, cli.EXIT_ERROR, cli.EXIT_WARNING)
 
@@ -494,6 +508,11 @@ def argparse_namespace_for(command: str, *, missing_file: bool) -> argparse.Name
             "json": False,
         },
         "report": {"output_dir": Path("/nonexistent_output"), "json": False},
+        "replay": {
+            "output_dir": Path("/nonexistent_output"),
+            "expected_run_id": "expected-run",
+            "json": True,
+        },
         "reproduce": {"run_hash": "abc123def456", "history_dir": Path("no/such")},
         "preflight": {"config": None, "json": False},
         "health": {"strict": False, "json": False},
