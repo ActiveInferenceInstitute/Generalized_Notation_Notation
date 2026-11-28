@@ -1,19 +1,11 @@
 #!/usr/bin/env python3
 """Fail when the committed hydrated prose is stale for the committed token map.
 
-The PR-time custody drift guard (SC-22 — see
-``scripts/z_generate_manuscript_variables.py``'s docstring). A count-changing
-PR regenerates ``output/data/manuscript_variables.json`` and re-records the
-custody manifest, so every PR-time gate passes; but the hydrated sections
-under ``output/manuscript/`` and the PDF evidence rendered from them only
-change when the full ritual runs, and the scheduled
-``custody-re-render.yml`` then goes red after the merge. This check catches
-that before merge, with no LaTeX: it re-substitutes ``docs/manuscript/*.md``
-from the committed token map and compares the result to the committed
-hydrated tree byte for byte and requires rendered Markdown and TeX to carry
-the token map commit stamp. A failure means: run the full ritual (figures,
-the template's ``stage_03_render``, then
-``scripts/z_record_manuscript_render_manifest.py``) and commit ``output/``.
+The PR-time drift guard (SC-22) re-substitutes ``docs/manuscript/*.md`` from
+its committed token map and compares the result with the hydrated tree. It
+also requires rendered Markdown and TeX to carry the token map commit stamp.
+If the evidence is stale, follow the render, preparation, Stage 04 validation,
+and renewal sequence in ``docs/RUN_GUIDE.md``, then commit the new evidence.
 
 Thin orchestrator: the logic is
 :func:`gnn.manuscript.render_custody.hydration_issues`. Without --base-ref every

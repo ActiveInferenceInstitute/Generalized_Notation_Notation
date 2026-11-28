@@ -346,14 +346,22 @@ workflow details:
 Published tags, source archives and original proof receipts retain their
 accepted identities while development continues.
 
-## Manuscript custody (SC-22): count-changing PRs run the full ritual
+## Manuscript custody (SC-22)
 
-`scripts/check_hydrated_prose.py` (the `Hydrated prose matches token map` step of `local-gates.yml`'s `repo-gates` job, `just hydrated-prose`) re-substitutes `docs/manuscript/*.md` from the committed `output/data/manuscript_variables.json` and fails when the committed `output/manuscript/` differs. **Consequence: any PR that regenerates the token map (every count-changing `src/` or `tests/` PR) must run the full SC-22 ritual before it can go green.** The ritual: `python -m scripts.manuscript_build_figures` → the template's `stage_03_render` (fresh `docxology/template` clone with this repository checked out as a real directory at `projects/active/GeneralizedNotationNotation`; the template's analysis-read custody refuses a symlinked project) → `scripts/z_verify_fresh_render.py` → `scripts/z_record_manuscript_render_manifest.py` → commit `output/`. The canonical statement is the `scripts/z_generate_manuscript_variables.py` docstring.
+Any PR changing manuscript inputs, including source or test counts, must
+regenerate publication evidence from the committed source. Follow the
+[run guide](docs/RUN_GUIDE.md#manuscript-rendering-and-custody) to rebuild figures,
+run template Stage 03, prepare evidence, run template Stage 04, and record the
+new render manifest. Commit the publication, native validation reports, and
+other custody inputs together. Run `scripts/z_verify_fresh_render.py --committed-only`,
+the strict token audit, and `scripts/check_hydrated_prose.py` on the resulting tree.
 
-If manuscript custody is red on main, repair main first. PR gates use the
-merge-base with the target SHA; only unchanged diagnostic and exact-evidence
-fingerprints may warn with the full base SHA. New or changed drift fails.
-Main and scheduled audits remain strict.
+The scheduled check verifies the committed baseline before rendering and
+compares fresh validated output with that baseline. Use the explicit renewal
+procedure for intentional changes. If custody is red on main, repair main
+first. Token and hydration PR gates can warn only on diagnostic and evidence
+fingerprints identical to the resolved merge base. The committed publication
+custody check is strict.
 
 ## Learned User Preferences
 

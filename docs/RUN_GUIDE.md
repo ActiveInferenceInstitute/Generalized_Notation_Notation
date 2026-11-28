@@ -126,27 +126,59 @@ That composite action is not a claim about this repository's setup.
 
 ## Manuscript rendering and custody
 
-The authoritative renderer is the template's `scripts/pipeline/stage_03_render.py`.
-The [manuscript reproduction section](manuscript/05_reproducibility.md#manuscript-reproducibility)
-and [custody workflow](../.github/workflows/custody-re-render.yml) own the ritual:
-regenerate variables, rebuild figures, render, verify the old chain, then record
-the renewed manifest after a successful render. Figures are declared in
-`output/figures/figure_registry.json`; variables are in
-`output/data/manuscript_variables.json`.
+Template Stage 03 renders the PDF, HTML, and slide decks. Stage 04 validates
+the publication and seals the template's evidence. The [custody workflow](../.github/workflows/custody-re-render.yml)
+checks for drift against the template default branch. For reproduction, use the
+revision recorded in `output/data/manuscript_render_manifest.json` at
+`declared_environment.template_revision`.
 
-Keep the reference template read-only. A disposable copy can hold this project
-as a real directory at `projects/active/GeneralizedNotationNotation`; project
-symlinks are refused. An exported template copy without `.git` needs an explicit
-`SOURCE_DATE_EPOCH` from the reference commit. Use a prepared template
-interpreter without synchronizing or changing the reference environment:
+Prepare the GNN and template environments with their frozen locks. Use a
+disposable template copy at that revision and place GNN under
+`projects/active/GeneralizedNotationNotation` as a real directory. Set
+`REFERENCE_TEMPLATE` to the reference checkout at the selected revision and
+`RENDER_TEMPLATE` to the disposable root. Run from a shell with both paths set:
 
 ```bash
-# From the disposable template root; set these paths to prepared checkouts.
-export SOURCE_DATE_EPOCH="$(git -C "$REFERENCE_TEMPLATE" show -s --format=%ct HEAD)"
 export GNN_TEMPLATE_REVISION="$(git -C "$REFERENCE_TEMPLATE" rev-parse HEAD)"
+export SOURCE_DATE_EPOCH="$(git -C "$REFERENCE_TEMPLATE" log -1 --format=%ct)"
+cd "$RENDER_TEMPLATE/projects/active/GeneralizedNotationNotation"
+uv run --frozen --no-sync python scripts/z_verify_fresh_render.py --committed-only
+uv run --frozen --no-sync python -m scripts.manuscript_build_figures
+cd "$RENDER_TEMPLATE"
 "$REFERENCE_TEMPLATE/.venv/bin/python" scripts/pipeline/stage_03_render.py \
   --project GeneralizedNotationNotation
+cd "$RENDER_TEMPLATE/projects/active/GeneralizedNotationNotation"
+uv run --frozen --no-sync python scripts/z_record_manuscript_render_manifest.py --prepare
+cd "$RENDER_TEMPLATE"
+"$REFERENCE_TEMPLATE/.venv/bin/python" scripts/pipeline/stage_04_validate.py \
+  --project GeneralizedNotationNotation
+cd "$RENDER_TEMPLATE/projects/active/GeneralizedNotationNotation"
+uv run --frozen --no-sync python scripts/z_verify_fresh_render.py
 ```
+
+The final command checks delivery against the fresh Stage 04 inventory and
+compares reproducible intermediates against the historical manifest. It
+reports its comparison profile and returns a distinct stale-chain status when
+the observed template revision differs from the one recorded.
+
+For an intentional source or template update, diagnose or note the existing
+custody status. Finish the source commit first, select the intended template
+revision, rebuild the figures, render, prepare the evidence and validate with
+Stage 04. Then renew the custody manifest and verify the new evidence:
+
+```bash
+uv run --frozen --no-sync python scripts/z_record_manuscript_render_manifest.py
+uv run --frozen --no-sync python scripts/z_verify_fresh_render.py --committed-only
+uv run --frozen --no-sync python scripts/check_manuscript_tokens.py --strict
+uv run --frozen --no-sync python scripts/check_hydrated_prose.py
+```
+
+Commit the rendered publication and its hydrated inputs, generated figures,
+variables, and custody manifest together. Retain `output/reports/artifact_manifest.json`,
+`validation_report.json`, `rendered_provenance.json`, and
+`manuscript_composition.json` under `output/reports/`, together with
+`output/web/_combined_manuscript.md`. This renewal leaves the previous evidence
+available at its original Git revision.
 
 Observed on 2026-11-12 at template
 `f1fc24de3a2989531e954bf5098360dbfb47ec3d`, pandoc 3.13,

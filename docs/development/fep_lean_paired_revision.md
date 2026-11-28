@@ -172,11 +172,11 @@ not exempt a current release from this sequence:
    to a contract owner file re-drifts the pair.
 2. **Manuscript/token ritual** (when manuscript inputs changed): follow the
    SC-22 ritual in the `scripts/z_generate_manuscript_variables.py` module
-   docstring — regenerate the token map → rebuild figures → run the template's
-   `stage_03_render` → record the render-custody manifest → commit the
-   regenerated `output/` artifacts. `scripts/check_hydrated_prose.py`
-   (`local-gates.yml` repo-gates) enforces this at PR time: a regenerated
-   token map without the render fails it.
+   docstring. Regenerate the token map, rebuild figures, run the template's
+   `stage_03_render`, prepare the evidence, and run `stage_04_validate`.
+   Record custody after validation and commit the regenerated publication
+   and evidence. The PR-time `local-gates.yml` checks committed custody,
+   the token map, and the hydrated prose.
    Run the ritual only at the final content state and **never amend a commit
    after recording**: the recorded manifest's `counts_describe_commit` cites
    the commit it was produced at, and amending afterwards orphans that

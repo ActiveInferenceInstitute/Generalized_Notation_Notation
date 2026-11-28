@@ -40,41 +40,21 @@ A machine-readable provenance receipt is always written to
 describe, whether the working tree is dirty, and the dirty paths), so the
 dirty-tree caveat is a file the gates can read, not just a stderr line.
 
-Scheduled re-render ritual (SC-22): ``.github/workflows/local-gates.yml``
-runs ``check_manuscript_tokens.py --strict`` on every push/PR to main (and
-``workflow_dispatch`` — event-driven per commit, not a cron schedule) and
-proves the *committed* artifacts describe ``HEAD``: the token map's
-commit-stable checksum matches a fresh ``generate_variables``, every figure
-registry ``png_sha256`` matches its PNG, and every ``source_sha256`` matches
-the bytes the prose describes. What it cannot do is render. So when HEAD
-moves with count-affecting changes, that gate fails until this manual
-ritual has run, in order:
+Manuscript custody (SC-22): commit the manuscript inputs first. Rebuild the
+figures with ``python -m scripts.manuscript_build_figures`` and run the
+selected template revision's ``stage_03_render.py``. The renderer calls this
+producer and generates the PDF, HTML, and slides. From the GNN project, run
+``scripts/z_record_manuscript_render_manifest.py --prepare`` to sanitize the
+intermediates before the template's ``stage_04_validate.py`` seals the evidence.
 
-1. regenerate — this script, invoked by the template render pipeline (or
-   standalone, when only the token map is wanted);
-2. rebuild the figures (``python -m scripts.manuscript_build_figures``);
-3. run the template's ``stage_03_render``;
-4. record the render custody manifest
-   (``uv run python scripts/z_record_manuscript_render_manifest.py``);
-5. commit the regenerated ``output/`` artifacts (including
-   ``output/data/manuscript_render_manifest.json``).
+To renew custody intentionally, run ``scripts/z_record_manuscript_render_manifest.py``
+after Stage 04 succeeds. Commit the custody manifest, rendered publication,
+and native validation reports together. The PR-time ``local-gates.yml`` checks
+committed custody, token and citation integrity, and hydrated prose. The
+scheduled ``custody-re-render.yml`` checks the historical manifest before
+rebuilding, then validates and compares the fresh render. Both verification
+paths keep the recorded manifest intact. See ``docs/RUN_GUIDE.md`` for commands.
 
-PR-time drift guard: ``scripts/check_hydrated_prose.py`` (``local-gates.yml``
-``repo-gates``) re-substitutes ``docs/manuscript/*.md`` from the committed token map
-and fails when the committed ``output/manuscript/`` differs. So a PR that
-regenerates the token map (every count-changing PR) must run this whole
-ritual. Regenerating and re-recording alone now fails before merge, where it
-used to fail only in the scheduled ``custody-re-render.yml`` after merge.
-
-What the gates verify afterwards: the strict token checks above, plus —
-via the custody manifest read by ``tests/test_manuscript_latex_log.py`` —
-that the committed ``.log``/``.tex``/``.md``, the hydrated sections under
-``output/manuscript/``, the token map, and the receipt are artifacts of one
-render invocation. What remains manual: running the render in the template
-checkout and committing the artifacts — no gate can run it for you, and
-since the custody manifest is recorded from the files on disk, the
-"render actually happened before the record" ordering is the one part of
-the chain the operator performs on trust.
 """
 
 from __future__ import annotations
