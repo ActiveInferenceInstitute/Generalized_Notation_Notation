@@ -14,12 +14,12 @@ Environment Variables:
   FAST_TESTS_TIMEOUT      Override timeout (default: 600 seconds)
 """
 
-import os
 import sys
 
 if globals().get("__package__") is None and not sys.flags.safe_path:
     sys.path.pop(0)  # Keep adjacent gnn/types from shadowing stdlib types.
 
+import os
 from pathlib import Path
 from typing import Any, cast
 
