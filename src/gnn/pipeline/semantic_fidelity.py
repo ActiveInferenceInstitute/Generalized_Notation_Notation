@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections import Counter
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
@@ -103,12 +104,14 @@ def build_semantic_contract(model_path: Path) -> dict[str, Any]:
             "model_name": str(model.model_name),
             "version": str(model.version),
             "annotation": str(model.annotation),
+            "gnn_section": model.extensions.get("gnn_section"),
         },
         "variables": _canonical_variables(model),
         "edges": _canonical_edges(model),
         "parameter_shapes": _canonical_parameter_shapes(model),
         "parameter_values": _canonical_parameter_values(model),
         "parameter_metadata": _canonical_parameter_metadata(model),
+        "parameter_declarations": _canonical_parameter_declarations(model),
         "parameter_names": sorted(
             str(parameter.name) for parameter in model.parameters if parameter.name
         ),
@@ -145,12 +148,13 @@ def compare_semantic_contracts(
         "parameter_shapes",
         "parameter_values",
         "parameter_metadata",
+        "parameter_declarations",
         "parameter_names",
         "equations",
         "time_specification",
         "ontology_mappings",
     ):
-        if original.get(field) != reparsed.get(field):
+        if _canonical_json(original.get(field)) != _canonical_json(reparsed.get(field)):
             differences.append(
                 SemanticDifference(
                     field=field,
@@ -229,7 +233,7 @@ def _run_format_round_trip(
 ) -> dict[str, Any]:
     system = GNNParsingSystem(strict_validation=False)
     source_result: Any = system.parse_file(model_path)
-    if source_result.model is None:
+    if not source_result.success or source_result.model is None:
         return {
             "format": format_name,
             "status": "failed",
@@ -254,10 +258,9 @@ def _run_format_round_trip(
         }
 
     try:
-        serialized = system.serialize(source_result.model, gnn_format)
         artifact = family_dir / f"{model_path.stem}.{format_name}"
-        artifact.write_text(serialized, encoding="utf-8")
-        reparsed = system.parse_string(serialized, gnn_format)
+        system.serialize_to_file(source_result.model, artifact, gnn_format)
+        reparsed = system.parse_file(artifact, format_hint=gnn_format)
         if not reparsed.success or reparsed.model is None:
             return {
                 "format": format_name,
@@ -266,9 +269,7 @@ def _run_format_round_trip(
                 "artifact": str(artifact),
                 "differences": [],
             }
-        reparsed_contract = _contract_from_model(
-            deepcopy(original_contract), reparsed.model
-        )
+        reparsed_contract = _contract_from_model(original_contract, reparsed.model)
         differences = compare_semantic_contracts(original_contract, reparsed_contract)
     except Exception as exc:  # pragma: no cover - defensive ledger detail
         return {
@@ -295,12 +296,14 @@ def _contract_from_model(source_contract: dict[str, Any], model: Any) -> dict[st
         "model_name": str(model.model_name),
         "version": str(model.version),
         "annotation": str(model.annotation),
+        "gnn_section": model.extensions.get("gnn_section"),
     }
     contract["variables"] = _canonical_variables(model)
     contract["edges"] = _canonical_edges(model)
     contract["parameter_shapes"] = _canonical_parameter_shapes(model)
     contract["parameter_values"] = _canonical_parameter_values(model)
     contract["parameter_metadata"] = _canonical_parameter_metadata(model)
+    contract["parameter_declarations"] = _canonical_parameter_declarations(model)
     contract["parameter_names"] = sorted(
         str(parameter.name) for parameter in model.parameters if parameter.name
     )
@@ -349,7 +352,10 @@ def _canonical_edges(model: Any) -> list[dict[str, Any]]:
                         "source": str(source),
                         "target": str(target),
                         "connection_type": connection_type,
+                        "source_group": list(connection.source_variables),
+                        "target_group": list(connection.target_variables),
                         "weight": connection.weight,
+                        "annotation": connection.annotation,
                         "description": str(connection.description or ""),
                     }
                 )
@@ -359,6 +365,7 @@ def _canonical_edges(model: Any) -> list[dict[str, Any]]:
             item["source"],
             item["target"],
             item["connection_type"],
+            _canonical_json(item),
         ),
     )
 
@@ -395,6 +402,25 @@ def _canonical_parameter_metadata(model: Any) -> dict[str, Any]:
     )
 
 
+def _canonical_parameter_declarations(model: Any) -> list[dict[str, Any]]:
+    counts = Counter(parameter.name for parameter in model.parameters)
+    declarations = []
+    for parameter in model.parameters:
+        declaration = {
+            "name": parameter.name,
+            "section": parameter.section,
+            "type_hint": parameter.type_hint,
+            "description": str(parameter.description or ""),
+        }
+        if counts[parameter.name] > 1:
+            # The legacy name-to-value projections retain only the last
+            # declaration. Keep the values and provenance of every duplicate.
+            declaration["value"] = _json_stable(parameter.value)
+            declaration["metadata"] = _json_stable(parameter.metadata)
+        declarations.append(declaration)
+    return sorted(declarations, key=lambda item: (item["name"], item["section"] or ""))
+
+
 def _canonical_equations(model: Any) -> list[dict[str, str]]:
     equations = []
     for equation in getattr(model, "equations", []):
@@ -426,6 +452,7 @@ def _canonical_time_specification(model: Any) -> dict[str, Any] | None:
         "discretization": str(time_spec.discretization or ""),
         "horizon": time_spec.horizon,
         "step_size": time_spec.step_size,
+        "metadata": _json_stable(time_spec.metadata),
     }
 
 
@@ -469,7 +496,12 @@ def _normalize_dimension(value: Any) -> int | str:
 
 
 def _json_stable(value: Any) -> Any:
-    return json.loads(json.dumps(value, sort_keys=True, default=str))
+    return json.loads(_canonical_json(value))
+
+
+def _canonical_json(value: Any) -> str:
+    """Compare JSON types and nested values without depending on mapping order."""
+    return json.dumps(value, sort_keys=True, ensure_ascii=False, default=str)
 
 
 def _contract_hash(contract: dict[str, Any]) -> str:

@@ -9,13 +9,19 @@ that other formats can use as a model.
 import ast
 import json
 import logging
+import re
 from typing import Any, Optional
+
+from gnn.utils.runtime_safety.safe_eval import MATRIX_MAX_LEN, safe_literal_eval
 
 from .common import (
     Parameter,
 )
 
 logger = logging.getLogger(__name__)
+_NUMERIC_MATRIX = re.compile(r"[\s0-9eE+.,();-]*")
+_NUMERIC_SEQUENCE = re.compile(r"[\s0-9eE+.,\[\]-]+")
+_MATRIX_DELIMITERS = str.maketrans({"(": "[", ")": "]", ";": ","})
 
 
 class ParameterParsingMixin:
@@ -86,7 +92,12 @@ class ParameterParsingMixin:
             # Parse value
             value = self._parse_parameter_value(value_str)
 
-            return Parameter(name=name, value=value, description=comment)
+            metadata = {}
+            if value_str.startswith("{") and isinstance(value, list):
+                metadata["markdown_braced_matrix"] = True
+            return Parameter(
+                name=name, value=value, description=comment, metadata=metadata
+            )
 
         except Exception as e:
             logger.warning(f"Failed to parse parameter assignment '{line}': {e}")
@@ -95,10 +106,22 @@ class ParameterParsingMixin:
     def _parse_parameter_value(self, value_str: str) -> Any:
         """Parse a parameter value string."""
         value_str = value_str.strip()
+        sequence = value_str.startswith("[") and value_str.endswith("]")
+        numeric_sequence = sequence and _NUMERIC_SEQUENCE.fullmatch(value_str)
+        if numeric_sequence and len(value_str) > MATRIX_MAX_LEN:
+            raise ValueError("parameter sequence exceeds the matrix literal limit")
 
         try:
             # Handle GNN matrix format: A={ (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0) }
             if value_str.startswith("{") and value_str.endswith("}"):
+                if ":" in value_str or value_str == "{}":
+                    try:
+                        mapping = safe_literal_eval(value_str)
+                    except (ValueError, SyntaxError):
+                        pass
+                    else:
+                        if isinstance(mapping, dict):
+                            return mapping
                 # Remove comments from the string
                 lines = value_str.split("\n")
                 cleaned_lines: list[Any] = []
@@ -116,6 +139,9 @@ class ParameterParsingMixin:
                 # Handle matrix format: { (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0) }
                 if cleaned_value.startswith("{") and cleaned_value.endswith("}"):
                     inner = cleaned_value[1:-1].strip()
+                    if _NUMERIC_MATRIX.fullmatch(inner):
+                        literal = "[" + inner.translate(_MATRIX_DELIMITERS) + "]"
+                        return safe_literal_eval(literal, max_len=MATRIX_MAX_LEN)
 
                     # Enhanced parsing logic for nested tuples
                     rows = self._parse_matrix_rows(inner)
@@ -131,14 +157,14 @@ class ParameterParsingMixin:
                     return matrix
 
             # Try to evaluate as Python literal (bounded against DoS).
-            from gnn.utils.runtime_safety.safe_eval import safe_literal_eval
-
+            if numeric_sequence:
+                return safe_literal_eval(value_str, max_len=MATRIX_MAX_LEN)
             return safe_literal_eval(value_str)
 
         except (ValueError, SyntaxError):
             # Handle other formats
 
-            if value_str.startswith("[") and value_str.endswith("]"):
+            if sequence:
                 try:
                     # The guard-only spelling changes no lengths or brackets.
                     # Reuse the existing length/depth limits before JSON parsing;

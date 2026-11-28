@@ -270,7 +270,12 @@ class JSONGNNParser(BaseGNNParser):
                 description = param_data.get("description", "")
 
                 parameter = Parameter(
-                    name=name, value=value, type_hint=type_hint, description=description
+                    name=name,
+                    value=value,
+                    type_hint=type_hint,
+                    description=description,
+                    metadata=param_data.get("metadata") or {},
+                    section=param_data.get("section"),
                 )
 
                 parameters.append(parameter)
@@ -321,6 +326,7 @@ class JSONGNNParser(BaseGNNParser):
                 discretization=discretization,
                 horizon=horizon,
                 step_size=time_data.get("step_size"),
+                metadata=time_data.get("metadata") or {},
             )
 
         except Exception as e:

@@ -17,8 +17,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+from gnn.extract.pomdp_extractor import POMDPExtractor  # noqa: E402
 from gnn.parsers import GNNFormat, GNNParsingSystem, convert_gnn_format  # noqa: E402
-from gnn.parsers.common import ParseError  # noqa: E402
+from gnn.parsers.common import ConnectionType, DataType, ParseError  # noqa: E402
 from gnn.parsers.system import PARSER_REGISTRY  # noqa: E402
 from gnn.parsers.unified_parser import (  # noqa: E402
     _PARSER_CLASS_PATHS,
@@ -28,6 +29,92 @@ from gnn.parsers.unified_parser import (  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 EXEMPLAR = REPO / "input" / "gnn_files" / "discrete" / "actinf_pomdp_agent.md"
+
+
+@pytest.mark.parametrize("interchange_suffix", [".md", ".json", ".yaml"])
+def test_saved_regime_schedule_and_tensor_survive_markdown_conversion(
+    tmp_path: Path, interchange_suffix: str
+) -> None:
+    system = GNNParsingSystem(strict_validation=False)
+    exemplar = EXEMPLAR.with_name("regime_switched_dynamics.md")
+    source_bytes = exemplar.read_bytes()
+    intermediate = tmp_path / f"intermediate{interchange_suffix}"
+    target = tmp_path / "converted.md"
+    system.convert_file(exemplar, intermediate)
+    system.convert_file(intermediate, target)
+    restored = system.parse_file(target)
+    assert restored.success, restored.errors
+    assert restored.model.time_specification.time_type == "RegimeSwitched"
+    assert restored.model.time_specification.metadata["time_variable"] == "t"
+    assert "!!python" not in intermediate.read_text()
+    extractor = POMDPExtractor()
+    authored = extractor.extract_from_gnn_content(source_bytes.decode())
+    converted = extractor.extract_from_gnn_content(target.read_text())
+    assert authored is not None and converted is not None
+    assert converted.gnn_section == authored.gnn_section == "ActInfPOMDP"
+    assert converted.num_timesteps == authored.num_timesteps == 8
+    assert converted.model_parameters == authored.model_parameters
+    assert converted.initial_parameterization == authored.initial_parameterization
+    assert exemplar.read_bytes() == source_bytes
+
+
+def test_saved_markdown_preserves_bracket_fields_edges_equations_and_time(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "authored.md"
+    source.write_text(
+        "## GNNVersionAndFlags\nGNN v1.1.0\n"
+        "## ModelName\nModel\n"
+        "## StateSpaceBlock\ns[2,default=ones,type=int] # state\n"
+        "o[n,type=bool]\nu[2,type=int]\n"
+        "## Connections\n(s,u)<->o:likelihood->posterior # observed\n"
+        "s|o\n"
+        "## InitialParameterization\nA = {'flag': True} # declared\n"
+        "## Equations\nupdate: s = s\n"
+        "## Time\nDynamic\nDiscreteTime=t\nModelTimeHorizon = 0\nStepSize = 0.25\n"
+        "## CustomExtension\nAuthored content\n",
+        encoding="utf-8",
+    )
+    system = GNNParsingSystem(strict_validation=False)
+    target = tmp_path / "saved.md"
+    system.convert_file(source, target)
+    result = system.parse_file(target)
+    assert result.success, result.errors
+    model = result.model
+    assert model.version == "1.1.0"
+    assert model.extensions["CustomExtension"] == "Authored content"
+    assert model.variables[0].data_type is DataType.INTEGER
+    assert model.variables[0].dimensions == [2]
+    assert model.variables[0].description == "state"
+    assert model.variables[0].constraints == {"default": "ones"}
+    assert model.variables[1].data_type is DataType.BINARY
+    assert model.variables[1].constraints == {"dimension_references": ["n"]}
+    assert model.connections[0].source_variables == ["s", "u"]
+    assert model.connections[0].target_variables == ["o"]
+    assert model.connections[0].connection_type is ConnectionType.BIDIRECTIONAL
+    assert model.connections[0].annotation == "likelihood->posterior"
+    assert model.connections[0].description == "observed"
+    assert model.connections[1].connection_type is ConnectionType.CONDITIONAL
+    assert model.parameters[0].value == {"flag": True}
+    assert model.parameters[0].description == "declared"
+    assert (model.equations[0].label, model.equations[0].content) == ("update", "s = s")
+    assert model.time_specification.horizon == 0
+    assert model.time_specification.step_size == 0.25
+    assert model.time_specification.metadata["time_variable"] == "t"
+
+
+def test_saved_markdown_retains_large_transition_tensor(tmp_path: Path) -> None:
+    source = REPO / "input/gnn_files/pymdp_scaling_study/pymdp_scaling_N16_T100.md"
+    system = GNNParsingSystem(strict_validation=False)
+    target = tmp_path / "large.md"
+    system.convert_file(source, target)
+    expected = system.parse_file(source).model.get_parameter_by_name("B")
+    result = system.parse_file(target)
+    assert result.success, result.errors
+    actual = result.model.get_parameter_by_name("B")
+    assert expected is not None and actual is not None
+    assert len(expected.value) == 16 and len(expected.value[0][0]) == 16
+    assert actual.value == expected.value
 
 
 class TestDetectGNNFormatFromContent:

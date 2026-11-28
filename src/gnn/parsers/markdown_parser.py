@@ -34,10 +34,12 @@ from .common import (
     normalize_variable_name,
     parse_connection_operator,
     parse_dimensions,
+    split_variable_bracket_fields,
 )
 from .markdown_parser_parameter import ParameterParsingMixin
 
 logger = logging.getLogger(__name__)
+_CONNECTION_OPERATOR = re.compile(r"<->|->|>|-|\|")
 
 
 def _collapse_heading(heading: str) -> str:
@@ -233,13 +235,14 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
         for line in lines:
             line = line.strip()
             if line and not line.startswith("#"):
-                if "GNN v" in line or "v" in line:
-                    # Extract version
-                    version_match = re.search(r"v?(\d+\.\d+(?:\.\d+)?)", line)
-                    if version_match:
-                        model.version = version_match.group(1)
+                version_match = re.fullmatch(
+                    r"(?:GNN\s+v|Version:\s*|v)(\d+(?:\.\d+)*)",
+                    line,
+                    flags=re.IGNORECASE,
+                )
+                if version_match:
+                    model.version = version_match.group(1)
                 else:
-                    # Handle flags
                     model.extensions.setdefault("flags", []).append(line)
 
     def _parse_model_name(self, content: str, model: GNNInternalRepresentation) -> Any:
@@ -286,20 +289,17 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
                 return None
 
             name = line[:bracket_start].strip()
-            dimensions_str = line[bracket_start + 1 : bracket_end].strip()
-
-            # Extract type specification
-            type_spec = None
-            dimension_parts = dimensions_str.split(",")
-            for index, part in enumerate(dimension_parts):
-                token = part.strip()
-                if token.startswith("type="):
-                    type_spec = token.split("=", 1)[1].strip()
-                    dimensions_str = ",".join(dimension_parts[:index])
-                    break
-
-            # Parse dimensions
-            dimensions = parse_dimensions("[" + dimensions_str + "]")
+            dimension_tokens, attributes = split_variable_bracket_fields(
+                line[bracket_start + 1 : bracket_end]
+            )
+            type_spec = attributes.pop("type", None)
+            dimensions = parse_dimensions("[" + ",".join(dimension_tokens) + "]")
+            references = [
+                None if token.isdigit() else token for token in dimension_tokens
+            ]
+            constraints: dict[str, Any] = dict(attributes)
+            if any(references):
+                constraints["dimension_references"] = references
 
             # Determine variable type and data type
             var_type = infer_variable_type(name)
@@ -321,6 +321,7 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
                 dimensions=dimensions,
                 data_type=data_type,
                 description=comment,
+                constraints=constraints,
             )
 
         except Exception as e:
@@ -372,26 +373,14 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
                 comment = comment.strip()
                 line = line.strip()
 
-            # Parse connection pattern: source>target, source-target, (s1,s2)>target
-            # Find connection operators
-            operators: list[Any] = ["<->", "->", ">", "-", "|"]
-            found_op = None
-            op_pos = -1
-
-            for op in operators:
-                pos = line.find(op)
-                if pos != -1:
-                    found_op = op
-                    op_pos = pos
-                    break
-
-            if not found_op:
+            operator = _CONNECTION_OPERATOR.search(line)
+            if operator is None:
                 logger.warning(f"No connection operator found in: {line}")
                 return None
 
             # Split source and target
-            source_part = line[:op_pos].strip()
-            target_part = line[op_pos + len(found_op) :].strip()
+            source_part = line[: operator.start()].strip()
+            target_part = line[operator.end() :].strip()
 
             # v1.1 connection annotation: an ':annotation' suffix on the
             # target side (docs/gnn/gnn_syntax.md section 3, "Annotated
@@ -411,7 +400,7 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
             target_vars = self._parse_variable_group(target_part)
 
             # Parse connection type
-            conn_type = parse_connection_operator(found_op)
+            conn_type = parse_connection_operator(operator.group())
 
             return Connection(
                 source_variables=source_vars,
@@ -438,7 +427,13 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
             # Single variable
             return [normalize_variable_name(group_str)]
 
-    def _parse_parameters(self, content: str, model: GNNInternalRepresentation) -> Any:
+    def _parse_parameters(
+        self,
+        content: str,
+        model: GNNInternalRepresentation,
+        *,
+        section: str = "InitialParameterization",
+    ) -> Any:
         """Parse the InitialParameterization section."""
         lines = content.strip().split("\n")
 
@@ -446,14 +441,15 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
         current_value_lines: list[Any] = []
         in_matrix = False
         matrix_brace_count = 0
+        first_parameter = len(model.parameters)
 
         for line in lines:
             line = line.strip()
 
             if line and not line.startswith("#"):
                 # Check if this is a new parameter definition (contains '=' or ':' and not inside a matrix)
-                has_assignment = "=" in line or ":" in line
-                if has_assignment and not in_matrix and not line.startswith("#"):
+                assignment = re.match(r"([^:=]+)[:=](.*)", line)
+                if assignment is not None and not in_matrix:
                     # Save previous parameter if exists
                     if current_parameter and current_value_lines:
                         value_str = "\n".join(current_value_lines)
@@ -464,10 +460,7 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
                             model.parameters.append(parameter)
 
                     # Start new parameter
-                    if "=" in line:
-                        name, value = line.split("=", 1)
-                    else:
-                        name, value = line.split(":", 1)
+                    name, value = assignment.groups()
                     current_parameter = name.strip()
                     current_value_lines = [value.strip()]
 
@@ -506,6 +499,8 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
             )
             if parameter:
                 model.parameters.append(parameter)
+        for parameter in model.parameters[first_parameter:]:
+            parameter.section = section
 
     # _parse_parameter_assignment, _parse_parameter_value, _parse_matrix_rows,
     # _parse_matrix_row, _has_nested_tuples, _extract_tuples, and _parse_single_value
@@ -564,22 +559,35 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
         for line in lines:
             line = line.strip()
             if line and not line.startswith("#"):
-                line_lower = line.lower()
-
-                if "static" in line_lower:
-                    time_spec.time_type = "Static"
-                elif "dynamic" in line_lower:
-                    time_spec.time_type = "Dynamic"
-                elif "discretetime" in line_lower:
-                    time_spec.discretization = "DiscreteTime"
-                elif "continuoustime" in line_lower:
-                    time_spec.discretization = "ContinuousTime"
-                elif "modeltimehorizon" in line_lower and "=" in line:
-                    _, horizon_str = line.split("=", 1)
+                key, separator, value = line.partition("=")
+                key = key.strip().lower()
+                value = value.strip()
+                modes = {
+                    "static": "Static",
+                    "dynamic": "Dynamic",
+                    "timevarying": "TimeVarying",
+                    "regimeswitched": "RegimeSwitched",
+                    "hierarchical": "Hierarchical",
+                }
+                if key in modes:
+                    time_spec.time_type = modes[key]
+                elif key in {"discretetime", "continuoustime"}:
+                    time_spec.discretization = (
+                        "DiscreteTime" if key == "discretetime" else "ContinuousTime"
+                    )
+                    if separator:
+                        time_spec.metadata["time_variable"] = value
+                elif key == "modeltimehorizon" and separator:
                     try:
-                        time_spec.horizon = int(horizon_str.strip())
+                        time_spec.horizon = int(value)
                     except ValueError:
-                        time_spec.horizon = horizon_str.strip()
+                        time_spec.horizon = value
+                elif key == "stepsize" and separator:
+                    time_spec.step_size = float(value)
+                else:
+                    time_spec.metadata.setdefault("source_declarations", []).append(
+                        line
+                    )
 
         model.time_specification = time_spec
 
@@ -627,7 +635,7 @@ class MarkdownGNNParser(ParameterParsingMixin, BaseGNNParser):
     ) -> Any:
         """Parse the ModelParameters section."""
         # Similar to InitialParameterization but for model-level parameters
-        self._parse_parameters(content, model)
+        self._parse_parameters(content, model, section="ModelParameters")
 
     def _parse_footer(self, content: str, model: GNNInternalRepresentation) -> Any:
         """Parse the Footer section."""

@@ -112,3 +112,33 @@ def test_semantic_compare_rejects_lost_parameter_provenance() -> None:
         d.field == "parameter_metadata"
         for d in compare_semantic_contracts(original, changed)
     )
+
+
+def test_semantic_compare_rejects_numeric_substitution_for_boolean() -> None:
+    original = {"parameter_values": {"mask": [True, False]}}
+    changed = {"parameter_values": {"mask": [1, 0]}}
+    assert [d.field for d in compare_semantic_contracts(original, changed)] == [
+        "parameter_values"
+    ]
+
+
+def test_semantic_compare_rejects_lost_edge_annotation() -> None:
+    original = build_semantic_contract(SAMPLE)
+    original["edges"][0]["annotation"] = "likelihood:α"
+    changed = deepcopy(original)
+    changed["edges"][0]["annotation"] = None
+    assert [d.field for d in compare_semantic_contracts(original, changed)] == ["edges"]
+
+
+def test_semantic_gate_round_trips_saved_yaml_and_markdown(tmp_path: Path) -> None:
+    ledger = run_semantic_fidelity_gate(
+        Path("input/model_family_manifest.json"),
+        tmp_path,
+        family_names=["basics"],
+        formats=("json", "yaml", "markdown"),
+        strict=True,
+    )
+    assert ledger["status"] == "passed"
+    for model in ledger["families"][0]["models"]:
+        for result in model["round_trips"]:
+            assert Path(result["artifact"]).is_file()
