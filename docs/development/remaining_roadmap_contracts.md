@@ -378,6 +378,12 @@ scores fail before selection. Native acceptance must compare Kalman posteriors
 and every EFE component against an independent reference, including tie and
 invalid-score cases. Estimated allocation remains separate from measured RSS.
 
+The [candidate sequence contract](../gnn/implementations/cpomdp.md#source-declared-candidate-sequences)
+adds bounded evaluation of an ordered source-authored subset. It records each
+candidate's native score and validity, and uses the source order for ties.
+Candidate costs and receipts describe the supplied sequences. Continuous action
+spaces and optimization beyond a finite set remain separate work.
+
 ## E5: exact-version archive
 
 The [v4.1.0 version record](https://zenodo.org/records/23245091) resolves via

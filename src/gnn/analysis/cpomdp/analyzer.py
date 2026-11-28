@@ -74,6 +74,9 @@ def analyze_payload(payload: dict[str, Any], output_dir: Path) -> dict[str, Any]
         "model_name": payload.get("model_name"),
         "metrics": metrics,
         "source_identity": payload.get("source_identity"),
+        "search_mode": payload.get("search_mode"),
+        "candidate_search_contract": payload.get("candidate_search_contract"),
+        "search_certificate": payload.get("search_certificate"),
         "admission": payload.get("admission"),
         "measured_resources": payload.get("measured_resources"),
         "unavailable_metrics": {

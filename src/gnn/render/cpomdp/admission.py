@@ -1,4 +1,4 @@
-"""Conservative admission before allocating an exhaustive policy search."""
+"""Conservative admission before allocating a finite policy search."""
 
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ def admit_search(
     max_step_evaluations: int = MAX_STEP_EVALUATIONS,
     max_estimated_bytes: int = MAX_ESTIMATED_BYTES,
     action_count: int | None = None,
+    candidate_count: int | None = None,
 ) -> dict:
     """Validate and estimate search allocation without computing an unbounded power.
 
@@ -59,7 +60,15 @@ def admit_search(
         if action_count < 2:
             raise ValueError("action_count must be at least two")
     policies = 0
-    if controlled:
+    if candidate_count is not None:
+        if not controlled or not declared_actions:
+            raise ValueError(
+                "cpomdp candidates require source-declared finite controls"
+            )
+        policies = _positive_int(candidate_count, "candidate_count")
+        if policies > max_policies:
+            raise ValueError("cpomdp candidate selection exceeds max_policies")
+    elif controlled:
         policies = 1
         for _ in range(horizon):
             if policies > max_policies // action_count:
@@ -76,6 +85,9 @@ def admit_search(
     ) + 64 * timesteps * (policies + n * n + 3 * n + m + 8)
     if declared_actions:
         estimate += 64 * (action_count * p + n * p)
+    if candidate_count is not None:
+        # Retain three score components and an eligibility flag for each row.
+        estimate += 64 * timesteps * policies
     if estimate > max_estimated_bytes:
         raise ValueError("cpomdp estimated allocation exceeds max_estimated_bytes")
     return {

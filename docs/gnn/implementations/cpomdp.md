@@ -7,7 +7,7 @@
 
 ## Overview
 
-cpomdp runs continuous (linear-Gaussian) GNN models as active inference agents. It filters with an exact Kalman filter and picks each action by scoring every policy's expected free energy (G) over a declared, finite action set. The JAX, NumPyro and PyTorch continuous scripts use a fixed proportional controller instead. cpomdp is the backend that reports G per policy and splits it into its pragmatic (goal-seeking) and epistemic (information-seeking) parts.
+cpomdp runs continuous (linear-Gaussian) GNN models as active inference agents. It filters with an exact Kalman filter and scores the expected free energy (G) of finite action sequences. It can enumerate the full search space or evaluate an explicit list from the source. The backend reports G per policy and splits it into its pragmatic (goal-seeking) and epistemic (information-seeking) parts.
 
 ## What it renders
 
@@ -58,7 +58,7 @@ The pipeline renders with the defaults below. Other values need the Python API, 
 | --- | --- | --- |
 | `control_mode` | `efe` | `efe` applies the first action of the lowest-G policy. `parity` applies GNN's `u_t = control_gain * (goal_mean - mu_t)` on cpomdp's filter and reproduces the JAX backend on the same seed. |
 | `action_scale` | `0.5` | Size of each action in the compass-rose action set. |
-| `horizon` | `1` | Policy length. Every sequence of that many actions is scored each step. |
+| `horizon` | `1` | Policy length for exhaustive search. An explicit candidate declaration supplies its own horizon. |
 | `goal_precision` | `1.0` | How sharply the goal observation is preferred. |
 
 ## Limitations
@@ -133,3 +133,31 @@ covariances. They compare every posterior and every policy's EFE components
 against the released native backend, and check duplicate-vector tie identity.
 Changed control maps and an extra initial prediction must disagree. This is a
 bounded numerical witness, not a universal extraction or equivalence proof.
+
+## Source-declared candidate sequences
+
+Add a `cpomdp_search` mapping alongside `cpomdp_control` in `InitialParameterization`.
+The following example uses the `forward`, `reverse` and `coast` action IDs declared above.
+
+```text
+cpomdp_search = {"contract": "gnn-cpomdp-candidate-sequences-v1", "version": "thruster-search-v1", "horizon": 2, "policies": [["forward", "coast"], ["coast", "forward"], ["reverse", "coast"]]}
+```
+
+All four keys are required. `version` names the authored candidate set. Each
+policy is a unique ordered sequence of declared action IDs with exactly `horizon`
+entries. Distinct IDs with equal control vectors remain separate. The first
+authored candidate wins ties. Supply the same horizon if you also set the renderer's
+`horizon` option. Candidate search runs in EFE mode and applies the first action of
+the best eligible candidate at each timestep.
+
+Admission uses the candidate count times horizon for each cycle, with one cycle
+per timestep. The standard policy, work and memory limits also apply to candidate
+search. The output records `search_mode: declared_candidates`, the complete
+`candidate_search_contract`, the selected index and action IDs, and all per-candidate
+G, pragmatic and epistemic scores. `search_certificate` is `null` for candidate
+search. Native exhaustive certificates apply to Cartesian enumeration.
+
+Nonfinite score components are serialized as JSON `null`. `policy_score_valid`
+marks eligible rows. A partial invalid-score run retains a diagnostic result and
+exits with failure. An all-invalid cycle fails before selection or result publication.
+The source identity digest includes the ordered candidate declaration.

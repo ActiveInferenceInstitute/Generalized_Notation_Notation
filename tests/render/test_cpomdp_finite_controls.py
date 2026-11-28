@@ -45,6 +45,110 @@ def _spec():
     }
 
 
+def _candidate_contract():
+    # Three authored policies fit even though exhaustive 3**9 exceeds the cap.
+    return {
+        "contract": "gnn-cpomdp-candidate-sequences-v1",
+        "version": "thruster-candidates-v2",
+        "horizon": 9,
+        "policies": [["forward-alias"] * 9, ["forward"] * 9, ["reverse"] * 9],
+    }
+
+
+@pytest.mark.parametrize(
+    ("mutation", "reason"),
+    [
+        ({"contract": "future"}, "contract"),
+        ({"version": " "}, "labels"),
+        ({"unknown": True}, "exactly"),
+        ({"horizon": True}, "positive integer"),
+        ({"horizon": 0}, "positive integer"),
+        ({"policies": []}, "max_policies"),
+        ({"policies": [[]] * 4097}, "max_policies"),
+        ({"horizon": 1000000}, "max_step_evaluations"),
+        ({"policies": [["forward"]]}, "declared horizon"),
+        ({"policies": [["unknown"] * 9]}, "action_ids"),
+        ({"policies": [[True] * 9]}, "action_ids"),
+        ({"policies": [["forward"] * 9] * 2}, "unique"),
+    ],
+)
+def test_bad_candidate_declarations_preserve_existing_artifact(
+    tmp_path, mutation, reason
+):
+    spec = _spec()
+    spec["initialparameterization"]["cpomdp_search"] = _candidate_contract() | mutation
+    dest = tmp_path / "model.py"
+    dest.write_text("previous artifact")
+    success, message, artifacts = render_gnn_to_cpomdp(spec, dest)
+    assert not success and "cpomdp_search" in message and reason in message
+    assert not artifacts and dest.read_text() == "previous artifact"
+
+
+@pytest.mark.parametrize(
+    ("options", "reason"),
+    [
+        ({"horizon": 8}, "horizon conflicts"),
+        ({"max_policies": 2}, "max_policies"),
+        ({"max_step_evaluations": 26}, "max_step_evaluations"),
+        ({"max_estimated_bytes": 1}, "max_estimated_bytes"),
+    ],
+)
+def test_candidate_search_respects_option_admission(tmp_path, options, reason):
+    spec = _spec()
+    spec["initialparameterization"]["cpomdp_search"] = _candidate_contract()
+    target = tmp_path / "model.py"
+    success, message, artifacts = render_gnn_to_cpomdp(spec, target, options)
+    assert not success and reason in message
+    assert not artifacts and not target.exists()
+
+
+def test_candidate_search_requires_its_action_set_and_other_backends_refuse(tmp_path):
+    spec = _spec()
+    params = spec["initialparameterization"]
+    params["cpomdp_search"] = _candidate_contract()
+    del params["cpomdp_control"]
+    success, reason, artifacts = render_gnn_to_cpomdp(spec, tmp_path / "model.py")
+    assert not success and "requires source-declared cpomdp_control" in reason
+    assert not artifacts
+    success, reason, artifacts = render_gnn_spec(spec, "jax", tmp_path / "jax")
+    assert not success and "unsupported-cpomdp-control" in reason
+    assert not artifacts
+
+
+def test_candidate_admission_uses_count_times_horizon_times_cycles():
+    result = admit_search(3, 2, 1, 4, 9, True, action_count=3, candidate_count=3)
+    assert result["policy_count"] == 3
+    assert result["step_evaluations_per_cycle"] == 27
+    assert result["total_step_evaluations"] == 108
+    with pytest.raises(ValueError, match="max_total_step_evaluations"):
+        admit_search(3, 2, 1, 20000, 9, True, action_count=3, candidate_count=3)
+
+
+def test_cli_preserves_candidate_declaration_from_markdown(tmp_path):
+    from gnn.cli import main
+
+    spec = _spec()
+    spec["initialparameterization"]["cpomdp_search"] = _candidate_contract()
+    parameters = "\n".join(
+        f"{key} = {value!r}" for key, value in spec["initialparameterization"].items()
+    )
+    source = tmp_path / "source.md"
+    source.write_text(
+        "## GNNSection\nActInfContinuous\n\n## ModelName\nDeclared candidate search\n\n"
+        "## StateSpaceBlock\nx[3,type=float]\ny[2,type=float]\nu[1,type=float]\n\n"
+        f"## InitialParameterization\n{parameters}\n",
+        encoding="utf-8",
+    )
+    artifact = tmp_path / "generated.py"
+    assert (
+        main(
+            ["render", str(source), "--framework", "cpomdp", "--output", str(artifact)]
+        )
+        == 0
+    )
+    assert f"CANDIDATE_SEARCH = {_candidate_contract()!r}" in artifact.read_text()
+
+
 @pytest.mark.parametrize(
     "mutation",
     [
@@ -120,13 +224,16 @@ def test_custom_action_count_and_total_budget_before_allocation(tmp_path):
     assert not (tmp_path / "huge.py").exists()
 
 
-def _reference(initial, result):
+def _reference(initial, result, policies=None):
     # Source-authored parameters; no generator/extractor or emitted parameter copies.
     F, H, Q, R = (np.asarray(initial[k]) for k in ("F", "H", "Q", "R"))
     M = np.asarray(initial["cpomdp_control"]["control_matrix"])
     mean, cov = np.array(initial["prior_mean"]), np.array(initial["prior_cov"])
     goal = H @ np.array(initial["goal_mean"])
-    policies = list(itertools.product(initial["cpomdp_control"]["actions"], repeat=2))
+    if policies is None:
+        policies = list(
+            itertools.product(initial["cpomdp_control"]["actions"], repeat=2)
+        )
     means, covs, scores = [], [], []
     for t, obs in enumerate(result["observations_continuous"]):
         if t:
@@ -157,6 +264,92 @@ def _reference(initial, result):
             row.append([pragmatic - epistemic, pragmatic, epistemic])
         scores.append(row)
     return np.array(means), np.array(covs), np.array(scores)
+
+
+@pytest.mark.needs_cpomdp
+def test_native_candidate_scores_match_numpy_and_preserve_authored_ties(tmp_path):
+    from gnn.analysis.cpomdp import analyze_payload
+
+    spec = _spec()
+    initial = spec["initialparameterization"]
+    declaration = _candidate_contract()
+    initial["cpomdp_search"] = declaration
+    script = tmp_path / "model.py"
+    success, message, _ = render_gnn_to_cpomdp(spec, script)
+    assert success, message
+    output = tmp_path / "results"
+    envelope = run_subprocess_envelope(
+        [sys.executable, str(script)],
+        timeout=60,
+        env=dict(os.environ, CPOMDP_OUTPUT_DIR=str(output)),
+    )
+    assert envelope["success"], envelope
+    result = json.loads((output / "simulation_results.json").read_text())
+    assert result["cpomdp_version"] == "0.5.1"
+    assert result["validation"]["all_valid"]
+    assert result["search_mode"] == "declared_candidates"
+    assert result["search_certificate"] is None
+    assert result["candidate_search_contract"] == declaration
+    assert result["n_policies"] == 3
+    assert result["horizon"] == 9
+    assert result["cost_per_cycle"] == 27
+    assert result["admission"]["total_step_evaluations"] == 108
+
+    control = initial["cpomdp_control"]
+    vectors_by_id = dict(zip(control["action_ids"], control["actions"], strict=True))
+    policies = [
+        [vectors_by_id[action] for action in policy]
+        for policy in declaration["policies"]
+    ]
+    means, covs, scores = _reference(initial, result, policies)
+    np.testing.assert_allclose(result["beliefs"], means, rtol=1e-9, atol=1e-10)
+    np.testing.assert_allclose(result["posterior_cov"], covs, rtol=1e-9, atol=1e-10)
+    np.testing.assert_allclose(
+        result["efe_history"], scores[:, :, 0], rtol=1e-9, atol=1e-10
+    )
+    for column, name in enumerate(("pragmatic", "epistemic"), start=1):
+        np.testing.assert_allclose(
+            result["policy_score_components"][name],
+            scores[:, :, column],
+            rtol=1e-9,
+            atol=1e-10,
+        )
+    expected = np.argmin(scores[:, :, 0], axis=1).tolist()
+    assert 0 in expected and 1 not in expected
+    assert result["selected_policy_index"] == expected
+    assert result["policy_action_ids"] == [declaration["policies"][i] for i in expected]
+    np.testing.assert_array_equal(
+        result["control_inputs"], [policies[i][0] for i in expected]
+    )
+    analysis = analyze_payload(result, tmp_path / "analysis")
+    assert analysis["search_mode"] == "declared_candidates"
+    assert analysis["candidate_search_contract"] == declaration
+
+
+@pytest.mark.needs_cpomdp
+def test_candidate_nonfinite_components_are_json_null_and_ineligible(tmp_path):
+    spec = _spec()
+    spec["initialparameterization"]["cpomdp_search"] = _candidate_contract()
+    spec["model_parameters"]["num_timesteps"] = 1
+    script = tmp_path / "injected_invalid.py"
+    success, message, _ = render_gnn_to_cpomdp(spec, script)
+    assert success, message
+    source = script.read_text()
+    script.write_text(source.replace("g = scored.g", "g = scored.g.at[0].set(jnp.nan)"))
+    output = tmp_path / "results"
+    result = run_subprocess_envelope(
+        [sys.executable, str(script)],
+        timeout=60,
+        env=dict(os.environ, CPOMDP_OUTPUT_DIR=str(output)),
+    )
+    assert result["return_code"] == 1, result
+    payload = (output / "simulation_results.json").read_text()
+    assert "NaN" not in payload and "Infinity" not in payload
+    receipt = json.loads(payload)
+    assert receipt["policy_score_valid"] == [[False, True, True]]
+    assert receipt["efe_history"][0][0] is None
+    assert not receipt["validation"]["all_valid"]
+    assert receipt["selected_policy_index"][0] != 0
 
 
 @pytest.mark.needs_cpomdp

@@ -90,7 +90,8 @@ def unsupported_contract(spec: object, framework: str) -> str | None:
     if not isinstance(spec, dict):
         return None
     declared_controls = any(
-        isinstance(initial, dict) and "cpomdp_control" in initial
+        isinstance(initial, dict)
+        and ("cpomdp_control" in initial or "cpomdp_search" in initial)
         for initial in (
             spec.get("initialparameterization"),
             spec.get("initial_parameterization"),

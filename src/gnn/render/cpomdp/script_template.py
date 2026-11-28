@@ -2,7 +2,7 @@
 
 ``render.continuous_script`` hard-codes a Kalman filter plus GNN's
 proportional controller. cpomdp brings its own filter (``KalmanBackend``) and
-picks actions by scoring every policy over a declared finite action set, so it
+picks actions by scoring a finite collection of policies, so it
 gets its own template. The matrix literals come from
 :func:`render.continuous_common.literal_block`, so every continuous backend
 splices the same numbers.
@@ -19,14 +19,13 @@ without a predict step. With a declared ``goal_mean``/``control_gain`` there
 are two control modes. ``efe`` applies the first action of the policy with the
 lowest expected free energy. ``parity`` applies GNN's
 ``u_t = control_gain * (goal_mean - mu_t)`` on cpomdp's filter, which
-reproduces the ``jax`` backend on the same seed. Both score every policy each
-step. Specs without a goal render as passive trackers.
+reproduces the ``jax`` backend on the same seed. A source can limit EFE search
+to explicit open-loop action sequences. Specs without a goal render as passive trackers.
 
-The completeness certificate is the library's own object, so a controlled run
+The completeness certificate is the library's own object, so an exhaustive run
 reads it from one construction-time ``evaluate`` pass over the same policies
 before its first plan. That pass is a planning cycle too: a controlled run
-admits ``num_timesteps + 1`` cycles, and only a passive tracker admits exactly
-``num_timesteps``.
+admits ``num_timesteps + 1`` cycles. Candidate search has one cycle per timestep.
 """
 
 from __future__ import annotations
@@ -175,7 +174,9 @@ def is_psd(cov):
 _MODEL = '''
 
 def selected_policy_ids(index):
-    """Decode the library's Cartesian-product policy order without deduplication."""
+    """Recover the authored action IDs for the selected policy."""
+    if CANDIDATE_SEARCH:
+        return CANDIDATE_SEARCH["policies"][index]
     ids = FINITE_CONTROLS["action_ids"]
     count = len(ids)
     return [ids[(index // (count ** (HORIZON - 1 - k))) % count] for k in range(HORIZON)]
@@ -268,22 +269,34 @@ def build_planner(model, goal):
     The scorer returns each policy's G with its pragmatic and epistemic parts,
     so the chosen policy is never rolled out a second time.
     """
-    action_set = (FiniteActionSet(FINITE_CONTROLS["actions"], version=ACTION_SET_VERSION)
-                  if FINITE_CONTROLS else compass_rose(model.n_controls, ACTION_SCALE))
-    search = EnumeratedEFESearch(model, action_set, horizon=HORIZON)
+    if CANDIDATE_SEARCH:
+        actions = FINITE_CONTROLS["actions"]
+        by_id = dict(zip(FINITE_CONTROLS["action_ids"], actions, strict=True))
+        policies = arr([[by_id[action] for action in policy]
+                        for policy in CANDIDATE_SEARCH["policies"]])
+        search = None
+    else:
+        action_set = (FiniteActionSet(FINITE_CONTROLS["actions"], version=ACTION_SET_VERSION)
+                      if FINITE_CONTROLS else compass_rose(model.n_controls, ACTION_SCALE))
+        search = EnumeratedEFESearch(model, action_set, horizon=HORIZON)
+        policies = search.policies
+        actions = FINITE_CONTROLS["actions"] if FINITE_CONTROLS else to_list(action_set.actions)
     preference = Preference(
         model.observation_matrix @ goal,
         GOAL_PRECISION * jnp.eye(model.n_observations),
     )
-    policies = search.policies
-
     @jax.jit
     def score(belief):
         return jax.vmap(lambda pol: policy_efe(model, belief, pol, preference))(
             policies
         )
 
-    return search, preference, score
+    return search, policies, actions, preference, score
+
+
+def score_values(values):
+    """Serialize unavailable policy components as JSON null."""
+    return [float(value) if np.isfinite(value) else None for value in np.asarray(values)]
 '''
 
 _RUN = '''
@@ -292,10 +305,9 @@ def run_simulation():
     """Simulate the GNN process, filter it with cpomdp and write the results."""
     start = time.time()
     passive = GOAL_MEAN_RAW is None or CONTROL_GAIN is None
-    # Planning cycles, not timesteps: a controlled run spends one extra cycle
-    # reading the library's completeness certificate before its first plan.
-    admitted_cycles = NUM_TIMESTEPS + (0 if passive else 1)
-    admission = admit_search(len(F_RAW), len(H_RAW), CONTROL_DIM, admitted_cycles, HORIZON, not passive, MAX_POLICIES, MAX_STEP_EVALUATIONS, MAX_ESTIMATED_BYTES, len(FINITE_CONTROLS["actions"]) if FINITE_CONTROLS else None)
+    # Exhaustive runs spend one extra cycle obtaining the native certificate.
+    admitted_cycles = NUM_TIMESTEPS + int(not passive and not CANDIDATE_SEARCH)
+    admission = admit_search(len(F_RAW), len(H_RAW), CONTROL_DIM, admitted_cycles, HORIZON, not passive, MAX_POLICIES, MAX_STEP_EVALUATIONS, MAX_ESTIMATED_BYTES, len(FINITE_CONTROLS["actions"]) if FINITE_CONTROLS else None, len(CANDIDATE_SEARCH["policies"]) if CANDIDATE_SEARCH else None)
     search_certificate = None
     model = build_model(controlled=not passive)
     backend = KalmanBackend(model)
@@ -305,11 +317,12 @@ def run_simulation():
 
     true_states, observations, beliefs, covs, controls = [], [], [], [], []
     efe_history, epistemic, pragmatic, selected = [], [], [], []
-    control_inputs, all_epistemic, all_pragmatic = [], [], []
+    control_inputs, all_epistemic, all_pragmatic, policy_score_valid = [], [], [], []
 
     if GOAL_MEAN_RAW is None or CONTROL_GAIN is None:
         control_mode = "passive"
-        search_stats = {"n_policies": 0, "cost_per_cycle": 0, "search_certificate": None}
+        policies = []
+        search_stats = {"search_mode": "passive", "n_policies": 0, "cost_per_cycle": 0, "search_certificate": None}
 
         def choose(belief):
             return no_action
@@ -318,30 +331,32 @@ def run_simulation():
         control_mode = CONTROL_MODE
         goal = arr(GOAL_MEAN_RAW)
         gain = CONTROL_GAIN
-        search, preference, score = build_planner(model, goal)
-        policies = search.policies
+        search, policies, actions, preference, score = build_planner(model, goal)
         search_stats = {
-            "n_policies": search.n_policies,
-            "cost_per_cycle": search.cost_per_plan,
+            "search_mode": "exhaustive" if search is not None else "declared_candidates",
+            "n_policies": len(policies),
+            "cost_per_cycle": search.cost_per_plan if search is not None else len(policies) * HORIZON,
             "search_certificate": None,
-            "action_set": (FINITE_CONTROLS["actions"] if FINITE_CONTROLS else to_list(compass_rose(model.n_controls, ACTION_SCALE).actions)),
+            "action_set": actions,
         }
 
         def choose(belief):
             nonlocal search_certificate
             scored = score(belief)
             g = scored.g
-            finite = np.isfinite(np.asarray(g))
+            finite = np.isfinite(np.column_stack((g, scored.epistemic, scored.pragmatic))).all(axis=1)
             if not np.any(finite):
-                raise ValueError("All enumerated cpomdp policy scores are invalid")
-            best = int(jnp.argmin(jnp.where(jnp.isfinite(g), g, jnp.inf)))
-            if search_certificate is None:
+                selection = "enumerated" if search is not None else "candidate"
+                raise ValueError(f"All {selection} cpomdp policy scores are invalid")
+            best = int(np.argmin(np.where(finite, g, np.inf)))
+            if search is not None and search_certificate is None:
                 search_certificate = certificate_payload(
                     search.evaluate(belief, preference).certificate
                 )
-            efe_history.append(to_list(g))
-            all_epistemic.append(to_list(scored.epistemic))
-            all_pragmatic.append(to_list(scored.pragmatic))
+            efe_history.append(score_values(g))
+            all_epistemic.append(score_values(scored.epistemic))
+            all_pragmatic.append(score_values(scored.pragmatic))
+            policy_score_valid.append(finite.tolist())
             selected.append(best)
             epistemic.append(float(scored.epistemic[best]))
             pragmatic.append(float(scored.pragmatic[best]))
@@ -383,7 +398,7 @@ def run_simulation():
         "posterior_cov_psd": all(is_psd(arr(c)) for c in covs),
         "rmse_finite": bool(np.isfinite(rmse)),
         "controls_finite": bool(np.all(np.isfinite(np.asarray(controls)))),
-        "efe_finite": bool(np.all(np.isfinite(np.asarray(efe_history, dtype=float)))),
+        "efe_finite": all(all(row) for row in policy_score_valid),
     }
     validation["all_valid"] = all(validation.values())
     results = {
@@ -401,9 +416,11 @@ def run_simulation():
         "control_inputs": control_inputs,
         "control_matrix": CONTROL_MATRIX_RAW,
         "finite_control_contract": FINITE_CONTROLS,
+        "candidate_search_contract": CANDIDATE_SEARCH,
         "action_set_version": ACTION_SET_VERSION,
         "policy_action_ids": [selected_policy_ids(i) for i in selected] if FINITE_CONTROLS else [],
         "policy_score_components": {"pragmatic": all_pragmatic, "epistemic": all_epistemic},
+        "policy_score_valid": policy_score_valid,
         "control_mode": control_mode,
         "rmse_vs_true": rmse,
         # Discrete-schema slots stay empty: nothing categorical is defined here.
@@ -419,7 +436,7 @@ def run_simulation():
         "generated_script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "admission": admission,
         "measured_resources": measured_resources(start),
-        "selected_policy": [to_list(search.policies[i]) for i in selected] if not passive else [],
+        "selected_policy": [to_list(policies[i]) for i in selected],
         "horizon": HORIZON,
         "action_scale": None if FINITE_CONTROLS else ACTION_SCALE,
         **search_stats,
@@ -427,10 +444,10 @@ def run_simulation():
     }
 
     output_dir = Path(os.environ.get(OUTPUT_ENV, "."))
+    payload = json.dumps(results, indent=2, allow_nan=False)
     output_dir.mkdir(parents=True, exist_ok=True)
     out = output_dir / "simulation_results.json"
-    with open(out, "w") as f:
-        json.dump(results, f, indent=2)
+    out.write_text(payload, encoding="utf-8")
     print(
         f"{FRAMEWORK} continuous active inference simulation complete: "
         f"{n_steps} steps, control_mode={control_mode}, rmse_vs_true={rmse:.4f}"
@@ -458,6 +475,7 @@ def generate_cpomdp_script(spec: ContinuousSpec, opts: Mapping[str, Any]) -> str
     """
     lits = literal_block(spec)
     finite = opts.get("finite_controls")
+    candidates = opts.get("candidate_search")
     matrix = (
         finite["control_matrix"]
         if finite
@@ -478,7 +496,7 @@ Generated by the GNN pipeline's cpomdp renderer. GNN continuous contract:
     x_t = F x_(t-1) + M a_(t-1) + N(0, Q)      ({spec.n}-dim latent state)
     y_t = H x_t + N(0, R)                    ({spec.m}-dim observation)
 Control: {control_desc}.
-Filter: cpomdp KalmanBackend. Policies: every sequence of a declared action set.
+Filter: cpomdp KalmanBackend. Search: {"source-declared sequences" if candidates else "finite action enumeration when controlled"}.
 """
 
 import hashlib
@@ -501,6 +519,7 @@ HORIZON = {opts["horizon"]}
 GOAL_PRECISION = {opts["goal_precision"]!r}
 ACTION_SET_VERSION = {json.dumps(finite["version"] if finite else ACTION_SET_VERSION)}
 FINITE_CONTROLS = {finite!r}
+CANDIDATE_SEARCH = {candidates!r}
 CONTROL_MATRIX_RAW = {matrix!r}
 CONTROL_DIM = {p}
 SOURCE_IDENTITY = {opts.get("source_identity", {})!r}
@@ -524,13 +543,14 @@ CONTROL_GAIN = {lits["control_gain"]}
         p,
         # Planning cycles: a controlled run also reads its completeness
         # certificate from one construction-time pass over the same policies.
-        spec.num_timesteps + (1 if spec.has_control else 0),
+        spec.num_timesteps + int(spec.has_control and not candidates),
         opts["horizon"],
         spec.has_control,
         opts["max_policies"],
         opts["max_step_evaluations"],
         opts["max_estimated_bytes"],
         len(finite["actions"]) if finite else None,
+        len(candidates["policies"]) if candidates else None,
     )
     admission_source = (
         inspect.getsource(_positive_int) + "\n" + inspect.getsource(admit_search)
