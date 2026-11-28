@@ -77,6 +77,8 @@ def _dict_from_parsed_json(
         "connections": list(data.get("connections") or []),
         "matrices": [],
         "parameters": list(data.get("parameters") or []),
+        "model_parameters": data.get("model_parameters") or {},
+        "matrix_provenance": data.get("matrix_provenance") or {},
         "metadata": {
             "model_name": data.get("model_name", ""),
             "annotation": data.get("annotation", ""),

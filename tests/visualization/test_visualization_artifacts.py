@@ -454,6 +454,51 @@ def _write_gnn_input(target: Path) -> Path:
     return dest
 
 
+def test_per_model_cache_reuses_all_formats_and_checks_source_and_artifact_bytes(
+    tmp_path, monkeypatch
+):
+    target = _write_gnn_input(tmp_path / "in")
+    output = tmp_path / "8_visualization_output"
+    output.mkdir()
+    render_count = 0
+
+    def render(parsed, target_dir, stem):
+        nonlocal render_count
+        render_count += 1
+        artifacts = []
+        for suffix in ("png", "html", "json"):
+            path = target_dir / f"{stem}_example.{suffix}"
+            path.write_text(f"render {render_count} {suffix}", encoding="utf-8")
+            artifacts.append(str(path))
+        return artifacts
+
+    monkeypatch.setattr(process_module, "generate_network_visualizations", render)
+    for producer in (
+        "generate_variable_parameter_bipartite",
+        "generate_combined_analysis",
+        "render_matrix_artifacts",
+    ):
+        monkeypatch.setattr(process_module, producer, lambda *args, **kwargs: [])
+
+    first = process_single_gnn_file(target, output)
+    assert [Path(path).suffix for path in first] == [".png", ".html", ".json", ".json"]
+    unrelated = output / target.stem / "unrelated.png"
+    unrelated.write_text("untracked plot", encoding="utf-8")
+    assert process_single_gnn_file(target, output) == first
+    assert render_count == 1
+
+    Path(first[1]).write_text("tampered page", encoding="utf-8")
+    assert process_single_gnn_file(target, output) == first
+    assert render_count == 2
+    assert Path(first[1]).read_text(encoding="utf-8") == "render 2 html"
+
+    timestamp = target.stat()
+    target.write_bytes(target.read_bytes() + b"\n")
+    os.utime(target, ns=(timestamp.st_atime_ns, timestamp.st_mtime_ns))
+    assert process_single_gnn_file(target, output) == first
+    assert render_count == 3
+
+
 @pytest.mark.unit
 def test_step8_reports_failed_figure_as_warning_exit(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -535,14 +535,14 @@ def _generate_policy_visualization(
         variables = model_data.get("variables", [])
         parameters = model_data.get("parameters", [])
 
-        policy_data: dict[Any, Any] = {}
-
+        policy_data: dict[str, tuple[str, Any]] = {}
         for var in variables:
-            if isinstance(var, dict):
-                name = var.get("name", "")
-                var_type = var.get("var_type", "")
-                if "policy" in var_type.lower() or name == "\u03c0" or name == "pi":
-                    policy_data[name] = var
+            if not isinstance(var, dict) or var.get("value") is None:
+                continue
+            name = str(var.get("name") or "")
+            var_type = str(var.get("var_type") or "").lower()
+            if name and ("policy" in var_type or name in {"π", "pi"}):
+                policy_data[name] = ("Declared Policy Probabilities", var["value"])
 
         mv = _MatrixVisualizer()
         if mv is None:
@@ -550,44 +550,48 @@ def _generate_policy_visualization(
             attempt.error_message = "MatrixVisualizer not available"
             return attempt
         matrices = mv.extract_matrix_data_from_parameters(parameters)
-
         if "E" in matrices:
-            policy_data["E"] = matrices["E"]
+            policy_data["E"] = ("Policy Prior", matrices["E"])
 
         if not policy_data:
             attempt.status = "skipped"
-            attempt.error_message = "No policy data found"
+            attempt.error_message = "No policy probabilities were declared"
             return attempt
 
-        num_policies = len(policy_data)
-        fig, axes = plt.subplots(1, num_policies, figsize=(5 * num_policies, 5))
-        if num_policies == 1:
-            axes = [axes]
+        distributions = []
+        for name, (kind, data) in policy_data.items():
+            values = np.asarray(data, dtype=float).reshape(-1)
+            if (
+                not values.size
+                or not np.isfinite(values).all()
+                or not np.all((0 <= values) & (values <= 1))
+                or not np.isclose(values.sum(), 1.0, atol=1e-4, rtol=0)
+            ):
+                raise ValueError(
+                    f"{name} must declare finite policy probabilities with unit mass"
+                )
+            distributions.append((f"{kind}: {name}", values))
 
-        for idx, (name, data) in enumerate(policy_data.items()):
-            if isinstance(data, np.ndarray):
-                policy_vec = data.flatten()
-            elif isinstance(data, dict):
-                dims = data.get("dimensions", [3])
-                policy_vec = np.ones(dims[0]) / dims[0]
-            else:
-                continue
+        count = len(distributions)
+        fig, axes = plt.subplots(1, count, figsize=(5 * count, 5), squeeze=False)
+        for axis, (title, values) in zip(axes.flat, distributions, strict=True):
+            axis.bar(range(len(values)), values, alpha=0.7)
+            axis.set_title(title)
+            axis.set_xlabel("Policy Index")
+            axis.set_ylabel("Probability")
+            axis.set_ylim(0, 1)
+            axis.grid(True, alpha=0.3)
 
-            axes[idx].bar(range(len(policy_vec)), policy_vec, alpha=0.7)
-            axes[idx].set_title(f"Policy Distribution: {name}")
-            axes[idx].set_xlabel("Action Index")
-            axes[idx].set_ylabel("Probability")
-            axes[idx].set_ylim(0, 1)
-            axes[idx].grid(True, alpha=0.3)
-
-        plt.suptitle(
+        fig.suptitle(
             f"Policy Visualization: {model_name}", fontsize=14, fontweight="bold"
         )
-        plt.tight_layout()
+        fig.tight_layout()
 
         output_file = output_dir / f"{model_name}_policy_visualization.png"
-        plt.savefig(output_file, dpi=300, bbox_inches="tight")
-        plt.close()
+        try:
+            fig.savefig(output_file, dpi=300, bbox_inches="tight")
+        finally:
+            plt.close(fig)
 
         attempt.status = "success"
         attempt.output_files = [str(output_file)]

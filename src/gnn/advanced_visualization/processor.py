@@ -563,12 +563,9 @@ def process_advanced_viz(
         logger.info(f"  Skipped: {results.skipped}")
         logger.info(f"  Output files: {len(results.output_files)}")
 
-        # Return success if:
-        # 1. At least some visualizations succeeded, OR
-        # 2. No attempts were made (no data), OR
-        # 3. Only failures are skipped optional features (no actual errors)
-        if results.successful > 0:
-            return True
+        # Successful partial output stays visible in the receipt and exit code.
+        if results.successful > 0 or results.output_files:
+            return 2 if results.failed else True
         if results.total_attempts == 0 or (results.failed == 0 and results.skipped > 0):
             return 2
         return False
