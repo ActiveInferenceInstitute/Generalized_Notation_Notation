@@ -43,45 +43,37 @@ scheduling controls and every direct entrypoint. It catches deterministic mistak
 before starting expensive hosted lanes; full/native/manuscript/companion qualification remains
 required. Existing `just quality` retains its broader local gate roster.
 
-Use the stdlib GitHub CLI collector from the repository root:
-
-```bash
-python .github/release_gate.py --revision FULL_COMMIT --ref RELEASE_BRANCH \
-  --dispatch-missing --output /absolute/task/work/candidate-observation-1.json
-python .github/release_gate.py --revision FULL_COMMIT --ref RELEASE_BRANCH \
-  --output /absolute/task/work/candidate-observation-2.json
-```
-
-The first command launches only workflows absent from the visible Actions
-history for that exact SHA; existing pending or failed work is reported without
-redispatch. Use a single dispatch owner and retain its receipt while the provider
-registers the runs. Subsequent observations use new output files and omit
-`--dispatch-missing`. Exit 1 means incomplete qualification; API/access errors
-remain errors. Every latest run/attempt and all its paginated jobs must succeed.
-The collector does not equate PR synthetic-merge tests with native artifact
-source identity. Inspect each source-bound artifact independently.
-
 After the accepted PR is merged normally, verify main has exactly the qualified
 Git tree and preserve its producer ancestry. Create the annotated candidate tag
-at that exact main commit. Main and tag qualification may run concurrently;
-publication stays blocked until both have terminal successful checks and their
-actual artifacts are independently accepted. Never move the tag or count a
-main run as tag evidence. The [release workflow roster](../../.github/release_gate.py)
-runs automatically on version tags. Collect each ref separately with
-`--ref main` for main's automatic and explicitly dispatched profiles, and
-`--event push --ref vVERSION` for the automatic tag roster. The collector filters
-the actual run ref and requested event, even when both point to one commit. Retain failed
-attempts; repair functional failures and only retry classified infrastructure
-failures with evidence. Do not lower test selections, coverage or warning policy.
-External links run at tag qualification with dead links blocking and transient
-or blocked responses remaining inconclusive.
+at that exact main commit. Use the [release workflow collector](../../.github/release_gate.py)
+for the two hosted qualification phases:
 
-The automatic main push uses a reduced `ci.yml` profile with intentional skips.
-Main qualification requires a full run at the exact candidate SHA. Use the
-weekly full run if it covers that SHA, or dispatch the full `ci.yml` profile
-against `main` while it still resolves to the candidate. Record the resulting
-run and check its head SHA. The collector's `--dispatch-missing` option will
-leave the already visible reduced run alone.
+```bash
+python .github/release_gate.py --revision FULL_MAIN_SHA --ref main \
+  --event workflow_dispatch --dispatch-missing \
+  --output /absolute/task/work/main-dispatch.json
+python .github/release_gate.py --revision FULL_MAIN_SHA --ref main \
+  --event workflow_dispatch --output /absolute/task/work/main-observation.json
+python .github/release_gate.py --revision FULL_MAIN_SHA --ref vVERSION \
+  --event push --output /absolute/task/work/tag-observation.json
+```
+
+Main's automatic branch push runs a reduced CI profile. All sixteen workflows
+support manual dispatch for full main qualification. The first command dispatches
+workflows with no visible manual run at the exact main SHA. It rechecks each
+missing workflow before dispatch and preserves existing runs, including pending
+and failed runs. Use a single dispatch owner and retain the dispatch receipt while
+GitHub registers the runs. For subsequent observations, use a new output path
+and omit `--dispatch-missing`. Omitting `--event` is available for read-only
+diagnosis across event types.
+
+All sixteen workflows also trigger automatically on version tag pushes.
+Main and tag qualification may run concurrently. Publication requires successful
+latest runs and every job for both ref/event pairs, plus independent acceptance
+of source-bound artifacts. Exit 1 reports incomplete workflow qualification.
+Retain failed attempts and classify failures before any retry. The tag's
+documentation audit also checks external links. Dead links block qualification,
+while transient or blocked responses remain inconclusive.
 
 A companion's actual main qualification may similarly overlap GNN's final
 candidate checks after the companion merges and GNN pins its exact merge.

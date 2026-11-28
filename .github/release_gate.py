@@ -2,6 +2,8 @@
 
 Uses the authenticated GitHub CLI. This is a workflow-status gate, not a
 substitute for independent artifact, manuscript or scientific acceptance.
+Release qualification observes main workflow-dispatch runs and tag-push
+runs separately. Dispatch fills only missing main workflow-dispatch runs.
 """
 
 from __future__ import annotations
@@ -167,21 +169,23 @@ def main() -> int:
         "--ref", required=True, help="Remote branch or tag resolving to that commit"
     )
     parser.add_argument(
-        "--event", choices=("push", "pull_request", "workflow_dispatch")
+        "--event",
+        choices=("push", "pull_request", "workflow_dispatch"),
+        help="Use workflow_dispatch for release main and push for the version tag",
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
         "--dispatch-missing",
         action="store_true",
-        help="Dispatch only workflows with no run; never retry failures",
+        help="Dispatch missing workflow_dispatch runs on main",
     )
     args = parser.parse_args()
     if not re.fullmatch("[0-9a-f]{40}", args.revision):
         parser.error("--revision must be a full commit SHA")
-    if args.dispatch_missing and args.event:
-        parser.error(
-            "dispatch requires unfiltered events so existing automatic runs are retained"
-        )
+    if args.dispatch_missing and (
+        args.ref != "main" or args.event != "workflow_dispatch"
+    ):
+        parser.error("--dispatch-missing requires --ref main --event workflow_dispatch")
     endpoint = f"repos/{REPOSITORY}/commits/{quote(args.ref, safe='')}"
     if gh("api", endpoint)["sha"] != args.revision:
         parser.error("remote ref no longer resolves to requested revision")
@@ -209,6 +213,11 @@ def main() -> int:
     if args.dispatch_missing:
         for name, result in observations.items():
             if result["state"] == "missing":
+                # An exact candidate run may have appeared during collection.
+                _, latest = inspect(name, args.revision, args.ref, args.event)
+                observations[name] = latest
+                if latest["state"] != "missing":
+                    continue
                 if gh("api", endpoint)["sha"] != args.revision:
                     raise RuntimeError("remote ref moved before dispatch")
                 subprocess.run(

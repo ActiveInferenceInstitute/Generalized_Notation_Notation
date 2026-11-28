@@ -1,13 +1,20 @@
 """Fail-closed release scheduling controls (stdlib only)."""
 
 import copy
+import io
+import json
+import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
+from unittest.mock import patch
 
 from release_gate import (
     REQUIRED_MATRIX_JOBS,
     WORKFLOWS,
     evaluate,
     filter_runs,
+    main,
     release_ready,
 )
 
@@ -72,6 +79,14 @@ class ReleaseGateControls(unittest.TestCase):
         self.assertEqual(filter_runs([manual], "v4.2.0", "push"), [])
         self.assertEqual(filter_runs([manual], "v4.2.0", None), [manual])
 
+    def test_push_cannot_fill_main_manual_qualification(self):
+        push = dict(self.run, head_branch="main", event="push")
+        manual = dict(push, event="workflow_dispatch", run_number=7)
+        self.assertEqual(
+            filter_runs([push, manual], "main", "workflow_dispatch"), [manual]
+        )
+        self.assertEqual(filter_runs([push], "main", "workflow_dispatch"), [])
+
     def test_every_job_must_finish_successfully(self):
         for conclusion in ["skipped", "cancelled", "failure", None]:
             jobs = copy.deepcopy(self.jobs)
@@ -100,6 +115,98 @@ class ReleaseRosterControls(unittest.TestCase):
                 self.assertFalse(release_ready(filtered))
                 filtered[name] = {"state": "missing"}
                 self.assertFalse(release_ready(filtered))
+
+
+class ReleaseDispatchControls(unittest.TestCase):
+    def test_dispatch_requires_explicit_main_manual_phase(self):
+        for ref, event in (
+            ("main", None),
+            ("main", "push"),
+            ("v5.1.0", "workflow_dispatch"),
+        ):
+            with self.subTest(ref=ref, event=event):
+                argv = [
+                    "release_gate.py",
+                    "--revision",
+                    "a" * 40,
+                    "--ref",
+                    ref,
+                    "--output",
+                    "unused.json",
+                    "--dispatch-missing",
+                ]
+                if event is not None:
+                    argv.extend(["--event", event])
+                with patch("sys.argv", argv), patch("release_gate.gh") as gh:
+                    with (
+                        redirect_stderr(io.StringIO()) as stderr,
+                        self.assertRaises(SystemExit) as exc,
+                    ):
+                        main()
+                    self.assertEqual(exc.exception.code, 2)
+                    self.assertIn(
+                        "requires --ref main --event workflow_dispatch",
+                        stderr.getvalue(),
+                    )
+                    gh.assert_not_called()
+
+    def test_dispatch_only_missing_manual_runs_and_recheck_arrivals(self):
+        revision = "a" * 40
+        states = {
+            "missing.yml": "missing",
+            "newly-queued.yml": "missing",
+            "failed.yml": "failed",
+            "pending.yml": "pending",
+            "stale.yml": "wrong_source",
+            "partial.yml": "incomplete_jobs",
+            "passed.yml": "success",
+        }
+        calls = []
+
+        def inspect(workflow, observed_revision, ref, event):
+            self.assertEqual(
+                (observed_revision, ref, event), (revision, "main", "workflow_dispatch")
+            )
+            state = states[workflow]
+            if workflow == "newly-queued.yml" and workflow in calls:
+                state = "pending"
+            calls.append(workflow)
+            return workflow, {"state": state}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "receipt.json"
+            args = [
+                "release_gate.py",
+                "--revision",
+                revision,
+                "--ref",
+                "main",
+                "--event",
+                "workflow_dispatch",
+                "--output",
+                str(output),
+                "--dispatch-missing",
+            ]
+            with (
+                patch("sys.argv", args),
+                patch("release_gate.WORKFLOWS", tuple(states)),
+                patch("release_gate.gh", return_value={"sha": revision}),
+                patch("release_gate.inspect", side_effect=inspect),
+                patch("release_gate.subprocess.run") as dispatch,
+                redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(main(), 1)
+            commands = [call.args[0] for call in dispatch.call_args_list]
+            self.assertEqual(len(commands), 1)
+            self.assertEqual(commands[0][:4], ["gh", "workflow", "run", "missing.yml"])
+            self.assertEqual(commands[0][-2:], ["--ref", "main"])
+            receipt = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(receipt["event"], "workflow_dispatch")
+            self.assertEqual(receipt["dispatched"], ["missing.yml"])
+            self.assertEqual(
+                receipt["workflows"]["newly-queued.yml"]["state"], "pending"
+            )
+            self.assertFalse(receipt["ready"])
 
 
 if __name__ == "__main__":

@@ -121,6 +121,7 @@ remain unchanged. Draft PRs already execute the full checks, so marking them
 ready does not retrigger those same expensive workflows.
 
 The [release procedure](../../docs/releases/README.md#repeatable-release-qualification)
-uses the [status collector](../release_gate.py) to collect exact commit/attempt/job
-identities and dispatch only missing work. It never retries failed work or
-replaces independent native, archive, companion or manuscript acceptance.
+uses the [status collector](../release_gate.py) to check exact main
+`workflow_dispatch` runs and tag `push` runs. Dispatch fills only missing
+main runs. Native, archive, companion, and manuscript acceptance have their
+own evidence.
