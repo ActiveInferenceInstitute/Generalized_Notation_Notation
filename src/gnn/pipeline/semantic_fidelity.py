@@ -413,7 +413,7 @@ def _canonical_parameter_declarations(model: Any) -> list[dict[str, Any]]:
             "description": str(parameter.description or ""),
         }
         if counts[parameter.name] > 1:
-            # The legacy name-to-value projections retain only the last
+            # The flat name-to-value projections retain only the last
             # declaration. Keep the values and provenance of every duplicate.
             declaration["value"] = _json_stable(parameter.value)
             declaration["metadata"] = _json_stable(parameter.metadata)

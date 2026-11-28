@@ -318,7 +318,7 @@ def read_pin(path: Path, *, party: Optional[str] = None) -> ImporterPin:
         raise PinError(f"{path}: parser_files must be an object of SHA-256 hashes")
     for relative, digest in parser_files.items():
         _relative_source_name(relative)
-        # The legacy NHIM pin also binds the exact published syntax reference.
+        # The original NHIM pin also binds the exact published syntax reference.
         # This is a metadata receipt, distinct from a package origin manifest.
         if relative != "docs/gnn/gnn_syntax.md" and not relative.startswith(
             ("src/gnn/", "gnn/")

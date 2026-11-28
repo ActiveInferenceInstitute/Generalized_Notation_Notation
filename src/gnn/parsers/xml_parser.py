@@ -134,8 +134,10 @@ class XMLGNNParser(BaseGNNParser):
         if result.success and root.tag == "gnn_model":
             embedded = self._extract_embedded_json_data(content)
             if embedded:
-                legacy = self._build_model_from_embedded_data(embedded)
-                result.model = self._reconcile_legacy_model(root, result.model, legacy)
+                embedded_model = self._build_model_from_embedded_data(embedded)
+                result.model = self._reconcile_legacy_model(
+                    root, result.model, embedded_model
+                )
         return result
 
     def _parse_xml_root(self, root: Any) -> ParseResult:
@@ -518,19 +520,19 @@ class XMLGNNParser(BaseGNNParser):
         self,
         root: Any,
         native: GNNInternalRepresentation,
-        legacy: GNNInternalRepresentation,
+        embedded_model: GNNInternalRepresentation,
     ) -> GNNInternalRepresentation:
         """Use native XML and recover fields omitted by historical writers."""
         if not any(element.tag != "metadata" for element in root):
             if root.get("name") or root.get("model_name"):
-                legacy.model_name = native.model_name
+                embedded_model.model_name = native.model_name
             if root.get("version") is not None:
-                legacy.version = native.version
+                embedded_model.version = native.version
             if root.find("./metadata/annotation") is not None:
-                legacy.annotation = native.annotation
+                embedded_model.annotation = native.annotation
             if root.find("./metadata/extensions") is not None:
-                legacy.extensions = native.extensions
-            return legacy
+                embedded_model.extensions = native.extensions
+            return embedded_model
 
         def connection_key(connection: Connection) -> tuple[Any, ...]:
             return (
@@ -540,7 +542,7 @@ class XMLGNNParser(BaseGNNParser):
             )
 
         old_connections: dict[tuple[Any, ...], deque[Connection]] = defaultdict(deque)
-        for connection in legacy.connections:
+        for connection in embedded_model.connections:
             old_connections[connection_key(connection)].append(connection)
         for connection in native.connections:
             matching_connections = old_connections[connection_key(connection)]
@@ -550,7 +552,7 @@ class XMLGNNParser(BaseGNNParser):
                     connection.annotation = prior_connection.annotation
 
         old_parameters: dict[str, deque[Parameter]] = defaultdict(deque)
-        for parameter in legacy.parameters:
+        for parameter in embedded_model.parameters:
             old_parameters[parameter.name].append(parameter)
         for parameter in native.parameters:
             matching = old_parameters[parameter.name]
@@ -570,12 +572,14 @@ class XMLGNNParser(BaseGNNParser):
                     except (TypeError, ValueError, SyntaxError):
                         pass
 
-        if native.time_specification and legacy.time_specification:
+        if native.time_specification and embedded_model.time_specification:
             if native.time_specification.horizon is None:
-                native.time_specification.horizon = legacy.time_specification.horizon
+                native.time_specification.horizon = (
+                    embedded_model.time_specification.horizon
+                )
             if native.time_specification.step_size is None:
                 native.time_specification.step_size = (
-                    legacy.time_specification.step_size
+                    embedded_model.time_specification.step_size
                 )
         return native
 
