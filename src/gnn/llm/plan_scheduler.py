@@ -28,6 +28,7 @@ checkpoints are terminal and current, not that a model attended to anything.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import shutil
 import time
@@ -374,13 +375,18 @@ async def run_request_plan(
     resumed = state.accepted
     rejected = state.rejected
     started = clock()
+    deadline = plan.record()["deadline"]
+    expires_at = started + deadline["deadline_seconds"]
+    request_timeout = deadline["request_timeout_seconds"]
+    max_tokens = plan.record()["context"]["reservations"]["output"]
     new_requests: list[str] = []
     refusals: list[dict[str, str]] = []
     refused: set[str] = set()
     status = "blocked"
     while True:
+        scheduled_at = clock()
         schedule = next_requests(
-            plan, state, started_at=started, now=clock(), cancelled=cancelled()
+            plan, state, started_at=started, now=scheduled_at, cancelled=cancelled()
         )
         if schedule["status"] in {"complete", "cancelled", "deadline_exceeded"}:
             status = schedule["status"]
@@ -392,43 +398,56 @@ async def run_request_plan(
             if not waiting:
                 status = "refused"
                 break
-            segment_id = waiting[0]["segment_id"]
-            request = window_request(plan, source, segment_id, prompt)
-            atomic_write_text(files.segment_request(segment_id), _dump(request))
-            new_requests.append(segment_id)
-            text, outcome = await execute(
-                request["messages"],
-                plan.record()["context"]["reservations"]["output"],
-                f"{plan.sha256[:16]}:{segment_id}",
-            )
-            try:
-                checkpoint = segment_checkpoint(plan, segment_id, text, outcome)
-            except RequestPlanRefused as exc:
-                refused.add(segment_id)
-                refusals.append({"request": segment_id, "reason": str(exc)})
-                continue
-            atomic_write_text(files.segment(segment_id), _dump(checkpoint))
-            accepted[segment_id] = checkpoint
+            label = waiting[0]["segment_id"]
+            request = window_request(plan, source, label, prompt)
+            request_path = files.segment_request(label)
         else:
             if "synthesis" in refused:
                 status = "refused"
                 break
+            label = "synthesis"
             request = synthesis_request(plan, source, accepted, prompt)
-            atomic_write_text(files.synthesis_request, _dump(request))
-            new_requests.append("synthesis")
-            text, outcome = await execute(
-                request["messages"],
-                plan.record()["context"]["reservations"]["output"],
-                f"{plan.sha256[:16]}:synthesis",
-            )
-            try:
+            request_path = files.synthesis_request
+
+        atomic_write_text(request_path, _dump(request))
+        new_requests.append(label)
+        timeout = asyncio.timeout(request_timeout)
+        try:
+            async with timeout:
+                text, outcome = await execute(
+                    request["messages"], max_tokens, f"{plan.sha256[:16]}:{label}"
+                )
+        except TimeoutError:
+            timed_out = True
+        else:
+            timed_out = timeout.expired()
+
+        # A terminal-looking reply may arrive after cancellation or its budget.
+        # Decide before creating a checkpoint or updating accepted state.
+        finished_at = clock()
+        if cancelled():
+            status = "cancelled"
+            break
+        if finished_at >= expires_at:
+            status = "deadline_exceeded"
+            break
+        if timed_out or finished_at - scheduled_at > request_timeout:
+            refused.add(label)
+            refusals.append({"request": label, "reason": "request timeout exceeded"})
+            continue
+
+        try:
+            if label == "synthesis":
                 synthesis = synthesis_checkpoint(plan, accepted, text, outcome)
-            except RequestPlanRefused as exc:
-                refused.add("synthesis")
-                refusals.append({"request": "synthesis", "reason": str(exc)})
-                synthesis = None
-                continue
-            atomic_write_text(files.synthesis, _dump(synthesis))
+                atomic_write_text(files.synthesis, _dump(synthesis))
+            else:
+                checkpoint = segment_checkpoint(plan, label, text, outcome)
+                atomic_write_text(files.segment(label), _dump(checkpoint))
+                accepted[label] = checkpoint
+        except RequestPlanRefused as exc:
+            refused.add(label)
+            refusals.append({"request": label, "reason": str(exc)})
+            continue
         state, accepted = revalidate_resume(
             plan.record(), plan, source, accepted.values(), synthesis
         )
@@ -645,6 +664,7 @@ async def run_corpus_plans(
             *,
             cache_content: str = content,
             plan_sha256: str = plan.sha256,
+            plan_timeout: float = plan.record()["deadline"]["request_timeout_seconds"],
         ) -> tuple[str, Mapping[str, Any]]:
             outcomes: dict[str, Any] = {}
             text = await api._execute_prompt(
@@ -657,7 +677,9 @@ async def run_corpus_plans(
                 label=key,
                 custom=prompt_type is None,
                 max_tokens=max_tokens,
-                max_prompt_timeout=min(request_timeout_seconds, remaining()),
+                max_prompt_timeout=min(
+                    plan_timeout, request_timeout_seconds, remaining()
+                ),
                 failed_auth_providers=failed_auth,
                 auth_errors=auth_errors,
                 outcomes=outcomes,
