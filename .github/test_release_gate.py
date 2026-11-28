@@ -104,6 +104,29 @@ class ReleaseGateControls(unittest.TestCase):
 
 
 class ReleaseRosterControls(unittest.TestCase):
+    def test_release_workflow_concurrency_separates_event_ref_and_commit(self):
+        workflows = Path(__file__).resolve().parent / "workflows"
+        for name in WORKFLOWS:
+            with self.subTest(workflow=name):
+                source = (workflows / name).read_text(encoding="utf-8")
+                group = next(
+                    line for line in source.splitlines() if line.startswith("  group: ")
+                )
+                for field in ("github.event_name", "github.ref", "github.sha"):
+                    self.assertIn(field, group)
+                if "\n  pull_request:\n" in source:
+                    branch, release_phase = group.split(" || ", 1)
+                    self.assertIn("'pull_request' && github.ref", branch)
+                    self.assertNotIn("github.sha", branch)
+                    self.assertIn(
+                        "format('{0}-{1}-{2}', github.event_name, github.ref, github.sha)",
+                        release_phase,
+                    )
+                    self.assertIn(
+                        "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
+                        source,
+                    )
+
     def test_incomplete_roster_cannot_report_ready(self):
         observations = {name: {"state": "success"} for name in WORKFLOWS}
         self.assertTrue(release_ready(observations))

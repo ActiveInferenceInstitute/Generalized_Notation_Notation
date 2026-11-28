@@ -68,7 +68,8 @@ and omit `--dispatch-missing`. Omitting `--event` is available for read-only
 diagnosis across event types.
 
 All sixteen workflows also trigger automatically on version tag pushes.
-Main and tag qualification may run concurrently. Publication requires successful
+Main and tag qualification can run concurrently because each workflow keys
+release concurrency by event, ref, and commit. Publication requires successful
 latest runs and every job for both ref/event pairs, plus independent acceptance
 of source-bound artifacts. Exit 1 reports incomplete workflow qualification.
 Retain failed attempts and classify failures before any retry. The tag's
