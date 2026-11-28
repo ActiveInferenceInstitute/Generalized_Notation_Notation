@@ -213,8 +213,9 @@ The lists below own outstanding work; this table owns target-version sequencing.
   retained; the default model is unchanged. This establishes the admitted local
   profile, not general scientific interpretation or independent attention.
   The opt-in corpus `request_plan` scheduler (`gnn_llm_request_plan_v1`) now
-  writes per-window checkpoints and admits only terminal-stop replies.
-  It is verified offline only.
+  writes per-window checkpoints, enforces the tighter request timeout, and
+  refuses terminal replies received after cancellation or the plan deadline.
+  The corpus scheduler has offline qualification.
   Remaining: live external-provider multi-window acceptance; native tokenizer
   counts for corpus `joint_source` plans; broader large-source/provider and
   answer-quality acceptance; native `part_evidence` qualification. Every joint source and prompt must fit
@@ -224,6 +225,10 @@ The lists below own outstanding work; this table owns target-version sequencing.
   on verified model/provider admission and M2/M3 result/configuration contracts.
 
 - [ ] **E1 — extend coupled multi-agent continuous semantics (P2).**
+  Native JAX now filters two explicitly coupled Gaussian agents from fixed
+  observations and controls, with full cross-covariance and independent
+  prefix-conditioning, permutation and zero-coupling controls. Native RxInfer
+  qualification is still required for this joint filter.
   Scope: reconcile existing continuous/factored/hybrid/nonstationary and
   independent Gaussian contracts, then specify additional coupling, control
   and observation semantics. Accept: explicit per-agent state/control identity,
@@ -233,10 +238,13 @@ The lists below own outstanding work; this table owns target-version sequencing.
   compatible shapes alone do not establish an inference contract.
 
 - [ ] **E2 — expand THRML through separate scientific contracts (P2).**
+  Native THRML 0.1.4 now has a bounded, strictly positive two-agent CPU
+  smoothing contract with fixed observations and actions. Python 3.12 and
+  3.14 witnesses compare the retained draws with exact joint enumeration.
   Scope: evaluate coupled agents, policy/action search, continuous/hybrid
   models and hardware execution as separately scoped extensions of the
   [THRML adapter](docs/gnn/implementations/thrml.md). Accept: defensible model and
-  inference mappings, released compatibility on both supported splits,
+  inference mappings, released compatibility on the supported runtime matrix,
   admission/failure/resource controls and independent native witnesses.
   Hardware, convergence, energy and speed claims each require their own direct
   evidence. Depends on S3 where structural zeros are required, plus M2/M3/E4.
@@ -248,6 +256,9 @@ The lists below own outstanding work; this table owns target-version sequencing.
   The generated runner, lock, adapter guide and native tests agree on
   `cpomdp==0.5.1`. The bounded review exercised the installed passive, parity
   and EFE fixtures and the readiness refusal for an incompatible runtime.
+  Source-declared explicit candidate sequences also passed independent Kalman
+  and EFE comparisons on the same released runtime, including policy identity
+  and stable authored ties.
   The earlier 0.5.0 adoption was reviewed against the FEP_Formal merge
   `9d77cd47fd170e1e4071c0944d3c5ee3cb7a4886` (#296). The later qualified
   companion revision is recorded in [`.github/fep-lean-pair.json`](.github/fep-lean-pair.json).
@@ -320,38 +331,27 @@ unavailable-observation reporting are recorded in [CHANGELOG.md](CHANGELOG.md).
 
 ### Medium package improvements
 
-- [ ] **Qualify the remaining wheel runtime profiles (P1).** The base,
-  pygls LSP and both API factory profiles are qualified from a local wheel
-  ([installed platforms](docs/development/installed_platform_acceptance.md)),
-  and [dependency hygiene](scripts/check_dep_hygiene.py) enforces direct
-  declarations. Extend the
-  [installed-platform lane](.github/workflows/installed-platforms.yml) to the
-  GUI, scientific and backend extras and their missing-extra behavior. Record
-  the actual Python, distributions, entry points, backend versions and the
-  PyMDP/JAX interpreter splits. The wheel ships no `py.typed` marker; do not
-  claim an installed typing contract until the documented public imports pass
-  an ordinary downstream type-check with the marker present.
-- [ ] **Cut over importers and remove private backend reads one consumer at a
-  time (P1).** Use the [canonical released reader](src/gnn/importers.py) on
+- [ ] **Qualify the remaining wheel runtime profiles (P1).** Local Linux checks
+  qualified ordinary base wheel and sdist installs, the API and LSP profiles,
+  native Gradio and Pillow, and strict downstream typing with `gnn/py.typed`.
+  The [installed-platform lane](.github/workflows/installed-platforms.yml)
+  retains Linux, macOS and Windows coverage and includes CPython 3.13 on Linux.
+  Qualify the exact release through the hosted matrix and record actual
+  runtime, backend and missing-extra evidence for scientific profiles.
+- [ ] **Qualify affected importer upgrades one consumer at a time (P1).**
+  Use the [canonical released reader](src/gnn/importers.py) on
   the member's own pin and specs before retiring local conformance code.
   Use the measured dtype, device and agent identity already recorded in the
   [PyMDP simulation receipt](src/gnn/execute/pymdp/SPEC.md).
-  Migrate Active_Fedference from `_build_pymdp_agent` after verifying existing
-  batch and horizon fields and comparing producer and consumer receipts at
-  exact pins. Exercise the PyMDP parser bridge and COGANT's subprocess
-  contract as independent compatibility checks.
+  Active_Fedference now calls the public `gnn.execute.pymdp` entry point and
+  passed its locked runtime profile. Use the PyMDP parser bridge and COGANT's
+  subprocess contract as independent compatibility checks for future changes.
 
 ### Major package improvements
 
-- [ ] **Carry the versioned handoffs into report, replay and resume (P1).**
-  The [versioned Step 3 receipt](docs/development/run_ownership_migration.md)
-  governs validation, export, visualization and render, and
-  `gnn_execution_handoff_v1` governs
-  [integration collection](src/gnn/integration/meta_analysis/collector.py) and
-  Step 16 analysis. Extend the same admission to the report step, reusing
-  [artifact ownership](src/gnn/pipeline/artifact_ownership.py), and accept
-  output parity for normal runs, replay and resume with old and new fixtures.
-  Keep COGANT's summary reader as an independent compatibility check.
+Reports, read-only replay and explicit resume now use the verified run evidence
+described in the [run ownership guide](docs/development/run_ownership_migration.md).
+
 - [ ] **Reduce the remaining import surface (P2).** `lint-imports`
   enforces twelve contracts ([contracts](pyproject.toml),
   [direction tests](tests/architecture/test_dependency_direction.py)):
