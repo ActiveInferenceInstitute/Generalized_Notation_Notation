@@ -237,14 +237,11 @@ def _norm_cols(mat: np.ndarray) -> np.ndarray:
     return out
 
 
-def _canonical_B(raw: np.ndarray, num_states: int, num_actions: int) -> np.ndarray:
+def _canonical_B(raw: np.ndarray) -> np.ndarray:
     if raw.ndim == 2:
         tensor = raw[:, :, None]
     elif raw.ndim == 3:
-        if raw.shape[0] == num_actions and raw.shape[1] == raw.shape[2]:
-            tensor = raw.transpose(2, 1, 0)
-        else:
-            tensor = raw
+        tensor = raw.transpose({b_axis_permutation})
     else:
         raise ValueError("B matrix must be 2D or 3D")
     tensor = tensor.copy()
@@ -282,7 +279,9 @@ def main() -> int:
 
     if B_data is None:
         raise ValueError("B matrix is required for pymdp execution")
-    B_np = _canonical_B(np.asarray(B_data, dtype=np.float64), num_states, num_actions_default)
+    B_np = _canonical_B(np.asarray(B_data, dtype=np.float64))
+    if B_np.shape != (num_states, num_states, num_actions_default):
+        raise ValueError("B dimensions do not match the rendered state/action axes")
     num_actions = B_np.shape[2]
 
     if C_data is None:

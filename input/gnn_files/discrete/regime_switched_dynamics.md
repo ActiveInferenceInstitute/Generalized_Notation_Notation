@@ -74,17 +74,19 @@ A={
 
 # B_regime: regime 0 (calm) and regime 1 (storm). Each regime slice is
 # (next_state × current_state × action) and column-stochastic.
+# The two state axes are transposed from the earlier stored row-stochastic
+# tables. This preserves every probability and puts next state first.
 
 B_regime={
   (
-    ((0.7, 0.1), (0.2, 0.1), (0.1, 0.8)),
-    ((0.2, 0.1), (0.7, 0.1), (0.1, 0.8)),
-    ((0.1, 0.1), (0.1, 0.1), (0.8, 0.8))
+    ((0.7, 0.1), (0.2, 0.1), (0.1, 0.1)),
+    ((0.2, 0.1), (0.7, 0.1), (0.1, 0.1)),
+    ((0.1, 0.8), (0.1, 0.8), (0.8, 0.8))
   ),
   (
-    ((0.2, 0.4), (0.6, 0.2), (0.2, 0.4)),
-    ((0.4, 0.2), (0.2, 0.4), (0.4, 0.4)),
-    ((0.3, 0.1), (0.3, 0.1), (0.4, 0.8))
+    ((0.2, 0.4), (0.4, 0.2), (0.3, 0.1)),
+    ((0.6, 0.2), (0.2, 0.4), (0.3, 0.1)),
+    ((0.2, 0.4), (0.4, 0.4), (0.4, 0.8))
   )
 }
 
@@ -125,6 +127,7 @@ num_hidden_states: 3
 num_obs: 3
 num_actions: 2
 num_timesteps: 8
+b_tensor_order_regime: next_state_previous_state_action
 b_regime_schedule: 0,0,0,0,1,1,1,1
 
 ## Footer

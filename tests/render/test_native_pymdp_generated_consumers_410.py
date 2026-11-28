@@ -166,6 +166,8 @@ def test_nonstationary_pipeline_retains_data_and_standalone_refuses(
     spec["initialparameterization"][transition] = copy.deepcopy(
         spec["initialparameterization"]["B"]
     )
+    if transition.startswith("B_regime"):
+        spec["model_parameters"]["b_regime_schedule"] = [0]
     before = pickle.dumps(spec, protocol=5)
     path = tmp_path / "pipeline.py"
     assert render_gnn_to_pymdp(spec, path, {"mode": "pipeline"})[0]

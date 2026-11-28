@@ -31,6 +31,7 @@ This module is stdlib-only at import time.
 """
 
 import math
+import re
 from dataclasses import dataclass
 from itertools import product
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
@@ -41,6 +42,7 @@ from .pomdp_state import POMDPStateSpace, _shape_of
 DEFAULT_ATOL = 1e-6
 DIMENSION_CODE = "GNN-E002"
 PROBABILITY_CODE = "GNN-E007"
+_PHASE_TRANSITION = re.compile(r"^B_(?:t|regime)(?:\d*|_\w+)$", re.IGNORECASE)
 
 __all__ = [
     "DEFAULT_ATOL",
@@ -131,20 +133,25 @@ def _b_next_axes(key: str, shape: Sequence[int], space: POMDPStateSpace) -> List
     """Candidate next-state axes for a transition tensor."""
     if len(shape) < 3 or (key == "B" and len(shape) != 3):
         return [0]
-    if len(shape) == 3:
+    phase_offset = 1 if len(shape) == 4 and _PHASE_TRANSITION.fullmatch(key) else 0
+    if len(shape) == 3 or phase_offset:
         provenance = (space.matrix_provenance or {}).get(key) or {}
         order = (
             parse_b_order(provenance.get("stored_order"))
             or declared_b_order(space.model_parameters or {}, name=key)
             or parse_b_order(provenance.get("detected_order"))
         )
-        candidates = b_shape_orders(shape)
+        candidates = b_shape_orders(shape[phase_offset:])
         if order:
             if order not in candidates:
                 raise ValueError(f"tensor shape {list(shape)} does not match {order}")
-            return [b_permutation(order)[0]]
+            return [phase_offset + b_permutation(order)[0]]
         if candidates:
-            return [b_permutation(order)[0] for order in candidates]
+            return [phase_offset + b_permutation(order)[0] for order in candidates]
+        if phase_offset:
+            raise ValueError(
+                f"phase tensor shape {list(shape)} has no supported layout"
+            )
     paired = sorted(
         {
             axis

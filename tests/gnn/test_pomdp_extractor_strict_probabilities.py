@@ -488,8 +488,6 @@ KNOWN_NONSTOCHASTIC_INPUT_FIXTURES = {
     # Uniform priors authored as 0.33333 x 3 (sum 0.99999 > atol 1e-6).
     "discrete/actinf_pomdp_agent.md": {"D"},
     "discrete/multi_armed_bandit.md": {"D"},
-    # Phase t=0 conditional (previous=1, action=1) sums to 0.8.
-    "discrete/time_varying_dynamics.md": {"B_t"},
     # Generated likelihood column rounds to 0.999969.
     "pymdp_scaling_study/pymdp_scaling_N64_T100.md": {"A"},
 }

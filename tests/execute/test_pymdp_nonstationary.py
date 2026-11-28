@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from gnn.execute.pymdp import run_pymdp_simulation
@@ -30,14 +31,14 @@ _D = [0.34, 0.33, 0.33]
 
 # (next, prev, action) slices — one per regime / phase (exemplar values).
 _SLICE_CALM = [
-    [[0.7, 0.1], [0.2, 0.1], [0.1, 0.8]],
-    [[0.2, 0.1], [0.7, 0.1], [0.1, 0.8]],
-    [[0.1, 0.1], [0.1, 0.1], [0.8, 0.8]],
+    [[0.7, 0.1], [0.2, 0.1], [0.1, 0.1]],
+    [[0.2, 0.1], [0.7, 0.1], [0.1, 0.1]],
+    [[0.1, 0.8], [0.1, 0.8], [0.8, 0.8]],
 ]
 _SLICE_STORM = [
-    [[0.2, 0.4], [0.6, 0.2], [0.2, 0.4]],
-    [[0.4, 0.2], [0.2, 0.4], [0.4, 0.4]],
-    [[0.3, 0.1], [0.3, 0.1], [0.4, 0.8]],
+    [[0.2, 0.4], [0.4, 0.2], [0.3, 0.1]],
+    [[0.6, 0.2], [0.2, 0.4], [0.3, 0.1]],
+    [[0.2, 0.4], [0.4, 0.4], [0.4, 0.8]],
 ]
 
 
@@ -141,3 +142,36 @@ def test_regime_schedule_out_of_range_is_refused(tmp_path: Path) -> None:
         run_pymdp_simulation(
             _regime_spec(schedule=[0, 0, 2, 1, 1, 1], horizon=6), tmp_path / "range"
         )
+
+
+@pytest.mark.parametrize("schedule", [[0, 0.9], [0, True], "0,,1"])
+def test_regime_schedule_keeps_authored_integer_indices(tmp_path, schedule):
+    spec = _regime_spec(horizon=3)
+    spec["model_parameters"]["b_regime_schedule"] = schedule
+    with pytest.raises(ValueError, match="nonboolean integer indices"):
+        run_pymdp_simulation(spec, tmp_path)
+    assert not (tmp_path / "simulation_results.json").exists()
+
+
+def test_native_asymmetric_phases_apply_the_declared_action_and_hold_last(tmp_path):
+    spec = _time_varying_spec(horizon=4)
+    spec["initialparameterization"]["A"] = np.eye(3).tolist()
+    spec["initialparameterization"]["D"] = [1.0, 0.0, 0.0]
+    # Authored phase/action targets are independent of the prior state.
+    targets = [[1, 2], [2, 0]]
+    stored = np.zeros((2, 2, 3, 3))
+    for phase, actions in enumerate(targets):
+        for action, next_state in enumerate(actions):
+            stored[phase, action, next_state, :] = 1.0
+    spec["initialparameterization"]["B_t"] = stored.tolist()
+    spec["model_parameters"]["b_tensor_order_t"] = "action_next_state_previous_state"
+    spec["model_parameters"]["b_tensor_order"] = "next_state_previous_state_action"
+
+    success, result = run_pymdp_simulation(spec, tmp_path)
+    assert success, result
+    states = [0] + [
+        targets[min(step, 1)][action] for step, action in enumerate(result["actions"])
+    ]
+    assert result["true_states"] == states
+    assert result["observations"] == states[:-1]
+    assert result["true_states"][2] != targets[0][result["actions"][1]]

@@ -25,6 +25,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from gnn.extract.pomdp_axes import b_permutation, declared_b_order, resolve_b_order
 from gnn.parsers.common import (  # noqa: F401
     GNNInternalRepresentation,
     ParseResult,
@@ -288,6 +289,12 @@ class PyMDPRenderer:
     def _generate_code(self, gnn_spec: Dict[str, Any], model_name: str) -> str:
         """Generate code."""
         from gnn.render.execution_contracts import unsupported_contract
+        from gnn.render.pomdp_contract import (
+            ModelKind,
+            canonicalise_pymdp_phase_transitions,
+            detect_model_kinds,
+            pymdp_nonstationary_transition,
+        )
 
         reason = unsupported_contract(gnn_spec, "pymdp")
         if reason:
@@ -297,10 +304,15 @@ class PyMDPRenderer:
         init_params = gnn_spec.get("initialparameterization") or gnn_spec.get(
             "initial_parameterization", {}
         )
-        nonstationary_keys = [
-            str(key) for key in init_params if str(key).startswith(("B_t", "B_regime"))
-        ]
-        is_nonstationary = bool(nonstationary_keys)
+        key = None
+        is_nonstationary = ModelKind.NONSTATIONARY in detect_model_kinds(gnn_spec)
+        if is_nonstationary:
+            retained = (gnn_spec.get("structured_pomdp") or {}).get("matrices") or {}
+            key = pymdp_nonstationary_transition({**retained, **init_params})
+            if key not in init_params:
+                raise ValueError(
+                    f"unsupported-nonstationary: {key} is absent from executable parameters"
+                )
         if is_nonstationary and self.mode == "standalone":
             raise ValueError(
                 "unsupported-nonstationary: the standalone pymdp runner builds "
@@ -333,6 +345,35 @@ class PyMDPRenderer:
                 f"Missing required PyMDP initial parameterization entries: {missing}"
             )
 
+        params = gnn_spec.get("model_parameters") or {}
+        provenance = gnn_spec.get("matrix_provenance") or {}
+        axis_permutation = (0, 1, 2)
+        if key:
+            declared_actions = params.get("num_actions")
+            phased_b, _ = canonicalise_pymdp_phase_transitions(
+                init_params[key],
+                key=key,
+                num_states=num_states,
+                num_actions=int(declared_actions)
+                if declared_actions is not None
+                else None,
+                parameters=params,
+                provenance=provenance.get(key),
+            )
+            num_actions = phased_b.shape[-1]
+        else:
+            raw_b = np.asarray(B_matrix)
+            if raw_b.ndim == 3:
+                order = resolve_b_order(
+                    raw_b,
+                    raw_b.shape,
+                    declared=declared_b_order(params),
+                    provenance=provenance.get("B"),
+                    states=num_states,
+                )
+                axis_permutation = b_permutation(order)
+                num_actions = raw_b.shape[axis_permutation[2]]
+
         context: Dict[str, Any] = {
             "model_name": model_name,
             "model_display_name": model_display_name,
@@ -342,6 +383,7 @@ class PyMDPRenderer:
             "num_actions": num_actions,
             "A_literal": _json.dumps(A_matrix) if A_matrix is not None else "None",
             "B_literal": _json.dumps(B_matrix) if B_matrix is not None else "None",
+            "b_axis_permutation": axis_permutation,
             "C_literal": _json.dumps(C_vector) if C_vector is not None else "None",
             "D_literal": _json.dumps(D_vector) if D_vector is not None else "None",
             "E_literal": _json.dumps(E_vector) if E_vector is not None else "None",

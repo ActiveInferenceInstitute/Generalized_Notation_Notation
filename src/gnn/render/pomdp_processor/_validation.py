@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Compatibility-validation mixin for the POMDP render processor."""
 
-import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 from gnn.render.pomdp_contract import (
     ModelKind,
+    detect_model_kinds,
     detect_pomdp_space_model_kind,
     detect_pomdp_space_model_kinds,
+    pymdp_nonstationary_transition,
     unsupported_composition_reason,
     unsupported_nonstationary_reason,
 )
@@ -211,6 +212,22 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
                 "warnings": warnings,
             }
 
+        if framework == "pymdp" and ModelKind.NONSTATIONARY in kinds:
+            try:
+                pymdp_nonstationary_transition(
+                    {
+                        **(pomdp_space.initial_parameterization or {}),
+                        **(pomdp_space.matrices or {}),
+                    }
+                )
+            except ValueError as error:
+                return {
+                    "compatible": False,
+                    "unsupported": True,
+                    "reason": str(error),
+                    "warnings": warnings,
+                }
+
         # Check required matrices are present, allowing factored matrices when
         # they can be composed into a canonical execution contract.
         missing_matrices: list[Any] = []
@@ -226,18 +243,7 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
                 "warnings": warnings,
             }
 
-        if framework == "pymdp" and ModelKind.NONSTATIONARY in kinds:
-            if not self._nonstationary_b_declared(pomdp_space):
-                # The time variation sits in A/C/D/E parameterization, not in
-                # a B_t/B_regime transition: pymdp has no executor route for
-                # it and would roll the model out as a static B.
-                return {
-                    "compatible": False,
-                    "unsupported": True,
-                    "reason": unsupported_nonstationary_reason(kinds),
-                    "warnings": warnings,
-                }
-        elif framework == "pymdp":
+        if framework == "pymdp" and ModelKind.NONSTATIONARY not in kinds:
             try:
                 self._build_canonical_initialparameterization(pomdp_space)
             except ValueError as exc:
@@ -280,14 +286,6 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
         if len(time_keys) == 1:
             return time_keys[0]
         return None
-
-    def _nonstationary_b_declared(self, pomdp_space: "POMDPStateSpace") -> bool:
-        """Return whether the space declares a pymdp-executable nonstationary
-        transition: a ``B_t`` / ``B_regime`` key (optional numeric suffix)."""
-        matrices = getattr(pomdp_space, "matrices", None) or {}
-        return any(
-            re.match(r"^B_(t|regime)\d*$", str(key), re.IGNORECASE) for key in matrices
-        )
 
     def _validate_state_spaces_in_spec(
         self, gnn_spec: Dict[str, Any], framework: str
@@ -343,20 +341,25 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
                 return {"valid": True, "critical": False, "warnings": warnings}
 
         # Check required matrices
+        transition = None
+        if framework == "pymdp" and ModelKind.NONSTATIONARY in detect_model_kinds(
+            gnn_spec
+        ):
+            try:
+                transition = pymdp_nonstationary_transition(initial_params)
+            except ValueError as error:
+                return {
+                    "valid": False,
+                    "critical": True,
+                    "reason": str(error),
+                    "warnings": warnings,
+                }
         missing_required: list[Any] = []
         required_matrices = cast(list[str], config["requires_matrices"])
         for required_matrix in required_matrices:
-            if required_matrix in initial_params:
-                continue
-            if required_matrix == "B" and any(
-                re.fullmatch(r"B_(t|regime)\d*", key, re.IGNORECASE)
-                for key in initial_params
+            if required_matrix in initial_params or (
+                required_matrix == "B" and transition
             ):
-                # A NONSTATIONARY spec's time-varying (B_t) or regime-switched
-                # (B_regime) transition tensor satisfies the required B: pymdp
-                # is the only framework that reaches this validator for such
-                # specs (others are refused upstream), and its raw-passthrough
-                # contract consumes B_t/B_regime directly.
                 continue
             missing_required.append(required_matrix)
 

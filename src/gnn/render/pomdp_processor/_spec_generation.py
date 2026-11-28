@@ -351,27 +351,26 @@ class _SpecGenerationMixin(_POMDPProcessorSupportMixin):
         initial: Dict[str, Any] = {}
         provenance: Dict[str, Dict[str, Any]] = {}
         for key, value in sorted(matrices.items()):
-            if key in {"A", "B", "C", "D", "E"} or key.startswith(("B_t", "B_regime")):
-                initial[key] = value
-                shape = list(np.asarray(value).shape)
-                if key.startswith(("B_t", "B_regime")):
-                    provenance[key] = {
-                        "source": "nonstationary_raw_passthrough",
-                        "source_key": key,
-                        "shape": shape,
-                        "derived": False,
-                        "reason": (
-                            "Nonstationary transition tensor passes through "
-                            "verbatim; run_pymdp_simulation resolves the "
-                            "per-step transition"
-                        ),
-                    }
-                else:
-                    provenance[key] = {
-                        "source": "InitialParameterization",
-                        "shape": shape,
-                        "derived": False,
-                    }
+            initial[key] = value
+            shape = list(np.asarray(value).shape)
+            if key.lower().startswith(("b_t", "b_regime")):
+                provenance[key] = {
+                    "source": "nonstationary_raw_passthrough",
+                    "source_key": key,
+                    "shape": shape,
+                    "derived": False,
+                    "reason": (
+                        "Nonstationary transition tensor passes through "
+                        "verbatim; run_pymdp_simulation resolves the "
+                        "per-step transition"
+                    ),
+                }
+            else:
+                provenance[key] = {
+                    "source": "InitialParameterization",
+                    "shape": shape,
+                    "derived": False,
+                }
         preserved = {
             key: value
             for key, value in raw_initial.items()

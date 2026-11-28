@@ -16,12 +16,20 @@ from __future__ import annotations
 import re
 from copy import deepcopy
 from enum import Enum
+from numbers import Integral
 from typing import Any, Dict, Iterable, List, Tuple, TypedDict, cast
 
 import numpy as np
 
 from gnn.extract.pomdp_axes import CANONICAL as CANONICAL_B_ORDER
-from gnn.extract.pomdp_axes import b_permutation, declared_b_order, resolve_b_order
+from gnn.extract.pomdp_axes import (
+    b_permutation,
+    b_shape_orders,
+    declared_b_order,
+    resolve_b_order,
+    stochastic_b_orders,
+    stored_b_order,
+)
 
 # Only source decimal rounding drift may be corrected; arbitrary weights
 # require the explicit demo adapter and never enter strict canonical models.
@@ -173,7 +181,7 @@ def canonicalise_b_matrix(
     value: Any,
     *,
     num_states: int,
-    num_actions: int,
+    num_actions: int | None,
     model_parameters: Dict[str, Any],
     b_provenance: Dict[str, Any] | None = None,
 ) -> Tuple[List[List[List[float]]], Dict[str, Any]]:
@@ -206,7 +214,7 @@ def canonicalise_b_matrix(
         raise ValueError(
             f"Canonical B shape {tensor.shape} does not match {num_states} states"
         )
-    if tensor.shape[2] not in {1, num_actions}:
+    if num_actions is not None and tensor.shape[2] not in {1, num_actions}:
         raise ValueError(
             f"Canonical B action dimension {tensor.shape[2]} does not match {num_actions}"
         )
@@ -292,11 +300,116 @@ _FACTOR_CONTINUOUS_KEY = re.compile(
 )
 
 
-_TIME_INDEXED_MATRIX_KEY = re.compile(r"^[ABCDE]_t\d*$", re.IGNORECASE)
-_REGIME_SWITCHED_MATRIX_KEY = re.compile(r"^[ABCDE]_regime\d*$", re.IGNORECASE)
+_TIME_INDEXED_MATRIX_KEY = re.compile(r"^[ABCDE]_t(?:\d*|_\w+)$", re.IGNORECASE)
+_REGIME_SWITCHED_MATRIX_KEY = re.compile(r"^[ABCDE]_regime(?:\d*|_\w+)$", re.IGNORECASE)
 _NONSTATIONARY_SCHEDULE_KEYS = frozenset(
     {"b_regime_schedule", "regime_schedule", "b_schedule", "b_t_schedule"}
 )
+
+
+def pymdp_nonstationary_transition(keys: Iterable[str]) -> str:
+    """Identify the single time-varying transition family PyMDP executes."""
+    phase_keys = sorted(
+        {
+            key
+            for key in keys
+            if _TIME_INDEXED_MATRIX_KEY.fullmatch(key)
+            or _REGIME_SWITCHED_MATRIX_KEY.fullmatch(key)
+        }
+    )
+    if len(phase_keys) != 1 or not phase_keys[0].lower().startswith("b_"):
+        detail = ", ".join(phase_keys) or "no transition tensor"
+        raise ValueError(
+            "unsupported-nonstationary: PyMDP requires exactly one B_t or "
+            f"B_regime tensor and supports no other time-varying matrices; found {detail}"
+        )
+    return phase_keys[0]
+
+
+def pymdp_regime_schedule(
+    key: str, parameters: Dict[str, Any], *, phases: int
+) -> list[int] | None:
+    """Validate the authored schedule, preserving every declared regime index."""
+    declared = sorted(_NONSTATIONARY_SCHEDULE_KEYS.intersection(parameters))
+    if "_regime" not in key.lower():
+        if declared:
+            raise ValueError(
+                f"{key} uses consecutive phases and does not accept {declared}"
+            )
+        return None
+    if len(declared) != 1:
+        raise ValueError(f"{key} requires exactly one b_regime_schedule declaration")
+    raw = parameters[declared[0]]
+    if isinstance(raw, str):
+        parts = [part.strip() for part in raw.split(",")]
+        raw = (
+            [int(part) for part in parts]
+            if all(re.fullmatch(r"[+-]?\d+", part) for part in parts)
+            else None
+        )
+    if (
+        not isinstance(raw, (list, tuple))
+        or not raw
+        or any(isinstance(item, bool) or not isinstance(item, Integral) for item in raw)
+    ):
+        raise ValueError("b_regime_schedule must contain nonboolean integer indices")
+    schedule = [int(item) for item in raw]
+    if not all(0 <= item < phases for item in schedule):
+        raise ValueError(
+            f"b_regime_schedule references a regime outside 0..{phases - 1}"
+        )
+    return schedule
+
+
+def canonicalise_pymdp_phase_transitions(
+    value: Any,
+    *,
+    key: str,
+    num_states: int,
+    num_actions: int | None,
+    parameters: Dict[str, Any],
+    provenance: Dict[str, Any] | None = None,
+) -> tuple[np.ndarray, list[int] | None]:
+    """Validate each authored phase and return its canonical tensor and schedule."""
+    raw = np.asarray(value)
+    if raw.ndim not in {2, 3, 4}:
+        raise ValueError(f"{key} must be a transition matrix, tensor or phase stack")
+    if raw.ndim in {2, 3}:
+        raw = raw[np.newaxis, ...]
+    if not raw.shape[0]:
+        raise ValueError(f"{key} must declare at least one phase")
+    schedule = pymdp_regime_schedule(key, parameters, phases=raw.shape[0])
+    order = declared_b_order(parameters, name="B" + key[1:].lower())
+    if raw.ndim == 4 and not stored_b_order(order, provenance or {}):
+        # A stack has one physical axis order for all phases. Intersect
+        # stochastic evidence before choosing the canonical legacy default.
+        candidates = b_shape_orders(
+            raw.shape[1:], states=num_states, actions=num_actions
+        )
+        possible = candidates
+        for phase in raw:
+            possible = stochastic_b_orders(
+                phase, phase.shape, possible, atol=DECLARED_PROBABILITY_MASS_ATOL
+            )
+        compatible = possible or candidates
+        if compatible:
+            order = (
+                CANONICAL_B_ORDER if CANONICAL_B_ORDER in compatible else compatible[0]
+            )
+    phases = []
+    for index, phase in enumerate(raw):
+        try:
+            canonical, _ = canonicalise_b_matrix(
+                phase,
+                num_states=num_states,
+                num_actions=num_actions,
+                model_parameters={"b_tensor_order": order},
+                b_provenance=provenance,
+            )
+        except ValueError as error:
+            raise ValueError(f"{key} phase {index}: {error}") from error
+        phases.append(canonical)
+    return np.asarray(phases, dtype=np.float64), schedule
 
 
 def _structured_matrix_keys(gnn_spec: Dict[str, Any]) -> List[str]:

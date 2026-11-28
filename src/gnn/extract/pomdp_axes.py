@@ -146,8 +146,17 @@ def resolve_b_order(
     default: str = ACTION_PREVIOUS_NEXT,
 ) -> str:
     """Choose an explicit order, unique stochastic evidence, or a legacy fallback."""
-    order = stored_b_order(declared, provenance or {})
-    if order:
+    metadata = provenance or {}
+    order = stored_b_order(declared, metadata)
+    bound = (
+        declared
+        or metadata.get("stored_order")
+        or (
+            metadata.get("source_order")
+            and metadata.get("canonical_order") == CANONICAL
+        )
+    )
+    if order and bound:
         if order not in b_shape_orders(shape, states=states):
             raise ValueError(f"B tensor shape {tuple(shape)} does not match {order}")
         action_count = shape[b_permutation(order)[2]]
@@ -161,4 +170,6 @@ def resolve_b_order(
         raise ValueError(f"B tensor shape {tuple(shape)} has no supported axis order")
     stochastic = stochastic_b_orders(value, shape, candidates)
     possible = stochastic or candidates
+    if order in possible:
+        return order
     return default if default in possible else possible[0]
