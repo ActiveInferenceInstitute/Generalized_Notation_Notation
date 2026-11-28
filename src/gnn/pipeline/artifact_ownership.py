@@ -102,12 +102,23 @@ def owned_artifact_paths(output_root: Path) -> set[str] | None:
     return set(checksums) if checksums is not None else None
 
 
-def current_artifact_files(directory: Path, pattern: str = "*") -> list[Path]:
+def current_artifact_files(
+    directory: Path,
+    pattern: str = "*",
+    *,
+    inventory: frozenset[Path] | None = None,
+) -> list[Path]:
     """List only current-invocation files, retaining standalone discovery."""
     import fnmatch
 
     from gnn.pipeline.run_context import current_run_context
 
+    if inventory is not None:
+        return sorted(
+            path
+            for path in inventory
+            if path.is_relative_to(directory) and fnmatch.fnmatch(path.name, pattern)
+        )
     context = current_run_context()
     if context is None:
         return sorted(path for path in directory.rglob(pattern) if path.is_file())

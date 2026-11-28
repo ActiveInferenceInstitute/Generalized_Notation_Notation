@@ -145,7 +145,13 @@ def _cmd_report(args: argparse.Namespace) -> int:
             )
         return EXIT_ERROR
 
-    report, report_path = publish_pipeline_report(output_dir)
+    try:
+        report, report_path = publish_pipeline_report(output_dir)
+    except (OSError, ValueError) as error:
+        logger.error("Could not generate pipeline report: %s", error)
+        if is_json:
+            _print_envelope("error", error=str(error), command="report")
+        return EXIT_ERROR
     if is_json:
         _print_envelope(
             "success",
