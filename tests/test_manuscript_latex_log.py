@@ -553,18 +553,22 @@ def test_mask_log_timestamp_masks_only_the_banner_start_time() -> None:
     assert mask_log_timestamp(other_engine.format(stamp="3 OCT 2026 07:05")) != masked
 
 
-def test_a_re_render_differing_only_in_the_log_timestamp_passes(
+def test_a_rerender_differing_only_in_generated_metadata_passes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Regression for the PR #225 review: an identical render is not drift.
 
     The committed log and a fresh one differ only in XeTeX's banner start
-    time; ``verify_fresh_render`` must mask it on both sides.
+    time. Pandoc also changes the generated PDF ID when the stamp changes.
     """
     root = _custody_fixture(tmp_path)
     log_rel = "output/pdf/_combined_manuscript.log"
+    tex_rel = "output/pdf/_combined_manuscript.tex"
     committed = _XETEX_BANNER.format(stamp="28 SEP 2026 21:42").encode("utf-8")
     (root / log_rel).write_bytes(committed)
+    first_id, fresh_id = "1" * 32, "2" * 32
+    tex = rf"\special{{pdf:trailerid [ <{first_id}> <{first_id}> ]}}" + "\nBody\n"
+    (root / tex_rel).write_text(tex, encoding="utf-8")
     record_render_manifest(root)
     committed_tree = {
         rel: (root / rel).read_bytes()
@@ -572,7 +576,7 @@ def test_a_re_render_differing_only_in_the_log_timestamp_passes(
             log_rel,
             "output/manuscript/05_reproducibility.md",
             "output/pdf/_combined_manuscript.md",
-            "output/pdf/_combined_manuscript.tex",
+            tex_rel,
         )
     }
     monkeypatch.setattr(
@@ -582,7 +586,12 @@ def test_a_re_render_differing_only_in_the_log_timestamp_passes(
     (root / log_rel).write_text(
         _XETEX_BANNER.format(stamp="29 SEP 2026 07:14"), encoding="utf-8"
     )
+    fresh_tex = tex.replace(first_id, fresh_id)
+    (root / tex_rel).write_text(fresh_tex, encoding="utf-8")
     assert verify_fresh_render(root) == []
+    (root / tex_rel).write_text(fresh_tex.replace("Body", "Edited"), encoding="utf-8")
+    assert verify_fresh_render(root)[0].startswith(f"[FAIL] {tex_rel}")
+    (root / tex_rel).write_text(fresh_tex, encoding="utf-8")
 
     (root / log_rel).write_text(
         _XETEX_BANNER.format(stamp="29 SEP 2026 07:14").replace("[2] ", ""),

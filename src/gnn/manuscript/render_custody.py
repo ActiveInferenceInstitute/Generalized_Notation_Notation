@@ -1238,6 +1238,16 @@ _LOG_TIMESTAMP_RE = re.compile(
 )
 _LOG_SUFFIX = ".log"
 
+# Pandoc derives the PDF document ID from rendered content, including the
+# source-commit stamp. Match only the generated, identical ID pair in each
+# engine-specific directive. Committed delivery and raw artifact digests
+# remain exact, and any other TeX content still participates in comparison.
+_TEX_TRAILER_ID = re.compile(
+    r"^(\\(?:special\{pdf:trailerid|pdftrailer\{/ID|pdfvariable trailerid \{)[ \t]*\[ )"
+    r"<([0-9a-f]{32})> <\2>( \]\})$",
+    re.MULTILINE,
+)
+
 
 def mask_log_timestamp(text: str) -> str:
     """``text`` with the TeX log banner's run start timestamp replaced by a sentinel."""
@@ -1249,11 +1259,12 @@ def _artifact_digest_from_bytes(
 ) -> str:
     """Fresh-comparison digest of one rendered artifact.
 
-    Commit stamps are masked for every artifact; the ``.log`` additionally
-    has its banner timestamp masked, so two renders of the same inputs
-    digest the same.
+    Mask source-commit stamps, the TeX banner timestamp, and Pandoc's derived
+    PDF document ID for fresh comparisons.
     """
-    if not rel_posix.endswith(_LOG_SUFFIX):
-        return _normalized_text_digest_from_bytes(data, stamps)
-    masked = mask_log_timestamp(data.decode("utf-8", "replace"))
-    return _normalized_text_digest_from_bytes(masked.encode("utf-8"), stamps)
+    if rel_posix.endswith(_LOG_SUFFIX):
+        data = mask_log_timestamp(data.decode("utf-8", "replace")).encode("utf-8")
+    elif rel_posix.endswith(".tex"):
+        text = data.decode("utf-8", "replace")
+        data = _TEX_TRAILER_ID.sub(r"\1<pdf-id> <pdf-id>\3", text).encode("utf-8")
+    return _normalized_text_digest_from_bytes(data, stamps)
