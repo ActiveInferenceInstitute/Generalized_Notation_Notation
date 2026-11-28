@@ -772,10 +772,24 @@ def _execute_selected_step(
         pipeline_config = pipeline_summary.get("identity_config", {}).get(
             "input_config"
         )
+    run_id = pipeline_summary.get("run_id")
+    if script_name == "2_tests.py" and pipeline_summary.get("identity_config", {}).get(
+        "skip_tests_in_pipeline"
+    ):
+        return {
+            "status": "SKIPPED",
+            "exit_code": 0,
+            "skip_reason": "SKIP_TESTS_IN_PIPELINE",
+            "stdout": "Test harness skipped by SKIP_TESTS_IN_PIPELINE",
+            "stderr": "",
+            "execution_mode": "skipped",
+            "artifacts": [],
+            "run_id": run_id,
+            "selected_model_ids": selected_ids if context is not None else [],
+        }
     output_root = Path(args.output_dir)
     step_output = get_output_dir_for_script(script_name, output_root)
     before = snapshot_files(step_output)
-    run_id = pipeline_summary.get("run_id")
     if _consolidated_step_selected(script_name, args, pipeline_summary):
         from gnn.pipeline.step_executor import execute_step_in_process
 

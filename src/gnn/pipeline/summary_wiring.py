@@ -369,6 +369,11 @@ def _log_pipeline_step_completion(
         step_stats,
     )
 
+    if status_for_logging == "SKIPPED":
+        reason = step_result.get("skip_reason") or step_result.get("stdout", "")
+        logger.info("⏭️ %s skipped: %s", description, str(reason).strip())
+        return
+
     if STRUCTURED_LOGGING_AVAILABLE and progress_tracker:
         if "WARNING" in status_for_logging:
             from gnn.utils.logging_utils import (
@@ -1683,10 +1688,15 @@ def _section_step_status(
             emoji = (
                 "✅"
                 if status in ("SUCCESS", "success")
+                else "⏭️"
+                if status == "SKIPPED"
                 else "⚠️"
                 if "warn" in str(status).lower()
                 else "❌"
             )
+            if status == "SKIPPED" and (reason := step.get("skip_reason")):
+                reason_text = str(reason).replace("|", "\\|").replace("\n", " ")
+                status = f"{status} ({reason_text})"
             lines.append(
                 f"| {step_num} | {name} | {emoji} {status} | {duration} | {files} | {size} |"
             )

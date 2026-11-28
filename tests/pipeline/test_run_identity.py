@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import sys
+from argparse import Namespace
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -193,10 +194,11 @@ def test_parallel_children_receive_same_run_identity(
     prepare = orchestrator._prepare_pipeline_context
 
     def context(
-        override_args: PipelineArguments | None,
+        args: PipelineArguments,
         override_config: dict[str, Any] | None,
+        parsed: Namespace | None,
     ) -> tuple[object, ...]:
-        values = list(prepare(override_args, override_config))
+        values = list(prepare(args, override_config, parsed))
         steps = values[2]
         assert isinstance(steps, list)
         steps.append(("1_setup.py", "Second identity probe"))

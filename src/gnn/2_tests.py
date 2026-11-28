@@ -14,6 +14,7 @@ Environment Variables:
   FAST_TESTS_TIMEOUT      Override timeout (default: 600 seconds)
 """
 
+import os
 import sys
 
 if globals().get("__package__") is None and not sys.flags.safe_path:
@@ -31,12 +32,12 @@ def _test_runner_wrapper(
     target_dir: Any, output_dir: Any, logger: Any, **kwargs: Any
 ) -> bool:
     """Wrapper to map standard pipeline args to run_tests."""
-    import os
+    if os.getenv("SKIP_TESTS_IN_PIPELINE"):
+        logger.info("⏭️ SKIP_TESTS_IN_PIPELINE set - tests will be skipped")
+        return True
 
     # Script-mode invocation (python src/gnn/2_tests.py) puts only src/gnn on
-    # sys.path; the tests package lives at the repository root. Resolve the
-    # delegation target before the skip switch so a broken harness is not
-    # silently skipped.
+    # sys.path; the tests package lives at the repository root.
     repo_root = Path(__file__).resolve().parents[2]
     if str(repo_root) not in sys.path:
         sys.path.insert(0, str(repo_root))
@@ -46,10 +47,6 @@ def _test_runner_wrapper(
         logger.error(f"Test harness import failed: {e}")
         return False
 
-    # Log environment overrides
-    if os.getenv("SKIP_TESTS_IN_PIPELINE"):
-        logger.info("⏭️ SKIP_TESTS_IN_PIPELINE set - tests will be skipped")
-        return True
     if os.getenv("FAST_TESTS_TIMEOUT"):
         logger.info(f"⏱️ Custom timeout: {os.getenv('FAST_TESTS_TIMEOUT')} seconds")
 

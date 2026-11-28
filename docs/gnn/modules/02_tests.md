@@ -20,6 +20,8 @@ uv run python src/gnn/2_tests.py --fast-only --verbose
 uv run python src/gnn/2_tests.py --comprehensive --verbose
 ```
 
+Set `SKIP_TESTS_IN_PIPELINE=1` to skip Step 2 with a successful exit. The skip can run from an installed package without the repository test harness. When Step 2 is selected in a pipeline run, the summary and report record `SKIPPED` with `SKIP_TESTS_IN_PIPELINE` as the reason.
+
 ## Agent Identity & Capabilities
 
 # Tests Module - Agent Scaffolding
