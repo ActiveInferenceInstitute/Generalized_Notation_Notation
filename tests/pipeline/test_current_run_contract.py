@@ -677,7 +677,7 @@ def test_observation_failure_still_kills_child_before_releasing_pipeline_lease(
     child_pid = tmp_path / "child.pid"
     worker_pid = tmp_path / "worker.pid"
     child = "import time; time.sleep(60)"
-    worker = f"import subprocess,sys,time,pathlib,os; pathlib.Path({str(worker_pid)!r}).write_text(str(os.getpid())); p=subprocess.Popen([sys.executable,'-c',{child!r}]); pathlib.Path({str(child_pid)!r}).write_text(str(p.pid)); time.sleep(60)"
+    worker = f"import subprocess,sys,pathlib,os; pathlib.Path({str(worker_pid)!r}).write_text(str(os.getpid())); p=subprocess.Popen([sys.executable,'-c',{child!r}]); pathlib.Path({str(child_pid)!r}).write_text(str(p.pid))"
     original_stop = DescendantTracker.stop
 
     def failed_stop(self, timeout=0.1):
@@ -692,7 +692,9 @@ def test_observation_failure_still_kills_child_before_releasing_pipeline_lease(
     args = PipelineArguments(
         target_dir=source, output_dir=tmp_path / "output", only_steps="3"
     )
-    assert orchestrator.main(args, {"pipeline": {"timeout": {"total": 0.75}}}) == 1
+    # Normal leader exit makes the injected observer fault independent of
+    # process startup timing while its descendant still needs cleanup.
+    assert orchestrator.main(args, {"pipeline": {"timeout": {"total": 5}}}) == 1
     for path in (worker_pid, child_pid):
         pid = int(path.read_text())
         assert (
@@ -708,6 +710,7 @@ def test_observation_failure_still_kills_child_before_releasing_pipeline_lease(
     )
     assert receipt["overall_status"] == "FAILED"
     assert receipt["steps"][0]["cleanup_verified"] is False
+    assert "Injected observation failure" in receipt["steps"][0]["stderr"]
 
 
 def test_explicit_model_scope_does_not_union_other_receipt_models() -> None:
