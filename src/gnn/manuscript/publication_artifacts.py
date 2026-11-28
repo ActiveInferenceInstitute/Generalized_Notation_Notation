@@ -129,11 +129,11 @@ def validation_digests(
     entries = manifest.get("entries")
     if not isinstance(entries, list):
         raise RuntimeError("template Stage 04 artifact manifest has no inventory")
-    for rel, digest in deliveries.items():
+    for delivery_path, digest in deliveries.items():
         matching = [
             entry
             for entry in entries
-            if isinstance(entry, dict) and entry.get("path") == rel
+            if isinstance(entry, dict) and entry.get("path") == delivery_path
         ]
         if (
             len(matching) != 1
@@ -141,6 +141,6 @@ def validation_digests(
             or any(matching[0].get(key) != value for key, value in digest.items())
         ):
             raise RuntimeError(
-                f"template Stage 04 artifact inventory does not match {rel}"
+                f"template Stage 04 artifact inventory does not match {delivery_path}"
             )
     return result
