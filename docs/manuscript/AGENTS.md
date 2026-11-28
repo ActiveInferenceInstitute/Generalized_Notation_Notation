@@ -1,5 +1,7 @@
 # Manuscript Agent Notes - GeneralizedNotationNotation
 
+## Overview
+
 This directory follows the docxology/template manuscript contract:
 
 - `00_` through `09_` files are main sections.
