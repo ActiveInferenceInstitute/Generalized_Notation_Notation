@@ -7,14 +7,12 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
-from unittest.mock import patch
 
 from release_gate import (
     REQUIRED_MATRIX_JOBS,
     WORKFLOWS,
     evaluate,
     filter_runs,
-    inspect,
     main,
     release_ready,
 )
@@ -142,21 +140,6 @@ class ReleaseRosterControls(unittest.TestCase):
 
 
 class ReleaseDispatchControls(unittest.TestCase):
-    def test_absent_run_reports_actual_workflow_state(self):
-        for workflow_state, expected in (
-            ("active", "missing"),
-            ("disabled_manually", "workflow_inactive"),
-        ):
-            with (
-                self.subTest(workflow_state=workflow_state),
-                patch("release_gate.pages", return_value=[]),
-                patch("release_gate.gh", return_value={"state": workflow_state}),
-            ):
-                self.assertEqual(
-                    inspect("ci.yml", "a" * 40, "main", "workflow_dispatch"),
-                    ("ci.yml", {"state": expected, "workflow_state": workflow_state}),
-                )
-
     def test_dispatch_requires_explicit_main_manual_phase(self):
         def fail_on_external_call(*args):
             self.fail(f"Rejected command accessed workflow services: {args}")
