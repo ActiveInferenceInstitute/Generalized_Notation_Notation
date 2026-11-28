@@ -1,7 +1,10 @@
 """Saved Step 3 models reach native public network artifacts without data loss."""
 
+import builtins
+import importlib.util
 import json
 from html.parser import HTMLParser
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 
 import numpy as np
@@ -9,7 +12,7 @@ import pytest
 from matplotlib.figure import Figure
 from PIL import Image
 
-from gnn.advanced_visualization import process_advanced_viz
+from gnn.advanced_visualization import probe_capabilities, process_advanced_viz
 
 
 def saved_model(tmp_path, edges, *, legacy=False, variables=None):
@@ -237,6 +240,43 @@ def test_public_all_keeps_both_dashboard_html_artifacts(tmp_path):
     _, _, summary = run_saved_model(tmp_path, parsed, inventory, "interactive")
     assert summary["output_files"][0] == str(structural_html)
     assert "Model Statistics" in structural_html.read_text(encoding="utf-8")
+
+
+def test_public_dashboard_recovers_with_bokeh_but_without_plotly(tmp_path, monkeypatch):
+    find_spec = importlib.util.find_spec
+    import_module = builtins.__import__
+
+    def bokeh_only_spec(name, *args, **kwargs):
+        if name == "plotly":
+            return None
+        if name == "bokeh":
+            return ModuleSpec("bokeh", loader=None)
+        return find_spec(name, *args, **kwargs)
+
+    def import_without_plotly(name, *args, **kwargs):
+        if name == "plotly" or name.startswith("plotly."):
+            raise ModuleNotFoundError(f"No module named {name!r}", name=name)
+        return import_module(name, *args, **kwargs)
+
+    monkeypatch.setattr(importlib.util, "find_spec", bokeh_only_spec)
+    monkeypatch.setattr(builtins, "__import__", import_without_plotly)
+    assert probe_capabilities()["plotly"] is False
+
+    _, parsed, inventory = saved_model(tmp_path, [("sensor", "belief")])
+    result, output, summary = run_saved_model(tmp_path, parsed, inventory, "dashboard")
+    assert result is True
+    assert (summary["successful"], summary["failed"], summary["skipped"]) == (1, 0, 0)
+    assert summary["attempts"][0]["fallback_used"] is True
+    fallback = output / "authored_network_dashboard_fallback.html"
+    assert summary["output_files"] == [str(fallback)]
+    assert "Model Structure" in fallback.read_text(encoding="utf-8")
+    assert not (output / "authored_network_interactive_dashboard.html").exists()
+
+    result, _, summary = run_saved_model(tmp_path, parsed, inventory, "interactive")
+    assert result == 2
+    assert summary["attempts"][0]["status"] == "skipped"
+    assert summary["attempts"][0]["error_message"] == "plotly not available"
+    assert summary["output_files"] == []
 
 
 def test_public_3d_network_rejects_unusable_saved_variables_without_artifact(tmp_path):

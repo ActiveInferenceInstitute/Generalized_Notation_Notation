@@ -49,7 +49,7 @@ Advanced visualization in GNN currently enables:
 - `viz_type="interactive"` exports a Plotly figure in the requested HTML, JSON, or PNG formats. HTML and JSON are the default formats. PNG requires the Plotly image converter.
 - `viz_type="dashboard"` generates a structural HTML dashboard with variable counts, adjacency, and a 3D network view. Both modes require `interactive=True`.
 - `viz_type="all"` records the two HTML outputs separately in `advanced_viz_summary.json`. The structural page uses `<model>_interactive_dashboard.html` and the Plotly figure uses `<model>_interactive_plotly_dashboard.html`. A dedicated `interactive` run keeps the filename `<model>_interactive_dashboard.html`.
-- Optional branches skip or fall back when required packages are unavailable.
+- If Plotly is unavailable, `interactive` skips and `dashboard` writes a static `<model>_dashboard_fallback.html` report with `fallback_used: true` in the summary.
 
 ### 3D Visualization
 - **3D-Style Artifacts**: Static visualization artifacts generated from model structure or matrix data
