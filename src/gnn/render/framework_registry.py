@@ -258,6 +258,7 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
                 "Fixed-action Posterior Smoothing",
                 "Independent Component Composition",
                 "Bounded Factored and Observation Composition",
+                "Two-agent Coupled Smoothing (CPU)",
             ],
             "function": "render_gnn_to_thrml",
             "output_format": "python",
@@ -271,6 +272,7 @@ FRAMEWORK_REGISTRY: Mapping[str, Dict[str, Any]] = MappingProxyType(
             "supports_continuous": False,
             "continuous_only": False,
             "experimental": True,
+            "execution_contracts": ["thrml_two_agent_v1"],
             "unavailable_reason": None,
         },
         "ngclearn": {

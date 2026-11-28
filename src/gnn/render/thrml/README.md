@@ -4,7 +4,8 @@ THRML supplies native categorical factor/block Gibbs sampling for selected
 GNN models. The GNN adapter targets released `thrml==0.1.4` and uses local
 JAX simulation. It supports positive finite categorical A/B/C/D models,
 optional E, independent complete agent/factor groups, bounded exact joint
-factor composition, and conditionally independent observation modalities.
+factor composition, conditionally independent observation modalities, and
+[source-declared two-agent coupled smoothing](../../../../docs/gnn/implementations/thrml.md#source-declared-two-agent-coupled-smoothing) on CPU.
 
 ```python
 from pathlib import Path

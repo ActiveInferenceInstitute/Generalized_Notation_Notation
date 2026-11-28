@@ -13,6 +13,7 @@ import json
 import os
 import sys
 import time
+from contextlib import nullcontext
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -30,11 +31,17 @@ from gnn.render.thrml.adapter import (
     _integer,
     contract_digest,
 )
+from gnn.render.thrml.coupled_agents import (
+    COUPLED_COMPOSITION,
+    COUPLED_CONTRACT,
+    authored_schedule,
+    compile_coupled_agents,
+)
 
 
 def _validate_payload(payload: dict[str, Any]) -> None:
     """Recheck serialized admission and value binding before native imports."""
-    from gnn.render.pomdp_contract import build_canonical_pomdp_spec
+    from gnn.render.pomdp_contract import build_canonical_pomdp_spec, nested_shape
 
     required_semantics = {
         "schema_version": 1,
@@ -53,6 +60,9 @@ def _validate_payload(payload: dict[str, Any]) -> None:
     components = payload.get("components")
     if not isinstance(components, list) or not 1 <= len(components) <= MAX_COMPONENTS:
         raise ValueError("invalid THRML component list")
+    coupled = payload.get("composition") == COUPLED_COMPOSITION
+    if coupled and len(components) != 1:
+        raise ValueError("THRML coupled smoothing requires one joint component")
     schedule = payload.get("sampling") or {}
     for key in ("num_timesteps", "num_samples", "thin"):
         _integer(schedule.get(key), key)
@@ -82,14 +92,25 @@ def _validate_payload(payload: dict[str, Any]) -> None:
             raise ValueError("THRML component identities must be unique")
         names.add(name)
         params = component.get("parameters") or {}
-        from gnn.render.pomdp_contract import nested_shape
-
+        metadata = component.get("composition_metadata") or {}
+        if (metadata.get("kind") == COUPLED_COMPOSITION) != coupled:
+            raise ValueError("THRML coupled composition identity mismatch")
+        if coupled and (
+            (metadata.get("source_declaration") or {}).get("contract")
+            != COUPLED_CONTRACT
+            or component.get("observations") is None
+            or component.get("action_origin") != "source_fixed_transition_actions"
+        ):
+            raise ValueError(
+                "THRML coupled smoothing requires authored observations and actions"
+            )
         b_shape = nested_shape(params.get("B", []))
         if len(b_shape) != 3:
             raise ValueError("THRML serialized B must have canonical rank three")
         admission = _component_admission(
             {
                 "initialparameterization": params,
+                "thrml_composition": metadata,
                 "model_parameters": {
                     "num_states": component.get("num_states"),
                     "num_obs": component.get("num_observations"),
@@ -116,6 +137,30 @@ def _validate_payload(payload: dict[str, Any]) -> None:
     # Only after aggregate admission may canonicalization allocate arrays.
     for component in components:
         params = component["parameters"]
+        if coupled:
+            metadata = component["composition_metadata"]
+            declaration = metadata["source_declaration"]
+            if authored_schedule(declaration) != schedule["num_timesteps"]:
+                raise ValueError(
+                    "THRML coupled observations disagree with the sampling duration"
+                )
+            derived, readings, actions = compile_coupled_agents(
+                {}, declaration, schedule
+            )
+            if (
+                readings != component["observations"]
+                or actions != component["transition_actions"]
+                or metadata != derived["thrml_composition"]
+                or set(params) != set(derived["initialparameterization"])
+                or any(
+                    nested_shape(params[key]) != nested_shape(values)
+                    or not np.allclose(params[key], values, rtol=2e-12, atol=0)
+                    for key, values in derived["initialparameterization"].items()
+                )
+            ):
+                raise ValueError(
+                    "THRML coupled parameters disagree with their source declaration"
+                )
         canonical = build_canonical_pomdp_spec(
             {
                 "initialparameterization": params,
@@ -325,7 +370,11 @@ def run_payload(
         name: importlib.metadata.version(name)
         for name in ("thrml", "jax", "jaxlib", "equinox", "jaxtyping", "numpy")
     }
-    key = jax.random.key(payload["sampling"]["seed"])
+    cpu = (
+        jax.devices("cpu")[0] if payload["composition"] == COUPLED_COMPOSITION else None
+    )
+    with jax.default_device(cpu) if cpu is not None else nullcontext():
+        key = jax.random.key(payload["sampling"]["seed"])
     shared = {
         name: deepcopy(payload[name])
         for name in (
@@ -362,19 +411,24 @@ def run_payload(
             "script_sha256": script_sha256,
             "execution_plane": "local_jax_simulation",
             "jax_enable_x64": bool(jax.config.jax_enable_x64),
-            "devices": [str(device) for device in jax.devices()],
+            "devices": [str(cpu)]
+            if cpu is not None
+            else [str(device) for device in jax.devices()],
             "python": sys.version.split()[0],
         },
     )
+    if cpu is not None:
+        shared["runtime_metadata"]["device_platform"] = cpu.platform
     results = {}
     for index, component in enumerate(payload["components"]):
         component_started = time.monotonic()
-        trajectories, observed, native_metadata = _native_samples(
-            component,
-            payload["sampling"],
-            jax.random.fold_in(key, index),
-            (jax, jnp, thrml, models),
-        )
+        with jax.default_device(cpu) if cpu is not None else nullcontext():
+            trajectories, observed, native_metadata = _native_samples(
+                component,
+                payload["sampling"],
+                jax.random.fold_in(key, index),
+                (jax, jnp, thrml, models),
+            )
         beliefs = np.stack(
             [
                 np.bincount(trajectories[:, step], minlength=component["num_states"])

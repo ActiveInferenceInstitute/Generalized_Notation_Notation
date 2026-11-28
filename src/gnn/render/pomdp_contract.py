@@ -288,6 +288,19 @@ def _is_active_inference_matrix_key(key: str) -> bool:
     )
 
 
+def declares_thrml_coupled_agents(spec: Dict[str, Any]) -> bool:
+    """Recognize a typed source boundary without admitting its values."""
+    structured = spec.get("structured_pomdp")
+    return any(
+        isinstance(initial, dict) and "thrml_coupled_agents" in initial
+        for initial in (
+            spec.get("initialparameterization"),
+            spec.get("initial_parameterization"),
+            structured.get("matrices") if isinstance(structured, dict) else None,
+        )
+    )
+
+
 _AGENT_MATRIX_KEY = re.compile(r"^[ABCDE]_agent\d+", re.IGNORECASE)
 _AGENT_CONTINUOUS_KEY = re.compile(
     r"^(F|H|Q|R|prior_mean|prior_cov|goal_mean|control_gain)_agent[1-9]\d*$"
@@ -502,9 +515,13 @@ def detect_model_kinds(gnn_spec: Dict[str, Any]) -> frozenset[ModelKind]:
         nr_agents = int(nr_agents)
     except (TypeError, ValueError):
         nr_agents = 1
-    if nr_agents > 1 or any(
-        _AGENT_MATRIX_KEY.match(key) or _AGENT_CONTINUOUS_KEY.fullmatch(key)
-        for key in all_keys
+    if (
+        nr_agents > 1
+        or declares_thrml_coupled_agents(gnn_spec)
+        or any(
+            _AGENT_MATRIX_KEY.match(key) or _AGENT_CONTINUOUS_KEY.fullmatch(key)
+            for key in all_keys
+        )
     ):
         kinds.add(ModelKind.MULTI_AGENT)
 

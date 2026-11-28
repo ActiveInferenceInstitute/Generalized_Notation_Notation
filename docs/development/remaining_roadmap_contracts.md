@@ -351,7 +351,12 @@ Check conditional logits, independent-node empirical frequencies, source/seed/
 sample identity, finite outputs and zero-frequency impossible states. Do not
 substitute epsilon clipping or a local monkeypatch for released compatibility.
 
-Coupled categorical factors, policy search, continuous/hybrid models and hardware
+E2 admits a named [positive two-agent CPU contract](../gnn/implementations/thrml.md#source-declared-two-agent-coupled-smoothing)
+for cross-agent previous-state dependence with conditionally independent next states,
+fixed observations and fixed actions. Its native witness compares empirical THRML
+marginals to an independent exact enumeration from the authored source tables.
+
+Other coupled categorical factors, policy search, continuous/hybrid models and hardware
 execution require different named contracts. For each, define factor semantics,
 conditioning, normalization, resource bounds and independent witnesses before
 adding capability registration. Hardware operation needs actual device receipts;

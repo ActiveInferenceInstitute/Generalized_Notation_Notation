@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 from gnn.render.pomdp_contract import (
     ModelKind,
+    declares_thrml_coupled_agents,
     detect_model_kinds,
     detect_pomdp_space_model_kind,
     detect_pomdp_space_model_kinds,
@@ -45,7 +46,11 @@ class _CompatibilityValidationMixin(_POMDPProcessorSupportMixin):
             "initialparameterization": pomdp_space.initial_parameterization or {},
         }
         reason = unsupported_contract(semantic_spec, framework)
-        if execution_contract(semantic_spec) is not None or reason is not None:
+        if (
+            execution_contract(semantic_spec) is not None
+            or declares_thrml_coupled_agents(semantic_spec)
+            or reason is not None
+        ):
             return {
                 "compatible": reason is None,
                 "unsupported": reason is not None,

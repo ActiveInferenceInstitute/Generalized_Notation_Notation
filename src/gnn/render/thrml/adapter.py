@@ -20,6 +20,7 @@ from gnn.render.pomdp_contract import (
     ModelKind,
     _declared_b_order,
     build_canonical_pomdp_spec,
+    declares_thrml_coupled_agents,
     detect_model_kinds,
     nested_shape,
 )
@@ -198,6 +199,8 @@ def _component_admission(
         raise UnsupportedTHRMLModel(
             "three-dimensional B requires explicit source tensor orientation"
         )
+    metadata = spec.get("thrml_composition") or {}
+    source_entries = _retained_matrix_entries(metadata.get("source_declaration"))
     return _admission(
         shape[1],
         shape[0],
@@ -206,9 +209,8 @@ def _component_admission(
         parameters=raw,
         # The runtime retains the explicitly derived neutral C for passive
         # models. Count it before allocation so serialized admission agrees.
-        additional_retained_entries=shape[0]
-        if "C" not in raw and len(b_shape) == 2
-        else 0,
+        additional_retained_entries=source_entries
+        + (shape[0] if "C" not in raw and len(b_shape) == 2 else 0),
     )
 
 
@@ -250,6 +252,12 @@ def build_thrml_payload(
         _compose_modalities,
         _independent_specs,
         _joint_metadata,
+    )
+    from gnn.render.thrml.coupled_agents import (
+        COUPLED_COMPOSITION,
+        SOURCE_KEY,
+        authored_schedule,
+        compile_coupled_agents,
     )
 
     options = dict(options or {})
@@ -298,6 +306,47 @@ def build_thrml_payload(
         raise UnsupportedTHRMLModel(
             "coupling/environment/signal semantics require a verified native joint mapping"
         )
+    is_coupled = declares_thrml_coupled_agents(gnn_spec)
+    if is_coupled:
+        if SOURCE_KEY not in matrices:
+            raise ValueError(f"conflicting {SOURCE_KEY} declarations")
+        source = matrices[SOURCE_KEY]
+        timesteps = authored_schedule(source)
+        for mapping in (
+            gnn_spec.get("initialparameterization"),
+            gnn_spec.get("initial_parameterization"),
+            (gnn_spec.get("structured_pomdp") or {}).get("matrices"),
+        ):
+            if (
+                isinstance(mapping, dict)
+                and SOURCE_KEY in mapping
+                and mapping[SOURCE_KEY] != source
+            ):
+                raise ValueError(f"conflicting {SOURCE_KEY} declarations")
+        if {"observations", "transition_actions"}.intersection(options):
+            raise ValueError(
+                f"{SOURCE_KEY} observations and actions come from the source"
+            )
+        params = gnn_spec.get("model_parameters") or {}
+        for mapping in (params, options):
+            if (
+                "num_timesteps" in mapping
+                and _integer(mapping["num_timesteps"], "num_timesteps") != timesteps
+            ):
+                raise ValueError(
+                    f"{SOURCE_KEY} timesteps must match the authored observations"
+                )
+        if any(re.match(r"^[ABCDE](?:_|$)", str(key)) for key in matrices):
+            raise UnsupportedTHRMLModel(
+                f"{SOURCE_KEY} cannot coexist with other categorical matrices"
+            )
+        if any(
+            _integer(params[key], key) != 2
+            for key in ("nr_agents", "num_agents")
+            if key in params
+        ):
+            raise ValueError(f"{SOURCE_KEY} requires exactly two agents")
+        options["num_timesteps"] = timesteps
     schedule = _schedule(gnn_spec, options)
     provenance = (
         gnn_spec.get("matrix_provenance")
@@ -308,8 +357,16 @@ def build_thrml_payload(
         all(key in matrices for key in ("A", "B", "C", "D"))
         and (provenance.get("A") or {}).get("source") == "factored_joint_composition"
     )
-    independent = {} if canonical_joint else _independent_specs(gnn_spec, matrices)
-    if independent:
+    independent = (
+        {} if canonical_joint or is_coupled else _independent_specs(gnn_spec, matrices)
+    )
+    if is_coupled:
+        selected, options["observations"], options["transition_actions"] = (
+            compile_coupled_agents(gnn_spec, matrices[SOURCE_KEY], schedule)
+        )
+        component_specs = {"model": selected}
+        composition = COUPLED_COMPOSITION
+    elif independent:
         component_specs = independent
         composition = "independent_components"
     else:
@@ -407,7 +464,11 @@ def build_thrml_payload(
             transitions = [0] * max(schedule["num_timesteps"] - 1, 0)
             action_origin = "explicit_default_fixed_action_0"
         else:
-            action_origin = "provided_fixed_transition_actions"
+            action_origin = (
+                "source_fixed_transition_actions"
+                if is_coupled
+                else "provided_fixed_transition_actions"
+            )
         transitions = _indices(
             transitions,
             max(schedule["num_timesteps"] - 1, 0),

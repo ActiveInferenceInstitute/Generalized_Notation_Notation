@@ -9,6 +9,8 @@ from typing import Any
 
 import numpy as np
 
+from gnn.render.pomdp_contract import declares_thrml_coupled_agents
+
 CONTRACTS = ("block_reset_v1", "timed_soft_controller_v1", "episodic_contingent_v1")
 
 #: Frame capability markers for source-declared finite controls.  These sit
@@ -103,6 +105,8 @@ def unsupported_contract(spec: object, framework: str) -> str | None:
     supported = FRAMEWORK_REGISTRY.get(framework, {}).get("execution_contracts", ())
     if declared_controls and not set(supported).intersection(CONTROL_CONTRACTS):
         return f"unsupported-cpomdp-control: {framework} cannot execute source-declared finite controls"
+    if declares_thrml_coupled_agents(spec) and "thrml_two_agent_v1" not in supported:
+        return f"unsupported-thrml: {framework} cannot execute source-declared two-agent smoothing"
     contract = execution_contract(spec)
     if contract is not None and (
         contract not in CONTRACTS or contract not in supported
