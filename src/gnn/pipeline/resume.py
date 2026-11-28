@@ -14,6 +14,7 @@ from gnn.pipeline.config import get_output_dir_for_script
 from gnn.pipeline.run_context import RunContext
 from gnn.pipeline.run_session import RunSession, UnitStatus, WorkUnit, load_session
 from gnn.pipeline.run_session_wiring import run_session_path
+from gnn.pipeline.step_registry import step_for_name
 from gnn.utils.pipeline_orchestration.pipeline_step_dependencies import (
     PIPELINE_OPTIONAL_PRODUCERS,
     PIPELINE_STEP_DEPENDENCIES,
@@ -106,9 +107,12 @@ def restore_pipeline_progress(
 
     reusable = set()
     if previous.get("resume_runtime_sha256") == summary["resume_runtime_sha256"]:
+        skip_tests = summary["identity_config"].get("skip_tests_in_pipeline") is True
         for unit in units:
             record = records.get(unit.unit_id)
-            if record is not None and _step_receipt_matches(unit, record, context):
+            if record is not None and _step_receipt_matches(
+                unit, record, context, skip_tests=skip_tests
+            ):
                 reusable.add(unit.unit_id)
     reusable = _dependency_closed(planned, reusable)
 
@@ -149,17 +153,22 @@ def restore_pipeline_progress(
 
 
 def _step_receipt_matches(
-    unit: WorkUnit, record: dict[str, Any], context: RunContext
+    unit: WorkUnit, record: dict[str, Any], context: RunContext, *, skip_tests: bool
 ) -> bool:
     step_number = int(unit.unit_id.partition("_")[0])
     model_ids = [model.model_id for model in context.selected_models(step_number)]
     if (
-        unit.status != UnitStatus.DONE
-        or unit.steps != [step_number]
-        or record.get("status") not in ("SUCCESS", "SUCCESS_WITH_WARNINGS")
+        unit.steps != [step_number]
         or record.get("run_id") != context.run_id
         or record.get("selected_model_ids") != model_ids
         or unit.input_identity != {"run_id": context.run_id, "model_ids": model_ids}
+    ):
+        return False
+    if unit.status == UnitStatus.SKIPPED:
+        return _skip_receipt_matches(unit, record, model_ids, skip_tests=skip_tests)
+    if unit.status != UnitStatus.DONE or record.get("status") not in (
+        "SUCCESS",
+        "SUCCESS_WITH_WARNINGS",
     ):
         return False
     try:
@@ -179,6 +188,33 @@ def _step_receipt_matches(
     except (OSError, ValueError, TypeError, KeyError):
         return False
     return True
+
+
+def _skip_receipt_matches(
+    unit: WorkUnit, record: dict[str, Any], model_ids: list[str], *, skip_tests: bool
+) -> bool:
+    """Revalidate deterministic decisions that dispatched no work or artifacts."""
+    if (
+        record.get("status") != "SKIPPED"
+        or record.get("exit_code") != 0
+        or record.get("artifacts") != []
+        or unit.artifact_hashes
+    ):
+        return False
+    reason = record.get("skip_reason")
+    if reason == "SKIP_TESTS_IN_PIPELINE":
+        return (
+            unit.unit_id == "2_tests.py"
+            and skip_tests
+            and record.get("execution_mode") == "skipped"
+        )
+    step = step_for_name(unit.unit_id)
+    return (
+        reason == "no_selected_models"
+        and not model_ids
+        and step is not None
+        and step.execution_scope != "run"
+    )
 
 
 def _dependency_closed(planned: list[str], reusable: set[str]) -> set[str]:

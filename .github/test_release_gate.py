@@ -185,6 +185,7 @@ class ReleaseDispatchControls(unittest.TestCase):
             "gridworld.yml": "pending",
             "full-extras.yml": "wrong_source",
             "installed-platforms.yml": "incomplete_jobs",
+            "local-gates.yml": "workflow_inactive",
         }
         observations = []
         requests = []
@@ -234,6 +235,9 @@ class ReleaseDispatchControls(unittest.TestCase):
             self.assertEqual(receipt["event"], "workflow_dispatch")
             self.assertEqual(receipt["dispatched"], ["ci.yml"])
             self.assertEqual(receipt["workflows"]["docs-audit.yml"]["state"], "pending")
+            self.assertEqual(
+                receipt["workflows"]["local-gates.yml"]["state"], "workflow_inactive"
+            )
             self.assertFalse(receipt["ready"])
 
 

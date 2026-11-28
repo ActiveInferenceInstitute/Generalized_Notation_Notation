@@ -296,6 +296,7 @@ def registered_flags() -> set[str]:
         # Maintained operator scripts and module entry points whose flags the
         # docs cite (Wave 6C reconciliation; every flag below is documented).
         ("docs/development/docs_audit.py", None),
+        ("scripts/check_distribution_artifacts.py", None),
         ("scripts/emit_run_manifest.py", None),
         ("scripts/run_backend_profile.py", None),
         ("scripts/run_cross_framework_reliability.py", None),
@@ -305,6 +306,7 @@ def registered_flags() -> set[str]:
         ("scripts/run_semantic_fidelity_gate.py", None),
         ("scripts/run_session_acceptance.py", None),
         ("scripts/run_v3_orchestration_acceptance.py", None),
+        ("scripts/z_verify_fresh_render.py", None),
         ("src/gnn/execute/jax/jax_runner.py", None),
         ("src/gnn/execute/pytorch/pytorch_runner.py", None),
         ("src/gnn/extract/__init__.py", None),

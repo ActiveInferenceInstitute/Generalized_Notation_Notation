@@ -471,3 +471,64 @@ def test_resume_refuses_changed_model_without_overwriting_checkpoint(
 
     assert orchestrator.main(parsed_run, resume=True) != 0
     assert (checkpoint.read_bytes(), terminal.read_bytes()) == before
+
+
+@pytest.mark.parametrize("changed_receipt", [False, True])
+def test_resume_reuses_only_verified_skip_and_downstream_report(
+    parsed_run: PipelineArguments,
+    monkeypatch: pytest.MonkeyPatch,
+    changed_receipt: bool,
+) -> None:
+    monkeypatch.setenv("SKIP_TESTS_IN_PIPELINE", "1")
+    parsed_run.only_steps = "2,23"
+    execute_step = orchestrator.execute_pipeline_step
+
+    def without_dependency_setup(script_name, *args, **kwargs):
+        if script_name == "1_setup.py":
+            return {"status": "SUCCESS", "exit_code": 0}
+        return execute_step(script_name, *args, **kwargs)
+
+    monkeypatch.setattr(orchestrator, "execute_pipeline_step", without_dependency_setup)
+    assert orchestrator.main(parsed_run) == 0
+    initial = _summary(parsed_run)
+    skipped = next(
+        row for row in initial["steps"] if row["script_name"] == "2_tests.py"
+    )
+    assert skipped["skip_reason"] == "SKIP_TESTS_IN_PIPELINE"
+    if changed_receipt:
+        skipped["skip_reason"] = "temporary_backend_unavailable"
+        current_path = (
+            parsed_run.output_dir / "00_pipeline_summary/current_summary.json"
+        )
+        current_path.write_text(json.dumps(initial))
+
+    assert orchestrator.main(parsed_run, resume=True) == 0
+    resumed = _summary(parsed_run)
+    expected_pending = ["2_tests.py", "23_report.py"] if changed_receipt else []
+    assert resumed["resume"]["scheduled_steps"] == expected_pending
+    assert resumed["resume"]["reused_steps"] == [
+        name for name in initial["planned_steps"] if name not in expected_pending
+    ]
+    retained = next(
+        row for row in resumed["steps"] if row["script_name"] == "2_tests.py"
+    )
+    assert retained["status"] == "SKIPPED"
+    assert retained["skip_reason"] == "SKIP_TESTS_IN_PIPELINE"
+    assert retained.get("reused_from_checkpoint", False) is not changed_receipt
+
+
+def test_resume_reuses_no_selected_models_skip(parsed_run: PipelineArguments) -> None:
+    excluded = parsed_run.target_dir / "excluded"
+    excluded.mkdir()
+    (parsed_run.target_dir / "simple_mdp.md").rename(excluded / "simple_mdp.md")
+    config = {"testing_matrix": {"enabled": True, "default_steps": []}}
+    assert orchestrator.main(parsed_run, config) == 0
+    initial = _summary(parsed_run)
+    assert initial["steps"][0]["skip_reason"] == "no_selected_models"
+
+    assert orchestrator.main(parsed_run, config, resume=True) == 0
+    resumed = _summary(parsed_run)
+    assert resumed["resume"]["reused_steps"] == ["3_gnn.py"]
+    assert resumed["resume"]["scheduled_steps"] == []
+    assert resumed["steps"][0]["skip_reason"] == "no_selected_models"
+    assert resumed["steps"][0]["reused_from_checkpoint"] is True

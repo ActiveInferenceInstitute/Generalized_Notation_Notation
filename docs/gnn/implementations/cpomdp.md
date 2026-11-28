@@ -61,6 +61,10 @@ The pipeline renders with the defaults below. Other values need the Python API, 
 | `horizon` | `1` | Policy length for exhaustive search. An explicit candidate declaration supplies its own horizon. |
 | `goal_precision` | `1.0` | How sharply the goal observation is preferred. |
 
+The results and analysis summary retain the effective `goal_precision` used
+to score policies in `efe` and `parity` modes. Passive results record `null`.
+Analysis of older results preserves the field's absence.
+
 ## Limitations
 
 - **The epistemic term barely matters yet.** The sensor noise `R` is fixed, so every action is equally informative. The choice of action is driven by the pragmatic term alone.

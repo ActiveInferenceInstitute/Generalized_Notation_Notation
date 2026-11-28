@@ -438,6 +438,7 @@ def run_simulation():
         "measured_resources": measured_resources(start),
         "selected_policy": [to_list(policies[i]) for i in selected],
         "horizon": HORIZON,
+        "goal_precision": None if passive else GOAL_PRECISION,
         "action_scale": None if FINITE_CONTROLS else ACTION_SCALE,
         **search_stats,
         **FRAMEWORK_VERSION,

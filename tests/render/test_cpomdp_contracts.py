@@ -131,7 +131,12 @@ def _kalman_reference(
 
 
 def _efe_reference(
-    initial: dict[str, Any], mean: np.ndarray, cov: np.ndarray, policy: Any
+    initial: dict[str, Any],
+    mean: np.ndarray,
+    cov: np.ndarray,
+    policy: Any,
+    *,
+    goal_precision: float = 1.0,
 ) -> tuple[float, float, float]:
     F, H, Q, R = (np.asarray(initial[key]) for key in ("F", "H", "Q", "R"))
     goal = H @ np.asarray(initial["goal_mean"])
@@ -141,7 +146,9 @@ def _efe_reference(
         cov = F @ cov @ F.T + Q
         sensor_cov = H @ cov @ H.T + R
         delta = H @ mean - goal
-        pragmatic += float(0.5 * (delta @ delta + np.trace(sensor_cov)))
+        pragmatic += float(
+            0.5 * goal_precision * (delta @ delta + np.trace(sensor_cov))
+        )
         epistemic += float(
             0.5 * (np.linalg.slogdet(sensor_cov)[1] - np.linalg.slogdet(R)[1])
         )
@@ -160,7 +167,13 @@ def test_released_wheel_native_filter_and_policy_scores(
 
     spec = _spec(controlled=mode != "passive")
     script = tmp_path / "model_cpomdp.py"
-    options = {"control_mode": "parity" if mode == "parity" else "efe", "horizon": 2}
+    options: dict[str, Any] = {
+        "control_mode": "parity" if mode == "parity" else "efe",
+        "horizon": 2,
+    }
+    if mode != "parity":
+        options["goal_precision"] = 2.5
+    expected_precision = options.get("goal_precision", 1.0)
     success, message, _ = render_gnn_to_cpomdp(spec, script, options)
     assert success, message
     output = tmp_path / "results"
@@ -191,13 +204,26 @@ def test_released_wheel_native_filter_and_policy_scores(
         for timestep, (mean, cov) in enumerate(zip(means, covariances)):
             scored = np.asarray(
                 [
-                    _efe_reference(spec["initialparameterization"], mean, cov, policy)
+                    _efe_reference(
+                        spec["initialparameterization"],
+                        mean,
+                        cov,
+                        policy,
+                        goal_precision=expected_precision,
+                    )
                     for policy in policies
                 ]
             )
             np.testing.assert_allclose(
                 results["efe_history"][timestep], scored[:, 0], rtol=1e-9, atol=1e-10
             )
+            for column, component in enumerate(("pragmatic", "epistemic"), start=1):
+                np.testing.assert_allclose(
+                    results["policy_score_components"][component][timestep],
+                    scored[:, column],
+                    rtol=1e-9,
+                    atol=1e-10,
+                )
             selected = results["selected_policy_index"][timestep]
             assert selected == int(np.argmin(scored[:, 0]))
             np.testing.assert_allclose(
@@ -206,7 +232,20 @@ def test_released_wheel_native_filter_and_policy_scores(
             np.testing.assert_allclose(
                 results["epistemic_term"][timestep], scored[selected, 2], rtol=1e-9
             )
-    analysis = analyze_payload(results, tmp_path / "analysis")
+    effective_precision = None if mode == "passive" else expected_precision
+    assert results["goal_precision"] == effective_precision
+    analysis_dir = tmp_path / "analysis"
+    analysis = analyze_payload(results, analysis_dir)
+    assert analysis["goal_precision"] == effective_precision
+    saved_analysis = json.loads((analysis_dir / "cpomdp_analysis.json").read_text())
+    assert saved_analysis["goal_precision"] == effective_precision
+    if mode == "parity":
+        older_result = {
+            key: value for key, value in results.items() if key != "goal_precision"
+        }
+        assert "goal_precision" not in analyze_payload(
+            older_result, tmp_path / "older_analysis"
+        )
     assert "categorical_entropy" in analysis["unavailable_metrics"]
     assert "entropy" not in analysis["metrics"]
     for path in analysis["artifacts"]:

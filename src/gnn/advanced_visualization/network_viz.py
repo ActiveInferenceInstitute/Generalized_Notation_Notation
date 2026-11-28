@@ -232,9 +232,10 @@ def _generate_interactive_dashboard(
     start_time = time.time()
 
     try:
-        if not (dependencies.get("plotly") or dependencies.get("bokeh")):
+        if not dependencies.get("plotly"):
             logger.info(
-                f"Skipping dashboard for {model_name} (no interactive libraries available)"
+                "Using the dashboard recovery report for %s because Plotly is unavailable",
+                model_name,
             )
             attempt.fallback_used = True
             _generate_fallback_report(

@@ -9,6 +9,7 @@ import json
 import logging
 import pickle  # nosec B403
 import xml.etree.ElementTree as ET  # nosec B405
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Dict
 
@@ -35,6 +36,48 @@ def _dump_pickle(data: Any, output_file: Path) -> None:
         pickle.dump(data, f)  # nosec B301
 
 
+def _connection_pairs(parsed_content: Dict[str, Any]) -> Iterator[tuple[str, str]]:
+    """Expand single endpoints and structured GNN connection groups."""
+    for connection in parsed_content.get("connections", []):
+        sources = connection.get(
+            "source_variables", connection.get("sources", [connection.get("source")])
+        )
+        targets = connection.get(
+            "target_variables", connection.get("targets", [connection.get("target")])
+        )
+        sources = [sources] if isinstance(sources, str) else sources or []
+        targets = [targets] if isinstance(targets, str) else targets or []
+        for source in sources:
+            for target in targets:
+                if (
+                    isinstance(source, str)
+                    and source
+                    and isinstance(target, str)
+                    and target
+                ):
+                    yield source, target
+
+
+def _graph_structure(
+    parsed_content: Dict[str, Any],
+) -> tuple[Dict[str, str], list[tuple[str, str]]]:
+    """Resolve connection names to emitted graph IDs in stable source order."""
+    names = dict.fromkeys(
+        var.get("name") for var in parsed_content.get("variables", [])
+    )
+    connections = list(_connection_pairs(parsed_content))
+    for source, target in connections:
+        names.setdefault(source, None)
+        names.setdefault(target, None)
+    nodes = {
+        name: f"n{index}"
+        for index, name in enumerate(
+            name for name in names if isinstance(name, str) and name
+        )
+    }
+    return nodes, connections
+
+
 def export_to_json(parsed_content: Dict[str, Any], output_file: Path) -> bool:
     """Export parsed content to JSON format."""
     try:
@@ -54,10 +97,18 @@ def export_to_xml(parsed_content: Dict[str, Any], output_file: Path) -> bool:
 
         # Add sections
         sections_elem = ET.SubElement(root, "sections")
-        for section_name, section_content in parsed_content.get("sections", {}).items():
+        sections = parsed_content.get("sections") or parsed_content.get(
+            "raw_sections", {}
+        )
+        for section_name, section_content in sections.items():
             section_elem = ET.SubElement(sections_elem, "section")
             section_elem.set("name", section_name)
-            for line in section_content:
+            lines = (
+                section_content.splitlines()
+                if isinstance(section_content, str)
+                else section_content
+            )
+            for line in lines:
                 line_elem = ET.SubElement(section_elem, "line")
                 line_elem.text = line
 
@@ -66,14 +117,14 @@ def export_to_xml(parsed_content: Dict[str, Any], output_file: Path) -> bool:
         for var in parsed_content.get("variables", []):
             var_elem = ET.SubElement(variables_elem, "variable")
             var_elem.set("name", var.get("name", ""))
-            var_elem.set("type", var.get("type", ""))
+            var_elem.set("type", var.get("type", var.get("data_type", "")))
 
         # Add connections
         connections_elem = ET.SubElement(root, "connections")
-        for conn in parsed_content.get("connections", []):
+        for source, target in _connection_pairs(parsed_content):
             conn_elem = ET.SubElement(connections_elem, "connection")
-            conn_elem.set("source", conn.get("source", ""))
-            conn_elem.set("target", conn.get("target", ""))
+            conn_elem.set("source", source)
+            conn_elem.set("target", target)
 
         # Write XML
         xml_str = _xml_parseString(ET.tostring(root)).toprettyxml(indent="  ")  # nosec B318
@@ -90,6 +141,7 @@ def export_to_graphml(parsed_content: Dict[str, Any], output_file: Path) -> bool
     """Export parsed content to GraphML format."""
     try:
         # Create GraphML structure
+        node_ids, connections = _graph_structure(parsed_content)
         root = ET.Element("graphml")
         root.set("xmlns", "http://graphml.graphdrawing.org/xmlns")
 
@@ -112,21 +164,19 @@ def export_to_graphml(parsed_content: Dict[str, Any], output_file: Path) -> bool
         graph.set("edgedefault", "directed")
 
         # Add nodes (variables)
-        variables = parsed_content.get("variables", [])
-        for i, var in enumerate(variables):
+        for name, node_id in node_ids.items():
             node = ET.SubElement(graph, "node")
-            node.set("id", f"n{i}")
+            node.set("id", node_id)
             data = ET.SubElement(node, "data")
             data.set("key", "d0")
-            data.text = var.get("name", "")
+            data.text = name
 
         # Add edges (connections)
-        connections = parsed_content.get("connections", [])
-        for i, conn in enumerate(connections):
+        for i, (source, target) in enumerate(connections):
             edge = ET.SubElement(graph, "edge")
             edge.set("id", f"e{i}")
-            edge.set("source", conn.get("source", ""))
-            edge.set("target", conn.get("target", ""))
+            edge.set("source", node_ids[source])
+            edge.set("target", node_ids[target])
 
         # Write GraphML
         xml_str = _xml_parseString(ET.tostring(root)).toprettyxml(indent="  ")  # nosec B318
@@ -143,6 +193,7 @@ def export_to_gexf(parsed_content: Dict[str, Any], output_file: Path) -> bool:
     """Export parsed content to GEXF format."""
     try:
         # Create GEXF structure
+        node_ids, connections = _graph_structure(parsed_content)
         root = ET.Element("gexf")
         root.set("xmlns", "http://www.gexf.net/1.2draft")
         root.set("version", "1.2")
@@ -162,20 +213,18 @@ def export_to_gexf(parsed_content: Dict[str, Any], output_file: Path) -> bool:
 
         # Add nodes
         nodes = ET.SubElement(graph, "nodes")
-        variables = parsed_content.get("variables", [])
-        for i, var in enumerate(variables):
+        for name, node_id in node_ids.items():
             node = ET.SubElement(nodes, "node")
-            node.set("id", f"n{i}")
-            node.set("label", var.get("name", ""))
+            node.set("id", node_id)
+            node.set("label", name)
 
         # Add edges
         edges = ET.SubElement(graph, "edges")
-        connections = parsed_content.get("connections", [])
-        for i, conn in enumerate(connections):
+        for i, (source, target) in enumerate(connections):
             edge = ET.SubElement(edges, "edge")
             edge.set("id", f"e{i}")
-            edge.set("source", conn.get("source", ""))
-            edge.set("target", conn.get("target", ""))
+            edge.set("source", node_ids[source])
+            edge.set("target", node_ids[target])
 
         # Write GEXF
         xml_str = _xml_parseString(ET.tostring(root)).toprettyxml(indent="  ")  # nosec B318
@@ -307,33 +356,40 @@ def export_to_plaintext_summary(model_data: Dict[str, Any], output_file: Path) -
 def export_to_plaintext_dsl(model_data: Dict[str, Any], output_file: Path) -> bool:
     """Export GNN model data to plaintext DSL format."""
     try:
-        with open(output_file, "w", encoding="utf-8") as f:
-            # Write model header
+        source = model_data.get("raw_content")
+        if isinstance(source, str) and source:
+            output_file.write_bytes(source.encode("utf-8"))
+            return True
+
+        raw_sections = model_data.get("raw_sections")
+        sections = raw_sections or model_data.get("sections", {})
+        with open(output_file, "w", encoding="utf-8", newline="") as f:
             f.write("# GNN Model\n\n")
 
-            # Write variables
-            variables = model_data.get("variables", [])
-            if variables:
-                f.write("## Variables\n\n")
-                for var in variables:
-                    f.write(f"{var.get('name', '')}: {var.get('type', '')}\n")
-                f.write("\n")
+            # Saved model summaries may carry only a subset of the authored sections.
+            if not raw_sections:
+                variables = model_data.get("variables", [])
+                if variables:
+                    f.write("## Variables\n\n")
+                    for var in variables:
+                        f.write(f"{var.get('name', '')}: {var.get('type', '')}\n")
+                    f.write("\n")
+                if "Connections" not in sections:
+                    endpoints = list(_connection_pairs(model_data))
+                    if endpoints:
+                        f.write("## Connections\n\n")
+                        for left, right in endpoints:
+                            f.write(f"{left} -> {right}\n")
+                        f.write("\n")
 
-            # Write connections
-            connections = model_data.get("connections", [])
-            if connections:
-                f.write("## Connections\n\n")
-                for conn in connections:
-                    f.write(f"{conn.get('source', '')} -> {conn.get('target', '')}\n")
-                f.write("\n")
-
-            # Write sections
-            sections = model_data.get("sections", {})
             for section_name, section_content in sections.items():
                 f.write(f"## {section_name}\n\n")
-                for line in section_content:
-                    f.write(f"{line}\n")
-                f.write("\n")
+                body = (
+                    section_content
+                    if isinstance(section_content, str)
+                    else "\n".join(map(str, section_content))
+                )
+                f.write(body + "\n\n")
 
         return True
     except Exception as e:

@@ -300,8 +300,7 @@ def _generate_fallback_report(
 <body>
     <h1>{model_name} - {viz_type.upper()} Visualization</h1>
     <div class="info">
-        <p><strong>Note:</strong> Advanced visualization libraries not available.
-        Showing basic model information instead.</p>
+        <p>This recovery report shows basic model information.</p>
     </div>
     <div class="data">
         <h2>Model Structure</h2>

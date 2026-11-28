@@ -144,14 +144,17 @@ def release_ready(observations: dict[str, dict]) -> bool:
 def inspect(
     workflow: str, revision: str, ref: str, event: str | None
 ) -> tuple[str, dict]:
-    endpoint = (
-        f"repos/{REPOSITORY}/actions/workflows/{workflow}/runs?head_sha={revision}"
-    )
+    workflow_endpoint = f"repos/{REPOSITORY}/actions/workflows/{workflow}"
+    endpoint = f"{workflow_endpoint}/runs?head_sha={revision}"
     if event:
         endpoint += f"&event={event}"
     runs = filter_runs(pages(endpoint, "workflow_runs"), ref, event)
     if not runs:
-        return workflow, evaluate([], [], revision)
+        workflow_state = gh("api", workflow_endpoint)["state"]
+        return workflow, {
+            "state": "missing" if workflow_state == "active" else "workflow_inactive",
+            "workflow_state": workflow_state,
+        }
     latest = max(runs, key=lambda item: (item["run_number"], item["run_attempt"]))
     # Attempt-specific jobs: a successful earlier attempt cannot fill missing jobs.
     jobs = pages(

@@ -86,17 +86,12 @@ def _check_dependencies(logger: logging.Logger) -> Dict[str, bool]:
         "matplotlib": MATPLOTLIB_AVAILABLE,
         "plotly": False,
         "seaborn": SEABORN_AVAILABLE,
-        "bokeh": False,
         "numpy": np is not None,
     }
     if importlib.util.find_spec("plotly") is not None:
         dependencies["plotly"] = True
     else:
         logger.info("plotly not available - interactive visualizations will be limited")
-    if importlib.util.find_spec("bokeh") is not None:
-        dependencies["bokeh"] = True
-    else:
-        logger.debug("bokeh not available - will use plotly recovery")
     return dependencies
 
 
@@ -507,6 +502,11 @@ def process_advanced_viz(
                             export_formats,
                             dependencies_available,
                             logger,
+                            html_suffix=(
+                                "interactive_plotly_dashboard"
+                                if viz_type == "all"
+                                else "interactive_dashboard"
+                            ),
                         ),
                     )
 

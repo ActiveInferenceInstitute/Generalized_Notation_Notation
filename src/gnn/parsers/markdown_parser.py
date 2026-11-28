@@ -39,7 +39,7 @@ from .common import (
 from .markdown_parser_parameter import ParameterParsingMixin
 
 logger = logging.getLogger(__name__)
-_CONNECTION_OPERATOR = re.compile(r"<->|->|>|-|\|")
+_CONNECTION_OPERATOR = re.compile(r"<->|->|→|>|-|\|")
 
 
 def _collapse_heading(heading: str) -> str:
